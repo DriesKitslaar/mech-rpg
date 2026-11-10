@@ -4,7 +4,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { EnvHttpProxyAgent, fetch as undiciFetch } from 'undici';
-import { JOBS, REFERENCE, promptFor, qualityFor } from './jobs';
+import { JOBS, qualityFor } from './jobs';
 import { ArtProxyError, editImage, generateImage, type ProxyDeps } from './proxy';
 
 const RAW = 'art/raw';
@@ -38,13 +38,19 @@ async function main(): Promise<void> {
   let done = 0;
   let failed = 0;
   for (const job of todo) {
-    const prompt = promptFor(job);
-    const referencePath = job.family ? REFERENCE[job.family] : null;
-    const viaEdit = referencePath !== null;
+    const { prompt } = job;
+    const references = job.references ?? [];
+    const viaEdit = references.length > 0;
     const quality = qualityFor(job);
+    const missing = references.filter((file) => !existsSync(file));
+    if (missing.length) {
+      failed++;
+      console.error(`FAIL ${job.id} missing reference image: ${missing.join(', ')}`);
+      continue;
+    }
     try {
       const request = () => viaEdit
-        ? editImage({ prompt, quality, references: [readFileSync(referencePath!)] }, deps)
+        ? editImage({ prompt, quality, references: references.map((file) => readFileSync(file)) }, deps)
         : generateImage({ prompt, quality }, deps);
       // No automatic retry: a request that times out at a gateway may still be billed.
       const png = await request();
@@ -53,7 +59,7 @@ async function main(): Promise<void> {
       renameSync(tmp, `${RAW}/${job.id}.png`);
       writeFileSync(`${RAW}/${job.id}.json`, JSON.stringify({
         id: job.id, model: 'gpt-image-2', size: '1024x1024', quality,
-        method: viaEdit ? 'edit' : 'generate', reference: referencePath, prompt,
+        method: viaEdit ? 'edit' : 'generate', references, prompt,
       }, null, 2) + '\n');
       done++;
       console.log(`ok   ${job.id}`);

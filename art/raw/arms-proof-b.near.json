@@ -1,0 +1,11 @@
+{
+  "id": "arms-proof-b.near",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-heavy.png"
+  ],
+  "prompt": "Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 as the background. Do not move, redraw, rescale or recentre anything. Keep: only the arm that is extended forward towards the right side of the image, complete with its shoulder armour, forearm and fist. Erase the torso, head, legs and the other arm."
+}

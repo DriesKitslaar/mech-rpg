@@ -13,8 +13,21 @@ export function chromaKey(img: RawImage, key: RGB, tolerance: number): RawImage 
   return { width: img.width, height: img.height, data };
 }
 
-/** Crops to the bounding box of pixels with alpha of 128 or more. */
-export function trim(img: RawImage): RawImage {
+/**
+ * Removes a green backdrop by dominance instead of distance: any pixel where green clearly
+ * outweighs red and blue goes, whatever its exact shade. Generated backdrops are never one flat colour.
+ */
+export function chromaKeyGreen(img: RawImage): RawImage {
+  const data = new Uint8ClampedArray(img.data);
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    if (g > 120 && g > r * 1.35 && g > b * 1.35) data[i + 3] = 0;
+  }
+  return { width: img.width, height: img.height, data };
+}
+
+/** Bounding box of pixels with alpha of 128 or more, or null when there are none. */
+export function bounds(img: RawImage): { x: number; y: number; w: number; h: number } | null {
   let minX = img.width, minY = img.height, maxX = -1, maxY = -1;
   for (let y = 0; y < img.height; y++) {
     for (let x = 0; x < img.width; x++) {
@@ -26,15 +39,19 @@ export function trim(img: RawImage): RawImage {
       }
     }
   }
-  if (maxX < 0) throw new Error('image is empty after background removal');
-  const width = maxX - minX + 1;
-  const height = maxY - minY + 1;
-  const data = new Uint8ClampedArray(width * height * 4);
-  for (let y = 0; y < height; y++) {
-    const start = ((y + minY) * img.width + minX) * 4;
-    data.set(img.data.subarray(start, start + width * 4), y * width * 4);
+  return maxX < 0 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+/** Crops to the bounding box of pixels with alpha of 128 or more. */
+export function trim(img: RawImage): RawImage {
+  const box = bounds(img);
+  if (!box) throw new Error('image is empty after background removal');
+  const data = new Uint8ClampedArray(box.w * box.h * 4);
+  for (let y = 0; y < box.h; y++) {
+    const start = ((y + box.y) * img.width + box.x) * 4;
+    data.set(img.data.subarray(start, start + box.w * 4), y * box.w * 4);
   }
-  return { width, height, data };
+  return { width: box.w, height: box.h, data };
 }
 
 /** Snaps opaque pixels to the nearest palette colour and makes alpha binary at 128. */

@@ -1,4 +1,4 @@
-import { chromaKey, quantize, trim, type RawImage } from '../../scripts/art/imageOps';
+import { bounds, chromaKey, chromaKeyGreen, quantize, trim, type RawImage } from '../../scripts/art/imageOps';
 
 type RGBA = [number, number, number, number];
 function image(w: number, h: number, fill: RGBA, set: [number, number, RGBA][] = []): RawImage {
@@ -48,4 +48,21 @@ test('quantize makes alpha fully on or fully off at 128', () => {
   const out = quantize(image(2, 1, [90, 100, 50, 127], [[1, 0, [90, 100, 50, 128]]]), palette);
   expect(px(out, 0, 0)[3]).toBe(0);
   expect(px(out, 1, 0)[3]).toBe(255);
+});
+
+test('chromaKeyGreen removes green-dominant pixels of any shade and keeps everything else', () => {
+  const img = image(5, 1, [0, 255, 0, 255], [
+    [1, 0, [20, 230, 30, 255]],   // slightly off green backdrop
+    [2, 0, [240, 240, 245, 255]], // white armour
+    [3, 0, [0, 200, 255, 255]],   // cyan light
+    [4, 0, [150, 20, 30, 255]],   // red armour
+  ]);
+  const out = chromaKeyGreen(img);
+  expect([0, 1, 2, 3, 4].map((x) => px(out, x, 0)[3])).toEqual([0, 0, 255, 255, 255]);
+});
+
+test('bounds reports where the opaque pixels are', () => {
+  const set: [number, number, RGBA][] = [[2, 3, OLIVE], [5, 7, OLIVE]];
+  expect(bounds(image(10, 10, [0, 0, 0, 0], set))).toEqual({ x: 2, y: 3, w: 4, h: 5 });
+  expect(bounds(image(3, 3, [0, 0, 0, 0]))).toBeNull();
 });

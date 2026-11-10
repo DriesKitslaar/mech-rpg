@@ -1,53 +1,83 @@
 {
   "legs-strider": {
     "file": "sprites/legs-strider.png",
-    "w": 29,
-    "h": 72
-  },
-  "legs-proof-b": {
-    "file": "sprites/legs-proof-b.png",
-    "w": 45,
-    "h": 72
+    "w": 112,
+    "h": 100,
+    "ox": 21,
+    "oy": 54
   },
   "core-hauler": {
     "file": "sprites/core-hauler.png",
-    "w": 23,
-    "h": 44
-  },
-  "core-proof-b": {
-    "file": "sprites/core-proof-b.png",
-    "w": 29,
-    "h": 44
+    "w": 32,
+    "h": 41,
+    "ox": 60,
+    "oy": 27
   },
   "head-scout-mk1": {
     "file": "sprites/head-scout-mk1.png",
-    "w": 34,
-    "h": 26
+    "w": 33,
+    "h": 31,
+    "ox": 58,
+    "oy": 5
+  },
+  "arms-rigger.near": {
+    "file": "sprites/arms-rigger.near.png",
+    "w": 54,
+    "h": 37,
+    "ox": 87,
+    "oy": 26
+  },
+  "arms-rigger.far": {
+    "file": "sprites/arms-rigger.far.png",
+    "w": 41,
+    "h": 61,
+    "ox": 25,
+    "oy": 26
+  },
+  "legs-proof-b": {
+    "file": "sprites/legs-proof-b.png",
+    "w": 118,
+    "h": 90,
+    "ox": 18,
+    "oy": 56
+  },
+  "core-proof-b": {
+    "file": "sprites/core-proof-b.png",
+    "w": 42,
+    "h": 75,
+    "ox": 53,
+    "oy": 24
   },
   "head-proof-b": {
     "file": "sprites/head-proof-b.png",
-    "w": 21,
-    "h": 26
+    "w": 27,
+    "h": 38,
+    "ox": 62,
+    "oy": 3
   },
-  "arms-rigger": {
-    "file": "sprites/arms-rigger.png",
-    "w": 14,
-    "h": 56
+  "arms-proof-b.near": {
+    "file": "sprites/arms-proof-b.near.png",
+    "w": 55,
+    "h": 43,
+    "ox": 88,
+    "oy": 16
   },
-  "arms-proof-b": {
-    "file": "sprites/arms-proof-b.png",
-    "w": 21,
-    "h": 56
+  "arms-proof-b.far": {
+    "file": "sprites/arms-proof-b.far.png",
+    "w": 44,
+    "h": 75,
+    "ox": 23,
+    "oy": 12
   },
   "wpn-rivet-rifle": {
     "file": "sprites/wpn-rivet-rifle.png",
-    "w": 70,
-    "h": 21
+    "w": 58,
+    "h": 17
   },
   "wpn-arc-pistol": {
     "file": "sprites/wpn-arc-pistol.png",
-    "w": 38,
-    "h": 24
+    "w": 34,
+    "h": 22
   },
   "wpn-mortar-pod": {
     "file": "sprites/wpn-mortar-pod.png",

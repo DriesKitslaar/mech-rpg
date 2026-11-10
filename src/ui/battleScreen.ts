@@ -1,5 +1,5 @@
 import { coolCost, boostCost, turnEnergyOf, HEAT_LIMIT, type UnitState } from '../core/battle';
-import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
+import { FRAME_SLOTS, type Build, type Catalog, type FrameSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { BattleFlow } from './battleFlow';
@@ -13,18 +13,27 @@ export type { BattlePhase, MenuView } from './battleFlow';
 
 const MESSAGE_MS = 600;
 const BACKGROUND = 'bg-neon-district';
-const MECH_ORIGIN = { x: 4, y: 24 };
+const MECH_ORIGIN = { x: 0, y: 16 };
 const ENEMY_BOX = 64;
-const ENEMY_SPOTS = [{ x: 190, y: 30 }, { x: 236, y: 62 }, { x: 190, y: 100 }];
+const ENEMY_SPOTS = [{ x: 204, y: 30 }, { x: 244, y: 64 }, { x: 204, y: 100 }];
 const PANEL_Y = 178;
 const MENU_W = 154;
-/** Placeholder sizes when a part sprite is missing. */
+/** Placeholder boxes, roughly where each layer sits in the pose, for when a sprite is missing. */
 const FALLBACK: Record<SpriteSlot, SpriteSize> = {
-  legs: { w: 60, h: 72 }, core: { w: 52, h: 44 }, head: { w: 36, h: 26 }, arm: { w: 26, h: 56 },
-  rightHand: { w: 70, h: 24 }, leftHand: { w: 70, h: 24 }, shoulder: { w: 44, h: 26 },
+  armFar: { w: 30, h: 42, ox: 18, oy: 38 }, legs: { w: 96, h: 84, ox: 14, oy: 72 }, core: { w: 42, h: 52, ox: 54, oy: 28 },
+  head: { w: 24, h: 24, ox: 66, oy: 6 }, armNear: { w: 54, h: 30, ox: 88, oy: 34 },
+  rightHand: { w: 70, h: 24 }, leftHand: { w: 40, h: 20 }, shoulder: { w: 44, h: 26 },
 };
-const BUILD_SLOT: Record<SpriteSlot, 'legs' | 'core' | 'head' | 'arms' | 'rightHand' | 'leftHand' | 'shoulder'> = {
-  legs: 'legs', core: 'core', head: 'head', arm: 'arms', rightHand: 'rightHand', leftHand: 'leftHand', shoulder: 'shoulder',
+/** Which sprite a slot shows for a build: the arms part supplies two layers. */
+const SPRITE_ID: Record<SpriteSlot, (build: Build) => string | undefined> = {
+  armFar: (b) => b.arms && `${b.arms}.far`,
+  legs: (b) => b.legs,
+  core: (b) => b.core,
+  head: (b) => b.head,
+  armNear: (b) => b.arms && `${b.arms}.near`,
+  rightHand: (b) => b.rightHand,
+  leftHand: (b) => b.leftHand,
+  shoulder: (b) => b.shoulder,
 };
 
 export class BattleScreen {
@@ -83,16 +92,14 @@ export class BattleScreen {
     const player = this.flow.state.units[0];
     if (player.destroyed || this.blinking(player.id)) return;
     const parts: Partial<Record<SpriteSlot, Sprite>> = {};
-    for (const slot of Object.keys(BUILD_SLOT) as SpriteSlot[]) {
-      const id = player.build[BUILD_SLOT[slot]];
+    for (const slot of Object.keys(SPRITE_ID) as SpriteSlot[]) {
+      const id = SPRITE_ID[slot](player.build);
       if (id) parts[slot] = this.sprites.get(id, { ...FALLBACK[slot], label: id });
     }
     for (const cmd of layoutMech(parts)) {
       const sprite = parts[cmd.slot]!;
-      ctx.filter = cmd.dim ? 'brightness(0.65)' : 'none';
       ctx.drawImage(sprite.image, MECH_ORIGIN.x + cmd.x, MECH_ORIGIN.y + cmd.y, sprite.w, sprite.h);
     }
-    ctx.filter = 'none';
   }
 
   private drawEnemies(ctx: CanvasRenderingContext2D): void {

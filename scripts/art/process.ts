@@ -1,18 +1,20 @@
 /**
  * Turns raw generated images into game sprites.
  * Usage: tsx scripts/art/process.ts            process all raw images, write the manifest
- *        tsx scripts/art/process.ts palette    build art/palette.json from the style reference
+ *        tsx scripts/art/process.ts palette    build art/palette.json from the family drawings
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as iq from 'image-q';
-import sharp, { type OverlayOptions, type Sharp } from 'sharp';
-import { BOX, JOBS, KEY_COLOUR, REFERENCE, type ArtJob } from './jobs';
-import { chromaKey, quantize, trim, type RawImage, type RGB } from './imageOps';
+import sharp, { type Sharp } from 'sharp';
+import { BOX, JOBS, POSE_BOX, type ArtJob } from './jobs';
+import { bounds, chromaKeyGreen, quantize, trim, type RawImage, type RGB } from './imageOps';
 
 const RAW = 'art/raw';
 const OUT = 'public/sprites';
 const PALETTE = 'art/palette.json';
 const MANIFEST = 'src/content/sprites.json';
+
+type Entry = { file: string; w: number; h: number; ox?: number; oy?: number };
 
 export async function decode(input: string | Buffer | Sharp): Promise<RawImage> {
   const s = typeof input === 'string' || Buffer.isBuffer(input) ? sharp(input) : input;
@@ -27,55 +29,63 @@ export function encode(img: RawImage): Sharp {
 }
 
 async function buildPalette(): Promise<void> {
-  // One shared palette from every reference, leaving out the near-black backdrops
-  // so the colours go to the machines themselves.
+  // One shared palette from every family drawing, without the green backdrop.
   const kept: number[] = [];
-  for (const file of Object.values(REFERENCE)) {
-    const img = await decode(file);
+  for (const job of JOBS.filter((j) => j.kind === 'family')) {
+    const img = chromaKeyGreen(await decode(`${RAW}/${job.id}.png`));
     for (let i = 0; i < img.data.length; i += 4) {
-      if (img.data[i] + img.data[i + 1] + img.data[i + 2] > 60) kept.push(img.data[i], img.data[i + 1], img.data[i + 2], 255);
+      if (img.data[i + 3] > 0) kept.push(img.data[i], img.data[i + 1], img.data[i + 2], 255);
     }
   }
+  if (kept.length === 0) throw new Error('no family drawings found to build the palette from');
   const container = iq.utils.PointContainer.fromUint8Array(Uint8Array.from(kept), kept.length / 4, 1);
-  const palette = await iq.buildPalette([container], { colors: 47 });
+  const palette = await iq.buildPalette([container], { colors: 48 });
   const colours: RGB[] = palette.getPointContainer().getPointArray().map((p) => [p.r, p.g, p.b]);
-  colours.unshift([10, 10, 12]);
   writeFileSync(PALETTE, JSON.stringify(colours) + '\n');
   console.log(`wrote ${colours.length} colours to ${PALETTE}`);
 }
 
-async function processJob(job: ArtJob, palette: RGB[]): Promise<{ w: number; h: number }> {
-  const box = BOX[job.kind];
+/** A layer keeps its place: the whole drawing is reduced to the pose box, then cropped with its offset recorded. */
+async function processLayer(job: ArtJob, palette: RGB[]): Promise<Entry> {
+  const keyed = chromaKeyGreen(await decode(`${RAW}/${job.id}.png`));
+  const small = quantize(await decode(await encode(keyed).resize(POSE_BOX, POSE_BOX).png().toBuffer()), palette);
+  const box = bounds(small);
+  if (!box) throw new Error('image is empty after background removal');
+  await encode(trim(small)).png().toFile(`${OUT}/${job.id}.png`);
+  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy: box.y };
+}
+
+async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
+  const box = BOX[job.kind as keyof typeof BOX];
   const src = `${RAW}/${job.id}.png`;
   let out: RawImage;
   if (job.kind === 'background') {
-    // Backgrounds are darkened and desaturated instead of snapped to the mech palette,
-    // so units stand out against them.
+    // Backgrounds are darkened instead of snapped to the mech palette, so units stand out against them.
     out = await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' })
       .modulate({ brightness: 0.55, saturation: 0.85 }));
   } else {
-    const cut = trim(chromaKey(await decode(src), KEY_COLOUR, 110));
+    const cut = trim(chromaKeyGreen(await decode(src)));
     let small = encode(cut).resize(box.w, box.h, { fit: 'inside' });
     if (job.flip) small = small.flop();
-    // The resize blends edge pixels with the removed background; binary alpha in quantize cleans that up.
     out = quantize(await decode(await small.png().toBuffer()), palette);
   }
   await encode(out).png().toFile(`${OUT}/${job.id}.png`);
-  return { w: out.width, h: out.height };
+  return { file: `sprites/${job.id}.png`, w: out.width, h: out.height };
 }
 
 async function main(): Promise<void> {
   if (process.argv[2] === 'palette') return buildPalette();
   const palette = JSON.parse(readFileSync(PALETTE, 'utf8')) as RGB[];
   mkdirSync(OUT, { recursive: true });
-  const manifest: Record<string, { file: string; w: number; h: number }> = {};
+  const manifest: Record<string, Entry> = {};
   let failed = 0;
   for (const job of JOBS) {
+    if (job.kind === 'family') continue; // families are only the source the layers are cut from
     if (!existsSync(`${RAW}/${job.id}.png`)) { console.log(`skip ${job.id} (no raw image)`); continue; }
     try {
-      const size = await processJob(job, palette);
-      manifest[job.id] = { file: `sprites/${job.id}.png`, ...size };
-      console.log(`ok   ${job.id} ${size.w}x${size.h}`);
+      const entry = await (job.kind === 'layer' ? processLayer(job, palette) : processFree(job, palette));
+      manifest[job.id] = entry;
+      console.log(`ok   ${job.id} ${entry.w}x${entry.h}${entry.ox !== undefined ? ` at ${entry.ox},${entry.oy}` : ''}`);
     } catch (e) {
       failed++;
       console.error(`FAIL ${job.id}: ${e instanceof Error ? e.message : String(e)}`);

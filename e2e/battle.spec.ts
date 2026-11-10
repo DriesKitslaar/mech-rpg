@@ -20,23 +20,25 @@ test('a battle can be played to its end with the keyboard alone', async ({ page 
   await page.keyboard.press('Enter');
   await page.screenshot({ path: testInfo.outputPath('battle-weapon.png') });
   await page.keyboard.press('Enter');
-  expect((await snapshot(page)).phase).toBe('target');
+  // Input is handled on the next frame, so wait for the phase instead of reading it at once.
+  await page.waitForFunction(() => (window as any).__game.battle().phase === 'target');
   await page.screenshot({ path: testInfo.outputPath('battle-target.png') });
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
+  await page.waitForFunction(() => (window as any).__game.battle().phase === 'action');
 
+  // Drive the battle one key at a time from what the game reports, waiting a frame after each key.
+  const nextFrame = () => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   let state = await snapshot(page);
-  for (let i = 0; i < 400 && state.phase !== 'result'; i++) {
-    if (state.phase === 'action' && state.menu.items[0].enabled) {
-      for (let k = 0; k < 3; k++) await page.keyboard.press('Enter');
-    } else if (state.phase === 'action') {
-      while ((await snapshot(page)).menu.items[(await snapshot(page)).menu.cursor]?.id !== 'endTurn') {
-        await page.keyboard.press('ArrowDown');
-      }
+  for (let i = 0; i < 3000 && state.phase !== 'result'; i++) {
+    const selected = state.menu.items[state.menu.cursor]?.id;
+    if (state.phase === 'weapon' || state.phase === 'target') {
       await page.keyboard.press('Enter');
-    } else {
-      await page.waitForTimeout(50);
+    } else if (state.phase === 'action') {
+      const wanted = state.menu.items[0].enabled ? 'fire' : 'endTurn';
+      await page.keyboard.press(selected === wanted ? 'Enter' : 'ArrowDown');
     }
+    await nextFrame();
     state = await snapshot(page);
   }
   expect(state.phase).toBe('result');
