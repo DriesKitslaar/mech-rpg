@@ -74,3 +74,23 @@ test('the key and pad maps together cover every action', () => {
   expect(new Set(Object.values(KEY_MAP))).toEqual(new Set(all));
   expect(new Set(Object.values(PAD_BUTTON_MAP))).toEqual(new Set(all));
 });
+
+test('a long gap between polls delivers one repeat, not a burst', () => {
+  const m = new InputMapper();
+  m.setDown('key', 'down', true, 0);
+  expect(m.poll(0)).toEqual(['down']);
+  expect(m.poll(5000)).toEqual(['down']);
+  expect(m.poll(5119)).toEqual([]);
+  expect(m.poll(5120)).toEqual(['down']);
+});
+
+test('releaseAll stops every held action', () => {
+  const m = new InputMapper();
+  m.setDown('key', 'down', true, 0);
+  m.setDown('pad', 'left', true, 0);
+  m.poll(0);
+  m.releaseAll();
+  expect(m.poll(5000)).toEqual([]);
+  m.setDown('key', 'down', true, 6000);
+  expect(m.poll(6000)).toEqual(['down']);
+});

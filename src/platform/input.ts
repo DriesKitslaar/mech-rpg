@@ -49,13 +49,19 @@ export class InputMapper {
     this.queue.push(action);
   }
 
+  /** Forgets everything held, for when the window loses focus and key-up events may never arrive. */
+  releaseAll(): void {
+    this.held.clear();
+  }
+
   /** Actions to deliver now, oldest first. Clears the queue. */
   poll(timeMs: number): InputAction[] {
     for (const [action, held] of this.held) {
       if (!DIRECTIONS.has(action)) continue;
-      while (timeMs >= held.nextRepeat) {
+      // At most one repeat per poll: a stalled frame must not turn into a burst of moves.
+      if (timeMs >= held.nextRepeat) {
         this.queue.push(action);
-        held.nextRepeat += REPEAT_INTERVAL_MS;
+        held.nextRepeat = timeMs + REPEAT_INTERVAL_MS;
       }
     }
     const out = this.queue;
@@ -77,8 +83,11 @@ export function attachInput(target: Window, mapper: InputMapper): { sample(timeM
   const keyup = onKey(false);
   target.addEventListener('keydown', keydown);
   target.addEventListener('keyup', keyup);
-
   const padDown = new Set<InputAction>();
+  const release = (): void => { mapper.releaseAll(); padDown.clear(); };
+  target.addEventListener('blur', release);
+  target.document?.addEventListener('visibilitychange', release);
+
   const sample = (timeMs: number): void => {
     const now = new Set<InputAction>();
     for (const pad of target.navigator.getGamepads?.() ?? []) {
@@ -103,6 +112,8 @@ export function attachInput(target: Window, mapper: InputMapper): { sample(timeM
     detach: () => {
       target.removeEventListener('keydown', keydown);
       target.removeEventListener('keyup', keyup);
+      target.removeEventListener('blur', release);
+      target.document?.removeEventListener('visibilitychange', release);
     },
   };
 }

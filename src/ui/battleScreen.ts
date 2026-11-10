@@ -16,7 +16,7 @@ const MECH_ORIGIN = { x: 14, y: 58 };
 const ENEMY_BOX = 64;
 const ENEMY_SPOTS = [{ x: 190, y: 30 }, { x: 236, y: 62 }, { x: 190, y: 100 }];
 const PANEL_Y = 178;
-const MENU_W = 150;
+const MENU_W = 154;
 /** Placeholder sizes when a part sprite is missing. */
 const FALLBACK: Record<SpriteSlot, SpriteSize> = {
   legs: { w: 64, h: 52 }, core: { w: 56, h: 40 }, head: { w: 26, h: 22 }, arm: { w: 22, h: 44 },
@@ -121,7 +121,9 @@ export class BattleScreen {
 
   private drawMessage(ctx: CanvasRenderingContext2D): void {
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
-    if (this.flow.phase !== 'result') drawText(ctx, this.flow.message, 5, 1);
+    if (this.flow.phase !== 'result') {
+      drawText(ctx, this.flow.message, 5, 1, { color: this.flow.overheatWarning ? COLORS.danger : COLORS.text });
+    }
   }
 
   private drawBottom(ctx: CanvasRenderingContext2D): void {
@@ -145,14 +147,13 @@ export class BattleScreen {
       const y = this.drawParts(ctx, target, x, PANEL_Y + 5 + LINE + 1, this.flow.targetPart);
       const p = this.flow.preview!;
       drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}`, x, y + 3, { size: 16 });
+      // Energy and heat stay in view while aiming, at the foot of the menu panel.
+      this.drawEnergyAndHeat(ctx, player, 6, LOGICAL_H - 2 * LINE - 4, 132);
     } else {
       drawText(ctx, STRINGS.headings.you, x, PANEL_Y + 5, { color: COLORS.dim });
-      drawText(ctx, `${STRINGS.meters.repairs} ${player.repairsLeft}`, x + 148, PANEL_Y + 5, { color: COLORS.dim, align: 'right' });
-      let y = this.drawParts(ctx, player, x, PANEL_Y + 5 + LINE + 1, null);
-      const max = turnEnergyOf(player, this.catalog);
-      this.drawStat(ctx, STRINGS.meters.energy, player.energy, max, COLORS.energy, x, y);
-      y += LINE;
-      this.drawStat(ctx, STRINGS.meters.heat, player.heat, HEAT_LIMIT, player.heat > 75 ? COLORS.danger : COLORS.heat, x, y);
+      drawText(ctx, `${STRINGS.meters.repairs} ${player.repairsLeft}`, x + 144, PANEL_Y + 5, { color: COLORS.dim, align: 'right' });
+      const y = this.drawParts(ctx, player, x, PANEL_Y + 5 + LINE + 1, null);
+      this.drawEnergyAndHeat(ctx, player, x, y, 144);
     }
   }
 
@@ -174,19 +175,26 @@ export class BattleScreen {
       const dead = part.ap <= 0;
       const color = slot === highlight ? COLORS.accent : dead ? COLORS.dim : COLORS.text;
       drawText(ctx, STRINGS.parts[slot], x, y, { color, strike: dead });
-      drawMeter(ctx, x + 30, y + 4, 78, 4, part.ap, part.maxAp, COLORS.armor);
-      drawText(ctx, String(part.ap), x + 148, y, { color, align: 'right' });
+      drawMeter(ctx, x + 30, y + 4, 74, 4, part.ap, part.maxAp, COLORS.armor);
+      drawText(ctx, String(part.ap), x + 144, y, { color, align: 'right' });
       y += LINE;
     }
     return y;
   }
 
+  private drawEnergyAndHeat(ctx: CanvasRenderingContext2D, player: UnitState, x: number, y: number, width: number): void {
+    const hot = player.heat > 75 || this.flow.overheatWarning;
+    this.drawStat(ctx, STRINGS.meters.energy, player.energy, turnEnergyOf(player, this.catalog), COLORS.energy, x, y, width);
+    this.drawStat(ctx, STRINGS.meters.heat, player.heat, HEAT_LIMIT, hot ? COLORS.danger : COLORS.heat, x, y + LINE, width);
+  }
+
   private drawStat(
     ctx: CanvasRenderingContext2D, label: string, value: number, max: number, color: string, x: number, y: number,
+    width: number,
   ): void {
     drawText(ctx, label, x, y, { color: COLORS.dim });
-    drawMeter(ctx, x + 30, y + 4, 78, 4, value, max, color);
-    drawText(ctx, String(value), x + 148, y, { align: 'right', color: color === COLORS.danger ? COLORS.danger : COLORS.text });
+    drawMeter(ctx, x + 30, y + 4, width - 70, 4, value, max, color);
+    drawText(ctx, String(value), x + width, y, { align: 'right', color: color === COLORS.danger ? COLORS.danger : COLORS.text });
   }
 
   private drawResult(ctx: CanvasRenderingContext2D): void {

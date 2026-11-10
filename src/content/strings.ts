@@ -17,6 +17,7 @@ export const STRINGS = {
   cool: (unit: string, amount: number) => `${unit} vents heat -${amount}`,
   repair: (unit: string, part: string, amount: number) => `${unit} repair ${part} +${amount}`,
   overheatPlayer: 'Overheated! Next turn lost',
+  overheatWarning: 'Warning: this shot will overheat',
   overheat: (unit: string) => `${unit} overheats`,
   turnSkipped: (unit: string) => `${unit} cooling down - turn lost`,
   victory: 'VICTORY',

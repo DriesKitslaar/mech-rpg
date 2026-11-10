@@ -1,6 +1,6 @@
 import { chooseEnemyAction } from '../core/ai';
 import {
-  activeUnit, applyAction, checkAction, previewShot,
+  activeUnit, applyAction, checkAction, previewShot, HEAT_LIMIT,
   type Action, type BattleEvent, type BattleState, type UnitState,
 } from '../core/battle';
 import { weaponIn } from '../core/build';
@@ -26,6 +26,8 @@ export class BattleFlow {
   targetId: string | null = null;
   targetPart: FrameSlot | null = null;
   preview: { hitChance: number; damage: number } | null = null;
+  /** True while targeting with a weapon whose shot would push heat past the limit. */
+  overheatWarning = false;
   message = '';
   /** The event behind the current message, for the screen to animate. */
   lastEvent: BattleEvent | null = null;
@@ -70,7 +72,7 @@ export class BattleFlow {
         const attacker = this.state.units.find((u) => u.id === event.unit)!;
         const weapon = weaponIn(attacker.build, event.weapon, this.catalog)?.name ?? event.weapon;
         return event.hit
-          ? STRINGS.hit(weapon, name(event.target), STRINGS.parts[event.part], event.damage)
+          ? STRINGS.hit(weapon, name(event.target), STRINGS.parts[event.appliedTo], event.damage)
           : STRINGS.miss(weapon, name(event.target));
       }
       case 'partDestroyed':
@@ -111,7 +113,6 @@ export class BattleFlow {
       return;
     }
     this.openActionMenu();
-    this.message = STRINGS.yourTurn(this.state.round);
   }
 
   private openActionMenu(): void {
@@ -125,24 +126,29 @@ export class BattleFlow {
     const items = ACTION_IDS.map((id) => ({ id, label: STRINGS.actions[id], enabled: enabled[id] }));
     this.phase = 'action';
     this.menu = { items, cursor: items.findIndex((i) => i.enabled) };
+    this.message = STRINGS.yourTurn(this.state.round);
     this.weapon = null;
     this.targetId = null;
     this.targetPart = null;
     this.preview = null;
+    this.overheatWarning = false;
   }
 
   private openWeaponMenu(): void {
     const items = this.fireableWeapons().map((slot) => {
       const weapon = weaponIn(this.player.build, slot, this.catalog)!;
       const ammo = this.player.ammo[slot];
-      const ammoText = ammo === null || ammo === undefined ? STRINGS.meters.unlimited : String(ammo);
-      return { id: slot, label: `${weapon.name}  ${STRINGS.meters.energy} ${weapon.energy}  ${STRINGS.meters.ammo} ${ammoText}`, enabled: true };
+      // Kept short to fit the menu panel: "Rivet Rifle x30 EN 60 HEAT 12".
+      const ammoText = typeof ammo === 'number' ? ` x${ammo}` : '';
+      const label = `${weapon.name}${ammoText} ${STRINGS.meters.energy} ${weapon.energy} ${STRINGS.meters.heat} ${weapon.heat}`;
+      return { id: slot, label, enabled: true };
     });
     this.phase = 'weapon';
     this.menu = { items, cursor: 0 };
     this.targetId = null;
     this.targetPart = null;
     this.preview = null;
+    this.overheatWarning = false;
   }
 
   private openTarget(targetId: string): void {
@@ -158,6 +164,9 @@ export class BattleFlow {
   private syncTarget(): void {
     this.targetPart = this.menu.items[this.menu.cursor].id as FrameSlot;
     this.preview = previewShot(this.state, 'player', this.weapon!, this.targetId!, this.targetPart, this.catalog);
+    const weapon = weaponIn(this.player.build, this.weapon!, this.catalog)!;
+    this.overheatWarning = this.player.heat + weapon.heat > HEAT_LIMIT;
+    this.message = this.overheatWarning ? STRINGS.overheatWarning : STRINGS.yourTurn(this.state.round);
   }
 
   private openRepairMenu(): void {
@@ -174,6 +183,7 @@ export class BattleFlow {
     this.phase = 'animating';
     this.menu = { items: [], cursor: 0 };
     this.preview = null;
+    this.overheatWarning = false;
     this.advance();
   }
 

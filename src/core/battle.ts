@@ -33,7 +33,8 @@ export interface UnitState {
 export type BattleEvent =
   | { type: 'turnStart'; unit: string }
   | { type: 'turnSkipped'; unit: string }
-  | { type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; hit: boolean; damage: number }
+  /** `part` is where the shot was aimed; `appliedTo` and `damage` are what was actually hit and lost. */
+  | { type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; appliedTo: FrameSlot; hit: boolean; damage: number }
   | { type: 'partDestroyed'; unit: string; part: FrameSlot }
   | { type: 'unitDestroyed'; unit: string }
   | { type: 'boost'; unit: string }
@@ -149,7 +150,7 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     unit.boosted = false;
     if (unit.overheated) {
       unit.overheated = false;
-      unit.heat = HEAT_AFTER_OVERHEAT;
+      unit.heat = Math.min(unit.heat, HEAT_AFTER_OVERHEAT);
       state.events.push({ type: 'turnSkipped', unit: unit.id });
       state.turn += 1;
       continue;
@@ -207,9 +208,12 @@ export function previewShot(
   if (arms && HAND_SLOTS.includes(slot) && isAlive(attacker.parts.arms)) aim += arms.aim ?? 0;
 
   const raw = weapon.accuracy + aim - evasion(target, catalog) + PART_MODIFIER[part] - headPenalty;
+  const full = Math.max(1, Math.round(weapon.damage * (1 - targetPart.resist[weapon.damageType])));
+  // A part that is already destroyed passes half the damage on to the core.
+  const passesOn = target.parts[part]!.ap <= 0;
   return {
     hitChance: Math.min(95, Math.max(10, raw)),
-    damage: Math.max(1, Math.round(weapon.damage * (1 - targetPart.resist[weapon.damageType]))),
+    damage: passesOn ? Math.max(1, Math.floor(full / 2)) : full,
   };
 }
 
@@ -273,13 +277,12 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   if (roll) value = roll();
   else ({ value, state: state.rng } = nextRandom(state.rng));
   const hit = value * 100 < hitChance;
+  const appliedTo: FrameSlot = target.parts[action.part]!.ap > 0 ? action.part : 'core';
   state.events.push({
-    type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: action.part, hit, damage: hit ? damage : 0,
+    type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: action.part, appliedTo, hit,
+    damage: hit ? damage : 0,
   });
-  if (hit) {
-    if (target.parts[action.part]!.ap > 0) damagePart(state, target, action.part, damage);
-    else damagePart(state, target, 'core', Math.max(1, Math.floor(damage / 2)));
-  }
+  if (hit) damagePart(state, target, appliedTo, damage);
 
   unit.heat += weapon.heat;
   if (unit.heat > HEAT_LIMIT && !unit.overheated) {

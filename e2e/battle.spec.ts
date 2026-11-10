@@ -18,6 +18,7 @@ test('a battle can be played to its end with the keyboard alone', async ({ page 
   await page.screenshot({ path: testInfo.outputPath('battle-action.png') });
 
   await page.keyboard.press('Enter');
+  await page.screenshot({ path: testInfo.outputPath('battle-weapon.png') });
   await page.keyboard.press('Enter');
   expect((await snapshot(page)).phase).toBe('target');
   await page.screenshot({ path: testInfo.outputPath('battle-target.png') });

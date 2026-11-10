@@ -96,7 +96,7 @@ describe('firing', () => {
     expect(player(s).energy).toBe(170);
     expect(player(s).heat).toBe(12);
     expect(s.events.at(-1)).toEqual({
-      type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', hit: true, damage: 38,
+      type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit: true, damage: 38,
     });
   });
 
@@ -153,6 +153,17 @@ describe('part destruction', () => {
     expect(unit(s, 'enemy-0').parts.legs!.ap).toBe(0);
     expect(unit(s, 'enemy-0').parts.core!.ap).toBe(31);
     expect(s.events.filter((e) => e.type === 'partDestroyed')).toEqual([{ type: 'partDestroyed', unit: 'enemy-0', part: 'legs' }]);
+  });
+
+  test('a shot at a destroyed part previews and reports the halved damage on the core', () => {
+    let s = toPlayer(demo(['recon-drone']));
+    s = applyAction(s, fire('rightHand', 'enemy-0', 'legs'), CATALOG, hit);
+    s = toPlayer(applyAction(s, END, CATALOG));
+    expect(previewShot(s, 'player', 'rightHand', 'enemy-0', 'legs', CATALOG).damage).toBe(19);
+    s = applyAction(s, fire('rightHand', 'enemy-0', 'legs'), CATALOG, hit);
+    expect(s.events.at(-1)).toEqual({
+      type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'legs', appliedTo: 'core', hit: true, damage: 19,
+    });
   });
 
   test('destroyed legs mean no evasion and no boost', () => {
@@ -233,6 +244,13 @@ describe('heat', () => {
     s = applyAction(s, { type: 'cool' }, CATALOG);
     expect(player(s)).toMatchObject({ heat: 39, energy: 184 });
     expect(checkAction(s, { type: 'cool' }, CATALOG)).toBe('alreadyUsed');
+  });
+
+  test('the overheat penalty never raises heat', () => {
+    let s = edit(toPlayer(demo(['recon-drone'])), (d) => { d.units[0].overheated = true; d.units[0].heat = 20; });
+    s = toPlayer(applyAction(s, END, CATALOG));
+    expect(s.events).toContainEqual({ type: 'turnSkipped', unit: 'player' });
+    expect(player(s).heat).toBeLessThanOrEqual(20);
   });
 
   test('heat never drops below zero', () => {

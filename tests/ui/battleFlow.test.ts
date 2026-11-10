@@ -132,3 +132,34 @@ test('input during enemy turns is ignored', () => {
   press(flow, 'confirm', 'down', 'cancel');
   expect(flow.state).toEqual(before);
 });
+
+test('weapon labels show the heat each shot adds', () => {
+  const flow = ready();
+  press(flow, 'confirm');
+  expect(flow.menu.items[0].label).toContain('HEAT 12');
+});
+
+test('targeting warns when the shot would overheat the mech', () => {
+  const cool = ready();
+  press(cool, 'confirm', 'confirm');
+  expect(cool.overheatWarning).toBe(false);
+
+  const hotState = structuredClone(ready().state);
+  hotState.units[0].heat = 95;
+  const hot = ready(hotState);
+  press(hot, 'confirm', 'confirm');
+  expect(hot.phase).toBe('target');
+  expect(hot.overheatWarning).toBe(true);
+  expect(hot.message).toBe('Warning: this shot will overheat');
+  press(hot, 'cancel');
+  expect(hot.overheatWarning).toBe(false);
+});
+
+test('a hit on a destroyed part is reported as core damage', () => {
+  const state = structuredClone(ready().state);
+  state.units[1].parts.legs!.ap = 0;
+  const flow = ready(state);
+  press(flow, 'confirm', 'confirm', 'down');
+  expect(flow.targetPart).toBe('legs');
+  expect(flow.preview!.damage).toBe(19);
+});
