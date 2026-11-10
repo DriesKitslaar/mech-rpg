@@ -170,10 +170,16 @@ function finishTurn(state: BattleState, catalog: Catalog): void {
   beginTurns(state, catalog);
 }
 
+/** Enemies of the same kind get a letter so messages can tell them apart. */
+function enemyName(enemies: EnemyDef[], index: number): string {
+  const same = enemies.map((e, i) => (e.id === enemies[index].id ? i : -1)).filter((i) => i >= 0);
+  return same.length > 1 ? `${enemies[index].name} ${String.fromCharCode(65 + same.indexOf(index))}` : enemies[index].name;
+}
+
 export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalog, seed: number): BattleState {
   const units = [
     createUnit('player', 'You', 'player', player, catalog),
-    ...enemies.map((e, i) => createUnit(`enemy-${i}`, e.name, 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite })),
+    ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite })),
   ];
   const state: BattleState = { units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing' };
   state.order = roundOrder(state, catalog);

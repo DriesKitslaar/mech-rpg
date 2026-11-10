@@ -1,0 +1,9 @@
+{
+  "id": "head-scout-mk1",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "medium",
+  "method": "edit",
+  "reference": "art/reference/style-ref.png",
+  "prompt": "16-bit pixel art, side view facing right, muted military palette of olive, steel grey and orange accents, crisp pixels, no anti-aliasing, no text, no ground shadow. Match the attached reference image exactly in pixel size, palette, outline weight and shading. Draw: a small, flat sensor head unit of a mech with a single orange visor lens facing right. Head only, no neck, no body. Show only this single component, centred, filling most of the frame, on a solid pure magenta #FF00FF background."
+}

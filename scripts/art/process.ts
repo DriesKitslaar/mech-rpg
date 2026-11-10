@@ -47,7 +47,10 @@ async function processJob(job: ArtJob, palette: RGB[]): Promise<{ w: number; h: 
   const src = `${RAW}/${job.id}.png`;
   let out: RawImage;
   if (job.kind === 'background') {
-    out = quantize(await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' })), palette);
+    // Backgrounds are darkened and desaturated instead of snapped to the mech palette,
+    // so units stand out against them.
+    out = await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' })
+      .modulate({ brightness: 0.62, saturation: 0.55 }));
   } else {
     const cut = trim(chromaKey(await decode(src), KEY, 110));
     let small = encode(cut).resize(box.w, box.h, { fit: 'inside' });

@@ -4,7 +4,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { EnvHttpProxyAgent, fetch as undiciFetch } from 'undici';
-import { JOBS, QUALITY, promptFor } from './jobs';
+import { JOBS, promptFor, qualityFor } from './jobs';
 import { ArtProxyError, editImage, generateImage, type ProxyDeps } from './proxy';
 
 const RAW = 'art/raw';
@@ -42,20 +42,18 @@ async function main(): Promise<void> {
   for (const job of todo) {
     const prompt = promptFor(job);
     const viaEdit = job.kind !== 'background';
+    const quality = qualityFor(job);
     try {
       const request = () => viaEdit
-        ? editImage({ prompt, quality: QUALITY, references: [reference] }, deps)
-        : generateImage({ prompt, quality: QUALITY }, deps);
-      // One retry for gateway hiccups and network errors; request errors (4xx) are not retried.
-      const png = await request().catch((e) => {
-        if (e instanceof ArtProxyError && (e.status === 0 || e.status >= 500)) return request();
-        throw e;
-      });
+        ? editImage({ prompt, quality, references: [reference] }, deps)
+        : generateImage({ prompt, quality }, deps);
+      // No automatic retry: a request that times out at a gateway may still be billed.
+      const png = await request();
       const tmp = `${TMP}/${job.id}.png`;
       writeFileSync(tmp, png);
       renameSync(tmp, `${RAW}/${job.id}.png`);
       writeFileSync(`${RAW}/${job.id}.json`, JSON.stringify({
-        id: job.id, model: 'gpt-image-2', size: '1024x1024', quality: QUALITY,
+        id: job.id, model: 'gpt-image-2', size: '1024x1024', quality,
         method: viaEdit ? 'edit' : 'generate', reference: viaEdit ? REFERENCE : null, prompt,
       }, null, 2) + '\n');
       done++;

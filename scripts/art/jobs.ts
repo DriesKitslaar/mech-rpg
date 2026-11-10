@@ -6,6 +6,7 @@ export interface ArtJob {
   subject: string;
   /** Mirror horizontally after processing (enemies face the player). */
   flip?: boolean;
+  quality?: 'low' | 'medium' | 'high';
 }
 
 /** Maximum processed size per kind, in logical pixels. */
@@ -16,7 +17,7 @@ export const BOX: Record<JobKind, { w: number; h: number }> = {
   arm: { w: 22, h: 44 },
   handWeapon: { w: 52, h: 20 },
   shoulderWeapon: { w: 60, h: 22 },
-  enemy: { w: 96, h: 96 },
+  enemy: { w: 64, h: 64 },
   background: { w: 310, h: 270 },
 };
 
@@ -28,7 +29,12 @@ export const FRAMING =
 export const REFERENCE_NOTE =
   'Match the attached reference image exactly in pixel size, palette, outline weight and shading.';
 
+/**
+ * Default quality. Some networks cut requests after 30 seconds, which medium quality can exceed;
+ * a job that keeps timing out can set `quality: 'low'`.
+ */
 export const QUALITY = 'medium' as const;
+export const qualityFor = (job: ArtJob): 'low' | 'medium' | 'high' => job.quality ?? QUALITY;
 
 export function promptFor(job: ArtJob): string {
   if (job.kind === 'background') return job.subject;
@@ -40,7 +46,7 @@ export const JOBS: ArtJob[] = [
     subject: 'the lower body of a heavy combat mech: a hip block with two thick reverse-jointed legs, standing, both feet flat on the same level. No torso, no arms, no weapons.' },
   { id: 'legs-proof-b', kind: 'legs',
     subject: 'the lower body of a mech built as a low tracked chassis: twin tank treads with a flat hip mounting plate on top. No torso, no turret, no weapons.' },
-  { id: 'core-hauler', kind: 'core',
+  { id: 'core-hauler', kind: 'core', quality: 'low',
     subject: 'the boxy, angular armoured torso block of a heavy combat mech with a cockpit hatch and side vents. Torso only: no head, no arms, no legs, no weapons.' },
   { id: 'core-proof-b', kind: 'core',
     subject: 'the slim, rounded torso pod of a light scout mech with a glass canopy at the front. Torso only: no head, no arms, no legs, no weapons.' },
@@ -57,11 +63,11 @@ export const JOBS: ArtJob[] = [
   { id: 'wpn-arc-pistol', kind: 'handWeapon',
     subject: 'a compact handheld energy pistol for a mech with glowing orange coil rings around the barrel, horizontal, muzzle pointing right. Weapon only, no hand.' },
   { id: 'wpn-mortar-pod', kind: 'shoulderWeapon',
-    subject: 'a shoulder-mounted multi-tube mortar launcher pod for a mech, horizontal, tubes pointing right, with a mounting bracket underneath. Weapon only.' },
+    subject: 'a boxy shoulder-mounted equipment pod for a toy robot in a retro video game: a rectangular housing with six short round tubes in two rows on its right face and a mounting bracket underneath, horizontal. The pod only.' },
   { id: 'enemy-recon-drone', kind: 'enemy', flip: true,
     subject: 'a small hovering quad-rotor reconnaissance drone with a single red sensor eye and a small stinger gun underneath. The whole drone, nothing else.' },
   { id: 'enemy-gun-turret', kind: 'enemy', flip: true,
     subject: 'a fixed armoured gun turret on a squat concrete base with one long heavy cannon barrel pointing right. The whole turret, nothing else.' },
-  { id: 'bg-quarry', kind: 'background',
+  { id: 'bg-quarry', kind: 'background', quality: 'low',
     subject: '16-bit pixel art background, no anti-aliasing: a wide view of an exhausted open-pit quarry on a barren planet at dusk, terraced rock walls, distant derelict mining machinery, flat empty ground filling the lower third, muted desaturated browns and greys under a dim orange sky. No characters, no robots, no vehicles in the foreground, no text.' },
 ];

@@ -1,0 +1,9 @@
+{
+  "id": "bg-quarry",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "reference": null,
+  "prompt": "16-bit pixel art background, no anti-aliasing: a wide view of an exhausted open-pit quarry on a barren planet at dusk, terraced rock walls, distant derelict mining machinery, flat empty ground filling the lower third, muted desaturated browns and greys under a dim orange sky. No characters, no robots, no vehicles in the foreground, no text."
+}
