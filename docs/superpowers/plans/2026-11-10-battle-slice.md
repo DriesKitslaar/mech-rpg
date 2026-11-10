@@ -269,7 +269,7 @@ export interface EnemyDef { id: string; name: string; build: Build; ai: AiProfil
 | `wpn-arc-pistol` | Arc Pistol | hand | energy | 30 | 80 | 90 | 22 | none | 0 | 50 |
 | `wpn-mortar-pod` | Mortar Pod | shoulder | explosive | 70 | 60 | 80 | 30 | 8 | 60 | 140 |
 | `wpn-drone-stinger` | Stinger | shoulder | kinetic | 14 | 70 | 50 | 10 | none | 0 | 30 |
-| `wpn-turret-cannon` | Bastion Cannon | shoulder | kinetic | 45 | 65 | 120 | 35 | none | 0 | 200 |
+| `wpn-turret-cannon` | Bastion Cannon | shoulder | kinetic | 60 | 75 | 120 | 35 | none | 0 | 200 |
 
 Prices for this slice: player frame parts 400, `gen-kd1` 500, player weapons 300; enemy-only parts 0.
 
@@ -366,8 +366,8 @@ export const PART_MODIFIER: Record<FrameSlot, number> = { core: 0, legs: -5, arm
 
 - [ ] **Step 2: Write `tests/core/battle.test.ts`.** Helpers: `demo(enemies)` creates a battle with `DEMO_BUILD` and seed 1; `hit = () => 0` and `miss = () => 0.999`. Tests:
   - **order:** `demo(['gun-turret', 'recon-drone'])` has `order` `['enemy-1', 'player', 'enemy-0']`.
-  - **preview:** player rifle at drone core `{ hitChance: 57, damage: 38 }`; at drone legs `hitChance: 52`; rifle at turret core `{ hitChance: 90, damage: 23 }`; mortar at turret core `{ hitChance: 70, damage: 63 }`; arc pistol at turret core `damage: 24`; drone stinger at player core `{ hitChance: 55, damage: 11 }`; turret cannon at player core `{ hitChance: 50, damage: 36 }`.
-  - **boost:** after the player boosts, the turret's preview against the player core is `hitChance: 20`, the player's energy is 161, and a second boost is refused with `alreadyUsed`. The boost ends when the player's next turn starts.
+  - **preview:** player rifle at drone core `{ hitChance: 57, damage: 38 }`; at drone legs `hitChance: 52`; rifle at turret core `{ hitChance: 90, damage: 23 }`; mortar at turret core `{ hitChance: 70, damage: 63 }`; arc pistol at turret core `damage: 24`; drone stinger at player core `{ hitChance: 55, damage: 11 }`; turret cannon at player core `{ hitChance: 60, damage: 48 }`.
+  - **boost:** after the player boosts, the turret's preview against the player core is `hitChance: 30`, the player's energy is 161, and a second boost is refused with `alreadyUsed`. The boost ends when the player's next turn starts.
   - **clamp:** a fixture weapon with accuracy 5 previews at 10; one with accuracy 200 previews at 95.
   - **hit and miss:** a forced hit lowers the drone core from 50 to 12 and the rifle's ammo from 30 to 29; a forced miss leaves AP unchanged and still spends ammo, energy and heat.
   - **one shot per weapon:** a second rifle shot in the same turn is refused with `alreadyFired`.
