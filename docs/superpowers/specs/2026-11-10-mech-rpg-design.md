@@ -1,9 +1,9 @@
-# IJZERLOON — ontwerp eerste versie
+# IRONWAGE — ontwerp eerste versie
 
 Datum: 2026-11-10
 Status: ter goedkeuring
 
-"IJZERLOON" is een werktitel. Alle namen in dit document (wereld, partijen, onderdelen)
+"IRONWAGE" is een werktitel. Alle namen in dit document (wereld, partijen, onderdelen)
 zijn eigen verzinsels en mogen nog veranderen.
 
 ## 1. Doel
@@ -161,9 +161,9 @@ briefings vertellen zelden de hele waarheid.
 
 | Partij | Karakter | Winkelaanbod |
 |---|---|---|
-| Hadron Delfstoffen | Mijnbouwconcern. Betaalt goed, liegt in briefings | Zwaar pantser, kinetische wapens |
-| Lumen Systemen | Techbedrijf. Koel en berekenend | Energiewapens, lichte frames |
-| De Onderstroom | Verzetsgroep. Arm maar eerlijk | Explosieven, goedkope onderdelen |
+| Hadron Mining | Mijnbouwconcern. Betaalt goed, liegt in briefings | Zwaar pantser, kinetische wapens |
+| Lumen Systems | Techbedrijf. Koel en berekenend | Energiewapens, lichte frames |
+| The Undertow | Verzetsgroep. Arm maar eerlijk | Explosieven, goedkope onderdelen |
 
 Het verhaal wordt verteld via briefings, de afrekening en het berichtenscherm. Er zijn
 geen tussenfilmpjes en er is geen rondloopbare wereld.
@@ -230,7 +230,10 @@ Alle schermen zijn getekend op 310×270 en worden 4× vergroot zonder vervaging.
 Op een computer werken pijltjestoetsen, Enter, Escape, Q/E en spatie als dezelfde acties.
 Dat is nodig om het spel geautomatiseerd te testen.
 
-**Taal**: alle speltekst is Nederlands en staat in één tekstbestand, los van de code.
+**Taal**: alle speltekst is Engels, inclusief namen van onderdelen, vijanden en partijen.
+De tekst staat in één tekstbestand, los van de code. Dit ontwerpdocument blijft Nederlands;
+de Nederlandse termen hierin (zoals "romp" of "noodreparatie") krijgen in het spel een
+Engelse naam.
 
 **Opslaan**: automatisch na elke afrekening en elke aankoop of verkoop. Er is één
 opslagplek. Het opslagbestand heeft een versienummer; een onleesbaar of te oud bestand
@@ -348,7 +351,7 @@ onderdeel-sprites verschilt.
 - Wereldkaart, arena en ranglijst
 - Rondlopen met een personage
 - Muziek
-- Engelse vertaling
+- Vertalingen naar andere talen
 - Meerdere opslagplekken
 - Publicatie in een app-winkel
 
