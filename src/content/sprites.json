@@ -1,71 +1,71 @@
 {
   "legs-strider": {
     "file": "sprites/legs-strider.png",
-    "w": 44,
-    "h": 52
+    "w": 29,
+    "h": 72
   },
   "legs-proof-b": {
     "file": "sprites/legs-proof-b.png",
-    "w": 64,
-    "h": 32
+    "w": 45,
+    "h": 72
   },
   "core-hauler": {
     "file": "sprites/core-hauler.png",
-    "w": 56,
-    "h": 37
+    "w": 23,
+    "h": 44
   },
   "core-proof-b": {
     "file": "sprites/core-proof-b.png",
-    "w": 56,
-    "h": 40
+    "w": 29,
+    "h": 44
   },
   "head-scout-mk1": {
     "file": "sprites/head-scout-mk1.png",
-    "w": 26,
-    "h": 20
+    "w": 34,
+    "h": 26
   },
   "head-proof-b": {
     "file": "sprites/head-proof-b.png",
-    "w": 16,
-    "h": 22
+    "w": 21,
+    "h": 26
   },
   "arms-rigger": {
     "file": "sprites/arms-rigger.png",
-    "w": 12,
-    "h": 44
+    "w": 14,
+    "h": 56
   },
   "arms-proof-b": {
     "file": "sprites/arms-proof-b.png",
-    "w": 14,
-    "h": 44
+    "w": 21,
+    "h": 56
   },
   "wpn-rivet-rifle": {
     "file": "sprites/wpn-rivet-rifle.png",
-    "w": 40,
-    "h": 20
+    "w": 70,
+    "h": 21
   },
   "wpn-arc-pistol": {
     "file": "sprites/wpn-arc-pistol.png",
-    "w": 37,
-    "h": 20
+    "w": 38,
+    "h": 24
   },
   "wpn-mortar-pod": {
     "file": "sprites/wpn-mortar-pod.png",
-    "w": 39,
-    "h": 22
+    "w": 41,
+    "h": 26
   },
   "enemy-recon-drone": {
     "file": "sprites/enemy-recon-drone.png",
     "w": 64,
-    "h": 31
+    "h": 39
   },
   "enemy-gun-turret": {
     "file": "sprites/enemy-gun-turret.png",
     "w": 64,
-    "h": 46
+    "h": 36
   },
-  "bg-quarry": {
-    "file": "sprites/bg-quarry.png",
+  "bg-neon-district": {
+    "file": "sprites/bg-neon-district.png",
     "w": 310,
     "h": 270
   }

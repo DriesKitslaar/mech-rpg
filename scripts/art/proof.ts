@@ -17,7 +17,7 @@ const VARIANTS = {
   arm: ['arms-rigger', 'arms-proof-b'],
 };
 const WEAPONS = { rightHand: 'wpn-rivet-rifle', leftHand: 'wpn-arc-pistol', shoulder: 'wpn-mortar-pod' };
-const CELL = 124;
+const CELL = 160;
 const SCALE = 3;
 
 async function sprite(id: string, dim: boolean): Promise<Buffer> {

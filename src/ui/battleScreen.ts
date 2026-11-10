@@ -12,15 +12,16 @@ export { BattleFlow } from './battleFlow';
 export type { BattlePhase, MenuView } from './battleFlow';
 
 const MESSAGE_MS = 600;
-const MECH_ORIGIN = { x: 14, y: 58 };
+const BACKGROUND = 'bg-neon-district';
+const MECH_ORIGIN = { x: 4, y: 24 };
 const ENEMY_BOX = 64;
 const ENEMY_SPOTS = [{ x: 190, y: 30 }, { x: 236, y: 62 }, { x: 190, y: 100 }];
 const PANEL_Y = 178;
 const MENU_W = 154;
 /** Placeholder sizes when a part sprite is missing. */
 const FALLBACK: Record<SpriteSlot, SpriteSize> = {
-  legs: { w: 64, h: 52 }, core: { w: 56, h: 40 }, head: { w: 26, h: 22 }, arm: { w: 22, h: 44 },
-  rightHand: { w: 52, h: 20 }, leftHand: { w: 52, h: 20 }, shoulder: { w: 60, h: 22 },
+  legs: { w: 60, h: 72 }, core: { w: 52, h: 44 }, head: { w: 36, h: 26 }, arm: { w: 26, h: 56 },
+  rightHand: { w: 70, h: 24 }, leftHand: { w: 70, h: 24 }, shoulder: { w: 44, h: 26 },
 };
 const BUILD_SLOT: Record<SpriteSlot, 'legs' | 'core' | 'head' | 'arms' | 'rightHand' | 'leftHand' | 'shoulder'> = {
   legs: 'legs', core: 'core', head: 'head', arm: 'arms', rightHand: 'rightHand', leftHand: 'leftHand', shoulder: 'shoulder',
@@ -59,7 +60,7 @@ export class BattleScreen {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const bg = this.sprites.get('bg-quarry', { w: LOGICAL_W, h: LOGICAL_H, label: 'bg-quarry' });
+    const bg = this.sprites.get(BACKGROUND, { w: LOGICAL_W, h: LOGICAL_H, label: BACKGROUND });
     ctx.fillStyle = '#101418';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);

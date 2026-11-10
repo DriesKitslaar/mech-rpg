@@ -2,8 +2,8 @@
   "id": "wpn-arc-pistol",
   "model": "gpt-image-2",
   "size": "1024x1024",
-  "quality": "medium",
+  "quality": "low",
   "method": "edit",
-  "reference": "art/reference/style-ref.png",
-  "prompt": "16-bit pixel art, side view facing right, muted military palette of olive, steel grey and orange accents, crisp pixels, no anti-aliasing, no text, no ground shadow. Match the attached reference image exactly in pixel size, palette, outline weight and shading. Draw: a compact handheld energy pistol for a mech with glowing orange coil rings around the barrel, horizontal, muzzle pointing right. Weapon only, no hand. Show only this single component, centred, filling most of the frame, on a solid pure magenta #FF00FF background."
+  "reference": "art/reference/ref-light.png",
+  "prompt": "16-bit pixel art, strict side profile view facing right, Japanese anime-style mecha design, crisp pixels, no anti-aliasing, no text, no ground shadow. The attached image is the design and style reference: match its armour shapes, colours, glowing accents, pixel size, outline weight and shading exactly. Draw: a compact handheld energy pistol sized for this mecha, white and navy with glowing cyan coil rings around the barrel, lying exactly horizontal, muzzle pointing right. The pistol only, no hand, no mecha. Show only this single component, upright, centred, filling most of the frame, on a solid pure green #00FF00 background. Use no green anywhere on the component itself."
 }

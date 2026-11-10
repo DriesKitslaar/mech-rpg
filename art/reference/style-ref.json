@@ -1,7 +1,0 @@
-{
-  "id": "style-ref",
-  "model": "gpt-image-2",
-  "size": "1024x1024",
-  "quality": "low",
-  "prompt": "16-bit pixel art sprite of an original heavy bipedal combat mech, side view facing right, modular design with clearly separate legs, torso core, arms, shoulder cannon and head sensor, muted military palette of olive, steel grey and orange accents, crisp pixels, no anti-aliasing, no text, plain flat dark background"
-}

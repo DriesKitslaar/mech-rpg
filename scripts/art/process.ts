@@ -6,14 +6,13 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as iq from 'image-q';
 import sharp, { type OverlayOptions, type Sharp } from 'sharp';
-import { BOX, JOBS, type ArtJob } from './jobs';
+import { BOX, JOBS, KEY_COLOUR, REFERENCE, type ArtJob } from './jobs';
 import { chromaKey, quantize, trim, type RawImage, type RGB } from './imageOps';
 
 const RAW = 'art/raw';
 const OUT = 'public/sprites';
 const PALETTE = 'art/palette.json';
 const MANIFEST = 'src/content/sprites.json';
-const KEY: RGB = [255, 0, 255];
 
 export async function decode(input: string | Buffer | Sharp): Promise<RawImage> {
   const s = typeof input === 'string' || Buffer.isBuffer(input) ? sharp(input) : input;
@@ -28,14 +27,17 @@ export function encode(img: RawImage): Sharp {
 }
 
 async function buildPalette(): Promise<void> {
-  const img = await decode('art/reference/style-ref.png');
-  // Leave out the near-black backdrop so the 32 colours go to the mech itself.
+  // One shared palette from every reference, leaving out the near-black backdrops
+  // so the colours go to the machines themselves.
   const kept: number[] = [];
-  for (let i = 0; i < img.data.length; i += 4) {
-    if (img.data[i] + img.data[i + 1] + img.data[i + 2] > 60) kept.push(img.data[i], img.data[i + 1], img.data[i + 2], 255);
+  for (const file of Object.values(REFERENCE)) {
+    const img = await decode(file);
+    for (let i = 0; i < img.data.length; i += 4) {
+      if (img.data[i] + img.data[i + 1] + img.data[i + 2] > 60) kept.push(img.data[i], img.data[i + 1], img.data[i + 2], 255);
+    }
   }
   const container = iq.utils.PointContainer.fromUint8Array(Uint8Array.from(kept), kept.length / 4, 1);
-  const palette = await iq.buildPalette([container], { colors: 31 });
+  const palette = await iq.buildPalette([container], { colors: 47 });
   const colours: RGB[] = palette.getPointContainer().getPointArray().map((p) => [p.r, p.g, p.b]);
   colours.unshift([10, 10, 12]);
   writeFileSync(PALETTE, JSON.stringify(colours) + '\n');
@@ -50,9 +52,9 @@ async function processJob(job: ArtJob, palette: RGB[]): Promise<{ w: number; h: 
     // Backgrounds are darkened and desaturated instead of snapped to the mech palette,
     // so units stand out against them.
     out = await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' })
-      .modulate({ brightness: 0.62, saturation: 0.55 }));
+      .modulate({ brightness: 0.55, saturation: 0.85 }));
   } else {
-    const cut = trim(chromaKey(await decode(src), KEY, 110));
+    const cut = trim(chromaKey(await decode(src), KEY_COLOUR, 110));
     let small = encode(cut).resize(box.w, box.h, { fit: 'inside' });
     if (job.flip) small = small.flop();
     // The resize blends edge pixels with the removed background; binary alpha in quantize cleans that up.

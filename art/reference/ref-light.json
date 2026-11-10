@@ -1,0 +1,7 @@
+{
+  "id": "ref-light",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "prompt": "16-bit pixel art sprite, strict side profile view facing right, an original Japanese anime-style mecha (original design, not from any existing series) standing upright in a neutral pose with both arms hanging straight down at its sides and legs straight, the whole body visible from head to feet, modular build with clearly separate legs, torso, arms and head, no weapons, crisp pixels, no anti-aliasing, no text, plain flat very dark background. Slender heroic proportions with long legs, sharp angular white and navy armour panels, glowing cyan accent lights, a compact helmet head with a single horizontal cyan visor band and one swept-back blade antenna on the side of the head. No V-shaped forehead crest, no wings, no backpack."
+}

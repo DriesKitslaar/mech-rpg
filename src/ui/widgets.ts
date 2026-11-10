@@ -1,15 +1,15 @@
 /** Small drawing helpers. All coordinates are logical (310x270) units. */
 export const COLORS = {
-  panel: 'rgba(16, 20, 24, 0.92)',
-  border: '#3a4046',
-  text: '#d8d4c4',
-  dim: '#6a6e72',
-  accent: '#e08a2c',
-  armor: '#8a9a4a',
-  energy: '#4aa3c7',
+  panel: 'rgba(12, 12, 24, 0.93)',
+  border: '#3b3760',
+  text: '#e4e2f0',
+  dim: '#76739a',
+  accent: '#ff5db1',
+  armor: '#5fd9c2',
+  energy: '#4aa8ff',
   heat: '#d6a02c',
   danger: '#e04a2c',
-  empty: '#22262a',
+  empty: '#22203a',
 };
 export const FONT = 'VT323';
 export const LINE = 11;
