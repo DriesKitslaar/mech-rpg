@@ -1,0 +1,7 @@
+{
+  "id": "b-samurai",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "prompt": "16-bit pixel art sprite, side view facing right, an original Japanese anime-style mecha (original design, not from any existing series), modular build with clearly separate legs, torso, arms, head and one shoulder-mounted equipment pod, holding a rifle, crisp pixels, no anti-aliasing, no text, plain flat very dark background. Heavy imposing humanoid inspired by samurai armour: layered shoulder plates, a helmet-like head with a crest, armoured skirt plates over the hips, dark lacquered charcoal and deep red armour with glowing magenta accent lines."
+}
