@@ -22,9 +22,9 @@ const DEFAULT_BACKGROUND = 'bg-neon-district';
 const MECH_ORIGIN = { x: 0, y: 16 };
 /** Where each enemy stands (the bottom centre of its sprite), by how many there are. */
 const ENEMY_ANCHORS: Record<number, { x: number; y: number }[]> = {
-  1: [{ x: 250, y: 140 }],
-  2: [{ x: 236, y: 98 }, { x: 268, y: 174 }],
-  3: [{ x: 252, y: 92 }, { x: 276, y: 174 }, { x: 212, y: 174 }],
+  1: [{ x: 250, y: 150 }],
+  2: [{ x: 240, y: 120 }, { x: 270, y: 174 }],
+  3: [{ x: 252, y: 96 }, { x: 278, y: 174 }, { x: 214, y: 174 }],
 };
 const PANEL_Y = 178;
 const MENU_W = 154;

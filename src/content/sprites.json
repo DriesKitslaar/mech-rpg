@@ -211,18 +211,18 @@
   },
   "enemy-light-mech": {
     "file": "sprites/enemy-light-mech.png",
-    "w": 68,
-    "h": 84
+    "w": 84,
+    "h": 104
   },
   "enemy-heavy-mech": {
     "file": "sprites/enemy-heavy-mech.png",
-    "w": 74,
-    "h": 84
+    "w": 92,
+    "h": 104
   },
   "enemy-rival": {
     "file": "sprites/enemy-rival.png",
-    "w": 69,
-    "h": 84
+    "w": 85,
+    "h": 104
   },
   "portrait-hadron": {
     "file": "sprites/portrait-hadron.png",

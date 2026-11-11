@@ -203,7 +203,10 @@ export const MESSAGES: Message[] = [
   },
   {
     id: 'after-intro-1', from: 'Dispatch', subject: 'Not bad', after: 'intro-1',
-    body: ['You shoot straight. One more job and I can put your name in front of real clients.'],
+    body: [
+      'You shoot straight. One more job and I can put your name in front of real clients.',
+      'Spend what you earned. A second weapon in your other hand, or one on your shoulder, lets you do more with every turn.',
+    ],
   },
   {
     id: 'clients', from: 'Dispatch', subject: 'Three offers', after: 'intro-2',

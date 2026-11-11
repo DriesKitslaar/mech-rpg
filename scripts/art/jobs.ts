@@ -30,7 +30,7 @@ export const BOX: Record<Exclude<JobKind, 'family' | 'layer'>, { w: number; h: n
   handWeapon: { w: 58, h: 22 },
   shoulderWeapon: { w: 44, h: 26 },
   enemy: { w: 64, h: 64 },
-  enemyMech: { w: 84, h: 84 },
+  enemyMech: { w: 104, h: 104 },
   portrait: { w: 56, h: 56 },
   background: { w: 310, h: 270 },
 };
