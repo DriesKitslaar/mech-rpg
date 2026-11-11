@@ -64,8 +64,8 @@ export class BriefingScreen implements Screen {
     drawText(ctx, mission.title.toUpperCase(), 72, 8, { size: 16, color: COLORS.accent });
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
     const tag = mission.phase === 'choice' ? B.exclusive : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable : '';
-    wrap(tag, charsFor(LOGICAL_W - 80, 10)).slice(0, 2).forEach((line, i) =>
-      drawText(ctx, line, 72, 40 + i * 9, { size: 10, color: mission.phase === 'choice' ? COLORS.danger : COLORS.dim }));
+    wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
+      drawText(ctx, line, 72, 40 + i * 11, { color: mission.phase === 'choice' ? COLORS.danger : COLORS.dim }));
 
     // Body.
     drawPanel(ctx, 4, 72, LOGICAL_W - 8, 122);
@@ -83,8 +83,8 @@ export class BriefingScreen implements Screen {
     drawPanel(ctx, 4, 198, LOGICAL_W - 8, 68);
     drawText(ctx, B.engagements(mission.battles.length), 12, 203, { color: COLORS.dim });
     drawText(ctx, `${B.reward} ${mission.reward}`, 12, 215, { size: 16, color: COLORS.armor });
-    drawText(ctx, B.hostiles, 120, 203, { color: COLORS.dim });
-    hostiles(mission).slice(0, 5).forEach((line, i) => drawText(ctx, line, 120, 213 + i * 9, { size: 10 }));
+    drawText(ctx, B.hostiles, 104, 203, { color: COLORS.dim });
+    hostiles(mission).slice(0, 5).forEach((line, i) => drawText(ctx, line, 104, 213 + i * 10));
     drawList(ctx, this.list, 236, 216, 56, 2);
   }
 }

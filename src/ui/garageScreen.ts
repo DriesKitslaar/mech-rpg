@@ -72,7 +72,7 @@ export class GarageScreen implements Screen {
       if (part) {
         ctx.fillStyle = COLORS.border;
         ctx.fillRect(LIST_X + 6, 134, LIST_W - 12, 1);
-        partLines(part).forEach((line, i) => drawText(ctx, line, LIST_X + 6, 138 + i * LINE, { size: 10 }));
+        partLines(part).forEach((line, i) => drawText(ctx, line, LIST_X + 6, 138 + i * LINE));
       }
     }
 

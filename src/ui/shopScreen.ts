@@ -71,7 +71,7 @@ export class ShopScreen implements Screen {
     drawPanel(ctx, 0, 235, LOGICAL_W, LOGICAL_H - 235);
     const refused = flow.message === S.cannotAfford || flow.message === S.inUse || flow.message === S.needWeapon;
     if (flow.message) drawText(ctx, flow.message, LOGICAL_W / 2, 240, { align: 'center', size: 16, color: refused ? COLORS.danger : COLORS.armor });
-    else drawText(ctx, S.hint, LOGICAL_W / 2, 244, { align: 'center', color: COLORS.dim, size: 10 });
+    else drawText(ctx, S.hint, LOGICAL_W / 2, 243, { align: 'center', color: COLORS.dim });
   }
 
   private drawDetail(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
@@ -104,7 +104,7 @@ export class ShopScreen implements Screen {
     let ty = y + boxH + 12;
     drawText(ctx, part.name, x + 6, ty, { color: COLORS.accent });
     ty += LINE;
-    if (part.vendor) { drawText(ctx, STRINGS.partInfo.vendors[part.vendor], x + 6, ty, { color: COLORS.dim, size: 10 }); ty += LINE; }
-    for (const line of partLines(part)) { drawText(ctx, line, x + 6, ty, { size: 10 }); ty += LINE - 1; }
+    if (part.vendor) { drawText(ctx, STRINGS.partInfo.vendors[part.vendor], x + 6, ty, { color: COLORS.dim }); ty += LINE; }
+    for (const line of partLines(part)) { drawText(ctx, line, x + 6, ty); ty += LINE; }
   }
 }

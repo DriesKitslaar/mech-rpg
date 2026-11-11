@@ -73,12 +73,12 @@ export class TitleScreen implements Screen {
     drawText(ctx, STRINGS.title, LOGICAL_W / 2, 60, { size: 64, align: 'center', color: COLORS.accent });
     drawText(ctx, T.tagline, LOGICAL_W / 2, 122, { align: 'center', color: COLORS.text });
 
-    const w = 150;
+    const w = 190;
     const x = (LOGICAL_W - w) / 2;
     const notice = this.notice();
     drawPanel(ctx, x, 160, w, notice ? 52 : 40);
     let y = 166;
-    if (notice) { drawText(ctx, notice, LOGICAL_W / 2, y, { align: 'center', color: COLORS.danger, size: 10 }); y += 14; }
-    drawList(ctx, this.list, x + 40, y, 70, 3);
+    if (notice) { drawText(ctx, notice, LOGICAL_W / 2, y, { align: 'center', color: COLORS.danger }); y += 14; }
+    drawList(ctx, this.list, x + 60, y, 70, 3);
   }
 }

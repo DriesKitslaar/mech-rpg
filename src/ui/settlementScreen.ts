@@ -37,7 +37,7 @@ export class SettlementScreen implements Screen {
     const w = LOGICAL_W - 80;
     const right = x + w - 10;
     drawPanel(ctx, x, 20, w, 230);
-    drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim, size: 10 });
+    drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
     drawText(ctx, s.won ? S.won : S.lost, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
 
     let y = 56;
@@ -58,8 +58,8 @@ export class SettlementScreen implements Screen {
 
     // After a win, what the client had to say about it.
     if (s.won) {
-      wrap(this.mission.debrief, charsFor(w - 20, 10)).slice(0, 3).forEach((line, i) =>
-        drawText(ctx, line, x + 10, 148 + i * 9, { size: 10, color: COLORS.dim }));
+      wrap(this.mission.debrief, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
+        drawText(ctx, line, x + 10, 144 + i * LINE, { color: COLORS.dim }));
     }
 
     ctx.fillStyle = COLORS.border;
