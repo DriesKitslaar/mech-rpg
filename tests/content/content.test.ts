@@ -2,6 +2,7 @@ import { validatePlayerBuild } from '../../src/core/build';
 import type { Build, FramePart, Weapon } from '../../src/core/types';
 import { ENCOUNTERS, ENCOUNTER_REWARD, ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD, SHOP_PARTS, STARTER_BUILD } from '../../src/content/parts';
+import SPRITES from '../../src/content/sprites.json';
 
 const SLOT_KIND: Record<keyof Build, string> = {
   head: 'head', core: 'core', arms: 'arms', legs: 'legs', generator: 'generator',
@@ -102,5 +103,28 @@ describe('shop catalogue', () => {
   test('every encounter pays a reward', () => {
     for (const name of Object.keys(ENCOUNTERS)) expect(ENCOUNTER_REWARD[name], name).toBeGreaterThan(0);
     expect(ENCOUNTER_REWARD).toMatchObject({ intro: 600, outpost: 1100 });
+  });
+});
+
+describe('sprites', () => {
+  test('every part the player can see has a sprite', () => {
+    const missing: string[] = [];
+    for (const part of SHOP_PARTS) {
+      if (part.kind === 'generator') continue; // generators sit inside the mech and are never drawn
+      const ids = part.kind === 'arms' ? [`${part.id}.near`, `${part.id}.far`] : [part.id];
+      for (const id of ids) if (!(id in SPRITES)) missing.push(id);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  test('frame layers record where they sit in the pose and free-standing sprites do not', () => {
+    const sprites = SPRITES as Record<string, { ox?: number; oy?: number }>;
+    expect(sprites['legs-bulwark'].ox).toBeTypeOf('number');
+    expect(sprites['arms-rigger.near'].oy).toBeTypeOf('number');
+    expect(sprites['wpn-rail-lance'].ox).toBeUndefined();
+  });
+
+  test('both backgrounds and both enemies have sprites', () => {
+    for (const id of ['bg-neon-district', 'bg-garage', 'enemy-recon-drone', 'enemy-gun-turret']) expect(id in SPRITES, id).toBe(true);
   });
 });

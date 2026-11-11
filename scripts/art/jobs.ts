@@ -110,29 +110,60 @@ function item(id: string, kind: 'handWeapon' | 'shoulderWeapon' | 'enemy', style
   };
 }
 
+const WEAPON_STYLE = 'gunmetal body with the accent colours and glowing lights of the reference';
+
 export const JOBS: ArtJob[] = [
-  poseFamily('heavy',
+  // Ronin defines the pose; every other family is that pose redrawn in its own design.
+  poseFamily('ronin',
     'Heavy imposing proportions inspired by samurai armour: layered shoulder plates, helmet-like head with a single ' +
     'curved crest, armoured skirt plates over the hips, dark lacquered charcoal and deep red armour with glowing magenta accent lines.'),
-  family('light', 'heavy',
+  family('halo', 'ronin',
     'a slender white and navy mecha with sharp angular armour panels, glowing cyan accent lights and a compact ' +
     'helmet head with a horizontal cyan visor band and one swept-back blade antenna; slimmer limbs than the first image.',
     'art/reference/ref-light.png'),
+  family('salvage', 'ronin',
+    'a scrappy salvaged mecha patched together from mismatched plates in faded teal and rust orange, with visible weld ' +
+    'seams, bolts, a few exposed cables and one hazard-striped shoulder; its head is a simple boxy sensor unit with a single ' +
+    'round amber lens. Medium build, plainer and more worn than the first image, with small amber lights.'),
+  family('bulwark', 'ronin',
+    'a massive industrial mining mecha in safety yellow with black hazard stripes and dark steel joints: very thick blocky ' +
+    'limbs, huge square shoulders, a wide barrel chest, and a low cab-like head with a row of small white work lights. ' +
+    'Bulkier than the first image, with heavy flat feet.'),
 
-  ...layersOf('light', { legs: 'legs-strider', core: 'core-hauler', head: 'head-scout-mk1', arms: 'arms-rigger' }),
-  ...layersOf('heavy', { legs: 'legs-proof-b', core: 'core-proof-b', head: 'head-proof-b', arms: 'arms-proof-b' }),
+  ...layersOf('salvage', { legs: 'legs-strider', core: 'core-hauler', head: 'head-scout-mk1', arms: 'arms-rigger' }),
+  ...layersOf('halo', { legs: 'legs-halo', core: 'core-halo', head: 'head-halo', arms: 'arms-halo' }),
+  ...layersOf('bulwark', { legs: 'legs-bulwark', core: 'core-bulwark', head: 'head-bulwark', arms: 'arms-bulwark' }),
+  ...layersOf('ronin', { legs: 'legs-ronin', core: 'core-ronin', head: 'head-ronin', arms: 'arms-ronin' }),
 
-  item('wpn-rivet-rifle', 'handWeapon', 'light',
+  item('wpn-rivet-rifle', 'handWeapon', 'halo',
     'a long handheld rifle sized for this mecha, in gunmetal and navy with a few cyan lights, lying exactly horizontal, barrel pointing right, grip near the left end. The rifle only, no hand, no mecha.'),
-  item('wpn-arc-pistol', 'handWeapon', 'light',
+  item('wpn-arc-pistol', 'handWeapon', 'halo',
     'a compact handheld energy pistol sized for this mecha, white and navy with glowing cyan coil rings around the barrel, lying exactly horizontal, muzzle pointing right. The pistol only, no hand, no mecha.'),
-  item('wpn-mortar-pod', 'shoulderWeapon', 'heavy',
+  item('wpn-scatter-gun', 'handWeapon', 'bulwark',
+    `a short, wide-barrelled handheld blaster for a robot in a retro video game, ${WEAPON_STYLE}: a stubby double barrel and a boxy stock, lying exactly horizontal, barrels pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-rail-lance', 'handWeapon', 'bulwark',
+    `a very long, slender handheld rail rifle for a robot in a retro video game, ${WEAPON_STYLE}: two exposed parallel rails along the barrel and a chunky power pack at the back, lying exactly horizontal, pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-pulse-carbine', 'handWeapon', 'halo',
+    `a compact handheld energy carbine for a robot in a retro video game, ${WEAPON_STYLE}: a sleek body with a glowing power cell on top, lying exactly horizontal, pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-lance-emitter', 'handWeapon', 'halo',
+    `a long handheld energy emitter for a robot in a retro video game, ${WEAPON_STYLE}: a slim barrel ending in a glowing focusing crystal, lying exactly horizontal, pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-frag-launcher', 'handWeapon', 'salvage',
+    `a stubby handheld launcher for a robot in a retro video game, ${WEAPON_STYLE}: a fat short barrel with a revolving drum, patched and worn, lying exactly horizontal, pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-mortar-pod', 'shoulderWeapon', 'ronin',
     'a boxy shoulder-mounted equipment pod for this robot, as in a retro video game: a rectangular charcoal and deep red housing with six short round tubes in two rows on its right face, magenta lights and a mounting bracket underneath, exactly horizontal. The pod only, no mecha.'),
-  item('enemy-recon-drone', 'enemy', 'heavy',
+  item('wpn-siege-cannon', 'shoulderWeapon', 'bulwark',
+    `a heavy shoulder-mounted equipment unit for a robot in a retro video game, ${WEAPON_STYLE}: one thick long barrel on a square housing with a mounting bracket underneath, exactly horizontal, barrel pointing right. The unit only, no mecha.`),
+  item('wpn-halo-array', 'shoulderWeapon', 'halo',
+    `a shoulder-mounted emitter array for a robot in a retro video game, ${WEAPON_STYLE}: a flat panel with a row of four glowing lenses on its right face and a mounting bracket underneath, exactly horizontal. The unit only, no mecha.`),
+  item('wpn-swarm-rack', 'shoulderWeapon', 'salvage',
+    `a shoulder-mounted rack for a robot in a retro video game, ${WEAPON_STYLE}: a worn frame holding twelve small round tubes in three rows on its right face, with a mounting bracket underneath, exactly horizontal. The rack only, no mecha.`),
+  item('enemy-recon-drone', 'enemy', 'ronin',
     'a small hovering security drone in the same dark charcoal and deep red armour: a compact body with two ducted rotors, one glowing magenta sensor eye and a small barrel underneath. The whole drone, nothing else, no mecha.', true),
-  item('enemy-gun-turret', 'enemy', 'heavy',
+  item('enemy-gun-turret', 'enemy', 'ronin',
     'a fixed gun turret in the same dark charcoal and deep red armour with magenta lights: a squat armoured base with one long heavy cannon barrel pointing right. The whole turret, nothing else, no mecha.', true),
 
   { id: 'bg-neon-district', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: an industrial megacity district at night seen from street level, wet reflective ground filling the lower third, towering dark buildings, cranes and pipes, many glowing neon signs in pink, cyan and purple with abstract shapes instead of readable text, light haze and rain. No characters, no robots, no vehicles in the foreground.' },
+  { id: 'bg-garage', kind: 'background',
+    prompt: '16-bit pixel art background, no anti-aliasing: the inside of a dim mecha hangar bay at night, steel gantries and catwalks, hanging chains and cables, tool racks along the walls, strips of cyan and magenta neon work lights, an empty metal floor filling the lower half. No characters, no robots, no vehicles, no text.' },
 ];

@@ -119,7 +119,9 @@ describe('hub', () => {
     g = equip(equip(equip(g, 'head', 'head-bulwark', CATALOG), 'core', 'core-bulwark', CATALOG), 'arms', 'arms-bulwark', CATALOG);
     const { app } = inHub(g);
     expect(snap(app).menu.items[0]).toMatchObject({ id: 'sortie', enabled: false, note: 'Overweight' });
-    press(app, 'confirm');
+    // The cursor starts on the garage, where the problem can be fixed.
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('garage');
+    select(app, 'sortie');
     expect(snap(app).screen).toBe('hub');
   });
 
@@ -168,5 +170,20 @@ describe('battle and settlement', () => {
     finishBattle(app);
     press(app, 'cancel', 'down', 'next');
     expect(snap(app).screen).toBe('battle');
+  });
+});
+
+describe('garage', () => {
+  test('opens from the hub, saves every change, and returns with cancel', () => {
+    const saved = buy(newGame(CATALOG, STARTER_BUILD), 'wpn-arc-pistol', CATALOG);
+    const { app, store } = makeApp(saved);
+    press(app, 'confirm');
+    select(app, 'garage');
+    expect(snap(app).screen).toBe('garage');
+    select(app, 'leftHand');
+    select(app, 'wpn-arc-pistol');
+    expect(JSON.parse(store.data[SAVE_KEY]).build.leftHand).toBe('wpn-arc-pistol');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
   });
 });

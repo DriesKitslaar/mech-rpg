@@ -1,11 +1,11 @@
 {
-  "id": "legs-proof-b",
+  "id": "legs-ronin",
   "model": "gpt-image-2",
   "size": "1024x1024",
   "quality": "low",
   "method": "edit",
   "references": [
-    "art/raw/family-heavy.png"
+    "art/raw/family-ronin.png"
   ],
   "prompt": "Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 as the background. Do not move, redraw, rescale or recentre anything. Keep: only the lower body: the hips with any hip or skirt armour, both legs and both feet. Erase the torso, head and both arms."
 }

@@ -9,6 +9,7 @@ import type { Sfx } from '../platform/audio';
 import type { InputAction } from '../platform/input';
 import type { SaveFile } from '../platform/storage';
 import { BattleFlow, BattleScreen } from './battleScreen';
+import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
 import type { ListItem } from './menuList';
 import { SettlementScreen } from './settlementScreen';
@@ -135,7 +136,8 @@ export class App {
         this.seed = (this.seed + 1) % 2147483647;
         this.current = new BattleHost(this, this.nextEncounter(), this.seed);
         break;
-      default: return; // garage, shop and settlement are opened through their own methods
+      case 'garage': this.current = new GarageScreen(this); break;
+      default: return; // the shop and the settlement are opened elsewhere
     }
     this.name = name;
   }

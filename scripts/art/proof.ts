@@ -1,5 +1,5 @@
 /**
- * Builds a contact sheet of every combination of the proof families' frame parts,
+ * Builds a contact sheet of every family's upper body on every family's legs,
  * so a person can judge whether mixed mechs hold together.
  * Usage: tsx scripts/art/proof.ts
  */
@@ -10,12 +10,12 @@ import { MECH_BOX, layoutMech, type SpriteSize, type SpriteSlot } from '../../sr
 type Manifest = Record<string, SpriteSize & { file: string }>;
 const manifest = JSON.parse(readFileSync('src/content/sprites.json', 'utf8')) as Manifest;
 
-const VARIANTS = {
-  legs: ['legs-strider', 'legs-proof-b'],
-  core: ['core-hauler', 'core-proof-b'],
-  head: ['head-scout-mk1', 'head-proof-b'],
-  arms: ['arms-rigger', 'arms-proof-b'],
-};
+const FAMILIES = [
+  { legs: 'legs-strider', core: 'core-hauler', head: 'head-scout-mk1', arms: 'arms-rigger' },
+  { legs: 'legs-halo', core: 'core-halo', head: 'head-halo', arms: 'arms-halo' },
+  { legs: 'legs-bulwark', core: 'core-bulwark', head: 'head-bulwark', arms: 'arms-bulwark' },
+  { legs: 'legs-ronin', core: 'core-ronin', head: 'head-ronin', arms: 'arms-ronin' },
+];
 const WEAPONS = { rightHand: 'wpn-rivet-rifle', leftHand: 'wpn-arc-pistol', shoulder: 'wpn-mortar-pod' };
 const CELL_W = 200;
 const CELL_H = 170;
@@ -24,7 +24,10 @@ const SCALE = 3;
 async function main(): Promise<void> {
   const layers: OverlayOptions[] = [];
   let cell = 0;
-  for (const legs of VARIANTS.legs) for (const core of VARIANTS.core) for (const head of VARIANTS.head) for (const arms of VARIANTS.arms) {
+  // One row per set of legs, one column per upper body: the diagonal shows the pure families.
+  for (const lower of FAMILIES) for (const upper of FAMILIES) {
+    const { legs } = lower;
+    const { core, head, arms } = upper;
     const ids: Record<SpriteSlot, string> = { legs, core, head, armNear: `${arms}.near`, armFar: `${arms}.far`, ...WEAPONS };
     const missing = Object.values(ids).filter((id) => !manifest[id]);
     if (missing.length) throw new Error(`missing processed sprite: ${missing.join(', ')}`);

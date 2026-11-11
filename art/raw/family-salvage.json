@@ -1,0 +1,11 @@
+{
+  "id": "family-salvage",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png"
+  ],
+  "prompt": "The first image shows a mecha in a combat stance. Redraw it as a different mecha design in exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, elbows, hands, hips, knees, feet) stays in the same place. The new design is: a scrappy salvaged mecha patched together from mismatched plates in faded teal and rust orange, with visible weld seams, bolts, a few exposed cables and one hazard-striped shoulder; its head is a simple boxy sensor unit with a single round amber lens. Medium build, plainer and more worn than the first image, with small amber lights. Keep the same proportions between joints. No weapons, empty hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

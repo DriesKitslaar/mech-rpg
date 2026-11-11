@@ -1,69 +1,139 @@
 {
   "legs-strider": {
     "file": "sprites/legs-strider.png",
+    "w": 118,
+    "h": 92,
+    "ox": 18,
+    "oy": 62
+  },
+  "core-hauler": {
+    "file": "sprites/core-hauler.png",
+    "w": 44,
+    "h": 49,
+    "ox": 53,
+    "oy": 22
+  },
+  "head-scout-mk1": {
+    "file": "sprites/head-scout-mk1.png",
+    "w": 29,
+    "h": 35,
+    "ox": 62,
+    "oy": 6
+  },
+  "arms-rigger.near": {
+    "file": "sprites/arms-rigger.near.png",
+    "w": 52,
+    "h": 38,
+    "ox": 90,
+    "oy": 26
+  },
+  "arms-rigger.far": {
+    "file": "sprites/arms-rigger.far.png",
+    "w": 44,
+    "h": 72,
+    "ox": 23,
+    "oy": 15
+  },
+  "legs-halo": {
+    "file": "sprites/legs-halo.png",
     "w": 112,
     "h": 100,
     "ox": 21,
     "oy": 54
   },
-  "core-hauler": {
-    "file": "sprites/core-hauler.png",
+  "core-halo": {
+    "file": "sprites/core-halo.png",
     "w": 32,
     "h": 41,
     "ox": 60,
     "oy": 27
   },
-  "head-scout-mk1": {
-    "file": "sprites/head-scout-mk1.png",
+  "head-halo": {
+    "file": "sprites/head-halo.png",
     "w": 33,
     "h": 31,
     "ox": 58,
     "oy": 5
   },
-  "arms-rigger.near": {
-    "file": "sprites/arms-rigger.near.png",
+  "arms-halo.near": {
+    "file": "sprites/arms-halo.near.png",
     "w": 54,
     "h": 37,
     "ox": 87,
     "oy": 26
   },
-  "arms-rigger.far": {
-    "file": "sprites/arms-rigger.far.png",
+  "arms-halo.far": {
+    "file": "sprites/arms-halo.far.png",
     "w": 41,
     "h": 61,
     "ox": 25,
     "oy": 26
   },
-  "legs-proof-b": {
-    "file": "sprites/legs-proof-b.png",
+  "legs-bulwark": {
+    "file": "sprites/legs-bulwark.png",
+    "w": 127,
+    "h": 95,
+    "ox": 14,
+    "oy": 55
+  },
+  "core-bulwark": {
+    "file": "sprites/core-bulwark.png",
+    "w": 59,
+    "h": 57,
+    "ox": 47,
+    "oy": 13
+  },
+  "head-bulwark": {
+    "file": "sprites/head-bulwark.png",
+    "w": 71,
+    "h": 34,
+    "ox": 46,
+    "oy": 8
+  },
+  "arms-bulwark.near": {
+    "file": "sprites/arms-bulwark.near.png",
+    "w": 55,
+    "h": 53,
+    "ox": 92,
+    "oy": 7
+  },
+  "arms-bulwark.far": {
+    "file": "sprites/arms-bulwark.far.png",
+    "w": 46,
+    "h": 83,
+    "ox": 16,
+    "oy": 11
+  },
+  "legs-ronin": {
+    "file": "sprites/legs-ronin.png",
     "w": 118,
     "h": 90,
     "ox": 18,
     "oy": 56
   },
-  "core-proof-b": {
-    "file": "sprites/core-proof-b.png",
+  "core-ronin": {
+    "file": "sprites/core-ronin.png",
     "w": 42,
     "h": 75,
     "ox": 53,
     "oy": 24
   },
-  "head-proof-b": {
-    "file": "sprites/head-proof-b.png",
+  "head-ronin": {
+    "file": "sprites/head-ronin.png",
     "w": 27,
     "h": 38,
     "ox": 62,
     "oy": 3
   },
-  "arms-proof-b.near": {
-    "file": "sprites/arms-proof-b.near.png",
+  "arms-ronin.near": {
+    "file": "sprites/arms-ronin.near.png",
     "w": 55,
     "h": 43,
     "ox": 88,
     "oy": 16
   },
-  "arms-proof-b.far": {
-    "file": "sprites/arms-proof-b.far.png",
+  "arms-ronin.far": {
+    "file": "sprites/arms-ronin.far.png",
     "w": 44,
     "h": 75,
     "ox": 23,
@@ -79,9 +149,49 @@
     "w": 34,
     "h": 22
   },
+  "wpn-scatter-gun": {
+    "file": "sprites/wpn-scatter-gun.png",
+    "w": 35,
+    "h": 22
+  },
+  "wpn-rail-lance": {
+    "file": "sprites/wpn-rail-lance.png",
+    "w": 58,
+    "h": 15
+  },
+  "wpn-pulse-carbine": {
+    "file": "sprites/wpn-pulse-carbine.png",
+    "w": 42,
+    "h": 22
+  },
+  "wpn-lance-emitter": {
+    "file": "sprites/wpn-lance-emitter.png",
+    "w": 58,
+    "h": 13
+  },
+  "wpn-frag-launcher": {
+    "file": "sprites/wpn-frag-launcher.png",
+    "w": 34,
+    "h": 22
+  },
   "wpn-mortar-pod": {
     "file": "sprites/wpn-mortar-pod.png",
     "w": 41,
+    "h": 26
+  },
+  "wpn-siege-cannon": {
+    "file": "sprites/wpn-siege-cannon.png",
+    "w": 44,
+    "h": 24
+  },
+  "wpn-halo-array": {
+    "file": "sprites/wpn-halo-array.png",
+    "w": 44,
+    "h": 24
+  },
+  "wpn-swarm-rack": {
+    "file": "sprites/wpn-swarm-rack.png",
+    "w": 33,
     "h": 26
   },
   "enemy-recon-drone": {
@@ -96,6 +206,11 @@
   },
   "bg-neon-district": {
     "file": "sprites/bg-neon-district.png",
+    "w": 310,
+    "h": 270
+  },
+  "bg-garage": {
+    "file": "sprites/bg-garage.png",
     "w": 310,
     "h": 270
   }

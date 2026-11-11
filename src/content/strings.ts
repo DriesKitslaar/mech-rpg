@@ -41,6 +41,21 @@ export const STRINGS = {
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
   },
   saveFailed: 'Could not save: storage is full or blocked',
+  slots: {
+    head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Generator',
+    rightHand: 'Right Hand', leftHand: 'Left Hand', shoulder: 'Shoulder',
+  },
+  garage: {
+    heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
+    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', back: 'B: back',
+  },
+  partInfo: {
+    ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',
+    output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',
+    unlimited: 'unlimited', perShot: 'per shot',
+    types: { kinetic: 'Kinetic', energy: 'Energy', explosive: 'Explosive' },
+    vendors: { undertow: 'The Undertow', lumen: 'Lumen Systems', hadron: 'Hadron Mining', freelance: 'Freelance' },
+  },
   fx: { miss: 'MISS', overheat: 'OVERHEAT' },
   debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
 } as const;
