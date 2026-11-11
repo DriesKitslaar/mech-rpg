@@ -16,9 +16,8 @@ export class SettlementScreen implements Screen {
 
   onInput(action: InputAction): void {
     // The settlement is already booked; this screen only shows it.
-    if (action !== 'confirm') return;
-    if (this.settlement.won && this.mission.phase === 'finale' && this.mission.faction) this.app.showEnding(this.mission.faction);
-    else this.app.go('hub');
+    // After a won finale the hub shows the ending first.
+    if (action === 'confirm') this.app.go('hub');
   }
 
   view(): ScreenView {

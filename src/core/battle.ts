@@ -60,7 +60,9 @@ export type Action =
   | { type: 'boost' }
   | { type: 'cool' }
   | { type: 'repair'; part: FrameSlot }
-  | { type: 'endTurn' };
+  | { type: 'endTurn' }
+  /** The player gives the battle up: a defeat, without waiting to be destroyed. */
+  | { type: 'retreat' };
 
 export type Refusal =
   | 'noEnergy' | 'noAmmo' | 'alreadyFired' | 'weaponDisabled' | 'noWeapon' | 'invalidTarget'
@@ -256,6 +258,8 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
   switch (action.type) {
     case 'endTurn':
       return null;
+    case 'retreat':
+      return unit.side === 'player' ? null : 'invalidTarget';
     case 'fire': {
       const weapon = weaponIn(unit.build, action.weapon, catalog);
       if (!weapon) return 'noWeapon';
@@ -365,6 +369,9 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
     }
     case 'endTurn':
       finishTurn(state, catalog);
+      break;
+    case 'retreat':
+      setOutcome(state, 'defeat');
       break;
   }
   return state;

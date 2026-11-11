@@ -22,15 +22,15 @@ export class ShopFlow {
   list = new MenuList();
   message = '';
 
-  constructor(game: GameState, private catalog: Catalog, private stock: Part[]) {
+  /** `stock` is what is for sale now; `everything` is every part that exists, so anything owned can be sold. */
+  constructor(game: GameState, private catalog: Catalog, private stock: Part[], private everything: Part[] = stock) {
     this.game = game;
     this.list = new MenuList(this.items());
   }
 
   private items(): ListItem[] {
-    const parts = this.stock.filter((part) => tabOf(part) === this.tab);
     if (this.mode === 'buy') {
-      return parts.map((part) => {
+      return this.stock.filter((part) => tabOf(part) === this.tab).map((part) => {
         const owned = this.game.inventory[part.id] ?? 0;
         return {
           id: part.id, label: owned > 0 ? `${part.name} (${owned})` : part.name,
@@ -38,9 +38,11 @@ export class ShopFlow {
         };
       });
     }
+    const parts = this.everything.filter((part) => tabOf(part) === this.tab);
     const owned = parts.filter((part) => (this.game.inventory[part.id] ?? 0) > 0).map((part) => {
-      const sellable = checkSell(this.game, part.id, this.catalog) === null;
-      return { id: part.id, label: part.name, enabled: sellable, note: sellable ? `+${part.price}` : S.inUse };
+      const refusal = checkSell(this.game, part.id, this.catalog);
+      const note = refusal === null ? `+${part.price}` : refusal === 'lastWeapon' ? S.lastWeapon : S.inUse;
+      return { id: part.id, label: part.name, enabled: refusal === null, note };
     });
     return owned.length > 0 ? owned : [{ id: EMPTY, label: S.nothingToSell, enabled: false }];
   }
@@ -81,7 +83,8 @@ export class ShopFlow {
           this.game = buy(this.game, part.id, this.catalog);
           this.message = S.bought(part.name);
         } else {
-          if (checkSell(this.game, part.id, this.catalog) !== null) { this.message = S.inUse; return 'stay'; }
+          const refusal = checkSell(this.game, part.id, this.catalog);
+          if (refusal !== null) { this.message = refusal === 'lastWeapon' ? S.needWeapon : S.inUse; return 'stay'; }
           this.game = sell(this.game, part.id, this.catalog);
           this.message = S.sold(part.name, part.price);
         }

@@ -17,7 +17,8 @@ export class HubScreen implements Screen {
   private contracts: MenuList | null = null;
   private clock = 0;
 
-  constructor(private app: App) {
+  /** `onContracts` opens with the contract list showing, for returning from a briefing. */
+  constructor(private app: App, onContracts = false) {
     const errors = app.buildErrors();
     const unread = app.unreadCount();
     this.main = new MenuList([
@@ -27,6 +28,11 @@ export class HubScreen implements Screen {
       { id: 'messages', label: H.messages, enabled: true, note: unread > 0 ? H.unread(unread) : undefined },
       // With a build that may not deploy the cursor starts on the garage, where that is fixed.
     ], errors.length === 0 ? 0 : 1);
+    if (onContracts && errors.length === 0) this.openContracts();
+  }
+
+  private openContracts(): void {
+    this.contracts = new MenuList(this.app.missions().map((m) => ({ id: m.id, label: m.title, enabled: true, note: String(m.reward) })));
   }
 
   private get list(): MenuList {
@@ -44,9 +50,8 @@ export class HubScreen implements Screen {
     else if (action === 'confirm' && this.list.selected?.enabled) {
       const id = this.list.selected.id;
       if (this.contracts) this.app.openBriefing(id);
-      else if (id === 'contracts') {
-        this.contracts = new MenuList(this.app.missions().map((m) => ({ id: m.id, label: m.title, enabled: true, note: String(m.reward) })));
-      } else this.app.go(id as 'garage' | 'shop' | 'messages');
+      else if (id === 'contracts') this.openContracts();
+      else this.app.go(id as 'garage' | 'shop' | 'messages');
     }
   }
 

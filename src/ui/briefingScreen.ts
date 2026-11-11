@@ -30,10 +30,10 @@ export class BriefingScreen implements Screen {
   onInput(action: InputAction): void {
     if (action === 'up') this.list.move(-1);
     else if (action === 'down') this.list.move(1);
-    else if (action === 'cancel') this.app.go('hub');
+    else if (action === 'cancel') this.app.openHub(true);
     else if (action === 'confirm') {
       if (this.list.selected?.id === 'accept') this.app.startMission(this.mission.id);
-      else this.app.go('hub');
+      else this.app.openHub(true); // back to the list the briefing was opened from
     }
   }
 
@@ -84,7 +84,7 @@ export class BriefingScreen implements Screen {
     drawText(ctx, B.engagements(mission.battles.length), 12, 203, { color: COLORS.dim });
     drawText(ctx, `${B.reward} ${mission.reward}`, 12, 215, { size: 16, color: COLORS.armor });
     drawText(ctx, B.hostiles, 120, 203, { color: COLORS.dim });
-    hostiles(mission).slice(0, 4).forEach((line, i) => drawText(ctx, line, 120, 214 + i * 10, { size: 10 }));
+    hostiles(mission).slice(0, 5).forEach((line, i) => drawText(ctx, line, 120, 213 + i * 9, { size: 10 }));
     drawList(ctx, this.list, 236, 216, 56, 2);
   }
 }

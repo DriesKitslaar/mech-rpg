@@ -1,9 +1,10 @@
 import { validatePlayerBuild } from '../core/build';
 import {
-  availableMissions, completeMission, markRead, stockFor, unreadMessages, type Faction, type Mission,
+  availableMissions, campaignComplete, chosenFaction, completeMission, markRead, stockFor, unreadMessages,
+  type Faction, type Mission,
 } from '../core/campaign';
 import { applySettlement, settle, type Settlement } from '../core/economy';
-import { newGame, type GameState } from '../core/game';
+import { ensureArmed, newGame, type GameState } from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import type { BuildError, Catalog, Part } from '../core/types';
 import { ENEMIES } from '../content/enemies';
@@ -56,6 +57,8 @@ class MissionHost implements Screen {
   private index = 0;
   private flow!: BattleFlow;
   private screen!: BattleScreen;
+  /** The contract's outcome, once it has been booked. */
+  private settlement: Settlement | null = null;
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
@@ -81,17 +84,35 @@ class MissionHost implements Screen {
     return this.index + 1 < this.mission.battles.length;
   }
 
-  update(dtMs: number): void { this.screen.update(dtMs); }
+  /**
+   * Books the contract the moment its last battle is decided, while the result is still being
+   * shown. Closing the game there can then neither lose a reward nor dodge a bill.
+   */
+  private bookIfOver(): void {
+    const { outcome } = this.flow.state;
+    if (this.settlement || outcome === 'ongoing' || (outcome === 'victory' && this.hasNext())) return;
+    this.settlement = settle(this.flow.state, this.mission.reward, this.app.deps.catalog);
+    this.app.bookSettlement(this.settlement, this.mission);
+  }
+
+  update(dtMs: number): void {
+    this.screen.update(dtMs);
+    this.bookIfOver();
+  }
+
   draw(ctx: CanvasRenderingContext2D): void { this.screen.draw(ctx); }
 
   onInput(action: InputAction): void {
-    if (this.flow.phase !== 'result') { this.screen.onInput(action); return; }
+    if (this.flow.phase !== 'result') {
+      this.screen.onInput(action);
+      this.bookIfOver();
+      return;
+    }
     if (action !== 'confirm') return;
-    if (this.flow.state.outcome === 'victory' && this.hasNext()) {
+    if (this.settlement) this.app.showSettlement(this.settlement, this.mission);
+    else {
       this.index += 1;
       this.begin();
-    } else {
-      this.app.showSettlement(settle(this.flow.state, this.mission.reward, this.app.deps.catalog), this.mission);
     }
   }
 
@@ -199,7 +220,7 @@ export class App {
   go(name: ScreenName): void {
     switch (name) {
       case 'title': this.current = new TitleScreen(this); break;
-      case 'hub': this.current = new HubScreen(this); break;
+      case 'hub': return this.openHub(false);
       case 'garage': this.current = new GarageScreen(this); break;
       case 'shop': this.current = new ShopScreen(this); break;
       case 'messages': this.current = new MessagesScreen(this); break;
@@ -209,13 +230,30 @@ export class App {
   }
 
   /**
-   * Books a contract's outcome and shows it. It is saved before the screen appears, so closing the
-   * game there can neither lose a reward nor dodge a bill.
+   * Opens the hub, optionally straight on the contract list. Two things are checked on the way in:
+   * a pilot without any weapon is issued one, and an ending that was earned but never seen is shown first.
    */
-  showSettlement(settlement: Settlement, mission: Mission): void {
+  openHub(onContracts: boolean): void {
+    const game = this.game;
+    if (game) {
+      const armed = ensureArmed(game, this.deps.catalog, STARTER_BUILD.rightHand!);
+      if (armed !== game) this.commit(armed);
+      const faction = chosenFaction(armed, MISSIONS);
+      if (campaignComplete(armed, MISSIONS) && !armed.endingSeen && faction) return this.showEnding(faction);
+    }
+    this.current = new HubScreen(this, onContracts);
+    this.name = 'hub';
+  }
+
+  /** Records a contract's outcome: money, the win, and the contract itself when it was won. */
+  bookSettlement(settlement: Settlement, mission: Mission): void {
     let next = applySettlement(this.game!, settlement);
     if (settlement.won) next = completeMission(next, mission.id, MISSIONS);
     this.commit(next);
+  }
+
+  /** Shows a settlement that has already been booked. */
+  showSettlement(settlement: Settlement, mission: Mission): void {
     this.current = new SettlementScreen(this, settlement, mission);
     this.name = 'settlement';
   }
@@ -223,6 +261,12 @@ export class App {
   showEnding(faction: Faction): void {
     this.current = new EndingScreen(this, faction);
     this.name = 'ending';
+  }
+
+  /** Marks the ending as seen and returns to the hub. */
+  finishEnding(): void {
+    if (this.game && !this.game.endingSeen) this.commit({ ...this.game, endingSeen: true });
+    this.openHub(false);
   }
 
   update(dtMs: number): void { this.current.update(dtMs); }

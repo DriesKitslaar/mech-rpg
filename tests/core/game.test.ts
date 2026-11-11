@@ -1,5 +1,5 @@
 import {
-  SAVE_VERSION, STARTING_CREDITS, buy, checkBuy, checkEquip, checkSell, equip, equippedCount, fits, isValidState,
+  SAVE_VERSION, STARTING_CREDITS, buy, checkBuy, checkEquip, checkSell, ensureArmed, equip, equippedCount, fits, isValidState,
   newGame, sell, spareCount, type GameState,
 } from '../../src/core/game';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
@@ -186,4 +186,34 @@ test('ids that only exist on every object are not parts', () => {
     expect(checkBuy(withCredits(99999), id, CATALOG)).toBe('notForSale');
     expect(checkEquip(fresh(), 'head', id, CATALOG)).toBe('notOwned');
   }
+});
+
+describe('never without a weapon', () => {
+  test('the last weapon a pilot owns cannot be sold, fitted or not', () => {
+    expect(checkSell(equip(fresh(), 'rightHand', null, CATALOG), 'wpn-rivet-rifle', CATALOG)).toBe('lastWeapon');
+    expect(checkSell(fresh(), 'wpn-rivet-rifle', CATALOG)).toBe('equipped');
+  });
+
+  test('with two weapons a spare one can be sold', () => {
+    const g = buy(fresh(), 'wpn-arc-pistol', CATALOG);
+    expect(checkSell(g, 'wpn-arc-pistol', CATALOG)).toBeNull();
+  });
+
+  test('a pilot who somehow owns no weapon is issued the starter rifle', () => {
+    const { 'wpn-rivet-rifle': _gone, ...inventory } = fresh().inventory;
+    const { rightHand: _slot, ...build } = fresh().build;
+    const unarmed = { ...fresh(), inventory, build };
+    const armed = ensureArmed(unarmed, CATALOG, 'wpn-rivet-rifle');
+    expect(armed.inventory['wpn-rivet-rifle']).toBe(1);
+    expect(armed.credits).toBe(unarmed.credits);
+    const already = fresh();
+    expect(ensureArmed(already, CATALOG, 'wpn-rivet-rifle')).toBe(already);
+  });
+});
+
+test('a new game has not seen an ending, and the flag must be a boolean', () => {
+  expect(fresh().endingSeen).toBe(false);
+  expect(isValidState({ ...fresh(), endingSeen: 'no' }, CATALOG)).toBe(false);
+  const { endingSeen: _flag, ...without } = fresh();
+  expect(isValidState(without, CATALOG)).toBe(false);
 });

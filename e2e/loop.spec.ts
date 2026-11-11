@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { acceptContract, choose, finishMission, open, press, snap, waitForScreen } from './helpers';
+import { choose, finishMission, open, press, snap, waitForPhase, waitForScreen } from './helpers';
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
@@ -49,9 +49,14 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await choose(page, 'intro-1');
   await waitForScreen(page, 'briefing');
   await page.screenshot({ path: shot('briefing') });
+  // Backing out of a briefing returns to the contract list it was opened from.
   await press(page, 'Escape');
   await waitForScreen(page, 'hub');
-  await acceptContract(page, 'intro-1');
+  expect((await snap(page)).menu.items.map((i) => i.id)).toEqual(['patrol', 'intro-1']);
+  await choose(page, 'intro-1');
+  await waitForScreen(page, 'briefing');
+  await choose(page, 'accept');
+  await waitForPhase(page, 'action');
   await page.screenshot({ path: shot('battle-action') });
   await finishMission(page);
   const { net, won } = (await snap(page)).settlement!;

@@ -8,11 +8,11 @@ import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog, type FrameSlot, type WeaponSlo
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 
-export type BattlePhase = 'action' | 'weapon' | 'target' | 'repairPart' | 'animating' | 'result';
+export type BattlePhase = 'action' | 'weapon' | 'target' | 'repairPart' | 'confirmRetreat' | 'animating' | 'result';
 export interface MenuItem { id: string; label: string; enabled: boolean }
 export interface MenuView { items: MenuItem[]; cursor: number }
 
-const ACTION_IDS = ['fire', 'boost', 'cool', 'repair', 'endTurn'] as const;
+const ACTION_IDS = ['fire', 'boost', 'cool', 'repair', 'endTurn', 'retreat'] as const;
 type ActionId = (typeof ACTION_IDS)[number];
 
 /**
@@ -127,6 +127,7 @@ export class BattleFlow {
       cool: this.can({ type: 'cool' }),
       repair: this.repairableParts().length > 0,
       endTurn: true,
+      retreat: true,
     };
     const items = ACTION_IDS.map((id) => ({ id, label: STRINGS.actions[id], enabled: enabled[id] }));
     this.phase = 'action';
@@ -217,7 +218,16 @@ export class BattleFlow {
         if (input !== 'confirm' || !item?.enabled) return;
         if (item.id === 'fire') this.openWeaponMenu();
         else if (item.id === 'repair') this.openRepairMenu();
-        else this.act({ type: item.id as 'boost' | 'cool' | 'endTurn' });
+        else if (item.id === 'retreat') {
+          // Giving up loses the contract, so it asks first, with "No" under the cursor.
+          this.phase = 'confirmRetreat';
+          this.menu = { items: [{ id: 'no', label: STRINGS.retreat.no, enabled: true }, { id: 'yes', label: STRINGS.retreat.yes, enabled: true }], cursor: 0 };
+          this.message = STRINGS.retreat.question;
+        } else this.act({ type: item.id as 'boost' | 'cool' | 'endTurn' });
+        return;
+      case 'confirmRetreat':
+        if (input === 'cancel' || (input === 'confirm' && item.id === 'no')) return this.openActionMenu();
+        if (input === 'confirm') this.act({ type: 'retreat' });
         return;
       case 'weapon':
         if (input === 'cancel') return this.openActionMenu();

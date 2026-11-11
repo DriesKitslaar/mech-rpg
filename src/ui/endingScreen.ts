@@ -20,7 +20,7 @@ export class EndingScreen implements Screen {
 
   onInput(action: InputAction): void {
     // A short hold-off keeps a button mashed through the settlement from skipping the ending unread.
-    if (action === 'confirm' && (this.app.deps.fast || this.clock > 800)) this.app.go('hub');
+    if (action === 'confirm' && (this.app.deps.fast || this.clock > 800)) this.app.finishEnding();
   }
 
   view(): ScreenView {

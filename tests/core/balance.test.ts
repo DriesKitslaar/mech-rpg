@@ -14,7 +14,9 @@ function play(missionId: string, buildName: string): { winRate: number; meanNet:
   let wins = 0;
   let net = 0;
   for (let seed = 1; seed <= SEEDS; seed++) {
-    const end = playMission(REFERENCE_BUILDS[buildName], mission, ENEMIES, CATALOG, seed * 7919, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction));
+    // Two unrelated seed families, alternated, so a threshold is not met by one lucky sequence.
+    const start = seed % 2 ? seed * 7919 : seed * 104729 + 13;
+    const end = playMission(REFERENCE_BUILDS[buildName], mission, ENEMIES, CATALOG, start, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction));
     if (end.outcome === 'victory') wins++;
     net += settle(end, mission.reward, CATALOG).net;
   }
@@ -62,4 +64,12 @@ test.each(ids('finale'))('finale %s is hard but winnable with late-game gear', (
 
 test.each(ids('finale'))('finale %s is not a walkover for early gear', (id) => {
   expect(play(id, 'tier1').winRate).toBeLessThanOrEqual(0.6);
+});
+
+test.each(ids('finale'))('late-game gear is not a step back from mid-game gear in finale %s', (id) => {
+  expect(play(id, 'tier3').winRate).toBeGreaterThanOrEqual(play(id, 'tier2').winRate - 0.1);
+});
+
+test.each(MISSIONS.filter((m) => m.phase !== 'patrol').map((m) => m.id))('winning %s with heavy gear does not usually lose money', (id) => {
+  expect(play(id, 'tier3').meanNet).toBeGreaterThan(-200);
 });

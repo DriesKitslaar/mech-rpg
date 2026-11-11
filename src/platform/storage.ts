@@ -13,10 +13,12 @@ export interface KeyValueStore {
 /** Brings a save written by an older version up to date, so an update never costs the player their game. */
 function upgrade(value: unknown): unknown {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return value;
-  const save = value as Record<string, unknown>;
+  let save = value as Record<string, unknown>;
   // Version 1 had no campaign: no contracts completed, no messages read.
-  if (save.version === 1) return { ...save, version: SAVE_VERSION, completed: [], read: [] };
-  return value;
+  if (save.version === 1) save = { ...save, version: 2, completed: [], read: [] };
+  // Version 2 did not remember whether the ending had been shown; show it (again) rather than never.
+  if (save.version === 2) save = { ...save, version: SAVE_VERSION, endingSeen: false };
+  return save;
 }
 
 /** One save slot. Anything unreadable or invalid counts as no save; nothing here ever throws. */

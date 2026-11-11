@@ -8,6 +8,7 @@ export const FIELD_SERVICE = 0.4;
 /**
  * Between battles the crew vents the heat and patches every part, destroyed ones included: a mech
  * that lost its head or arms in the first engagement would otherwise be helpless for the rest.
+ * The service is free: the settlement bills only the armour missing at the end of the contract.
  */
 function fieldService(state: BattleState): void {
   const player = state.units[0];

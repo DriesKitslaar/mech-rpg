@@ -192,6 +192,11 @@ export const ENDINGS: Record<string, { title: string; body: string[] }> = {
   },
 };
 
+/** After the finale the ending can be read again in the inbox. */
+const epilogue = (faction: keyof typeof ENDINGS): Message => ({
+  id: `ending-${faction}`, from: 'Epilogue', subject: ENDINGS[faction].title, after: `finale-${faction}`, body: ENDINGS[faction].body,
+});
+
 export const MESSAGES: Message[] = [
   {
     id: 'welcome', from: 'Dispatch', subject: 'Your licence is active', after: 'start',
@@ -245,4 +250,5 @@ export const MESSAGES: Message[] = [
       'Nothing personal. My old frame is on the open market now, if you want to meet me on even terms.',
     ],
   },
+  epilogue('hadron'), epilogue('lumen'), epilogue('undertow'),
 ];

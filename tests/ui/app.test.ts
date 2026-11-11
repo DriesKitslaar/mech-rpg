@@ -181,7 +181,7 @@ describe('contracts and briefings', () => {
     expect(ids(app)).toEqual(['contracts', 'garage', 'shop', 'messages']);
   });
 
-  test('a contract opens its briefing, which can be accepted or declined', () => {
+  test('a contract opens its briefing, and declining returns to the contract list', () => {
     const { app } = inHub();
     select(app, 'contracts');
     select(app, 'intro-1');
@@ -189,10 +189,12 @@ describe('contracts and briefings', () => {
     expect(ids(app)).toEqual(['accept', 'back']);
     select(app, 'back');
     expect(snap(app).screen).toBe('hub');
-    select(app, 'contracts');
+    expect(ids(app)).toEqual(['patrol', 'intro-1']);
     select(app, 'intro-1');
     press(app, 'cancel');
-    expect(snap(app).screen).toBe('hub');
+    expect(ids(app)).toEqual(['patrol', 'intro-1']);
+    press(app, 'cancel');
+    expect(ids(app)).toEqual(['contracts', 'garage', 'shop', 'messages']);
   });
 
   test('accepting starts the first battle of the contract', () => {
@@ -319,6 +321,11 @@ describe('the campaign', () => {
     expect(snap(app).screen).toBe('hub');
     select(app, 'contracts');
     expect(ids(app)).toEqual(['patrol']);
+    // Seen once: returning to the hub later does not replay it.
+    press(app, 'cancel');
+    select(app, 'garage');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
   });
 
   test('taking one exclusive contract withdraws the other two', () => {
@@ -400,5 +407,68 @@ describe('shop', () => {
     press(app, 'cancel');
     accept(app, 'patrol');
     expect(snap(app).build!.leftHand).toBe('wpn-arc-pistol');
+  });
+});
+
+describe('closing the game at an awkward moment', () => {
+  test('the outcome is booked as soon as the last battle is decided, before any button is pressed', () => {
+    const { app, store } = inHub();
+    accept(app, 'patrol');
+    finishBattle(app);
+    expect(snap(app).screen).toBe('battle');
+    const saved = JSON.parse(store.data[SAVE_KEY]);
+    expect(saved.battlesWon).toBe(1);
+    expect(saved.credits).toBeGreaterThan(1200);
+    // Reopening instead of pressing on finds the reward kept.
+    const reopened = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
+    press(reopened, 'confirm');
+    expect(snap(reopened).credits).toBe(saved.credits);
+    // Pressing on shows the same settlement without booking it again.
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'settlement', credits: saved.credits });
+  });
+
+  test('a retreat is billed even if the game is closed on the defeat panel', () => {
+    const { app, store } = inHub(undefined, 5);
+    accept(app, 'patrol');
+    for (let i = 0; i < 200 && snap(app).battle!.phase !== 'action'; i++) app.update(16);
+    press(app, 'confirm', 'confirm', 'confirm'); // fire once so there is a bill
+    for (let i = 0; i < 400 && snap(app).battle!.phase !== 'action'; i++) app.update(16);
+    select(app, 'retreat');
+    select(app, 'yes');
+    expect(JSON.parse(store.data[SAVE_KEY]).credits).toBeLessThan(1200);
+  });
+
+  test('an ending that was never seen is shown the next time the hub opens', () => {
+    const finished = { ...done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-undertow', 'finale-undertow') };
+    const { app, store } = makeApp(finished);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'ending', ending: 'undertow' });
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+    expect(JSON.parse(store.data[SAVE_KEY]).endingSeen).toBe(true);
+    // And only once.
+    const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
+    press(again, 'confirm');
+    expect(snap(again).screen).toBe('hub');
+  });
+
+  test('the ending can be read again as a message afterwards', () => {
+    const finished = { ...done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-lumen', 'finale-lumen'), endingSeen: true };
+    const { app } = inHub(finished);
+    select(app, 'messages');
+    expect(ids(app)[0]).toBe('ending-lumen');
+  });
+
+  test('a pilot who owns no weapon at all is issued a rifle on reaching the hub', () => {
+    const { 'wpn-rivet-rifle': _gone, ...inventory } = fresh().inventory;
+    const { rightHand: _slot, ...build } = fresh().build;
+    const { app } = inHub({ ...fresh(), credits: 50, inventory, build });
+    expect((app.snapshot() as { inventory: Record<string, number> }).inventory['wpn-rivet-rifle']).toBe(1);
+    select(app, 'garage');
+    select(app, 'rightHand');
+    select(app, 'wpn-rivet-rifle');
+    press(app, 'cancel');
+    expect(snap(app).menu.items[0]).toMatchObject({ id: 'contracts', enabled: true });
   });
 });

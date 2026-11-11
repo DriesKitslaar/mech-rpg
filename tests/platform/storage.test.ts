@@ -56,10 +56,10 @@ test('clear removes the save, and survives storage that refuses', () => {
 });
 
 test('a save from the first version is upgraded instead of thrown away', () => {
-  const { completed: _c, read: _r, ...rest } = game();
+  const { completed: _c, read: _r, endingSeen: _e, ...rest } = game();
   const old = { ...rest, version: 1 };
   const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify(old) }), CATALOG).load();
-  expect(loaded).toEqual({ ...game(), completed: [], read: [] });
+  expect(loaded).toEqual({ ...game(), completed: [], read: [], endingSeen: false });
 });
 
 test('unusable save data is reported as such, a missing save is not', () => {
@@ -68,4 +68,11 @@ test('unusable save data is reported as such, a missing save is not', () => {
   const good = memoryStore();
   new SaveFile(good, CATALOG).save(game());
   expect(new SaveFile(good, CATALOG).hasUnusableData()).toBe(false);
+});
+
+test('a save from the second version is upgraded too, keeping its campaign progress', () => {
+  const { endingSeen: _e, ...rest } = { ...game(), completed: ['intro-1'], read: ['welcome'] };
+  const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 2 }) }), CATALOG).load();
+  expect(loaded).toMatchObject({ completed: ['intro-1'], read: ['welcome'], endingSeen: false });
+  expect(loaded?.version).toBe(3);
 });

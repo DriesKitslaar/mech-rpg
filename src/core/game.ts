@@ -1,6 +1,6 @@
 import type { Build, Catalog, Part } from './types';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const STARTING_CREDITS = 1200;
 
 /** Everything about a player's progress that is kept between battles and saved. */
@@ -15,6 +15,8 @@ export interface GameState {
   completed: string[];
   /** Ids of the messages read. */
   read: string[];
+  /** Whether the ending has been shown; it is shown once, on the first visit to the hub after the finale. */
+  endingSeen: boolean;
 }
 
 export type BuildSlot = keyof Build;
@@ -31,7 +33,7 @@ export function ownedCount(state: GameState, partId: string): number {
   return Object.hasOwn(state.inventory, partId) ? state.inventory[partId] : 0;
 }
 
-export type TradeRefusal = 'notForSale' | 'cannotAfford' | 'notOwned' | 'equipped';
+export type TradeRefusal = 'notForSale' | 'cannotAfford' | 'notOwned' | 'equipped' | 'lastWeapon';
 export type EquipRefusal = 'notOwned' | 'wrongSlot' | 'noSpare' | 'required';
 
 /** Whether a part may go in a slot: frame parts and generators by kind, weapons by mount. */
@@ -47,7 +49,7 @@ export function newGame(catalog: Catalog, starter: Build): GameState {
     if (!partOf(catalog, id)) throw new Error(`starter part missing from catalogue: ${id}`);
     inventory[id] = (inventory[id] ?? 0) + 1;
   }
-  return { version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [] };
+  return { version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false };
 }
 
 export function equippedCount(state: GameState, partId: string): number {
@@ -77,7 +79,20 @@ export function buy(state: GameState, partId: string, catalog: Catalog): GameSta
 
 export function checkSell(state: GameState, partId: string, catalog: Catalog): TradeRefusal | null {
   if (!partOf(catalog, partId) || ownedCount(state, partId) <= 0) return 'notOwned';
-  return spareCount(state, partId) <= 0 ? 'equipped' : null;
+  if (spareCount(state, partId) <= 0) return 'equipped';
+  // A pilot without any weapon and without the money for one could never work again.
+  return partOf(catalog, partId)!.kind === 'weapon' && weaponsOwned(state, catalog) <= 1 ? 'lastWeapon' : null;
+}
+
+/** How many weapons the pilot owns in total, fitted or not. */
+export function weaponsOwned(state: GameState, catalog: Catalog): number {
+  return Object.entries(state.inventory).reduce((sum, [id, count]) => sum + (partOf(catalog, id)?.kind === 'weapon' ? count : 0), 0);
+}
+
+/** Issues a pilot who owns no weapon at all the given one, free. The state is returned unchanged otherwise. */
+export function ensureArmed(state: GameState, catalog: Catalog, weaponId: string): GameState {
+  if (weaponsOwned(state, catalog) > 0 || partOf(catalog, weaponId)?.kind !== 'weapon') return state;
+  return { ...state, inventory: { ...state.inventory, [weaponId]: 1 } };
 }
 
 /** Selling returns the full price, so trying parts out costs nothing. */
@@ -121,7 +136,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 export function isValidState(value: unknown, catalog: Catalog): value is GameState {
   if (!isRecord(value) || value.version !== SAVE_VERSION) return false;
   if (typeof value.credits !== 'number' || !Number.isSafeInteger(value.credits)) return false;
-  if (!isTextList(value.completed) || !isTextList(value.read)) return false;
+  if (!isTextList(value.completed) || !isTextList(value.read) || typeof value.endingSeen !== 'boolean') return false;
   if (!isWholeNonNegative(value.battlesWon)) return false;
   const { inventory, build } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;

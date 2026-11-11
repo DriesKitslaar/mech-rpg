@@ -3,7 +3,8 @@ import type { FrameSlot } from '../core/types';
 /** All player-facing text. UI code never contains literal copy. */
 export const STRINGS = {
   title: 'IRONWAGE',
-  actions: { fire: 'Fire', boost: 'Boost', cool: 'Cool', repair: 'Field Repair', endTurn: 'End Turn' },
+  actions: { fire: 'Fire', boost: 'Boost', cool: 'Cool', repair: 'Field Repair', endTurn: 'End Turn', retreat: 'Retreat' },
+  retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
   parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
   meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
   headings: { you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?' },
@@ -67,6 +68,7 @@ export const STRINGS = {
     bought: (name: string) => `Bought ${name}`,
     sold: (name: string, price: number) => `Sold ${name} +${price}`,
     cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
+    lastWeapon: 'Last weapon', needWeapon: 'You need at least one weapon',
     hint: 'L1/R1 category   LEFT/RIGHT buy or sell   B back',
   },
   partInfo: {

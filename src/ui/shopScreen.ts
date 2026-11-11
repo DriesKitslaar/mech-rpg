@@ -1,3 +1,4 @@
+import { SHOP_PARTS } from '../content/parts';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -15,7 +16,7 @@ export class ShopScreen implements Screen {
   private flow: ShopFlow;
 
   constructor(private app: App) {
-    this.flow = new ShopFlow(app.game!, app.deps.catalog, app.stock());
+    this.flow = new ShopFlow(app.game!, app.deps.catalog, app.stock(), SHOP_PARTS);
   }
 
   update(): void {}
@@ -68,7 +69,7 @@ export class ShopScreen implements Screen {
     this.drawDetail(ctx, LIST_W + 2, 33, LOGICAL_W - LIST_W - 2, 200);
 
     drawPanel(ctx, 0, 235, LOGICAL_W, LOGICAL_H - 235);
-    const refused = flow.message === S.cannotAfford || flow.message === S.inUse;
+    const refused = flow.message === S.cannotAfford || flow.message === S.inUse || flow.message === S.needWeapon;
     if (flow.message) drawText(ctx, flow.message, LOGICAL_W / 2, 240, { align: 'center', size: 16, color: refused ? COLORS.danger : COLORS.armor });
     else drawText(ctx, S.hint, LOGICAL_W / 2, 244, { align: 'center', color: COLORS.dim, size: 10 });
   }

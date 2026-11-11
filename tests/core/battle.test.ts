@@ -387,3 +387,18 @@ describe('carrying a mech from one battle into the next', () => {
     expect(() => createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, carryFrom(dead))).toThrow('a destroyed mech cannot enter a battle');
   });
 });
+
+describe('retreat', () => {
+  test('the player may retreat on their turn, which is a defeat', () => {
+    const s = applyAction(toPlayer(demo(['gun-turret'])), { type: 'retreat' }, CATALOG);
+    expect(s.outcome).toBe('defeat');
+    expect(s.events.at(-1)).toEqual({ type: 'outcome', outcome: 'defeat' });
+    expect(checkAction(s, { type: 'retreat' }, CATALOG)).toBe('battleOver');
+  });
+
+  test('enemies do not retreat', () => {
+    const s = applyAction(demo(['gun-turret']), END, CATALOG);
+    expect(activeUnit(s).side).toBe('enemy');
+    expect(checkAction(s, { type: 'retreat' }, CATALOG)).toBe('invalidTarget');
+  });
+});
