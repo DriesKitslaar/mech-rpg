@@ -14,7 +14,8 @@ export class SettlementScreen implements Screen {
   update(): void {}
 
   onInput(action: InputAction): void {
-    if (action === 'confirm') this.app.finishSettlement(this.settlement);
+    // The settlement is already booked; this screen only shows it.
+    if (action === 'confirm') this.app.go('hub');
   }
 
   view(): ScreenView {
@@ -56,7 +57,7 @@ export class SettlementScreen implements Screen {
     ctx.fillRect(x + 10, 180, w - 20, 1);
     drawText(ctx, S.net, x + 10, 186, { size: 16 });
     drawText(ctx, s.net > 0 ? `+${s.net}` : String(s.net), right, 186, { size: 16, align: 'right', color: s.net >= 0 ? COLORS.armor : COLORS.danger });
-    const balance = this.app.game!.credits + s.net;
+    const balance = this.app.game!.credits; // already includes this settlement
     drawText(ctx, S.balance, x + 10, 206, { color: COLORS.dim });
     drawText(ctx, String(balance), right, 206, { align: 'right', color: balance < 0 ? COLORS.danger : COLORS.text });
     drawText(ctx, S.continue, LOGICAL_W / 2, 230, { align: 'center', color: COLORS.dim });

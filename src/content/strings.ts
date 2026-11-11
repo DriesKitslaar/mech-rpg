@@ -29,11 +29,11 @@ export const STRINGS = {
   },
   hub: {
     heading: 'HEADQUARTERS', sortie: 'Sortie', garage: 'Garage', shop: 'Shop',
-    credits: 'CREDITS', battlesWon: 'CONTRACTS WON', next: 'NEXT CONTRACT',
+    credits: 'CREDITS', battlesWon: 'CONTRACTS WON', contracts: 'CONTRACTS', reward: 'pays',
   },
   buildErrors: {
     overweight: 'Overweight', insufficientEnergy: 'Not enough energy', missingSlot: 'Missing part',
-    wrongMount: 'Wrong mount', unknownPart: 'Unknown part',
+    wrongMount: 'Wrong mount', unknownPart: 'Unknown part', noWeapon: 'No weapon',
   },
   encounters: { intro: 'Drone Patrol', outpost: 'Outpost Assault' } as Record<string, string>,
   settlement: {

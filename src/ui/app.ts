@@ -3,7 +3,7 @@ import { validatePlayerBuild } from '../core/build';
 import { applySettlement, settle, type Settlement } from '../core/economy';
 import { newGame, type GameState } from '../core/game';
 import type { BuildError, Catalog } from '../core/types';
-import { ENCOUNTERS, ENCOUNTER_REWARD, ENEMIES } from '../content/enemies';
+import { ENCOUNTERS, ENCOUNTER_REWARD, ENCOUNTER_UNLOCK, ENEMIES } from '../content/enemies';
 import { STARTER_BUILD } from '../content/parts';
 import type { Sfx } from '../platform/audio';
 import type { InputAction } from '../platform/input';
@@ -122,37 +122,41 @@ export class App {
     return this.game ? validatePlayerBuild(this.game.build, this.deps.catalog) : [];
   }
 
-  /** The encounter the next sortie leads to. */
-  nextEncounter(): string {
-    const names = Object.keys(ENCOUNTERS);
-    return names[(this.game?.battlesWon ?? 0) % names.length];
+  /** The contracts on offer now. The first is always available, so a pilot can never run out of work. */
+  availableEncounters(): { id: string; reward: number }[] {
+    const won = this.game?.battlesWon ?? 0;
+    return Object.keys(ENCOUNTERS)
+      .filter((id) => won >= (ENCOUNTER_UNLOCK[id] ?? 0))
+      .map((id) => ({ id, reward: ENCOUNTER_REWARD[id] ?? 0 }));
+  }
+
+  /** Starts a contract, unless the build may not deploy or the contract is not on offer. */
+  startBattle(encounter: string): void {
+    if (this.buildErrors().length > 0 || !this.availableEncounters().some((e) => e.id === encounter)) return;
+    this.seed = (this.seed + 1) % 2147483647;
+    this.current = new BattleHost(this, encounter, this.seed);
+    this.name = 'battle';
   }
 
   go(name: ScreenName): void {
     switch (name) {
       case 'title': this.current = new TitleScreen(this); break;
       case 'hub': this.current = new HubScreen(this); break;
-      case 'battle':
-        if (this.buildErrors().length > 0) return;
-        this.seed = (this.seed + 1) % 2147483647;
-        this.current = new BattleHost(this, this.nextEncounter(), this.seed);
-        break;
       case 'garage': this.current = new GarageScreen(this); break;
       case 'shop': this.current = new ShopScreen(this); break;
-      default: return; // the settlement is opened by the battle that leads to it
+      default: return; // battles start through startBattle, and the settlement follows a battle
     }
     this.name = name;
   }
 
+  /**
+   * Books a settlement and shows it. It is saved before the screen appears, so closing the game
+   * there can neither lose a reward nor dodge a bill.
+   */
   showSettlement(settlement: Settlement): void {
+    this.commit(applySettlement(this.game!, settlement));
     this.current = new SettlementScreen(this, settlement);
     this.name = 'settlement';
-  }
-
-  /** Books a settlement and returns to the hub. */
-  finishSettlement(settlement: Settlement): void {
-    this.commit(applySettlement(this.game!, settlement));
-    this.go('hub');
   }
 
   update(dtMs: number): void { this.current.update(dtMs); }

@@ -8,18 +8,25 @@ import { COLORS, drawList, drawPanel, drawText } from './widgets';
 
 const H = STRINGS.hub;
 
-/** The place between battles: shows the money and leads to the sortie, the garage and the shop. */
+/** The place between battles: shows the money and leads to the contracts, the garage and the shop. */
 export class HubScreen implements Screen {
-  private list: MenuList;
+  private main: MenuList;
+  /** The contract list, while it is open. */
+  private contracts: MenuList | null = null;
   private clock = 0;
 
   constructor(private app: App) {
     const errors = app.buildErrors();
-    this.list = new MenuList([
+    this.main = new MenuList([
       { id: 'sortie', label: H.sortie, enabled: errors.length === 0, note: errors[0] ? STRINGS.buildErrors[errors[0]] : undefined },
       { id: 'garage', label: H.garage, enabled: true },
       { id: 'shop', label: H.shop, enabled: true },
+      // With a build that may not deploy the cursor starts on the garage, where that is fixed.
     ], errors.length === 0 ? 0 : 1);
+  }
+
+  private get list(): MenuList {
+    return this.contracts ?? this.main;
   }
 
   update(dtMs: number): void {
@@ -29,11 +36,17 @@ export class HubScreen implements Screen {
   onInput(action: InputAction): void {
     if (action === 'up') this.list.move(-1);
     else if (action === 'down') this.list.move(1);
+    else if (action === 'cancel') this.contracts = null;
     else if (action === 'confirm' && this.list.selected?.enabled) {
       const id = this.list.selected.id;
-      if (id === 'sortie') this.app.go('battle');
+      if (this.contracts) this.app.startBattle(id);
       else if (id === 'garage') this.app.go('garage');
       else if (id === 'shop') this.app.go('shop');
+      else if (id === 'sortie') {
+        this.contracts = new MenuList(this.app.availableEncounters().map((e) => ({
+          id: e.id, label: STRINGS.encounters[e.id] ?? e.id, enabled: true, note: String(e.reward),
+        })));
+      }
     }
   }
 
@@ -57,15 +70,14 @@ export class HubScreen implements Screen {
 
     const x = 172;
     const w = LOGICAL_W - x - 6;
-    drawPanel(ctx, x, 24, w, 62);
+    drawPanel(ctx, x, 24, w, 40);
     drawText(ctx, H.credits, x + 6, 29, { color: COLORS.dim });
     drawText(ctx, String(game.credits), x + w - 6, 27, { size: 16, align: 'right', color: game.credits < 0 ? COLORS.danger : COLORS.text });
     drawText(ctx, H.battlesWon, x + 6, 45, { color: COLORS.dim });
     drawText(ctx, String(game.battlesWon), x + w - 6, 45, { align: 'right' });
-    drawText(ctx, H.next, x + 6, 59, { color: COLORS.dim });
-    drawText(ctx, STRINGS.encounters[this.app.nextEncounter()] ?? this.app.nextEncounter(), x + 6, 70, { color: COLORS.accent });
 
-    drawPanel(ctx, x, 96, w, 50);
-    drawList(ctx, this.list, x + 6, 102, w - 14, 3);
+    drawPanel(ctx, x, 74, w, 62);
+    drawText(ctx, this.contracts ? `${H.contracts} - ${H.reward}` : H.heading, x + 6, 79, { color: COLORS.dim, size: 10 });
+    drawList(ctx, this.list, x + 6, 92, w - 14, 3);
   }
 }

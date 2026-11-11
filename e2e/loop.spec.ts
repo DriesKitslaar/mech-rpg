@@ -36,6 +36,8 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
 
   // Battle and settlement.
   await choose(page, 'sortie');
+  await page.screenshot({ path: shot('contracts') });
+  await choose(page, 'intro');
   await waitForPhase(page, 'action');
   await page.screenshot({ path: shot('battle-action') });
   const end = await finishBattle(page);
@@ -43,6 +45,8 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await press(page, 'Enter');
   await waitForScreen(page, 'settlement');
   const { net, won } = (await snap(page)).settlement!;
+  // Booked the moment it is shown.
+  expect((await snap(page)).credits).toBe(600 + net);
   await page.screenshot({ path: shot('settlement') });
   await press(page, 'Enter');
   await waitForScreen(page, 'hub');

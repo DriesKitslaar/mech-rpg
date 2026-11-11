@@ -25,8 +25,12 @@ test('ammunition is charged per shot fired', () => {
 });
 
 test('weapons without ammunition cost nothing to fire', () => {
-  const s = settle(finished('victory', (b) => { b.units[0].fired = ['leftHand']; }), 600, CATALOG);
-  expect(s.ammoCost).toBe(0);
+  // The Arc Pistol has no ammunition count; give the rifle a full magazine so only the pistol could matter.
+  const battle = finished('victory');
+  expect(battle.units[0].ammo.leftHand).toBeNull();
+  expect(settle(battle, 600, CATALOG).ammoCost).toBe(0);
+  // The same battle with rifle shots fired does cost, so the zero above is not an accident.
+  expect(settle(finished('victory', (b) => { b.units[0].ammo.rightHand = 29; }), 600, CATALOG).ammoCost).toBe(15);
 });
 
 test('repairs cost half the part price in proportion to the armour lost', () => {

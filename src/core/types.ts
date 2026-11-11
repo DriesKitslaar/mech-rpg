@@ -84,7 +84,7 @@ export interface BuildStats {
   turnEnergy: number;
 }
 
-export type BuildError = 'missingSlot' | 'overweight' | 'insufficientEnergy' | 'wrongMount' | 'unknownPart';
+export type BuildError = 'missingSlot' | 'overweight' | 'insufficientEnergy' | 'wrongMount' | 'unknownPart' | 'noWeapon';
 export type AiProfile = 'gunner' | 'skirmisher' | 'bruiser';
 
 export interface EnemyDef {

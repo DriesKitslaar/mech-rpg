@@ -61,3 +61,8 @@ test('an unknown part id is reported', () => {
 test('a part of the wrong kind for its slot is reported as unknown', () => {
   expect(validatePlayerBuild({ ...STARTER_BUILD, head: 'core-hauler' }, CATALOG)).toEqual(['unknownPart']);
 });
+
+test('a player build needs at least one weapon', () => {
+  const { rightHand: _weapon, ...unarmed } = STARTER_BUILD;
+  expect(validatePlayerBuild(unarmed, CATALOG)).toEqual(['noWeapon']);
+});

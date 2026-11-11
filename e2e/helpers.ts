@@ -48,6 +48,7 @@ export async function startBattle(page: Page, url?: string): Promise<void> {
   await choose(page, 'new');
   await waitForScreen(page, 'hub');
   await choose(page, 'sortie');
+  await choose(page, 'intro');
   await waitForPhase(page, 'action');
 }
 

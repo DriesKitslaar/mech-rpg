@@ -138,37 +138,112 @@ describe('hub', () => {
   });
 });
 
-describe('battle and settlement', () => {
-  test('a sortie leads through the battle and the settlement back to the hub, saved', () => {
-    const { app, store } = makeApp();
-    press(app, 'confirm');
+describe('contracts', () => {
+  const inHub = (saved?: GameState) => { const made = makeApp(saved); press(made.app, 'confirm'); return made; };
+
+  test('a new pilot is offered only the patrol, with its reward', () => {
+    const { app } = inHub();
     select(app, 'sortie');
-    expect(snap(app)).toMatchObject({ screen: 'battle', battle: { encounter: 'intro' } });
-    finishBattle(app);
-    const won = snap(app).battle!.outcome === 'victory';
-    press(app, 'confirm');
-    expect(snap(app).screen).toBe('settlement');
-    const { net } = snap(app).settlement!;
-    expect(snap(app).settlement!.won).toBe(won);
-    expect(snap(app).credits).toBe(1200);
-    press(app, 'confirm');
-    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 1200 + net, battlesWon: won ? 1 : 0 });
-    expect(JSON.parse(store.data[SAVE_KEY])).toMatchObject({ credits: 1200 + net, battlesWon: won ? 1 : 0 });
+    expect(snap(app).screen).toBe('hub');
+    expect(snap(app).menu.items).toMatchObject([{ id: 'intro', label: 'Drone Patrol', note: '600', enabled: true }]);
   });
 
-  test('the encounter alternates with the number of battles won', () => {
-    const { app } = makeApp({ ...newGame(CATALOG, STARTER_BUILD), battlesWon: 1 });
-    press(app, 'confirm');
+  test('the outpost opens after one win, and the patrol stays available', () => {
+    const { app } = inHub({ ...newGame(CATALOG, STARTER_BUILD), battlesWon: 1 });
     select(app, 'sortie');
-    expect(snap(app).battle!.encounter).toBe('outpost');
+    expect(ids(app)).toEqual(['intro', 'outpost']);
+    select(app, 'outpost');
+    expect(snap(app)).toMatchObject({ screen: 'battle', battle: { encounter: 'outpost' } });
+  });
+
+  test('cancel returns from the contract list to the hub menu', () => {
+    const { app } = inHub();
+    select(app, 'sortie');
+    press(app, 'cancel');
+    expect(ids(app)).toEqual(['sortie', 'garage', 'shop']);
+  });
+
+  test('a pilot in debt can still take a contract', () => {
+    const { app } = inHub({ ...newGame(CATALOG, STARTER_BUILD), credits: -500 });
+    select(app, 'sortie');
+    select(app, 'intro');
+    expect(snap(app).screen).toBe('battle');
+  });
+
+  test('a mech without any weapon cannot deploy', () => {
+    const unarmed = equip(newGame(CATALOG, STARTER_BUILD), 'rightHand', null, CATALOG);
+    const { app } = inHub(unarmed);
+    expect(snap(app).menu.items[0]).toMatchObject({ id: 'sortie', enabled: false, note: 'No weapon' });
+  });
+});
+
+describe('battle and settlement', () => {
+  /** Into the hub, then into the named contract. */
+  const sortie = (app: App, encounter: string) => { press(app, 'confirm'); select(app, 'sortie'); select(app, encounter); };
+
+  test('a won patrol is booked and saved the moment the settlement appears', () => {
+    const { app, store } = makeApp();
+    sortie(app, 'intro');
+    finishBattle(app);
+    // The starter build wins the patrol with this seed; if content changes that, this test must be revisited.
+    expect(snap(app).battle!.outcome).toBe('victory');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('settlement');
+    const { net, won } = snap(app).settlement!;
+    expect(won).toBe(true);
+    expect(net).toBeGreaterThan(0);
+    expect(snap(app)).toMatchObject({ credits: 1200 + net, battlesWon: 1 });
+    expect(JSON.parse(store.data[SAVE_KEY])).toMatchObject({ credits: 1200 + net, battlesWon: 1 });
+
+    // Closing the game on the settlement screen must not lose the reward.
+    const reopened = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
+    press(reopened, 'confirm');
+    expect(snap(reopened)).toMatchObject({ screen: 'hub', credits: 1200 + net, battlesWon: 1 });
+
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 1200 + net, battlesWon: 1 });
+  });
+
+  test('a lost contract charges its costs, pays nothing and does not count as a win', () => {
+    const { app, store } = makeApp({ ...newGame(CATALOG, STARTER_BUILD), battlesWon: 1 });
+    sortie(app, 'outpost');
+    finishBattle(app);
+    // The starter build alone does not survive the outpost.
+    expect(snap(app).battle!.outcome).toBe('defeat');
+    press(app, 'confirm');
+    const { net, won } = snap(app).settlement!;
+    expect(won).toBe(false);
+    expect(net).toBeLessThan(0);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 1200 + net, battlesWon: 1 });
+    expect(JSON.parse(store.data[SAVE_KEY]).credits).toBe(1200 + net);
+  });
+
+  test('pressing confirm again and again books the settlement only once', () => {
+    const { app } = makeApp();
+    sortie(app, 'intro');
+    finishBattle(app);
+    press(app, 'confirm');
+    const { net } = snap(app).settlement!;
+    press(app, 'confirm', 'confirm', 'cancel');
+    expect(snap(app).credits).toBe(1200 + net);
   });
 
   test('other keys on the result screen do not skip the settlement', () => {
     const { app } = makeApp();
-    press(app, 'confirm');
-    select(app, 'sortie');
+    sortie(app, 'intro');
     finishBattle(app);
     press(app, 'cancel', 'down', 'next');
+    expect(snap(app).screen).toBe('battle');
+  });
+
+  test('a device that refuses to save is reported, and play goes on', () => {
+    const store: KeyValueStore = { getItem: () => null, setItem: () => { throw new Error('quota'); }, removeItem() {} };
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
+    press(app, 'confirm');
+    expect(app.snapshot()).toMatchObject({ screen: 'hub', saveFailed: true, message: 'Could not save: storage is full or blocked' });
+    select(app, 'sortie');
+    select(app, 'intro');
     expect(snap(app).screen).toBe('battle');
   });
 });
@@ -214,6 +289,7 @@ describe('shop', () => {
     select(app, 'wpn-arc-pistol');
     press(app, 'cancel');
     select(app, 'sortie');
+    select(app, 'intro');
     expect(snap(app).screen).toBe('battle');
     expect((app.snapshot() as { build: Record<string, string> }).build.leftHand).toBe('wpn-arc-pistol');
   });
