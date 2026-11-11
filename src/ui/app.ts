@@ -13,6 +13,7 @@ import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
 import type { ListItem } from './menuList';
 import { SettlementScreen } from './settlementScreen';
+import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
 
@@ -137,7 +138,8 @@ export class App {
         this.current = new BattleHost(this, this.nextEncounter(), this.seed);
         break;
       case 'garage': this.current = new GarageScreen(this); break;
-      default: return; // the shop and the settlement are opened elsewhere
+      case 'shop': this.current = new ShopScreen(this); break;
+      default: return; // the settlement is opened by the battle that leads to it
     }
     this.name = name;
   }

@@ -49,6 +49,14 @@ export const STRINGS = {
     heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
     weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', back: 'B: back',
   },
+  shop: {
+    heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'CR',
+    tabs: { head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', hand: 'Hand', shoulder: 'Shldr' },
+    bought: (name: string) => `Bought ${name}`,
+    sold: (name: string, price: number) => `Sold ${name} +${price}`,
+    cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
+    hint: 'L1/R1 category   LEFT/RIGHT buy or sell   B back',
+  },
   partInfo: {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',
     output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',

@@ -187,3 +187,34 @@ describe('garage', () => {
     expect(snap(app).screen).toBe('hub');
   });
 });
+
+describe('shop', () => {
+  test('opens from the hub, saves every trade, and returns with cancel', () => {
+    const { app, store } = makeApp();
+    press(app, 'confirm');
+    select(app, 'shop');
+    expect(snap(app).screen).toBe('shop');
+    select(app, 'head-halo');
+    expect(snap(app).credits).toBe(300);
+    expect(JSON.parse(store.data[SAVE_KEY]).inventory['head-halo']).toBe(1);
+    expect(snap(app).message).toBe('Bought Halo Visor');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+  });
+
+  test('a part bought in the shop can be fitted in the garage and taken into battle', () => {
+    const { app } = makeApp();
+    press(app, 'confirm');
+    select(app, 'shop');
+    press(app, 'next', 'next', 'next', 'next', 'next');
+    select(app, 'wpn-arc-pistol');
+    press(app, 'cancel');
+    select(app, 'garage');
+    select(app, 'leftHand');
+    select(app, 'wpn-arc-pistol');
+    press(app, 'cancel');
+    select(app, 'sortie');
+    expect(snap(app).screen).toBe('battle');
+    expect((app.snapshot() as { build: Record<string, string> }).build.leftHand).toBe('wpn-arc-pistol');
+  });
+});
