@@ -3,6 +3,7 @@ import { createBattle } from './core/battle';
 import { ENCOUNTERS, ENEMIES } from './content/enemies';
 import { CATALOG, DEMO_BUILD } from './content/parts';
 import manifest from './content/sprites.json';
+import { Sfx, soundForInput } from './platform/audio';
 import { InputMapper, attachInput, type InputAction } from './platform/input';
 import { BattleFlow, BattleScreen } from './ui/battleScreen';
 import { fitCanvas } from './ui/display';
@@ -34,13 +35,15 @@ async function start(): Promise<void> {
     document.fonts.load(`12px ${FONT}`).catch(() => undefined),
   ]);
 
+  const sfx = new Sfx();
+  sfx.muted = fast;
   let flow!: BattleFlow;
   let screen!: BattleScreen;
   let battlesStarted = 0;
   const startBattle = (): void => {
     const enemies = ENCOUNTERS[names[encounterIndex]].map((id) => ENEMIES[id]);
     flow = new BattleFlow(createBattle(DEMO_BUILD, enemies, CATALOG, seed), CATALOG);
-    screen = new BattleScreen(flow, sprites, CATALOG, { fast });
+    screen = new BattleScreen(flow, sprites, CATALOG, { fast, sfx });
     battlesStarted += 1;
   };
   startBattle();
@@ -58,17 +61,26 @@ async function start(): Promise<void> {
     battlesStarted: () => battlesStarted,
   };
 
+  /** Everything an input can change, to tell whether it did anything (and so which sound fits). */
+  const signature = (): string =>
+    [battlesStarted, flow.phase, flow.menu.cursor, flow.targetId, flow.targetPart, flow.eventsShown, flow.state.events.length].join('|');
+
   const handle = (action: InputAction): void => {
+    sfx.unlock(); // browsers only allow sound after an input
     if (action === 'menu') { debug.toggle(); return; }
+    const before = signature();
     if (flow.phase === 'result') {
       // Until there is a mission board, the result screen leads straight into the next encounter.
-      if (action !== 'confirm') return;
-      encounterIndex = (encounterIndex + 1) % names.length;
-      seed = (seed + 1) % 2147483647;
-      startBattle();
-      return;
+      if (action === 'confirm') {
+        encounterIndex = (encounterIndex + 1) % names.length;
+        seed = (seed + 1) % 2147483647;
+        startBattle();
+      }
+    } else {
+      screen.onInput(action);
     }
-    screen.onInput(action);
+    const sound = soundForInput(action, signature() !== before);
+    if (sound) sfx.play(sound);
   };
 
   let last = performance.now();

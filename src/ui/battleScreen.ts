@@ -5,7 +5,10 @@ import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { BattleFlow } from './battleFlow';
 import { LOGICAL_H, LOGICAL_W } from './display';
-import { BattleFx, type Scene } from './battleFx';
+import type { Sfx } from '../platform/audio';
+import { soundsForEvent } from '../platform/audio';
+import { ApDisplay } from './apDisplay';
+import { BattleFx, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, layoutMech, type SpriteSize, type SpriteSlot } from './mechLayout';
 import type { Sprite, SpriteStore } from './sprites';
 import { COLORS, LINE, drawMenu, drawMeter, drawPanel, drawText } from './widgets';
@@ -48,16 +51,22 @@ export class BattleScreen {
   private fx = new BattleFx(this.scene());
   /** Events already handed to the effects. */
   private fxDone = 0;
+  /** Armour as shown, which trails the rules until each shot has landed. */
+  private shownAp: ApDisplay;
 
   constructor(
     private flow: BattleFlow, private sprites: SpriteStore, private catalog: Catalog,
-    private opts: { fast: boolean },
-  ) {}
+    private opts: { fast: boolean; sfx?: Sfx },
+  ) {
+    this.shownAp = new ApDisplay(flow.state.units);
+  }
 
   update(dtMs: number): void {
     this.clock += dtMs;
     this.spawnEffects();
     this.fx.update(dtMs);
+    this.shownAp.update(dtMs);
+    if (this.flow.phase !== 'animating') this.shownAp.sync(this.flow.state.units);
     if (this.flow.phase !== 'animating') { this.timer = 0; return; }
     this.timer += dtMs;
     if (this.opts.fast || this.timer >= MESSAGE_MS) {
@@ -70,8 +79,16 @@ export class BattleScreen {
   private spawnEffects(): void {
     const events = this.flow.state.events;
     const shown = this.flow.eventsShown;
-    // In fast mode messages fly by within a frame; effects would only pile up.
-    if (!this.opts.fast) for (let i = this.fxDone; i < shown; i++) this.fx.onEvent(events[i]);
+    for (let i = this.fxDone; i < shown; i++) {
+      const event = events[i];
+      const dtype = event.type === 'shot' ? this.scene().damageType(event.unit, event.weapon) : 'kinetic';
+      // In fast mode messages fly by within a frame: no effects, no sound, no waiting.
+      const flight = this.opts.fast || event.type !== 'shot' ? 0 : flightFor(dtype);
+      this.shownAp.schedule(event, flight);
+      if (this.opts.fast) continue;
+      this.fx.onEvent(event);
+      for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
+    }
     this.fxDone = shown;
   }
 
@@ -164,7 +181,7 @@ export class BattleScreen {
       this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx, r.y + dy, r.w, r.h));
       if (enemy.destroyed) return;
       const core = enemy.parts.core!;
-      drawMeter(ctx, spot.x + 12, spot.y + ENEMY_BOX + 2, ENEMY_BOX - 24, 2, core.ap, core.maxAp, COLORS.armor);
+      drawMeter(ctx, spot.x + 12, spot.y + ENEMY_BOX + 2, ENEMY_BOX - 24, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
       if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, spot.x, spot.y);
     });
   }
@@ -267,11 +284,12 @@ export class BattleScreen {
     for (const slot of FRAME_SLOTS) {
       const part = unit.parts[slot];
       if (!part) continue;
-      const dead = part.ap <= 0;
+      const ap = this.shownAp.ap(unit.id, slot);
+      const dead = ap <= 0;
       const color = slot === highlight ? COLORS.accent : dead ? COLORS.dim : COLORS.text;
       drawText(ctx, STRINGS.parts[slot], x, y, { color, strike: dead });
-      drawMeter(ctx, x + 30, y + 4, 74, 4, part.ap, part.maxAp, COLORS.armor);
-      drawText(ctx, String(part.ap), x + 144, y, { color, align: 'right' });
+      drawMeter(ctx, x + 30, y + 4, 74, 4, ap, part.maxAp, COLORS.armor);
+      drawText(ctx, String(ap), x + 144, y, { color, align: 'right' });
       y += LINE;
     }
     return y;

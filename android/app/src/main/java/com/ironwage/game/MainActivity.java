@@ -47,6 +47,9 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         hideSystemBars();
+        // Controller presses reach the page as synthetic key events, which browsers do not count
+        // as a user gesture; without this the game would never be allowed to make a sound.
+        getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
     }
 
     @Override

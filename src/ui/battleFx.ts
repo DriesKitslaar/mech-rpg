@@ -20,6 +20,8 @@ export interface UnitTransform { dx: number; dy: number; flash: boolean; alpha: 
 export const PROJECTILE_MS = 160;
 export const SHELL_MS = 260;
 export const HIT_MS = 220;
+/** How long a shot of this type takes to reach its target. */
+export const flightFor = (dtype: DamageType): number => (dtype === 'explosive' ? SHELL_MS : PROJECTILE_MS);
 export const TEXT_MS = 650;
 export const DEATH_MS = 550;
 const RECOIL_MS = 140;
@@ -74,7 +76,7 @@ export class BattleFx {
         const from = s.muzzle(event.unit, event.weapon);
         const target = s.hitPoint(event.target, event.appliedTo);
         const dir = s.facing(event.unit);
-        const flight = dtype === 'explosive' ? SHELL_MS : PROJECTILE_MS;
+        const flight = flightFor(dtype);
         // A miss flies on past the target.
         const to = event.hit ? target : { x: target.x + dir * 34, y: target.y - 16 };
         this.add(0, 70, { kind: 'muzzle', at: from, dtype });
