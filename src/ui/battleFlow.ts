@@ -39,6 +39,11 @@ export class BattleFlow {
     this.state = state;
   }
 
+  /** How many of the state's events have been turned into messages so far. */
+  get eventsShown(): number {
+    return this.shown;
+  }
+
   private get player(): UnitState {
     return this.state.units[0];
   }

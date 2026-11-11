@@ -23,5 +23,6 @@ export const STRINGS = {
   victory: 'VICTORY',
   defeat: 'DEFEAT',
   hints: { result: 'Press A for the next battle' },
+  fx: { miss: 'MISS', overheat: 'OVERHEAT' },
   debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
 } as const;

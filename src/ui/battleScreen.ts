@@ -1,10 +1,12 @@
 import { coolCost, boostCost, turnEnergyOf, HEAT_LIMIT, type UnitState } from '../core/battle';
+import { weaponIn } from '../core/build';
 import { FRAME_SLOTS, type Build, type Catalog, type FrameSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { BattleFlow } from './battleFlow';
 import { LOGICAL_H, LOGICAL_W } from './display';
-import { layoutMech, type SpriteSize, type SpriteSlot } from './mechLayout';
+import { BattleFx, type Scene } from './battleFx';
+import { BACK_MOUNT, FAR_FIST, NEAR_FIST, layoutMech, type SpriteSize, type SpriteSlot } from './mechLayout';
 import type { Sprite, SpriteStore } from './sprites';
 import { COLORS, LINE, drawMenu, drawMeter, drawPanel, drawText } from './widgets';
 
@@ -24,6 +26,10 @@ const FALLBACK: Record<SpriteSlot, SpriteSize> = {
   head: { w: 24, h: 24, ox: 66, oy: 6 }, armNear: { w: 54, h: 30, ox: 88, oy: 34 },
   rightHand: { w: 70, h: 24 }, leftHand: { w: 40, h: 20 }, shoulder: { w: 44, h: 26 },
 };
+/** Where a hit on each part of the player's mech lands, inside the pose box. */
+const PLAYER_HIT: Record<FrameSlot, { x: number; y: number }> = {
+  head: { x: 76, y: 20 }, core: { x: 78, y: 50 }, arms: { x: 108, y: 44 }, legs: { x: 76, y: 108 },
+};
 /** Which sprite a slot shows for a build: the arms part supplies two layers. */
 const SPRITE_ID: Record<SpriteSlot, (build: Build) => string | undefined> = {
   armFar: (b) => b.arms && `${b.arms}.far`,
@@ -39,6 +45,9 @@ const SPRITE_ID: Record<SpriteSlot, (build: Build) => string | undefined> = {
 export class BattleScreen {
   private timer = 0;
   private clock = 0;
+  private fx = new BattleFx(this.scene());
+  /** Events already handed to the effects. */
+  private fxDone = 0;
 
   constructor(
     private flow: BattleFlow, private sprites: SpriteStore, private catalog: Catalog,
@@ -47,12 +56,23 @@ export class BattleScreen {
 
   update(dtMs: number): void {
     this.clock += dtMs;
+    this.spawnEffects();
+    this.fx.update(dtMs);
     if (this.flow.phase !== 'animating') { this.timer = 0; return; }
     this.timer += dtMs;
     if (this.opts.fast || this.timer >= MESSAGE_MS) {
       this.timer = 0;
       this.flow.advance();
     }
+  }
+
+  /** Starts an effect for every event the flow has shown since the last frame, so none is ever skipped. */
+  private spawnEffects(): void {
+    const events = this.flow.state.events;
+    const shown = this.flow.eventsShown;
+    // In fast mode messages fly by within a frame; effects would only pile up.
+    if (!this.opts.fast) for (let i = this.fxDone; i < shown; i++) this.fx.onEvent(events[i]);
+    this.fxDone = shown;
   }
 
   onInput(action: InputAction): void {
@@ -76,45 +96,112 @@ export class BattleScreen {
 
     this.drawPlayer(ctx);
     this.drawEnemies(ctx);
+    this.fx.draw(ctx);
     this.drawMessage(ctx);
     this.drawBottom(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
   }
 
-  /** True while the current message is about this unit being hit: the sprite blinks. */
-  private blinking(unitId: string): boolean {
-    const e = this.flow.lastEvent;
-    return this.flow.phase === 'animating' && !!e && e.type === 'shot' && e.hit && e.target === unitId
-      && Math.floor(this.clock / 80) % 2 === 0;
+  /** A destroyed unit stays on screen until its destruction has played out. */
+  private hidden(unit: UnitState): boolean {
+    if (!unit.destroyed) return false;
+    return this.opts.fast || this.fx.isGone(unit.id) || (this.flow.phase === 'result' && !this.fx.busy);
+  }
+
+  /** Applies an effect transform around a draw call. */
+  private withTransform(ctx: CanvasRenderingContext2D, unit: UnitState, idleDy: number, draw: (dx: number, dy: number) => void): void {
+    const t = this.fx.transform(unit.id);
+    ctx.globalAlpha = t.alpha;
+    ctx.filter = t.flash ? 'brightness(2.6)' : 'none';
+    draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy));
+    ctx.filter = 'none';
+    ctx.globalAlpha = 1;
+  }
+
+  private playerSprites(): Partial<Record<SpriteSlot, Sprite>> {
+    const build = this.flow.state.units[0].build;
+    const parts: Partial<Record<SpriteSlot, Sprite>> = {};
+    for (const slot of Object.keys(SPRITE_ID) as SpriteSlot[]) {
+      const id = SPRITE_ID[slot](build);
+      if (id) parts[slot] = this.sprites.get(id, { ...FALLBACK[slot], label: id });
+    }
+    return parts;
   }
 
   private drawPlayer(ctx: CanvasRenderingContext2D): void {
     const player = this.flow.state.units[0];
-    if (player.destroyed || this.blinking(player.id)) return;
-    const parts: Partial<Record<SpriteSlot, Sprite>> = {};
-    for (const slot of Object.keys(SPRITE_ID) as SpriteSlot[]) {
-      const id = SPRITE_ID[slot](player.build);
-      if (id) parts[slot] = this.sprites.get(id, { ...FALLBACK[slot], label: id });
-    }
-    for (const cmd of layoutMech(parts)) {
-      const sprite = parts[cmd.slot]!;
-      ctx.drawImage(sprite.image, MECH_ORIGIN.x + cmd.x, MECH_ORIGIN.y + cmd.y, sprite.w, sprite.h);
-    }
+    if (this.hidden(player)) return;
+    const parts = this.playerSprites();
+    // A slow one-pixel sway keeps the mech from looking frozen.
+    const idle = Math.round(Math.sin(this.clock / 520));
+    this.withTransform(ctx, player, idle, (dx, dy) => {
+      for (const cmd of layoutMech(parts)) {
+        const sprite = parts[cmd.slot]!;
+        // The legs stay planted; only the upper body sways.
+        const sway = cmd.slot === 'legs' ? 0 : dy;
+        ctx.drawImage(sprite.image, MECH_ORIGIN.x + cmd.x + dx, MECH_ORIGIN.y + cmd.y + sway, sprite.w, sprite.h);
+      }
+    });
+  }
+
+  private enemyRect(index: number): { x: number; y: number; w: number; h: number; sprite: Sprite } {
+    const enemy = this.flow.state.units[index + 1];
+    const spot = ENEMY_SPOTS[index];
+    const sprite = this.sprites.get(enemy.sprite ?? enemy.id, { w: 48, h: 48, label: enemy.name });
+    return {
+      x: spot.x + Math.round((ENEMY_BOX - sprite.w) / 2), y: spot.y + (ENEMY_BOX - sprite.h), w: sprite.w, h: sprite.h, sprite,
+    };
   }
 
   private drawEnemies(ctx: CanvasRenderingContext2D): void {
     const enemies = this.flow.state.units.slice(1);
     enemies.forEach((enemy, i) => {
-      if (enemy.destroyed) return;
+      if (this.hidden(enemy)) return;
       const spot = ENEMY_SPOTS[i];
-      const sprite = this.sprites.get(enemy.sprite ?? enemy.id, { w: 48, h: 48, label: enemy.name });
-      const x = spot.x + Math.round((ENEMY_BOX - sprite.w) / 2);
-      const y = spot.y + (ENEMY_BOX - sprite.h);
-      if (!this.blinking(enemy.id)) ctx.drawImage(sprite.image, x, y, sprite.w, sprite.h);
+      const r = this.enemyRect(i);
+      // Flying units bob; anything bolted to the ground stays put.
+      const hover = enemy.parts.legs ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
+      this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx, r.y + dy, r.w, r.h));
+      if (enemy.destroyed) return;
       const core = enemy.parts.core!;
       drawMeter(ctx, spot.x + 12, spot.y + ENEMY_BOX + 2, ENEMY_BOX - 24, 2, core.ap, core.maxAp, COLORS.armor);
       if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, spot.x, spot.y);
     });
+  }
+
+  /** Screen positions the effects need: where shots leave from and where they land. */
+  private scene(): Scene {
+    const isPlayer = (id: string) => id === 'player';
+    const enemyIndex = (id: string) => this.flow.state.units.findIndex((u) => u.id === id) - 1;
+    const at = (p: { x: number; y: number }) => ({ x: MECH_ORIGIN.x + p.x, y: MECH_ORIGIN.y + p.y });
+    return {
+      muzzle: (id, weapon) => {
+        if (!isPlayer(id)) {
+          const r = this.enemyRect(enemyIndex(id));
+          return { x: r.x + 2, y: r.y + Math.round(r.h * 0.62) };
+        }
+        const w = this.playerSprites()[weapon]?.w ?? 40;
+        if (weapon === 'rightHand') return at({ x: NEAR_FIST.x + 0.8 * w, y: NEAR_FIST.y - 2 });
+        if (weapon === 'leftHand') return at({ x: FAR_FIST.x + 0.8 * w, y: FAR_FIST.y - 2 });
+        return at({ x: BACK_MOUNT.x + 0.4 * w, y: BACK_MOUNT.y });
+      },
+      hitPoint: (id, part) => {
+        if (isPlayer(id)) return at(PLAYER_HIT[part]);
+        const r = this.enemyRect(enemyIndex(id));
+        const offset = { core: 0.5, legs: 0.25, arms: 0.5, head: 0.2 }[part];
+        return { x: r.x + r.w / 2, y: r.y + r.h * offset };
+      },
+      centre: (id) => {
+        if (isPlayer(id)) return at({ x: 78, y: 70 });
+        const r = this.enemyRect(enemyIndex(id));
+        return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+      },
+      facing: (id) => (isPlayer(id) ? 1 : -1),
+      damageType: (id, weapon) => {
+        const unit = this.flow.state.units.find((u) => u.id === id)!;
+        return weaponIn(unit.build, weapon, this.catalog)?.damageType ?? 'kinetic';
+      },
+    };
   }
 
   private drawBrackets(ctx: CanvasRenderingContext2D, x: number, y: number): void {
