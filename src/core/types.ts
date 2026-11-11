@@ -4,6 +4,9 @@ export type WeaponSlot = 'rightHand' | 'leftHand' | 'shoulder';
 /** Fraction of damage ignored per damage type, 0..0.6. */
 export type Resist = Record<DamageType, number>;
 
+/** Who sells a part. Enemy-only parts have no vendor and cannot be bought. */
+export type Vendor = 'undertow' | 'lumen' | 'hadron' | 'freelance';
+
 export interface FramePart {
   id: string;
   name: string;
@@ -21,6 +24,7 @@ export interface FramePart {
   capacity?: number;
   /** Legs only. */
   mobility?: number;
+  vendor?: Vendor;
 }
 
 export interface Generator {
@@ -32,6 +36,7 @@ export interface Generator {
   cooling: number;
   weight: number;
   price: number;
+  vendor?: Vendor;
 }
 
 export interface Weapon {
@@ -51,6 +56,7 @@ export interface Weapon {
   costPerShot: number;
   weight: number;
   price: number;
+  vendor?: Vendor;
 }
 
 export type Part = FramePart | Generator | Weapon;

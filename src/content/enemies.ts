@@ -16,3 +16,6 @@ export const ENCOUNTERS: Record<string, string[]> = {
   intro: ['recon-drone', 'recon-drone'],
   outpost: ['gun-turret', 'recon-drone'],
 };
+
+/** Credits paid for winning each encounter. */
+export const ENCOUNTER_REWARD: Record<string, number> = { intro: 600, outpost: 1100 };
