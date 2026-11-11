@@ -1,17 +1,25 @@
-import { createBattle } from '../core/battle';
 import { validatePlayerBuild } from '../core/build';
+import {
+  availableMissions, completeMission, markRead, stockFor, unreadMessages, type Faction, type Mission,
+} from '../core/campaign';
 import { applySettlement, settle, type Settlement } from '../core/economy';
 import { newGame, type GameState } from '../core/game';
-import type { BuildError, Catalog } from '../core/types';
-import { ENCOUNTERS, ENCOUNTER_REWARD, ENCOUNTER_UNLOCK, ENEMIES } from '../content/enemies';
-import { STARTER_BUILD } from '../content/parts';
+import { startMissionBattle } from '../core/mission';
+import type { BuildError, Catalog, Part } from '../core/types';
+import { ENEMIES } from '../content/enemies';
+import { MESSAGES, MISSIONS } from '../content/missions';
+import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
+import { STRINGS } from '../content/strings';
 import type { Sfx } from '../platform/audio';
 import type { InputAction } from '../platform/input';
 import type { SaveFile } from '../platform/storage';
 import { BattleFlow, BattleScreen } from './battleScreen';
+import { BriefingScreen } from './briefingScreen';
+import { EndingScreen } from './endingScreen';
 import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
 import type { ListItem } from './menuList';
+import { MessagesScreen } from './messagesScreen';
 import { SettlementScreen } from './settlementScreen';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
@@ -31,7 +39,7 @@ export interface Screen {
   view(): ScreenView;
 }
 
-export type ScreenName = 'title' | 'hub' | 'garage' | 'shop' | 'battle' | 'settlement';
+export type ScreenName = 'title' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'ending';
 
 export interface AppDeps {
   catalog: Catalog;
@@ -43,16 +51,34 @@ export interface AppDeps {
   seed: number;
 }
 
-/** A battle in progress, wrapped so that its result leads to the settlement. */
-class BattleHost implements Screen {
-  readonly flow: BattleFlow;
-  private screen: BattleScreen;
+/** A contract in progress: its battles in order, each starting where the last one left the mech. */
+class MissionHost implements Screen {
+  private index = 0;
+  private flow!: BattleFlow;
+  private screen!: BattleScreen;
 
-  constructor(private app: App, readonly encounter: string, seed: number) {
-    const { catalog, sprites, sfx, fast } = app.deps;
-    const enemies = ENCOUNTERS[encounter].map((id) => ENEMIES[id]);
-    this.flow = new BattleFlow(createBattle(app.game!.build, enemies, catalog, seed), catalog);
-    this.screen = new BattleScreen(this.flow, sprites, catalog, { fast, sfx });
+  constructor(private app: App, private mission: Mission, private seed: number) {
+    this.begin();
+  }
+
+  private begin(): void {
+    const { catalog, sprites, sfx, fast } = this.app.deps;
+    const total = this.mission.battles.length;
+    const state = startMissionBattle(
+      this.app.game!.build, this.mission, this.index, ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
+    );
+    this.flow = new BattleFlow(state, catalog);
+    this.screen = new BattleScreen(this.flow, sprites, catalog, {
+      fast, sfx,
+      background: this.mission.battles[this.index].background,
+      label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
+      resultHint: this.hasNext() ? STRINGS.mission.next : STRINGS.hints.result,
+    });
+  }
+
+  /** True when winning the current battle leads to another one. */
+  private hasNext(): boolean {
+    return this.index + 1 < this.mission.battles.length;
   }
 
   update(dtMs: number): void { this.screen.update(dtMs); }
@@ -60,8 +86,12 @@ class BattleHost implements Screen {
 
   onInput(action: InputAction): void {
     if (this.flow.phase !== 'result') { this.screen.onInput(action); return; }
-    if (action === 'confirm') {
-      this.app.showSettlement(settle(this.flow.state, ENCOUNTER_REWARD[this.encounter] ?? 0, this.app.deps.catalog));
+    if (action !== 'confirm') return;
+    if (this.flow.state.outcome === 'victory' && this.hasNext()) {
+      this.index += 1;
+      this.begin();
+    } else {
+      this.app.showSettlement(settle(this.flow.state, this.mission.reward, this.app.deps.catalog), this.mission);
     }
   }
 
@@ -72,7 +102,8 @@ class BattleHost implements Screen {
       message: flow.message,
       battle: {
         phase: flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
-        encounter: this.encounter, targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
+        mission: this.mission.id, index: this.index, of: this.mission.battles.length,
+        targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
       },
     };
   }
@@ -101,6 +132,11 @@ export class App {
     return this.deps.save.load();
   }
 
+  /** True when something is saved that this version cannot read. */
+  saveIsUnusable(): boolean {
+    return this.deps.save.hasUnusableData();
+  }
+
   startNewGame(): void {
     this.commit(newGame(this.deps.catalog, STARTER_BUILD));
     this.go('hub');
@@ -122,19 +158,41 @@ export class App {
     return this.game ? validatePlayerBuild(this.game.build, this.deps.catalog) : [];
   }
 
-  /** The contracts on offer now. The first is always available, so a pilot can never run out of work. */
-  availableEncounters(): { id: string; reward: number }[] {
-    const won = this.game?.battlesWon ?? 0;
-    return Object.keys(ENCOUNTERS)
-      .filter((id) => won >= (ENCOUNTER_UNLOCK[id] ?? 0))
-      .map((id) => ({ id, reward: ENCOUNTER_REWARD[id] ?? 0 }));
+  /** The contracts on offer now. The patrol is always among them. */
+  missions(): Mission[] {
+    return this.game ? availableMissions(this.game, MISSIONS) : [];
+  }
+
+  /** What the shop sells at this point in the campaign. */
+  stock(): Part[] {
+    return this.game ? stockFor(this.game, SHOP_PARTS, SHOP_UNLOCKS, MISSIONS) : [];
+  }
+
+  unreadCount(): number {
+    return this.game ? unreadMessages(this.game, MESSAGES, MISSIONS).length : 0;
+  }
+
+  readMessage(id: string): void {
+    if (this.game && !this.game.read.includes(id)) this.commit(markRead(this.game, id));
+  }
+
+  private offered(missionId: string): Mission | undefined {
+    return this.missions().find((m) => m.id === missionId);
+  }
+
+  openBriefing(missionId: string): void {
+    const mission = this.offered(missionId);
+    if (!mission) return;
+    this.current = new BriefingScreen(this, mission);
+    this.name = 'briefing';
   }
 
   /** Starts a contract, unless the build may not deploy or the contract is not on offer. */
-  startBattle(encounter: string): void {
-    if (this.buildErrors().length > 0 || !this.availableEncounters().some((e) => e.id === encounter)) return;
-    this.seed = (this.seed + 1) % 2147483647;
-    this.current = new BattleHost(this, encounter, this.seed);
+  startMission(missionId: string): void {
+    const mission = this.offered(missionId);
+    if (!mission || this.buildErrors().length > 0) return;
+    this.seed = (this.seed + 101) % 2147483647;
+    this.current = new MissionHost(this, mission, this.seed);
     this.name = 'battle';
   }
 
@@ -144,19 +202,27 @@ export class App {
       case 'hub': this.current = new HubScreen(this); break;
       case 'garage': this.current = new GarageScreen(this); break;
       case 'shop': this.current = new ShopScreen(this); break;
-      default: return; // battles start through startBattle, and the settlement follows a battle
+      case 'messages': this.current = new MessagesScreen(this); break;
+      default: return; // briefings, battles, settlements and endings open through their own methods
     }
     this.name = name;
   }
 
   /**
-   * Books a settlement and shows it. It is saved before the screen appears, so closing the game
-   * there can neither lose a reward nor dodge a bill.
+   * Books a contract's outcome and shows it. It is saved before the screen appears, so closing the
+   * game there can neither lose a reward nor dodge a bill.
    */
-  showSettlement(settlement: Settlement): void {
-    this.commit(applySettlement(this.game!, settlement));
-    this.current = new SettlementScreen(this, settlement);
+  showSettlement(settlement: Settlement, mission: Mission): void {
+    let next = applySettlement(this.game!, settlement);
+    if (settlement.won) next = completeMission(next, mission.id, MISSIONS);
+    this.commit(next);
+    this.current = new SettlementScreen(this, settlement, mission);
     this.name = 'settlement';
+  }
+
+  showEnding(faction: Faction): void {
+    this.current = new EndingScreen(this, faction);
+    this.name = 'ending';
   }
 
   update(dtMs: number): void { this.current.update(dtMs); }
@@ -169,6 +235,7 @@ export class App {
       screen: this.name,
       credits: game?.credits ?? null,
       battlesWon: game?.battlesWon ?? null,
+      completed: game?.completed ?? null,
       build: game?.build ?? null,
       inventory: game?.inventory ?? null,
       saveFailed: this.saveFailed,

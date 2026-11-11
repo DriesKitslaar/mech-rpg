@@ -204,8 +204,63 @@
     "w": 64,
     "h": 36
   },
+  "enemy-tank": {
+    "file": "sprites/enemy-tank.png",
+    "w": 64,
+    "h": 41
+  },
+  "enemy-light-mech": {
+    "file": "sprites/enemy-light-mech.png",
+    "w": 68,
+    "h": 84
+  },
+  "enemy-heavy-mech": {
+    "file": "sprites/enemy-heavy-mech.png",
+    "w": 74,
+    "h": 84
+  },
+  "enemy-rival": {
+    "file": "sprites/enemy-rival.png",
+    "w": 69,
+    "h": 84
+  },
+  "portrait-hadron": {
+    "file": "sprites/portrait-hadron.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-lumen": {
+    "file": "sprites/portrait-lumen.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-undertow": {
+    "file": "sprites/portrait-undertow.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-rival": {
+    "file": "sprites/portrait-rival.png",
+    "w": 56,
+    "h": 56
+  },
   "bg-neon-district": {
     "file": "sprites/bg-neon-district.png",
+    "w": 310,
+    "h": 270
+  },
+  "bg-mine": {
+    "file": "sprites/bg-mine.png",
+    "w": 310,
+    "h": 270
+  },
+  "bg-plaza": {
+    "file": "sprites/bg-plaza.png",
+    "w": 310,
+    "h": 270
+  },
+  "bg-undercity": {
+    "file": "sprites/bg-undercity.png",
     "w": 310,
     "h": 270
   },

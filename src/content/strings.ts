@@ -26,16 +26,28 @@ export const STRINGS = {
   titleScreen: {
     tagline: 'Every contract pays. Not every pilot collects.',
     continue: 'Continue', newGame: 'New Game', eraseQuestion: 'Start over? This erases your save.', no: 'No', yes: 'Yes',
+    unusable: 'Your saved game could not be read.',
   },
   hub: {
-    heading: 'HEADQUARTERS', sortie: 'Sortie', garage: 'Garage', shop: 'Shop',
+    heading: 'HEADQUARTERS', contractsItem: 'Contracts', garage: 'Garage', shop: 'Shop', messages: 'Messages',
     credits: 'CREDITS', battlesWon: 'CONTRACTS WON', contracts: 'CONTRACTS', reward: 'pays',
+    unread: (n: number) => `${n} new`, campaignDone: 'The war is over. Patrols still pay.',
   },
   buildErrors: {
     overweight: 'Overweight', insufficientEnergy: 'Not enough energy', missingSlot: 'Missing part',
     wrongMount: 'Wrong mount', unknownPart: 'Unknown part', noWeapon: 'No weapon',
   },
-  encounters: { intro: 'Drone Patrol', outpost: 'Outpost Assault' } as Record<string, string>,
+  briefing: {
+    accept: 'Accept', back: 'Back', reward: 'PAYS', engagements: (n: number) => (n === 1 ? '1 ENGAGEMENT' : `${n} ENGAGEMENTS`),
+    hostiles: 'EXPECTED', exclusive: 'EXCLUSIVE: the other two clients will withdraw their offers.',
+    finale: 'FINAL CONTRACT', repeatable: 'STANDING CONTRACT',
+  },
+  mission: {
+    engagement: (i: number, n: number) => `ENGAGEMENT ${i}/${n}`,
+    next: 'Press A for the next engagement',
+  },
+  messagesScreen: { heading: 'MESSAGES', isNew: 'NEW', from: 'FROM', empty: 'No messages', back: 'B: back' },
+  ending: { continue: 'Press A to return to headquarters' },
   settlement: {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',

@@ -4,7 +4,8 @@ export type Snap = {
   screen: string; credits: number | null; battlesWon: number | null; message?: string;
   build: Record<string, string> | null; inventory: Record<string, number> | null;
   menu: { items: { id: string; label: string; enabled: boolean; note?: string }[]; cursor: number };
-  battle?: { phase: string; outcome: string; round: number; message: string; encounter: string };
+  battle?: { phase: string; outcome: string; round: number; message: string; mission: string; index: number; of: number };
+  completed: string[] | null;
   settlement?: { net: number; won: boolean };
 };
 
@@ -47,9 +48,26 @@ export async function startBattle(page: Page, url?: string): Promise<void> {
   await open(page, url);
   await choose(page, 'new');
   await waitForScreen(page, 'hub');
-  await choose(page, 'sortie');
-  await choose(page, 'intro');
+  await acceptContract(page, 'intro-1');
+}
+
+/** From the hub: open the contract list, the briefing, and accept. Waits until the player may act. */
+export async function acceptContract(page: Page, missionId: string): Promise<void> {
+  await choose(page, 'contracts');
+  await choose(page, missionId);
+  await waitForScreen(page, 'briefing');
+  await choose(page, 'accept');
   await waitForPhase(page, 'action');
+}
+
+/** Plays every battle of the current contract until the settlement appears. */
+export async function finishMission(page: Page): Promise<void> {
+  for (let i = 0; i < 4; i++) {
+    if ((await snap(page)).screen !== 'battle') break;
+    await finishBattle(page);
+    await press(page, 'Enter');
+  }
+  await waitForScreen(page, 'settlement');
 }
 
 /** Plays the current battle to its result by always firing the first weapon at the first target. */

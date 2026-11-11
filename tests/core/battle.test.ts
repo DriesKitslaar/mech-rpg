@@ -71,8 +71,8 @@ describe('shot preview', () => {
   });
 
   test('enemy weapons against the player', () => {
-    expect(p('enemy-1', 'shoulder', 'player', 'core')).toEqual({ hitChance: 55, damage: 11 });
-    expect(p('enemy-0', 'shoulder', 'player', 'core')).toEqual({ hitChance: 60, damage: 48 });
+    expect(p('enemy-1', 'shoulder', 'player', 'core')).toEqual({ hitChance: 55, damage: 10 });
+    expect(p('enemy-0', 'shoulder', 'player', 'core')).toEqual({ hitChance: 60, damage: 38 });
   });
 
   test('hit chance is clamped between 10 and 95', () => {

@@ -1,9 +1,9 @@
 import { createBattle, previewShot, type BattleState } from '../../src/core/battle';
-import { ENCOUNTERS, ENEMIES } from '../../src/content/enemies';
+import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { BattleFlow } from '../../src/ui/battleFlow';
 
-const intro = (seed = 1): BattleState => createBattle(DEMO_BUILD, ENCOUNTERS.intro.map((id) => ENEMIES[id]), CATALOG, seed);
+const intro = (seed = 1): BattleState => createBattle(DEMO_BUILD, [ENEMIES['recon-drone'], ENEMIES['recon-drone']], CATALOG, seed);
 
 /** Plays out queued messages and enemy turns until the player may act (or the battle is over). */
 function settle(flow: BattleFlow): BattleFlow {

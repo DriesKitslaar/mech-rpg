@@ -18,10 +18,14 @@ export { BattleFlow } from './battleFlow';
 export type { BattlePhase, MenuView } from './battleFlow';
 
 const MESSAGE_MS = 600;
-const BACKGROUND = 'bg-neon-district';
+const DEFAULT_BACKGROUND = 'bg-neon-district';
 const MECH_ORIGIN = { x: 0, y: 16 };
-const ENEMY_BOX = 64;
-const ENEMY_SPOTS = [{ x: 204, y: 30 }, { x: 244, y: 64 }, { x: 204, y: 100 }];
+/** Where each enemy stands (the bottom centre of its sprite), by how many there are. */
+const ENEMY_ANCHORS: Record<number, { x: number; y: number }[]> = {
+  1: [{ x: 250, y: 140 }],
+  2: [{ x: 236, y: 98 }, { x: 268, y: 174 }],
+  3: [{ x: 252, y: 92 }, { x: 276, y: 174 }, { x: 212, y: 174 }],
+};
 const PANEL_Y = 178;
 const MENU_W = 154;
 /** Where a hit on each part of the player's mech lands, inside the pose box. */
@@ -39,7 +43,7 @@ export class BattleScreen {
 
   constructor(
     private flow: BattleFlow, private sprites: SpriteStore, private catalog: Catalog,
-    private opts: { fast: boolean; sfx?: Sfx },
+    private opts: { fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string },
   ) {
     this.shownAp = new ApDisplay(flow.state.units);
   }
@@ -89,7 +93,8 @@ export class BattleScreen {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const bg = this.sprites.get(BACKGROUND, { w: LOGICAL_W, h: LOGICAL_H, label: BACKGROUND });
+    const background = this.opts.background ?? DEFAULT_BACKGROUND;
+    const bg = this.sprites.get(background, { w: LOGICAL_W, h: LOGICAL_H, label: background });
     ctx.fillStyle = '#101418';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
@@ -132,27 +137,25 @@ export class BattleScreen {
   }
 
   private enemyRect(index: number): { x: number; y: number; w: number; h: number; sprite: Sprite } {
+    const enemies = this.flow.state.units.length - 1;
     const enemy = this.flow.state.units[index + 1];
-    const spot = ENEMY_SPOTS[index];
+    const anchor = (ENEMY_ANCHORS[enemies] ?? ENEMY_ANCHORS[3])[index] ?? ENEMY_ANCHORS[3][2];
     const sprite = this.sprites.get(enemy.sprite ?? enemy.id, { w: 48, h: 48, label: enemy.name });
-    return {
-      x: spot.x + Math.round((ENEMY_BOX - sprite.w) / 2), y: spot.y + (ENEMY_BOX - sprite.h), w: sprite.w, h: sprite.h, sprite,
-    };
+    return { x: Math.round(anchor.x - sprite.w / 2), y: anchor.y - sprite.h, w: sprite.w, h: sprite.h, sprite };
   }
 
   private drawEnemies(ctx: CanvasRenderingContext2D): void {
     const enemies = this.flow.state.units.slice(1);
     enemies.forEach((enemy, i) => {
       if (this.hidden(enemy)) return;
-      const spot = ENEMY_SPOTS[i];
       const r = this.enemyRect(i);
-      // Flying units bob; anything bolted to the ground stays put.
-      const hover = enemy.parts.legs ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
+      // Flying units bob; anything that stands on the ground stays put.
+      const hover = enemy.sprite === 'enemy-recon-drone' ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
       this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx, r.y + dy, r.w, r.h));
       if (enemy.destroyed) return;
       const core = enemy.parts.core!;
-      drawMeter(ctx, spot.x + 12, spot.y + ENEMY_BOX + 2, ENEMY_BOX - 24, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
-      if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, spot.x, spot.y);
+      drawMeter(ctx, r.x + 8, r.y + r.h + 2, r.w - 16, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
+      if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, r.x - 2, r.y - 2, r.w + 4, r.h + 4);
     });
   }
 
@@ -191,11 +194,10 @@ export class BattleScreen {
     };
   }
 
-  private drawBrackets(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-    const s = ENEMY_BOX;
+  private drawBrackets(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
     const k = 6;
     ctx.fillStyle = COLORS.accent;
-    for (const [cx, cy, dx, dy] of [[x, y, 1, 1], [x + s, y, -1, 1], [x, y + s, 1, -1], [x + s, y + s, -1, -1]]) {
+    for (const [cx, cy, dx, dy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]) {
       ctx.fillRect(dx > 0 ? cx : cx - k, dy > 0 ? cy : cy - 1, k, 1);
       ctx.fillRect(dx > 0 ? cx : cx - 1, dy > 0 ? cy : cy - k, 1, k);
     }
@@ -206,6 +208,7 @@ export class BattleScreen {
     if (this.flow.phase !== 'result') {
       drawText(ctx, this.flow.message, 5, 1, { color: this.flow.overheatWarning ? COLORS.danger : COLORS.text });
     }
+    if (this.opts.label) drawText(ctx, this.opts.label, LOGICAL_W - 5, 1, { align: 'right', color: COLORS.dim });
   }
 
   private drawBottom(ctx: CanvasRenderingContext2D): void {
@@ -288,6 +291,6 @@ export class BattleScreen {
     drawPanel(ctx, x, y, w, h);
     const won = this.flow.state.outcome === 'victory';
     drawText(ctx, this.flow.message, LOGICAL_W / 2, y + 8, { size: 32, align: 'center', color: won ? COLORS.accent : COLORS.danger });
-    drawText(ctx, STRINGS.hints.result, LOGICAL_W / 2, y + 42, { align: 'center', color: COLORS.dim });
+    drawText(ctx, this.opts.resultHint ?? STRINGS.hints.result, LOGICAL_W / 2, y + 42, { align: 'center', color: COLORS.dim });
   }
 }

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { choose, finishBattle, open, press, snap, waitForPhase, waitForScreen } from './helpers';
+import { acceptContract, choose, finishMission, open, press, snap, waitForScreen } from './helpers';
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
@@ -34,16 +34,26 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await press(page, 'Escape');
   await waitForScreen(page, 'hub');
 
-  // Battle and settlement.
-  await choose(page, 'sortie');
+  // Messages: the welcome is waiting.
+  await choose(page, 'messages');
+  await waitForScreen(page, 'messages');
+  await choose(page, 'welcome');
+  await page.screenshot({ path: shot('message') });
+  await press(page, 'Escape');
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+
+  // Contract: list, briefing, battle, settlement.
+  await choose(page, 'contracts');
   await page.screenshot({ path: shot('contracts') });
-  await choose(page, 'intro');
-  await waitForPhase(page, 'action');
+  await choose(page, 'intro-1');
+  await waitForScreen(page, 'briefing');
+  await page.screenshot({ path: shot('briefing') });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  await acceptContract(page, 'intro-1');
   await page.screenshot({ path: shot('battle-action') });
-  const end = await finishBattle(page);
-  expect(end.battle?.phase).toBe('result');
-  await press(page, 'Enter');
-  await waitForScreen(page, 'settlement');
+  await finishMission(page);
   const { net, won } = (await snap(page)).settlement!;
   // Booked the moment it is shown.
   expect((await snap(page)).credits).toBe(600 + net);
@@ -52,6 +62,7 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await waitForScreen(page, 'hub');
   const after = await snap(page);
   expect(after).toMatchObject({ credits: 600 + net, battlesWon: won ? 1 : 0 });
+  expect(after.completed).toEqual(won ? ['intro-1'] : []);
 
   // A reload must find the same game.
   await page.reload();
@@ -63,6 +74,7 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   expect(loaded.credits).toBe(after.credits);
   expect(loaded.battlesWon).toBe(after.battlesWon);
   expect(loaded.build?.leftHand).toBe('wpn-arc-pistol');
+  expect(loaded.completed).toEqual(after.completed);
   expect(loaded.inventory?.['wpn-arc-pistol']).toBe(1);
   expect(errors).toEqual([]);
 });
