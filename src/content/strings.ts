@@ -22,5 +22,6 @@ export const STRINGS = {
   turnSkipped: (unit: string) => `${unit} cooling down - turn lost`,
   victory: 'VICTORY',
   defeat: 'DEFEAT',
-  hints: { result: 'Reload to fight again' },
+  hints: { result: 'Press A for the next battle' },
+  debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
 } as const;

@@ -1,0 +1,52 @@
+name: Android build
+
+on:
+  push:
+    branches: [main, 'feat/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Build the APK
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ironwage.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ironwage-apk
+          path: ironwage.apk
+      - name: Publish as the latest build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-build --yes --cleanup-tag || true
+          gh release create latest-build ironwage.apk \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Latest build (#$GITHUB_RUN_NUMBER)" \
+            --notes "Automatic build of $GITHUB_REF_NAME at $GITHUB_SHA. Download ironwage.apk and install it."

@@ -62,3 +62,28 @@ test('an unknown encounter falls back to the intro', async ({ page }) => {
   await ready(page, '/?encounter=does-not-exist&fast=1');
   expect((await snapshot(page)).outcome).toBe('ongoing');
 });
+
+test('confirming on the result screen starts the next battle', async ({ page }) => {
+  await ready(page, '/?encounter=intro&seed=7&fast=1');
+  const nextFrame = () => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  let state = await snapshot(page);
+  for (let i = 0; i < 3000 && state.phase !== 'result'; i++) {
+    const selected = state.menu.items[state.menu.cursor]?.id;
+    if (state.phase === 'weapon' || state.phase === 'target') await page.keyboard.press('Enter');
+    else if (state.phase === 'action') {
+      const wanted = state.menu.items[0].enabled ? 'fire' : 'endTurn';
+      await page.keyboard.press(selected === wanted ? 'Enter' : 'ArrowDown');
+    }
+    await nextFrame();
+    state = await snapshot(page);
+  }
+  expect(state.phase).toBe('result');
+  expect(await page.evaluate(() => (window as any).__game.battlesStarted())).toBe(1);
+
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => (window as any).__game.battlesStarted() === 2);
+  await page.waitForFunction(() => (window as any).__game.battle().phase === 'action');
+  const fresh = await snapshot(page);
+  expect(fresh.outcome).toBe('ongoing');
+  expect(fresh.round).toBe(1);
+});
