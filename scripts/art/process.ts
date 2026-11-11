@@ -57,9 +57,12 @@ async function processLayer(job: ArtJob, palette: RGB[]): Promise<Entry> {
 
 async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
   const box = BOX[job.kind as keyof typeof BOX];
-  const src = `${RAW}/${job.id}.png`;
+  const src = `${RAW}/${job.source ?? job.id}.png`;
   let out: RawImage;
-  if (job.kind === 'background') {
+  if (job.kind === 'portrait') {
+    // Portraits keep their own colours and lighting.
+    out = await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' }));
+  } else if (job.kind === 'background') {
     // Backgrounds are darkened instead of snapped to the mech palette, so units stand out against them.
     out = await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' })
       .modulate({ brightness: 0.55, saturation: 0.85 }));
@@ -81,7 +84,7 @@ async function main(): Promise<void> {
   let failed = 0;
   for (const job of JOBS) {
     if (job.kind === 'family') continue; // families are only the source the layers are cut from
-    if (!existsSync(`${RAW}/${job.id}.png`)) { console.log(`skip ${job.id} (no raw image)`); continue; }
+    if (!existsSync(`${RAW}/${job.source ?? job.id}.png`)) { console.log(`skip ${job.id} (no raw image)`); continue; }
     try {
       const entry = await (job.kind === 'layer' ? processLayer(job, palette) : processFree(job, palette));
       manifest[job.id] = entry;

@@ -1,5 +1,5 @@
 import {
-  activeUnit, applyAction, checkAction, createBattle, evasion, previewShot,
+  activeUnit, applyAction, carryFrom, checkAction, createBattle, evasion, previewShot,
   type Action, type BattleState, type UnitState,
 } from '../../src/core/battle';
 import type { Build, Catalog, Weapon } from '../../src/core/types';
@@ -349,5 +349,41 @@ describe('state handling', () => {
 
   test('a different seed gives different events', () => {
     expect(script(3).events).not.toEqual(script(4).events);
+  });
+});
+
+describe('carrying a mech from one battle into the next', () => {
+  function worn(): BattleState {
+    return edit(toPlayer(demo(['recon-drone'])), (d) => {
+      const p = d.units[0];
+      p.parts.core!.ap = 140; p.parts.arms!.ap = 0; p.heat = 40; p.ammo.rightHand = 22; p.ammo.shoulder = 0; p.repairsLeft = 1;
+    });
+  }
+
+  test('damage, heat, ammunition and repairs carry over', () => {
+    const next = createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 2, carryFrom(worn()));
+    const p = player(next);
+    expect(p.parts.core).toEqual({ ap: 140, maxAp: 220 });
+    expect(p.parts.arms).toEqual({ ap: 0, maxAp: 110 });
+    expect(p.parts.legs).toEqual({ ap: 150, maxAp: 150 });
+    expect(p).toMatchObject({ heat: 40, repairsLeft: 1 });
+    expect(p.ammo).toEqual({ rightHand: 22, leftHand: null, shoulder: 0 });
+  });
+
+  test('a part destroyed earlier is still disabled', () => {
+    const next = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 2, carryFrom(worn())));
+    expect(checkAction(next, fire('rightHand', 'enemy-0'), CATALOG)).toBe('weaponDisabled');
+    expect(checkAction(next, fire('shoulder', 'enemy-0'), CATALOG)).toBe('noAmmo');
+  });
+
+  test('enemies always start fresh, and a battle without a carry starts fresh too', () => {
+    const next = createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, carryFrom(worn()));
+    expect(unit(next, 'enemy-0').parts.core!.ap).toBe(50);
+    expect(player(createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2))).toMatchObject({ heat: 0, repairsLeft: 2 });
+  });
+
+  test('a destroyed mech cannot be carried into another battle', () => {
+    const dead = edit(worn(), (d) => { d.units[0].parts.core!.ap = 0; d.units[0].destroyed = true; });
+    expect(() => createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, carryFrom(dead))).toThrow('a destroyed mech cannot enter a battle');
   });
 });

@@ -1,0 +1,9 @@
+{
+  "id": "bg-mine",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art background, no anti-aliasing: a vast terraced strip mine inside a megacity at night, giant conveyor gantries and excavator arms, harsh yellow floodlights, hazard-striped barriers and a few amber neon signs with abstract shapes instead of readable text, dusty haze, flat packed-earth ground filling the lower third. No characters, no robots, no vehicles in the foreground."
+}

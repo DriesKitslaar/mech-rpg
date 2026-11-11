@@ -5,7 +5,7 @@
  * pose (kind 'family'), then cut into layers (kind 'layer') that keep their place in that pose.
  * Layers of different families therefore fit on each other without any scaling or shifting.
  */
-export type JobKind = 'family' | 'layer' | 'handWeapon' | 'shoulderWeapon' | 'enemy' | 'background';
+export type JobKind = 'family' | 'layer' | 'handWeapon' | 'shoulderWeapon' | 'enemy' | 'enemyMech' | 'portrait' | 'background';
 export type Layer = 'legs' | 'torso' | 'head' | 'armNear' | 'armFar';
 
 export interface ArtJob {
@@ -15,6 +15,8 @@ export interface ArtJob {
   prompt: string;
   /** Images sent along as references; with none the image is generated from text alone. */
   references?: string[];
+  /** Process this raw image instead of generating one: enemy mechs reuse the family drawings. */
+  source?: string;
   /** Mirror horizontally after processing (enemies face the player). */
   flip?: boolean;
   quality?: 'low' | 'medium' | 'high';
@@ -28,6 +30,8 @@ export const BOX: Record<Exclude<JobKind, 'family' | 'layer'>, { w: number; h: n
   handWeapon: { w: 58, h: 22 },
   shoulderWeapon: { w: 44, h: 26 },
   enemy: { w: 64, h: 64 },
+  enemyMech: { w: 84, h: 84 },
+  portrait: { w: 56, h: 56 },
   background: { w: 310, h: 270 },
 };
 
@@ -112,6 +116,13 @@ function item(id: string, kind: 'handWeapon' | 'shoulderWeapon' | 'enemy', style
 
 const WEAPON_STYLE = 'gunmetal body with the accent colours and glowing lights of the reference';
 
+function portrait(id: string, who: string): ArtJob {
+  return {
+    id, kind: 'portrait',
+    prompt: `16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, ${who}. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background.`,
+  };
+}
+
 export const JOBS: ArtJob[] = [
   // Ronin defines the pose; every other family is that pose redrawn in its own design.
   poseFamily('ronin',
@@ -162,8 +173,27 @@ export const JOBS: ArtJob[] = [
   item('enemy-gun-turret', 'enemy', 'ronin',
     'a fixed gun turret in the same dark charcoal and deep red armour with magenta lights: a squat armoured base with one long heavy cannon barrel pointing right. The whole turret, nothing else, no mecha.', true),
 
+  item('enemy-tank', 'enemy', 'salvage',
+    'a squat salvaged battle tank in the same patched teal and rust plating: a low hull on two wide treads with a short stubby turret and one amber lamp. The whole tank, nothing else, no mecha.', true),
+
+  // Enemy mechs are the family drawings themselves, mirrored: no new image needed.
+  { id: 'enemy-light-mech', kind: 'enemyMech', source: 'family-halo', flip: true, prompt: '' },
+  { id: 'enemy-heavy-mech', kind: 'enemyMech', source: 'family-bulwark', flip: true, prompt: '' },
+  { id: 'enemy-rival', kind: 'enemyMech', source: 'family-ronin', flip: true, prompt: '' },
+
+  portrait('portrait-hadron', 'a heavyset middle-aged mining executive with tired eyes and slicked-back grey hair, wearing a high-collared charcoal coat with a small yellow and black hazard-striped pin'),
+  portrait('portrait-lumen', 'a composed woman analyst with a short dark bob, wearing a white high-tech jacket with thin glowing cyan piping and a translucent data visor over one eye'),
+  portrait('portrait-undertow', 'an older resistance organiser with a weathered face and cropped white hair, wearing a patched teal work jacket and a rust-orange scarf, a smudge of oil on one cheek'),
+  portrait('portrait-rival', 'a confident mercenary pilot with short black hair with one red streak and a thin scar through one eyebrow, wearing a charcoal and deep red flight suit with a glowing magenta collar ring'),
+
   { id: 'bg-neon-district', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: an industrial megacity district at night seen from street level, wet reflective ground filling the lower third, towering dark buildings, cranes and pipes, many glowing neon signs in pink, cyan and purple with abstract shapes instead of readable text, light haze and rain. No characters, no robots, no vehicles in the foreground.' },
+  { id: 'bg-mine', kind: 'background',
+    prompt: '16-bit pixel art background, no anti-aliasing: a vast terraced strip mine inside a megacity at night, giant conveyor gantries and excavator arms, harsh yellow floodlights, hazard-striped barriers and a few amber neon signs with abstract shapes instead of readable text, dusty haze, flat packed-earth ground filling the lower third. No characters, no robots, no vehicles in the foreground.' },
+  { id: 'bg-plaza', kind: 'background',
+    prompt: '16-bit pixel art background, no anti-aliasing: a spotless corporate research plaza at night, tall white and glass towers with thin cyan light lines, floating hologram panels with abstract shapes instead of readable text, trimmed planters, a smooth pale reflective floor filling the lower third. No characters, no robots, no vehicles in the foreground.' },
+  { id: 'bg-undercity', kind: 'background',
+    prompt: '16-bit pixel art background, no anti-aliasing: a flooded lower level of a megacity, huge rusted pipes and support pillars, shacks built from scrap, strings of mismatched teal and orange neon lights, dripping water and steam, a shallow wet concrete floor filling the lower third. No characters, no robots, no vehicles in the foreground.' },
   { id: 'bg-garage', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: the inside of a dim mecha hangar bay at night, steel gantries and catwalks, hanging chains and cables, tool racks along the walls, strips of cyan and magenta neon work lights, an empty metal floor filling the lower half. No characters, no robots, no vehicles, no text.' },
 ];

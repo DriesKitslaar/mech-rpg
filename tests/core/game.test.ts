@@ -17,6 +17,8 @@ describe('a new game', () => {
       'head-scout-mk1': 1, 'core-hauler': 1, 'arms-rigger': 1, 'legs-strider': 1, 'gen-kd1': 1, 'wpn-rivet-rifle': 1,
     });
     expect(g.battlesWon).toBe(0);
+    expect(g.completed).toEqual([]);
+    expect(g.read).toEqual([]);
     expect(g.version).toBe(SAVE_VERSION);
     expect(isValidState(g, CATALOG)).toBe(true);
   });
@@ -156,6 +158,11 @@ describe('validating loaded data', () => {
     ['no build', (g) => ({ ...g, build: undefined })],
     ['an inventory that is a list', (g) => ({ ...g, inventory: [] })],
     ['negative battles won', (g) => ({ ...g, battlesWon: -1 })],
+    ['completed contracts that are not a list', (g) => ({ ...g, completed: 'intro-1' })],
+    ['a completed entry that is not text', (g) => ({ ...g, completed: [1] })],
+    ['read messages missing', (g) => { const { read: _read, ...rest } = g; return rest; }],
+    ['fractional credits', (g) => ({ ...g, credits: 10.5 })],
+    ['absurdly many copies', (g) => ({ ...g, inventory: { ...g.inventory, 'head-halo': 1e308 } })],
   ];
   test.each(broken)('rejects %s', (_name, make) => {
     expect(isValidState(make(fresh()), CATALOG)).toBe(false);
@@ -171,4 +178,12 @@ describe('validating loaded data', () => {
   test('accepts negative credits', () => {
     expect(isValidState(withCredits(-300), CATALOG)).toBe(true);
   });
+});
+
+test('ids that only exist on every object are not parts', () => {
+  for (const id of ['constructor', '__proto__', 'toString']) {
+    expect(checkSell(fresh(), id, CATALOG)).toBe('notOwned');
+    expect(checkBuy(withCredits(99999), id, CATALOG)).toBe('notForSale');
+    expect(checkEquip(fresh(), 'head', id, CATALOG)).toBe('notOwned');
+  }
 });

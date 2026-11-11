@@ -54,3 +54,18 @@ test('clear removes the save, and survives storage that refuses', () => {
   const broken: KeyValueStore = { getItem: () => null, setItem() {}, removeItem: () => { throw new Error('blocked'); } };
   expect(() => new SaveFile(broken, CATALOG).clear()).not.toThrow();
 });
+
+test('a save from the first version is upgraded instead of thrown away', () => {
+  const { completed: _c, read: _r, ...rest } = game();
+  const old = { ...rest, version: 1 };
+  const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify(old) }), CATALOG).load();
+  expect(loaded).toEqual({ ...game(), completed: [], read: [] });
+});
+
+test('unusable save data is reported as such, a missing save is not', () => {
+  expect(new SaveFile(memoryStore({ [SAVE_KEY]: '{' }), CATALOG).hasUnusableData()).toBe(true);
+  expect(new SaveFile(memoryStore(), CATALOG).hasUnusableData()).toBe(false);
+  const good = memoryStore();
+  new SaveFile(good, CATALOG).save(game());
+  expect(new SaveFile(good, CATALOG).hasUnusableData()).toBe(false);
+});

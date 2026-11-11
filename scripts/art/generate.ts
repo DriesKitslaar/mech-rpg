@@ -23,7 +23,8 @@ async function main(): Promise<void> {
   const unknown = (only ?? []).filter((id) => !JOBS.some((j) => j.id === id));
   if (unknown.length) throw new Error(`unknown job id: ${unknown.join(', ')}`);
 
-  const todo = JOBS.filter((j) => (!only || only.includes(j.id)) && (force || !existsSync(`${RAW}/${j.id}.png`)));
+  // Jobs with a `source` reuse another raw image and are never generated.
+  const todo = JOBS.filter((j) => !j.source && (!only || only.includes(j.id)) && (force || !existsSync(`${RAW}/${j.id}.png`)));
   if (todo.length > max) throw new Error(`${todo.length} images to generate exceeds --max ${max}`);
   if (todo.length === 0) { console.log('nothing to generate'); return; }
 

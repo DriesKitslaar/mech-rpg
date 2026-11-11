@@ -1,6 +1,6 @@
 import type { Build, Catalog, Part } from './types';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const STARTING_CREDITS = 1200;
 
 /** Everything about a player's progress that is kept between battles and saved. */
@@ -11,11 +11,25 @@ export interface GameState {
   inventory: Record<string, number>;
   build: Build;
   battlesWon: number;
+  /** Ids of the story contracts completed, in order. */
+  completed: string[];
+  /** Ids of the messages read. */
+  read: string[];
 }
 
 export type BuildSlot = keyof Build;
 export const BUILD_SLOTS: BuildSlot[] = ['head', 'core', 'arms', 'legs', 'generator', 'rightHand', 'leftHand', 'shoulder'];
 const REQUIRED: BuildSlot[] = ['head', 'core', 'arms', 'legs', 'generator'];
+
+/** Looks a part up by id. Names every object has, such as `constructor`, are not parts. */
+export function partOf(catalog: Catalog, id: string): Part | undefined {
+  return Object.hasOwn(catalog, id) ? catalog[id] : undefined;
+}
+
+/** Copies of a part the player owns. */
+export function ownedCount(state: GameState, partId: string): number {
+  return Object.hasOwn(state.inventory, partId) ? state.inventory[partId] : 0;
+}
 
 export type TradeRefusal = 'notForSale' | 'cannotAfford' | 'notOwned' | 'equipped';
 export type EquipRefusal = 'notOwned' | 'wrongSlot' | 'noSpare' | 'required';
@@ -30,10 +44,10 @@ export function fits(part: Part, slot: BuildSlot): boolean {
 export function newGame(catalog: Catalog, starter: Build): GameState {
   const inventory: Record<string, number> = {};
   for (const id of Object.values(starter)) {
-    if (!catalog[id]) throw new Error(`starter part missing from catalogue: ${id}`);
+    if (!partOf(catalog, id)) throw new Error(`starter part missing from catalogue: ${id}`);
     inventory[id] = (inventory[id] ?? 0) + 1;
   }
-  return { version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0 };
+  return { version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [] };
 }
 
 export function equippedCount(state: GameState, partId: string): number {
@@ -42,11 +56,11 @@ export function equippedCount(state: GameState, partId: string): number {
 
 /** Copies owned but not fitted. */
 export function spareCount(state: GameState, partId: string): number {
-  return (state.inventory[partId] ?? 0) - equippedCount(state, partId);
+  return ownedCount(state, partId) - equippedCount(state, partId);
 }
 
 export function checkBuy(state: GameState, partId: string, catalog: Catalog): TradeRefusal | null {
-  const part = catalog[partId];
+  const part = partOf(catalog, partId);
   if (!part || !part.vendor) return 'notForSale';
   return state.credits < part.price ? 'cannotAfford' : null;
 }
@@ -57,12 +71,12 @@ export function buy(state: GameState, partId: string, catalog: Catalog): GameSta
   return {
     ...state,
     credits: state.credits - catalog[partId].price,
-    inventory: { ...state.inventory, [partId]: (state.inventory[partId] ?? 0) + 1 },
+    inventory: { ...state.inventory, [partId]: ownedCount(state, partId) + 1 },
   };
 }
 
 export function checkSell(state: GameState, partId: string, catalog: Catalog): TradeRefusal | null {
-  if (!catalog[partId] || (state.inventory[partId] ?? 0) <= 0) return 'notOwned';
+  if (!partOf(catalog, partId) || ownedCount(state, partId) <= 0) return 'notOwned';
   return spareCount(state, partId) <= 0 ? 'equipped' : null;
 }
 
@@ -78,8 +92,8 @@ export function sell(state: GameState, partId: string, catalog: Catalog): GameSt
 
 export function checkEquip(state: GameState, slot: BuildSlot, partId: string | null, catalog: Catalog): EquipRefusal | null {
   if (partId === null) return REQUIRED.includes(slot) ? 'required' : null;
-  const part = catalog[partId];
-  if (!part || (state.inventory[partId] ?? 0) <= 0) return 'notOwned';
+  const part = partOf(catalog, partId);
+  if (!part || ownedCount(state, partId) <= 0) return 'notOwned';
   if (!fits(part, slot)) return 'wrongSlot';
   if (state.build[slot] === partId) return null; // already there
   return spareCount(state, partId) <= 0 ? 'noSpare' : null;
@@ -94,7 +108,10 @@ export function equip(state: GameState, slot: BuildSlot, partId: string | null, 
   return { ...state, build };
 }
 
-const isWholeNonNegative = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0;
+const isWholeNonNegative = (n: unknown): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+const isTextList = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
+/** More copies than this of one part is not something play can produce. */
+const MAX_COPIES = 999;
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
@@ -103,21 +120,22 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
  */
 export function isValidState(value: unknown, catalog: Catalog): value is GameState {
   if (!isRecord(value) || value.version !== SAVE_VERSION) return false;
-  if (typeof value.credits !== 'number' || !Number.isFinite(value.credits)) return false;
+  if (typeof value.credits !== 'number' || !Number.isSafeInteger(value.credits)) return false;
+  if (!isTextList(value.completed) || !isTextList(value.read)) return false;
   if (!isWholeNonNegative(value.battlesWon)) return false;
   const { inventory, build } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
 
   for (const [id, count] of Object.entries(inventory)) {
-    if (!catalog[id]?.vendor || !isWholeNonNegative(count)) return false;
+    if (!partOf(catalog, id)?.vendor || !isWholeNonNegative(count) || count > MAX_COPIES) return false;
   }
   const fitted: Record<string, number> = {};
   for (const [slot, id] of Object.entries(build)) {
     if (!BUILD_SLOTS.includes(slot as BuildSlot) || typeof id !== 'string') return false;
-    const part = catalog[id];
+    const part = partOf(catalog, id);
     if (!part || !fits(part, slot as BuildSlot)) return false;
     fitted[id] = (fitted[id] ?? 0) + 1;
-    if (fitted[id] > ((inventory[id] as number | undefined) ?? 0)) return false;
+    if (fitted[id] > (Object.hasOwn(inventory, id) ? (inventory[id] as number) : 0)) return false;
   }
-  return REQUIRED.every((slot) => typeof build[slot] === 'string');
+  return REQUIRED.every((slot) => Object.hasOwn(build, slot) && typeof build[slot] === 'string');
 }
