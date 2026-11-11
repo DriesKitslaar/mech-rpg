@@ -22,7 +22,25 @@ export const STRINGS = {
   turnSkipped: (unit: string) => `${unit} cooling down - turn lost`,
   victory: 'VICTORY',
   defeat: 'DEFEAT',
-  hints: { result: 'Press A for the next battle' },
+  hints: { result: 'Press A to continue' },
+  titleScreen: {
+    tagline: 'Every contract pays. Not every pilot collects.',
+    continue: 'Continue', newGame: 'New Game', eraseQuestion: 'Start over? This erases your save.', no: 'No', yes: 'Yes',
+  },
+  hub: {
+    heading: 'HEADQUARTERS', sortie: 'Sortie', garage: 'Garage', shop: 'Shop',
+    credits: 'CREDITS', battlesWon: 'CONTRACTS WON', next: 'NEXT CONTRACT',
+  },
+  buildErrors: {
+    overweight: 'Overweight', insufficientEnergy: 'Not enough energy', missingSlot: 'Missing part',
+    wrongMount: 'Wrong mount', unknownPart: 'Unknown part',
+  },
+  encounters: { intro: 'Drone Patrol', outpost: 'Outpost Assault' } as Record<string, string>,
+  settlement: {
+    won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
+    net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
+  },
+  saveFailed: 'Could not save: storage is full or blocked',
   fx: { miss: 'MISS', overheat: 'OVERHEAT' },
   debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
 } as const;
