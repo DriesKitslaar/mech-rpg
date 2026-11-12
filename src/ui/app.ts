@@ -69,6 +69,7 @@ class MissionHost implements Screen {
     const total = this.mission.battles.length;
     const state = startMissionBattle(
       this.app.game!.build, this.mission, this.index, ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
+      { enemyScale: this.mission.scale ?? 1 },
     );
     this.flow = new BattleFlow(state, catalog);
     this.screen = new BattleScreen(this.flow, sprites, catalog, {

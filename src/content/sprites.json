@@ -334,6 +334,21 @@
     "w": 33,
     "h": 26
   },
+  "wpn-enemy-needle": {
+    "file": "sprites/wpn-enemy-needle.png",
+    "w": 42,
+    "h": 22
+  },
+  "wpn-enemy-maul": {
+    "file": "sprites/wpn-enemy-maul.png",
+    "w": 35,
+    "h": 22
+  },
+  "wpn-enemy-mortar": {
+    "file": "sprites/wpn-enemy-mortar.png",
+    "w": 41,
+    "h": 26
+  },
   "enemy-recon-drone": {
     "file": "sprites/enemy-recon-drone.png",
     "w": 64,

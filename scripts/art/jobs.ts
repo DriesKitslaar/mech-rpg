@@ -206,6 +206,9 @@ export const JOBS: ArtJob[] = [
   { id: 'wpn-enemy-shotgun', kind: 'handWeapon', source: 'wpn-scatter-gun', prompt: '' },
   { id: 'wpn-enemy-lance', kind: 'handWeapon', source: 'wpn-rail-lance', prompt: '' },
   { id: 'wpn-enemy-rack', kind: 'shoulderWeapon', source: 'wpn-swarm-rack', prompt: '' },
+  { id: 'wpn-enemy-needle', kind: 'handWeapon', source: 'wpn-needler', prompt: '' },
+  { id: 'wpn-enemy-maul', kind: 'handWeapon', source: 'wpn-scatter-gun', prompt: '' },
+  { id: 'wpn-enemy-mortar', kind: 'shoulderWeapon', source: 'wpn-mortar-pod', prompt: '' },
 
   item('enemy-recon-drone', 'enemy', 'ronin',
     'a small hovering security drone in the same dark charcoal and deep red armour: a compact body with two ducted rotors, one glowing magenta sensor eye and a small barrel underneath. The whole drone, nothing else, no mecha.', true),

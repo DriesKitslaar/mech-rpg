@@ -21,6 +21,8 @@ export interface Mission {
   reward: number;
   /** Fought in order; damage, heat and ammunition carry from one to the next. */
   battles: { enemies: string[]; background: string }[];
+  /** Multiplies enemy armour and damage; 1 when absent. */
+  scale?: number;
 }
 
 export interface Message {

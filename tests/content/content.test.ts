@@ -168,7 +168,17 @@ describe('campaign content', () => {
       expect(enemy.sprite in SPRITES, enemy.sprite).toBe(true);
       for (const id of Object.values(enemy.build)) expect(CATALOG[id], `${enemy.id}: ${id}`).toBeDefined();
     }
-    expect(Object.keys(ENEMIES)).toHaveLength(6);
+    expect(Object.keys(ENEMIES)).toHaveLength(10);
+  });
+
+  test('enemies that are drawn from their parts have a sprite for every part they show', () => {
+    const composed = Object.values(ENEMIES).filter((e) => e.composed);
+    expect(composed.map((e) => e.id).sort()).toEqual(['heavy-mech', 'juggernaut', 'light-mech', 'rival', 'stalker']);
+    for (const enemy of composed) {
+      const { head, core, arms, legs, rightHand, leftHand, shoulder } = enemy.build;
+      const ids = [head, core, legs, `${arms}.near`, `${arms}.far`, rightHand, leftHand, shoulder].filter(Boolean) as string[];
+      for (const id of ids) expect(id in SPRITES, `${enemy.id}: ${id}`).toBe(true);
+    }
   });
 
   test('every client has an ending', () => {

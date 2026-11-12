@@ -98,7 +98,10 @@ export interface EnemyDef {
   name: string;
   build: Build;
   ai: AiProfile;
+  /** The single image used when the enemy is one of several. */
   sprite: string;
+  /** A mech that, when it fights alone, is drawn full size from the sprites of its parts. */
+  composed?: boolean;
 }
 
 export const FRAME_SLOTS: FrameSlot[] = ['core', 'legs', 'arms', 'head'];

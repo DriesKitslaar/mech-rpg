@@ -101,6 +101,18 @@ const ENEMY_PARTS: Part[] = [
   weapon('wpn-enemy-shotgun', 'Breaching Gun', 'hand', 'kinetic', 36, 60, 80, 20, null, 0, 110, 0),
   weapon('wpn-enemy-lance', 'Duelist Lance', 'hand', 'kinetic', 46, 80, 120, 28, null, 0, 150, 0),
   weapon('wpn-enemy-rack', 'Duelist Rack', 'shoulder', 'explosive', 50, 66, 110, 34, null, 0, 180, 0),
+  weapon('wpn-enemy-needle', 'Stalker Needles', 'hand', 'kinetic', 16, 78, 90, 20, null, 0, 70, 0, undefined, 'twin'),
+  weapon('wpn-enemy-maul', 'Siege Maul', 'hand', 'kinetic', 48, 66, 110, 26, null, 0, 150, 0),
+  weapon('wpn-enemy-mortar', 'Siege Mortar', 'shoulder', 'explosive', 44, 62, 100, 30, null, 0, 180, 0),
+  // Gunship: quick, fragile, rains explosives over the whole mech.
+  frame('core-gunship', 'Gunship Hull', 'core', 110, r(0.1, 0.1, 0.1), 120, 0, 0, undefined),
+  frame('legs-thrusters', 'Lift Thrusters', 'legs', 60, r(0.1, 0.1, 0.1), 60, 0, 0, undefined, { capacity: 600, mobility: 40 }),
+  generator('gen-gunship', 'Gunship Turbine', 150, 22, 40, 0),
+  weapon('wpn-gunship-pods', 'Rocket Pods', 'shoulder', 'explosive', 30, 68, 90, 22, null, 0, 60, 0),
+  // Lance tower: cannot move, rarely misses, and always goes for the head.
+  frame('core-tower', 'Tower Column', 'core', 160, r(0.3, 0.2, 0.2), 300, 0, 0, undefined),
+  generator('gen-tower', 'Tower Capacitor', 180, 20, 60, 0),
+  weapon('wpn-tower-lance', 'Sentry Lance', 'shoulder', 'kinetic', 44, 88, 130, 40, null, 0, 200, 0),
 ];
 
 /** The contract (or 'choice' for any exclusive contract) that puts a part in the shop. Unlisted parts are always in stock. */
