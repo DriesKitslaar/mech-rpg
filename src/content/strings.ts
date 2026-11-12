@@ -36,7 +36,7 @@ export const STRINGS = {
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
     locked: 'Locked', campaignDone: 'The war is over. The work is not.',
     cycleLabel: (n: number) => `CYCLE ${n + 1}`,
-    cycleQuestion: ['Start the war again?', 'You keep credits, parts, level,', 'perks and arena rank. Enemies', 'get tougher and pay improves.'],
+    cycleQuestion: ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.', 'Enemies get tougher and', 'pay improves.'],
     no: 'No', yes: 'Yes',
   },
   arena: {

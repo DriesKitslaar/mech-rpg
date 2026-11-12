@@ -19,7 +19,7 @@ export type { BattlePhase, MenuView } from './battleFlow';
 
 const MESSAGE_MS = 600;
 const DEFAULT_BACKGROUND = 'bg-neon-district';
-const MECH_ORIGIN = { x: 0, y: 16 };
+const MECH_ORIGIN = { x: -8, y: 16 };
 /** Where each enemy stands (the bottom centre of its sprite), by how many there are. */
 const ENEMY_ANCHORS: Record<number, { x: number; y: number }[]> = {
   1: [{ x: 250, y: 150 }],
@@ -27,8 +27,8 @@ const ENEMY_ANCHORS: Record<number, { x: number; y: number }[]> = {
   3: [{ x: 252, y: 96 }, { x: 274, y: 174 }, { x: 210, y: 174 }],
 };
 /** Right edge of the mirrored pose box of a duelling enemy mech, and the area its body covers. */
-const DUEL_RIGHT = 316;
-const DUEL_BODY = { x: 178, y: 22, w: 118, h: 150 };
+const DUEL_RIGHT = 324;
+const DUEL_BODY = { x: 186, y: 22, w: 118, h: 150 };
 const PANEL_Y = 178;
 const MENU_W = 154;
 /** Where a hit on each part of the player's mech lands, inside the pose box. */
