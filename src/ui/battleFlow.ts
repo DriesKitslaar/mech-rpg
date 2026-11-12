@@ -25,7 +25,7 @@ export class BattleFlow {
   menu: MenuView = { items: [], cursor: 0 };
   targetId: string | null = null;
   targetPart: FrameSlot | null = null;
-  preview: { hitChance: number; damage: number } | null = null;
+  preview: { hitChance: number; damage: number; shots: number } | null = null;
   /** True while targeting with a weapon whose shot would push heat past the limit. */
   overheatWarning = false;
   message = '';

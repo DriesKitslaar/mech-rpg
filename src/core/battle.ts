@@ -55,6 +55,8 @@ export interface UnitState {
   repairsLeft: number;
   destroyed: boolean;
   mods: UnitMods;
+  /** Energy drained by enemy weapons, taken off the next turn's supply. */
+  energyDebt: number;
 }
 
 export type BattleEvent =
@@ -127,7 +129,7 @@ function createUnit(
   }
   return {
     id, name, side, build, ...extra, parts, heat: 0, energy: 0, ammo, boosted: false, overheated: false,
-    usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods,
+    usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
   };
 }
 
@@ -190,7 +192,8 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
       state.turn += 1;
       continue;
     }
-    unit.energy = turnEnergyOf(unit, catalog);
+    unit.energy = Math.max(0, turnEnergyOf(unit, catalog) - unit.energyDebt);
+    unit.energyDebt = 0;
     unit.usedBoost = false;
     unit.usedCool = false;
     unit.fired = [];
@@ -260,7 +263,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
 
 export function previewShot(
   state: BattleState, attackerId: string, slot: WeaponSlot, targetId: string, part: FrameSlot, catalog: Catalog,
-): { hitChance: number; damage: number } {
+): { hitChance: number; damage: number; shots: number } {
   const attacker = findUnit(state, attackerId);
   const target = findUnit(state, targetId);
   const weapon = attacker && weaponIn(attacker.build, slot, catalog);
@@ -278,12 +281,14 @@ export function previewShot(
   if (arms && HAND_SLOTS.includes(slot) && isAlive(attacker.parts.arms)) aim += arms.aim ?? 0;
 
   const raw = weapon.accuracy + aim - evasion(target, catalog) + PART_MODIFIER[part] - headPenalty;
-  const full = Math.max(1, Math.round(weapon.damage * (1 - targetPart.resist[weapon.damageType]) * attacker.mods.damage));
+  const resist = targetPart.resist[weapon.damageType] * (weapon.trait === 'pierce' ? 0.5 : 1);
+  const full = Math.max(1, Math.round(weapon.damage * (1 - resist) * attacker.mods.damage));
   // A part that is already destroyed passes half the damage on to the core.
   const passesOn = target.parts[part]!.ap <= 0;
   return {
     hitChance: Math.min(95, Math.max(10, raw)),
     damage: passesOn ? Math.max(1, Math.floor(full / 2)) : full,
+    shots: weapon.trait === 'twin' ? 2 : 1,
   };
 }
 
@@ -338,32 +343,45 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   const unit = activeUnit(state);
   const target = findUnit(state, action.target)!;
   const weapon = weaponIn(unit.build, action.weapon, catalog)!;
-  const { hitChance, damage } = previewShot(state, unit.id, action.weapon, target.id, action.part, catalog);
 
   unit.energy -= weapon.energy;
   unit.fired.push(action.weapon);
   const ammo = unit.ammo[action.weapon];
   if (typeof ammo === 'number') unit.ammo[action.weapon] = ammo - 1;
 
-  let value: number;
-  if (roll) value = roll();
-  else ({ value, state: state.rng } = nextRandom(state.rng));
-  const hit = value * 100 < hitChance;
-  const appliedTo: FrameSlot = target.parts[action.part]!.ap > 0 ? action.part : 'core';
-  state.events.push({
-    type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: action.part, appliedTo, hit,
-    damage: hit ? damage : 0,
-  });
-  if (hit) damagePart(state, target, appliedTo, damage);
-
-  unit.heat += weapon.heat;
-  if (unit.heat > HEAT_LIMIT && !unit.overheated) {
-    unit.overheated = true;
-    state.events.push({ type: 'overheat', unit: unit.id });
+  // A twin weapon fires twice; each shot is rolled and previewed on its own, because the first
+  // may destroy the part (or the target) the second was aimed at.
+  const shots = weapon.trait === 'twin' ? 2 : 1;
+  for (let i = 0; i < shots && !target.destroyed; i++) {
+    const { hitChance, damage } = previewShot(state, unit.id, action.weapon, target.id, action.part, catalog);
+    let value: number;
+    if (roll) value = roll();
+    else ({ value, state: state.rng } = nextRandom(state.rng));
+    const hit = value * 100 < hitChance;
+    const appliedTo: FrameSlot = target.parts[action.part]!.ap > 0 ? action.part : 'core';
+    state.events.push({
+      type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: action.part, appliedTo, hit,
+      damage: hit ? damage : 0,
+    });
+    if (!hit) continue;
+    damagePart(state, target, appliedTo, damage);
+    if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
+    if (weapon.trait === 'drain') target.energyDebt += weapon.traitPower ?? 0;
   }
+
+  heatUp(state, unit, weapon.heat);
 
   if (state.units.every((u) => u.side !== 'enemy' || u.destroyed)) setOutcome(state, 'victory');
   else if (findUnit(state, 'player')!.destroyed) setOutcome(state, 'defeat');
+}
+
+/** Adds heat; passing the limit marks the unit overheated, which costs it its next turn. */
+function heatUp(state: BattleState, unit: UnitState, amount: number): void {
+  unit.heat += amount;
+  if (unit.heat > HEAT_LIMIT && !unit.overheated && !unit.destroyed) {
+    unit.overheated = true;
+    state.events.push({ type: 'overheat', unit: unit.id });
+  }
 }
 
 /**

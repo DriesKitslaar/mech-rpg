@@ -60,19 +60,19 @@ describe('shot preview', () => {
   const p = (attacker: string, weapon: any, target: string, part: any) => previewShot(s, attacker, weapon, target, part, CATALOG);
 
   test('rifle against the drone', () => {
-    expect(p('player', 'rightHand', 'enemy-1', 'core')).toEqual({ hitChance: 57, damage: 38 });
+    expect(p('player', 'rightHand', 'enemy-1', 'core')).toEqual({ hitChance: 57, damage: 38, shots: 1 });
     expect(p('player', 'rightHand', 'enemy-1', 'legs').hitChance).toBe(52);
   });
 
   test('weapons against the turret use its resistances', () => {
-    expect(p('player', 'rightHand', 'enemy-0', 'core')).toEqual({ hitChance: 90, damage: 23 });
-    expect(p('player', 'shoulder', 'enemy-0', 'core')).toEqual({ hitChance: 70, damage: 63 });
+    expect(p('player', 'rightHand', 'enemy-0', 'core')).toEqual({ hitChance: 90, damage: 23, shots: 1 });
+    expect(p('player', 'shoulder', 'enemy-0', 'core')).toEqual({ hitChance: 70, damage: 63, shots: 1 });
     expect(p('player', 'leftHand', 'enemy-0', 'core').damage).toBe(24);
   });
 
   test('enemy weapons against the player', () => {
-    expect(p('enemy-1', 'shoulder', 'player', 'core')).toEqual({ hitChance: 55, damage: 10 });
-    expect(p('enemy-0', 'shoulder', 'player', 'core')).toEqual({ hitChance: 60, damage: 38 });
+    expect(p('enemy-1', 'shoulder', 'player', 'core')).toEqual({ hitChance: 55, damage: 10, shots: 1 });
+    expect(p('enemy-0', 'shoulder', 'player', 'core')).toEqual({ hitChance: 60, damage: 38, shots: 1 });
   });
 
   test('hit chance is clamped between 10 and 95', () => {
@@ -456,5 +456,77 @@ describe('unit modifiers', () => {
     const first = edit(toPlayer(withMods({ armour: 0.18 })), (d) => { d.units[0].parts.core!.ap = 100; });
     const next = createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, { carry: carryFrom(first), mods: { armour: 0.18 } });
     expect(player(next).parts.core).toEqual({ ap: 100, maxAp: 260 });
+  });
+});
+
+describe('weapon traits', () => {
+  const base = CATALOG['wpn-rivet-rifle'] as Weapon;
+  /** A battle where the player's right hand holds the rifle with the given trait. */
+  function withTrait(trait: Weapon['trait'], traitPower: number | undefined, enemy: string, extra: Partial<Weapon> = {}): { s: BattleState; catalog: Catalog } {
+    const catalog: Catalog = { ...CATALOG, 'wpn-test-trait': { ...base, id: 'wpn-test-trait', trait, traitPower, ...extra } };
+    const s = createBattle({ ...DEMO_BUILD, rightHand: 'wpn-test-trait' }, [ENEMIES[enemy]], catalog, 1);
+    let t = s;
+    for (let i = 0; i < 5 && activeUnit(t).id !== 'player'; i++) t = applyAction(t, END, catalog);
+    return { s: t, catalog };
+  }
+
+  test('pierce counts only half of the target\'s resistance', () => {
+    const { s, catalog } = withTrait('pierce', undefined, 'gun-turret', { damage: 100 });
+    expect(previewShot(s, 'player', 'rightHand', 'enemy-0', 'core', catalog).damage).toBe(80);
+  });
+
+  test('thermal adds heat to a target it hits, and none when it misses', () => {
+    const { s, catalog } = withTrait('thermal', 18, 'gun-turret');
+    expect(unit(applyAction(s, fire('rightHand', 'enemy-0'), catalog, hit), 'enemy-0').heat).toBe(18);
+    expect(unit(applyAction(s, fire('rightHand', 'enemy-0'), catalog, miss), 'enemy-0').heat).toBe(0);
+  });
+
+  test('enough heat makes an enemy overheat and lose its turn', () => {
+    const { s, catalog } = withTrait('thermal', 120, 'gun-turret');
+    let t = applyAction(s, fire('rightHand', 'enemy-0'), catalog, hit);
+    expect(unit(t, 'enemy-0').overheated).toBe(true);
+    t = applyAction(t, END, catalog);
+    expect(t.events).toContainEqual({ type: 'turnSkipped', unit: 'enemy-0' });
+    expect(activeUnit(t).id).toBe('player');
+  });
+
+  test('drain cuts the energy the target gets on its next turn, once', () => {
+    const { s, catalog } = withTrait('drain', 150, 'gun-turret');
+    let t = applyAction(s, fire('rightHand', 'enemy-0'), catalog, hit);
+    expect(unit(t, 'enemy-0').energyDebt).toBe(150);
+    t = applyAction(t, END, catalog);
+    expect(activeUnit(t).id).toBe('enemy-0');
+    expect(unit(t, 'enemy-0')).toMatchObject({ energy: 50, energyDebt: 0 });
+    // With 50 energy the turret cannot fire its 120-energy cannon.
+    expect(checkAction(t, fire('shoulder', 'player'), catalog)).toBe('noEnergy');
+  });
+
+  test('drained energy never goes below zero', () => {
+    const { s, catalog } = withTrait('drain', 900, 'gun-turret');
+    const t = applyAction(applyAction(s, fire('rightHand', 'enemy-0'), catalog, hit), END, catalog);
+    expect(unit(t, 'enemy-0').energy).toBe(0);
+  });
+
+  test('twin fires two shots for one ammunition, one energy cost and one dose of heat', () => {
+    const { s, catalog } = withTrait('twin', undefined, 'gun-turret');
+    const rolls = [0, 0.999];
+    const t = applyAction(s, fire('rightHand', 'enemy-0'), catalog, () => rolls.shift()!);
+    const shots = t.events.filter((e) => e.type === 'shot');
+    expect(shots.map((e) => e.type === 'shot' && e.hit)).toEqual([true, false]);
+    expect(unit(t, 'enemy-0').parts.core!.ap).toBe(260 - 23);
+    expect(player(t)).toMatchObject({ energy: 170, heat: 12 });
+    expect(player(t).ammo.rightHand).toBe(29);
+    expect(previewShot(s, 'player', 'rightHand', 'enemy-0', 'core', catalog)).toMatchObject({ damage: 23, shots: 2 });
+  });
+
+  test('the second twin shot is not fired at a target the first one destroyed', () => {
+    const { s, catalog } = withTrait('twin', undefined, 'recon-drone', { damage: 500 });
+    const t = applyAction(s, fire('rightHand', 'enemy-0'), catalog, hit);
+    expect(t.events.filter((e) => e.type === 'shot')).toHaveLength(1);
+    expect(t.outcome).toBe('victory');
+  });
+
+  test('an ordinary weapon fires one shot', () => {
+    expect(previewShot(demo(['recon-drone']), 'player', 'rightHand', 'enemy-0', 'core', CATALOG).shots).toBe(1);
   });
 });

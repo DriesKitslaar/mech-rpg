@@ -119,3 +119,13 @@ describe('messages', () => {
     expect(unreadMessages(g, MESSAGES, MISSIONS)).toEqual([]);
   });
 });
+
+describe('arena unlocks', () => {
+  const unlocks = { 'head-halo': 'arena:3' };
+  const has = (g: GameState) => stockFor(g, SHOP_PARTS, unlocks, MISSIONS).some((p) => p.id === 'head-halo');
+  test('a part waits for the arena rank it names', () => {
+    expect(has({ ...fresh(), arenaRank: 2 })).toBe(false);
+    expect(has({ ...fresh(), arenaRank: 3 })).toBe(true);
+    expect(has({ ...fresh(), arenaRank: 9 })).toBe(true);
+  });
+});

@@ -15,11 +15,14 @@ const FAMILIES = [
   { legs: 'legs-halo', core: 'core-halo', head: 'head-halo', arms: 'arms-halo' },
   { legs: 'legs-bulwark', core: 'core-bulwark', head: 'head-bulwark', arms: 'arms-bulwark' },
   { legs: 'legs-ronin', core: 'core-ronin', head: 'head-ronin', arms: 'arms-ronin' },
+  { legs: 'legs-wraith', core: 'core-wraith', head: 'head-wraith', arms: 'arms-wraith' },
+  { legs: 'legs-colossus', core: 'core-colossus', head: 'head-colossus', arms: 'arms-colossus' },
 ];
+const COLS = FAMILIES.length;
 const WEAPONS = { rightHand: 'wpn-rivet-rifle', leftHand: 'wpn-arc-pistol', shoulder: 'wpn-mortar-pod' };
 const CELL_W = 200;
 const CELL_H = 170;
-const SCALE = 3;
+const SCALE = 2;
 
 async function main(): Promise<void> {
   const layers: OverlayOptions[] = [];
@@ -32,16 +35,16 @@ async function main(): Promise<void> {
     const missing = Object.values(ids).filter((id) => !manifest[id]);
     if (missing.length) throw new Error(`missing processed sprite: ${missing.join(', ')}`);
     const sizes = Object.fromEntries(Object.entries(ids).map(([slot, id]) => [slot, manifest[id]]));
-    const ox = (cell % 4) * CELL_W + 4;
-    const oy = Math.floor(cell / 4) * CELL_H + (CELL_H - MECH_BOX) / 2;
+    const ox = (cell % COLS) * CELL_W + 4;
+    const oy = Math.floor(cell / COLS) * CELL_H + (CELL_H - MECH_BOX) / 2;
     for (const cmd of layoutMech(sizes)) {
       layers.push({ input: `public/${manifest[ids[cmd.slot]].file}`, left: ox + cmd.x, top: oy + cmd.y });
     }
     cell++;
   }
   mkdirSync('art/proof', { recursive: true });
-  const w = CELL_W * 4;
-  const h = CELL_H * 4;
+  const w = CELL_W * COLS;
+  const h = CELL_H * COLS;
   const sheet = await sharp({ create: { width: w, height: h, channels: 4, background: { r: 24, g: 20, b: 40, alpha: 1 } } })
     .composite(layers).png().toBuffer();
   await sharp(sheet).resize(w * SCALE, h * SCALE, { kernel: 'nearest' }).toFile('art/proof/contact-sheet.png');

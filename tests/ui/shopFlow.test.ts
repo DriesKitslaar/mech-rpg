@@ -22,14 +22,14 @@ test('there are seven tabs and they wrap in both directions', () => {
 
 test('each tab lists its stock with the price', () => {
   const flow = shop();
-  expect(flow.list.items.map((i) => i.id)).toEqual(['head-scout-mk1', 'head-halo', 'head-bulwark', 'head-ronin']);
+  expect(flow.list.items.map((i) => i.id)).toEqual(['head-scout-mk1', 'head-halo', 'head-bulwark', 'head-ronin', 'head-wraith', 'head-colossus']);
   expect(flow.list.items[1]).toMatchObject({ label: 'Halo Visor', note: '900', enabled: true });
   toTab(flow, 'hand');
-  expect(flow.list.items).toHaveLength(7);
+  expect(flow.list.items).toHaveLength(11);
   toTab(flow, 'shoulder');
-  expect(flow.list.items).toHaveLength(4);
+  expect(flow.list.items).toHaveLength(8);
   toTab(flow, 'generator');
-  expect(flow.list.items).toHaveLength(3);
+  expect(flow.list.items).toHaveLength(5);
 });
 
 test('buying deducts the price and reports it', () => {
@@ -148,4 +148,11 @@ test('a part that is owned but not in stock can still be sold', () => {
   expect(flow.list.items.map((i) => i.id)).not.toContain('head-halo');
   press(flow, 'right');
   expect(flow.list.items.map((i) => i.id)).toContain('head-halo');
+});
+
+test('a weapon\'s special effect is described', () => {
+  expect(partLines(CATALOG['wpn-needler']).at(-1)).toBe('TWIN: fires twice');
+  expect(partLines(CATALOG['wpn-void-rifle']).at(-1)).toBe('PIERCE: halves resistance');
+  expect(partLines(CATALOG['wpn-thermal-lance']).at(-1)).toBe('THERMAL: +18 heat on target');
+  expect(partLines(CATALOG['wpn-arc-caster']).at(-1)).toBe('DRAIN: -60 energy on target');
 });

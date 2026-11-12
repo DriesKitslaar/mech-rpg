@@ -85,6 +85,8 @@ export function campaignComplete(state: GameState, missions: Mission[]): boolean
 function reached(state: GameState, condition: string, missions: Mission[]): boolean {
   if (condition === 'start') return true;
   if (condition === 'choice') return chosenFaction(state, missions) !== null;
+  // "arena:N": the arena rank is at least N.
+  if (condition.startsWith('arena:')) return state.arenaRank >= Number(condition.slice(6));
   return state.completed.includes(condition);
 }
 

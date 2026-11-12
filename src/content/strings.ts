@@ -75,6 +75,12 @@ export const STRINGS = {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',
     output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',
     unlimited: 'unlimited', perShot: 'per shot',
+    traits: {
+      twin: () => 'TWIN: fires twice',
+      pierce: () => 'PIERCE: halves resistance',
+      thermal: (power: number) => `THERMAL: +${power} heat on target`,
+      drain: (power: number) => `DRAIN: -${power} energy on target`,
+    },
     types: { kinetic: 'Kinetic', energy: 'Energy', explosive: 'Explosive' },
     vendors: { undertow: 'The Undertow', lumen: 'Lumen Systems', hadron: 'Hadron Mining', freelance: 'Freelance' },
   },

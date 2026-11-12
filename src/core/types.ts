@@ -57,6 +57,12 @@ export interface Weapon {
   weight: number;
   price: number;
   vendor?: Vendor;
+  /**
+   * A special effect: `pierce` halves the target's resistance; `thermal` adds `traitPower` heat on a hit;
+   * `drain` takes `traitPower` from the target's next turn of energy on a hit; `twin` fires two shots.
+   */
+  trait?: 'pierce' | 'thermal' | 'drain' | 'twin';
+  traitPower?: number;
 }
 
 export type Part = FramePart | Generator | Weapon;

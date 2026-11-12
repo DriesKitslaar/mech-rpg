@@ -232,7 +232,8 @@ export class BattleScreen {
       drawText(ctx, target.name.toUpperCase(), x, PANEL_Y + 5, { color: COLORS.accent });
       const y = this.drawParts(ctx, target, x, PANEL_Y + 5 + LINE + 1, this.flow.targetPart);
       const p = this.flow.preview!;
-      drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}`, x, y + 3, { size: 16 });
+      const twice = p.shots > 1 ? ` x${p.shots}` : '';
+      drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}${twice}`, x, y + 3, { size: 16 });
       // Energy and heat stay in view while aiming, at the foot of the menu panel.
       this.drawEnergyAndHeat(ctx, player, 6, LOGICAL_H - 2 * LINE - 4, 132);
     } else {
