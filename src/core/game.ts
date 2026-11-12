@@ -29,6 +29,8 @@ export interface GameState {
 }
 
 export interface Settings { sfx: boolean; music: boolean; fastBattles: boolean }
+/** No perk has more ranks than this; a save claiming more is not a real save. */
+export const MAX_PERK_RANK = 3;
 export const DEFAULT_SETTINGS: Settings = { sfx: true, music: true, fastBattles: false };
 
 export type BuildSlot = keyof Build;
@@ -156,7 +158,7 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!isWholeNonNegative(value.xp) || !isWholeNonNegative(value.arenaRank) || !isWholeNonNegative(value.cycle)) return false;
   if (value.arenaRank > 99 || value.cycle > 99) return false;
   const { perks, settings } = value;
-  if (!isRecord(perks) || !Object.values(perks).every((rank) => isWholeNonNegative(rank) && rank <= 10)) return false;
+  if (!isRecord(perks) || !Object.values(perks).every((rank) => isWholeNonNegative(rank) && rank <= MAX_PERK_RANK)) return false;
   if (!isRecord(settings) || !['sfx', 'music', 'fastBattles'].every((key) => typeof settings[key] === 'boolean')) return false;
   const { inventory, build } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;

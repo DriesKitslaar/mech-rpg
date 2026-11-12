@@ -1,6 +1,6 @@
 import { arenaPurse, checkChallenge, recordArenaWin } from '../../src/core/arena';
 import { validatePlayerBuild } from '../../src/core/build';
-import { createBattle } from '../../src/core/battle';
+import { createBattle, turnEnergyOf } from '../../src/core/battle';
 import { newGame, type GameState } from '../../src/core/game';
 import { ARENA, ARENA_ENEMIES } from '../../src/content/arena';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
@@ -60,4 +60,12 @@ test('enemies never run out of ammunition, whatever they carry', () => {
   const s = createBattle(DEMO_BUILD, [ARENA_ENEMIES[ARENA[0].enemy]], CATALOG, 1);
   expect(Object.values(s.units[1].ammo).every((a) => a === null)).toBe(true);
   expect(s.units[0].ammo.rightHand).toBe(30);
+});
+
+test.each(ARENA.map((o) => [o.name, o] as const))('%s can fire every weapon they carry in one turn', (_name, opponent) => {
+  const s = createBattle(DEMO_BUILD, [ARENA_ENEMIES[opponent.enemy]], CATALOG, 1);
+  const unit = s.units[1];
+  const cost = (['rightHand', 'leftHand', 'shoulder'] as const)
+    .reduce((sum, slot) => sum + (unit.build[slot] ? (CATALOG[unit.build[slot]!] as { energy: number }).energy : 0), 0);
+  expect(turnEnergyOf(unit, CATALOG)).toBeGreaterThanOrEqual(cost);
 });

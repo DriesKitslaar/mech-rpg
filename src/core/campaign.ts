@@ -118,9 +118,15 @@ function reached(state: GameState, condition: string, missions: Mission[]): bool
   return state.completed.includes(condition);
 }
 
-/** What the shop sells now. `unlocks` maps a part id to the contract (or `'choice'`) that puts it in stock. */
+/**
+ * What the shop sells now. `unlocks` maps a part id to the contract (or `'choice'`, or `'arena:N'`)
+ * that puts it in stock. Vendors do not forget a pilot: from the second cycle on, everything a
+ * contract unlocks stays in stock. Arena prizes always need the rank.
+ */
 export function stockFor(state: GameState, parts: Part[], unlocks: Record<string, string>, missions: Mission[]): Part[] {
-  return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || reached(state, unlocks[part.id], missions));
+  const open = (condition: string): boolean =>
+    (state.cycle > 0 && !condition.startsWith('arena:')) || reached(state, condition, missions);
+  return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || open(unlocks[part.id]));
 }
 
 /** Messages that have arrived, oldest first. */

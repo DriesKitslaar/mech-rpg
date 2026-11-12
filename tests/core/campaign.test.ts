@@ -159,3 +159,13 @@ describe('a new cycle', () => {
     expect(forCycle(MISSIONS[0], 3)).toBe(MISSIONS[0]); // the patrol stays a patrol
   });
 });
+
+test('the shop keeps everything it sold before when a new cycle starts', () => {
+  const unlocks = { 'gen-prism': 'lumen-1', 'wpn-thermal-lance': 'choice', 'wpn-void-rifle': 'arena:5' };
+  const ids = (g: GameState) => stockFor(g, SHOP_PARTS, unlocks, MISSIONS).map((p) => p.id);
+  const cycled: GameState = { ...fresh(), cycle: 1 };
+  expect(ids(fresh())).not.toContain('gen-prism');
+  expect(ids(cycled)).toContain('gen-prism');
+  expect(ids(cycled)).toContain('wpn-thermal-lance');
+  expect(ids(cycled)).not.toContain('wpn-void-rifle'); // arena prizes still need the rank
+});

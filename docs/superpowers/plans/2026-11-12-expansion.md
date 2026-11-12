@@ -158,3 +158,6 @@ Adds `xp: 0`, `perks: {}`, `arenaRank: 0`, `cycle: 0`,
 - Enemies have unlimited ammunition.
 - The arena and the open contracts stay available in later cycles from the start.
 - Options are stored under their own key (`ironwage-settings`) and copied into the save.
+- Gunship pods do 30 damage (not 34) and the lance tower 44 (not 52), from simulation.
+- From the second cycle on the shop keeps everything a contract unlocked; only arena prizes still
+  depend on rank. Otherwise a new cycle would empty most of the shop.

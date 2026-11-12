@@ -81,11 +81,11 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Bastion', ai: 'bruiser', scale: 1.15,
+    name: 'Bastion', ai: 'bruiser', scale: 0.85,
     style: 'A full Colossus with a breaker cannon. Slow to kill and slow to shoot, but one hit can end you.',
     taunt: 'Take your time. I have all the armour in the world.',
     build: {
-      head: 'head-colossus', core: 'core-colossus', arms: 'arms-colossus', legs: 'legs-colossus', generator: 'gen-ember',
+      head: 'head-colossus', core: 'core-colossus', arms: 'arms-colossus', legs: 'legs-colossus', generator: 'gen-tidal',
       rightHand: 'wpn-rail-lance', shoulder: 'wpn-breaker-cannon',
     },
   },
