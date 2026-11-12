@@ -1,0 +1,9 @@
+{
+  "id": "bg-arena",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art background, no anti-aliasing: an underground mecha duelling arena at night, a wide scuffed steel floor filling the lower third, tall cage walls, floodlights, banks of spectator stands with a silhouetted crowd, and neon scoreboards in pink and cyan with abstract shapes instead of readable text. No characters or robots in the foreground, no vehicles."
+}

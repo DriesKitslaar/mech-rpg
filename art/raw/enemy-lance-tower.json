@@ -1,0 +1,11 @@
+{
+  "id": "enemy-lance-tower",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a tall slender fixed sentry tower in the same dark charcoal and deep red armour with one magenta lens: a narrow column on a tripod base carrying one extremely long thin barrel pointing right. The whole tower, nothing else, no mecha. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

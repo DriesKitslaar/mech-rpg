@@ -361,7 +361,7 @@ describe('carrying a mech from one battle into the next', () => {
   }
 
   test('damage, heat, ammunition and repairs carry over', () => {
-    const next = createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 2, carryFrom(worn()));
+    const next = createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 2, { carry: carryFrom(worn()) });
     const p = player(next);
     expect(p.parts.core).toEqual({ ap: 140, maxAp: 220 });
     expect(p.parts.arms).toEqual({ ap: 0, maxAp: 110 });
@@ -371,20 +371,20 @@ describe('carrying a mech from one battle into the next', () => {
   });
 
   test('a part destroyed earlier is still disabled', () => {
-    const next = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 2, carryFrom(worn())));
+    const next = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 2, { carry: carryFrom(worn()) }));
     expect(checkAction(next, fire('rightHand', 'enemy-0'), CATALOG)).toBe('weaponDisabled');
     expect(checkAction(next, fire('shoulder', 'enemy-0'), CATALOG)).toBe('noAmmo');
   });
 
   test('enemies always start fresh, and a battle without a carry starts fresh too', () => {
-    const next = createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, carryFrom(worn()));
+    const next = createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, { carry: carryFrom(worn()) });
     expect(unit(next, 'enemy-0').parts.core!.ap).toBe(50);
     expect(player(createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2))).toMatchObject({ heat: 0, repairsLeft: 2 });
   });
 
   test('a destroyed mech cannot be carried into another battle', () => {
     const dead = edit(worn(), (d) => { d.units[0].parts.core!.ap = 0; d.units[0].destroyed = true; });
-    expect(() => createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, carryFrom(dead))).toThrow('a destroyed mech cannot enter a battle');
+    expect(() => createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, { carry: carryFrom(dead) })).toThrow('a destroyed mech cannot enter a battle');
   });
 });
 
@@ -400,5 +400,61 @@ describe('retreat', () => {
     const s = applyAction(demo(['gun-turret']), END, CATALOG);
     expect(activeUnit(s).side).toBe('enemy');
     expect(checkAction(s, { type: 'retreat' }, CATALOG)).toBe('invalidTarget');
+  });
+});
+
+describe('unit modifiers', () => {
+  const withMods = (mods: object, enemy = 'recon-drone') => createBattle(DEMO_BUILD, [ENEMIES[enemy]], CATALOG, 1, { mods });
+
+  test('without modifiers nothing changes', () => {
+    expect(player(demo(['recon-drone'])).mods).toEqual({ aim: 0, evasion: 0, energy: 0, cooling: 0, repairs: 0, armour: 0, damage: 1, toughness: 1 });
+  });
+
+  test('aim raises the hit chance in the preview and in the shot', () => {
+    const s = withMods({ aim: 12 });
+    expect(previewShot(s, 'player', 'rightHand', 'enemy-0', 'core', CATALOG).hitChance).toBe(69);
+  });
+
+  test('evasion makes the unit harder to hit while its legs work', () => {
+    const s = withMods({ evasion: 12 });
+    expect(evasion(player(s), CATALOG)).toBe(27);
+    expect(previewShot(s, 'enemy-0', 'shoulder', 'player', 'core', CATALOG).hitChance).toBe(43);
+    const legless = edit(s, (d) => { d.units[0].parts.legs!.ap = 0; });
+    expect(evasion(player(legless), CATALOG)).toBe(0);
+  });
+
+  test('energy adds to every turn and to what boost and cool cost', () => {
+    const s = toPlayer(withMods({ energy: 60 }));
+    expect(player(s).energy).toBe(290);
+    expect(player(applyAction(s, { type: 'boost' }, CATALOG)).energy).toBe(290 - 87);
+  });
+
+  test('cooling applies at the end of the turn and to the cool action', () => {
+    let s = edit(toPlayer(withMods({ cooling: 15 })), (d) => { d.units[0].heat = 80; });
+    s = applyAction(s, { type: 'cool' }, CATALOG);
+    expect(player(s).heat).toBe(40);
+    s = applyAction(s, END, CATALOG);
+    expect(player(s).heat).toBe(0);
+  });
+
+  test('extra field repairs and extra armour are there from the start', () => {
+    const p = player(withMods({ repairs: 2, armour: 0.18 }));
+    expect(p.repairsLeft).toBe(4);
+    expect(p.parts.core).toEqual({ ap: 260, maxAp: 260 });
+    expect(p.parts.head).toEqual({ ap: 71, maxAp: 71 });
+  });
+
+  test('enemy scaling makes enemies tougher and harder hitting, and leaves the player alone', () => {
+    const s = createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 1, { enemyScale: 1.5 });
+    expect(unit(s, 'enemy-0').parts.core).toEqual({ ap: 390, maxAp: 390 });
+    expect(previewShot(s, 'enemy-0', 'shoulder', 'player', 'core', CATALOG).damage).toBe(58);
+    expect(player(s).parts.core!.maxAp).toBe(220);
+    expect(previewShot(s, 'player', 'rightHand', 'enemy-0', 'core', CATALOG).damage).toBe(23);
+  });
+
+  test('carried armour is kept, against the modified maximum', () => {
+    const first = edit(toPlayer(withMods({ armour: 0.18 })), (d) => { d.units[0].parts.core!.ap = 100; });
+    const next = createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 2, { carry: carryFrom(first), mods: { armour: 0.18 } });
+    expect(player(next).parts.core).toEqual({ ap: 100, maxAp: 260 });
   });
 });

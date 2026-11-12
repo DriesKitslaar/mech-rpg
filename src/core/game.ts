@@ -1,6 +1,6 @@
 import type { Build, Catalog, Part } from './types';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const STARTING_CREDITS = 1200;
 
 /** Everything about a player's progress that is kept between battles and saved. */
@@ -17,7 +17,19 @@ export interface GameState {
   read: string[];
   /** Whether the ending has been shown; it is shown once, on the first visit to the hub after the finale. */
   endingSeen: boolean;
+  /** Pilot experience; the level follows from it. */
+  xp: number;
+  /** Ranks bought per perk id. */
+  perks: Record<string, number>;
+  /** Arena opponents beaten, in order. */
+  arenaRank: number;
+  /** How many times the campaign has been finished and started again. */
+  cycle: number;
+  settings: Settings;
 }
+
+export interface Settings { sfx: boolean; music: boolean; fastBattles: boolean }
+export const DEFAULT_SETTINGS: Settings = { sfx: true, music: true, fastBattles: false };
 
 export type BuildSlot = keyof Build;
 export const BUILD_SLOTS: BuildSlot[] = ['head', 'core', 'arms', 'legs', 'generator', 'rightHand', 'leftHand', 'shoulder'];
@@ -49,7 +61,10 @@ export function newGame(catalog: Catalog, starter: Build): GameState {
     if (!partOf(catalog, id)) throw new Error(`starter part missing from catalogue: ${id}`);
     inventory[id] = (inventory[id] ?? 0) + 1;
   }
-  return { version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false };
+  return {
+    version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false,
+    xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS },
+  };
 }
 
 export function equippedCount(state: GameState, partId: string): number {
@@ -138,6 +153,11 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (typeof value.credits !== 'number' || !Number.isSafeInteger(value.credits)) return false;
   if (!isTextList(value.completed) || !isTextList(value.read) || typeof value.endingSeen !== 'boolean') return false;
   if (!isWholeNonNegative(value.battlesWon)) return false;
+  if (!isWholeNonNegative(value.xp) || !isWholeNonNegative(value.arenaRank) || !isWholeNonNegative(value.cycle)) return false;
+  if (value.arenaRank > 99 || value.cycle > 99) return false;
+  const { perks, settings } = value;
+  if (!isRecord(perks) || !Object.values(perks).every((rank) => isWholeNonNegative(rank) && rank <= 10)) return false;
+  if (!isRecord(settings) || !['sfx', 'music', 'fastBattles'].every((key) => typeof settings[key] === 'boolean')) return false;
   const { inventory, build } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
 

@@ -20,8 +20,11 @@ export interface Settlement {
   lines: { partId: string; lost: number; cost: number }[];
 }
 
+/** Pilot perks that change the bill: a fraction more pay, a fraction off ammunition and repairs. */
+export interface Terms { payBonus: number; costDiscount: number }
+
 /** What a finished battle earns and costs the player. */
-export function settle(battle: BattleState, reward: number, catalog: Catalog): Settlement {
+export function settle(battle: BattleState, reward: number, catalog: Catalog, terms: Terms = { payBonus: 0, costDiscount: 0 }): Settlement {
   if (battle.outcome === 'ongoing') throw new Error('battle is not over');
   const player = battle.units[0];
   const won = battle.outcome === 'victory';
@@ -32,6 +35,8 @@ export function settle(battle: BattleState, reward: number, catalog: Catalog): S
     const left = player.ammo[slot];
     if (weapon && weapon.ammo !== null && typeof left === 'number') ammoCost += (weapon.ammo - left) * weapon.costPerShot;
   }
+  const discounted = (cost: number): number => Math.round(cost * (1 - terms.costDiscount));
+  ammoCost = discounted(ammoCost);
 
   const lines: Settlement['lines'] = [];
   for (const slot of FRAME_SLOTS) {
@@ -39,10 +44,10 @@ export function settle(battle: BattleState, reward: number, catalog: Catalog): S
     const part = framePart(player.build, slot, catalog);
     if (!state || !part || state.ap >= state.maxAp) continue;
     const lost = state.maxAp - state.ap;
-    lines.push({ partId: part.id, lost, cost: Math.round(lost * REPAIR_COST_PER_AP) });
+    lines.push({ partId: part.id, lost, cost: discounted(lost * REPAIR_COST_PER_AP) });
   }
   const repairCost = lines.reduce((sum, line) => sum + line.cost, 0);
-  const paid = won ? reward : 0;
+  const paid = won ? Math.round(reward * (1 + terms.payBonus)) : 0;
   return { won, reward: paid, ammoCost, repairCost, net: paid - ammoCost - repairCost, lines };
 }
 

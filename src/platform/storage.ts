@@ -1,4 +1,4 @@
-import { SAVE_VERSION, isValidState, type GameState } from '../core/game';
+import { DEFAULT_SETTINGS, SAVE_VERSION, isValidState, type GameState } from '../core/game';
 import type { Catalog } from '../core/types';
 
 export const SAVE_KEY = 'ironwage-save';
@@ -17,7 +17,11 @@ function upgrade(value: unknown): unknown {
   // Version 1 had no campaign: no contracts completed, no messages read.
   if (save.version === 1) save = { ...save, version: 2, completed: [], read: [] };
   // Version 2 did not remember whether the ending had been shown; show it (again) rather than never.
-  if (save.version === 2) save = { ...save, version: SAVE_VERSION, endingSeen: false };
+  if (save.version === 2) save = { ...save, version: 3, endingSeen: false };
+  // Version 3 had no pilot levels, arena, cycles or settings.
+  if (save.version === 3) {
+    save = { ...save, version: SAVE_VERSION, xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS } };
+  }
   return save;
 }
 

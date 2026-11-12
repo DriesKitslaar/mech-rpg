@@ -75,3 +75,21 @@ test('applying a settlement changes credits and counts wins', () => {
   expect(lost).toMatchObject({ credits: -196, battlesWon: 0 });
   expect(game.credits).toBe(1200);
 });
+
+describe('pilot modifiers on the settlement', () => {
+  test('a pay bonus raises the reward', () => {
+    expect(settle(finished('victory'), 600, CATALOG, { payBonus: 0.24, costDiscount: 0 })).toMatchObject({ reward: 744, net: 744 });
+  });
+
+  test('a cost discount lowers ammunition and repairs', () => {
+    const battle = finished('victory', (b) => { b.units[0].ammo.rightHand = 20; b.units[0].parts.core!.ap = 110; });
+    const s = settle(battle, 600, CATALOG, { payBonus: 0, costDiscount: 0.45 });
+    expect(s.ammoCost).toBe(83);          // 150 less 45%, rounded
+    expect(s.lines).toEqual([{ partId: 'core-hauler', lost: 110, cost: 48 }]);
+    expect(s.net).toBe(600 - 83 - 48);
+  });
+
+  test('a bonus does not turn a defeat into pay', () => {
+    expect(settle(finished('defeat'), 600, CATALOG, { payBonus: 0.24, costDiscount: 0 }).reward).toBe(0);
+  });
+});
