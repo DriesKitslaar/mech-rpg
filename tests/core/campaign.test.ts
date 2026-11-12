@@ -1,5 +1,6 @@
 import {
-  availableMissions, campaignComplete, chosenFaction, completeMission, loyalty, markRead, stockFor, unreadMessages,
+  availableMissions, campaignComplete, chosenFaction, completeMission, forCycle, loyalty, markRead, startNewCycle, stockFor,
+  unreadMessages,
   type Message, type Mission,
 } from '../../src/core/campaign';
 import { newGame, type GameState } from '../../src/core/game';
@@ -127,5 +128,34 @@ describe('arena unlocks', () => {
     expect(has({ ...fresh(), arenaRank: 2 })).toBe(false);
     expect(has({ ...fresh(), arenaRank: 3 })).toBe(true);
     expect(has({ ...fresh(), arenaRank: 9 })).toBe(true);
+  });
+});
+
+describe('a new cycle', () => {
+  const finished = (): GameState => ({
+    ...after('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-lumen', 'finale-lumen'),
+    credits: 9000, read: ['welcome'], endingSeen: true, xp: 700, perks: { marksman: 2 }, arenaRank: 4, battlesWon: 12,
+  });
+
+  test('restarts the story and keeps everything the pilot has', () => {
+    const next = startNewCycle(finished(), MISSIONS);
+    expect(next).toMatchObject({
+      completed: [], read: [], endingSeen: false, cycle: 1,
+      credits: 9000, xp: 700, perks: { marksman: 2 }, arenaRank: 4, battlesWon: 12,
+    });
+    expect(next.inventory).toEqual(finished().inventory);
+    expect(offered(next)).toEqual(['patrol', 'intro-1']);
+  });
+
+  test('is only possible once the campaign is complete', () => {
+    expect(() => startNewCycle(after('intro-1'), MISSIONS)).toThrow('the campaign is not complete');
+  });
+
+  test('story contracts get tougher and pay more with each cycle', () => {
+    const base = MISSIONS.find((x) => x.id === 'hadron-1')!;
+    expect(forCycle(base, 0)).toBe(base);
+    expect(forCycle(base, 1)).toMatchObject({ reward: 150, scale: 1.35, id: 'hadron-1' });
+    expect(forCycle(base, 2)).toMatchObject({ reward: 200, scale: 1.7 });
+    expect(forCycle(MISSIONS[0], 3)).toBe(MISSIONS[0]); // the patrol stays a patrol
   });
 });

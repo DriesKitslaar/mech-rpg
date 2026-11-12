@@ -1,7 +1,9 @@
-import { DEFAULT_SETTINGS, SAVE_VERSION, isValidState, type GameState } from '../core/game';
+import { DEFAULT_SETTINGS, SAVE_VERSION, isValidState, type GameState, type Settings } from '../core/game';
 import type { Catalog } from '../core/types';
 
 export const SAVE_KEY = 'ironwage-save';
+/** Options are kept apart from the game, so they exist before a game does and survive starting over. */
+export const SETTINGS_KEY = 'ironwage-settings';
 
 /** The part of `localStorage` the game needs; injected so saving can be tested without a browser. */
 export interface KeyValueStore {
@@ -53,6 +55,30 @@ export class SaveFile {
   save(state: GameState): boolean {
     try {
       this.store.setItem(SAVE_KEY, JSON.stringify(state));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** The stored options, or null when there are none that can be used. */
+  loadSettings(): Settings | null {
+    try {
+      const raw = this.store.getItem(SETTINGS_KEY);
+      if (!raw) return null;
+      const value: unknown = JSON.parse(raw);
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+      const { sfx, music, fastBattles } = value as Record<string, unknown>;
+      if (typeof sfx !== 'boolean' || typeof music !== 'boolean' || typeof fastBattles !== 'boolean') return null;
+      return { sfx, music, fastBattles };
+    } catch {
+      return null;
+    }
+  }
+
+  saveSettings(settings: Settings): boolean {
+    try {
+      this.store.setItem(SETTINGS_KEY, JSON.stringify(settings));
       return true;
     } catch {
       return false;

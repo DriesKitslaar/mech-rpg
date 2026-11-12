@@ -26,13 +26,32 @@ export const STRINGS = {
   hints: { result: 'Press A to continue' },
   titleScreen: {
     tagline: 'Every contract pays. Not every pilot collects.',
-    continue: 'Continue', newGame: 'New Game', eraseQuestion: 'Start over? This erases your save.', no: 'No', yes: 'Yes',
+    continue: 'Continue', newGame: 'New Game', options: 'Options', eraseQuestion: 'Start over? This erases your save.', no: 'No', yes: 'Yes',
     unusable: 'Your saved game could not be read.',
   },
   hub: {
-    heading: 'HEADQUARTERS', contractsItem: 'Contracts', garage: 'Garage', shop: 'Shop', messages: 'Messages',
-    credits: 'CREDITS', battlesWon: 'CONTRACTS WON', contracts: 'CONTRACTS', reward: 'pays',
-    unread: (n: number) => `${n} new`, campaignDone: 'The war is over. Patrols still pay.',
+    heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
+    messages: 'Messages', options: 'Options', cycle: 'New Cycle',
+    credits: 'CREDITS', battlesWon: 'BATTLES WON', level: 'PILOT LEVEL', contracts: 'CONTRACTS', reward: 'pays',
+    unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
+    locked: 'Locked', campaignDone: 'The war is over. The work is not.',
+    cycleLabel: (n: number) => `CYCLE ${n + 1}`,
+    cycleQuestion: ['Start the war again?', 'You keep credits, parts, level,', 'perks and arena rank. Enemies', 'get tougher and pay improves.'],
+    no: 'No', yes: 'Yes',
+  },
+  arena: {
+    heading: 'ARENA', client: 'Arena Office', win: 'The crowd got what it paid for. So did you.',
+    rank: (n: number) => `RANK ${n}`, purse: 'PURSE', rematch: 'REMATCH',
+    next: 'NEXT OPPONENT', beaten: 'BEATEN', locked: 'LOCKED', champion: 'You are the champion of Varn.',
+    yourRank: (n: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/10`), fight: 'ARENA FIGHT', back: 'A: challenge   B: back',
+  },
+  pilot: {
+    heading: 'PILOT', level: 'LEVEL', xp: 'XP', next: 'NEXT LEVEL', maxLevel: 'MAX LEVEL', points: 'PERK POINTS',
+    hint: 'A: spend a point   B: back', noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
+  },
+  options: {
+    heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', fastBattles: 'Fast Battles', on: 'On', off: 'Off',
+    hint: 'A: change   B: back',
   },
   buildErrors: {
     overweight: 'Overweight', insufficientEnergy: 'Not enough energy', missingSlot: 'Missing part',
@@ -41,7 +60,7 @@ export const STRINGS = {
   briefing: {
     accept: 'Accept', back: 'Back', reward: 'PAYS', engagements: (n: number) => (n === 1 ? '1 ENGAGEMENT' : `${n} ENGAGEMENTS`),
     hostiles: 'EXPECTED', exclusive: 'EXCLUSIVE: the other two clients will withdraw their offers.',
-    finale: 'FINAL CONTRACT', repeatable: 'STANDING CONTRACT',
+    finale: 'FINAL CONTRACT', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT',
   },
   mission: {
     engagement: (i: number, n: number) => `ENGAGEMENT ${i}/${n}`,

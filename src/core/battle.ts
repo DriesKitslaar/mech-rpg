@@ -127,7 +127,8 @@ function createUnit(
   const ammo: UnitState['ammo'] = {};
   for (const slot of WEAPON_SLOTS) {
     const weapon = weaponIn(build, slot, catalog);
-    if (weapon) ammo[slot] = weapon.ammo;
+    // Enemies are not on a budget: they never run dry.
+    if (weapon) ammo[slot] = side === 'enemy' ? null : weapon.ammo;
   }
   return {
     id, name, side, build, composed: false, ...extra, parts, heat: 0, energy: 0, ammo, boosted: false, overheated: false,

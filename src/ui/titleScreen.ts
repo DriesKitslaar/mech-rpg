@@ -23,6 +23,7 @@ export class TitleScreen implements Screen {
     return new MenuList([
       ...(this.saved ? [{ id: 'continue', label: T.continue, enabled: true }] : []),
       { id: 'new', label: T.newGame, enabled: true },
+      { id: 'options', label: T.options, enabled: true },
     ]);
   }
 
@@ -51,6 +52,7 @@ export class TitleScreen implements Screen {
           this.asking = true;
           this.list = new MenuList([{ id: 'no', label: T.no, enabled: true }, { id: 'yes', label: T.yes, enabled: true }]);
           break;
+        case 'options': this.app.openOptions(); break;
         case 'yes': this.app.startNewGame(); break;
         case 'no': this.back(); break;
       }
@@ -76,7 +78,7 @@ export class TitleScreen implements Screen {
     const w = 190;
     const x = (LOGICAL_W - w) / 2;
     const notice = this.notice();
-    drawPanel(ctx, x, 160, w, notice ? 52 : 40);
+    drawPanel(ctx, x, 160, w, notice ? 64 : 50);
     let y = 166;
     if (notice) { drawText(ctx, notice, LOGICAL_W / 2, y, { align: 'center', color: COLORS.danger }); y += 14; }
     drawList(ctx, this.list, x + 60, y, 70, 3);

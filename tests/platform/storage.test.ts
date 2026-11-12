@@ -85,3 +85,27 @@ test('a save from the third version gains a pilot and settings and keeps everyth
     xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { sfx: true, music: true, fastBattles: false },
   });
 });
+
+describe('settings', () => {
+  const mem = (initial: Record<string, string> = {}) => {
+    const data = { ...initial };
+    return { data, getItem: (k: string) => (k in data ? data[k] : null), setItem: (k: string, v: string) => { data[k] = v; }, removeItem: (k: string) => { delete data[k]; } };
+  };
+
+  test('are stored apart from the game and read back', () => {
+    const store = mem();
+    const file = new SaveFile(store, CATALOG);
+    expect(file.loadSettings()).toBeNull();
+    expect(file.saveSettings({ sfx: false, music: true, fastBattles: true })).toBe(true);
+    expect(new SaveFile(store, CATALOG).loadSettings()).toEqual({ sfx: false, music: true, fastBattles: true });
+  });
+
+  test.each(['{oops', '[]', '{"sfx":"yes","music":true,"fastBattles":false}', '{"sfx":true}'])('unusable settings %s count as none', (raw) => {
+    expect(new SaveFile(mem({ 'ironwage-settings': raw }), CATALOG).loadSettings()).toBeNull();
+  });
+
+  test('a device that refuses to store them is reported', () => {
+    const store = { getItem: () => null, setItem: () => { throw new Error('full'); }, removeItem: () => {} };
+    expect(new SaveFile(store, CATALOG).saveSettings({ sfx: true, music: true, fastBattles: false })).toBe(false);
+  });
+});

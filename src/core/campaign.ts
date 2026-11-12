@@ -23,6 +23,8 @@ export interface Mission {
   battles: { enemies: string[]; background: string }[];
   /** Multiplies enemy armour and damage; 1 when absent. */
   scale?: number;
+  /** Set on an arena fight: the rank of the opponent. */
+  arenaRank?: number;
 }
 
 export interface Message {
@@ -77,6 +79,30 @@ export function loyalty(state: GameState, missions: Mission[]): Record<Faction, 
   for (const m of done(state, missions, 'faction')) if (m.faction) points[m.faction] += 1;
   for (const m of done(state, missions, 'choice')) if (m.faction) points[m.faction] += 2;
   return points;
+}
+
+/** True once the introductions are behind the pilot, in this cycle or an earlier one. */
+export function introductionsDone(state: GameState, missions: Mission[]): boolean {
+  return state.cycle > 0 || all(missions, 'intro').every((m) => state.completed.includes(m.id));
+}
+
+export const CYCLE_SCALE = 0.35;
+export const CYCLE_PAY = 0.5;
+
+/** A story contract as it is offered in the given cycle: tougher enemies, better pay. The patrol never changes. */
+export function forCycle(mission: Mission, cycle: number): Mission {
+  if (cycle <= 0 || mission.phase === 'patrol') return mission;
+  return {
+    ...mission,
+    reward: Math.round(mission.reward * (1 + CYCLE_PAY * cycle)),
+    scale: Math.round((mission.scale ?? 1) * (1 + CYCLE_SCALE * cycle) * 100) / 100,
+  };
+}
+
+/** Starts the story again. Credits, parts, pilot level, perks and arena rank all stay. */
+export function startNewCycle(state: GameState, missions: Mission[]): GameState {
+  if (!campaignComplete(state, missions)) throw new Error('the campaign is not complete');
+  return { ...state, completed: [], read: [], endingSeen: false, cycle: state.cycle + 1 };
 }
 
 export function campaignComplete(state: GameState, missions: Mission[]): boolean {

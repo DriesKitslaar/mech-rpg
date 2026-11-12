@@ -46,12 +46,14 @@ export class BattleScreen {
 
   constructor(
     private flow: BattleFlow, private sprites: SpriteStore, private catalog: Catalog,
-    private opts: { fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string },
+    private opts: { fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string; speed?: number },
   ) {
     this.shownAp = new ApDisplay(flow.state.units);
   }
 
-  update(dtMs: number): void {
+  update(realMs: number): void {
+    // The fast-battles option plays every pause and effect at a multiple of normal speed.
+    const dtMs = realMs * (this.opts.speed ?? 1);
     this.clock += dtMs;
     this.spawnEffects();
     this.fx.update(dtMs);
