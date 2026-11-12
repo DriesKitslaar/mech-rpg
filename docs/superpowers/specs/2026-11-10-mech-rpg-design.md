@@ -458,3 +458,82 @@ die op dat moment betaalbaar is. Die speler wint de introducties altijd, de klan
 in 88 tot 100% van de gevallen, de exclusieve contracten in 73 tot 100% en de finales in 55
 tot 74%. De balans is niet met mensen getest.
 
+
+## 16. De uitbreiding
+
+Na de eerste versie is gevraagd om een volwaardig spel met meer speeluren en keuzes. Het
+bouwplan staat in `docs/superpowers/plans/2026-11-12-expansion.md`. Hoofdstuk 14 noemde de
+arena en muziek nog als "buiten deze versie"; die zijn er nu.
+
+### 16.1 Piloot
+
+- Een gewonnen contract geeft ervaring: een tiende van het loon. Verliezen geeft niets.
+- Twintig niveaus. Elk niveau boven het eerste geeft één punt.
+- Acht vaardigheden met twee of drie rangen: trefkans, ontwijken, energie per beurt,
+  koeling, een extra noodreparatie, pantser, hoger loon, lagere kosten.
+- Punten zijn niet terug te krijgen.
+
+### 16.2 Wapens met een eigenschap
+
+| Eigenschap | Werking |
+|---|---|
+| Pierce | De weerstand van het doelwit telt voor de helft |
+| Thermal | Een treffer maakt het doelwit warmer |
+| Drain | Een treffer haalt energie weg uit de volgende beurt van het doelwit |
+| Twin | Twee schoten, apart gerold, voor één keer munitie, energie en hitte |
+
+### 16.3 Meer onderdelen en vijanden
+
+- Achttien nieuwe onderdelen, 48 in totaal: de families Wraith (snelst, scherpst) en
+  Colossus (zwaarst), twee generatoren en acht wapens.
+- Vier nieuwe vijanden: het gunship, de lanstoren, de Wraith Stalker en de Colossus
+  Juggernaut.
+- Een vijandelijke mecha die alleen staat, wordt op volle grootte getekend uit de lagen van
+  zijn onderdelen, gespiegeld tegenover de speler.
+- Vijanden raken nooit door hun munitie heen.
+- Een contract kan vijanden sterker of zwakker maken met één factor voor pantser en schade.
+
+### 16.4 Arena
+
+Tien tegenstanders, elk met een eigen mecha uit winkelonderdelen, in vaste volgorde. Wie de
+volgende in de rij verslaat, stijgt een rang en krijgt de volle premie (800 tot 7000). Een
+tegenstander die al verslagen is, levert bij een herkansing een kwart op. De arena gaat open
+na de introducties. Arenarang geeft toegang tot de beste onderdelen in de winkel.
+
+### 16.5 Losse contracten
+
+Na de introducties staan er drie gegenereerde contracten op het bord, naast de vaste. Ze
+volgen uit het aantal gewonnen gevechten en de ronde: na herladen staat hetzelfde bord er,
+na elk gewonnen gevecht een nieuw. Het bord wordt één trap zwaarder per vijf gewonnen
+gevechten (en twee per ronde), tot trap acht. De drie contracten zitten op trap −2, −1 en 0
+ten opzichte van het bord, zodat er altijd een lichtere keuze is. Loon: 250 per
+budgetpunt plus 200 per gevecht.
+
+Dit wijkt af van het plan (één trap per drie gevechten, alle drie op dezelfde trap, budget
+tot 9): in de simulatie werd het bord dan sneller zwaar dan een speler kan bijbenen.
+
+### 16.6 Nieuwe ronde
+
+Na het einde biedt het hoofdkwartier "New Cycle". Credits, onderdelen, niveau, vaardigheden
+en arenarang blijven. De voltooide contracten en gelezen berichten worden gewist, zodat het
+verhaal opnieuw begint en opnieuw een keuze en een einde heeft. Per ronde worden
+verhaalvijanden 35% sterker en betaalt het verhaal 50% meer. De patrouille verandert niet.
+
+### 16.7 Opties en muziek
+
+Geluid, muziek en snelle gevechten (2,5 keer zo snel). De opties staan apart van het spel
+opgeslagen, zodat ze ook werken voordat er een spel is. De muziek bestaat uit twee korte
+lussen (menu en gevecht) die net als de geluiden uit losse tonen zijn opgebouwd.
+
+### 16.8 Opslag
+
+Versie 4. Versie 1 tot en met 3 worden opgewaardeerd.
+
+### 16.9 Balans
+
+Dezelfde automatische speler heeft de arena, het bord en de volgende rondes gespeeld
+(`npm run simulate -- --arena`, `--board`, `--cycle 1`). Elke arenategenstander is te
+verslaan met de uitrusting die op dat moment betaalbaar is (56 tot 96%); de kampioen vraagt
+de zwaarste uitrusting (47%, meer met vaardigheden). De tweede ronde is goed te doen met
+eindspeluitrusting, de derde is zwaar. Niet met mensen getest; de muziek en geluiden zijn
+nooit beluisterd.

@@ -147,3 +147,14 @@ Adds `xp: 0`, `perks: {}`, `arenaRank: 0`, `cycle: 0`,
 6. Cycles.
 7. Pilot screen, options screen, music.
 8. Balance checks, browser tests, review, device build, documentation.
+
+## Changes made while building
+
+- Open contracts: the tier rises once per **five** battles won (not three). The three contracts
+  sit at tier − 2, tier − 1 and tier, so a lighter one is always on offer. Budget is capped at 8,
+  pay is 250 per budget point + 200 per battle, and `enemyScale = 1 + 0.04 * max(0, t - 4)`.
+  With the original numbers the simulation showed the board outgrowing any affordable build.
+- Arena opponents carry a tuning scale between 0.8 and 1.5, set from simulation.
+- Enemies have unlimited ammunition.
+- The arena and the open contracts stay available in later cycles from the start.
+- Options are stored under their own key (`ironwage-settings`) and copied into the save.
