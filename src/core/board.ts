@@ -12,10 +12,11 @@ export const MECH_ENEMIES = ['light-mech', 'stalker', 'heavy-mech', 'rival', 'ju
 const POOL = Object.keys(ENEMY_COST).filter((id) => id !== 'rival');
 
 export const MAX_TIER = 8;
-export const MAX_BUDGET = 9;
+export const MAX_BUDGET = 8;
 export const BOARD_SIZE = 3;
-export const PAY_PER_POINT = 220;
-export const PAY_PER_BATTLE = 150;
+export const WINS_PER_TIER = 5;
+export const PAY_PER_POINT = 250;
+export const PAY_PER_BATTLE = 200;
 
 /** The words open contracts are written with. */
 export interface BoardText {
@@ -31,9 +32,18 @@ export interface BoardText {
   battles: (count: number) => string;
 }
 
+/** How far the board has grown: one tier per five battles won, two per cycle. */
 export function boardTier(battlesWon: number, cycle: number): number {
-  return Math.min(MAX_TIER, Math.floor(battlesWon / 3) + 2 * cycle);
+  return Math.min(MAX_TIER, Math.floor(battlesWon / WINS_PER_TIER) + 2 * cycle);
 }
+
+/** The three contracts differ in weight: the first sits two tiers below the board's, the last at it. */
+export function contractTier(battlesWon: number, cycle: number, index: number): number {
+  return Math.max(0, boardTier(battlesWon, cycle) - (BOARD_SIZE - 1 - index));
+}
+
+export const budgetFor = (tier: number): number => Math.min(MAX_BUDGET, 2 + tier);
+export const scaleFor = (tier: number): number => 1 + 0.04 * Math.max(0, tier - 4);
 
 class Dice {
   constructor(private state: number) {}
@@ -67,16 +77,16 @@ function rollEnemies(dice: Dice, budget: number): string[] {
 }
 
 /**
- * The open contracts on offer. A pure function of the pilot's progress: the same board after a
- * reload, a new one after every battle won.
+ * The open contracts on offer, lightest first. A pure function of the pilot's progress: the same
+ * board after a reload, a new one after every battle won.
  */
 export function generateBoard(battlesWon: number, cycle: number, text: BoardText): Mission[] {
-  const tier = boardTier(battlesWon, cycle);
-  const budget = Math.min(MAX_BUDGET, 2 + tier);
   const dice = new Dice(((battlesWon + 1) * 7919 + cycle * 104729) | 0);
   const usedTitles = new Set<string>();
   const board: Mission[] = [];
   for (let i = 0; i < BOARD_SIZE; i++) {
+    const tier = contractTier(battlesWon, cycle, i);
+    const budget = budgetFor(tier);
     // The first is a single fight; the others run longer and pay more.
     const battleCount = 1 + (i === 0 ? 0 : dice.roll(i + 1));
     const place = dice.roll(text.backgrounds.length);
@@ -93,7 +103,7 @@ export function generateBoard(battlesWon: number, cycle: number, text: BoardText
       briefing: [text.places[place], text.threats[strongest], text.battles(battleCount)],
       debrief: dice.pick(text.debriefs),
       reward: PAY_PER_POINT * spent + PAY_PER_BATTLE * battleCount,
-      battles, scale: 1 + 0.08 * Math.max(0, tier - 4),
+      battles, scale: scaleFor(tier),
     });
   }
   return board;

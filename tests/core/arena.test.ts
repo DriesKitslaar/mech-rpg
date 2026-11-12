@@ -25,7 +25,7 @@ describe('the ladder', () => {
       expect(id in SPRITES, id).toBe(true);
     }
     expect(opponent.scale).toBeGreaterThan(0.4);
-    expect(opponent.scale).toBeLessThanOrEqual(1.2);
+    expect(opponent.scale).toBeLessThanOrEqual(1.6);
     expect(opponent.taunt.length).toBeGreaterThan(0);
   });
 });

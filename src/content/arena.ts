@@ -9,7 +9,7 @@ type Entry = Omit<ArenaOpponent, 'rank' | 'enemy' | 'purse'> & { ai: AiProfile; 
 /** The ladder, bottom first. Every mech is built from parts the shop sells. */
 const LADDER: Entry[] = [
   {
-    name: 'Rustjaw', ai: 'gunner', scale: 0.6,
+    name: 'Rustjaw', ai: 'gunner', scale: 1.5,
     style: 'A scrapper in a stock salvage frame. Shoots straight for the core and nothing else.',
     taunt: 'Fresh paint. I will fix that for you.',
     build: {
@@ -18,7 +18,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Sister Volt', ai: 'skirmisher', scale: 0.6,
+    name: 'Sister Volt', ai: 'skirmisher', scale: 0.9,
     style: 'Halo optics on a salvage body. Boosts often and aims for the head.',
     taunt: 'Hold still. This only hurts if I miss.',
     build: {
@@ -27,7 +27,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Brick', ai: 'bruiser', scale: 0.6,
+    name: 'Brick', ai: 'bruiser', scale: 1.5,
     style: 'A Bulwark core on borrowed legs, with a scatter gun. Hunts whatever is already damaged.',
     taunt: 'I do not dodge. I do not need to.',
     build: {
@@ -36,7 +36,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Mirage', ai: 'skirmisher', scale: 0.65,
+    name: 'Mirage', ai: 'skirmisher', scale: 0.9,
     style: 'A full Halo frame with a pulse carbine. Very hard to hit while her legs work.',
     taunt: 'You will be shooting at where I was.',
     build: {
@@ -45,7 +45,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Anvil', ai: 'bruiser', scale: 0.65,
+    name: 'Anvil', ai: 'bruiser', scale: 1.3,
     style: 'A full Bulwark with a rail lance. Shrugs off bullets; energy weapons cut right through.',
     taunt: 'Hadron built me to break strikes. You are a small one.',
     build: {
@@ -54,7 +54,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Kestrel', ai: 'sprayer', scale: 0.7,
+    name: 'Kestrel', ai: 'sprayer', scale: 0.9,
     style: 'A Ronin frame with a pulse carbine and a shoulder array. Takes your mech apart piece by piece.',
     taunt: 'Nothing personal. I am paid per part.',
     build: {
@@ -63,7 +63,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Cinder', ai: 'gunner', scale: 0.75,
+    name: 'Cinder', ai: 'gunner', scale: 1.0,
     style: 'A Ronin with thermal weapons. Every hit heats you up, so vent early or shut down.',
     taunt: 'Let us see how you fight with your cockpit on fire.',
     build: {
@@ -81,7 +81,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Bastion', ai: 'bruiser', scale: 0.85,
+    name: 'Bastion', ai: 'bruiser', scale: 1.15,
     style: 'A full Colossus with a breaker cannon. Slow to kill and slow to shoot, but one hit can end you.',
     taunt: 'Take your time. I have all the armour in the world.',
     build: {
@@ -90,7 +90,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'The Magistrate', ai: 'bruiser', scale: 1,
+    name: 'The Magistrate', ai: 'bruiser', scale: 1.25,
     style: 'The champion. Colossus armour, a Wraith mask, a void rifle and a null beam that drains your generator.',
     taunt: 'The ladder ends here. Most careers do.',
     build: {
