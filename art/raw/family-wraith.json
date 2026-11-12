@@ -1,0 +1,11 @@
+{
+  "id": "family-wraith",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png"
+  ],
+  "prompt": "The first image shows a mecha in a combat stance. Redraw it as a different mecha design in exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, elbows, hands, hips, knees, feet) stays in the same place. The new design is: a lean stealth reconnaissance mecha in matte indigo and black armour with thin glowing amber light slits: narrow waist, slim angular limbs, small pointed shoulder guards, and a smooth faceless mask head with one vertical amber slit. Slimmer than the first image, sinister and quiet. Keep the same proportions between joints. No weapons, empty hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

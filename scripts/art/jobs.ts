@@ -141,10 +141,21 @@ export const JOBS: ArtJob[] = [
     'limbs, huge square shoulders, a wide barrel chest, and a low cab-like head with a row of small white work lights. ' +
     'Bulkier than the first image, with heavy flat feet.'),
 
+  family('wraith', 'ronin',
+    'a lean stealth reconnaissance mecha in matte indigo and black armour with thin glowing amber light slits: narrow ' +
+    'waist, slim angular limbs, small pointed shoulder guards, and a smooth faceless mask head with one vertical amber ' +
+    'slit. Slimmer than the first image, sinister and quiet.'),
+  family('colossus', 'ronin',
+    'a towering siege mecha in burnished bronze plating with deep blue enamel panels and small white light ports: ' +
+    'enormous rounded pauldrons, a broad barrel chest, forearms like tower shields, thick pillar legs, and a crowned ' +
+    'head with three short upright fins. The biggest and heaviest of all, regal and slow.'),
+
   ...layersOf('salvage', { legs: 'legs-strider', core: 'core-hauler', head: 'head-scout-mk1', arms: 'arms-rigger' }),
   ...layersOf('halo', { legs: 'legs-halo', core: 'core-halo', head: 'head-halo', arms: 'arms-halo' }),
   ...layersOf('bulwark', { legs: 'legs-bulwark', core: 'core-bulwark', head: 'head-bulwark', arms: 'arms-bulwark' }),
   ...layersOf('ronin', { legs: 'legs-ronin', core: 'core-ronin', head: 'head-ronin', arms: 'arms-ronin' }),
+  ...layersOf('wraith', { legs: 'legs-wraith', core: 'core-wraith', head: 'head-wraith', arms: 'arms-wraith' }),
+  ...layersOf('colossus', { legs: 'legs-colossus', core: 'core-colossus', head: 'head-colossus', arms: 'arms-colossus' }),
 
   item('wpn-rivet-rifle', 'handWeapon', 'halo',
     'a long handheld rifle sized for this mecha, in gunmetal and navy with a few cyan lights, lying exactly horizontal, barrel pointing right, grip near the left end. The rifle only, no hand, no mecha.'),
@@ -168,6 +179,34 @@ export const JOBS: ArtJob[] = [
     `a shoulder-mounted emitter array for a robot in a retro video game, ${WEAPON_STYLE}: a flat panel with a row of four glowing lenses on its right face and a mounting bracket underneath, exactly horizontal. The unit only, no mecha.`),
   item('wpn-swarm-rack', 'shoulderWeapon', 'salvage',
     `a shoulder-mounted rack for a robot in a retro video game, ${WEAPON_STYLE}: a worn frame holding twelve small round tubes in three rows on its right face, with a mounting bracket underneath, exactly horizontal. The rack only, no mecha.`),
+  item('wpn-needler', 'handWeapon', 'salvage',
+    `a slim twin-barrelled handheld rapid-fire tool for a robot in a retro video game, ${WEAPON_STYLE}: two thin parallel barrels and a box magazine underneath, lying exactly horizontal, pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-thermal-lance', 'handWeapon', 'halo',
+    `a handheld heat-beam emitter for a robot in a retro video game, ${WEAPON_STYLE}: a ribbed barrel with glowing orange heat fins and a white body, lying exactly horizontal, pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-void-rifle', 'handWeapon', 'wraith',
+    `a long, thin precision rifle for a robot in a retro video game, ${WEAPON_STYLE}: a very slender barrel, a large scope on top and a skeletal stock, lying exactly horizontal, pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-arc-caster', 'handWeapon', 'wraith',
+    `a compact handheld device for a robot in a retro video game, ${WEAPON_STYLE}: a short body ending in two prongs with a crackling spark between them, lying exactly horizontal, pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-hailstorm', 'shoulderWeapon', 'bulwark',
+    `a shoulder-mounted rotary unit for a robot in a retro video game, ${WEAPON_STYLE}: a cluster of six long thin barrels in a ring on a drum housing with a mounting bracket underneath, exactly horizontal, barrels pointing right. The unit only, no mecha.`),
+  item('wpn-inferno-pod', 'shoulderWeapon', 'salvage',
+    `a shoulder-mounted equipment pod for a robot in a retro video game, ${WEAPON_STYLE}: a scorched rectangular housing with four wide nozzles glowing orange on its right face and a mounting bracket underneath, exactly horizontal. The pod only, no mecha.`),
+  item('wpn-null-beam', 'shoulderWeapon', 'wraith',
+    `a shoulder-mounted emitter for a robot in a retro video game, ${WEAPON_STYLE}: a long tapering dish-tipped projector on a slim housing with a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no mecha.`),
+  item('wpn-breaker-cannon', 'shoulderWeapon', 'colossus',
+    `a huge shoulder-mounted equipment unit for a robot in a retro video game, ${WEAPON_STYLE}: one very thick short barrel with a heavy muzzle ring on an armoured block with a mounting bracket underneath, exactly horizontal, barrel pointing right. The unit only, no mecha.`),
+
+  item('enemy-gunship', 'enemy', 'ronin',
+    'a compact hovering gunship drone in the same dark charcoal and deep red armour: a wedge-shaped body with two side engine pods glowing magenta and two small tube pods under the nose. The whole craft, nothing else, no mecha.', true),
+  item('enemy-lance-tower', 'enemy', 'ronin',
+    'a tall slender fixed sentry tower in the same dark charcoal and deep red armour with one magenta lens: a narrow column on a tripod base carrying one extremely long thin barrel pointing right. The whole tower, nothing else, no mecha.', true),
+
+  // Enemy-only weapons borrow the look of a shop weapon.
+  { id: 'wpn-enemy-carbine', kind: 'handWeapon', source: 'wpn-pulse-carbine', prompt: '' },
+  { id: 'wpn-enemy-shotgun', kind: 'handWeapon', source: 'wpn-scatter-gun', prompt: '' },
+  { id: 'wpn-enemy-lance', kind: 'handWeapon', source: 'wpn-rail-lance', prompt: '' },
+  { id: 'wpn-enemy-rack', kind: 'shoulderWeapon', source: 'wpn-swarm-rack', prompt: '' },
+
   item('enemy-recon-drone', 'enemy', 'ronin',
     'a small hovering security drone in the same dark charcoal and deep red armour: a compact body with two ducted rotors, one glowing magenta sensor eye and a small barrel underneath. The whole drone, nothing else, no mecha.', true),
   item('enemy-gun-turret', 'enemy', 'ronin',
@@ -180,6 +219,8 @@ export const JOBS: ArtJob[] = [
   { id: 'enemy-light-mech', kind: 'enemyMech', source: 'family-halo', flip: true, prompt: '' },
   { id: 'enemy-heavy-mech', kind: 'enemyMech', source: 'family-bulwark', flip: true, prompt: '' },
   { id: 'enemy-rival', kind: 'enemyMech', source: 'family-ronin', flip: true, prompt: '' },
+  { id: 'enemy-stalker', kind: 'enemyMech', source: 'family-wraith', flip: true, prompt: '' },
+  { id: 'enemy-juggernaut', kind: 'enemyMech', source: 'family-colossus', flip: true, prompt: '' },
 
   portrait('portrait-hadron', 'a heavyset middle-aged mining executive with tired eyes and slicked-back grey hair, wearing a high-collared charcoal coat with a small yellow and black hazard-striped pin'),
   portrait('portrait-lumen', 'a composed woman analyst with a short dark bob, wearing a white high-tech jacket with thin glowing cyan piping and a translucent data visor over one eye'),
@@ -194,6 +235,8 @@ export const JOBS: ArtJob[] = [
     prompt: '16-bit pixel art background, no anti-aliasing: a spotless corporate research plaza at night, tall white and glass towers with thin cyan light lines, floating hologram panels with abstract shapes instead of readable text, trimmed planters, a smooth pale reflective floor filling the lower third. No characters, no robots, no vehicles in the foreground.' },
   { id: 'bg-undercity', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: a flooded lower level of a megacity, huge rusted pipes and support pillars, shacks built from scrap, strings of mismatched teal and orange neon lights, dripping water and steam, a shallow wet concrete floor filling the lower third. No characters, no robots, no vehicles in the foreground.' },
+  { id: 'bg-arena', kind: 'background',
+    prompt: '16-bit pixel art background, no anti-aliasing: an underground mecha duelling arena at night, a wide scuffed steel floor filling the lower third, tall cage walls, floodlights, banks of spectator stands with a silhouetted crowd, and neon scoreboards in pink and cyan with abstract shapes instead of readable text. No characters or robots in the foreground, no vehicles.' },
   { id: 'bg-garage', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: the inside of a dim mecha hangar bay at night, steel gantries and catwalks, hanging chains and cables, tool racks along the walls, strips of cyan and magenta neon work lights, an empty metal floor filling the lower half. No characters, no robots, no vehicles, no text.' },
 ];
