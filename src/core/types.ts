@@ -178,6 +178,8 @@ export interface EnemyDef {
   sprite: string;
   /** A mech that, when it fights alone, is drawn full size from the sprites of its parts. */
   composed?: boolean;
+  /** Paint scheme the enemy is drawn in; its own colours when absent. */
+  paint?: string;
 }
 
 export const FRAME_SLOTS: FrameSlot[] = ['core', 'legs', 'arms', 'head'];

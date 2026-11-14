@@ -9,7 +9,7 @@ import type { Sfx } from '../platform/audio';
 import { soundsForEvent } from '../platform/audio';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, flightFor, type Scene } from './battleFx';
-import { BACK_MOUNT, FAR_FIST, NEAR_FIST } from './mechLayout';
+import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import type { Sprite, SpriteStore } from './sprites';
 import { COLORS, LINE, drawMeter, drawPanel, drawScrollMenu, drawText } from './widgets';
@@ -46,7 +46,11 @@ export class BattleScreen {
 
   constructor(
     private flow: BattleFlow, private sprites: SpriteStore, private catalog: Catalog,
-    private opts: { fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string; speed?: number },
+    private opts: {
+      fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string; speed?: number;
+      /** The paint scheme of the player's mech. */
+      paint?: string;
+    },
   ) {
     this.shownAp = new ApDisplay(flow.state.units);
   }
@@ -132,7 +136,7 @@ export class BattleScreen {
   }
 
   private playerSprites(): MechSprites {
-    return mechSprites(this.sprites, this.flow.state.units[0].build);
+    return mechSprites(this.sprites, this.flow.state.units[0].build, this.opts.paint);
   }
 
   private drawPlayer(ctx: CanvasRenderingContext2D): void {
@@ -156,7 +160,9 @@ export class BattleScreen {
     // A duelling mech fills the mirrored pose box; this is the part of it the body occupies.
     if (this.duel()) return { x: DUEL_BODY.x, y: DUEL_BODY.y, w: DUEL_BODY.w, h: DUEL_BODY.h, sprite: { image: null as unknown as CanvasImageSource, w: 0, h: 0 } };
     const anchor = (ENEMY_ANCHORS[enemies] ?? ENEMY_ANCHORS[3])[index] ?? ENEMY_ANCHORS[3][2];
-    const sprite = this.sprites.get(enemy.sprite ?? enemy.id, { w: 48, h: 48, label: enemy.name });
+    const fallback = { w: 48, h: 48, label: enemy.name };
+    const id = enemy.sprite ?? enemy.id;
+    const sprite = enemy.paint && this.sprites.painted ? this.sprites.painted(id, enemy.paint, fallback) : this.sprites.get(id, fallback);
     return { x: Math.round(anchor.x - sprite.w / 2), y: anchor.y - sprite.h, w: sprite.w, h: sprite.h, sprite };
   }
 
@@ -169,7 +175,7 @@ export class BattleScreen {
       const flies = enemy.sprite === 'enemy-recon-drone' || enemy.sprite === 'enemy-gunship';
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
       if (this.duel()) {
-        const parts = mechSprites(this.sprites, enemy.build);
+        const parts = mechSprites(this.sprites, enemy.build, enemy.paint);
         const sway = Math.round(Math.sin(this.clock / 520 + 2));
         this.withTransform(ctx, enemy, sway, (dx, dy) => {
           // Mirror the pose box so the mech faces left; a shift to the right is a shift to the left in there.
@@ -245,9 +251,12 @@ export class BattleScreen {
   private scene(): Scene {
     const isPlayer = (id: string) => id === 'player';
     const enemyIndex = (id: string) => this.flow.state.units.findIndex((u) => u.id === id) - 1;
-    const at = (p: { x: number; y: number }) => ({ x: MECH_ORIGIN.x + p.x, y: MECH_ORIGIN.y + p.y });
+    // A mech on tracks carries its upper body lower; every point above the legs comes down with it.
+    const lowered = (unitIndex: number, part?: FrameSlot): number =>
+      (part === 'legs' ? 0 : dropOf(unitIndex === 0 ? this.playerSprites() : mechSprites(this.sprites, this.flow.state.units[unitIndex].build)));
+    const at = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: MECH_ORIGIN.x + p.x, y: MECH_ORIGIN.y + p.y + lowered(0, part) });
     /** A point of the pose box as it lands on screen for the mirrored enemy. */
-    const mirror = (p: { x: number; y: number }) => ({ x: DUEL_RIGHT - p.x, y: MECH_ORIGIN.y + p.y });
+    const mirror = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: DUEL_RIGHT - p.x, y: MECH_ORIGIN.y + p.y + lowered(1, part) });
     return {
       muzzle: (id, weapon) => {
         if (!isPlayer(id)) {
@@ -268,8 +277,8 @@ export class BattleScreen {
         return at({ x: BACK_MOUNT.x + 0.4 * w, y: BACK_MOUNT.y });
       },
       hitPoint: (id, part) => {
-        if (isPlayer(id)) return at(PLAYER_HIT[part]);
-        if (this.duel()) return mirror(PLAYER_HIT[part]);
+        if (isPlayer(id)) return at(PLAYER_HIT[part], part);
+        if (this.duel()) return mirror(PLAYER_HIT[part], part);
         const r = this.enemyRect(enemyIndex(id));
         const offset = { core: 0.5, legs: 0.25, arms: 0.5, head: 0.2 }[part];
         return { x: r.x + r.w / 2, y: r.y + r.h * offset };

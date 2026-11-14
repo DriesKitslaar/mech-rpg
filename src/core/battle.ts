@@ -46,6 +46,8 @@ export interface UnitState {
   sprite?: string;
   /** See `EnemyDef.composed`. */
   composed: boolean;
+  /** See `EnemyDef.paint`. Only the screen reads it. */
+  paint?: string;
   /** Only the frame slots the build has. */
   parts: Partial<Record<FrameSlot, PartState>>;
   heat: number;
@@ -171,7 +173,7 @@ const HAND_SLOTS: WeaponSlot[] = ['rightHand', 'leftHand'];
 
 function createUnit(
   id: string, name: string, side: UnitState['side'], build: Build, catalog: Catalog,
-  extra: Partial<Pick<UnitState, 'ai' | 'sprite' | 'composed'>> = {}, modifiers: Partial<UnitMods> = {},
+  extra: Partial<Pick<UnitState, 'ai' | 'sprite' | 'composed' | 'paint'>> = {}, modifiers: Partial<UnitMods> = {},
 ): UnitState {
   const mods: UnitMods = { ...NO_MODS, ...modifiers };
   const parts: UnitState['parts'] = {};
@@ -355,7 +357,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
   const enemyMods = { damage: scale, toughness: scale };
   const units = [
     playerUnit,
-    ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite, composed: e.composed ?? false }, enemyMods)),
+    ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite, composed: e.composed ?? false, ...(e.paint ? { paint: e.paint } : {}) }, enemyMods)),
   ];
   const state: BattleState = { units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing' };
   state.order = roundOrder(state, catalog);

@@ -102,6 +102,11 @@ async function addPaintInfo(manifest: Record<string, Entry>): Promise<void> {
     for (const id of ids) manifest[id].paint = paint;
     console.log(`paint ${family}: trim hues ${JSON.stringify(paint.accent)}, brightness ${paint.lo}/${paint.mid}/${paint.hi}`);
   }
+  // Enemy sprites are whole pictures: each is judged on its own, so elites can be shown in other colours.
+  for (const job of JOBS) {
+    if ((job.kind !== 'enemy' && job.kind !== 'enemyMech') || !manifest[job.id]) continue;
+    manifest[job.id].paint = analyse([await decode(`${OUT}/${job.id}.png`)]);
+  }
 }
 
 async function main(): Promise<void> {

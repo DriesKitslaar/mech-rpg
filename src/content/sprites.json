@@ -927,12 +927,34 @@
   "enemy-gunship": {
     "file": "sprites/enemy-gunship.png",
     "w": 64,
-    "h": 35
+    "h": 35,
+    "paint": {
+      "accent": [
+        0,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.031,
+      "mid": 0.137,
+      "hi": 0.292
+    }
   },
   "enemy-lance-tower": {
     "file": "sprites/enemy-lance-tower.png",
     "w": 58,
-    "h": 64
+    "h": 64,
+    "paint": {
+      "accent": [
+        5,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.031,
+      "mid": 0.137,
+      "hi": 0.329
+    }
   },
   "wpn-enemy-carbine": {
     "file": "sprites/wpn-enemy-carbine.png",
@@ -972,42 +994,132 @@
   "enemy-recon-drone": {
     "file": "sprites/enemy-recon-drone.png",
     "w": 64,
-    "h": 39
+    "h": 39,
+    "paint": {
+      "accent": [
+        8,
+        10
+      ],
+      "lo": 0.031,
+      "mid": 0.125,
+      "hi": 0.271
+    }
   },
   "enemy-gun-turret": {
     "file": "sprites/enemy-gun-turret.png",
     "w": 64,
-    "h": 36
+    "h": 36,
+    "paint": {
+      "accent": [
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.158,
+      "hi": 0.271
+    }
   },
   "enemy-tank": {
     "file": "sprites/enemy-tank.png",
     "w": 64,
-    "h": 41
+    "h": 41,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.169,
+      "hi": 0.412
+    }
   },
   "enemy-light-mech": {
     "file": "sprites/enemy-light-mech.png",
     "w": 84,
-    "h": 104
+    "h": 104,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.708,
+      "hi": 0.983
+    }
   },
   "enemy-heavy-mech": {
     "file": "sprites/enemy-heavy-mech.png",
     "w": 92,
-    "h": 104
+    "h": 104,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
   },
   "enemy-rival": {
     "file": "sprites/enemy-rival.png",
     "w": 85,
-    "h": 104
+    "h": 104,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        5,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
   },
   "enemy-stalker": {
     "file": "sprites/enemy-stalker.png",
     "w": 86,
-    "h": 104
+    "h": 104,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.098,
+      "hi": 0.329
+    }
   },
   "enemy-juggernaut": {
     "file": "sprites/enemy-juggernaut.png",
     "w": 88,
-    "h": 104
+    "h": 104,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.169,
+      "hi": 0.601
+    }
   },
   "portrait-hadron": {
     "file": "sprites/portrait-hadron.png",
