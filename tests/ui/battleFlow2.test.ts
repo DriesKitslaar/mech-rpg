@@ -72,7 +72,9 @@ describe('the weapon menu', () => {
     settle(flow);
     pick(flow, 'fire');
     expect(flow.menu.items.map((i) => [i.id, i.enabled])).toEqual([['rightHand', false], ['leftHand', true], ['shoulder', true]]);
-    expect(item(flow, 'rightHand').label).toBe('Rivet Rifle - fired');
+    expect(item(flow, 'rightHand')).toMatchObject({ label: 'Rivet Rifle x29', note: 'fired' });
+    expect(item(flow, 'leftHand')).toMatchObject({ label: 'Arc Pistol', note: 'EN 90  HEAT 22' });
+    expect(item(flow, 'shoulder')).toMatchObject({ label: 'Mortar Pod x8', note: 'EN 80  HEAT 30' });
     expect(flow.menu.cursor).toBe(1);
   });
 
@@ -82,14 +84,14 @@ describe('the weapon menu', () => {
     state.units[0].energy = 85;
     const flow = ready(state);
     pick(flow, 'fire');
-    expect(item(flow, 'rightHand').label).toBe('Rivet Rifle - no ammo');
-    expect(item(flow, 'leftHand').label).toBe('Arc Pistol - no energy');
+    expect(item(flow, 'rightHand').note).toBe('no ammo');
+    expect(item(flow, 'leftHand').note).toBe('no energy');
     expect(item(flow, 'shoulder').enabled).toBe(true);
     const armless = battle();
     armless.units[0].parts.arms!.ap = 0;
     const second = ready(armless);
     pick(second, 'fire');
-    expect(item(second, 'rightHand').label).toBe('Rivet Rifle - arms destroyed');
+    expect(item(second, 'rightHand').note).toBe('arms destroyed');
   });
 
   test('a disabled weapon cannot be chosen', () => {
@@ -106,15 +108,19 @@ describe('the weapon menu', () => {
   test('a charge weapon is charged from the menu, and fired from it a turn later', () => {
     const flow = ready(battle({ ...DEMO_BUILD, rightHand: 'wpn-t-charge' }));
     pick(flow, 'fire');
-    expect(item(flow, 'rightHand').label).toBe('wpn-t-charge x8 CHARGE EN 150');
+    expect(item(flow, 'rightHand')).toMatchObject({ label: 'wpn-t-charge x8', note: 'CHARGE  EN 150' });
     pick(flow, 'rightHand');
     settle(flow);
     expect(player(flow).charged).toEqual(['rightHand']);
     expect(flow.phase).toBe('action');
+    // Charged this turn: it says so, instead of claiming it was fired.
+    pick(flow, 'fire');
+    expect(item(flow, 'rightHand')).toMatchObject({ enabled: false, note: 'charged' });
+    flow.onInput('cancel');
     pick(flow, 'endTurn');
     settle(flow);
     pick(flow, 'fire');
-    expect(item(flow, 'rightHand').label).toBe('wpn-t-charge x8 READY HEAT 34');
+    expect(item(flow, 'rightHand')).toMatchObject({ label: 'wpn-t-charge x8', note: 'READY  HEAT 34', enabled: true });
     pick(flow, 'rightHand');
     expect(flow.phase).toBe('target');
     flow.onInput('confirm');
@@ -125,7 +131,7 @@ describe('the weapon menu', () => {
   test('a blade says it needs a boost, and works after one', () => {
     const flow = ready(battle({ ...DEMO_BUILD, rightHand: 'wpn-t-blade' }));
     pick(flow, 'fire');
-    expect(item(flow, 'rightHand')).toMatchObject({ label: 'wpn-t-blade - needs Boost', enabled: false });
+    expect(item(flow, 'rightHand')).toMatchObject({ label: 'wpn-t-blade', note: 'needs Boost', enabled: false });
     flow.onInput('cancel');
     pick(flow, 'boost');
     settle(flow);
@@ -172,4 +178,14 @@ test('every new event has a message', () => {
   expect(seen).toContain('You fire a shock pulse');
   pick(flow, 'guard');
   expect(flow.message).toBe('You brace');
+});
+
+test('no weapon line is wider than the menu panel, whatever is fitted', () => {
+  const longest = Object.values(ALL).filter((p) => p.kind === 'weapon').reduce((a, b) => (b.name.length > a.name.length ? b : a));
+  const flow = ready(battle({ ...DEMO_BUILD, rightHand: longest.mount === 'hand' ? longest.id : DEMO_BUILD.rightHand, shoulder: 'wpn-breaker-cannon' }));
+  pick(flow, 'fire');
+  for (const entry of flow.menu.items) {
+    expect(entry.label.length, entry.label).toBeLessThanOrEqual(28);
+    expect((entry.note ?? '').length, entry.note).toBeLessThanOrEqual(26);
+  }
 });

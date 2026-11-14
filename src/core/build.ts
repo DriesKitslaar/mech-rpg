@@ -69,7 +69,7 @@ export const LEG_TYPES: Record<LegType, {
   shoulderAim: number;
 }> = {
   biped: { stability: 1, thrust: 0, boostCost: 1, canBoost: true, shoulderAim: 0 },
-  reverse: { stability: 0.9, thrust: 8, boostCost: 1, canBoost: true, shoulderAim: 0 },
+  reverse: { stability: 1, thrust: 8, boostCost: 1, canBoost: true, shoulderAim: 0 },
   quad: { stability: 1.25, thrust: 0, boostCost: 1, canBoost: true, shoulderAim: 6 },
   tank: { stability: 1.4, thrust: 0, boostCost: 1, canBoost: false, guard: 0.5, shoulderAim: 0 },
   hover: { stability: 0.8, thrust: 0, boostCost: 0.6, canBoost: true, shoulderAim: 0 },
@@ -148,8 +148,17 @@ export function validatePlayerBuild(build: Build, catalog: Catalog): BuildError[
 
   const stats = computeBuildStats(build, catalog);
   if (stats.weight > stats.capacity) errors.add('overweight');
-  const costs = WEAPON_SLOTS.flatMap((slot) => weaponIn(build, slot, catalog)?.energy ?? []);
-  // An unarmed mech can only lose: it may not leave the garage.
+  // What each weapon takes to use once. A blade is only swung in a turn that began with a boost, so it
+  // needs the energy for both, and on legs that cannot boost it is no weapon at all.
+  const boost = boostProfile(build, catalog);
+  const boostEnergy = Math.ceil(boost.cost * stats.turnEnergy);
+  const costs = WEAPON_SLOTS.flatMap((slot) => {
+    const weapon = weaponIn(build, slot, catalog);
+    if (!weapon) return [];
+    if (weapon.melee) return boost.able ? [weapon.energy + boostEnergy] : [];
+    return [weapon.energy];
+  });
+  // A mech with nothing it can use can only lose: it may not leave the garage.
   if (costs.length === 0) errors.add('noWeapon');
   if (costs.length > 0 && stats.turnEnergy < Math.min(...costs)) errors.add('insufficientEnergy');
   return [...errors];

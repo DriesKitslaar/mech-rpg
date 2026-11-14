@@ -234,6 +234,16 @@ describe('charge weapons', () => {
     expect(can(start(), { type: 'charge', weapon: 'shoulder' })).toBe('noWeapon');
   });
 
+  test('losing the arms loses the charge of a hand weapon, but not of the one on the shoulder', () => {
+    const both: Build = { ...DEMO_BUILD, rightHand: 'wpn-t-charge', shoulder: 'wpn-t-salvo' };
+    let s = act(toPlayer(battle(['gun-turret'], both)), { type: 'charge', weapon: 'rightHand' });
+    s = edit(s, (d) => { const p = player(d); p.charged = ['rightHand', 'shoulder']; p.parts.arms!.ap = 5; });
+    s = act(s, END);
+    s = act(s, { type: 'fire', weapon: 'shoulder', target: 'player', part: 'arms' });
+    expect(player(s).parts.arms!.ap).toBe(0);
+    expect(player(s).charged).toEqual(['shoulder']);
+  });
+
   test('a charged hand weapon is no use once the arms are gone', () => {
     let s = nextRound(act(start(), { type: 'charge', weapon: 'rightHand' }));
     s = edit(s, (d) => { player(d).parts.arms!.ap = 0; });
@@ -456,6 +466,22 @@ describe('modules', () => {
     expect(unit(s, 'enemy-1').destroyed).toBe(true);
     const last = edit(withModule('shock', ['recon-drone']), (d) => { unit(d, 'enemy-0').parts.core!.ap = 10; });
     expect(use(last).outcome).toBe('victory');
+  });
+
+  test('shock: a barrier absorbs it, a guard halves its push, and a staggered mech takes more of it', () => {
+    let s = withModule('shock', ['gun-turret', 'tank', 'recon-drone']);
+    s = edit(s, (d) => {
+      const [, shielded, guarded, reeling] = d.units;
+      shielded.barrier = 90;
+      guarded.guarding = true;
+      reeling.staggered = 2;
+    });
+    s = use(s);
+    expect(unit(s, 'enemy-0')).toMatchObject({ barrier: 75, stagger: 70 });
+    expect(unit(s, 'enemy-0').parts.core!.ap).toBe(260);
+    expect(unit(s, 'enemy-1').stagger).toBe(35);
+    expect(unit(s, 'enemy-1').parts.core!.ap).toBe(200 - Math.round(15 * 0.6));
+    expect(unit(s, 'enemy-2').parts.core!.ap).toBe(50 - Math.round(15 * 1.3));
   });
 
   test('chaff: harder to hit until the unit\'s next turn', () => {

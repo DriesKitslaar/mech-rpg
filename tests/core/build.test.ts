@@ -157,12 +157,41 @@ describe('stability', () => {
     expect(computeBuildStats(DEMO_BUILD, CATALOG).stability).toBe(Math.round(60 + 0.07 * 990));
   });
 
-  test('four legs and tracks stand firmer, hover and reverse joints less firm', () => {
+  test('four legs and tracks stand firmer, hover less firm; reverse joints stand like any biped', () => {
     expect(stabilityFor(1000, 'quad')).toBe(163);
     expect(stabilityFor(1000, 'tank')).toBe(182);
     expect(stabilityFor(1000, 'hover')).toBe(104);
-    expect(stabilityFor(1000, 'reverse')).toBe(117);
+    expect(stabilityFor(1000, 'reverse')).toBe(130);
     expect(stabilityFor(1000, 'biped')).toBe(130);
     expect(Object.keys(LEG_TYPES).sort()).toEqual(['biped', 'hover', 'quad', 'reverse', 'tank']);
+  });
+});
+
+describe('a blade needs the energy for the boost that carries it in', () => {
+  const blade: Weapon = {
+    id: 'wpn-test-blade', name: 'Blade', kind: 'weapon', mount: 'hand', damageType: 'energy', damage: 95, accuracy: 92,
+    energy: 110, heat: 14, ammo: null, costPerShot: 0, weight: 60, price: 0, melee: true,
+  };
+  const weak: Generator = { id: 'gen-test-155', name: 'Weak', kind: 'generator', output: 325, cooling: 10, weight: 100, price: 0 };
+  const tracks: FramePart = { ...(CATALOG['legs-strider'] as FramePart), id: 'legs-test-tracks', legType: 'tank' };
+  const catalog: Catalog = { ...CATALOG, [blade.id]: blade, [weak.id]: weak, [tracks.id]: tracks };
+  const { rightHand: _r, ...unarmed } = STARTER_BUILD;
+
+  test('a mech whose only weapon is a blade it can never afford to swing is refused', () => {
+    // 155 energy a turn: the boost takes 47, which leaves 108 for a blade that needs 110.
+    const build = { ...unarmed, generator: weak.id, rightHand: blade.id };
+    expect(computeBuildStats(build, catalog).turnEnergy).toBe(155);
+    expect(validatePlayerBuild(build, catalog)).toEqual(['insufficientEnergy']);
+    expect(validatePlayerBuild({ ...unarmed, rightHand: blade.id }, catalog)).toEqual([]);
+  });
+
+  test('a gun it can afford makes the build fit to deploy again', () => {
+    const build = { ...unarmed, generator: weak.id, rightHand: blade.id, leftHand: 'wpn-rivet-rifle' };
+    expect(validatePlayerBuild(build, catalog)).toEqual([]);
+  });
+
+  test('on legs that cannot boost a blade is no weapon at all', () => {
+    expect(validatePlayerBuild({ ...unarmed, legs: tracks.id, rightHand: blade.id }, catalog)).toEqual(['noWeapon']);
+    expect(validatePlayerBuild({ ...unarmed, legs: tracks.id, rightHand: blade.id, leftHand: 'wpn-rivet-rifle' }, catalog)).toEqual([]);
   });
 });

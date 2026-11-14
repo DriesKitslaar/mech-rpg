@@ -51,6 +51,16 @@ describe('enemies', () => {
     expect(enemyMove(s)).toEqual(END);
   });
 
+  test('strike first after closing in: the energy kept for the blade is not spent on a gun', () => {
+    let s = to(start(mech({ rightHand: 'wpn-t-blade', shoulder: 'wpn-mortar-pod' })), 'enemy-0');
+    expect(enemyMove(s)).toEqual({ type: 'boost' });
+    s = apply(s, enemyMove(s));
+    expect(enemyMove(s)).toMatchObject({ type: 'fire', weapon: 'rightHand' });
+    s = apply(s, enemyMove(s));
+    // 51 energy left: not enough for the mortar.
+    expect(enemyMove(s)).toEqual(END);
+  });
+
   test('with a blade but not the energy for boost and strike, do not waste the boost', () => {
     const s = edit(to(start(mech({ rightHand: 'wpn-t-blade' })), 'enemy-0'), (d) => { unit(d, 'enemy-0').energy = 150; });
     expect(enemyMove(s)).toEqual(END);
@@ -89,9 +99,10 @@ describe('enemies', () => {
       expect(enemyMove(withModule('painter'))).toEqual({ type: 'module', target: 'player' });
       expect(uses(withModule('painter', (_e, p) => { p.painted = 2; }))).toBe(false);
     });
-    test('shock and overclock at once, the limiter only when cool enough to afford it', () => {
+    test('shock at once; overclock and the limiter only when cool enough to afford the heat', () => {
       expect(uses(withModule('shock'))).toBe(true);
       expect(uses(withModule('overclock'))).toBe(true);
+      expect(uses(withModule('overclock', (e) => { e.heat = 80; }))).toBe(false);
       expect(uses(withModule('limiter'))).toBe(true);
       expect(uses(withModule('limiter', (e) => { e.heat = 50; }))).toBe(false);
     });
@@ -140,6 +151,18 @@ describe('the automatic player', () => {
     expect(autoMove(s)).toEqual({ type: 'boost' });
     s = apply(s, autoMove(s));
     expect(autoMove(s)).toMatchObject({ type: 'fire', weapon: 'rightHand' });
+  });
+
+  test('with a rifle in one hand and a blade in the other, closes in and strikes before it shoots', () => {
+    let s = to(start(ENEMIES['gun-turret'], { ...DEMO_BUILD, leftHand: 'wpn-t-blade', shoulder: undefined }), 'player');
+    expect(autoMove(s)).toEqual({ type: 'boost' });
+    s = apply(s, autoMove(s));
+    expect(autoMove(s)).toMatchObject({ type: 'fire', weapon: 'leftHand' });
+  });
+
+  test('does not overclock itself into overheating', () => {
+    const hot = edit(to(start(ENEMIES['gun-turret'], { ...DEMO_BUILD, module: 'mod-t-overclock' }), 'player'), (d) => { unit(d, 'player').heat = 80; });
+    expect(autoMove(hot).type).not.toBe('module');
   });
 
   test('charges a charge weapon and fires it the turn after', () => {

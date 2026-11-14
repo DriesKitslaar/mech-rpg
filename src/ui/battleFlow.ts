@@ -10,7 +10,8 @@ import type { InputAction } from '../platform/input';
 
 export type BattlePhase =
   | 'action' | 'weapon' | 'target' | 'repairPart' | 'moduleTarget' | 'confirmRetreat' | 'animating' | 'result';
-export interface MenuItem { id: string; label: string; enabled: boolean }
+/** `note` is a second line: what a weapon costs to fire, or why it cannot be fired. */
+export interface MenuItem { id: string; label: string; enabled: boolean; note?: string }
 export interface MenuView { items: MenuItem[]; cursor: number }
 
 type ActionId = 'fire' | 'boost' | 'guard' | 'cool' | 'module' | 'repair' | 'auto' | 'endTurn' | 'retreat';
@@ -71,6 +72,8 @@ export class BattleFlow {
   /** Why a weapon can neither be fired nor charged right now; null when it can. */
   private weaponRefusal(slot: WeaponSlot): Refusal | null {
     if (this.firstTarget(slot) || this.can({ type: 'charge', weapon: slot })) return null;
+    // Charged this turn: it fires from the next turn on, which reads better than "fired".
+    if (this.player.charged.includes(slot) && this.player.fired.includes(slot)) return 'alreadyUsed';
     const enemy = this.livingEnemies()[0];
     const fire = enemy ? checkAction(this.state, { type: 'fire', weapon: slot, target: enemy.id, part: 'core' }, this.catalog) : 'invalidTarget';
     // A charge weapon that is not charged is refused for whatever stops it from charging.
@@ -184,22 +187,23 @@ export class BattleFlow {
     this.overheatWarning = false;
   }
 
-  private weaponLabel(slot: WeaponSlot): string {
+  /** A weapon's menu entry: its name with the shots left, and under it the cost of firing or the reason it cannot. */
+  private weaponItem(slot: WeaponSlot): MenuItem {
     const weapon = weaponIn(this.player.build, slot, this.catalog)!;
-    const refusal = this.weaponRefusal(slot);
-    if (refusal) return `${weapon.name} - ${W.reasons[refusal as keyof typeof W.reasons] ?? refusal}`;
     const ammo = this.player.ammo[slot];
-    const ammoText = typeof ammo === 'number' ? ` x${ammo}` : '';
+    const label = `${weapon.name}${typeof ammo === 'number' ? ` x${ammo}` : ''}`;
+    const refusal = this.weaponRefusal(slot);
+    if (refusal) return { id: slot, label, enabled: false, note: W.reasons[refusal as keyof typeof W.reasons] ?? refusal };
     const { energy, heat } = STRINGS.meters;
-    // Kept short to fit the menu panel: "Rivet Rifle x30 EN 60 HEAT 12".
-    if (!weapon.charge) return `${weapon.name}${ammoText} ${energy} ${weapon.energy} ${heat} ${weapon.heat}`;
-    return this.player.charged.includes(slot)
-      ? `${weapon.name}${ammoText} ${W.ready} ${heat} ${weapon.heat}`
-      : `${weapon.name}${ammoText} ${W.charge} ${energy} ${weapon.energy}`;
+    let note = `${energy} ${weapon.energy}  ${heat} ${weapon.heat}`;
+    if (weapon.charge) {
+      note = this.player.charged.includes(slot) ? `${W.ready}  ${heat} ${weapon.heat}` : `${W.charge}  ${energy} ${weapon.energy}`;
+    }
+    return { id: slot, label, enabled: true, note };
   }
 
   private openWeaponMenu(): void {
-    const items = this.fittedWeapons().map((slot) => ({ id: slot, label: this.weaponLabel(slot), enabled: this.weaponRefusal(slot) === null }));
+    const items = this.fittedWeapons().map((slot) => this.weaponItem(slot));
     this.phase = 'weapon';
     this.menu = { items, cursor: Math.max(0, items.findIndex((i) => i.enabled)) };
     this.targetId = null;

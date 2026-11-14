@@ -44,6 +44,15 @@ export class ApDisplay {
     if (this.pending.length === 0) this.copy(units);
   }
 
+  /**
+   * Adopts the real values at once and drops whatever was still on its way. For changes no shot or
+   * repair event describes (a shock pulse, nanites): by then the real values already include them.
+   */
+  refresh(units: UnitState[]): void {
+    this.pending = [];
+    this.copy(units);
+  }
+
   ap(unitId: string, part: FrameSlot): number {
     return this.shown.get(unitId)?.[part]?.ap ?? 0;
   }

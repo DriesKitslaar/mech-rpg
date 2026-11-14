@@ -5,7 +5,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { EnvHttpProxyAgent, fetch as undiciFetch } from 'undici';
 import { JOBS, qualityFor } from './jobs';
-import { ART_BUDGET_USD, appendLedger, costOf, estimateFor, readLedger, totalOf, wouldExceed } from './ledger';
+import { ART_BUDGET_USD, beginRequest, readLedger, settleRequest, totalOf, wouldExceed } from './ledger';
 import { ArtProxyError, editImage, generateImage, type ProxyDeps } from './proxy';
 
 const RAW = 'art/raw';
@@ -21,6 +21,8 @@ async function main(): Promise<void> {
   const force = process.argv.includes('--force');
   const max = Number(arg('--max') ?? 20);
 
+  // Checked before anything is booked: a run that cannot reach the service must not touch the ledger.
+  if (!process.env.ART_PROXY_URL) throw new Error('ART_PROXY_URL is not set');
   const unknown = (only ?? []).filter((id) => !JOBS.some((j) => j.id === id));
   if (unknown.length) throw new Error(`unknown job id: ${unknown.join(', ')}`);
 
@@ -57,13 +59,15 @@ async function main(): Promise<void> {
       console.error(`FAIL ${job.id} missing reference image: ${missing.join(', ')}`);
       continue;
     }
+    // Booked before it is sent: a request that is interrupted, or times out and is billed anyway, still counts.
+    beginRequest({ id: job.id, at: new Date().toISOString(), method, quality });
     try {
       const request = () => viaEdit
         ? editImage({ prompt, quality, references: references.map((file) => readFileSync(file)) }, deps)
         : generateImage({ prompt, quality }, deps);
       // No automatic retry: a request that times out at a gateway may still be billed.
       const { png, usage } = await request();
-      appendLedger({ id: job.id, at: new Date().toISOString(), method, quality, usd: costOf(method, quality, usage), ...(usage ? { usage } : {}) });
+      settleRequest(job.id, { usage });
       const tmp = `${TMP}/${job.id}.png`;
       writeFileSync(tmp, png);
       renameSync(tmp, `${RAW}/${job.id}.png`);
@@ -75,8 +79,8 @@ async function main(): Promise<void> {
       console.log(`ok   ${job.id}`);
     } catch (e) {
       failed++;
-      // Counted at the estimate: the request may have been billed even though nothing came back.
-      appendLedger({ id: job.id, at: new Date().toISOString(), method, quality, usd: estimateFor(method, quality), failed: true });
+      // Kept at the estimate: the request may have been billed even though nothing came back.
+      settleRequest(job.id, { failed: true });
       const status = e instanceof ArtProxyError ? e.status : '-';
       console.error(`FAIL ${job.id} [${status}] ${e instanceof Error ? e.message : String(e)}`);
     }

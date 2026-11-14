@@ -78,6 +78,8 @@ export class BattleScreen {
       const melee = event.type === 'shot' && this.scene().isMelee(event.unit, event.weapon);
       const flight = this.opts.fast || event.type !== 'shot' ? 0 : melee ? MELEE_MS : flightFor(dtype);
       this.shownAp.schedule(event, flight);
+      // A module changes armour without a shot or a repair to say so; the state already holds the result.
+      if (event.type === 'module') this.shownAp.refresh(this.flow.state.units);
       if (this.opts.fast) continue;
       this.fx.onEvent(event);
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
@@ -324,7 +326,8 @@ export class BattleScreen {
     if (heading) { drawText(ctx, heading, 6, menuY, { color: COLORS.dim }); menuY += LINE; }
     // While aiming, the foot of the menu panel shows energy and heat, so the list above it is shorter.
     const rows = aiming ? 4 : heading ? 7 : 8;
-    drawScrollMenu(ctx, 6, menuY, phase === 'action' ? this.actionLabels() : menu.items, menu.cursor, rows);
+    if (phase === 'weapon') this.drawWeaponMenu(ctx, 6, menuY);
+    else drawScrollMenu(ctx, 6, menuY, phase === 'action' ? this.actionLabels() : menu.items, menu.cursor, rows);
 
     const x = MENU_W + 5;
     const top = PANEL_Y + 3;
@@ -348,6 +351,18 @@ export class BattleScreen {
       y = this.drawStability(ctx, player, x, y, width);
       this.drawEnergyAndHeat(ctx, player, x, y, width);
     }
+  }
+
+  /** The weapon menu: each weapon's name, and under it what firing it costs or why it cannot be fired. */
+  private drawWeaponMenu(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    const { items, cursor } = this.flow.menu;
+    items.forEach((item, i) => {
+      const selected = i === cursor;
+      const top = y + i * (2 * LINE);
+      if (selected) drawText(ctx, '>', x, top, { color: COLORS.accent });
+      drawText(ctx, item.label, x + 8, top, { color: !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text });
+      if (item.note) drawText(ctx, item.note, x + 14, top + LINE - 1, { color: item.enabled ? COLORS.dim : COLORS.danger, size: 10 });
+    });
   }
 
   /** Action menu labels with their energy cost where there is one. */

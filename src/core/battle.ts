@@ -493,7 +493,11 @@ function damagePart(state: BattleState, target: UnitState, slot: FrameSlot, amou
   const part = target.parts[slot]!;
   const before = part.ap;
   part.ap = Math.max(0, part.ap - amount);
-  if (before > 0 && part.ap === 0) state.events.push({ type: 'partDestroyed', unit: target.id, part: slot });
+  if (before > 0 && part.ap === 0) {
+    state.events.push({ type: 'partDestroyed', unit: target.id, part: slot });
+    // Without arms the hand weapons are finished, and whatever charge they held goes with them.
+    if (slot === 'arms') target.charged = target.charged.filter((charged) => !HAND_SLOTS.includes(charged));
+  }
   if (slot === 'core' && part.ap === 0 && !target.destroyed) {
     target.destroyed = true;
     state.events.push({ type: 'unitDestroyed', unit: target.id });
@@ -563,8 +567,23 @@ function heatUp(state: BattleState, unit: UnitState, amount: number): void {
   }
 }
 
+/**
+ * Damage that is not a shot (a shock pulse) arriving at a unit: a staggered unit takes more of it,
+ * a guarding one less, a barrier takes it before the armour does, and a guard halves the push.
+ */
+function strike(state: BattleState, target: UnitState, damage: number, impact: number, catalog: Catalog): void {
+  let amount = damage;
+  if (target.staggered > 0) amount *= STAGGER_DAMAGE;
+  if (target.guarding) amount *= guardFactor(target, catalog);
+  const dealt = Math.max(1, Math.round(amount));
+  const absorbed = Math.min(target.barrier, dealt);
+  target.barrier -= absorbed;
+  if (dealt > absorbed) damagePart(state, target, 'core', dealt - absorbed);
+  addImpact(state, target, Math.round(impact * (target.guarding ? GUARD_IMPACT : 1)));
+}
+
 /** Runs a module's effect and returns what it amounted to, for the event. */
-function useModule(state: BattleState, unit: UnitState, module: Module, targetId: string | undefined): number {
+function useModule(state: BattleState, unit: UnitState, module: Module, targetId: string | undefined, catalog: Catalog): number {
   const { power } = module;
   switch (module.effect) {
     case 'coolant': {
@@ -597,8 +616,7 @@ function useModule(state: BattleState, unit: UnitState, module: Module, targetId
     }
     case 'shock':
       for (const enemy of state.units.filter((u) => u.side !== unit.side && !u.destroyed)) {
-        damagePart(state, enemy, 'core', SHOCK_DAMAGE);
-        addImpact(state, enemy, power);
+        strike(state, enemy, SHOCK_DAMAGE, power, catalog);
       }
       return power;
     case 'chaff':
@@ -659,7 +677,7 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
         type: 'module', unit: unit.id, effect: module.effect, amount: 0, ...(action.target ? { target: action.target } : {}),
       };
       state.events.push(event);
-      event.amount = useModule(state, unit, module, action.target);
+      event.amount = useModule(state, unit, module, action.target, catalog);
       checkOutcome(state);
       break;
     }

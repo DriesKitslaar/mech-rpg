@@ -1,5 +1,5 @@
 import {
-  activeUnit, applyAction, boostCost, checkAction, guardFactor, previewShot, HEAT_LIMIT, LIMITER_HEAT,
+  activeUnit, applyAction, boostCost, checkAction, guardFactor, previewShot, HEAT_LIMIT, LIMITER_HEAT, OVERCLOCK_HEAT,
   type Action, type BattleState, type UnitState,
 } from './battle';
 import { boostProfile, impactOf, moduleOf, weaponIn } from './build';
@@ -16,6 +16,11 @@ function usableWeapons(state: BattleState, catalog: Catalog, targetId: string, o
     const weapon = weaponIn(unit.build, slot, catalog);
     return weapon && can(state, { type: 'fire', weapon: slot, target: targetId, part: 'core' }, catalog) ? [{ slot, weapon }] : [];
   });
+}
+
+/** Puts blades first. A unit that boosted to close in kept energy back for the strike; a gun must not take it. */
+function bladesFirst(usable: Usable[]): Usable[] {
+  return [...usable.filter((u) => u.weapon.melee), ...usable.filter((u) => !u.weapon.melee)];
 }
 
 /** Shared shape of both policies: cool if a shot would overheat, else fire a safe weapon, else stop. */
@@ -72,7 +77,8 @@ function moduleAction(state: BattleState, catalog: Catalog, foe: UnitState): Act
     case 'nanites': wanted = armourShare(unit) < 0.6; break;
     case 'painter': wanted = foe.painted === 0; break;
     case 'limiter': wanted = unit.heat + LIMITER_HEAT <= 60 && unit.fired.length === 0; break;
-    case 'overclock': wanted = unit.fired.length === 0; break;
+    // Both heat the unit: neither is worth a lost turn.
+    case 'overclock': wanted = unit.heat + OVERCLOCK_HEAT <= 70 && unit.fired.length === 0; break;
     case 'shock': wanted = true; break;
   }
   const action: Action = module.effect === 'painter' ? { type: 'module', target: foe.id } : { type: 'module' };
@@ -109,7 +115,7 @@ export function chooseEnemyAction(state: BattleState, catalog: Catalog): Action 
   if (charge) return charge;
   if (shouldCloseIn(state, catalog)) return { type: 'boost' };
 
-  const usable = usableWeapons(state, catalog, player.id, ['shoulder', 'rightHand', 'leftHand']);
+  const usable = bladesFirst(usableWeapons(state, catalog, player.id, ['shoulder', 'rightHand', 'leftHand']));
   const first = coolOrFire(state, catalog, usable, player.id, 'core');
   if (first.type === 'cool') return first;
   if (first.type === 'fire') {
@@ -190,7 +196,7 @@ export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Ac
   if (target.staggered === 0 && damage < target.parts.core!.ap && push >= target.staggerMax - target.stagger) {
     usable.sort((a, b) => impactOf(b.weapon) - impactOf(a.weapon));
   }
-  const choice = coolOrFire(state, catalog, usable, target.id, 'core');
+  const choice = coolOrFire(state, catalog, bladesFirst(usable), target.id, 'core');
   if (choice.type === 'fire') {
     const legs = target.parts.legs;
     const odds = previewShot(state, me.id, choice.weapon, target.id, 'core', catalog).hitChance;

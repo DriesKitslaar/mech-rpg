@@ -74,3 +74,14 @@ test('an unknown unit or part reads as zero', () => {
   expect(shown.ap('nobody', 'core')).toBe(0);
   expect(shown.ap('enemy-0', 'head')).toBe(0);
 });
+
+test('refreshing adopts the real armour at once and drops what was still on its way', () => {
+  const state = battle();
+  const shown = new ApDisplay(state.units);
+  shown.schedule(hit(38), 500);
+  state.units[1].parts.core!.ap = 35; // a shock pulse took 15: no shot event says so
+  shown.refresh(state.units);
+  expect(shown.ap('enemy-0', 'core')).toBe(35);
+  shown.update(600);
+  expect(shown.ap('enemy-0', 'core')).toBe(35);
+});

@@ -138,10 +138,10 @@ test('input during enemy turns is ignored', () => {
   expect(flow.state).toEqual(before);
 });
 
-test('weapon labels show the heat each shot adds', () => {
+test('the line under a weapon shows the energy and the heat each shot takes', () => {
   const flow = ready();
   press(flow, 'confirm');
-  expect(flow.menu.items[0].label).toContain('HEAT 12');
+  expect(flow.menu.items[0]).toMatchObject({ label: 'Rivet Rifle x30', note: 'EN 60  HEAT 12' });
 });
 
 test('targeting warns when the shot would overheat the mech', () => {
