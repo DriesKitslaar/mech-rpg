@@ -179,7 +179,7 @@ test('the kind of legs and the way a weapon is used are described', () => {
   expect(partLines({ ...(CATALOG['legs-strider'] as FramePart), legType: 'tank' }).at(-1)).toBe('TRACKS: no boost, guard 50%');
   const rifle = CATALOG['wpn-rivet-rifle'] as Weapon;
   expect(partLines({ ...rifle, charge: true }).at(-1)).toBe('CHARGE: fires a turn later');
-  expect(partLines({ ...rifle, melee: true }).at(-1)).toBe('MELEE: needs Boost');
+  expect(partLines({ ...rifle, melee: true }).at(-1)).toBe('MELEE: spends your Boost');
   expect(partLines({ ...rifle, trait: 'burst', traitPower: 3 }).at(-1)).toBe('BURST: fires 3 times');
   expect(partLines({ ...rifle, trait: 'salvo' }).at(-1)).toBe('SALVO: hits every enemy');
   expect(partLines({ ...rifle, impact: 140 })[1]).toBe('EN 60  HEAT 12  IMP 140');

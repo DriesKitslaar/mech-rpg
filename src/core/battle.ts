@@ -556,6 +556,8 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
     }
   }
 
+  // Closing in to strike is what the boost was spent on: the mech ends up in the enemy's face, not dodging.
+  if (weapon.melee) unit.boosted = false;
   heatUp(state, unit, weapon.heat);
   checkOutcome(state);
 }

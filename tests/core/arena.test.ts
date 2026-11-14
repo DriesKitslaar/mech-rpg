@@ -1,10 +1,11 @@
 import { arenaPurse, checkChallenge, recordArenaWin } from '../../src/core/arena';
-import { validatePlayerBuild } from '../../src/core/build';
+import { validatePlayerBuild, weaponIn } from '../../src/core/build';
 import { createBattle, turnEnergyOf } from '../../src/core/battle';
 import { newGame, type GameState } from '../../src/core/game';
 import { ARENA, ARENA_ENEMIES } from '../../src/content/arena';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
+import { paintById } from '../../src/ui/paint';
 
 const at = (arenaRank: number): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), arenaRank });
 
@@ -27,6 +28,13 @@ describe('the ladder', () => {
     expect(opponent.scale).toBeGreaterThan(0.4);
     expect(opponent.scale).toBeLessThanOrEqual(1.6);
     expect(opponent.taunt.length).toBeGreaterThan(0);
+    if (def.paint) expect(paintById(def.paint), def.paint).toBeDefined();
+  });
+
+  test('most of the ladder wears its own paint, and no two the same', () => {
+    const paints = Object.values(ARENA_ENEMIES).flatMap((def) => def.paint ?? []);
+    expect(paints.length).toBeGreaterThanOrEqual(8);
+    expect(new Set(paints).size).toBe(paints.length);
   });
 });
 
@@ -65,7 +73,8 @@ test('enemies never run out of ammunition, whatever they carry', () => {
 test.each(ARENA.map((o) => [o.name, o] as const))('%s can fire every weapon they carry in one turn', (_name, opponent) => {
   const s = createBattle(DEMO_BUILD, [ARENA_ENEMIES[opponent.enemy]], CATALOG, 1);
   const unit = s.units[1];
+  // A shield in the left hand is not fired and costs nothing.
   const cost = (['rightHand', 'leftHand', 'shoulder'] as const)
-    .reduce((sum, slot) => sum + (unit.build[slot] ? (CATALOG[unit.build[slot]!] as { energy: number }).energy : 0), 0);
+    .reduce((sum, slot) => sum + (weaponIn(unit.build, slot, CATALOG)?.energy ?? 0), 0);
   expect(turnEnergyOf(unit, CATALOG)).toBeGreaterThanOrEqual(cost);
 });

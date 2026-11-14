@@ -1,5 +1,6 @@
 import { completeMission } from '../../src/core/campaign';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
+import { ARENA } from '../../src/content/arena';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
@@ -47,10 +48,18 @@ const select = (app: App, id: string) => {
 const HUB = ['contracts', 'arena', 'garage', 'shop', 'pilot', 'messages', 'options'];
 const fresh = (): GameState => newGame(CATALOG, STARTER_BUILD);
 const done = (...missionIds: string[]): GameState => missionIds.reduce((g, id) => completeMission(g, id, MISSIONS), fresh());
-/** A save that owns and wears one of the reference builds. */
+/**
+ * The heaviest frame with weapons that never run dry, for tests that are about reaching something
+ * rather than about balance: the plain way these tests fight would empty any magazine first.
+ */
+const JUGGERNAUT = {
+  head: 'head-colossus', core: 'core-colossus', arms: 'arms-colossus', legs: 'legs-colossus', generator: 'gen-singularity',
+  booster: 'bst-stock', fcs: 'fcs-omni', rightHand: 'wpn-lance-emitter', leftHand: 'wpn-pulse-carbine', shoulder: 'wpn-halo-array',
+};
+/** A save that owns and wears one of the reference builds, or the juggernaut above. */
 function geared(base: GameState, buildName: string): GameState {
   let g = { ...base, credits: 99999 };
-  for (const [slot, id] of Object.entries(REFERENCE_BUILDS[buildName])) {
+  for (const [slot, id] of Object.entries(buildName === 'juggernaut' ? JUGGERNAUT : REFERENCE_BUILDS[buildName])) {
     if (!g.inventory[id]) g = buy(g, id, CATALOG);
     g = equip(g, slot as keyof typeof g.build, id, CATALOG);
   }
@@ -313,8 +322,8 @@ describe('the campaign', () => {
   const allButFinale = (choice: string) => done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', `choice-${choice}`);
 
   test.each(['hadron', 'lumen', 'undertow'])('the %s finale leads to its ending and back to a hub with only the patrol', (faction) => {
-    // Late-game gear, and as many attempts as it takes: the point is that the ending is reachable.
-    const { app } = inHub(geared(allButFinale(faction), 'tier3'), 11);
+    // The best gear there is, and as many attempts as it takes: the point is that the ending is reachable.
+    const { app } = inHub(geared(allButFinale(faction), 'juggernaut'), 11);
     let won = false;
     for (let attempt = 0; attempt < 12 && !won; attempt++) {
       accept(app, `finale-${faction}`);
@@ -532,7 +541,7 @@ describe('pilot levels and perks', () => {
 });
 
 describe('the arena', () => {
-  const ready = (extra: Partial<GameState> = {}) => inHub({ ...geared(done('intro-1', 'intro-2'), 'tier3'), ...extra }, 3);
+  const ready = (extra: Partial<GameState> = {}) => inHub({ ...geared(done('intro-1', 'intro-2'), 'juggernaut'), ...extra }, 3);
 
   test('is locked until the introductions are done', () => {
     const { app } = inHub();
@@ -674,7 +683,7 @@ describe('options', () => {
     select(easy, 'arena');
     select(easy, 'rank-1');
     select(easy, 'accept');
-    expect(snap(easy).battle!.enemyScale).toBeCloseTo(1.5 * 1.2);
+    expect(snap(easy).battle!.enemyScale).toBeCloseTo(ARENA[0].scale * 1.2);
     expect(JSON.parse(store.data[SAVE_KEY]).settings.difficulty).toBe('standard');
   });
 

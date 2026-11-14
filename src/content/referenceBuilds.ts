@@ -12,26 +12,26 @@ export const REFERENCE_BUILDS: Record<string, Build> = {
   starter: STARTER_BUILD,
   /** After the introductions: two more weapons (1300 credits). */
   tier1: DEMO_BUILD,
-  /** After the three clients: a sharper head, a stronger generator and an energy carbine. Costs 3800, part of which comes from selling the parts they replace. */
-  tier2: { ...DEMO_BUILD, head: 'head-halo', generator: 'gen-prism', leftHand: 'wpn-pulse-carbine' },
-  /** After the exclusive contract: heavy legs and core to carry it all, and a cooler generator. Again partly paid for by selling what it replaces. */
+  /** After the three clients: a sharper head, a stronger generator, an energy carbine and fire control to match. Part of the cost comes from selling what they replace. */
+  tier2: { ...DEMO_BUILD, head: 'head-halo', generator: 'gen-prism', leftHand: 'wpn-pulse-carbine', fcs: 'fcs-lattice' },
+  /** After the exclusive contract: heavy legs and core to carry it all, a cooler generator, the same fire control and a barrier. */
   tier3: {
     ...DEMO_BUILD, head: 'head-halo', core: 'core-bulwark', legs: 'legs-bulwark', generator: 'gen-furnace',
-    leftHand: 'wpn-pulse-carbine',
+    leftHand: 'wpn-pulse-carbine', fcs: 'fcs-lattice', module: 'mod-barrier',
   },
   /** After the campaign: a full Ronin with a rail lance and a shoulder array. */
   tier4: {
     ...STOCK, head: 'head-ronin', core: 'core-ronin', arms: 'arms-ronin', legs: 'legs-ronin', generator: 'gen-prism',
-    rightHand: 'wpn-rail-lance', leftHand: 'wpn-pulse-carbine', shoulder: 'wpn-halo-array',
+    rightHand: 'wpn-rail-lance', leftHand: 'wpn-pulse-carbine', shoulder: 'wpn-halo-array', module: 'mod-coolant',
   },
-  /** Deep into the arena: a Wraith striker with a void rifle. */
+  /** Deep into the arena: a Wraith duellist with a void rifle and a blade, on phase jets. */
   tier5: {
-    ...STOCK, head: 'head-wraith', core: 'core-wraith', arms: 'arms-wraith', legs: 'legs-wraith', generator: 'gen-tidal',
-    rightHand: 'wpn-void-rifle', leftHand: 'wpn-arc-caster', shoulder: 'wpn-halo-array',
+    head: 'head-wraith', core: 'core-wraith', arms: 'arms-wraith', legs: 'legs-wraith', generator: 'gen-tidal',
+    booster: 'bst-phase', fcs: 'fcs-surgeon', module: 'mod-oracle', rightHand: 'wpn-void-rifle', leftHand: 'wpn-arc-blade',
   },
-  /** The top of the ladder: a full Colossus carrying the heaviest guns there are. */
+  /** The top of the ladder: a full Colossus with the best generator, a void rifle, a breaker cannon and a barrier. */
   tier6: {
-    ...STOCK, head: 'head-colossus', core: 'core-colossus', arms: 'arms-colossus', legs: 'legs-colossus', generator: 'gen-tidal',
-    rightHand: 'wpn-void-rifle', leftHand: 'wpn-lance-emitter', shoulder: 'wpn-breaker-cannon',
+    head: 'head-colossus', core: 'core-colossus', arms: 'arms-colossus', legs: 'legs-colossus', generator: 'gen-singularity',
+    booster: 'bst-stock', fcs: 'fcs-omni', module: 'mod-aegis', rightHand: 'wpn-void-rifle', shoulder: 'wpn-breaker-cannon',
   },
 };

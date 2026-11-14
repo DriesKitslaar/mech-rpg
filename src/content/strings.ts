@@ -152,7 +152,7 @@ export const STRINGS = {
     thrust: 'THRUST', boostCost: 'BOOST COST', aimByType: 'AIM K/E/X', focus: 'FOCUS', uses: 'USES',
     guard: (blocked: number) => `GUARD: blocks ${blocked}%`, guardShort: 'GUARD',
     versus: (name: string) => `VS ${name}`,
-    charge: 'CHARGE: fires a turn later', melee: 'MELEE: needs Boost',
+    charge: 'CHARGE: fires a turn later', melee: 'MELEE: spends your Boost',
     traits: {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',
