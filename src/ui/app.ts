@@ -6,8 +6,9 @@ import {
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
+import { openEntries, type Entry } from '../core/codex';
 import { applySettlement, settle, type Settlement } from '../core/economy';
-import { MEDAL_PAY, awardMedals, type Medal } from '../core/medals';
+import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
@@ -16,13 +17,14 @@ import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats }
 import type { BuildError, Catalog, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
+import { WORLD } from '../content/codex';
 import { MEDALS } from '../content/medals';
 import { MESSAGES, MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
 import { SCENES } from '../content/scenes';
 import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
 import { STRINGS } from '../content/strings';
-import type { Sfx } from '../platform/audio';
+import type { Sfx, SoundName } from '../platform/audio';
 import type { TrackName } from '../platform/music';
 import type { InputAction } from '../platform/input';
 import { SLOTS, type SaveFile } from '../platform/storage';
@@ -30,6 +32,7 @@ import { ArenaScreen } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
 import { CallsignScreen } from './callsignScreen';
+import { DatabaseScreen } from './databaseScreen';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
@@ -43,7 +46,7 @@ import { battleTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
-import { COLORS, drawMedal, drawPanel, drawText } from './widgets';
+import { COLORS, drawMedal, drawPage, drawPanel, drawText } from './widgets';
 
 /** What a screen reports about itself, for tests and for telling whether an input did anything. */
 export interface ScreenView {
@@ -61,7 +64,7 @@ export interface Screen {
 
 export type ScreenName =
   | 'title' | 'callsign' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
-  | 'arena' | 'pilot' | 'options';
+  | 'arena' | 'pilot' | 'options' | 'database';
 
 /** One of the kept games as the title shows it: empty, unreadable, or a game. */
 export interface SlotView { slot: number; game: GameState | null; unusable: boolean }
@@ -75,8 +78,44 @@ export const SHUTTER_MS = 320;
 export const TOAST_MS = 2600;
 const TOAST_SLIDE_MS = 180;
 
+/** More medals than this earned at once are announced together. */
+const TOASTS_AT_ONCE = 3;
+/** Screens that are not interrupted: an announcement waits until they are over. */
+const NO_TOASTS: ScreenName[] = ['battle', 'scene', 'ending', 'title', 'callsign'];
+
 /** What the battles of a contract added up to, for the record. */
 export interface Fought { tally: Stats; met: string[]; retreated: boolean }
+
+/** Something to tell the pilot in passing: a medal earned, the database grown. */
+interface Toast {
+  id: string;
+  heading: string;
+  title: string;
+  /** Written at the right: what a medal pays. */
+  note?: string;
+  /** The metal of a medal; an announcement without one is about the database. */
+  tier?: Tier;
+  sound: SoundName;
+}
+
+/** One announcement a medal, or one for all of them when there are many. */
+function medalToasts(earned: Medal[]): Toast[] {
+  const M = STRINGS.medals;
+  if (earned.length > TOASTS_AT_ONCE) {
+    const pay = earned.reduce((sum, medal) => sum + MEDAL_PAY[medal.tier], 0);
+    const best = Math.max(...earned.map((medal) => medal.tier)) as Tier;
+    return [{ id: `medals:${earned.length}`, heading: M.earnedMany, title: M.count(earned.length), note: M.pay(pay), tier: best, sound: 'medal' }];
+  }
+  return earned.map((medal) => ({ id: medal.id, heading: M.earned, title: medal.name, note: M.pay(MEDAL_PAY[medal.tier]), tier: medal.tier, sound: 'medal' as const }));
+}
+
+/** One entry is announced by its title, several as a count. */
+function entryToasts(opened: Entry[]): Toast[] {
+  const D = STRINGS.database;
+  if (opened.length === 0) return [];
+  if (opened.length === 1) return [{ id: `entry:${opened[0].id}`, heading: D.toast, title: opened[0].title, sound: 'entry' }];
+  return [{ id: `entries:${opened.length}`, heading: D.toast, title: D.newEntries(opened.length), sound: 'entry' }];
+}
 
 /** The part of the music player the app steers. */
 export interface MusicControl {
@@ -229,9 +268,9 @@ export class App {
   private file: SaveFile;
   /** The way the current screen is still coming into view: what is left of it and how long it takes. */
   private entering = { left: 0, total: 1, shutter: false };
-  /** Medals earned and not yet announced, and the one being announced with the time it has left. */
-  private toasts: Medal[] = [];
-  private toast: { medal: Medal; left: number } | null = null;
+  /** What has not been announced yet, and what is being announced with the time it has left. */
+  private toasts: Toast[] = [];
+  private toast: { item: Toast; left: number } | null = null;
   /** Time played since the record was last brought up to date, in milliseconds. */
   private played = 0;
 
@@ -335,20 +374,24 @@ export class App {
     this.file = file;
     this.file.rememberSlot();
     this.played = 0;
-    this.game = { ...saved, settings: { ...this.settings } };
+    // Saved at once: a game from an older version is brought up to date where it is kept, and what it
+    // had already done is recognised now (medals, entries of the database) rather than at its next save.
+    this.commit({ ...saved, settings: { ...this.settings } });
     this.go('hub');
   }
 
   /**
    * Replaces the game state and saves it. On the way the record is brought up to date with the
-   * time played, and any medal the pilot now has what it takes for is awarded and queued to be announced.
+   * time played, any medal the pilot now has what it takes for is awarded, and the database's
+   * entries whose time has come are opened; both are queued to be announced.
    */
   commit(next: GameState): void {
     const seconds = Math.floor(this.played / 1000);
     this.played -= seconds * 1000;
     const timed = seconds > 0 ? { ...next, stats: { ...next.stats, seconds: next.stats.seconds + seconds } } : next;
-    const { game, earned } = awardMedals(timed, MEDALS);
-    this.toasts.push(...earned);
+    const { game: awarded, earned } = awardMedals(timed, MEDALS);
+    const { game, opened } = openEntries(awarded, WORLD, MISSIONS);
+    this.toasts.push(...medalToasts(earned), ...entryToasts(opened));
     this.game = game;
     this.saveFailed = !this.file.save(game);
   }
@@ -450,6 +493,7 @@ export class App {
       case 'shop': return this.show(name, new ShopScreen(this));
       case 'messages': return this.show(name, new MessagesScreen(this));
       case 'pilot': return this.show(name, new PilotScreen(this));
+      case 'database': return this.show(name, new DatabaseScreen(this));
       case 'arena': if (this.sideWorkOpen()) this.show(name, new ArenaScreen(this)); return;
       case 'options': return this.openOptions();
       default: return; // briefings, battles, settlements and endings open through their own methods
@@ -517,22 +561,22 @@ export class App {
     this.stepToast(dtMs);
   }
 
-  /** One announcement at a time, and none over a battle: they wait for the settlement. */
+  /** One announcement at a time, and none over a battle or a page of story: they wait for what comes after. */
   private stepToast(dtMs: number): void {
     if (this.toast) {
       this.toast.left -= dtMs;
       if (this.toast.left <= 0) this.toast = null;
       return;
     }
-    if (this.toasts.length === 0 || this.name === 'battle') return;
-    this.toast = { medal: this.toasts.shift()!, left: TOAST_MS };
-    this.deps.sfx?.play('medal');
+    if (this.toasts.length === 0 || NO_TOASTS.includes(this.name)) return;
+    this.toast = { item: this.toasts.shift()!, left: TOAST_MS };
+    this.deps.sfx?.play(this.toast.item.sound);
   }
 
-  /** A medal's announcement: a strip that slides down from the top edge, stays, and slides back. */
+  /** An announcement: a strip that slides down from the top edge, stays, and slides back. */
   private drawToast(ctx: CanvasRenderingContext2D): void {
     if (!this.toast) return;
-    const { medal, left } = this.toast;
+    const { item, left } = this.toast;
     const slide = Math.min(1, left / TOAST_SLIDE_MS, (TOAST_MS - left) / TOAST_SLIDE_MS);
     const w = 176;
     const h = 28;
@@ -542,10 +586,11 @@ export class App {
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(x, y, w, h);
     drawPanel(ctx, x, y, w, h);
-    drawMedal(ctx, x + 6, y + 9, medal.tier, true);
-    drawText(ctx, STRINGS.medals.earned, x + 20, y + 2, { color: COLORS.dim, size: 10 });
-    drawText(ctx, medal.name, x + 20, y + 12, { color: COLORS.accent });
-    drawText(ctx, STRINGS.medals.pay(MEDAL_PAY[medal.tier]), x + w - 6, y + 12, { align: 'right', color: COLORS.armor });
+    if (item.tier) drawMedal(ctx, x + 6, y + 9, item.tier, true);
+    else drawPage(ctx, x + 6, y + 9);
+    drawText(ctx, item.heading, x + 20, y + 2, { color: COLORS.dim, size: 10 });
+    drawText(ctx, item.title, x + 20, y + 12, { color: COLORS.accent });
+    if (item.note) drawText(ctx, item.note, x + w - 6, y + 12, { align: 'right', color: COLORS.armor });
   }
 
   private drawScreen(ctx: CanvasRenderingContext2D): void {
@@ -592,8 +637,8 @@ export class App {
       ranks: game?.ranks ?? null,
       scenes: game?.scenes ?? null,
       medals: game?.medals ?? [],
-      toast: this.toast?.medal.id ?? null,
-      toasts: this.toasts.map((medal) => medal.id),
+      toast: this.toast?.item.id ?? null,
+      toasts: this.toasts.map((item) => item.id),
       saveFailed: this.saveFailed,
       ...this.current.view(),
     };

@@ -4,6 +4,7 @@ import type { EnemyDef } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { BattleFlow, BattleScreen, INTRO_MS, TALK_HOLD_MS, WARNING_MS } from '../../src/ui/battleScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
+import { WORLD } from '../../src/content/codex';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
@@ -420,7 +421,7 @@ describe('the screens the pilot\'s record added', () => {
   });
 
   test('a medal is announced over whatever screen is up, with its name and what it pays', () => {
-    const app = start({ ...done('intro-1'), scenes: ['act-1'] }, false);
+    const app = start({ ...done('intro-1'), scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
     app.commit({ ...app.game!, arenaRank: 1 });
     const { ctx, calls } = recorder();
     app.update(400);
@@ -431,6 +432,34 @@ describe('the screens the pilot\'s record added', () => {
     app.update(3000);
     app.draw(later.ctx);
     expect(texts(later.calls)).not.toContain('MEDAL EARNED');
+  });
+
+  test('the database draws its three pages: a unit with its picture and figures, an entry about the world, a topic of the manual', () => {
+    const app = start({ ...done('intro-1'), met: ['recon-drone', 'gun-turret'], scenes: ['act-1'] });
+    select(app, 'database');
+    const page = () => { const { ctx, calls } = recorder(); app.update(16); app.draw(ctx); return { said: texts(calls), calls }; };
+    press(app, 'down', 'down', 'down', 'down', 'down');
+    const unit = page();
+    expect(unit.said).toEqual(expect.arrayContaining([
+      'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'MET 2/30', '? ? ?',
+    ]));
+    expect(unit.calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'enemy-gun-turret')).toBe(true);
+    press(app, 'next');
+    expect(page().said).toEqual(expect.arrayContaining(['VARN', 'Varn', 'The Licence', 'Hadron Mining']));
+    press(app, 'next');
+    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Leg Types', `${22} TOPICS`]));
+  });
+
+  test('the database growing is announced with its own mark, and medals after it one by one', () => {
+    // A game from before there was a database: its entries open as it is loaded.
+    const app = start({ ...done('intro-1'), scenes: ['act-1'] }, false);
+    const strip = () => { const { ctx, calls } = recorder(); app.update(400); app.draw(ctx); return texts(calls); };
+    expect(strip()).toEqual(expect.arrayContaining(['DATABASE', '6 new entries']));
+    app.commit({ ...app.game!, arenaRank: 10 });
+    app.update(3000);
+    expect(strip()).toEqual(expect.arrayContaining(['MEDAL EARNED', 'On the Ladder', '+100 c']));
+    app.update(3000);
+    expect(strip()).toEqual(expect.arrayContaining(['MEDAL EARNED', 'Champion of Varn', '+1200 c']));
   });
 
   test('the hub shows the pilot\'s callsign and level', () => {

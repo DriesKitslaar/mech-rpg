@@ -34,7 +34,7 @@ test('arena, pilot, options, open contracts and a new cycle', async ({ page }) =
   await open(page);
   await choose(page, 'continue');
   await waitForScreen(page, 'hub');
-  expect((await snap(page)).menu.items.map((i) => i.id)).toEqual(['contracts', 'arena', 'garage', 'shop', 'pilot', 'messages', 'options', 'cycle']);
+  expect((await snap(page)).menu.items.map((i) => i.id)).toEqual(['contracts', 'arena', 'garage', 'shop', 'pilot', 'messages', 'database', 'options', 'cycle']);
   await page.screenshot({ path: shot('hub-late') });
 
   // Pilot: level 5 with four points, two already spent.

@@ -57,6 +57,36 @@ test('the pilot screen: perks, medals and the record, paged with the shoulder bu
   expect(errors).toEqual([]);
 });
 
+test('the database: units met and not met, the world so far, and the manual', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const met = ['recon-drone', 'gunship', 'shield-drone', 'bomb-crawler', 'gun-turret', 'tank', 'light-mech', 'heavy-mech', 'rival', 'leviathan', 'adjuster'];
+  await load(page, veteran({ met, codex: ['varn', 'licence', 'dispatch', 'hadron', 'lumen', 'undertow', 'arena', 'ashfall'] }));
+  await enterHub(page);
+  await page.screenshot({ path: shot('hub-menu') });
+  await choose(page, 'database');
+  await waitForScreen(page, 'database');
+  expect(await snap(page)).toMatchObject({ page: 'units' });
+  await page.screenshot({ path: shot('database-unit') });
+  for (const id of ['heavy-mech', 'leviathan', 'adjuster']) {
+    for (let i = 0; i < 40 && (await snap(page)).menu.items[(await snap(page)).menu.cursor].id !== id; i++) await press(page, 'ArrowDown');
+    await page.screenshot({ path: shot(`database-${id}`) });
+  }
+  await press(page, 'KeyE');
+  expect((await snap(page)).page).toBe('world');
+  await press(page, 'ArrowDown');
+  await press(page, 'ArrowDown');
+  await press(page, 'ArrowDown');
+  await page.screenshot({ path: shot('database-world') });
+  await press(page, 'KeyE');
+  expect((await snap(page)).page).toBe('manual');
+  await press(page, 'ArrowDown');
+  await page.screenshot({ path: shot('database-manual') });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  expect(errors).toEqual([]);
+});
+
 test('a medal earned is announced over the hub and then goes away', async ({ page }) => {
   // This pilot has done what two medals take but holds neither: the first save awards them.
   await load(page, veteran({ medals: ['first-contract'] }), '/?seed=7');

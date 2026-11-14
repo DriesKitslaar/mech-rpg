@@ -11,7 +11,7 @@ import { drawMech, mechSprites } from './mechView';
 import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const H = STRINGS.hub;
-const ROWS = 8;
+const ROWS = 10;
 /** The entry of the contract list that opens the archive. No contract has this id. */
 export const ARCHIVE = 'archive';
 
@@ -38,6 +38,7 @@ export class HubScreen implements Screen {
       { id: 'shop', label: H.shop, enabled: true },
       { id: 'pilot', label: H.pilot, enabled: true, note: points > 0 ? H.points(points) : undefined },
       { id: 'messages', label: H.messages, enabled: true, note: unread > 0 ? H.unread(unread) : undefined },
+      { id: 'database', label: H.database, enabled: true },
       { id: 'options', label: H.options, enabled: true },
       ...(app.canStartCycle() ? [{ id: 'cycle', label: H.cycle, enabled: true }] : []),
       // With a build that may not deploy the cursor starts on the garage, where that is fixed.
@@ -101,7 +102,7 @@ export class HubScreen implements Screen {
       else if (id === 'cycle') {
         this.asking = true;
         this.sub = new MenuList([{ id: 'no', label: H.no, enabled: true }, { id: 'yes', label: H.yes, enabled: true }]);
-      } else this.app.go(id as 'arena' | 'garage' | 'shop' | 'pilot' | 'messages' | 'options');
+      } else this.app.go(id as 'arena' | 'garage' | 'shop' | 'pilot' | 'messages' | 'database' | 'options');
     }
   }
 

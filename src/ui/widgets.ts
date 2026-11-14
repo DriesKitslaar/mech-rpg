@@ -117,6 +117,16 @@ export function drawMedal(ctx: CanvasRenderingContext2D, x: number, y: number, t
   }
 }
 
+/** A page with lines on it, nine pixels square: the mark of the database. */
+export function drawPage(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.fillStyle = COLORS.energy;
+  ctx.fillRect(x + 1, y, 7, 9);
+  ctx.fillStyle = COLORS.panel;
+  ctx.fillRect(x + 2, y + 1, 5, 7);
+  ctx.fillStyle = COLORS.text;
+  for (const row of [2, 4, 6]) ctx.fillRect(x + 3, y + row, row === 6 ? 2 : 3, 1);
+}
+
 /** A horizontal bar filled to value/max. */
 export function drawMeter(
   ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, value: number, max: number, color: string,

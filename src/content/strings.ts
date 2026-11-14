@@ -103,7 +103,7 @@ export const STRINGS = {
   },
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
-    messages: 'Messages', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
+    messages: 'Messages', database: 'Database', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
     credits: 'CREDITS', battlesWon: 'BATTLES WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
     locked: 'Locked', campaignDone: 'The war is over. The work is not.',
@@ -124,7 +124,7 @@ export const STRINGS = {
     pages: { perks: 'PERKS', medals: 'MEDALS', record: 'RECORD' },
   },
   medals: {
-    heading: 'MEDALS', earned: 'MEDAL EARNED', pay: (credits: number) => `+${credits} c`, held: 'EARNED', pays: (credits: number) => `Pays ${credits} c`,
+    heading: 'MEDALS', earned: 'MEDAL EARNED', earnedMany: 'MEDALS EARNED', count: (n: number) => `${n} medals`, pay: (credits: number) => `+${credits} c`, held: 'EARNED', pays: (credits: number) => `Pays ${credits} c`,
     secretName: '? ? ?', secretText: 'A turn of the story.',
   },
   record: {
@@ -133,6 +133,20 @@ export const STRINGS = {
     sRanks: 'S RANKS', arena: 'ARENA RANK', shots: 'SHOTS FIRED', hits: 'SHOTS LANDED', accuracy: 'ACCURACY',
     damage: 'ARMOUR SHOT OFF', taken: 'ARMOUR LOST', overheats: 'TURNS LOST TO HEAT', rounds: 'ROUNDS FOUGHT',
     earned: 'CREDITS EARNED', medals: 'MEDALS', cycle: 'CYCLE', time: 'TIME PLAYED', none: '-', ranksHeld: 'RANKS HELD',
+  },
+  database: {
+    heading: 'DATABASE', pages: { units: 'UNITS', world: 'WORLD', manual: 'MANUAL' }, hint: 'L1/R1: page   B: back',
+    unknown: '? ? ?', notMet: 'Not met yet.', met: (n: number, of: number) => `MET ${n}/${of}`,
+    entries: (n: number, of: number) => `ENTRIES ${n}/${of}`, topics: (n: number) => `${n} TOPICS`,
+    armour: 'ARMOUR', weak: 'WEAK TO', strong: 'TOUGH VS', none: '-',
+    weapon: (name: string, type: string) => `${name} (${type})`,
+    aegis: (share: number) => `Covers the rest: -${share}% damage`,
+    mend: (share: number) => `Mends ${share}% of a part a turn`,
+    jam: (aim: number) => `Jams your aim: -${aim}`,
+    bomb: (fuse: number, damage: number) => `Goes off on turn ${fuse}: ${damage} damage`,
+    carrier: (unit: string, every: number) => `Launches ${unit}, every ${every} turns`,
+    phases: (n: number) => `Changes tactics ${n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`}`,
+    toast: 'DATABASE', newEntries: (n: number) => `${n} new entries`,
   },
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
