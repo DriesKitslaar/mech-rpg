@@ -596,6 +596,21 @@ describe('the screens the pilot\'s record added', () => {
     expect(texts(later.calls)).not.toContain('MEDAL EARNED');
   });
 
+  test('the way out of a settlement is written clear of an announcement: its letters end where the strip begins', () => {
+    const app = start({ ...done('intro-1'), scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
+    const mission = MISSIONS.find((m) => m.id === 'patrol')!;
+    app.showSettlement({ won: true, reward: 300, ammoCost: 20, repairCost: 10, net: 270, lines: [] }, mission);
+    app.commit({ ...app.game!, arenaRank: 1 });
+    app.update(16);
+    app.update(400);
+    const { ctx, calls } = recorder();
+    app.draw(ctx);
+    const y = (text: string) => Number(calls.find((c) => c.name === 'fillText' && c.args[0] === text)!.args[2]);
+    // The strip's heading is written two below its top edge; a line of text is twelve tall.
+    const stripTop = y('MEDAL EARNED') - 2;
+    expect(y('Press A to continue') + 12).toBeLessThanOrEqual(stripTop);
+  });
+
   test('the database draws its three pages: a unit with its picture and figures, an entry about the world, a topic of the manual', () => {
     const app = start({ ...done('intro-1'), met: ['recon-drone', 'gun-turret'], scenes: ['act-1'] });
     select(app, 'database');

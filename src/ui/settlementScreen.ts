@@ -10,6 +10,8 @@ const S = STRINGS.settlement;
 /** When the rank comes down, how long it takes to land, and how long the net amount takes to count up. */
 const STAMP_AT = 500;
 const STAMP_MS = 160;
+/** Where the way out is written: its letters end above line 240, where an announcement begins. */
+export const HINT_Y = 227;
 const COUNT_MS = 700;
 
 /** The bill after a battle: reward, ammunition, repairs and what is left. */
@@ -104,7 +106,8 @@ export class SettlementScreen implements Screen {
     drawText(ctx, S.balance, x + 10, 206, { color: COLORS.dim });
     drawText(ctx, String(balance), right, 206, { align: 'right', color: balance < 0 ? COLORS.danger : COLORS.text });
     // A bill that ran into the debt limit: what Dispatch wrote off, between the balance and the way out.
-    if (s.relief) drawText(ctx, S.relief(s.relief), LOGICAL_W / 2, 218, { align: 'center', color: COLORS.heat, size: 10 });
-    drawText(ctx, S.continue, LOGICAL_W / 2, 230, { align: 'center', color: COLORS.dim });
+    if (s.relief) drawText(ctx, S.relief(s.relief), LOGICAL_W / 2, 217, { align: 'center', color: COLORS.heat, size: 10 });
+    // Clear of the strip along the bottom edge where a medal or a database entry is announced.
+    drawText(ctx, S.continue, LOGICAL_W / 2, HINT_Y, { align: 'center', color: COLORS.dim });
   }
 }
