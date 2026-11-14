@@ -4,7 +4,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { drawPartIcon, hasIcon } from './partIcon';
-import { partLines } from './partInfo';
+import { compareParts, fittedFor, partLines } from './partInfo';
 import { SHOP_TABS, ShopFlow } from './shopFlow';
 import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
@@ -82,7 +82,7 @@ export class ShopScreen implements Screen {
     const { sprites } = this.app.deps;
 
     // Picture: arms show the outstretched arm; parts that sit inside the mech get an icon.
-    const boxH = 104;
+    const boxH = 72;
     const cx = x + w / 2;
     const cy = y + 6 + boxH / 2;
     if (hasIcon(part.kind)) {
@@ -97,10 +97,27 @@ export class ShopScreen implements Screen {
       ctx.drawImage(sprite.image, Math.round(cx - dw / 2), Math.round(cy - dh / 2), dw, dh);
     }
 
-    let ty = y + boxH + 12;
+    let ty = y + boxH + 10;
     drawText(ctx, part.name, x + 6, ty, { color: COLORS.accent });
     ty += LINE;
     if (part.vendor) { drawText(ctx, STRINGS.partInfo.vendors[part.vendor], x + 6, ty, { color: COLORS.dim }); ty += LINE; }
     for (const line of partLines(part)) { drawText(ctx, line, x + 6, ty); ty += LINE; }
+
+    // How it differs from what is fitted now: green for better, red for worse.
+    const fitted = fittedFor(part, this.app.game!.build, this.app.deps.catalog);
+    const rows = fitted && fitted.id !== part.id ? compareParts(part, fitted) : [];
+    if (fitted && rows.length > 0 && ty + (rows.length + 1) * LINE <= y + h - 2) {
+      ty += 2;
+      drawText(ctx, STRINGS.partInfo.versus(fitted.name), x + 6, ty, { color: COLORS.dim, size: 10 });
+      ty += LINE - 1;
+      for (const row of rows) {
+        let cx = x + 6;
+        for (const chip of row) {
+          drawText(ctx, chip.text, cx, ty, { color: chip.good ? COLORS.armor : COLORS.danger });
+          cx += Math.round((chip.text.length + 2) * 4.8);
+        }
+        ty += LINE;
+      }
+    }
   }
 }

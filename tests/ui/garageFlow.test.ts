@@ -175,3 +175,16 @@ test('the flow never changes the game it was given', () => {
 test('armour totals the frame parts', () => {
   expect(new GarageFlow(fresh(), CATALOG).armour(STARTER_BUILD)).toBe(60 + 220 + 110 + 150);
 });
+
+test('the build panel also knows cooling, boosted evasion and what a full volley costs', () => {
+  const flow = new GarageFlow(rich('wpn-arc-pistol', 'wpn-mortar-pod', 'bst-vector'), CATALOG);
+  expect(flow.details(flow.game.build)).toEqual({ cooling: 25, evasion: 18 + 30, volley: 60 });
+  const armed = { ...flow.game.build, leftHand: 'wpn-arc-pistol', shoulder: 'wpn-mortar-pod', booster: 'bst-vector' };
+  expect(flow.details(armed)).toEqual({ cooling: 25, evasion: 14 + 38, volley: 60 + 90 + 80 });
+});
+
+test('a mech that cannot boost has only its mobility to evade with', () => {
+  const flow = new GarageFlow(rich('legs-crawler'), CATALOG);
+  const tracked = { ...flow.game.build, legs: 'legs-crawler' };
+  expect(flow.details(tracked).evasion).toBe(flow.statsOf(tracked).mobility);
+});

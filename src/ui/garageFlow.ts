@@ -1,6 +1,6 @@
-import { computeBuildStats, framePart, validatePlayerBuild } from '../core/build';
+import { boostProfile, computeBuildStats, framePart, generatorOf, validatePlayerBuild, weaponIn } from '../core/build';
 import { BUILD_SLOTS, OPTIONAL_SLOTS, checkEquip, equip, fits, spareCount, type BuildSlot, type GameState } from '../core/game';
-import { FRAME_SLOTS, type Build, type BuildError, type BuildStats, type Catalog } from '../core/types';
+import { FRAME_SLOTS, WEAPON_SLOTS, type Build, type BuildError, type BuildStats, type Catalog } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { MenuList, type ListItem } from './menuList';
@@ -72,6 +72,22 @@ export class GarageFlow {
   get preview(): BuildStats { return computeBuildStats(this.previewBuild, this.catalog); }
   get errors(): BuildError[] { return validatePlayerBuild(this.game.build, this.catalog); }
   get previewErrors(): BuildError[] { return validatePlayerBuild(this.previewBuild, this.catalog); }
+
+  statsOf(build: Build): BuildStats {
+    return computeBuildStats(build, this.catalog);
+  }
+
+  /** Numbers the build panel shows beyond the basic statistics. */
+  details(build: Build): { cooling: number; evasion: number; volley: number } {
+    const boost = boostProfile(build, this.catalog);
+    return {
+      cooling: generatorOf(build, this.catalog).cooling,
+      // How hard the mech is to hit in a turn it boosts; tracks cannot boost and have only their mobility.
+      evasion: this.statsOf(build).mobility + (boost.able ? boost.thrust : 0),
+      // The energy it takes to fire every weapon once.
+      volley: WEAPON_SLOTS.reduce((sum, slot) => sum + (weaponIn(build, slot, this.catalog)?.energy ?? 0), 0),
+    };
+  }
 
   /** Total armour of a build's frame parts. */
   armour(build: Build): number {

@@ -103,9 +103,15 @@ export class GarageScreen implements Screen {
     cell(G.mobility, String(next.mobility), next.mobility - now.mobility, true, false, 0, 1);
     cell(G.armour, String(flow.armour(flow.previewBuild)), flow.armour(flow.previewBuild) - flow.armour(flow.game.build), true, false, 1, 1);
     cell(G.stability, String(next.stability), next.stability - now.stability, true, false, 0, 2);
+    const was = flow.details(flow.game.build);
+    const will = flow.details(flow.previewBuild);
+    cell(G.cooling, String(will.cooling), will.cooling - was.cooling, true, false, 1, 2);
+    cell(G.evasion, String(will.evasion), will.evasion - was.evasion, true, false, 0, 3);
+    // A volley that takes more than a turn's energy is not an error, but worth seeing: it shows in the warning colour.
+    cell(G.volley, String(will.volley), will.volley - was.volley, false, will.volley > next.turnEnergy, 1, 3);
 
     if (errors.length > 0) {
-      drawText(ctx, errors.map((e) => STRINGS.buildErrors[e]).join(' - '), LOGICAL_W / 2, STATS_Y + 54, { align: 'center', color: COLORS.danger, size: 16 });
+      drawText(ctx, errors.map((e) => STRINGS.buildErrors[e]).join(' - '), LOGICAL_W / 2, STATS_Y + 57, { align: 'center', color: COLORS.danger, size: 16 });
     }
   }
 }

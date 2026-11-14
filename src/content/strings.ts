@@ -123,7 +123,8 @@ export const STRINGS = {
   },
   garage: {
     heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
-    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', back: 'B: back',
+    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', cooling: 'Cooling',
+    evasion: 'Boost evade', volley: 'Volley EN', back: 'B: back',
     slotTags: {
       head: 'HEAD', core: 'CORE', arms: 'ARMS', legs: 'LEGS', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
       rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SHLDR',
@@ -146,7 +147,8 @@ export const STRINGS = {
     output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',
     impact: 'IMP', unlimited: 'unlimited', perShot: '/shot',
     thrust: 'THRUST', boostCost: 'BOOST COST', aimByType: 'AIM K/E/X', focus: 'FOCUS', uses: 'USES',
-    guard: (blocked: number) => `GUARD: blocks ${blocked}%`,
+    guard: (blocked: number) => `GUARD: blocks ${blocked}%`, guardShort: 'GUARD',
+    versus: (name: string) => `VS ${name}`,
     charge: 'CHARGE: fires a turn later', melee: 'MELEE: needs Boost',
     traits: {
       twin: () => 'TWIN: fires twice',
