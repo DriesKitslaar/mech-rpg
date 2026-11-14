@@ -1,5 +1,5 @@
 import {
-  aegisFactor, coolCost, boostCost, guardCost, jamOn, objectiveTarget, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type UnitState,
+  aegisFactor, coolCost, boostCost, guardCost, jamOn, objectiveTarget, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type BattleEvent, type UnitState,
 } from '../core/battle';
 import { weaponIn } from '../core/build';
 import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
@@ -13,6 +13,7 @@ import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
+import { Puppet, type Pose } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 import { fitTags, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { Typewriter } from './typewriter';
@@ -65,6 +66,8 @@ export class BattleScreen {
   private timer = 0;
   private clock = 0;
   private fx = new BattleFx(this.scene());
+  /** What moves each unit's layers: one puppet a unit, made when it is first drawn. */
+  private puppets = new Map<string, Puppet>();
   /** Events already handed to the effects. */
   private fxDone = 0;
   /** Armour as shown, which trails the rules until each shot has landed. */
@@ -143,6 +146,7 @@ export class BattleScreen {
     }
     this.spawnEffects();
     this.fx.update(dtMs);
+    for (const puppet of this.puppets.values()) puppet.update(dtMs);
     this.shownAp.update(dtMs);
     this.updateTalk(realMs);
     const rumble = this.fx.takeRumble();
@@ -206,6 +210,7 @@ export class BattleScreen {
       }
       if (this.opts.fast) continue;
       this.fx.onEvent(event);
+      this.move(event, melee, flight);
       // The end of a battle is marked once: by the music's fanfare where there is music, by the effect where there is not.
       if (event.type === 'outcome' && this.opts.jingle?.(event.outcome === 'victory')) continue;
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
@@ -350,6 +355,43 @@ export class BattleScreen {
     }
   }
 
+  /** The puppet of a unit. A mech built from layers breathes; a machine that is one picture only reacts. */
+  private puppet(unit: UnitState): Puppet {
+    let puppet = this.puppets.get(unit.id);
+    if (!puppet) {
+      const layered = unit.side === 'player' || unit.composed;
+      puppet = new Puppet(this.flow.state.units.indexOf(unit) * 2.1, !this.opts.fast, layered);
+      this.puppets.set(unit.id, puppet);
+    }
+    return puppet;
+  }
+
+  /** How a unit's layers are shifted right now. */
+  private poseOf(unit: UnitState): Pose {
+    return this.puppet(unit).pose({ guarding: unit.guarding, staggered: unit.staggered > 0, overheated: unit.overheated }, this.clock);
+  }
+
+  /** Sets the units an event is about in motion: the one that fires kicks, the one that is hit flinches. */
+  private move(event: BattleEvent, melee: boolean, flight: number): void {
+    const unit = (id: string): UnitState | undefined => this.flow.state.units.find((u) => u.id === id);
+    if (event.type === 'shot') {
+      const shooter = unit(event.unit);
+      const kick = melee ? 'strike' : event.weapon === 'rightHand' ? 'fireNear' : event.weapon === 'leftHand' ? 'fireFar' : 'fireShoulder';
+      if (shooter) this.puppet(shooter).play(kick);
+      const target = unit(event.target);
+      if (event.hit && target) this.puppet(target).play('hit', flight);
+    } else if (event.type === 'boost') {
+      const who = unit(event.unit);
+      if (who) this.puppet(who).play('boost');
+    } else if (event.type === 'blast' || event.type === 'support') {
+      const target = unit(event.target);
+      if (target) this.puppet(target).play('hit', flight);
+    } else if (event.type === 'unitDestroyed') {
+      const who = unit(event.unit);
+      if (who) this.puppet(who).play('destroyed');
+    }
+  }
+
   /** A destroyed unit stays on screen until its destruction has played out; a launched one is not there before its launch. */
   private hidden(unit: UnitState): boolean {
     if (!this.arrived.has(unit.id)) return true;
@@ -374,10 +416,10 @@ export class BattleScreen {
   private drawPlayer(ctx: CanvasRenderingContext2D): void {
     const player = this.flow.state.units[0];
     if (this.hidden(player)) return;
-    // A slow one-pixel sway of the upper body keeps the mech from looking frozen.
-    const idle = Math.round(Math.sin(this.clock / 520));
-    this.withTransform(ctx, player, idle, (dx, dy) =>
-      drawMech(ctx, this.playerSprites(), this.playerX(), MECH_ORIGIN.y, { dx, dy: 0 }, dy));
+    // Its layers move by themselves: breathing, kicking back, flinching, coming apart.
+    const pose = this.poseOf(player);
+    this.withTransform(ctx, player, 0, (dx, dy) =>
+      drawMech(ctx, this.playerSprites(), this.playerX(), MECH_ORIGIN.y, { dx, dy: 0 }, dy, pose));
   }
 
   /** Left edge of the player's pose box. */
@@ -414,17 +456,19 @@ export class BattleScreen {
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
       if (this.duel()) {
         const parts = mechSprites(this.sprites, enemy.build, enemy.paint);
-        const sway = Math.round(Math.sin(this.clock / 520 + 2));
-        this.withTransform(ctx, enemy, sway, (dx, dy) => {
+        const pose = this.poseOf(enemy);
+        this.withTransform(ctx, enemy, 0, (dx, dy) => {
           // Mirror the pose box so the mech faces left; a shift to the right is a shift to the left in there.
           ctx.save();
           ctx.translate(DUEL_RIGHT, MECH_ORIGIN.y);
           ctx.scale(-1, 1);
-          drawMech(ctx, parts, 0, 0, { dx: -dx, dy: 0 }, dy);
+          drawMech(ctx, parts, 0, 0, { dx: -dx, dy: 0 }, dy, pose);
           ctx.restore();
         });
       } else {
-        this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx, r.y + dy, r.w, r.h));
+        // A machine that is one picture moves as a whole, the way its body would: it faces left, so forward is left.
+        const body = this.poseOf(enemy).core ?? { dx: 0, dy: 0 };
+        this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx - body.dx, r.y + dy + body.dy, r.w, r.h));
       }
     });
     // Then everything that is written over them, so no machine hides another's bars.

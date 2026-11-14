@@ -1,5 +1,6 @@
 import type { Build } from '../core/types';
 import { layoutMech, type SpriteSize, type SpriteSlot } from './mechLayout';
+import type { Pose } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 
 /** Placeholder boxes, roughly where each layer sits in the pose, for when a sprite is missing. */
@@ -42,15 +43,16 @@ export function mechSprites(store: SpriteStore, build: Build, paint?: string): M
 
 /**
  * Draws a mech with its pose box at (x, y). `shift` moves the whole mech; `sway` moves everything
- * but the legs, which stay planted.
+ * but the legs, which stay planted; `pose` moves each layer by itself (see `pose.ts`).
  */
 export function drawMech(
   ctx: CanvasRenderingContext2D, parts: MechSprites, x: number, y: number,
-  shift: { dx: number; dy: number } = { dx: 0, dy: 0 }, sway = 0,
+  shift: { dx: number; dy: number } = { dx: 0, dy: 0 }, sway = 0, pose: Pose = {},
 ): void {
   for (const cmd of layoutMech(parts)) {
     const sprite = parts[cmd.slot]!;
     const lift = cmd.slot === 'legs' ? 0 : sway;
-    ctx.drawImage(sprite.image, x + cmd.x + shift.dx, y + cmd.y + shift.dy + lift, sprite.w, sprite.h);
+    const moved = pose[cmd.slot] ?? { dx: 0, dy: 0 };
+    ctx.drawImage(sprite.image, x + cmd.x + shift.dx + moved.dx, y + cmd.y + shift.dy + lift + moved.dy, sprite.w, sprite.h);
   }
 }
