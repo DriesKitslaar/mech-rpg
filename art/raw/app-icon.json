@@ -1,0 +1,9 @@
+{
+  "id": "app-icon",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art app icon, crisp pixels, no anti-aliasing, no text, no lettering: the head of an original Japanese anime-style mecha seen from the front, a helmet in dark charcoal armour with one curved crest and a single horizontal visor glowing hot pink, lit from the sides by pink and cyan neon, bold simple shapes, centred, filling most of the square, on a plain very dark navy background."
+}

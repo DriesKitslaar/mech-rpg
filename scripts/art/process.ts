@@ -67,8 +67,8 @@ async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
   const box = BOX[job.kind as keyof typeof BOX];
   const src = `${RAW}/${job.source ?? job.id}.png`;
   let out: RawImage;
-  if (job.kind === 'portrait') {
-    // Portraits keep their own colours and lighting.
+  if (job.kind === 'portrait' || job.kind === 'icon') {
+    // Portraits and the icon keep their own colours and lighting.
     out = await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' }));
   } else if (job.kind === 'background') {
     // Backgrounds are darkened instead of snapped to the mech palette, so units stand out against them.

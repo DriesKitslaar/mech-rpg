@@ -39,4 +39,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- For the rumble on heavy hits; the game works the same without a motor. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>

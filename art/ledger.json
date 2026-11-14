@@ -1397,5 +1397,25 @@
    },
    "total_tokens": 1384
   }
+ },
+ {
+  "id": "app-icon",
+  "at": "2026-11-14T12:26:37.764Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 92,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 288
+  }
  }
 ]
