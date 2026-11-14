@@ -4,7 +4,7 @@ import type { Wingman } from '../core/wingman';
 export const WINGMEN: Wingman[] = [
   {
     id: 'kite', name: 'Kite', damage: 18, share: 0.15, after: 'intro-2',
-    text: 'New licence, old frame, steady hands. One shot a round at whatever looks worst.',
+    text: 'New licence, old frame, steady hands. One shot a round at whatever looks strongest.',
   },
   {
     id: 'marrow', name: 'Marrow', damage: 28, share: 0.25, after: 'rival-1',

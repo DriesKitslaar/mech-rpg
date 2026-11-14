@@ -61,6 +61,25 @@ describe('hiring a wingman from the briefing', () => {
     expect(snap(app).settlement).toMatchObject({ reward: 400 });
   });
 
+  test('a wingman who does not take calls yet cannot be slipped in, and the lent patrol flies alone', () => {
+    const { app } = inHub(strong(done('intro-1', 'intro-2')));
+    app.startMission('patrol', false, 'sixty');
+    expect((snap(app).battle as unknown as { support: string | null }).support).toBeNull();
+  });
+
+  test('with two for hire, left and right go opposite ways round', () => {
+    const { app } = inHub({ ...strong(done('intro-1', 'intro-2', 'rival-1')), scenes: ['act-1', 'act-2'] });
+    select(app, 'contracts');
+    select(app, 'patrol');
+    toRow(app, 'wingman');
+    press(app, 'right');
+    expect(hire(app).wingman?.id).toBe('kite');
+    press(app, 'left', 'left');
+    expect(hire(app).wingman?.id).toBe('marrow');
+    press(app, 'right');
+    expect(hire(app).wingman?.id).toBeNull();
+  });
+
   test('the arena and the simulator have no such row', () => {
     const { app } = inHub(strong(done('intro-1', 'intro-2')));
     select(app, 'arena');

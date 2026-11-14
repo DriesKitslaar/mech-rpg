@@ -70,6 +70,9 @@ export function intentText(intent: Intent | null): string | null {
     case 'aim': return STRINGS.intent.aim(intent.part);
     case 'dart': return STRINGS.intent.dart;
     case 'mend': return STRINGS.intent.mend;
+    case 'cool': return STRINGS.intent.cool;
+    // A charge already held has its own tag; this is the turn spent winding one up.
+    case 'charge': return STRINGS.intent.windUp;
     default: return null;
   }
 }

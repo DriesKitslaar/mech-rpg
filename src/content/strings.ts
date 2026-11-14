@@ -39,7 +39,7 @@ export const STRINGS = {
     covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`,
   },
   // What an enemy is about to do, read from how it moves: shown with its tags while it is aimed at.
-  intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', charge: 'CHARGING' },
+  intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', cool: 'COOLING', windUp: 'WINDS UP' },
   objectives: {
     survive: (round: number, rounds: number) => `HOLD OUT ${round}/${rounds}`,
     protect: (name: string, hp: number, max: number) => `${name.toUpperCase()} ${hp}/${max}`,
@@ -208,7 +208,7 @@ export const STRINGS = {
     wingman: 'Wingman', alone: 'None', wingmanShare: (percent: number) => `-${percent}% fee`,
     wingmanHint: 'LEFT/RIGHT: choose a wingman',
     aloneText: 'Fly it alone and keep the whole fee.',
-    wingmanTerms: (damage: number, percent: number) => `Fires for ${damage} each round. Takes ${percent}% of the fee.`,
+    wingmanTerms: (damage: number, percent: number) => `Up to ${damage} a round from round 2. Takes ${percent}% of fee and XP.`,
     lentNote: 'Your own mech cannot deploy as it stands, so Dispatch lends you a stock frame for this one. Put yours right in the Garage; until then this is the work there is.',
     support: (name: string) => `Fire support: ${name}`,
   },
