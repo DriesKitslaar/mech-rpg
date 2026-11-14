@@ -1,5 +1,6 @@
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
+import { isDrill } from '../core/training';
 import { ALL_ENEMIES } from '../content/arena';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -75,7 +76,10 @@ export class BriefingScreen implements Screen {
   view(): ScreenView {
     return {
       menu: { items: this.list.items, cursor: this.list.cursor },
-      briefing: { mission: this.mission.id, replay: !!this.mission.replay, reward: this.mission.reward, objectives: objectiveLines(this.mission) },
+      briefing: {
+        mission: this.mission.id, replay: !!this.mission.replay, reward: this.mission.reward, objectives: objectiveLines(this.mission),
+        lent: !isDrill(this.mission) && this.mission.loaner !== undefined,
+      },
     };
   }
 
@@ -95,7 +99,8 @@ export class BriefingScreen implements Screen {
     drawText(ctx, mission.title.toUpperCase(), 72, 8, { size: 16, color: COLORS.accent });
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
     const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
-    const tag = mission.loaner !== undefined ? STRINGS.training.tag
+    const tag = isDrill(mission) ? STRINGS.training.tag
+      : mission.loaner !== undefined ? B.lent
       : mission.arenaRank !== undefined || mission.id === MIRROR_ID ? STRINGS.arena.fight
       : mission.replay ? B.replay
       : mission.id.startsWith('open-') ? B.open

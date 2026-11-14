@@ -1,14 +1,16 @@
 import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
 import { checkAction, createBattle, previewShot, type Action, type BattleState } from '../../src/core/battle';
 import { validatePlayerBuild, weaponIn } from '../../src/core/build';
-import { completeMission } from '../../src/core/campaign';
+import { completeMission, lentPatrol } from '../../src/core/campaign';
 import { newGame, type GameState } from '../../src/core/game';
 import { DRILL_PAY, drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill } from '../../src/core/training';
 import { WEAPON_SLOTS, type Catalog, type WeaponSlot } from '../../src/core/types';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { DRILLS } from '../../src/content/drills';
 import { MISSIONS } from '../../src/content/missions';
+import SPRITES from '../../src/content/sprites.json';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
+import { STRINGS } from '../../src/content/strings';
 import { TALK_CHARS, TALK_LINES } from '../../src/ui/battleScreen';
 import { BRIEFING_CHARS, briefingRows, objectiveLines } from '../../src/ui/briefingScreen';
 import { charsFor, wrap } from '../../src/ui/widgets';
@@ -73,6 +75,9 @@ describe('the drills', () => {
     expect(validatePlayerBuild(drill.build, CATALOG)).toEqual([]);
     for (const part of Object.values(drill.build)) expect(CATALOG[part].vendor, part).toBeDefined();
     for (const id of drill.battle.enemies) expect(Object.hasOwn(ALL_ENEMIES, id), id).toBe(true);
+    // The simulator has a hall of its own, and there is a picture of it.
+    expect(drill.battle.background).toBe('bg-simulator');
+    expect(drill.battle.background in SPRITES).toBe(true);
     expect(drill.title.length).toBeLessThanOrEqual(19);
     expect(drill.lesson.length).toBeLessThanOrEqual(30);
     const mission = drillMission(fresh(), drill, 'Training Simulator');
@@ -142,4 +147,45 @@ describe('what the drills teach', () => {
       expect(rate(id, naive)).toBeLessThanOrEqual(0.5);
     },
   );
+});
+
+describe('the patrol in a lent mech', () => {
+  const patrol = MISSIONS.find((m) => m.id === 'patrol')!;
+  const lent = lentPatrol(patrol, STARTER_BUILD, STRINGS.briefing.lentNote);
+
+  test('is the patrol itself, same pay and same enemies, with a mech that comes with it', () => {
+    expect(lent).toMatchObject({ id: 'patrol', phase: 'patrol', reward: patrol.reward, battles: patrol.battles, loaner: STARTER_BUILD });
+    expect(validatePlayerBuild(lent.loaner!, CATALOG)).toEqual([]);
+    // It is no drill: it is billed and counted like any contract.
+    expect(isDrill(lent)).toBe(false);
+    expect(isDrill(patrol)).toBe(false);
+  });
+
+  test('says why the mech is lent, and its briefing fits the panel', () => {
+    expect(lent.briefing[0]).toBe(STRINGS.briefing.lentNote);
+    expect(lent.briefing[0]).toMatch(/Garage/);
+    let y = 0;
+    for (const paragraph of lent.briefing) {
+      for (const _line of wrap(paragraph, BRIEFING_CHARS)) {
+        expect(y, 'the briefing of the lent patrol is too long').toBeLessThanOrEqual((briefingRows(lent) - 1) * 11);
+        y += 11;
+      }
+      y += 4;
+    }
+    // The line under the client's name has two rows.
+    expect(wrap(STRINGS.briefing.lent, charsFor(310 - 84)).length).toBeLessThanOrEqual(2);
+  });
+
+  test('the lent mech wins the patrol nearly every time, even for a pilot who only fires', () => {
+    let wins = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const start = createBattle(STARTER_BUILD, patrol.battles[0].enemies.map((id) => ALL_ENEMIES[id]), CATALOG, seed * 7919);
+      if (runBattle(start, CATALOG, (s, c) => {
+        const target = s.units.find((u) => u.side === 'enemy' && !u.destroyed)!;
+        const fire: Action = { type: 'fire', weapon: 'rightHand', target: target.id, part: 'core' };
+        return checkAction(s, fire, c) === null ? fire : { type: 'endTurn' };
+      }).outcome === 'victory') wins += 1;
+    }
+    expect(wins).toBeGreaterThanOrEqual(57);
+  });
 });

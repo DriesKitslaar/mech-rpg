@@ -148,6 +148,8 @@ test('the end roll can be watched again from the options: it climbs by itself, a
   await enterHub(page);
   await choose(page, 'options');
   await waitForScreen(page, 'options');
+  // Not in fast mode a screen fades in: wait for that before the picture is taken.
+  await page.waitForTimeout(500);
   await page.screenshot({ path: shot('options-end-roll') });
   await choose(page, 'credits');
   await waitForScreen(page, 'credits');

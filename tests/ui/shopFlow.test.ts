@@ -258,3 +258,30 @@ describe('comparing a part with the one that is fitted', () => {
     expect(fittedFor(CATALOG['wpn-arc-pistol'], { ...STARTER_BUILD, rightHand: undefined, leftHand: 'wpn-rivet-rifle' }, CATALOG)?.id).toBe('wpn-rivet-rifle');
   });
 });
+
+describe('after a purchase', () => {
+  const rich = (): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), credits: 5000 });
+  const shop = () => new ShopFlow(rich(), CATALOG, SHOP_PARTS);
+
+  test('the shop says once that what was bought still has to be fitted, until the next thing is done', () => {
+    const flow = shop();
+    expect(flow.justBought).toBe(false);
+    expect(flow.onInput('confirm')).toBe('changed');
+    expect(flow.justBought).toBe(true);
+    flow.onInput('down');
+    expect(flow.justBought).toBe(false);
+  });
+
+  test('a sale, or a purchase that was refused, says no such thing', () => {
+    const flow = shop();
+    flow.onInput('confirm');
+    flow.onInput('right');
+    expect(flow.justBought).toBe(false);
+    expect(flow.onInput('confirm')).toBe('changed');
+    expect(flow.message.startsWith('Sold')).toBe(true);
+    expect(flow.justBought).toBe(false);
+    const poor = new ShopFlow({ ...newGame(CATALOG, STARTER_BUILD), credits: 0 }, CATALOG, SHOP_PARTS);
+    expect(poor.onInput('confirm')).toBe('stay');
+    expect(poor.justBought).toBe(false);
+  });
+});

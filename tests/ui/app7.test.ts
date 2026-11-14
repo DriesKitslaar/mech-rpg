@@ -1,12 +1,14 @@
+import { createBattle } from '../../src/core/battle';
+import { validatePlayerBuild } from '../../src/core/build';
 import { completeMission, startNewCycle } from '../../src/core/campaign';
-import type { GameState } from '../../src/core/game';
+import { buy, equip, sell, type GameState } from '../../src/core/game';
 import { WORLD } from '../../src/content/codex';
 import { MISSIONS } from '../../src/content/missions';
-import { CATALOG } from '../../src/content/parts';
+import { CATALOG, SHOP_PARTS, STARTER_BUILD } from '../../src/content/parts';
 import { SAVE_KEY, SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
 import { App } from '../../src/ui/app';
 import {
-  accept, done, finishMission, fresh, inHub, makeApp, medalPay, memoryStore, press, savedGame, select, skipScenes, snap, sprites, strong,
+  accept, done, finishMission, fresh, ids, inHub, makeApp, medalPay, memoryStore, press, retreat, savedGame, select, skipScenes, snap, sprites, strong,
 } from '../helpers/app';
 
 /** A pilot the database and the story have nothing to announce to, so that only medals are announced. */
@@ -259,5 +261,168 @@ describe('the end roll', () => {
     expect(snap(app)).toMatchObject({ screen: 'credits', credits: { done: true } });
     press(app, 'cancel');
     expect(snap(app).screen).toBe('hub');
+  });
+});
+
+describe('the list of contracts', () => {
+  test('opens with the cursor on the next contract of the story, not on the patrol above it', () => {
+    const { app } = inHub(quiet());
+    select(app, 'contracts');
+    const { items, cursor } = snap(app).menu;
+    expect(items[0].id).toBe('patrol');
+    expect(items[cursor].id).toBe('intro-1');
+    // Pressing the same button again and again leads into the story.
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'intro-1' } });
+  });
+
+  test('with no story contract on offer, on the patrol', () => {
+    const story = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
+      'choice-hadron', 'hadron-3', 'hadron-4', 'hadron-5', 'finale-hadron', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
+    const { app } = inHub(quiet({ ...done(...story), endingSeen: true }));
+    select(app, 'contracts');
+    const { items, cursor } = snap(app).menu;
+    expect(items[cursor].id).toBe('patrol');
+  });
+
+  test('coming back from a briefing still leaves the cursor on that contract', () => {
+    const { app } = inHub(quiet());
+    select(app, 'contracts');
+    press(app, 'up');
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('patrol');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('briefing');
+    press(app, 'cancel');
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('patrol');
+  });
+});
+
+describe('after a defeat', () => {
+  /** Ends every turn without doing anything until the battle is lost. */
+  function standStill(app: App): void {
+    for (let i = 0; i < 60000 && snap(app).battle?.phase !== 'result'; i++) {
+      if (snap(app).battle!.phase === 'action') select(app, 'endTurn');
+      else if (snap(app).battle!.phase === 'animating') app.update(16);
+      else press(app, 'confirm');
+    }
+    expect(snap(app).battle).toMatchObject({ phase: 'result', outcome: 'defeat' });
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('settlement');
+  }
+
+  test('the settlement carries a word about what went wrong: here, a pilot who never boosted or guarded', () => {
+    const { app } = inHub(quiet());
+    accept(app, 'intro-1');
+    standStill(app);
+    expect(snap(app).settlement).toMatchObject({ won: false, tip: 'stance' });
+  });
+
+  test('a contract that was won, or walked away from, carries none', () => {
+    const won = inHub(strong(quiet())).app;
+    accept(won, 'intro-1');
+    finishMission(won);
+    expect(snap(won).settlement).toMatchObject({ won: true, tip: null });
+    const left = inHub(quiet()).app;
+    accept(left, 'intro-1');
+    retreat(left);
+    expect(snap(left).settlement).toMatchObject({ won: false, tip: null });
+  });
+
+  test('a drill that was failed carries one too', () => {
+    const { app } = inHub(quiet());
+    select(app, 'training');
+    select(app, 'drill-heat');
+    select(app, 'accept');
+    expect(snap(app).screen).toBe('battle');
+    standStill(app);
+    expect(snap(app).settlement).toMatchObject({ won: false });
+    expect(snap(app).settlement!.tip).not.toBeNull();
+  });
+});
+
+describe('the arena before it opens', () => {
+  test('says what opens it, and stops saying so once it is open', () => {
+    const { app } = inHub(quiet());
+    expect(snap(app).menu.items.find((i) => i.id === 'arena')).toMatchObject({ enabled: false, note: 'after Hot Barrel' });
+    const open = inHub(quiet(done('intro-1', 'intro-2'))).app;
+    const arena = snap(open).menu.items.find((i) => i.id === 'arena')!;
+    expect(arena.enabled).toBe(true);
+    expect(arena.note).toBeUndefined();
+  });
+});
+
+describe('a pilot whose own mech cannot deploy', () => {
+  /**
+   * The dead end a reviewer traded their way into: a core fitted that the legs cannot carry, the core
+   * it replaced sold, and too little money left to buy another.
+   */
+  function stranded(credits = 100): GameState {
+    const base = quiet();
+    const core = SHOP_PARTS.find((part) =>
+      part.kind === 'core' && validatePlayerBuild({ ...base.build, core: part.id }, CATALOG).includes('overweight'))!;
+    expect(core, 'some core is too heavy for the starting legs').toBeDefined();
+    let g: GameState = { ...base, credits: 99999 };
+    g = buy(g, core.id, CATALOG);
+    g = equip(g, 'core', core.id, CATALOG);
+    g = sell(g, base.build.core, CATALOG);
+    expect(validatePlayerBuild(g.build, CATALOG)).toContain('overweight');
+    return { ...g, credits };
+  }
+
+  test('still has work: the patrol, in a stock mech that Dispatch lends, and nothing else', () => {
+    const { app } = inHub(stranded());
+    const hub = snap(app).menu.items;
+    expect(hub.find((i) => i.id === 'contracts')).toMatchObject({ enabled: true, note: 'Overweight' });
+    expect(hub.find((i) => i.id === 'arena')!.enabled).toBe(false);
+    // The cursor still starts on the garage, where the mech is put right.
+    expect(hub[snap(app).menu.cursor].id).toBe('garage');
+    select(app, 'contracts');
+    expect(ids(app)).toEqual(['patrol']);
+    select(app, 'patrol');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'patrol', lent: true } });
+  });
+
+  test('the lent mech is the stock one, the pay is the patrol\'s, and it is enough to get out of the hole', () => {
+    const { app, store } = inHub(stranded());
+    select(app, 'contracts');
+    select(app, 'patrol');
+    select(app, 'accept');
+    expect(snap(app).screen).toBe('battle');
+    // The stock frame's armour, not that of the mech in the garage.
+    const stock = createBattle(STARTER_BUILD, [], CATALOG, 1).units[0];
+    expect(snap(app).player!.maxAp).toBe(Object.values(stock.parts).reduce((sum, part) => sum + part!.maxAp, 0));
+    finishMission(app);
+    expect(snap(app).settlement).toMatchObject({ won: true, reward: 400 });
+    expect(snap(app).credits).toBeGreaterThan(100);
+    // The pilot's own mech is as it was.
+    expect(validatePlayerBuild(savedGame(store).build, CATALOG)).toContain('overweight');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+    // Back from the briefing the list is still there.
+    select(app, 'contracts');
+    select(app, 'patrol');
+    press(app, 'cancel');
+    expect(snap(app)).toMatchObject({ screen: 'hub', list: 'contracts' });
+  });
+
+  test('a contract of the story cannot be started that way, and with the mech put right everything is on offer again', () => {
+    const { app } = inHub(stranded(5000));
+    app.startMission('intro-1');
+    expect(snap(app).screen).toBe('hub');
+    // Buy the old core back and fit it.
+    const core = fresh().build.core;
+    app.commit(equip(buy(app.game!, core, CATALOG), 'core', core, CATALOG));
+    app.go('hub');
+    select(app, 'contracts');
+    expect(ids(app)).toEqual(['patrol', 'intro-1']);
+  });
+
+  test('a drill is still a drill: lent mech, no bill, back to the training list', () => {
+    const { app } = inHub(stranded());
+    select(app, 'training');
+    select(app, 'drill-aim');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'drill-aim', lent: false } });
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('training');
   });
 });

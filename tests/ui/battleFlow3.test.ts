@@ -22,11 +22,12 @@ function pick(flow: BattleFlow, id: string): void {
   flow.onInput('confirm');
 }
 const edit = (s: BattleState, fn: (d: BattleState) => void): BattleState => { const c = structuredClone(s); fn(c); return c; };
-/** Fires the right-hand weapon at the first enemy's first listed part. */
+/** Fires the right-hand weapon at the core of the enemy it is aimed at when its list opens. */
 function shoot(flow: BattleFlow): void {
   pick(flow, 'fire');
   pick(flow, 'rightHand');
-  flow.onInput('confirm');
+  // The list opens on the core, except for a machine wanted in one piece.
+  pick(flow, 'core');
 }
 const line = (at: TalkLine['at'], text: string, who = 'Dispatch'): TalkLine => ({ at, who, text });
 

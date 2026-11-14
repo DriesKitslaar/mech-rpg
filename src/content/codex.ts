@@ -21,7 +21,7 @@ export const UNITS: UnitPage[] = [
   { id: 'jammer', note: 'A mast with no gun. While it stands, everything you fire is 20 less likely to hit.' },
   { id: 'tank', note: 'Tracks and a howitzer. Bullets bounce off the hull; blasts do not.' },
   { id: 'carrier', note: 'Launches a recon drone every second turn while fewer than three enemies stand. Kill the carrier, not its drones.' },
-  { id: 'light-mech', note: 'Lumen security. Quick, and hard to hit while its legs work: shoot those out first.' },
+  { id: 'light-mech', note: 'Lumen security. Quick, and hard to hit while its legs work. Fire at the core anyway. Staggered, it cannot dodge.' },
   { id: 'marksman', note: 'Charges a piercing longbow for a turn, then fires it. Guard or boost on the turn it is loaded.' },
   { id: 'heavy-mech', note: 'Hadron muscle. Slow, thick, and it goes for whatever is already damaged. Beams cut through it.' },
   { id: 'bulldozer', note: 'A Bulwark on tracks behind a riot shield, with a mortar. Tracks cannot boost, so it is easy to hit. Beams cut through it.' },
@@ -111,7 +111,7 @@ export const WORLD: Entry[] = [
   },
   {
     id: 'strip-miner', title: 'THE STRIP-MINER', after: 'lumen-3',
-    text: 'A Hadron mining machine roughly the size of the campus it was pointed at. A bucket wheel, blasting charges and a hull that laughed at bullets. It could not dodge and it could not be reasoned with.',
+    text: 'A Hadron mining machine roughly the size of the campus it was pointed at. A bucket wheel, blasting charges and a hull that laughed at bullets. It barely moved and it could not be reasoned with.',
   },
   {
     id: 'overseer', title: 'THE OVERSEER', after: 'undertow-4',
@@ -187,7 +187,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'repairs', title: 'FIELD REPAIRS',
-    text: 'Twice per contract you can patch a damaged part in the field, which restores 40% of its armour. A destroyed part cannot be patched. Each repair you use lowers your rank a little.',
+    text: 'Twice per contract you can patch a damaged part in the field, which restores 40% of its armour. A destroyed part cannot be patched. A repair ends your turn, so fire first. Each one you use lowers your rank a little.',
   },
   {
     id: 'tricks', title: 'ENEMY TRICKS',
@@ -203,7 +203,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'money', title: 'MONEY',
-    text: 'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying.',
+    text: 'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying, and you can owe 2000 at most: what a bill adds beyond that, Dispatch writes off.',
   },
   {
     id: 'garage', title: 'THE GARAGE',

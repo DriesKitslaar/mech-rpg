@@ -9,42 +9,45 @@ opdrachtgevers, en betaalt munitie en reparaties uit je eigen loon.
 ## Spelen
 
 De nieuwste Android-versie staat onder [Latest build](../../releases/tag/latest-build) als
-`ironwage.apk`. Zet het bestand op het toestel en open het om te installeren.
+`ironwage.apk`. Zet het bestand op het toestel en open het om te installeren. Een uitgebreide
+uitleg staat in de [handleiding](docs/handleiding.md).
 
 | Knop | Functie |
 |---|---|
 | D-pad | Kiezen |
 | A | Bevestigen |
 | B | Terug |
-| L1 / R1 | Vorige of volgende categorie in de winkel, of doelwit in een gevecht |
-| Links / rechts | Kopen of verkopen in de winkel, of van doelwit wisselen |
-| Start | Invoer-venster aan of uit (toont de code van elke knop) |
+| L1 / R1 | Bladeren: pagina's, tabbladen, verf in de garage, doelwit in een gevecht |
+| Links / rechts | In de winkel wisselen tussen de koop- en de verkooplijst, in een gevecht van doelwit wisselen |
+| Start | Invoer-venster aan of uit (toont de code van elke knop en de grootte waarop het spel getekend wordt) |
 
-Op een computer: pijltjestoetsen, Enter, Escape, Q/E en spatie.
+Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B Buttons** op
+**Swapped**. Op een computer: pijltjestoetsen, Enter, Escape, Q/E en spatie.
 
-## Hoe het spel werkt
+## Wat er in zit
 
-- **Mecha**: acht sloten (kop, romp, armen, benen, generator, twee handwapens, een
-  schouderwapen). Het gewicht mag het draagvermogen van de benen niet overschrijden, en de
-  generator moet je wapens kunnen voeden.
-- **Gevecht**: per beurt besteed je energie aan vuren, boosten, koelen of een noodreparatie.
-  Je mikt op een onderdeel: zonder benen kan een vijand niet ontwijken, zonder armen vallen
-  zijn handwapens uit, zonder kop raakt hij slecht, en zonder romp is hij vernietigd.
-- **Hitte**: elk schot maakt je mecha warmer. Boven de 100 val je een beurt stil.
-- **Geld**: na een contract krijg je je loon, min munitie en reparaties. Verkopen levert de
-  volle prijs op, dus experimenteren kost niets.
-- **Campagne**: twee introducties, daarna drie opdrachtgevers in vrije volgorde, dan één
-  exclusief contract dat de andere twee uitsluit, en de finale van de gekozen opdrachtgever.
-  Er zijn drie eindes. De patrouille is altijd beschikbaar.
-- **Arena**: tien tegenstanders met elk een eigen mecha. Elke rang levert een premie op en
-  hogere rangen openen de beste onderdelen in de winkel.
-- **Losse contracten**: na de introducties staan er altijd drie wisselende contracten op het
-  bord, van licht tot zwaar. Ze worden zwaarder naarmate je meer wint.
-- **Piloot**: gewonnen contracten geven ervaring. Elk niveau levert een punt op voor een van
-  acht vaardigheden.
-- **Nieuwe ronde**: na het einde kun je het verhaal opnieuw beginnen met alles wat je hebt,
-  tegen sterkere vijanden en voor meer loon.
-- **Opties**: geluid, muziek en snelle gevechten.
+- **Mecha**: elf sloten (kop, romp, armen, benen, generator, booster, vuurleiding, module, twee
+  handen, schouder) en 112 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
+  niet overschrijden en de generator moet alles kunnen voeden. Twaalf verfschema's en drie
+  opgeslagen builds.
+- **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
+  noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
+  zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.
+- **Vijanden**: dertig soorten, waaronder drones die de rest afdekken of repareren, stoorzenders,
+  lopende bommen, dragers, benoemde piloten en eindbazen die halverwege van tactiek veranderen.
+- **Campagne**: drie bedrijven, 29 verhaalcontracten waarvan één piloot er achttien speelt, drie
+  opdrachtgevers, twee slotkeuzes en zes eindes. Contracten hebben doelen (overleven, beschermen,
+  uitschakelen zonder te vernietigen, verjagen) en een rang van S tot D. Gespeelde contracten staan
+  in een archief.
+- **Arena**: een ladder van tien piloten, een achterkamer met vijf voor de kampioen, en een
+  spiegelgevecht tegen je eigen mecha.
+- **Training**: tien oefeningen in een geleende mecha die elk één ding uitleggen.
+- **Piloot**: niveaus en acht vaardigheden, 45 medailles en een logboek.
+- **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
+  spelregels.
+- **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,
+  drie moeilijkheden, muziek per scherm (tien nummers, zonder audiobestanden), trillen bij zware
+  treffers, en een schuldplafond zodat een reeks nederlagen nooit het einde van een spel is.
 
 ![Arena](docs/screenshots/arena.png)
 
@@ -63,7 +66,8 @@ npm run dev
 | `npm test` | Tests op de spelregels, de inhoud en de schermlogica |
 | `npm run e2e` | Browsertests die het spel met het toetsenbord doorspelen |
 | `npm run typecheck` | Typecontrole |
-| `npm run simulate -- --all` | Speelt elk contract honderden keren automatisch en toont winstkans en opbrengst (`--arena`, `--board` en `--cycle 1` voor de uitbreiding) |
+| `npm run simulate -- --table` | Speelt elk contract honderden keren automatisch en toont de winstkans per referentiebuild (`--arena`, `--board`, `--cycle 1`, `--why`) |
+| `npm run career -- --all` | Laat een piloot hele loopbanen zelf uitspelen: elke route, elke moeilijkheid. Hij vecht alleen met Auto Turn en koopt onderdelen via de spelregels, niet via de winkelschermen |
 | `npm run build` | Bouwt de webversie in `dist/` |
 
 De APK wordt bij elke push gebouwd door de workflow in `.github/workflows/android.yml`.
@@ -72,8 +76,8 @@ De APK wordt bij elke push gebouwd door de workflow in `.github/workflows/androi
 
 | Map | Inhoud |
 |---|---|
-| `src/core` | Spelregels zonder beeld of opslag: gevecht, builds, economie, campagne, piloot, arena, contractbord |
-| `src/content` | Onderdelen, vijanden, contracten, berichten en alle speltekst |
+| `src/core` | Spelregels zonder beeld of opslag: gevecht, builds, economie, campagne, rangen, piloot, medailles, arena, training, database, contractbord |
+| `src/content` | Onderdelen, vijanden, contracten, scènes, berichten, medailles, oefeningen, database, liedjes en alle speltekst |
 | `src/ui` | Schermen: per scherm een logicaklasse en een tekenklasse |
 | `src/platform` | Invoer, geluid, muziek en opslag |
 | `scripts/art` | Beeld genereren en verwerken tot sprites |

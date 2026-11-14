@@ -14,10 +14,16 @@ export const STRINGS = {
     fire: 'Fire', boost: 'Boost', guard: 'Guard', cool: 'Vent', module: 'Module', repair: 'Field Repair', auto: 'Auto Turn',
     endTurn: 'End Turn', retreat: 'Retreat',
   },
+  /** What an action costs other than energy, said beside it in the list. */
+  actionNotes: { repair: 'ends turn' },
   retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
   parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
   meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
-  headings: { you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?', paint: 'MARK WHICH ENEMY?' },
+  headings: {
+    you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?', paint: 'MARK WHICH ENEMY?',
+    // With more than one enemy to aim at: which one this is, and the buttons that go to the next.
+    targetOf: (n: number, of: number) => `TARGET ${n}/${of}  L1/R1`,
+  },
   preview: { hit: 'HIT', damage: 'DMG', all: 'ALL' },
   weaponMenu: {
     charge: 'CHARGE', ready: 'READY',
@@ -104,9 +110,9 @@ export const STRINGS = {
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
     messages: 'Messages', database: 'Database', training: 'Training', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
-    credits: 'CREDITS', battlesWon: 'BATTLES WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
+    credits: 'CREDITS', battlesWon: 'CONTRACTS WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
-    locked: 'Locked', campaignDone: 'The war is over. The work is not.',
+    locked: 'Locked', opensAfter: (title: string) => `after ${title}`, campaignDone: 'The war is over. The work is not.',
     cycleLabel: (n: number) => `CYCLE ${n + 1}`,
     cycleQuestion: ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.', 'Enemies get tougher and', 'pay improves.'],
     no: 'No', yes: 'Yes',
@@ -173,7 +179,9 @@ export const STRINGS = {
   },
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
-    credits: 'End Roll', watch: 'Watch',
+    credits: 'End Roll', watch: 'Watch', title: 'Quit to Title',
+    swapAB: 'A/B Buttons', normal: 'Normal', swapped: 'Swapped', swapHelp: 'Swap them if B confirms on your handheld.',
+    unsaved: 'Not saved', unsavedHelp: 'The last change could not be saved. A again: quit.',
     on: 'On', off: 'Off',
     difficulties: { story: 'Story', standard: 'Standard', veteran: 'Veteran' },
     difficultyHelp: {
@@ -193,6 +201,8 @@ export const STRINGS = {
     finale: 'THE LAST MOVE OF THE WAR', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT',
     verdict: 'VERDICT: your answer ends the story. The other offer is withdrawn.',
     replay: 'ARCHIVE: pays less. Nothing in the story changes.',
+    lent: 'LENT MECH: yours cannot deploy. The bill is still yours.',
+    lentNote: 'Your own mech cannot deploy as it stands, so Dispatch lends you a stock frame for this one. Put yours right in the Garage; until then this is the work there is.',
     support: (name: string) => `Fire support: ${name}`,
   },
   mission: {
@@ -206,6 +216,19 @@ export const STRINGS = {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
+    relief: (credits: number) => `Debt limit reached: ${credits} written off`,
+  },
+  /** What Dispatch says after a lost battle; `adviceAfter` picks which. Each fits three lines of the settlement. */
+  advice: {
+    disable: 'The machine was wanted in one piece. Aim at its legs and arms; leave the core alone.',
+    protect: 'It loses a point a round for every hostile still standing. Thin them out, weakest first.',
+    heat: 'You overheated and lost a turn. Vent before the heat bar passes 100.',
+    stance: 'You never used Boost or Guard. Boost makes you hard to hit; Guard blunts what lands.',
+    repairs: 'You went down with field repairs unused. A repair ends your turn: fire, then patch.',
+    time: 'The fight ran out of time. Bring more firepower, and aim at what the contract names.',
+    patrol: 'Short of parts? The patrol always pays, and a second weapon changes most fights.',
+    drills: 'The drills under Training teach one trick each, in a mech lent for the purpose.',
+    auto: 'Auto Turn plays a turn for you. Watch what it does with the same mech.',
   },
   saveFailed: 'Could not save: storage is full or blocked',
   slots: {
@@ -235,7 +258,7 @@ export const STRINGS = {
     sold: (name: string, price: number) => `Sold ${name} +${price}`,
     cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
     lastWeapon: 'Last weapon', needWeapon: 'You need at least one weapon',
-    hint: 'L1/R1 category   LEFT/RIGHT buy or sell   B back',
+    hint: 'A trade  L1/R1 category  LEFT/RIGHT buy/sell list  B back', fitHint: 'Fit it in the Garage.',
   },
   partInfo: {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',
@@ -278,5 +301,5 @@ export const STRINGS = {
       chaff: 'CHAFF', limiter: 'LIMITER',
     },
   },
-  debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
+  debug: { title: 'INPUT', action: 'action', key: 'key', screen: 'screen', error: 'error', close: 'START: close', none: '-' },
 } as const;

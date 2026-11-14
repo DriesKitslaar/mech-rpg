@@ -105,6 +105,33 @@ test('the same kind of enemy among others is drawn as its single sprite', () => 
   expect(calls.some((c) => c.name === 'scale' && c.args[0] === -1)).toBe(false);
 });
 
+test('with more than one enemy to aim at, the target list says which one this is and which buttons go to the next', () => {
+  const app = start({ ...done(), scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) });
+  select(app, 'contracts');
+  select(app, 'intro-1');
+  select(app, 'accept');
+  expect(snap(app).screen).toBe('battle');
+  // The drones are quicker and go first.
+  for (let i = 0; i < 4000 && snap(app).battle?.phase !== 'action'; i++) app.update(16);
+  // The list of actions says what each costs: energy, or for a field repair the rest of the turn.
+  const actions = recorder();
+  app.draw(actions.ctx);
+  expect(actions.calls.filter((c) => c.name === 'fillText').map((c) => String(c.args[0]))).toContain('Field Repair  ends turn');
+  select(app, 'fire');
+  press(app, 'confirm');
+  expect(snap(app).battle?.phase).toBe('target');
+  const { ctx, calls } = recorder();
+  app.update(16);
+  app.draw(ctx);
+  const said = calls.filter((c) => c.name === 'fillText').map((c) => String(c.args[0]));
+  expect(said).toContain('TARGET 1/2  L1/R1');
+  // On to the other one, and the count follows.
+  press(app, 'next');
+  const next = recorder();
+  app.draw(next.ctx);
+  expect(next.calls.filter((c) => c.name === 'fillText').map((c) => String(c.args[0]))).toContain('TARGET 2/2  L1/R1');
+});
+
 describe('the screens the three-act story added', () => {
   const texts = (calls: { name: string; args: unknown[] }[]) => calls.filter((c) => c.name === 'fillText').map((c) => String(c.args[0]));
 
@@ -596,6 +623,21 @@ describe('the screens the pilot\'s record added', () => {
     expect(texts(later.calls)).not.toContain('MEDAL EARNED');
   });
 
+  test('the way out of a settlement is written clear of an announcement: its letters end where the strip begins', () => {
+    const app = start({ ...done('intro-1'), scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
+    const mission = MISSIONS.find((m) => m.id === 'patrol')!;
+    app.showSettlement({ won: true, reward: 300, ammoCost: 20, repairCost: 10, net: 270, lines: [] }, mission);
+    app.commit({ ...app.game!, arenaRank: 1 });
+    app.update(16);
+    app.update(400);
+    const { ctx, calls } = recorder();
+    app.draw(ctx);
+    const y = (text: string) => Number(calls.find((c) => c.name === 'fillText' && c.args[0] === text)!.args[2]);
+    // The strip's heading is written two below its top edge; a line of text is twelve tall.
+    const stripTop = y('MEDAL EARNED') - 2;
+    expect(y('Press A to continue') + 12).toBeLessThanOrEqual(stripTop);
+  });
+
   test('the database draws its three pages: a unit with its picture and figures, an entry about the world, a topic of the manual', () => {
     const app = start({ ...done('intro-1'), met: ['recon-drone', 'gun-turret'], scenes: ['act-1'] });
     select(app, 'database');
@@ -679,6 +721,21 @@ describe('the screens the pilot\'s record added', () => {
     expect(end.map((d) => d.text)).not.toContain('IRONWAGE');
     press(app, 'confirm');
     expect(snap(app).screen).toBe('hub');
+  });
+
+  test('a settlement that ran into the debt limit says what was written off', () => {
+    const app = start({ ...done('intro-1'), credits: -2000, scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) });
+    const mission = MISSIONS.find((m) => m.id === 'patrol')!;
+    app.showSettlement({ won: false, reward: 0, ammoCost: 80, repairCost: 320, net: -400, lines: [], relief: 400 }, mission);
+    const { ctx, calls } = recorder();
+    app.update(16);
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['CONTRACT FAILED', 'Debt limit reached: 400 written off', '-2000']));
+    // One that did not says nothing about it.
+    app.showSettlement({ won: false, reward: 0, ammoCost: 80, repairCost: 320, net: -400, lines: [] }, mission);
+    const plain = recorder();
+    app.draw(plain.ctx);
+    expect(texts(plain.calls).some((text) => text.startsWith('Debt limit'))).toBe(false);
   });
 
   test('the end roll says how to skip it while it climbs, and no longer once it has stopped', () => {

@@ -49,6 +49,8 @@ export class BattleFlow {
   phase: BattlePhase = 'animating';
   menu: MenuView = { items: [], cursor: 0 };
   targetId: string | null = null;
+  /** The enemy the pilot fired at last: the next weapon is aimed at the same one. */
+  private lastTarget: string | null = null;
   targetPart: FrameSlot | null = null;
   preview: ShotPreview | null = null;
   /** True while targeting with a weapon whose shot would push heat past the limit. */
@@ -164,9 +166,25 @@ export class BattleFlow {
     return this.state.units.filter((u) => u.side === 'enemy' && !u.destroyed);
   }
 
-  /** The first living enemy a weapon may be fired at, if any. */
+  /** The living enemies a weapon may be fired at, in the order they stand. */
+  private targetsOf(slot: WeaponSlot): UnitState[] {
+    return this.livingEnemies().filter((e) => this.can({ type: 'fire', weapon: slot, target: e.id, part: 'core' }));
+  }
+
+  /**
+   * The enemy a weapon is aimed at when its list opens, if there is one: the enemy the pilot fired at
+   * last (their own choice holds), else the one the contract names, else the first standing.
+   */
   private firstTarget(slot: WeaponSlot): UnitState | undefined {
-    return this.livingEnemies().find((e) => this.can({ type: 'fire', weapon: slot, target: e.id, part: 'core' }));
+    const open = this.targetsOf(slot);
+    const named = objectiveTarget(this.state);
+    return open.find((e) => e.id === this.lastTarget) ?? open.find((e) => e.id === named?.id) ?? open[0];
+  }
+
+  /** Which of the enemies the weapon in hand can reach is under the sights, counted from one, and how many there are. */
+  get targetChoice(): { at: number; of: number } {
+    const open = this.weapon ? this.targetsOf(this.weapon) : [];
+    return { at: Math.max(0, open.findIndex((e) => e.id === this.targetId)) + 1, of: open.length };
   }
 
   /** Why a weapon can neither be fired nor charged right now; null when it can. */
@@ -340,7 +358,10 @@ export class BattleFlow {
     const items = FRAME_SLOTS.filter((part) => target.parts[part])
       .map((part) => ({ id: part, label: partName(target, part), enabled: true }));
     this.phase = 'target';
-    this.menu = { items, cursor: 0 };
+    // A machine the client wants in one piece is aimed at by what has to come off it, never first by its core.
+    const wanted = this.state.objective.type === 'disable' && objectiveTarget(this.state)?.id === targetId;
+    const limb = wanted ? items.findIndex((item) => (item.id === 'legs' || item.id === 'arms') && target.parts[item.id]!.ap > 0) : -1;
+    this.menu = { items, cursor: Math.max(0, limb) };
     this.targetId = targetId;
     this.syncTarget();
   }
@@ -391,8 +412,7 @@ export class BattleFlow {
   }
 
   private cycleTarget(delta: number): void {
-    const enemies = this.livingEnemies().filter((e) =>
-      this.can({ type: 'fire', weapon: this.weapon!, target: e.id, part: 'core' }));
+    const enemies = this.targetsOf(this.weapon!);
     const index = enemies.findIndex((e) => e.id === this.targetId);
     this.openTarget(enemies[(index + delta + enemies.length) % enemies.length].id);
   }
@@ -449,6 +469,7 @@ export class BattleFlow {
         if (input === 'prev') return this.cycleTarget(-1);
         if (input === 'next') return this.cycleTarget(1);
         if (input === 'confirm') {
+          this.lastTarget = this.targetId;
           this.act({ type: 'fire', weapon: this.weapon!, target: this.targetId!, part: this.targetPart! });
         }
         return;

@@ -26,7 +26,7 @@ export const SCENES: Scene[] = [
     lines: [
       'Varn does not sleep. It mines, it calculates, and underneath all of that it drowns.',
       'Three powers hold the city, and none of them will fight for it in person. That is what pilots are for.',
-      'You have a salvaged frame, a licence and a debt. Start with the debt.',
+      'You have a salvaged frame, a licence, and a debt nobody has called in yet. Start earning.',
     ],
   },
   {

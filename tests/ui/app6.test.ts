@@ -4,7 +4,11 @@ import { NO_STATS } from '../../src/core/stats';
 import { WORLD } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { CATALOG } from '../../src/content/parts';
-import { autoBattle, done, fresh, ids, inHub, medalPay, press, retreat, savedGame, select, snap, strong } from '../helpers/app';
+import { SAVE_KEY, SaveFile } from '../../src/platform/storage';
+import { App } from '../../src/ui/app';
+import {
+  autoBattle, done, fresh, ids, inHub, makeApp, medalPay, memoryStore, press, retreat, savedGame, select, snap, sprites, strong,
+} from '../helpers/app';
 
 /** A pilot for whom nothing is waiting to be announced, so that credits only move for the reason under test. */
 const quiet = (base = fresh()) => ({ ...base, codex: WORLD.map((entry) => entry.id), scenes: ['act-1'] });
@@ -42,7 +46,7 @@ describe('training', () => {
     for (const id of ['head-bulwark', 'core-bulwark', 'arms-bulwark']) g = buy(g, id, CATALOG);
     g = equip(equip(equip(g, 'head', 'head-bulwark', CATALOG), 'core', 'core-bulwark', CATALOG), 'arms', 'arms-bulwark', CATALOG);
     const { app } = inHub(quiet(g));
-    expect(snap(app).menu.items.find((i) => i.id === 'contracts')).toMatchObject({ enabled: false });
+    expect(snap(app).menu.items.find((i) => i.id === 'contracts')).toMatchObject({ note: 'Overweight' });
     expect(snap(app).menu.items.find((i) => i.id === 'training')).toMatchObject({ enabled: true });
     openDrill(app, 'drill-aim');
     expect(snap(app).briefing).toMatchObject({ reward: 150, objectives: ['Disable, do not destroy: Halo Guard'] });
@@ -191,5 +195,194 @@ describe('the arena, past the ladder', () => {
       { id: 'arena-15', phase: 'patrol', title: 'The Founder', client: 'Arena Office', briefing: [], debrief: '', reward: 22000, battles: [], arenaRank: 15 });
     expect(savedGame(store).arenaRank).toBe(15);
     expect(savedGame(store).medals).toEqual(expect.arrayContaining(['apex']));
+  });
+});
+
+describe('the debt limit', () => {
+  const lost = (cost: number) => ({ won: false, reward: 0, ammoCost: cost, repairCost: 0, net: -cost, lines: [] });
+  const patrol = { id: 'patrol', phase: 'patrol' as const, title: 'Perimeter Sweep', client: 'Dispatch', briefing: [], debrief: '', reward: 400, battles: [] };
+
+  test('a bill never takes a pilot more than two thousand into debt: the rest is written off, and the settlement says so', () => {
+    // A pilot who already holds the medals a first win and a first loss earn, so that only the bills move the credits.
+    const seasoned = { ...fresh(), credits: -1500, medals: ['first-contract', 'first-loss'], stats: { ...NO_STATS, contracts: 1, lost: 1 } };
+    const { app, store } = inHub(quiet(seasoned));
+    expect(app.bookSettlement(lost(300), patrol)).toBe(0);
+    expect(savedGame(store).credits).toBe(-1800);
+    expect(app.bookSettlement(lost(700), patrol)).toBe(500);
+    expect(savedGame(store).credits).toBe(-2000);
+    expect(app.bookSettlement(lost(700), patrol)).toBe(700);
+    expect(savedGame(store).credits).toBe(-2000);
+    // Pay still counts in full.
+    app.bookSettlement({ won: true, reward: 400, ammoCost: 0, repairCost: 0, net: 400, lines: [] }, patrol);
+    // (A win without a scratch earns a medal of its own, which pays a little.)
+    const earned = savedGame(store).medals.filter((id) => !seasoned.medals.includes(id));
+    expect(savedGame(store).credits).toBe(-1600 + medalPay(earned));
+  });
+
+  test('a contract lost at the limit costs nothing more, and its settlement shows what was written off', () => {
+    const { app, store } = inHub(quiet({ ...fresh(), credits: -2000 }));
+    select(app, 'contracts');
+    select(app, 'patrol');
+    select(app, 'accept');
+    // Fire once so there is a bill, then walk away.
+    for (let i = 0; i < 400 && snap(app).battle!.phase !== 'action'; i++) app.update(16);
+    press(app, 'confirm', 'confirm', 'confirm');
+    retreat(app);
+    const { net, relief } = snap(app).settlement as unknown as { net: number; relief: number };
+    expect(net).toBeLessThan(0);
+    expect(relief).toBe(-net);
+    expect(savedGame(store).credits).toBe(-2000 + medalPay(savedGame(store).medals));
+  });
+});
+
+describe('leaving a game for the title', () => {
+  test('the options offer it while a game is on, and the game is there to continue afterwards', () => {
+    const { app, store } = inHub(quiet({ ...fresh(), credits: 4321 }));
+    select(app, 'options');
+    expect(ids(app)).toContain('title');
+    select(app, 'title');
+    expect(snap(app)).toMatchObject({ screen: 'title', credits: null, callsign: null, medals: [], toast: null });
+    expect(ids(app)).toEqual(['continue', 'new', 'options']);
+    // Nothing was lost on the way out: the game was already saved.
+    expect(savedGame(store).credits).toBe(4321);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 4321 });
+  });
+
+  test('from the title the options have no such entry, and no end roll of a game that is not being played', () => {
+    const { app } = inHub(quiet({ ...fresh(), endingSeen: true, cycle: 1 }));
+    select(app, 'options');
+    expect(ids(app)).toEqual(expect.arrayContaining(['credits', 'title']));
+    select(app, 'title');
+    select(app, 'options');
+    expect(ids(app)).not.toContain('title');
+    expect(ids(app)).not.toContain('credits');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('title');
+  });
+
+  test('another kept game can then be loaded, and time on the title is not counted for either', () => {
+    const { app, store } = inHub(quiet({ ...fresh(), credits: 111 }));
+    store.data['ironwage-save-2'] = JSON.stringify(quiet({ ...fresh(), callsign: 'VANTA', credits: 222 }));
+    select(app, 'options');
+    select(app, 'title');
+    app.update(60_000);
+    expect(ids(app)).toEqual(['continue', 'new', 'load', 'options']);
+    select(app, 'load');
+    select(app, 'slot-2');
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 222, callsign: 'VANTA', slot: 1 });
+    expect(savedGame(store, 'ironwage-save-2').stats.seconds).toBe(0);
+    expect(savedGame(store).stats.seconds).toBe(0);
+  });
+});
+
+describe('the options, pressed the wrong way', () => {
+  const toRow = (app: App, id: string): void => {
+    for (let i = 0; i < 20 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');
+    expect(snap(app).menu.items[snap(app).menu.cursor]?.id).toBe(id);
+  };
+
+  test('left and right change a setting, but never set off an entry that does something', () => {
+    const { app } = inHub(quiet({ ...fresh(), endingSeen: true, cycle: 1 }));
+    select(app, 'options');
+    toRow(app, 'credits');
+    press(app, 'left', 'right');
+    expect(snap(app).screen).toBe('options');
+    toRow(app, 'title');
+    press(app, 'left', 'right');
+    expect(snap(app)).toMatchObject({ screen: 'options', callsign: 'PILOT' });
+    // A setting still answers to them.
+    press(app, 'up', 'up', 'up');
+    const at = snap(app).menu.items[snap(app).menu.cursor];
+    expect(at.id).toBe('difficulty');
+    press(app, 'right');
+    expect(snap(app).menu.items[snap(app).menu.cursor].note).not.toBe(at.note);
+  });
+
+  /** A game over storage that can be told to refuse every write. */
+  function flaky(saved = quiet({ ...fresh(), credits: 500 })) {
+    const state = { refuse: false };
+    const inner = memoryStore({ [SAVE_KEY]: JSON.stringify(saved) });
+    const store = { ...inner, setItem: (k: string, v: string) => { if (state.refuse) throw new Error('full'); inner.setItem(k, v); } };
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 2 });
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+    return { app, inner, state };
+  }
+
+  test('leaving for the title after a change that could not be saved warns first, and leaves on the second press', () => {
+    const { app, inner, state } = flaky();
+    state.refuse = true;
+    select(app, 'garage');
+    press(app, 'next', 'cancel');
+    expect(snap(app).saveFailed).toBe(true);
+    select(app, 'options');
+    toRow(app, 'title');
+    press(app, 'confirm');
+    // Still here, and the entry says why.
+    expect(snap(app)).toMatchObject({ screen: 'options', callsign: 'PILOT' });
+    expect(snap(app).menu.items.find((i) => i.id === 'title')!.note).toBe('Not saved');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('title');
+    expect(savedGame(inner).paint).toBe('factory');
+  });
+
+  test('if storage takes the game after all, leaving saves it on the way out and says nothing', () => {
+    const { app, inner, state } = flaky();
+    state.refuse = true;
+    select(app, 'garage');
+    press(app, 'next', 'cancel');
+    expect(savedGame(inner).paint).toBe('factory');
+    state.refuse = false;
+    select(app, 'options');
+    toRow(app, 'title');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('title');
+    // The repaint that could not be written then is written now.
+    expect(savedGame(inner).paint).not.toBe('factory');
+  });
+});
+
+describe('swapped A and B buttons', () => {
+  test('the options have a switch for it, off to begin with', () => {
+    const { app } = inHub(quiet());
+    select(app, 'options');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ label: 'A/B Buttons', note: 'Normal' });
+  });
+
+  test('switching it on is remembered with the options and the game; switching it off again forgets it', () => {
+    const { app, store } = inHub(quiet());
+    select(app, 'options');
+    select(app, 'swapAB');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Swapped' });
+    expect(JSON.parse(store.data['ironwage-settings']).swapAB).toBe(true);
+    expect(savedGame(store).settings.swapAB).toBe(true);
+    expect((snap(app).settings as { swapAB?: boolean }).swapAB).toBe(true);
+    press(app, 'confirm');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Normal' });
+    expect(JSON.parse(store.data['ironwage-settings']).swapAB).toBeUndefined();
+    expect(savedGame(store).settings.swapAB).toBeUndefined();
+  });
+
+  test('the app takes presses as they are handed to it: the swap is made where the buttons are read, not here', () => {
+    // The system's Back key and a keyboard's Enter and Escape must keep their meaning with the swap on,
+    // so the app cannot be the one to swap: it never knows which button a press came from.
+    const { app } = inHub(quiet({ ...fresh(), settings: { ...fresh().settings, swapAB: true } }));
+    select(app, 'options');
+    expect(snap(app).screen).toBe('options');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', list: 'contracts' });
+  });
+
+  test('left and right on the row switch it too, so a player who swapped by accident can undo it with the D-pad alone', () => {
+    const { app } = inHub(quiet());
+    select(app, 'options');
+    for (let i = 0; i < 20 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'swapAB'; i++) press(app, 'down');
+    press(app, 'right');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Swapped' });
+    press(app, 'left');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Normal' });
   });
 });

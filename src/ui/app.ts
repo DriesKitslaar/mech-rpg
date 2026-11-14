@@ -1,13 +1,14 @@
+import { adviceAfter, type Advice } from '../core/advice';
 import { MIRROR_ID, arenaMission, checkChallenge, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordMirrorWin } from '../core/arena';
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
-  archiveMissions, availableMissions, campaignComplete, completeMission, dueScenes, forCycle, introductionsDone, markRead,
+  archiveMissions, availableMissions, campaignComplete, completeMission, dueScenes, forCycle, introductionsDone, lentPatrol, markRead,
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
 import { metByRecord, openEntries, type Entry } from '../core/codex';
-import { applySettlement, settle, type Settlement } from '../core/economy';
+import { applySettlement, debtRelief, settle, type Settlement } from '../core/economy';
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
@@ -152,6 +153,8 @@ class MissionHost implements Screen {
   /** What the battles already over added to the record, and the kinds of enemy seen in them. */
   private tally: Stats = NO_STATS;
   private met = new Set<string>();
+  /** What there is to say about the battle the contract was lost in; null after a win or a retreat. */
+  private tip: Advice | null = null;
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
@@ -202,6 +205,8 @@ class MissionHost implements Screen {
   private bookIfOver(): void {
     const { outcome } = this.flow.state;
     if (this.settlement || outcome === 'ongoing' || (outcome === 'victory' && this.hasNext())) return;
+    // After a defeat Dispatch has a word about what went wrong in the battle that was lost.
+    this.tip = adviceAfter(this.flow.state);
     if (isDrill(this.mission)) {
       // The simulator bills nothing and counts for nothing but the list of drills passed.
       this.settlement = drillSettlement(outcome === 'victory', this.mission);
@@ -211,9 +216,11 @@ class MissionHost implements Screen {
     const { payBonus, costDiscount } = this.app.perks();
     const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
-    this.settlement = rankSettlement(bill, performance);
+    const settlement = rankSettlement(bill, performance);
     this.count();
-    this.app.bookSettlement(this.settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state) });
+    const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state) });
+    // What the debt limit wrote off is shown with the bill.
+    this.settlement = relief > 0 ? { ...settlement, relief } : settlement;
   }
 
   /** Adds the battle that has just ended to what the contract has added up to. */
@@ -237,7 +244,7 @@ class MissionHost implements Screen {
       return;
     }
     if (action !== 'confirm') return;
-    if (this.settlement) this.app.showSettlement(this.settlement, this.mission);
+    if (this.settlement) this.app.showSettlement(this.settlement, this.mission, this.tip);
     else {
       this.rounds += this.flow.state.round;
       this.count();
@@ -439,6 +446,11 @@ export class App {
   missions(): Mission[] {
     const game = this.game;
     if (!game) return [];
+    // A pilot whose own mech cannot deploy is not left without work: the patrol, as it is in the first
+    // cycle, in a stock frame Dispatch lends. Everything else waits for the mech to be put right.
+    if (this.buildErrors().length > 0) {
+      return MISSIONS.filter((m) => m.id === 'patrol').map((m) => lentPatrol(m, STARTER_BUILD, STRINGS.briefing.lentNote));
+    }
     const story = availableMissions(game, MISSIONS).map((m) => forCycle(m, game.cycle));
     return this.sideWorkOpen() ? [...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT)] : story;
   }
@@ -558,10 +570,10 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission));
   }
 
-  /** Starts a contract, unless the build may not deploy or the contract is not on offer. A drill lends its own mech. */
+  /** Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends no mech of its own. */
   startMission(missionId: string, replay = false): void {
     const mission = this.offered(missionId, replay);
-    if (!mission || (!isDrill(mission) && this.buildErrors().length > 0)) return;
+    if (!mission || (mission.loaner === undefined && this.buildErrors().length > 0)) return;
     this.seed = (this.seed + 101) % 2147483647;
     this.show('battle', new MissionHost(this, mission, this.seed));
   }
@@ -602,7 +614,8 @@ export class App {
    * Records a contract's outcome: money and experience, and after a win the contract itself (story
    * contracts) or the new arena rank (arena fights). Open contracts and the patrol leave no record.
    */
-  bookSettlement(settlement: Settlement, mission: Mission, fought: Fought = { tally: NO_STATS, met: [], retreated: false }): void {
+  bookSettlement(settlement: Settlement, mission: Mission, fought: Fought = { tally: NO_STATS, met: [], retreated: false }): number {
+    const relief = debtRelief(this.game!, settlement);
     let next = applySettlement(this.game!, settlement);
     next = addXp(next, xpForContract(mission.reward, settlement.won));
     const pay = settlement.reward + (settlement.bonus ?? 0);
@@ -621,11 +634,12 @@ export class App {
       }
     }
     this.commit(next);
+    return relief;
   }
 
   /** Shows a settlement that has already been booked. */
-  showSettlement(settlement: Settlement, mission: Mission): void {
-    this.show('settlement', new SettlementScreen(this, settlement, mission), trackFor('settlement', settlement));
+  showSettlement(settlement: Settlement, mission: Mission, tip: Advice | null = null): void {
+    this.show('settlement', new SettlementScreen(this, settlement, mission, tip), trackFor('settlement', settlement));
   }
 
   /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. An ending is followed by the end roll. */
@@ -649,6 +663,27 @@ export class App {
 
   closeCredits(): void {
     this.openHub();
+  }
+
+  /** Stores the game as it is if the last attempt failed; true when what is kept is the game being played. */
+  saveNow(): boolean {
+    if (this.game && this.saveFailed) this.saveFailed = !this.file.save(this.game);
+    return !this.saveFailed;
+  }
+
+  /**
+   * Leaves the game being played for the title, where another kept game can be continued or a new
+   * one started. Every change was saved as it was made; one that could not be is tried once more here,
+   * and is lost if it still cannot be (the options warn before they call this).
+   */
+  quitToTitle(): void {
+    this.saveNow();
+    this.saveFailed = false;
+    this.game = null;
+    this.toasts = [];
+    this.toast = null;
+    this.played = 0;
+    this.go('title');
   }
 
   update(dtMs: number): void {

@@ -36,7 +36,7 @@ export class ShopScreen implements Screen {
     return {
       menu: { items: flow.list.items, cursor: flow.list.cursor },
       message: flow.message,
-      shop: { tab: flow.tab, mode: flow.mode, selected: flow.selected?.id ?? null },
+      shop: { tab: flow.tab, mode: flow.mode, selected: flow.selected?.id ?? null, fitHint: flow.justBought },
     };
   }
 
@@ -76,6 +76,8 @@ export class ShopScreen implements Screen {
     const refused = flow.message === S.cannotAfford || flow.message === S.inUse || flow.message === S.needWeapon;
     if (flow.message) drawText(ctx, flow.message, LOGICAL_W / 2, 240, { align: 'center', size: 16, color: refused ? COLORS.danger : COLORS.armor });
     else drawText(ctx, S.hint, LOGICAL_W / 2, 243, { align: 'center', color: COLORS.dim });
+    // Buying a part does not fit it: a new pilot is told where that is done.
+    if (flow.justBought) drawText(ctx, S.fitHint, LOGICAL_W / 2, 257, { align: 'center', color: COLORS.dim, size: 10 });
   }
 
   private drawDetail(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {

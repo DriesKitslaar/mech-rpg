@@ -1,13 +1,15 @@
 import { chooseEnemyAction } from '../../src/core/ai';
-import { HEAT_LIMIT, activeUnit, applyAction, createBattle, guardFactor, type BattleState } from '../../src/core/battle';
+import { HEAT_LIMIT, activeUnit, applyAction, createBattle, guardFactor, previewShot, type BattleState } from '../../src/core/battle';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
+import { newGame } from '../../src/core/game';
 import { ARENA, ARENA_ENEMIES } from '../../src/content/arena';
-import { MANUAL, UNITS } from '../../src/content/codex';
+import { MANUAL, UNITS, WORLD } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { MEDALS } from '../../src/content/medals';
 import { MISSIONS } from '../../src/content/missions';
-import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
+import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
+import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
 
 /** What the game tells the player about its rules, held against the rules themselves. */
@@ -132,5 +134,118 @@ describe('the medals', () => {
     // Only contracts of the story keep their best rank; the patrol, open contracts and arena fights do not.
     expect(MISSIONS.find((m) => m.id === 'patrol')!.phase).toBe('patrol');
     for (const id of ['first-s', 's-10', 's-25']) expect(MEDALS.find((m) => m.id === id)!.text, id).toMatch(/story contract/);
+  });
+});
+
+describe('field repairs', () => {
+  test('a field repair ends the turn, and the manual and the battle menu both say so', () => {
+    const s = structuredClone(toPlayer(createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 2)));
+    s.units[0].parts.core!.ap -= 50;
+    expect(activeUnit(s).side).toBe('player');
+    const after = applyAction(s, { type: 'repair', part: 'core' }, CATALOG);
+    expect(after.units[0].repairsLeft).toBe(s.units[0].repairsLeft - 1);
+    expect(activeUnit(after).side).toBe('enemy');
+    expect(topic('repairs')).toMatch(/ends your turn/);
+    expect(STRINGS.actionNotes.repair).toBe('ends turn');
+  });
+});
+
+describe('advice in the first contracts', () => {
+  const mission = (id: string) => MISSIONS.find((m) => m.id === id)!;
+  const said = (id: string): string => {
+    const m = mission(id);
+    return [...m.briefing, m.debrief, ...m.battles.flatMap((b) => (b.talk ?? []).map((line) => line.text))].join(' ');
+  };
+
+  test('nobody is told to shoot the legs off the Halo Guard first: its legs are harder to hit than its core', () => {
+    const s = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['light-mech']], CATALOG, 3));
+    for (const slot of ['rightHand', 'leftHand', 'shoulder'] as const) {
+      const core = previewShot(s, 'player', slot, 'enemy-0', 'core', CATALOG).hitChance;
+      const legs = previewShot(s, 'player', slot, 'enemy-0', 'legs', CATALOG).hitChance;
+      expect(legs, slot).toBeLessThan(core);
+    }
+    expect(said('undertow-1')).not.toMatch(/legs first/i);
+    expect(note('light-mech')).not.toMatch(/shoot those out first/);
+    // What does help against it is said instead.
+    expect(said('undertow-1')).toContain(STRINGS.actions.boost);
+  });
+
+  test('what the menu calls Guard is called Guard: no contract tells the pilot to brace', () => {
+    for (const m of MISSIONS) expect(said(m.id), m.id).not.toMatch(/\bbrace\b/i);
+    expect(said('undertow-2')).toContain(STRINGS.actions.guard);
+  });
+
+  test('no contract says of a machine with any mobility that it cannot dodge', () => {
+    expect(said('lumen-3')).not.toMatch(/cannot dodge/);
+    expect(WORLD.find((e) => e.id === 'strip-miner')!.text).not.toMatch(/could not dodge|cannot dodge/);
+    // The turret of the second contract really cannot: it has no mobility at all.
+    expect(computeBuildStats(ENEMIES['gun-turret'].build, CATALOG).mobility).toBe(0);
+  });
+
+  test('the opening does not send a pilot with money in hand to start with a debt', () => {
+    expect(newGame(CATALOG, STARTER_BUILD).credits).toBeGreaterThan(0);
+    expect(SCENES.find((scene) => scene.id === 'act-1')!.lines.join(' ')).not.toMatch(/Start with the debt/);
+  });
+});
+
+describe('the cards of the arena', () => {
+  const card = (name: string) => ARENA.find((o) => o.name === name)!;
+  /** What an opponent does in its first three turns against a pilot who only ends the turn. */
+  function turns(name: string): string[][] {
+    let s = createBattle(DEMO_BUILD, [ARENA_ENEMIES[card(name).enemy]], CATALOG, 6);
+    const out: string[][] = [];
+    for (let round = 0; round < 3 && s.outcome === 'ongoing'; round++) {
+      const from = s.events.length;
+      s = toPlayer(s);
+      if (s.outcome !== 'ongoing') break;
+      s = applyAction(s, { type: 'endTurn' }, CATALOG);
+      s = toPlayer(s);
+      out.push(s.events.slice(from).flatMap((e) => (e.type === 'boost' && e.unit === 'enemy-0' ? ['boost'] : e.type === 'shot' && e.unit === 'enemy-0' ? [e.weapon] : [])));
+    }
+    return out;
+  }
+
+  test('Rustjaw boosts in and strikes before he shoots, and his card says it that way round', () => {
+    const first = turns('Rustjaw').find((turn) => turn.includes('leftHand') && turn.includes('rightHand'))!;
+    expect(first).toBeDefined();
+    expect(first.indexOf('boost')).toBeLessThan(first.indexOf('leftHand'));
+    expect(first.indexOf('leftHand')).toBeLessThan(first.indexOf('rightHand'));
+    expect(card('Rustjaw').style).not.toMatch(/Shoots for the core, then boosts in/);
+    // The first fight of the ladder says what takes the sting out of his fist.
+    expect(card('Rustjaw').style).toContain(STRINGS.actions.guard);
+  });
+
+  test('Phantom strikes with the blade from the first round, and the void rifle halves resistance, not armour', () => {
+    expect(turns('Phantom')[0]).toContain('leftHand');
+    expect(card('Phantom').style).not.toMatch(/ignores half your armour|for when you stagger/);
+  });
+
+  test('Anvil is not said to be unable to dodge while it has mobility, and Bastion is not said to end a pilot in one hit', () => {
+    expect(computeBuildStats(ARENA_ENEMIES[card('Anvil').enemy].build, CATALOG).mobility).toBeGreaterThan(0);
+    expect(card('Anvil').style).not.toMatch(/cannot dodge/);
+    expect(card('Bastion').style).not.toMatch(/One hit can end you/);
+  });
+});
+
+describe('the drill on aiming', () => {
+  test('with the fire control it lends, every part is as easy to hit as the core, and the talk says that, not the opposite', () => {
+    const d = drill('drill-aim');
+    const s = toPlayer(createBattle(d.build, [ENEMIES['light-mech']], CATALOG, 2, { enemyScale: d.scale ?? 1 }));
+    const chances = (['core', 'legs', 'arms', 'head'] as const).map((part) => previewShot(s, 'player', 'rightHand', 'enemy-0', part, CATALOG).hitChance);
+    expect(new Set(chances).size).toBe(1);
+    const talk = d.battle.talk!.map((line) => line.text).join(' ');
+    expect(talk).not.toMatch(/watch the hit chance change/);
+    expect(talk).toMatch(/the same/);
+  });
+});
+
+describe('small words', () => {
+  test('the hub counts what it says it counts: contracts won', () => {
+    expect(STRINGS.hub.battlesWon).toBe('CONTRACTS WON');
+  });
+
+  test('the shop\'s hint says which button trades', () => {
+    expect(STRINGS.shop.hint).toMatch(/^A /);
+    expect(STRINGS.shop.hint.length * 4.8).toBeLessThanOrEqual(300);
   });
 });

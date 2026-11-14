@@ -14,7 +14,7 @@ import { BattleFx, MELEE_MS, PROJECTILE_MS, flightFor, type Scene } from './batt
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import type { Sprite, SpriteStore } from './sprites';
-import { fitTags, tagWidth, type Tag } from './tags';
+import { fitTags, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { Typewriter } from './typewriter';
 import { drawWeather, weatherFor } from './weather';
 import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
@@ -436,7 +436,17 @@ export class BattleScreen {
       // Under the armour line, how much balance the enemy has left.
       drawMeter(ctx, r.x + 8, r.y + r.h + 5, r.w - 16, 1, enemy.staggerMax - enemy.stagger, enemy.staggerMax, COLORS.heat);
       const mark = this.fieldMark(enemy) ?? (enemy.id === marked ? { text: STRINGS.objectives.mark, color: COLORS.heat } : null);
-      if (mark) drawText(ctx, mark.text, Math.round(r.x + r.w / 2), Math.max(26, r.y - 10), { align: 'center', size: 10, color: mark.color });
+      if (mark) {
+        // Above the unit, unless that is where the bars of one standing higher up are: then on the unit, on a dark ground.
+        const others = enemies.filter((other) => other !== enemy && !other.destroyed).map((other) => this.enemyRect(other));
+        const width = mark.text.length * 4;
+        const at = markPosition(r, others, width);
+        if (at.inside) {
+          ctx.fillStyle = 'rgba(8, 8, 20, 0.7)';
+          ctx.fillRect(at.x - width / 2 - 2, at.y - 1, width + 4, 10);
+        }
+        drawText(ctx, mark.text, at.x, at.y, { align: 'center', size: 10, color: mark.color });
+      }
       // The enemy the objective is about wears small amber corners all battle long.
       if (enemy.id === marked) this.drawBrackets(ctx, r.x - 1, r.y - 1, r.w + 2, r.h + 2, COLORS.heat, 3);
       if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, r.x - 2, r.y - 2, r.w + 4, r.h + 4);
@@ -575,7 +585,9 @@ export class BattleScreen {
     if (this.flow.phase !== 'result') {
       drawText(ctx, this.flow.message, 5, 1, { color: this.flow.overheatWarning ? COLORS.danger : COLORS.text });
     }
-    if (this.opts.label) drawText(ctx, this.opts.label, LOGICAL_W - 5, 1, { align: 'right', color: COLORS.dim });
+    // Which battle of the contract this is makes way for a message that needs the room.
+    const message = this.flow.phase !== 'result' ? this.flow.message : '';
+    if (this.opts.label && labelFits(message, this.opts.label)) drawText(ctx, this.opts.label, LOGICAL_W - 5, 1, { align: 'right', color: COLORS.dim });
   }
 
   /** What the battle asks for, under the message bar, with a bar where there is something to count. */
@@ -623,7 +635,7 @@ export class BattleScreen {
 
     const heading = phase === 'weapon' ? STRINGS.headings.weapons
       : phase === 'repairPart' ? STRINGS.headings.repair
-      : phase === 'target' ? STRINGS.headings.target
+      : phase === 'target' ? this.targetHeading()
       : phase === 'moduleTarget' ? STRINGS.headings.paint
       : phase === 'confirmRetreat' ? STRINGS.actions.retreat.toUpperCase() : '';
     let menuY = PANEL_Y + 3;
@@ -661,6 +673,12 @@ export class BattleScreen {
     }
   }
 
+  /** Over the list of parts while aiming: with a choice of enemies, which one this is and how to get to the next. */
+  private targetHeading(): string {
+    const { at, of } = this.flow.targetChoice;
+    return of > 1 ? STRINGS.headings.targetOf(at, of) : STRINGS.headings.target;
+  }
+
   /** The weapon menu: each weapon's name, and under it what firing it costs or why it cannot be fired. */
   private drawWeaponMenu(ctx: CanvasRenderingContext2D, x: number, y: number): void {
     const { items, cursor } = this.flow.menu;
@@ -680,7 +698,9 @@ export class BattleScreen {
       boost: boostCost(player, this.catalog), guard: guardCost(player, this.catalog), cool: coolCost(player, this.catalog),
     };
     return this.flow.menu.items.map((item) => ({
-      ...item, label: cost[item.id] !== undefined ? `${item.label}  ${STRINGS.meters.energy} ${cost[item.id]}` : item.label,
+      ...item,
+      label: cost[item.id] !== undefined ? `${item.label}  ${STRINGS.meters.energy} ${cost[item.id]}`
+        : item.id === 'repair' ? `${item.label}  ${STRINGS.actionNotes.repair}` : item.label,
     }));
   }
 

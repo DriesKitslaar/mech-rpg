@@ -1,4 +1,6 @@
+import type { Advice } from '../core/advice';
 import type { Mission } from '../core/campaign';
+import { isDrill } from '../core/training';
 import type { Settlement } from '../core/economy';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -10,13 +12,16 @@ const S = STRINGS.settlement;
 /** When the rank comes down, how long it takes to land, and how long the net amount takes to count up. */
 const STAMP_AT = 500;
 const STAMP_MS = 160;
+/** Where the way out is written: its letters end above line 240, where an announcement begins. */
+export const HINT_Y = 227;
 const COUNT_MS = 700;
 
 /** The bill after a battle: reward, ammunition, repairs and what is left. */
 export class SettlementScreen implements Screen {
   private clock = 0;
 
-  constructor(private app: App, private settlement: Settlement, private mission: Mission) {}
+  /** `tip` is what Dispatch has to say after a defeat, shown where the client's words go after a win. */
+  constructor(private app: App, private settlement: Settlement, private mission: Mission, private tip: Advice | null = null) {}
 
   update(dtMs: number): void {
     const before = this.clock;
@@ -31,8 +36,11 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus } = this.settlement;
-    return { menu: { items: [], cursor: 0 }, settlement: { net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0 } };
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief } = this.settlement;
+    return {
+      menu: { items: [], cursor: 0 },
+      settlement: { net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0, relief: relief ?? 0, tip: won ? null : this.tip },
+    };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -48,7 +56,7 @@ export class SettlementScreen implements Screen {
     const right = x + w - 10;
     drawPanel(ctx, x, 20, w, 230);
     drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
-    const drill = this.mission.loaner !== undefined;
+    const drill = isDrill(this.mission);
     const heading = drill ? (s.won ? STRINGS.training.won : STRINGS.training.lost) : s.won ? S.won : S.lost;
     drawText(ctx, heading, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
     const fast = this.app.deps.fast;
@@ -85,11 +93,10 @@ export class SettlementScreen implements Screen {
       y += LINE;
     }
 
-    // After a win, what the client had to say about it.
-    if (s.won) {
-      wrap(this.mission.debrief, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
-        drawText(ctx, line, x + 10, 144 + i * LINE, { color: COLORS.dim }));
-    }
+    // After a win, what the client had to say about it; after a defeat, what Dispatch makes of it.
+    const words = s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
+    wrap(words, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
+      drawText(ctx, line, x + 10, 144 + i * LINE, { color: s.won ? COLORS.dim : COLORS.text }));
 
     ctx.fillStyle = COLORS.border;
     ctx.fillRect(x + 10, 180, w - 20, 1);
@@ -100,6 +107,9 @@ export class SettlementScreen implements Screen {
     const balance = this.app.game!.credits; // already includes this settlement
     drawText(ctx, S.balance, x + 10, 206, { color: COLORS.dim });
     drawText(ctx, String(balance), right, 206, { align: 'right', color: balance < 0 ? COLORS.danger : COLORS.text });
-    drawText(ctx, S.continue, LOGICAL_W / 2, 230, { align: 'center', color: COLORS.dim });
+    // A bill that ran into the debt limit: what Dispatch wrote off, between the balance and the way out.
+    if (s.relief) drawText(ctx, S.relief(s.relief), LOGICAL_W / 2, 217, { align: 'center', color: COLORS.heat, size: 10 });
+    // Clear of the strip along the bottom edge where a medal or a database entry is announced.
+    drawText(ctx, S.continue, LOGICAL_W / 2, HINT_Y, { align: 'center', color: COLORS.dim });
   }
 }

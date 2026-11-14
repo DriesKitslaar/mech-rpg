@@ -14,8 +14,9 @@ const STOCK = { booster: 'bst-stock', fcs: 'fcs-stock' };
  */
 const LADDER: Entry[] = [
   {
-    name: 'Rustjaw', ai: 'gunner', scale: 0.85,
-    style: 'A scrapper in a stock salvage frame. Shoots for the core, then boosts in to finish with a ram fist.',
+    // The first fight of the ladder: a pilot with a second weapon who guards wins it nearly every time.
+    name: 'Rustjaw', ai: 'gunner', scale: 0.7,
+    style: 'A scrapper in a stock salvage frame. He boosts in with a ram fist that knocks a light mech flat, then shoots. Guard takes half the push out of it.',
     taunt: 'Fresh paint. I will fix that for you.',
     build: {
       ...STOCK, head: 'head-scout-mk1', core: 'core-hauler', arms: 'arms-rigger', legs: 'legs-strider', generator: 'gen-kd1',
@@ -51,7 +52,7 @@ const LADDER: Entry[] = [
   },
   {
     name: 'Anvil', ai: 'bruiser', scale: 1.2, paint: 'obsidian',
-    style: 'A Bulwark on tracks behind a tower shield. It cannot dodge and does not care; energy weapons cut through it.',
+    style: 'A Bulwark on tracks behind a tower shield. It cannot boost and does not care; energy weapons cut through it.',
     taunt: 'Hadron built me to break strikes. You are a small one.',
     build: {
       head: 'head-bulwark', core: 'core-bulwark', arms: 'arms-bulwark', legs: 'legs-crawler', generator: 'gen-furnace',
@@ -79,7 +80,7 @@ const LADDER: Entry[] = [
   },
   {
     name: 'Phantom', ai: 'skirmisher', scale: 0.75, paint: 'bone',
-    style: 'A full Wraith with a void rifle that ignores half your armour, and an arc blade for when you stagger.',
+    style: 'A full Wraith with a void rifle that halves what your armour resists, and an arc blade it closes in with every round.',
     taunt: 'Eight seasons. Nobody has touched the mask.',
     build: {
       head: 'head-wraith', core: 'core-wraith', arms: 'arms-wraith', legs: 'legs-wraith', generator: 'gen-tidal',
@@ -88,7 +89,7 @@ const LADDER: Entry[] = [
   },
   {
     name: 'Bastion', ai: 'bruiser', scale: 0.95, paint: 'midnight',
-    style: 'A full Colossus with a breaker cannon and a barrier for when it hurts. One hit can end you.',
+    style: 'A full Colossus with a breaker cannon and a barrier for when it hurts. Both guns landing take half a core.',
     taunt: 'Take your time. I have all the armour in the world.',
     build: {
       head: 'head-colossus', core: 'core-colossus', arms: 'arms-colossus', legs: 'legs-colossus', generator: 'gen-tidal',
