@@ -96,6 +96,13 @@ export const STRINGS = {
   victory: 'VICTORY',
   defeat: 'DEFEAT',
   hints: { result: 'Press A to continue' },
+  // Said over the field in a new pilot's first battles: which button does what at this step.
+  coach: {
+    action: 'UP/DOWN: choose what to do   A: confirm',
+    weapon: 'Pick a weapon with A.   B: go back',
+    target: 'Pick the part to hit with A. The core kills.',
+    repairPart: 'Pick the part to patch with A.   B: go back',
+  },
   titleScreen: {
     tagline: 'Every contract pays. Not every pilot collects.',
     continue: 'Continue', newGame: 'New Game', loadGame: 'Load Game', options: 'Options',

@@ -189,10 +189,17 @@ class MissionHost implements Screen {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: drill ? undefined : this.app.game!.paint,
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
       ...(boss ? { boss: boss.name } : {}),
+      coach: this.coach,
       background: this.mission.battles[this.index].background,
       label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
       resultHint: this.hasNext() ? STRINGS.mission.next : STRINGS.hints.result,
     });
+  }
+
+  /** True for a pilot who has not finished the introductions of a first story: they are told which button does what. */
+  private get coach(): boolean {
+    const game = this.app.game;
+    return !!game && game.cycle === 0 && !introductionsDone(game, MISSIONS);
   }
 
   /** The contract's own scale times the difficulty the player chose. A drill is the same for everyone. */
@@ -285,6 +292,7 @@ class MissionHost implements Screen {
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
         support: flow.state.support?.name ?? null,
+        coach: this.coach,
         // What the enemy being aimed at is about to do.
         intent: intentText(intentOf(flow.state, flow.state.units.find((u) => u.id === flow.targetId) ?? flow.state.units[0], this.app.deps.catalog)),
         enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),
