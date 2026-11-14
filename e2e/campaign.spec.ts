@@ -81,11 +81,34 @@ test('an objective: the briefing names it, the battle opens with talk and shows 
   const opening = await snap(page);
   expect(opening.battle).toMatchObject({ objective: 'ORE TRAIN 12/12', enemies: ['recon-drone', 'bomb-crawler', 'recon-drone'] });
   expect(opening.battle?.spoken).toContain('Count the hostiles');
+  // First the banner, then the line of talk writing itself out.
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: shot('battle-banner') });
+  await page.waitForTimeout(3000);
   await page.screenshot({ path: shot('battle-talk') });
   await press(page, 'Enter');
   await waitForPhase(page, 'action');
   await page.screenshot({ path: shot('battle-objective') });
   expect(errors).toEqual([]);
+});
+
+test('the title is alive, and a battle against a boss opens with a warning', async ({ page }) => {
+  const story = [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3'];
+  await page.addInitScript((data) => {
+    if (!window.localStorage.getItem('ironwage-save')) window.localStorage.setItem('ironwage-save', data);
+  }, JSON.stringify(pilot(story)));
+  await open(page, '/?seed=7');
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: shot('title-live') });
+  await choose(page, 'continue');
+  await enterHub(page);
+  await accept(page, 'verdict-enforce');
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: shot('battle-warning') });
+  // The warning can be dismissed with a press; then Ashfall has something to say.
+  await press(page, 'Enter');
+  await waitForPhase(page, 'talk');
+  expect((await snap(page)).battle?.spoken).toContain('I wondered which of us');
 });
 
 test('the machines: each one is on screen with its own part names, and what it launches joins the fight', async ({ page }) => {

@@ -4,6 +4,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
+import { drawWeather } from './weather';
 import { COLORS, drawList, drawPanel, drawText } from './widgets';
 
 const T = STRINGS.titleScreen;
@@ -13,6 +14,7 @@ export class TitleScreen implements Screen {
   private saved: GameState | null;
   private list: MenuList;
   private asking = false;
+  private clock = 0;
 
   constructor(private app: App) {
     this.saved = app.loadSave();
@@ -38,7 +40,9 @@ export class TitleScreen implements Screen {
     return !this.saved && this.app.saveIsUnusable() ? T.unusable : '';
   }
 
-  update(): void {}
+  update(dtMs: number): void {
+    this.clock += dtMs;
+  }
 
   onInput(action: InputAction): void {
     if (action === 'up') this.list.move(-1);
@@ -64,15 +68,33 @@ export class TitleScreen implements Screen {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    const bg = this.app.deps.sprites.get('bg-neon-district', { w: LOGICAL_W, h: LOGICAL_H, label: '' });
+    const fast = this.app.deps.fast;
+    // Varn in the rain, drifting very slightly, as if seen from a hovering frame.
+    const bg = this.app.deps.sprites.get('still-varn', { w: LOGICAL_W, h: LOGICAL_H, label: '' });
+    const drift = fast ? 0 : Math.round(Math.sin(this.clock / 2600) * 3);
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    // Pixel for pixel: once as it is, and once more a few pixels up or down, so the drift never shows an edge.
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
-    ctx.fillStyle = 'rgba(8, 8, 20, 0.55)';
+    if (drift !== 0) ctx.drawImage(bg.image, 0, drift, LOGICAL_W, LOGICAL_H);
+    ctx.fillStyle = 'rgba(8, 8, 20, 0.4)';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    if (!fast) drawWeather(ctx, 'rain', this.clock, LOGICAL_W, LOGICAL_H);
 
     drawText(ctx, STRINGS.title, LOGICAL_W / 2 + 2, 62, { size: 64, align: 'center', color: '#3b1d5a' });
     drawText(ctx, STRINGS.title, LOGICAL_W / 2, 60, { size: 64, align: 'center', color: COLORS.accent });
+    if (!fast) {
+      // A glint crosses the title every few seconds: the same letters, lighter, seen through a narrow moving slit.
+      const sweep = (this.clock % 4200) / 900;
+      if (sweep < 1) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(Math.round(40 + sweep * 240), 56, 12, 62);
+        ctx.clip();
+        drawText(ctx, STRINGS.title, LOGICAL_W / 2, 60, { size: 64, align: 'center', color: '#ffe3f2' });
+        ctx.restore();
+      }
+    }
     drawText(ctx, T.tagline, LOGICAL_W / 2, 122, { align: 'center', color: COLORS.text });
 
     const w = 190;

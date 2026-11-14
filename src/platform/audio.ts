@@ -6,7 +6,8 @@ export type SoundName =
   | 'move' | 'confirm' | 'cancel' | 'deny'
   | 'shotKinetic' | 'shotEnergy' | 'shotExplosive' | 'hit' | 'miss'
   | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat'
-  | 'guard' | 'stagger' | 'charge' | 'module';
+  | 'guard' | 'stagger' | 'charge' | 'module'
+  | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning';
 
 /** One synthesised note or burst. Times are in seconds, frequencies in hertz. */
 export interface Tone {
@@ -41,6 +42,28 @@ export const SOUNDS: Record<SoundName, Tone[]> = {
   charge: [t('sawtooth', 160, 0, 0.5, 0.25, 960), t('triangle', 320, 0.1, 0.4, 0.2, 1400)],
   module: [t('triangle', 660, 0, 0.07, 0.3), t('triangle', 990, 0.07, 0.07, 0.3), t('triangle', 1320, 0.14, 0.14, 0.3)],
   cool: [t('noise', 0, 0, 0.45, 0.25)],
+  // A letter appearing: barely there.
+  type: [t('square', 1500, 0, 0.012, 0.08)],
+  // A bomb going off: longer and lower than a destroyed unit.
+  blast: [t('noise', 0, 0, 0.7, 0.8), t('triangle', 90, 0, 0.7, 0.7, 28), t('sawtooth', 220, 0, 0.25, 0.3, 60)],
+  // A unit leaving a launch bay.
+  launch: [t('noise', 0, 0, 0.12, 0.3), t('sawtooth', 240, 0, 0.3, 0.25, 900)],
+  // Welding: two bright stutters.
+  mend: [t('square', 980, 0, 0.04, 0.2), t('noise', 0, 0.02, 0.08, 0.25), t('square', 1240, 0.1, 0.05, 0.2), t('noise', 0, 0.12, 0.08, 0.2)],
+  // A boss changing its ways: a two-tone siren.
+  alarm: [t('square', 440, 0, 0.16, 0.3), t('square', 587, 0.16, 0.16, 0.3), t('square', 440, 0.32, 0.16, 0.3), t('square', 587, 0.48, 0.2, 0.3)],
+  // Fire from off the field: a long falling whistle, then the caller hears the hit.
+  support: [t('sawtooth', 1900, 0, 0.16, 0.25, 500), t('triangle', 2600, 0, 0.1, 0.15, 1200)],
+  // A fuse burning down a notch.
+  fuse: [t('square', 1047, 0, 0.05, 0.25), t('square', 1047, 0.1, 0.05, 0.25)],
+  // Something the pilot was meant to keep safe taking damage.
+  asset: [t('triangle', 196, 0, 0.18, 0.4, 130), t('noise', 0, 0, 0.1, 0.2)],
+  // The rank coming down on the settlement.
+  stamp: [t('noise', 0, 0, 0.06, 0.6), t('triangle', 110, 0, 0.16, 0.6, 55), t('square', 660, 0.08, 0.1, 0.2)],
+  // The banner that opens a battle.
+  banner: [t('noise', 0, 0, 0.22, 0.18), t('triangle', 330, 0, 0.22, 0.2, 660)],
+  // The warning that opens a battle with a boss.
+  warning: [t('sawtooth', 311, 0, 0.22, 0.3), t('sawtooth', 311, 0.3, 0.22, 0.3), t('sawtooth', 311, 0.6, 0.3, 0.3), t('square', 155, 0, 0.9, 0.15)],
   repair: [t('triangle', 520, 0, 0.08, 0.35), t('triangle', 780, 0.09, 0.12, 0.35)],
   overheat: [t('square', 520, 0, 0.1, 0.35), t('square', 390, 0.16, 0.1, 0.35), t('square', 520, 0.32, 0.1, 0.35)],
   victory: [t('square', 523, 0, 0.12, 0.3), t('square', 659, 0.13, 0.12, 0.3), t('square', 784, 0.26, 0.12, 0.3), t('square', 1047, 0.39, 0.3, 0.3)],
@@ -65,22 +88,27 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
     case 'recover': return [];
     case 'cool':
     case 'turnSkipped': return now('cool');
-    case 'repair':
-    case 'mend': return now('repair');
-    case 'fuse': return now('charge');
-    case 'blast': return now('unitDestroyed');
-    case 'launch': return now('boost');
-    case 'phase': return now('stagger');
-    case 'support': return [{ name: 'shotEnergy', delayMs: 0 }, { name: 'hit', delayMs: flightMs }];
-    case 'asset': return now('partDestroyed');
+    case 'repair': return now('repair');
+    case 'mend': return now('mend');
+    case 'fuse': return now('fuse');
+    case 'blast': return now('blast');
+    case 'launch': return now('launch');
+    case 'phase': return now('alarm');
+    case 'support': return [{ name: 'support', delayMs: 0 }, { name: 'hit', delayMs: flightMs }];
+    case 'asset': return event.lost > 0 ? now('asset') : [];
     case 'overheat': return now('overheat');
     case 'outcome': return now(event.outcome === 'victory' ? 'victory' : 'defeat');
     case 'turnStart': return [];
   }
 }
 
-/** The sound for a menu input. `changed` says whether the input actually did something. */
-export function soundForInput(action: InputAction, changed: boolean): SoundName | null {
+/**
+ * The sound for a menu input. `changed` says whether the input actually did something; `busy` that
+ * the screen was not taking input (it was still coming up, or holding a line of text for a moment),
+ * in which case a press that did nothing is passed over in silence rather than refused.
+ */
+export function soundForInput(action: InputAction, changed: boolean, busy = false): SoundName | null {
+  if (!changed && busy) return null;
   if (action === 'confirm') return changed ? 'confirm' : 'deny';
   if (!changed) return null;
   if (action === 'cancel') return 'cancel';

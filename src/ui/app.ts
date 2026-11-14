@@ -20,11 +20,13 @@ import { SCENES } from '../content/scenes';
 import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
 import { STRINGS } from '../content/strings';
 import type { Sfx } from '../platform/audio';
+import type { TrackName } from '../platform/music';
 import type { InputAction } from '../platform/input';
 import type { SaveFile } from '../platform/storage';
 import { ArenaScreen } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
+import { LOGICAL_H, LOGICAL_W } from './display';
 import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
 import type { ListItem } from './menuList';
@@ -33,6 +35,7 @@ import { OptionsScreen } from './optionsScreen';
 import { PilotScreen } from './pilotScreen';
 import { SceneScreen } from './sceneScreen';
 import { SettlementScreen } from './settlementScreen';
+import { battleTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
@@ -57,11 +60,14 @@ export type ScreenName =
 
 /** How much quicker a battle plays with the fast-battles option on. */
 export const FAST_BATTLE_SPEED = 2.5;
+/** How long a new screen takes to come up out of black, and the shutter over a battle to open. */
+export const FADE_MS = 170;
+export const SHUTTER_MS = 320;
 
 /** The part of the music player the app steers. */
 export interface MusicControl {
   enabled: boolean;
-  play(track: 'menu' | 'battle' | null): void;
+  play(track: TrackName | null): void;
 }
 
 export interface AppDeps {
@@ -72,6 +78,8 @@ export interface AppDeps {
   music?: MusicControl;
   /** Skips message pauses and effects; used by tests. */
   fast: boolean;
+  /** Makes the device vibrate for a number of milliseconds, where it can. */
+  vibrate?: (ms: number) => void;
   seed: number;
 }
 
@@ -98,10 +106,17 @@ class MissionHost implements Screen {
       this.app.game!.build, this.mission, this.index, ALL_ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
       { enemyScale: this.enemyScale(), mods: { aim, evasion, energy, cooling, repairs, armour } },
     );
+    // Each battle of a contract has its own song: the last one may be against a boss.
+    this.app.playTrack(battleTrack(this.mission, this.index, ALL_ENEMIES));
     // Tests play without the talk: it is words to read, and they have nobody reading.
     this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast });
+    const battle = this.mission.battles[this.index];
+    const boss = battle.enemies.map((id) => ALL_ENEMIES[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
+    if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: this.app.game!.paint,
+      title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
+      ...(boss ? { boss: boss.name } : {}),
       background: this.mission.battles[this.index].background,
       label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
       resultHint: this.hasNext() ? STRINGS.mission.next : STRINGS.hints.result,
@@ -163,7 +178,10 @@ class MissionHost implements Screen {
         maxAp: Object.values(player.parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0), repairsLeft: player.repairsLeft,
       },
       message: flow.message,
+      // A line of talk holds its place for a moment: a press then is passed over, not refused.
+      busy: this.screen.holding,
       battle: {
+        banner: this.screen.banner, typing: this.screen.typing,
         phase: flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
@@ -184,6 +202,8 @@ export class App {
   private name: ScreenName = 'title';
   private current!: Screen;
   private seed: number;
+  /** The way the current screen is still coming into view: what is left of it and how long it takes. */
+  private entering = { left: 0, total: 1, shutter: false };
 
   constructor(readonly deps: AppDeps) {
     this.seed = deps.seed;
@@ -192,11 +212,34 @@ export class App {
     this.show('title', new TitleScreen(this));
   }
 
-  /** Puts a screen up and picks the music that goes with it. */
-  private show(name: ScreenName, screen: Screen): void {
+  /** Puts a screen up and picks the music that goes with it. A battle picks its own as it begins. */
+  private show(name: ScreenName, screen: Screen, track: TrackName = trackFor(name)): void {
     this.current = screen;
     this.name = name;
-    this.deps.music?.play(name === 'battle' ? 'battle' : 'menu');
+    if (name !== 'battle') this.playTrack(track);
+    if (name === 'battle') this.openShutter();
+    else if (!this.deps.fast) this.entering = { left: FADE_MS, total: FADE_MS, shutter: false };
+  }
+
+  /** A battle comes into view from behind a shutter that opens from the middle. */
+  openShutter(): void {
+    if (!this.deps.fast) this.entering = { left: SHUTTER_MS, total: SHUTTER_MS, shutter: true };
+  }
+
+  /** Rumbles the handheld, unless the player has turned that off. */
+  rumble(ms: number): void {
+    if (this.settings.rumble !== false && !this.deps.fast) this.deps.vibrate?.(ms);
+  }
+
+  playTrack(track: TrackName): void {
+    this.deps.music?.play(track);
+  }
+
+  /** Starts the fanfare for a battle won or lost, if there is music to play it. Says whether it did. */
+  jingle(won: boolean): boolean {
+    if (!this.deps.music || !this.settings.music) return false;
+    this.playTrack(won ? 'victory' : 'defeat');
+    return true;
   }
 
   private applySettings(): void {
@@ -395,7 +438,7 @@ export class App {
 
   /** Shows a settlement that has already been booked. */
   showSettlement(settlement: Settlement, mission: Mission): void {
-    this.show('settlement', new SettlementScreen(this, settlement, mission));
+    this.show('settlement', new SettlementScreen(this, settlement, mission), trackFor('settlement', settlement));
   }
 
   /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. */
@@ -407,12 +450,41 @@ export class App {
     this.openHub();
   }
 
-  update(dtMs: number): void { this.current.update(dtMs); }
-  draw(ctx: CanvasRenderingContext2D): void { this.current.draw(ctx); }
-  onInput(action: InputAction): void { this.current.onInput(action); }
+  update(dtMs: number): void {
+    this.entering.left = Math.max(0, this.entering.left - dtMs);
+    this.current.update(dtMs);
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    this.current.draw(ctx);
+    const { left, total, shutter } = this.entering;
+    if (left <= 0) return;
+    const p = left / total;
+    if (shutter) {
+      // Two black leaves that draw back to the top and the bottom.
+      const h = Math.ceil((LOGICAL_H / 2) * p);
+      ctx.fillStyle = '#04040c';
+      ctx.fillRect(0, 0, LOGICAL_W, h);
+      ctx.fillRect(0, LOGICAL_H - h, LOGICAL_W, h);
+    } else {
+      ctx.fillStyle = `rgba(4, 4, 12, ${p.toFixed(3)})`;
+      ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    }
+  }
+  /** True while a shutter still hides the battle behind it. */
+  private get shuttered(): boolean {
+    return !this.deps.fast && this.entering.shutter && this.entering.left > 0;
+  }
+
+  onInput(action: InputAction): void {
+    // Nothing is pressed on a battle that cannot be seen yet.
+    if (this.shuttered) return;
+    this.current.onInput(action);
+  }
 
   snapshot(): unknown {
     const game = this.game;
+    const view = this.current.view();
     return {
       screen: this.name,
       credits: game?.credits ?? null,
@@ -430,7 +502,9 @@ export class App {
       ranks: game?.ranks ?? null,
       scenes: game?.scenes ?? null,
       saveFailed: this.saveFailed,
-      ...this.current.view(),
+      ...view,
+      // Not taking input right now: behind a shutter, or holding a line of text for a moment.
+      busy: this.shuttered || view.busy === true,
     };
   }
 }

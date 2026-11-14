@@ -5,6 +5,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
+import { Typewriter } from './typewriter';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
 
 const B = STRINGS.briefing;
@@ -47,9 +48,18 @@ export class BriefingScreen implements Screen {
     { id: 'back', label: B.back, enabled: true },
   ]);
 
-  constructor(private app: App, private mission: Mission) {}
+  /** The briefing writes itself out; the menu does not wait for it. */
+  private rows: string[][];
+  private writer: Typewriter;
 
-  update(): void {}
+  constructor(private app: App, private mission: Mission) {
+    this.rows = mission.briefing.map((paragraph) => wrap(paragraph, BRIEFING_CHARS));
+    this.writer = new Typewriter(this.rows.flat(), 150, app.deps.fast);
+  }
+
+  update(dtMs: number): void {
+    this.writer.update(dtMs);
+  }
 
   onInput(action: InputAction): void {
     if (action === 'up') this.list.move(-1);
@@ -96,16 +106,20 @@ export class BriefingScreen implements Screen {
     drawPanel(ctx, 4, 72, LOGICAL_W - 8, 122);
     const objectives = objectiveLines(mission);
     const lastRow = 78 + (briefingRows(mission) - 1) * LINE;
+    const written = this.writer.visible();
+    let at = 0;
     let y = 78;
-    for (const paragraph of mission.briefing) {
-      for (const line of wrap(paragraph, BRIEFING_CHARS)) {
+    for (const paragraph of this.rows) {
+      for (const _full of paragraph) {
+        const line = written[at++];
         if (y > lastRow) break;
         drawText(ctx, line, 12, y);
         y += LINE;
       }
       y += 4;
     }
-    objectives.forEach((line, i) => drawText(ctx, line, 12, 191 - (objectives.length - i) * LINE, { color: COLORS.heat }));
+    // What the contract asks for appears when the client has finished talking.
+    if (this.writer.done) objectives.forEach((line, i) => drawText(ctx, line, 12, 191 - (objectives.length - i) * LINE, { color: COLORS.heat }));
 
     // Footer: what to expect, what it pays, and the choice.
     drawPanel(ctx, 4, 198, LOGICAL_W - 8, 68);

@@ -7,12 +7,22 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { COLORS, LINE, charsFor, drawPanel, drawText, wrap } from './widgets';
 
 const S = STRINGS.settlement;
+/** When the rank comes down, how long it takes to land, and how long the net amount takes to count up. */
+const STAMP_AT = 500;
+const STAMP_MS = 160;
+const COUNT_MS = 700;
 
 /** The bill after a battle: reward, ammunition, repairs and what is left. */
 export class SettlementScreen implements Screen {
+  private clock = 0;
+
   constructor(private app: App, private settlement: Settlement, private mission: Mission) {}
 
-  update(): void {}
+  update(dtMs: number): void {
+    const before = this.clock;
+    this.clock += dtMs;
+    if (this.settlement.rank && before < STAMP_AT && this.clock >= STAMP_AT) this.app.deps.sfx?.play('stamp');
+  }
 
   onInput(action: InputAction): void {
     // The settlement is already booked; this screen only shows it.
@@ -39,11 +49,20 @@ export class SettlementScreen implements Screen {
     drawPanel(ctx, x, 20, w, 230);
     drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
     drawText(ctx, s.won ? S.won : S.lost, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
+    const fast = this.app.deps.fast;
     if (s.rank) {
-      // How well it was done, in the corner: S and A are the ones that pay.
+      // How well it was done, in the corner: S and A are the ones that pay. It is stamped on a moment after the bill appears.
       const color = s.rank === 'S' ? COLORS.accent : s.rank === 'A' ? COLORS.armor : s.rank === 'B' ? COLORS.text : COLORS.dim;
       drawText(ctx, S.rank, right - 16, 33, { size: 10, align: 'right', color: COLORS.dim });
-      drawText(ctx, s.rank, right, 20, { size: 32, align: 'right', color });
+      if (fast || this.clock >= STAMP_AT) {
+        const landed = fast ? 1 : Math.min(1, (this.clock - STAMP_AT) / STAMP_MS);
+        const scale = 3 - 2 * landed;
+        ctx.save();
+        ctx.translate(right - 6, 36);
+        ctx.scale(scale, scale);
+        drawText(ctx, s.rank, 6, -16, { size: 32, align: 'right', color });
+        ctx.restore();
+      }
     }
 
     // Four rows and four repair lines, a line apart, end just above what the client says.
@@ -73,7 +92,9 @@ export class SettlementScreen implements Screen {
     ctx.fillStyle = COLORS.border;
     ctx.fillRect(x + 10, 180, w - 20, 1);
     drawText(ctx, S.net, x + 10, 186, { size: 16 });
-    drawText(ctx, s.net > 0 ? `+${s.net}` : String(s.net), right, 186, { size: 16, align: 'right', color: s.net >= 0 ? COLORS.armor : COLORS.danger });
+    // The net amount counts up (or down) to what it is.
+    const net = fast ? s.net : Math.round(s.net * Math.min(1, this.clock / COUNT_MS));
+    drawText(ctx, net > 0 ? `+${net}` : String(net), right, 186, { size: 16, align: 'right', color: s.net >= 0 ? COLORS.armor : COLORS.danger });
     const balance = this.app.game!.credits; // already includes this settlement
     drawText(ctx, S.balance, x + 10, 206, { color: COLORS.dim });
     drawText(ctx, String(balance), right, 206, { align: 'right', color: balance < 0 ? COLORS.danger : COLORS.text });

@@ -49,10 +49,11 @@ export const DIFFICULTIES: Difficulty[] = ['story', 'standard', 'veteran'];
 /** What each difficulty multiplies enemy armour and damage by. */
 export const DIFFICULTY_SCALE: Record<Difficulty, number> = { story: 0.8, standard: 1, veteran: 1.2 };
 
-export interface Settings { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: Difficulty }
+/** `rumble` came later than the rest: a game saved without it has it on. */
+export interface Settings { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: Difficulty; rumble?: boolean }
 /** No perk has more ranks than this; a save claiming more is not a real save. */
 export const MAX_PERK_RANK = 3;
-export const DEFAULT_SETTINGS: Settings = { sfx: true, music: true, fastBattles: false, difficulty: 'standard' };
+export const DEFAULT_SETTINGS: Settings = { sfx: true, music: true, fastBattles: false, difficulty: 'standard', rumble: true };
 
 export type BuildSlot = keyof Build;
 export const BUILD_SLOTS: BuildSlot[] = [
@@ -239,6 +240,7 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!isRecord(perks) || !Object.values(perks).every((rank) => isWholeNonNegative(rank) && rank <= MAX_PERK_RANK)) return false;
   if (!isRecord(settings) || !['sfx', 'music', 'fastBattles'].every((key) => typeof settings[key] === 'boolean')) return false;
   if (!DIFFICULTIES.includes(settings.difficulty as Difficulty)) return false;
+  if (settings.rumble !== undefined && typeof settings.rumble !== 'boolean') return false;
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;

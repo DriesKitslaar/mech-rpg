@@ -48,6 +48,12 @@ test('menu input maps to move, confirm, cancel or deny', () => {
   expect(soundForInput('menu', true)).toBeNull();
 });
 
+test('a press on a screen that is not taking input yet is silent, not refused', () => {
+  expect(soundForInput('confirm', false, true)).toBeNull();
+  expect(soundForInput('confirm', true, true)).toBe('confirm');
+  expect(soundForInput('cancel', false, true)).toBeNull();
+});
+
 test('every sound has at least one audible tone', () => {
   for (const [name, tones] of Object.entries(SOUNDS)) {
     expect(tones.length, name).toBeGreaterThan(0);
@@ -106,4 +112,17 @@ test('nothing plays before the first input unlocks audio, or while muted', () =>
 test('a device without audio support stays silent instead of failing', () => {
   const sfx = new Sfx(() => { throw new Error('no audio here'); });
   expect(() => { sfx.unlock(); sfx.play('hit'); }).not.toThrow();
+});
+
+test('the events the three-act story added each have a sound of their own', () => {
+  const one = (event: Parameters<typeof soundsForEvent>[0]) => soundsForEvent(event, 'kinetic', 160).map((sound) => sound.name);
+  expect(one({ type: 'mend', unit: 'enemy-0', target: 'enemy-1', part: 'core', amount: 20 })).toEqual(['mend']);
+  expect(one({ type: 'fuse', unit: 'enemy-0', left: 2 })).toEqual(['fuse']);
+  expect(one({ type: 'blast', unit: 'enemy-0', target: 'player', damage: 80 })).toEqual(['blast']);
+  expect(one({ type: 'launch', unit: 'enemy-0', spawned: 'enemy-1' })).toEqual(['launch']);
+  expect(one({ type: 'phase', unit: 'enemy-0', phase: 1 })).toEqual(['alarm']);
+  expect(soundsForEvent({ type: 'support', name: 'Ashfall', target: 'enemy-0', damage: 30 }, 'kinetic', 160))
+    .toEqual([{ name: 'support', delayMs: 0 }, { name: 'hit', delayMs: 160 }]);
+  expect(one({ type: 'asset', hp: 4, lost: 2 })).toEqual(['asset']);
+  expect(one({ type: 'asset', hp: 4, lost: 0 })).toEqual([]);
 });

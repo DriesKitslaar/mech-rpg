@@ -4,6 +4,7 @@ import manifest from './content/sprites.json';
 import { Sfx, soundForInput } from './platform/audio';
 import { Music } from './platform/music';
 import { InputMapper, attachInput, type InputAction } from './platform/input';
+import { vibrator, type NativeShell } from './platform/rumble';
 import { SaveFile, type KeyValueStore } from './platform/storage';
 import { App } from './ui/app';
 import { fitCanvas } from './ui/display';
@@ -50,7 +51,12 @@ async function start(): Promise<void> {
 
   const sfx = new Sfx();
   const music = new Music(() => sfx.context);
-  const app = new App({ catalog: CATALOG, save: new SaveFile(openStore(), CATALOG), sprites, sfx, music, fast, seed });
+  // Inside the Android shell the shell drives the motor; elsewhere the browser is asked. A device without one simply does not answer.
+  const vibrate = vibrator((window as { IronwageShell?: NativeShell }).IronwageShell, navigator);
+  // Where sound needs no first input (the Android shell allows it), the title has its song from the start.
+  // A browser that does need one keeps the engine asleep until the first press wakes it.
+  if (!fast) sfx.unlock();
+  const app = new App({ catalog: CATALOG, save: new SaveFile(openStore(), CATALOG), sprites, sfx, music, fast, seed, vibrate });
 
   const mapper = new InputMapper();
   const input = attachInput(window, mapper);
@@ -63,9 +69,10 @@ async function start(): Promise<void> {
     if (!fast) sfx.unlock(); // browsers only allow sound after an input; test runs stay silent
     if (action === 'menu') { debug.toggle(); return; }
     // Comparing what the app reports before and after tells whether the input did anything.
-    const before = JSON.stringify(app.snapshot());
+    const was = app.snapshot() as { busy?: boolean };
+    const before = JSON.stringify(was);
     app.onInput(action);
-    const sound = soundForInput(action, JSON.stringify(app.snapshot()) !== before);
+    const sound = soundForInput(action, JSON.stringify(app.snapshot()) !== before, was.busy === true);
     if (sound) sfx.play(sound);
   };
 

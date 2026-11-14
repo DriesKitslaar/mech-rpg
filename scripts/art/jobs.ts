@@ -7,7 +7,7 @@
  */
 export type JobKind =
   | 'family' | 'layer' | 'handWeapon' | 'shoulderWeapon' | 'shield' | 'enemy' | 'enemyMech' | 'boss' | 'portrait' | 'background'
-  | 'still';
+  | 'still' | 'icon';
 export type Layer = 'legs' | 'torso' | 'head' | 'armNear' | 'armFar';
 
 export interface ArtJob {
@@ -42,6 +42,8 @@ export const BOX: Record<Exclude<JobKind, 'family' | 'layer'>, { w: number; h: n
   background: { w: 310, h: 270 },
   // The picture behind a page of story.
   still: { w: 310, h: 270 },
+  // The app icon: kept at full size for scripts/art/icon.ts, and reduced for the web page.
+  icon: { w: 192, h: 192 },
 };
 
 /**
@@ -414,6 +416,9 @@ export const JOBS: ArtJob[] = [
   portrait('portrait-rook', 'a broad, grinning scrapyard pilot with a shaved head and welding goggles pushed up on his forehead, wearing a patched teal jacket with a rust-orange armband'),
   portrait('portrait-krell', 'a scarred veteran security chief with a square jaw and a grey buzz cut, wearing a heavy charcoal uniform with yellow and black hazard-striped shoulder boards'),
   portrait('portrait-actuary', 'a thin, immaculate insurance adjuster with slicked dark hair, round gold-rimmed glasses and a faint polite smile, wearing a black high-collared suit with a small gold pin shaped like a balance scale'),
+
+  { id: 'app-icon', kind: 'icon',
+    prompt: '16-bit pixel art app icon, crisp pixels, no anti-aliasing, no text, no lettering: the head of an original Japanese anime-style mecha seen from the front, a helmet in dark charcoal armour with one curved crest and a single horizontal visor glowing hot pink, lit from the sides by pink and cyan neon, bold simple shapes, centred, filling most of the square, on a plain very dark navy background.' },
 
   background('bg-foundry', 'the inside of a huge smelting foundry in a megacity at night, channels of glowing molten metal, giant ladles hanging on chains, black steel gantries, harsh orange light and drifting sparks, a flat grated steel floor filling the lower third.'),
   background('bg-vault', 'the inside of a vast data vault, endless rows of tall white monolith cabinets with thin cyan light lines receding into the distance, cold mist along a glossy pale floor that fills the lower third.'),

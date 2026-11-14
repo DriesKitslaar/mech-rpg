@@ -106,3 +106,64 @@ test('events that are only bookkeeping start no effect', () => {
   fx.onEvent({ type: 'outcome', outcome: 'defeat' });
   expect(fx.busy).toBe(false);
 });
+
+describe('shaking the field', () => {
+  const hitFor = (damage: number): BattleEvent => ({ ...shot(true), damage } as BattleEvent);
+  /** The largest displacement of the field seen over the given time, sampled every few milliseconds. */
+  function strongest(fx: BattleFx, ms: number): number {
+    let most = 0;
+    for (let t = 0; t < ms; t += 8) {
+      fx.update(8);
+      const { dx, dy } = fx.shake();
+      most = Math.max(most, Math.abs(dx), Math.abs(dy));
+    }
+    return most;
+  }
+
+  test('nothing shakes while nothing happens', () => {
+    const fx = new BattleFx(scene);
+    expect(fx.shake()).toEqual({ dx: 0, dy: 0 });
+    expect(fx.takeRumble()).toBe(0);
+  });
+
+  test('a heavy hit shakes the field when it lands, not when it is fired, and the shaking dies away', () => {
+    const fx = new BattleFx(scene);
+    fx.onEvent(hitFor(80));
+    fx.update(PROJECTILE_MS - 20);
+    expect(fx.shake()).toEqual({ dx: 0, dy: 0 });
+    expect(strongest(fx, 200)).toBeGreaterThan(0);
+    fx.update(600);
+    expect(fx.shake()).toEqual({ dx: 0, dy: 0 });
+  });
+
+  test('a light hit does not shake it; a miss never does', () => {
+    const light = new BattleFx(scene);
+    light.onEvent(hitFor(12));
+    expect(strongest(light, 500)).toBe(0);
+    const miss = new BattleFx(scene);
+    miss.onEvent(shot(false));
+    expect(strongest(miss, 500)).toBe(0);
+  });
+
+  test('a blast shakes harder than a hit, and a destruction, a stagger and a phase change shake too', () => {
+    const of = (event: BattleEvent) => { const fx = new BattleFx(scene); fx.onEvent(event); return strongest(fx, 700); };
+    const hit = of(hitFor(80));
+    expect(of({ type: 'blast', unit: 'enemy-0', target: 'player', damage: 90 })).toBeGreaterThan(hit);
+    expect(of({ type: 'unitDestroyed', unit: 'enemy-0' })).toBeGreaterThan(0);
+    expect(of({ type: 'stagger', unit: 'player' })).toBeGreaterThan(0);
+    expect(of({ type: 'phase', unit: 'enemy-0', phase: 1 })).toBeGreaterThan(0);
+    expect(of({ type: 'boost', unit: 'player' })).toBe(0);
+  });
+
+  test('rumble is asked for once, at the moment the jolt lands', () => {
+    const fx = new BattleFx(scene);
+    fx.onEvent(hitFor(80));
+    fx.update(20);
+    expect(fx.takeRumble()).toBe(0);
+    fx.update(PROJECTILE_MS);
+    expect(fx.takeRumble()).toBeGreaterThan(0);
+    expect(fx.takeRumble()).toBe(0);
+    fx.update(1000);
+    expect(fx.takeRumble()).toBe(0);
+  });
+});

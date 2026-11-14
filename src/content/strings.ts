@@ -50,6 +50,7 @@ export const STRINGS = {
       disable: (name: string) => `Disable, do not destroy: ${name}`, driveOff: (name: string) => `Drive off: ${name}`,
     },
   },
+  battleIntro: { warning: 'WARNING', destroy: 'DESTROY ALL HOSTILES' },
   yourTurn: (round: number) => `Round ${round} - your move`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} misses ${obj(target)}`,
@@ -113,7 +114,7 @@ export const STRINGS = {
     hint: 'A: spend a point   B: back', noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
   },
   options: {
-    heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
+    heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
     on: 'On', off: 'Off',
     difficulties: { story: 'Story', standard: 'Standard', veteran: 'Veteran' },
     difficultyHelp: {

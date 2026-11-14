@@ -725,17 +725,38 @@ describe('options', () => {
     expect(ids(app)).toEqual(['new', 'options']);
     select(app, 'options');
     expect(snap(app).screen).toBe('options');
-    expect(snap(app).menu.items.map((i) => [i.id, i.note])).toEqual([['sfx', 'On'], ['music', 'On'], ['fastBattles', 'Off'], ['difficulty', 'Standard']]);
+    expect(snap(app).menu.items.map((i) => [i.id, i.note]))
+      .toEqual([['sfx', 'On'], ['music', 'On'], ['rumble', 'On'], ['fastBattles', 'Off'], ['difficulty', 'Standard']]);
     press(app, 'confirm');
     expect(snap(app).menu.items[0].note).toBe('Off');
     expect(JSON.parse(store.data[SETTINGS_KEY]).sfx).toBe(false);
     press(app, 'cancel');
     expect(snap(app).screen).toBe('title');
     select(app, 'new');
-    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false, difficulty: 'standard' });
+    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false, difficulty: 'standard', rumble: true });
 
     const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
     expect(snap(again).settings.sfx).toBe(false);
+  });
+
+  test('rumble is asked of the device on a heavy blow, and not when the option is off or in a game saved before the option', () => {
+    const buzz: number[] = [];
+    const make = (settings: Record<string, unknown>) => {
+      const store = memoryStore({ [SETTINGS_KEY]: JSON.stringify(settings) });
+      return new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 1, vibrate: (ms) => buzz.push(ms) });
+    };
+    const on = make({ sfx: true, music: true, fastBattles: false, difficulty: 'standard' });
+    on.rumble(120);
+    expect(buzz).toEqual([120]);
+    const off = make({ sfx: true, music: true, fastBattles: false, difficulty: 'standard', rumble: false });
+    off.rumble(120);
+    expect(buzz).toEqual([120]);
+    // The option is a switch like the others.
+    const { app, store } = makeApp();
+    select(app, 'options');
+    select(app, 'rumble');
+    expect(snap(app).menu.items.find((i) => i.id === 'rumble')!.note).toBe('Off');
+    expect(JSON.parse(store.data[SETTINGS_KEY]).rumble).toBe(false);
   });
 
   test('the difficulty scales every enemy, on top of the contract\'s own scale', () => {
@@ -767,19 +788,36 @@ describe('options', () => {
     expect(JSON.parse(store.data[SAVE_KEY]).settings.fastBattles).toBe(true);
   });
 
+  test('a battle against a boss has its own song', () => {
+    const tracks: (string | null)[] = [];
+    const music = { enabled: true, play: (t: string | null) => { tracks.push(t); } };
+    const store = memoryStore({ [SAVE_KEY]: JSON.stringify({ ...done(...toVerdict('lumen')), scenes: ['war-won-lumen', 'act-3'] }) });
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 5, music });
+    press(app, 'confirm');
+    select(app, 'contracts');
+    select(app, 'verdict-enforce');
+    select(app, 'accept');
+    expect(tracks.at(-1)).toBe('boss');
+  });
+
   test('sound and music follow the settings and the screen', () => {
     const store = memoryStore();
     const tracks: (string | null)[] = [];
     const music = { enabled: true, play: (t: string | null) => { tracks.push(t); } };
     const sfx = { muted: false, play: () => {}, unlock: () => {} };
     const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 5, music, sfx: sfx as never });
-    expect(tracks.at(-1)).toBe('menu');
+    expect(tracks.at(-1)).toBe('title');
     press(app, 'confirm');
+    expect(tracks.at(-1)).toBe('briefing'); // the first page of the story
     skipScenes(app);
-    accept(app, 'patrol');
+    expect(tracks.at(-1)).toBe('hub');
+    select(app, 'contracts');
+    select(app, 'patrol');
+    expect(tracks.at(-1)).toBe('briefing');
+    select(app, 'accept');
     expect(tracks.at(-1)).toBe('battle');
     finishMission(app);
-    expect(tracks.at(-1)).toBe('menu');
+    expect(tracks.at(-1)).toBe(snap(app).settlement!.won ? 'victory' : 'defeat');
     press(app, 'confirm');
     select(app, 'options');
     select(app, 'music');

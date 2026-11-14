@@ -7,8 +7,8 @@ import { MenuList } from './menuList';
 import { COLORS, drawList, drawPanel, drawText } from './widgets';
 
 const O = STRINGS.options;
-type Toggle = 'sfx' | 'music' | 'fastBattles';
-const KEYS: (keyof Settings)[] = ['sfx', 'music', 'fastBattles', 'difficulty'];
+type Toggle = 'sfx' | 'music' | 'fastBattles' | 'rumble';
+const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'difficulty'];
 
 /** Sound, music, battle speed and difficulty. Opened from the title or the hub, and returns to where it came from. */
 export class OptionsScreen implements Screen {
@@ -21,8 +21,13 @@ export class OptionsScreen implements Screen {
   private refresh(): void {
     const settings = this.app.settings;
     const value = (key: keyof Settings): string =>
-      (key === 'difficulty' ? O.difficulties[settings.difficulty] : settings[key] ? O.on : O.off);
+      (key === 'difficulty' ? O.difficulties[settings.difficulty] : this.isOn(key as Toggle) ? O.on : O.off);
     this.list.setItems(KEYS.map((key) => ({ id: key, label: O[key], enabled: true, note: value(key) })));
+  }
+
+  /** Whether a switch is on. Rumble is on in a game saved before there was a switch for it. */
+  private isOn(key: Toggle): boolean {
+    return key === 'rumble' ? this.app.settings.rumble !== false : this.app.settings[key];
   }
 
   /** Flips a switch, or steps the difficulty one way or the other. */
@@ -33,7 +38,7 @@ export class OptionsScreen implements Screen {
       const n = DIFFICULTIES.length;
       const difficulty = DIFFICULTIES[(DIFFICULTIES.indexOf(settings.difficulty) + step + n) % n];
       this.app.setSettings({ ...settings, difficulty });
-    } else this.app.setSettings({ ...settings, [key]: !settings[key as Toggle] });
+    } else this.app.setSettings({ ...settings, [key]: !this.isOn(key as Toggle) });
     this.refresh();
   }
 
@@ -61,12 +66,12 @@ export class OptionsScreen implements Screen {
 
     const w = 230;
     const x = (LOGICAL_W - w) / 2;
-    drawPanel(ctx, x, 70, w, 112);
-    drawText(ctx, O.heading, LOGICAL_W / 2, 76, { size: 16, align: 'center', color: COLORS.accent });
-    drawList(ctx, this.list, x + 14, 102, w - 34, KEYS.length);
+    drawPanel(ctx, x, 64, w, 124);
+    drawText(ctx, O.heading, LOGICAL_W / 2, 70, { size: 16, align: 'center', color: COLORS.accent });
+    drawList(ctx, this.list, x + 14, 96, w - 34, KEYS.length);
     if (this.list.selected?.id === 'difficulty') {
-      drawText(ctx, O.difficultyHelp[this.app.settings.difficulty], LOGICAL_W / 2, 152, { align: 'center', color: COLORS.text, size: 10 });
+      drawText(ctx, O.difficultyHelp[this.app.settings.difficulty], LOGICAL_W / 2, 157, { align: 'center', color: COLORS.text, size: 10 });
     }
-    drawText(ctx, O.hint, LOGICAL_W / 2, 166, { align: 'center', color: COLORS.dim });
+    drawText(ctx, O.hint, LOGICAL_W / 2, 171, { align: 'center', color: COLORS.dim });
   }
 }
