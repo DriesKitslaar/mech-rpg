@@ -1,8 +1,9 @@
-import { buy, equip, newGame, type GameState } from '../../src/core/game';
+import { buy, equip, newGame, saveLoadout, sell, type GameState } from '../../src/core/game';
 import type { Shield } from '../../src/core/types';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import type { InputAction } from '../../src/platform/input';
 import { GarageFlow } from '../../src/ui/garageFlow';
+import { PAINTS } from '../../src/ui/paint';
 
 const fresh = (credits = 1200): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), credits });
 const rich = (...ids: string[]): GameState => ids.reduce((g, id) => buy(g, id, CATALOG), fresh(50000));
@@ -187,4 +188,133 @@ test('a mech that cannot boost has only its mobility to evade with', () => {
   const flow = new GarageFlow(rich('legs-crawler'), CATALOG);
   const tracked = { ...flow.game.build, legs: 'legs-crawler' };
   expect(flow.details(tracked).evasion).toBe(flow.statsOf(tracked).mobility);
+});
+
+describe('paint', () => {
+  test('L1 and R1 on the slot list step through factory colours and every scheme, and wrap', () => {
+    const flow = new GarageFlow(fresh(), CATALOG);
+    expect(flow.game.paint).toBe('factory');
+    expect(flow.paintName).toBe('Factory');
+    expect(flow.onInput('next')).toBe('changed');
+    expect(flow.game.paint).toBe(PAINTS[0].id);
+    expect(flow.paintName).toBe(PAINTS[0].name);
+    expect(flow.onInput('prev')).toBe('changed');
+    expect(flow.onInput('prev')).toBe('changed');
+    expect(flow.game.paint).toBe(PAINTS.at(-1)!.id);
+    for (let i = 0; i < PAINTS.length; i++) flow.onInput('prev');
+    expect(flow.game.paint).toBe('factory');
+  });
+
+  test('a scheme this version does not know is shown as factory and steps on from there', () => {
+    const flow = new GarageFlow({ ...fresh(), paint: 'plaid' }, CATALOG);
+    expect(flow.paintName).toBe('Factory');
+    flow.onInput('next');
+    expect(flow.game.paint).toBe(PAINTS[0].id);
+  });
+
+  test('paint is not changed while choosing a part', () => {
+    const flow = new GarageFlow(fresh(), CATALOG);
+    openSlot(flow, 'head');
+    expect(flow.onInput('next')).toBe('stay');
+    expect(flow.game.paint).toBe('factory');
+  });
+});
+
+describe('saved builds', () => {
+  const toLoadouts = (flow: GarageFlow) => { flow.onInput('right'); expect(flow.mode).toBe('loadouts'); };
+  const choose = (flow: GarageFlow, id: string) => {
+    const list = flow.mode === 'loadouts' ? flow.loadouts : flow.loadoutMenu;
+    for (let i = 0; i < 6 && list.selected?.id !== id; i++) flow.onInput('down');
+    expect(list.selected?.id).toBe(id);
+    return flow.onInput('confirm');
+  };
+
+  test('left or right from the slot list opens three slots, empty at first', () => {
+    const flow = new GarageFlow(fresh(), CATALOG);
+    toLoadouts(flow);
+    expect(flow.loadouts.items.map((i) => [i.id, i.label])).toEqual([['0', '1  (empty)'], ['1', '2  (empty)'], ['2', '3  (empty)']]);
+    flow.onInput('cancel');
+    expect(flow.mode).toBe('slots');
+    flow.onInput('left');
+    expect(flow.mode).toBe('loadouts');
+    flow.onInput('left');
+    expect(flow.mode).toBe('slots');
+  });
+
+  test('a slot offers load, save and clear; an empty one only save', () => {
+    const flow = new GarageFlow(fresh(), CATALOG);
+    toLoadouts(flow);
+    flow.onInput('confirm');
+    expect(flow.mode).toBe('loadoutMenu');
+    expect(flow.loadoutMenu.items.map((i) => [i.id, i.enabled])).toEqual([['load', false], ['save', true], ['clear', false], ['back', true]]);
+    expect(flow.loadoutMenu.selected?.id).toBe('save');
+  });
+
+  test('saving names the slot after its core; loading brings the build back', () => {
+    const flow = new GarageFlow(rich('core-bulwark', 'wpn-arc-pistol'), CATALOG);
+    toLoadouts(flow);
+    flow.onInput('confirm');
+    expect(choose(flow, 'save')).toBe('changed');
+    expect(flow.mode).toBe('loadouts');
+    expect(flow.loadouts.items[0].label).toBe('1  Hauler Core');
+    flow.onInput('cancel');
+
+    // Change the mech, then load the saved one.
+    openSlot(flow, 'core');
+    pick(flow, 'core-bulwark');
+    flow.onInput('confirm');
+    expect(flow.game.build.core).toBe('core-bulwark');
+    toLoadouts(flow);
+    flow.onInput('confirm');
+    expect(flow.loadoutMenu.selected?.id).toBe('load');
+    expect(choose(flow, 'load')).toBe('changed');
+    expect(flow.game.build.core).toBe('core-hauler');
+    expect(flow.mode).toBe('slots');
+    expect(flow.slots.items.find((i) => i.id === 'core')?.note).toBe('Hauler Core');
+  });
+
+  test('while a saved build is highlighted the mech and the numbers show it', () => {
+    let game = rich('core-bulwark');
+    game = saveLoadout(equip(game, 'core', 'core-bulwark', CATALOG), 1);
+    game = equip(game, 'core', 'core-hauler', CATALOG);
+    const flow = new GarageFlow(game, CATALOG);
+    toLoadouts(flow);
+    expect(flow.previewBuild).toBe(flow.game.build);
+    flow.onInput('down');
+    expect(flow.previewBuild.core).toBe('core-bulwark');
+    expect(flow.preview.weight).toBeGreaterThan(flow.stats.weight);
+  });
+
+  test('a build whose part was sold cannot be loaded, and the menu names the part', () => {
+    let game = rich('head-halo');
+    game = saveLoadout(equip(game, 'head', 'head-halo', CATALOG), 0);
+    game = sell(equip(game, 'head', 'head-scout-mk1', CATALOG), 'head-halo', CATALOG);
+    const flow = new GarageFlow(game, CATALOG);
+    toLoadouts(flow);
+    flow.onInput('confirm');
+    expect(flow.loadoutMenu.items[0]).toMatchObject({ id: 'load', enabled: false, note: 'Missing: Halo Visor' });
+    expect(choose(flow, 'load')).toBe('stay');
+    expect(flow.game.build.head).toBe('head-scout-mk1');
+  });
+
+  test('clearing empties the slot', () => {
+    const flow = new GarageFlow(saveLoadout(fresh(), 2), CATALOG);
+    toLoadouts(flow);
+    flow.onInput('up');
+    flow.onInput('confirm');
+    expect(choose(flow, 'clear')).toBe('changed');
+    expect(flow.game.loadouts).toEqual([null, null, null]);
+    expect(flow.loadouts.items[2].label).toBe('3  (empty)');
+  });
+
+  test('back and cancel leave the menu without changing anything', () => {
+    const flow = new GarageFlow(saveLoadout(fresh(), 0), CATALOG);
+    toLoadouts(flow);
+    flow.onInput('confirm');
+    expect(choose(flow, 'back')).toBe('stay');
+    expect(flow.mode).toBe('loadouts');
+    flow.onInput('confirm');
+    flow.onInput('cancel');
+    expect(flow.mode).toBe('loadouts');
+  });
 });

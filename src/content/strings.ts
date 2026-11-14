@@ -125,6 +125,9 @@ export const STRINGS = {
     heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
     weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', cooling: 'Cooling',
     evasion: 'Boost evade', volley: 'Volley EN', back: 'B: back',
+    factoryPaint: 'Factory', paint: (name: string) => `L1/R1 PAINT: ${name}`, toLoadouts: 'LEFT/RIGHT: SAVED BUILDS',
+    loadouts: 'SAVED BUILDS', emptyLoadout: '(empty)', load: 'Load', save: 'Save current build', clear: 'Clear', backItem: 'Back',
+    missing: (name: string) => `Missing: ${name}`,
     slotTags: {
       head: 'HEAD', core: 'CORE', arms: 'ARMS', legs: 'LEGS', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
       rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SHLDR',

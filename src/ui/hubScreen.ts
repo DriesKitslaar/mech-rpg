@@ -90,7 +90,7 @@ export class HubScreen implements Screen {
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
 
-    drawMech(ctx, mechSprites(sprites, game.build), -8, 78, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
+    drawMech(ctx, mechSprites(sprites, game.build, game.paint), -8, 78, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, H.heading, 5, 1, { color: COLORS.accent });

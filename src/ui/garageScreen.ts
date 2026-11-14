@@ -34,10 +34,11 @@ export class GarageScreen implements Screen {
   }
 
   view(): ScreenView {
-    const list = this.flow.mode === 'slots' ? this.flow.slots : this.flow.parts;
+    const { flow } = this;
+    const list = { slots: flow.slots, parts: flow.parts, loadouts: flow.loadouts, loadoutMenu: flow.loadoutMenu }[flow.mode];
     return {
       menu: { items: list.items, cursor: list.cursor },
-      garage: { mode: this.flow.mode, slot: this.flow.slot, candidate: this.flow.candidate, errors: this.flow.errors },
+      garage: { mode: flow.mode, slot: flow.slot, candidate: flow.candidate, errors: flow.errors, paint: flow.game.paint },
     };
   }
 
@@ -50,7 +51,7 @@ export class GarageScreen implements Screen {
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
 
     // The mech shows the highlighted part already fitted, so a choice can be judged before confirming.
-    drawMech(ctx, mechSprites(sprites, flow.previewBuild), 0, 30, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
+    drawMech(ctx, mechSprites(sprites, flow.previewBuild, flow.game.paint), 0, 30, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, G.heading, 5, 1, { color: COLORS.accent });
@@ -66,6 +67,22 @@ export class GarageScreen implements Screen {
         drawText(ctx, G.slotTags[item.id as BuildSlot], LIST_X + 10, y + 1, { color: COLORS.dim, size: 10 });
         drawText(ctx, item.note ?? '', LIST_X + 40, y, { color: selected ? COLORS.accent : item.note === G.empty ? COLORS.dim : COLORS.text });
       });
+    } else if (flow.mode === 'loadouts' || flow.mode === 'loadoutMenu') {
+      drawText(ctx, G.loadouts, LIST_X + 6, 24, { color: COLORS.dim });
+      drawList(ctx, flow.loadouts, LIST_X + 6, 40, LIST_W - 18, 3);
+      if (flow.mode === 'loadoutMenu') {
+        ctx.fillStyle = COLORS.border;
+        ctx.fillRect(LIST_X + 6, 80, LIST_W - 12, 1);
+        // The load entry's note says which part is missing; it gets a line of its own so it fits.
+        flow.loadoutMenu.items.forEach((item, i) => {
+          const selected = i === flow.loadoutMenu.cursor;
+          const y = 88 + i * 13;
+          if (selected) drawText(ctx, '>', LIST_X + 6, y, { color: COLORS.accent });
+          drawText(ctx, item.label, LIST_X + 14, y, { color: !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text });
+        });
+        const missing = flow.loadoutMenu.items[0].note;
+        if (missing) drawText(ctx, missing, LIST_X + 6, 146, { color: COLORS.danger });
+      }
     } else {
       drawText(ctx, STRINGS.slots[flow.slot].toUpperCase(), LIST_X + 6, 24, { color: COLORS.dim });
       drawList(ctx, flow.parts, LIST_X + 6, 37, LIST_W - 18, 7);
@@ -112,6 +129,10 @@ export class GarageScreen implements Screen {
 
     if (errors.length > 0) {
       drawText(ctx, errors.map((e) => STRINGS.buildErrors[e]).join(' - '), LOGICAL_W / 2, STATS_Y + 57, { align: 'center', color: COLORS.danger, size: 16 });
+    } else if (flow.mode === 'slots') {
+      // With nothing wrong, the foot of the panel says what the shoulder buttons and the D-pad do here.
+      drawText(ctx, G.paint(flow.paintName), 8, STATS_Y + 61, { color: COLORS.dim, size: 10 });
+      drawText(ctx, G.toLoadouts, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
     }
   }
 }

@@ -96,7 +96,7 @@ class MissionHost implements Screen {
     );
     this.flow = new BattleFlow(state, catalog);
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
-      fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1,
+      fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: this.app.game!.paint,
       background: this.mission.battles[this.index].background,
       label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
       resultHint: this.hasNext() ? STRINGS.mission.next : STRINGS.hints.result,

@@ -1,6 +1,6 @@
 import type { Build, Catalog, Part } from './types';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 export const STARTING_CREDITS = 1200;
 
 /** Everything about a player's progress that is kept between battles and saved. */
@@ -26,7 +26,14 @@ export interface GameState {
   /** How many times the campaign has been finished and started again. */
   cycle: number;
   settings: Settings;
+  /** The paint scheme of the mech: `factory`, or the id of a scheme. */
+  paint: string;
+  /** Saved builds, one per slot; an empty slot is null. */
+  loadouts: (Build | null)[];
 }
+
+export const FACTORY_PAINT = 'factory';
+export const LOADOUT_SLOTS = 3;
 
 /** How tough enemies are: `story` for the tale, `veteran` for a fight. */
 export type Difficulty = 'story' | 'standard' | 'veteran';
@@ -77,7 +84,53 @@ export function newGame(catalog: Catalog, starter: Build): GameState {
   return {
     version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false,
     xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS },
+    paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null),
   };
+}
+
+export function setPaint(state: GameState, paint: string): GameState {
+  return { ...state, paint };
+}
+
+export type LoadoutRefusal = 'unknown' | 'empty' | 'missingPart';
+const isSlot = (index: number): boolean => Number.isInteger(index) && index >= 0 && index < LOADOUT_SLOTS;
+const withLoadout = (state: GameState, index: number, build: Build | null): GameState =>
+  ({ ...state, loadouts: state.loadouts.map((saved, i) => (i === index ? build : saved)) });
+
+/** Keeps a copy of the current build in a slot, replacing what was there. */
+export function saveLoadout(state: GameState, index: number): GameState {
+  if (!isSlot(index)) throw new Error('illegal loadout: unknown');
+  return withLoadout(state, index, { ...state.build });
+}
+
+export function clearLoadout(state: GameState, index: number): GameState {
+  if (!isSlot(index)) throw new Error('illegal loadout: unknown');
+  return withLoadout(state, index, null);
+}
+
+/**
+ * Whether a saved build can be fitted now. Fitting it frees every part of the current build, so
+ * all that matters is that enough copies of each of its parts are still owned.
+ */
+export function checkLoadout(state: GameState, index: number, catalog: Catalog): { refusal: LoadoutRefusal; part?: string } | null {
+  if (!isSlot(index)) return { refusal: 'unknown' };
+  const build = state.loadouts[index];
+  if (!build) return { refusal: 'empty' };
+  const needed: Record<string, number> = {};
+  for (const slot of BUILD_SLOTS) {
+    const id = build[slot];
+    if (id === undefined) continue;
+    needed[id] = (needed[id] ?? 0) + 1;
+    const part = partOf(catalog, id);
+    if (!part || !fits(part, slot) || needed[id] > ownedCount(state, id)) return { refusal: 'missingPart', part: id };
+  }
+  return null;
+}
+
+export function loadLoadout(state: GameState, index: number, catalog: Catalog): GameState {
+  const refused = checkLoadout(state, index, catalog);
+  if (refused) throw new Error(`illegal loadout: ${refused.refusal}`);
+  return { ...state, build: { ...state.loadouts[index]! } };
 }
 
 export function equippedCount(state: GameState, partId: string): number {
@@ -172,8 +225,22 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!isRecord(perks) || !Object.values(perks).every((rank) => isWholeNonNegative(rank) && rank <= MAX_PERK_RANK)) return false;
   if (!isRecord(settings) || !['sfx', 'music', 'fastBattles'].every((key) => typeof settings[key] === 'boolean')) return false;
   if (!DIFFICULTIES.includes(settings.difficulty as Difficulty)) return false;
-  const { inventory, build } = value;
+  const { inventory, build, paint, loadouts } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
+  // The scheme itself is the screen's business; here it only has to be a plain short word.
+  if (typeof paint !== 'string' || !/^[a-z]{1,24}$/.test(paint)) return false;
+  if (!Array.isArray(loadouts) || loadouts.length !== LOADOUT_SLOTS) return false;
+  for (const saved of loadouts) {
+    if (saved === null) continue;
+    if (!isRecord(saved)) return false;
+    // A saved build may name parts that have since been sold (loading it is then refused),
+    // but every part must be one a player can own, in a slot it fits.
+    for (const [slot, id] of Object.entries(saved)) {
+      if (!BUILD_SLOTS.includes(slot as BuildSlot) || typeof id !== 'string') return false;
+      const part = partOf(catalog, id);
+      if (!part?.vendor || !fits(part, slot as BuildSlot)) return false;
+    }
+  }
 
   for (const [id, count] of Object.entries(inventory)) {
     if (!partOf(catalog, id)?.vendor || !isWholeNonNegative(count) || count > MAX_COPIES) return false;

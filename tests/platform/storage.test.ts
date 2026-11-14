@@ -122,6 +122,13 @@ describe('a save from the fourth version', () => {
   });
 });
 
+test('a save from the fifth version gains factory paint and three empty build slots', () => {
+  const { paint: _p, loadouts: _l, ...rest } = { ...game(), xp: 300, arenaRank: 2 };
+  const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 5 }) }), CATALOG).load();
+  expect(loaded).toEqual({ ...game(), xp: 300, arenaRank: 2 });
+  expect(loaded).toMatchObject({ version: SAVE_VERSION, paint: 'factory', loadouts: [null, null, null] });
+});
+
 describe('settings', () => {
   const mem = (initial: Record<string, string> = {}) => {
     const data = { ...initial };

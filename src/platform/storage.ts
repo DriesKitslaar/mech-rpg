@@ -1,4 +1,7 @@
-import { DEFAULT_SETTINGS, DIFFICULTIES, SAVE_VERSION, isValidState, type Difficulty, type GameState, type Settings } from '../core/game';
+import {
+  DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LOADOUT_SLOTS, SAVE_VERSION, isValidState,
+  type Difficulty, type GameState, type Settings,
+} from '../core/game';
 import type { Catalog } from '../core/types';
 
 export const SAVE_KEY = 'ironwage-save';
@@ -26,7 +29,9 @@ function upgrade(value: unknown): unknown {
   }
   // Version 4 had no boosters or fire control: every mech had what are now the stock parts built in.
   // Issuing those, fitted, changes nothing about how the mech performs.
-  if (save.version === 4) save = { ...save, ...withStockParts(save), version: SAVE_VERSION };
+  if (save.version === 4) save = { ...save, ...withStockParts(save), version: 5 };
+  // Version 5 had no paint and no saved builds.
+  if (save.version === 5) save = { ...save, version: SAVE_VERSION, paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null) };
   return save;
 }
 
