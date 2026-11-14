@@ -2,7 +2,7 @@ import { createBattle, type BattleOptions } from '../../src/core/battle';
 import { completeMission } from '../../src/core/campaign';
 import type { EnemyDef } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
-import { BattleFlow, BattleScreen, INTRO_MS, WARNING_MS } from '../../src/ui/battleScreen';
+import { BattleFlow, BattleScreen, INTRO_MS, TALK_HOLD_MS, WARNING_MS } from '../../src/ui/battleScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
@@ -148,11 +148,13 @@ describe('the screens the three-act story added', () => {
     // The line is still being written: the first press finishes it, the second goes on.
     const line = 'Count the hostiles. That is what the train loses';
     expect(texts(calls)).not.toContain(line);
+    app.update(TALK_HOLD_MS);
     press(app, 'confirm');
     expect(snap(app).battle?.phase).toBe('talk');
     calls.length = 0;
     app.draw(ctx);
     expect(texts(calls)).toContain(line);
+    app.update(TALK_HOLD_MS);
     press(app, 'confirm');
     expect(snap(app).battle?.phase).not.toBe('talk');
     for (let i = 0; i < 400 && snap(app).battle?.phase !== 'action'; i++) { app.update(16); app.draw(ctx); }
@@ -265,6 +267,53 @@ describe('the screens the three-act story added', () => {
     const debrief = Math.min(...drawn.filter((d) => d.y >= 140 && d.y < 180).map((d) => d.y));
     // A line of text is eleven pixels high.
     expect(lowest + 11).toBeLessThanOrEqual(debrief);
+  });
+
+  /** A battle with one line of talk at its start, past its banner, with the line on screen. */
+  function talking() {
+    const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['gun-turret'], ENEMIES['recon-drone']], CATALOG, 7);
+    const flow = new BattleFlow(state, CATALOG, { talk: [{ at: 'start', who: 'Dispatch', text: 'Two hostiles. The one on the ground cannot dodge, so start with that one.' }] });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false });
+    screen.update(INTRO_MS + 16);
+    screen.update(16);
+    const drawn = () => {
+      const { ctx, calls } = recorder();
+      screen.draw(ctx);
+      return calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) }));
+    };
+    return { flow, screen, drawn };
+  }
+
+  test('talk is written in the panel under the field: nothing on the field is covered, and the menu is put away meanwhile', () => {
+    const { flow, drawn } = talking();
+    expect(flow.phase).toBe('talk');
+    const all = drawn();
+    const who = all.find((d) => d.text === 'DISPATCH')!;
+    // The field ends where the panel begins, 178 pixels down.
+    expect(who.y).toBeGreaterThanOrEqual(178);
+    expect(all.filter((d) => d.y >= 178).every((d) => d.y < 270)).toBe(true);
+    // Nothing of the menu or of the pilot's own panel shows through.
+    expect(all.some((d) => d.text.startsWith('REPAIRS'))).toBe(false);
+    expect(all.some((d) => d.text === 'Fire')).toBe(false);
+  });
+
+  test('a press that comes too soon after a line appears, or after the press that finished writing it, does nothing', () => {
+    const { flow, screen, drawn } = talking();
+    const whole = 'Two hostiles. The one on the ground cannot dodge,';
+    // Mashed at once: the line goes on writing itself.
+    screen.onInput('confirm');
+    expect(drawn().some((d) => d.text === whole)).toBe(false);
+    screen.update(TALK_HOLD_MS);
+    screen.onInput('confirm');
+    expect(drawn().some((d) => d.text === whole)).toBe(true);
+    // Mashed again at once: the line stays up to be read.
+    screen.onInput('confirm');
+    screen.update(TALK_HOLD_MS - 20);
+    screen.onInput('confirm');
+    expect(flow.phase).toBe('talk');
+    screen.update(40);
+    screen.onInput('confirm');
+    expect(flow.phase).not.toBe('talk');
   });
 
   test('a boss with phases says its line, and every new kind of event has something to draw', () => {

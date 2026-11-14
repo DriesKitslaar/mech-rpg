@@ -22,10 +22,16 @@ import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, dra
 export { BattleFlow } from './battleFlow';
 export type { BattlePhase, FlowOptions, MenuView } from './battleFlow';
 
-/** The box a line of talk is shown in, and how much text fits: lines of `TALK_CHARS`, at most `TALK_LINES` of them. */
-const TALK = { x: 4, y: 116, w: LOGICAL_W - 8, h: 58, portrait: 48 };
-export const TALK_CHARS = charsFor(TALK.w - TALK.portrait - 18);
+const PANEL_Y = 178;
+/**
+ * The box a line of talk is shown in: the panel under the field, where the menu is at other times,
+ * so that whatever is being talked about stays in view. Lines of `TALK_CHARS`, at most `TALK_LINES`.
+ */
+const TALK = { x: 0, y: PANEL_Y, w: LOGICAL_W, h: LOGICAL_H - PANEL_Y, portrait: 48 };
+export const TALK_CHARS = charsFor(TALK.w - TALK.portrait - 26);
 export const TALK_LINES = 3;
+/** How long a press is ignored after a line comes up, and after the press that finished writing it: a mashed button skips nothing unread. */
+export const TALK_HOLD_MS = 250;
 
 const MESSAGE_MS = 600;
 /** How long the banner that opens a battle stays up: longer when it warns of a boss. */
@@ -46,7 +52,6 @@ const DUEL_RIGHT = 330;
 const DUEL_BODY = { x: 192, y: 22, w: 118, h: 150 };
 /** In a duel the player's mech stands this much further left, so two full-size mechs cross weapons, not bodies. */
 const DUEL_SHIFT = 6;
-const PANEL_Y = 178;
 /** Sprites of units that fly: these bob up and down, everything else stands still. */
 const FLYERS = new Set([
   'enemy-recon-drone', 'enemy-gunship', 'enemy-shield-drone', 'enemy-repair-drone', 'enemy-lien-drone', 'boss-overseer',
@@ -71,6 +76,8 @@ export class BattleScreen {
   /** The line of talk being written out, and the writer doing it. */
   private talkLine: unknown = null;
   private talkWriter: Typewriter | null = null;
+  /** What is left of the time a press on a line of talk is ignored. */
+  private talkHold = 0;
   private typeTick = 0;
   /** What is left of the opening banner, and how long it lasts in all. Nothing else moves while it is up. */
   private intro: number;
@@ -132,6 +139,9 @@ export class BattleScreen {
     if (line !== this.talkLine) {
       this.talkLine = line;
       this.talkWriter = line ? new Typewriter(wrap(line.text, TALK_CHARS).slice(0, TALK_LINES), undefined, this.opts.fast) : null;
+      this.talkHold = line && !this.opts.fast ? TALK_HOLD_MS : 0;
+    } else {
+      this.talkHold = Math.max(0, this.talkHold - realMs);
     }
     if (!this.talkWriter) return;
     this.typeTick -= realMs;
@@ -177,10 +187,15 @@ export class BattleScreen {
       if (action === 'confirm') { this.timer = 0; this.flow.advance(); }
       return;
     }
-    // The first press on a line still being written finishes it; the next one goes on.
-    if (this.flow.phase === 'talk' && action === 'confirm' && this.talkWriter && !this.talkWriter.done) {
-      this.talkWriter.finish();
-      return;
+    // The first press on a line still being written finishes it; the next one goes on. A press that
+    // comes straight after the line appeared, or straight after the one that finished it, is ignored.
+    if (this.flow.phase === 'talk' && action === 'confirm') {
+      if (this.talkHold > 0) return;
+      if (this.talkWriter && !this.talkWriter.done) {
+        this.talkWriter.finish();
+        this.talkHold = this.opts.fast ? 0 : TALK_HOLD_MS;
+        return;
+      }
     }
     // In targeting, left/right also switch enemies.
     if (this.flow.phase === 'target' && (action === 'left' || action === 'right')) {
@@ -216,9 +231,11 @@ export class BattleScreen {
 
     this.drawMessage(ctx);
     this.drawObjective(ctx);
-    this.drawBottom(ctx);
+    // While someone talks, their words have the panel: there is nothing to choose until they are done.
+    const talking = this.flow.phase === 'talk' && this.intro <= 0;
+    if (!talking) this.drawBottom(ctx);
     if (this.intro > 0) return this.drawIntro(ctx);
-    if (this.flow.phase === 'talk') this.drawTalk(ctx);
+    if (talking) this.drawTalk(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
   }
 
@@ -522,19 +539,20 @@ export class BattleScreen {
     drawMeter(ctx, textW + 9, 18, meterW - 4, 4, value, max, color);
   }
 
-  /** The line being said: the speaker's face, their name, and the words, over the field. */
+  /** The line being said: the speaker's face, their name, and the words, in the panel under the field. */
   private drawTalk(ctx: CanvasRenderingContext2D): void {
     const line = this.flow.spoken;
-    if (!line) return;
     const { x, y, w, h, portrait } = TALK;
     drawPanel(ctx, x, y, w, h);
-    drawPortrait(ctx, this.sprites, line.portrait, x + 5, y + 5, portrait);
-    const left = x + portrait + 12;
-    drawText(ctx, line.who.toUpperCase(), left, y + 5, { color: COLORS.accent });
+    if (!line) return;
+    drawPortrait(ctx, this.sprites, line.portrait, x + 10, y + 10, portrait);
+    const left = x + portrait + 20;
+    drawText(ctx, line.who.toUpperCase(), left, y + 10, { color: COLORS.accent });
     const rows = this.talkWriter?.visible() ?? wrap(line.text, TALK_CHARS).slice(0, TALK_LINES);
-    rows.forEach((row, i) => drawText(ctx, row, left, y + 18 + i * LINE));
+    // The panel has room to spare: the lines stand a little further apart than usual.
+    rows.forEach((row, i) => drawText(ctx, row, left, y + 26 + i * (LINE + 3)));
     // The prompt to go on shows once the line is all there.
-    if ((this.talkWriter?.done ?? true) && Math.floor(this.clock / 320) % 2 === 0) drawText(ctx, 'A', x + w - 10, y + h - 13, { color: COLORS.dim });
+    if ((this.talkWriter?.done ?? true) && Math.floor(this.clock / 320) % 2 === 0) drawText(ctx, 'A', x + w - 14, y + h - 16, { color: COLORS.dim });
   }
 
   private drawBottom(ctx: CanvasRenderingContext2D): void {
