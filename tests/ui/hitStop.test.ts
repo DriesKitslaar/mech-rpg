@@ -9,8 +9,10 @@ test('time passes untouched while nothing has landed', () => {
 test('a killing blow holds the field still for a moment, then lets time run again', () => {
   const stop = new HitStop();
   stop.strike(90);
+  // The frame the blow lands in is held whole and takes nothing off the hold: the flash is drawn at its brightest.
   expect(stop.pass(16)).toBe(0);
-  expect(stop.flash).toBeGreaterThan(0);
+  expect(stop.flash).toBe(0.55);
+  expect(stop.pass(16)).toBe(0);
   expect(stop.pass(16)).toBe(0);
   // The frame in which the hold ends passes on what is left of it.
   expect(stop.pass(70)).toBe(12);
@@ -22,6 +24,7 @@ test('the flash is brightest at the blow and gone by the end of the hold', () =>
   const stop = new HitStop();
   stop.strike(100);
   const first = stop.flash;
+  stop.pass(16);
   stop.pass(50);
   expect(stop.flash).toBeLessThan(first);
   stop.pass(60);

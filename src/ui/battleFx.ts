@@ -303,7 +303,8 @@ export class BattleFx {
       else if (fx.kind === 'lunge') dx += fx.dir * 9 * Math.sin(Math.PI * p);
       else if (fx.kind === 'hit') { flash ||= p < 0.5; dx += Math.floor(p * 6) % 2 === 0 ? 2 : -2; }
       else if (fx.kind === 'pulse') flash ||= Math.floor(p * 4) % 2 === 0;
-      else if (fx.kind === 'death') { alpha = Math.min(alpha, 1 - p); dy += 8 * p; flash ||= p < 0.25; }
+      // A wreck is seen coming apart before it fades: whole for the first half, gone at the end.
+      else if (fx.kind === 'death') { alpha = Math.min(alpha, Math.min(1, 2 * (1 - p))); dy += 8 * p; flash ||= p < 0.25; }
     }
     return { dx: px(dx), dy: px(dy), flash, alpha };
   }
