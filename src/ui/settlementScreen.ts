@@ -46,11 +46,12 @@ export class SettlementScreen implements Screen {
       drawText(ctx, s.rank, right, 20, { size: 32, align: 'right', color });
     }
 
-    let y = 56;
+    // Four rows and four repair lines, a line apart, end just above what the client says.
+    let y = 55;
     const row = (label: string, amount: number, color: string = COLORS.text): void => {
       drawText(ctx, label, x + 10, y, { color: COLORS.text });
       drawText(ctx, amount > 0 ? `+${amount}` : String(amount), right, y, { align: 'right', color });
-      y += LINE + 1;
+      y += LINE;
     };
     row(S.reward, s.reward, s.reward > 0 ? COLORS.armor : COLORS.dim);
     if (s.rank && s.bonus) row(S.rankBonus(s.rank), s.bonus, COLORS.armor);

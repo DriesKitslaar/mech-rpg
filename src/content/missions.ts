@@ -232,7 +232,7 @@ export const MISSIONS: Mission[] = [
     debrief: 'The vault burns clean and white. Brenn frames a photograph of it for his office.',
     battles: [
       battle(['lance-tower', 'shield-drone', 'recon-drone'], VAULT, {
-        talk: [dispatch('start', 'Shield drone in the middle. While it flies, your shots on the others do little more than half.')],
+        talk: [dispatch('start', 'Shield drone. While it flies, your shots on the others do little more than half.')],
       }),
       battle(['marksman', 'shield-drone'], VAULT),
       battle(['sable'], VAULT, {
@@ -294,7 +294,7 @@ export const MISSIONS: Mission[] = [
       }),
       battle(['strip-miner'], FOUNDRY, {
         par: 9,
-        talk: [varga('start', 'The hull resists kinetic fire. The wheel arm and the cab resist very little.')],
+        talk: [varga('start', 'Kinetic fire is wasted on the hull and the wheel arm. Energy weapons go through all of it.')],
       }),
     ],
   },
@@ -498,7 +498,7 @@ export const MISSIONS: Mission[] = [
     ],
   },
   {
-    id: 'verdict-enforce', phase: 'verdict', verdict: 'enforce', scale: 1.25, title: 'Enforce', client: 'The Actuary, Meridian Mutual',
+    id: 'verdict-enforce', phase: 'verdict', verdict: 'enforce', scale: 1.06, title: 'Enforce', client: 'The Actuary, Meridian Mutual',
     portrait: 'portrait-actuary', reward: 10000,
     briefing: [
       'Meridian values competence. Sign with Collections and your debt is cleared, your licence restored, your frame your own.',

@@ -14,7 +14,8 @@ import { BattleFx, MELEE_MS, PROJECTILE_MS, flightFor, type Scene } from './batt
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import type { Sprite, SpriteStore } from './sprites';
-import { COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
+import { fitTags, tagWidth, type Tag } from './tags';
+import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
 
 export { BattleFlow } from './battleFlow';
 export type { BattlePhase, FlowOptions, MenuView } from './battleFlow';
@@ -255,36 +256,42 @@ export class BattleScreen {
     return null;
   }
 
-  /** Short labels for everything that is on a unit right now, what it does for its side first. */
-  private tagsOf(unit: UnitState): { text: string; color: string }[] {
+  /**
+   * Short labels for everything that is on a unit right now, what it does for its side first. The
+   * rank says what is left out when a row has no room for them all: what a unit is goes before what
+   * is about to happen to the pilot.
+   */
+  private tagsOf(unit: UnitState): Tag[] {
     const T = STRINGS.tags;
     const state = this.flow.state;
     const jammed = unit.side === 'player' ? jamOn(state, unit) : 0;
     return [
-      ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger }] : []),
-      ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy }] : []),
-      ...(unit.abilities.jam !== undefined ? [{ text: T.jammer, color: COLORS.heat }] : []),
-      ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor }] : []),
-      ...(unit.abilities.carrier ? [{ text: T.carrier, color: COLORS.heat }] : []),
-      ...(aegisFactor(state, unit) < 1 ? [{ text: T.covered, color: COLORS.energy }] : []),
-      ...(jammed > 0 ? [{ text: T.jammed(jammed), color: COLORS.heat }] : []),
-      ...(unit.boosted ? [{ text: T.boost, color: COLORS.energy }] : []),
-      ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor }] : []),
-      ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat }] : []),
-      ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy }] : []),
-      ...(unit.painted > 0 ? [{ text: T.painted, color: COLORS.danger }] : []),
-      ...(unit.chaff > 0 ? [{ text: T.chaff, color: COLORS.dim }] : []),
+      ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger, rank: 9 }] : []),
+      ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy, rank: 2 }] : []),
+      ...(unit.abilities.jam !== undefined ? [{ text: T.jammer, color: COLORS.heat, rank: 2 }] : []),
+      ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor, rank: 2 }] : []),
+      ...(unit.abilities.carrier ? [{ text: T.carrier, color: COLORS.heat, rank: 2 }] : []),
+      ...(aegisFactor(state, unit) < 1 ? [{ text: T.covered, color: COLORS.energy, rank: 4 }] : []),
+      ...(jammed > 0 ? [{ text: T.jammed(jammed), color: COLORS.heat, rank: 5 }] : []),
+      ...(unit.boosted ? [{ text: T.boost, color: COLORS.energy, rank: 5 }] : []),
+      ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor, rank: 6 }] : []),
+      ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat, rank: 8 }] : []),
+      ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy, rank: 7 }] : []),
+      ...(unit.painted > 0 ? [{ text: T.painted, color: COLORS.danger, rank: 3 }] : []),
+      ...(unit.chaff > 0 ? [{ text: T.chaff, color: COLORS.dim, rank: 3 }] : []),
     ];
   }
 
-  /** Draws a unit's tags in a row; from the right edge when `right` is set. Returns whether there were any. */
-  private drawTags(ctx: CanvasRenderingContext2D, unit: UnitState, x: number, y: number, right = false): boolean {
-    const tags = this.tagsOf(unit);
-    const width = (text: string) => text.length * 4 + 5;
-    let at = right ? x - tags.reduce((sum, t) => sum + width(t.text), 0) + 5 : x;
+  /**
+   * Draws as many of a unit's tags as fit in `room` pixels, in a row; from the right edge when
+   * `right` is set. Returns whether there were any.
+   */
+  private drawTags(ctx: CanvasRenderingContext2D, unit: UnitState, x: number, y: number, room: number, right = false): boolean {
+    const tags = fitTags(this.tagsOf(unit), room);
+    let at = right ? x - tags.reduce((sum, t) => sum + tagWidth(t.text), 0) + 5 : x;
     for (const tag of tags) {
       drawText(ctx, tag.text, at, y + 1, { size: 10, color: tag.color });
-      at += width(tag.text);
+      at += tagWidth(tag.text);
     }
     return tags.length > 0;
   }
@@ -427,8 +434,10 @@ export class BattleScreen {
     const width = 144;
     const target = aiming && this.flow.targetId ? this.flow.state.units.find((u) => u.id === this.flow.targetId) : undefined;
     if (target) {
-      drawText(ctx, target.name.toUpperCase(), x, top, { color: COLORS.accent });
-      this.drawTags(ctx, target, x + width, top, true);
+      const name = target.name.toUpperCase();
+      drawText(ctx, name, x, top, { color: COLORS.accent });
+      // The tags get what the name leaves of the row, less a gap.
+      this.drawTags(ctx, target, x + width, top, width - Math.ceil(name.length * CHAR_W) - 4, true);
       let y = this.drawParts(ctx, target, x, top + LINE, this.flow.targetPart);
       y = this.drawStability(ctx, target, x, y, width);
       const p = this.flow.preview;
@@ -438,8 +447,10 @@ export class BattleScreen {
       }
       this.drawEnergyAndHeat(ctx, player, 6, LOGICAL_H - 2 * LINE - 2, 132);
     } else {
-      if (!this.drawTags(ctx, player, x, top)) drawText(ctx, STRINGS.headings.you, x, top, { color: COLORS.dim });
-      drawText(ctx, `${STRINGS.meters.repairs} ${player.repairsLeft}`, x + width, top, { color: COLORS.dim, align: 'right' });
+      const repairs = `${STRINGS.meters.repairs} ${player.repairsLeft}`;
+      // The pilot's own tags stop short of the repairs count at the other end of the row.
+      if (!this.drawTags(ctx, player, x, top, width - Math.ceil(repairs.length * CHAR_W) - 4)) drawText(ctx, STRINGS.headings.you, x, top, { color: COLORS.dim });
+      drawText(ctx, repairs, x + width, top, { color: COLORS.dim, align: 'right' });
       let y = this.drawParts(ctx, player, x, top + LINE, null);
       y = this.drawStability(ctx, player, x, y, width);
       this.drawEnergyAndHeat(ctx, player, x, y, width);

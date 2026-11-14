@@ -224,12 +224,17 @@ function reached(state: GameState, condition: Condition, missions: Mission[]): b
 /**
  * What the shop sells now. `unlocks` maps a part id to the contract (or `'choice'`, or `'arena:N'`)
  * that puts it in stock. Vendors do not forget a pilot: from the second cycle on, everything a
- * contract unlocks stays in stock. Arena prizes always need the rank.
+ * contract unlocks stays in stock. Arena prizes always need the rank. What the third act unlocks
+ * stays only for a pilot who has given a verdict before: a game that reached a later cycle when the
+ * story still ended with the war has never met Meridian, and is not sold its parts.
  */
 export function stockFor(state: GameState, parts: Part[], unlocks: Record<string, string>, missions: Mission[]): Part[] {
-  const open = (condition: string): boolean =>
-    (state.cycle > 0 && !condition.startsWith('arena:')) || reached(state, condition, missions);
-  return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || open(unlocks[part.id]));
+  const actThree = (condition: string): boolean =>
+    condition === 'verdict' || missions.some((m) => m.id === condition && (m.phase === 'audit' || m.phase === 'verdict'));
+  // Every won story contract leaves a rank, and ranks are kept through the cycles.
+  const judged = all(missions, 'verdict').some((m) => Object.hasOwn(state.ranks, m.id));
+  const kept = (condition: string): boolean => state.cycle > 0 && !condition.startsWith('arena:') && (!actThree(condition) || judged);
+  return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || kept(unlocks[part.id]) || reached(state, unlocks[part.id], missions));
 }
 
 /** Messages that have arrived, oldest first. */

@@ -139,6 +139,27 @@ describe('drive off', () => {
     expect(s.outcome).toBe('victory');
     expect(unit(s, 'enemy-0').destroyed).toBe(false);
   });
+
+  test('a hit that would destroy the target outright drives it off instead: it breaks away with its core all but gone', () => {
+    let s = to(battle([mech()], { type: 'driveOff', target: 0, share: 0.5 }), 'player');
+    // Just above the share, and one hit from nothing.
+    s = edit(s, (d) => { const core = unit(d, 'enemy-0').parts.core!; core.maxAp = 20; core.ap = 11; d.units[0].energy = 999; });
+    s = act(s, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' });
+    expect(s.outcome).toBe('victory');
+    expect(unit(s, 'enemy-0')).toMatchObject({ destroyed: false, parts: { core: { ap: 1 } } });
+    expect(s.events.some((e) => e.type === 'unitDestroyed')).toBe(false);
+    expect(s.events.some((e) => e.type === 'partDestroyed' && e.part === 'core')).toBe(false);
+  });
+
+  test('only the one being driven off is spared: anything beside it can still be destroyed, and so can its limbs', () => {
+    let s = to(battle([mech(), 'recon-drone'], { type: 'driveOff', target: 0, share: 0.5 }), 'player');
+    s = edit(s, (d) => { unit(d, 'enemy-1').parts.core!.ap = 1; unit(d, 'enemy-0').parts.legs!.ap = 1; d.units[0].energy = 999; });
+    s = act(s, { type: 'fire', weapon: 'rightHand', target: 'enemy-1', part: 'core' });
+    expect(unit(s, 'enemy-1').destroyed).toBe(true);
+    s = act(s, { type: 'fire', weapon: 'leftHand', target: 'enemy-0', part: 'legs' });
+    expect(unit(s, 'enemy-0').parts.legs!.ap).toBe(0);
+    expect(s.outcome).toBe('ongoing');
+  });
 });
 
 test('every objective still ends in defeat at the round limit', () => {
@@ -169,6 +190,30 @@ describe('the automatic player plays to the objective', () => {
     expect(firstShot(s)).toMatchObject({ type: 'fire', target: 'enemy-0', part: 'legs' });
     const legless = edit(s, (d) => { unit(d, 'enemy-0').parts.legs!.ap = 0; });
     expect(firstShot(legless)).toMatchObject({ type: 'fire', target: 'enemy-0', part: 'arms' });
+  });
+
+  test('keeps a salvo in its rack when the shots that go wide would finish a machine wanted in one piece', () => {
+    // A salvo aimed at the repair drone also lands on the core of everything else standing.
+    const build = { ...DEMO_BUILD, shoulder: 'wpn-micro-salvo' };
+    const start = createBattle(build, [mech(), ENEMIES['repair-drone']], CATALOG, 1, { objective: { type: 'disable', target: 0 } });
+    const turn = (s: BattleState): Action[] => {
+      const actions: Action[] = [];
+      let now = edit(to(s, 'player'), (d) => { d.units[0].energy = 999; });
+      for (let i = 0; i < 12 && now.outcome === 'ongoing' && activeUnit(now).id === 'player'; i++) {
+        const action = chooseAutoPlayerAction(now, CATALOG);
+        actions.push(action);
+        now = applyAction(now, action, CATALOG, hit);
+      }
+      return actions;
+    };
+    const salvo = (actions: Action[]) => actions.some((a) => a.type === 'fire' && a.weapon === 'shoulder');
+    // With the machine's core whole, the salvo is fired at the drone like anything else.
+    expect(salvo(turn(start))).toBe(true);
+    // With its core nearly gone, the salvo stays where it is, and the machine outlives the turn.
+    const frail = edit(start, (d) => { unit(d, 'enemy-0').parts.core!.ap = 20; });
+    const actions = turn(frail);
+    expect(salvo(actions)).toBe(false);
+    expect(actions.some((a) => a.type === 'fire')).toBe(true);
   });
 
   test.each([
