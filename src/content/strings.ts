@@ -173,7 +173,7 @@ export const STRINGS = {
   },
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
-    credits: 'End Roll', watch: 'Watch',
+    credits: 'End Roll', watch: 'Watch', title: 'Quit to Title',
     on: 'On', off: 'Off',
     difficulties: { story: 'Story', standard: 'Standard', veteran: 'Veteran' },
     difficultyHelp: {

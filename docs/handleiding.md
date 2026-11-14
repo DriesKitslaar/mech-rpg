@@ -44,7 +44,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels; deze handleiding i
 | Pilot | Niveau en vaardigheden, medailles, en een logboek van alles wat je gedaan hebt. |
 | Messages | Berichten van je opdrachtgevers. |
 | Database | Fiches van elke vijand die je bent tegengekomen, achtergrond over de stad, en de spelregels. |
-| Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid. |
+| Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid, de aftiteling opnieuw bekijken, terug naar het titelscherm. |
 
 ## Een gevecht
 
@@ -104,7 +104,8 @@ Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen
 ## Opslaan
 
 Het spel slaat vanzelf op na alles wat telt. Er zijn drie opslagplekken; op het titelscherm kies je
-**Continue** (het laatst gespeelde spel), **New Game** of **Load Game**.
+**Continue** (het laatst gespeelde spel), **New Game** of **Load Game**. Terug naar het titelscherm
+ga je met **Options** en dan **Quit to Title**.
 
 ## Moeilijkheid
 

@@ -647,6 +647,18 @@ export class App {
     this.openHub();
   }
 
+  /**
+   * Leaves the game being played for the title, where another kept game can be continued or a new
+   * one started. Nothing has to be saved: every change was saved as it was made.
+   */
+  quitToTitle(): void {
+    this.game = null;
+    this.toasts = [];
+    this.toast = null;
+    this.played = 0;
+    this.go('title');
+  }
+
   update(dtMs: number): void {
     this.entering.left = Math.max(0, this.entering.left - dtMs);
     this.current.update(dtMs);

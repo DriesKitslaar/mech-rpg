@@ -230,3 +230,44 @@ describe('the debt limit', () => {
     expect(savedGame(store).credits).toBe(-2000 + medalPay(savedGame(store).medals));
   });
 });
+
+describe('leaving a game for the title', () => {
+  test('the options offer it while a game is on, and the game is there to continue afterwards', () => {
+    const { app, store } = inHub(quiet({ ...fresh(), credits: 4321 }));
+    select(app, 'options');
+    expect(ids(app)).toContain('title');
+    select(app, 'title');
+    expect(snap(app)).toMatchObject({ screen: 'title', credits: null, callsign: null, medals: [], toast: null });
+    expect(ids(app)).toEqual(['continue', 'new', 'options']);
+    // Nothing was lost on the way out: the game was already saved.
+    expect(savedGame(store).credits).toBe(4321);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 4321 });
+  });
+
+  test('from the title the options have no such entry, and no end roll of a game that is not being played', () => {
+    const { app } = inHub(quiet({ ...fresh(), endingSeen: true, cycle: 1 }));
+    select(app, 'options');
+    expect(ids(app)).toEqual(expect.arrayContaining(['credits', 'title']));
+    select(app, 'title');
+    select(app, 'options');
+    expect(ids(app)).not.toContain('title');
+    expect(ids(app)).not.toContain('credits');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('title');
+  });
+
+  test('another kept game can then be loaded, and time on the title is not counted for either', () => {
+    const { app, store } = inHub(quiet({ ...fresh(), credits: 111 }));
+    store.data['ironwage-save-2'] = JSON.stringify(quiet({ ...fresh(), callsign: 'VANTA', credits: 222 }));
+    select(app, 'options');
+    select(app, 'title');
+    app.update(60_000);
+    expect(ids(app)).toEqual(['continue', 'new', 'load', 'options']);
+    select(app, 'load');
+    select(app, 'slot-2');
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 222, callsign: 'VANTA', slot: 1 });
+    expect(savedGame(store, 'ironwage-save-2').stats.seconds).toBe(0);
+    expect(savedGame(store).stats.seconds).toBe(0);
+  });
+});

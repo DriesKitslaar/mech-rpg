@@ -9,8 +9,9 @@ import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 const O = STRINGS.options;
 type Toggle = 'sfx' | 'music' | 'fastBattles' | 'rumble';
 const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'difficulty'];
-/** The entry that plays the end roll again. It is not a setting. */
+/** The entries that are not settings: the end roll once more, and the way back to the title. */
 const CREDITS = 'credits';
+const TITLE = 'title';
 
 /** Sound, music, battle speed and difficulty. Opened from the title or the hub, and returns to where it came from. */
 export class OptionsScreen implements Screen {
@@ -28,6 +29,8 @@ export class OptionsScreen implements Screen {
       ...KEYS.map((key) => ({ id: key as string, label: O[key], enabled: true, note: value(key) })),
       // Once an ending has been seen, the end roll can be watched again from here.
       ...(this.app.canWatchCredits() ? [{ id: CREDITS, label: O.credits, enabled: true, note: O.watch }] : []),
+      // While a game is on, this is the way to the title: to another kept game, or a new one.
+      ...(this.app.game ? [{ id: TITLE, label: O.title, enabled: true }] : []),
     ]);
   }
 
@@ -40,6 +43,7 @@ export class OptionsScreen implements Screen {
   private change(step: number): void {
     const settings = this.app.settings;
     if (this.list.selected!.id === CREDITS) return this.app.showCredits();
+    if (this.list.selected!.id === TITLE) return this.app.quitToTitle();
     const key = this.list.selected!.id as keyof Settings;
     if (key === 'difficulty') {
       const n = DIFFICULTIES.length;
