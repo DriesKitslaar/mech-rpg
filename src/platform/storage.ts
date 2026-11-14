@@ -41,12 +41,12 @@ function upgrade(value: unknown): unknown {
   // Version 6 had no ranks and no scenes, and its story ended where the third act now begins: whoever
   // saw that ending has not seen the real one, so it is shown when it is earned.
   if (save.version === 6) save = { ...save, version: 7, ranks: {}, scenes: [], endingSeen: false };
-  // Version 7 had no callsign, no record, no medals, no list of enemies met and no training. The one
-  // thing it did count, contracts won, starts the record.
+  // Version 7 had no callsign, no record, no medals, no list of enemies met, no training and no
+  // database. The one thing it did count, contracts won, starts the record.
   if (save.version === 7) {
     const won = save.battlesWon;
     const contracts = typeof won === 'number' && Number.isSafeInteger(won) && won >= 0 ? won : 0;
-    save = { ...save, version: SAVE_VERSION, callsign: DEFAULT_CALLSIGN, stats: { ...NO_STATS, contracts }, medals: [], met: [], drills: [] };
+    save = { ...save, version: SAVE_VERSION, callsign: DEFAULT_CALLSIGN, stats: { ...NO_STATS, contracts }, medals: [], met: [], drills: [], codex: [] };
   }
   return save;
 }

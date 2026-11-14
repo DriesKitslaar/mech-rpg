@@ -149,18 +149,18 @@ describe('a save from the sixth version', () => {
 
 describe('a save from the seventh version', () => {
   const seventh = () => {
-    const { callsign: _c, stats: _s, medals: _m, met: _e, drills: _d, ...rest } = { ...game(), xp: 300, ranks: { 'intro-1': 'A' } } as Record<string, any>;
+    const { callsign: _c, stats: _s, medals: _m, met: _e, drills: _d, codex: _x, ...rest } = { ...game(), xp: 300, ranks: { 'intro-1': 'A' } } as Record<string, any>;
     return new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 7 }) }), CATALOG).load();
   };
 
   test('gains a callsign, an empty record, no medals, nobody met and no training, and keeps everything else', () => {
     expect(seventh()).toEqual({ ...game(), xp: 300, ranks: { 'intro-1': 'A' } });
-    expect(seventh()).toMatchObject({ version: SAVE_VERSION, callsign: 'PILOT', medals: [], met: [], drills: [] });
+    expect(seventh()).toMatchObject({ version: SAVE_VERSION, callsign: 'PILOT', medals: [], met: [], drills: [], codex: [] });
     expect(seventh()!.stats).toEqual(NO_STATS);
   });
 
   test('the one thing it did count goes on the record: the contracts won', () => {
-    const { callsign: _c, stats: _s, medals: _m, met: _e, drills: _d, ...rest } = { ...game(), battlesWon: 12 } as Record<string, any>;
+    const { callsign: _c, stats: _s, medals: _m, met: _e, drills: _d, codex: _x, ...rest } = { ...game(), battlesWon: 12 } as Record<string, any>;
     const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 7 }) }), CATALOG).load();
     expect(loaded!.stats).toEqual({ ...NO_STATS, contracts: 12 });
     // A count that is not a count is not carried over; the save is refused for it anyway.

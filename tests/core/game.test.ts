@@ -404,7 +404,7 @@ describe('saved builds', () => {
 describe('callsign, record and the lists that came with them', () => {
   test('a new game has the default callsign, an empty record and empty lists; a callsign can be given', () => {
     const g = newGame(CATALOG, STARTER_BUILD);
-    expect(g).toMatchObject({ callsign: 'PILOT', medals: [], met: [], drills: [] });
+    expect(g).toMatchObject({ callsign: 'PILOT', medals: [], met: [], drills: [], codex: [] });
     expect(Object.values(g.stats).every((n) => n === 0)).toBe(true);
     expect(newGame(CATALOG, STARTER_BUILD, 'VANTA7').callsign).toBe('VANTA7');
     expect(isValidState(newGame(CATALOG, STARTER_BUILD, 'A'), CATALOG)).toBe(true);
@@ -427,6 +427,8 @@ describe('callsign, record and the lists that came with them', () => {
     ['medals that are not a list of text', (g) => ({ ...g, medals: [1] })],
     ['no list of enemies met', (g) => { const { met: _m, ...rest } = g; return rest; }],
     ['drills that are not a list', (g) => ({ ...g, drills: 'all' })],
+    ['no list of database entries', (g) => { const { codex: _c, ...rest } = g; return rest; }],
+    ['database entries that are not text', (g) => ({ ...g, codex: [null] })],
   ];
   test.each(bad)('a save with %s is refused', (_name, make) => {
     expect(isValidState(make(newGame(CATALOG, STARTER_BUILD)), CATALOG)).toBe(false);

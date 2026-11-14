@@ -54,6 +54,8 @@ export interface GameState {
   met: string[];
   /** Ids of the training drills passed. */
   drills: string[];
+  /** Ids of the database's entries about the world that have opened. They stay open through later cycles. */
+  codex: string[];
 }
 
 export const FACTORY_PAINT = 'factory';
@@ -111,7 +113,7 @@ export function newGame(catalog: Catalog, starter: Build, callsign: string = DEF
     version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false,
     xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS },
     paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null), ranks: {}, scenes: [],
-    callsign, stats: { ...NO_STATS }, medals: [], met: [], drills: [],
+    callsign, stats: { ...NO_STATS }, medals: [], met: [], drills: [], codex: [],
   };
 }
 
@@ -262,8 +264,8 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
-  const { callsign, stats, medals, met, drills } = value;
-  if (!isCallsign(callsign) || !isTextList(medals) || !isTextList(met) || !isTextList(drills)) return false;
+  const { callsign, stats, medals, met, drills, codex } = value;
+  if (!isCallsign(callsign) || !isTextList(medals) || !isTextList(met) || !isTextList(drills) || !isTextList(codex)) return false;
   // The record holds exactly the counters there are, each a whole number that is not negative.
   if (!isRecord(stats) || Object.keys(stats).length !== STAT_KEYS.length || !STAT_KEYS.every((key) => isWholeNonNegative(stats[key]))) return false;
   // The scheme itself is the screen's business; here it only has to be a plain short word.
