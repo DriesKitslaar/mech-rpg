@@ -29,8 +29,11 @@ export class GarageScreen implements Screen {
 
   onInput(action: InputAction): void {
     const result = this.flow.onInput(action);
-    if (result === 'changed') this.app.commit(this.flow.game);
-    else if (result === 'exit') this.app.go('hub');
+    if (result === 'changed') {
+      this.app.commit(this.flow.game);
+      // The next change starts from the game as it was saved, not from the copy made before it.
+      this.flow.adopt(this.app.game!);
+    } else if (result === 'exit') this.app.go('hub');
   }
 
   view(): ScreenView {

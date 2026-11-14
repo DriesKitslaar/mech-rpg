@@ -128,7 +128,7 @@ const LADDER: Entry[] = [
   },
   {
     name: 'Brother Rust', ai: 'bruiser', scale: 1.25,
-    style: 'A Ronin body on Colossus legs. He boosts in with a breach pick and a ram fist, and a howler knocks you flat first.',
+    style: 'A Ronin body on Colossus legs. He boosts in with a breach pick and a ram fist, then a howler knocks you flat.',
     taunt: 'Kneel. It is easier on the knees than what comes next.',
     build: {
       head: 'head-ronin', core: 'core-ronin', arms: 'arms-ronin', legs: 'legs-colossus', generator: 'gen-tidal',

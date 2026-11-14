@@ -33,9 +33,16 @@ export class TitleScreen implements Screen {
     return this.slots.filter((s) => s.game !== null);
   }
 
+  /** The game Continue goes on with: the one played last, or the first there is. */
+  private continued(): SlotView['game'] {
+    const slot = this.app.continueSlot();
+    return this.slots.find((s) => s.slot === slot)?.game ?? null;
+  }
+
   private mainMenu(): MenuList {
     return new MenuList([
-      ...(this.kept.length > 0 ? [{ id: 'continue', label: T.continue, enabled: true }] : []),
+      // Continue names the pilot it goes on with: with more than one game kept, that is worth knowing.
+      ...(this.kept.length > 0 ? [{ id: 'continue', label: T.continue, enabled: true, note: this.continued()?.callsign }] : []),
       { id: 'new', label: T.newGame, enabled: true },
       // With one game kept, Continue is all the loading there is to do.
       ...(this.kept.length > 1 ? [{ id: 'load', label: T.loadGame, enabled: true }] : []),
@@ -161,6 +168,7 @@ export class TitleScreen implements Screen {
       y += 14;
     }
     if (picking) drawList(ctx, this.list, x + 10, y, w - 26, 3);
-    else drawList(ctx, this.list, x + 60, y, 70, 4);
+    // Wide enough for the longest callsign to stand clear of Continue.
+    else drawList(ctx, this.list, x + 40, y, 110, 4);
   }
 }

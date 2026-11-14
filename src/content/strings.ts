@@ -11,7 +11,7 @@ const obj = (unit: string): string => (unit === PLAYER_NAME ? 'you' : unit);
 export const STRINGS = {
   title: 'IRONWAGE',
   actions: {
-    fire: 'Fire', boost: 'Boost', guard: 'Guard', cool: 'Cool', module: 'Module', repair: 'Field Repair', auto: 'Auto Turn',
+    fire: 'Fire', boost: 'Boost', guard: 'Guard', cool: 'Vent', module: 'Module', repair: 'Field Repair', auto: 'Auto Turn',
     endTurn: 'End Turn', retreat: 'Retreat',
   },
   retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
@@ -169,7 +169,7 @@ export const STRINGS = {
       ashfall: 'a licensed pilot', sable: 'Lumen\'s best', rook: 'the Undertow\'s champion', krell: 'Hadron\'s strike-breaker',
       actuary: 'Meridian Mutual',
     },
-    again: 'THE WAR CAN BE FOUGHT AGAIN', cycle: 'New Cycle, at headquarters', thanks: 'THANK YOU FOR FLYING',
+    again: 'THE WAR CAN BE FOUGHT AGAIN', cycle: 'New Cycle, at headquarters', thanks: 'THANK YOU FOR FLYING', skip: 'A: skip',
   },
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',

@@ -37,8 +37,9 @@ export class PilotScreen implements Screen {
       const { have, need, earned } = medalProgress(medal, game);
       return {
         id: medal.id, label: this.nameOf(medal), enabled: earned,
-        // Earned, or how far along; a medal that is simply done or not says nothing until it is.
-        note: earned ? M.held : need > 1 ? `${have}/${need}` : undefined,
+        // Earned, or how far along; a medal that is simply done or not says nothing until it is, and
+        // neither does one that keeps its name to itself: its count would give away what it is for.
+        note: earned ? M.held : need > 1 && !this.isHidden(medal) ? `${have}/${need}` : undefined,
       };
     }));
   }

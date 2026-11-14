@@ -62,6 +62,14 @@ export function tallyBattle(state: BattleState): Stats {
       case 'blast':
         if (!isEnemy(event.target)) tally.taken += event.damage;
         break;
+      case 'module':
+        // A shock pulse is not a shot, but the armour it takes off counts all the same: against the pilot when
+        // it is the enemy's, for the pilot when it is their own.
+        if (event.effect === 'shock' && event.damage) {
+          if (isEnemy(event.unit)) tally.taken += event.damage;
+          else tally.damage += event.damage;
+        }
+        break;
       case 'partDestroyed':
         if (isEnemy(event.unit) && event.part !== 'core') tally.parts += 1;
         break;

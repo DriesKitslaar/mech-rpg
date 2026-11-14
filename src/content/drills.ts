@@ -91,17 +91,18 @@ export const DRILLS: Drill[] = [
     id: 'drill-types', title: 'The Right Tool', lesson: 'Damage types', after: 'intro-2', scale: 0.8,
     briefing: [
       'There are three kinds of damage: kinetic, energy and explosive. Every part resists each kind differently.',
-      'A turret stops bullets and is soft to blasts. An enforcer shrugs at bullets and blasts and has almost no answer to a beam. The damage shown before you fire already counts this.',
+      'A tank stops bullets and is bare to blasts. An enforcer shrugs at bullets and blasts and has almost no answer to a beam. The damage shown before you fire already counts this.',
     ],
-    debrief: 'Each of them got what it liked least. The database lists a weakness for everything you have met.',
+    debrief: 'Each of them got what it liked least. The database keeps a page on whatever you meet in the field.',
+    // The beam and the mortar hit about as hard as each other, so what decides between them is the target.
     build: {
-      ...STARTER_FRAME, ...STOCK, generator: 'gen-prism',
-      rightHand: 'wpn-rivet-rifle', leftHand: 'wpn-pulse-carbine', shoulder: 'wpn-mortar-pod',
+      ...STARTER_FRAME, legs: 'legs-ronin', ...STOCK, generator: 'gen-prism',
+      rightHand: 'wpn-rivet-rifle', leftHand: 'wpn-lance-emitter', shoulder: 'wpn-mortar-pod',
     },
     battle: {
-      enemies: ['gun-turret', 'heavy-mech'], background: HALL,
+      enemies: ['tank', 'heavy-mech'], background: HALL,
       talk: [
-        sim('start', 'Rifle, carbine, mortar: one of each kind. Aim each at both targets and compare the damage before you commit.'),
+        sim('start', 'Rifle, lance, mortar: one of each kind. Aim each at both targets and compare the damage before you commit.'),
       ],
     },
   },
@@ -144,7 +145,7 @@ export const DRILLS: Drill[] = [
   {
     id: 'drill-blade', title: 'Close In', lesson: 'Boost and strike', after: 'intro-2',
     briefing: [
-      'A blade hits harder than anything you can carry in one hand and makes almost no heat. It only reaches from close in.',
+      'A blade hits hard and makes almost no heat. It only reaches from close in.',
       'So a blade strikes only in a turn that began with a boost, and the strike spends the boost: you do not dodge afterwards. Reverse legs like these boost further.',
     ],
     debrief: 'Three machines, three cuts. Mind what is left standing when you land.',

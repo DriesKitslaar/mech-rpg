@@ -274,8 +274,10 @@ describe('the database', () => {
     app.update(TOAST_MS);
     app.update(16);
     expect(snap(app).toast).toBeNull();
-    // The first meeting with Ashfall opens their entry.
+    // The first meeting with Ashfall opens their entry, once the page of story that follows it has been read.
     app.commit({ ...app.game!, completed: ['intro-1', 'intro-2', 'rival-1'] });
+    expect(savedGame(store).codex).not.toContain('ashfall');
+    app.commit({ ...app.game!, scenes: [...app.game!.scenes, 'act-2'] });
     expect(savedGame(store).codex).toEqual(expect.arrayContaining(['ashfall', 'arena', 'freelance']));
     app.update(16);
     expect(snap(app).toast).toBe('entries:3');

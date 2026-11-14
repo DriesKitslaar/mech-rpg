@@ -40,9 +40,9 @@ const EARNED: Medal[] = [
   // Doing it well.
   { id: 'first-flawless', name: 'Not a Scratch', text: 'Win a contract without being hit.', tier: 1, progress: count(1, (g) => g.stats.flawless) },
   { id: 'flawless-10', name: 'Untouchable', text: 'Win 10 contracts without being hit.', tier: 3, progress: count(10, (g) => g.stats.flawless) },
-  { id: 'first-s', name: 'Signature Work', text: 'Earn an S rank on a contract.', tier: 1, progress: count(1, sRanks) },
-  { id: 's-10', name: 'Gold Standard', text: 'Hold an S rank on 10 contracts.', tier: 2, progress: count(10, sRanks) },
-  { id: 's-25', name: 'Perfect Ledger', text: 'Hold an S rank on 25 contracts.', tier: 3, progress: count(25, sRanks) },
+  { id: 'first-s', name: 'Signature Work', text: 'Earn an S rank on a story contract.', tier: 1, progress: count(1, sRanks) },
+  { id: 's-10', name: 'Gold Standard', text: 'Hold an S rank on 10 story contracts.', tier: 2, progress: count(10, sRanks) },
+  { id: 's-25', name: 'Perfect Ledger', text: 'Hold an S rank on 25 story contracts.', tier: 3, progress: count(25, sRanks) },
   // The story.
   { id: 'side', name: 'Under Contract', text: 'Take a side in the war.', tier: 1, progress: once((g) => g.completed.some((id) => id.startsWith('choice-'))) },
   { id: 'war-hadron', name: 'Company Man', text: 'Win the war for Hadron Mining.', tier: 2, progress: did('finale-hadron') },

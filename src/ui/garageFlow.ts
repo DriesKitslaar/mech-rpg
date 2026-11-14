@@ -38,6 +38,14 @@ export class GarageFlow {
     return this.catalog[id]?.name ?? id;
   }
 
+  /**
+   * Takes the game back as it was booked: with whatever the booking added (a medal and its pay, time
+   * played). Nothing the garage shows depends on those, so the lists stay as they are.
+   */
+  adopt(game: GameState): void {
+    this.game = game;
+  }
+
   private slotItems(): ListItem[] {
     return BUILD_SLOTS.map((slot) => {
       const id = this.game.build[slot];

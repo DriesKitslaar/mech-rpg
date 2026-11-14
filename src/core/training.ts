@@ -27,7 +27,12 @@ export const DRILL_PAY = 150;
 
 export const isDrill = (mission: Mission): boolean => mission.loaner !== undefined;
 export const drillPassed = (game: GameState, drillId: string): boolean => game.drills.includes(drillId);
-export const drillOpen = (game: GameState, drill: Drill, missions: Mission[]): boolean => reached(game, drill.after, missions);
+/**
+ * Whether a drill can be run. Once open it stays open: a drill that was passed is never locked
+ * again, and a pilot whose story has started over keeps every drill the first time round opened.
+ */
+export const drillOpen = (game: GameState, drill: Drill, missions: Mission[]): boolean =>
+  game.cycle > 0 || drillPassed(game, drill.id) || reached(game, drill.after, missions);
 
 /** A drill in the shape of a contract, so it is briefed, fought and settled like one. It pays only until it has been passed. */
 export function drillMission(game: GameState, drill: Drill, client: string): Mission {

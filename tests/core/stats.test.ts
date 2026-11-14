@@ -33,6 +33,34 @@ test('a blast counts as damage taken, and fire from an ally as nobody\'s shot', 
   expect(tally).toMatchObject({ taken: 54, shots: 0, damage: 0 });
 });
 
+test('armour lost to a shock pulse is damage taken; what the pilot\'s own pulse takes off is damage done', () => {
+  const tally = tallyBattle(withEvents([
+    { type: 'module', unit: 'enemy-0', effect: 'shock', amount: 60, damage: 15 },
+    { type: 'module', unit: 'player', effect: 'shock', amount: 60, damage: 22 },
+    { type: 'module', unit: 'enemy-0', effect: 'chaff', amount: 30 },
+    { type: 'module', unit: 'player', effect: 'coolant', amount: 40 },
+  ]));
+  expect(tally).toMatchObject({ taken: 15, damage: 22, shots: 0, hits: 0 });
+});
+
+test('a shock pulse says how much armour it took off those it struck', () => {
+  let s = createBattle({ ...DEMO_BUILD, module: 'mod-shock' }, [ENEMIES['gun-turret'], ENEMIES['gun-turret']], CATALOG, 3);
+  while (activeUnit(s).side !== 'player') s = applyAction(s, { type: 'endTurn' }, CATALOG);
+  const before = s.units.filter((u) => u.side === 'enemy').map((u) => u.parts.core!.ap);
+  s = applyAction(s, { type: 'module' }, CATALOG);
+  const after = s.units.filter((u) => u.side === 'enemy').map((u) => u.parts.core!.ap);
+  const lost = before.reduce((sum, ap, i) => sum + ap - after[i], 0);
+  expect(lost).toBeGreaterThan(0);
+  const event = s.events.find((e) => e.type === 'module');
+  expect(event).toMatchObject({ effect: 'shock', damage: lost });
+  expect(tallyBattle(s).damage).toBe(lost);
+});
+
+test('a contract won with only a shock pulse landed on the pilot is not a flawless one', () => {
+  const battle = tallyBattle(withEvents([{ type: 'module', unit: 'enemy-0', effect: 'shock', amount: 60, damage: 15 }]));
+  expect(contractStats(battle, { won: true, retreated: false, pay: 100 }).flawless).toBe(0);
+});
+
 test('kills, parts, staggers and overheats', () => {
   const tally = tallyBattle(withEvents([
     { type: 'partDestroyed', unit: 'enemy-0', part: 'legs' }, { type: 'partDestroyed', unit: 'enemy-0', part: 'core' },

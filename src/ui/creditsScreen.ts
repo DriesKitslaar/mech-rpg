@@ -66,7 +66,7 @@ export const creditsHeight = (lines: CreditLine[]): number => lines.reduce((sum,
 export const CREDITS_SPEED = 18;
 export const CREDITS_HOLD_MS = 600;
 
-/** The end roll. It climbs by itself and stops with its last line in the middle of the screen; a press skips to there, the next leaves. */
+/** The end roll. It climbs by itself and stops with its last line in the middle of the screen; a press of A or B skips to there, the next leaves. */
 export class CreditsScreen implements Screen {
   private lines: CreditLine[];
   private clock = 0;
@@ -91,7 +91,8 @@ export class CreditsScreen implements Screen {
   }
 
   onInput(action: InputAction): void {
-    if (action !== 'confirm') return;
+    // Either button: there is nothing here to go back from.
+    if (action !== 'confirm' && action !== 'cancel') return;
     // A press carried over from the page before does nothing.
     if (!this.app.deps.fast && this.clock < CREDITS_HOLD_MS) return;
     if (this.done) this.app.closeCredits();
@@ -122,5 +123,7 @@ export class CreditsScreen implements Screen {
     if (this.done && Math.floor(this.clock / 420) % 2 === 0) {
       drawText(ctx, STRINGS.scene.continue, LOGICAL_W / 2, LOGICAL_H - 16, { align: 'center', color: COLORS.dim });
     }
+    // While it climbs, a small word in the corner says it need not be sat through.
+    if (!this.done && this.clock >= CREDITS_HOLD_MS) drawText(ctx, C.skip, LOGICAL_W - 6, LOGICAL_H - 13, { align: 'right', color: COLORS.dim, size: 10 });
   }
 }

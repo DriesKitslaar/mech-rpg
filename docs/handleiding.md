@@ -56,7 +56,7 @@ Elke beurt krijg je energie van je generator. Daarmee kun je:
   een beurt waarin je eerst geboost hebt, en de slag verbruikt de boost.
 - **Guard**: tot je volgende beurt komt er veel minder schade door. Doe dit als boven een vijand
   **CHARGING** of **FUSE 1** staat: dan komt er de volgende beurt een zware klap.
-- **Cool**: hitte lozen. Elk schot maakt je mecha warmer; boven de 100 verlies je je volgende beurt.
+- **Vent**: hitte lozen. Elk schot maakt je mecha warmer; boven de 100 verlies je je volgende beurt.
 - **Module**: je speciale uitrusting, een paar keer per gevecht, kost geen energie.
 - **Field Repair**: twee keer per contract een beschadigd onderdeel oplappen.
 - **Auto Turn**: de computer speelt deze beurt voor je.
