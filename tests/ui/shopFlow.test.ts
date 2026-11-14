@@ -24,14 +24,14 @@ test('there are ten tabs and they wrap in both directions', () => {
 test('each tab lists its stock with the price', () => {
   const flow = shop();
   expect(flow.list.items.map((i) => i.id)).toEqual([
-    'head-scout-mk1', 'head-halo', 'head-bulwark', 'head-ronin', 'head-wraith', 'head-colossus', 'head-mantis',
+    'head-scout-mk1', 'head-halo', 'head-bulwark', 'head-ronin', 'head-wraith', 'head-colossus', 'head-mantis', 'head-auditor',
   ]);
   expect(flow.list.items[1]).toMatchObject({ label: 'Halo Visor', note: '900', enabled: true });
   toTab(flow, 'hand');
-  expect(flow.list.items).toHaveLength(25);
+  expect(flow.list.items).toHaveLength(27);
   expect(flow.list.items.slice(-3).map((i) => i.id)).toEqual(['shd-riot', 'shd-barrier', 'shd-tower']);
   toTab(flow, 'shoulder');
-  expect(flow.list.items).toHaveLength(16);
+  expect(flow.list.items).toHaveLength(17);
   toTab(flow, 'generator');
   expect(flow.list.items).toHaveLength(8);
   toTab(flow, 'booster');

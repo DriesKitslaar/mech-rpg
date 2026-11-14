@@ -39,6 +39,10 @@ const DUEL_BODY = { x: 192, y: 22, w: 118, h: 150 };
 /** In a duel the player's mech stands this much further left, so two full-size mechs cross weapons, not bodies. */
 const DUEL_SHIFT = 6;
 const PANEL_Y = 178;
+/** Sprites of units that fly: these bob up and down, everything else stands still. */
+const FLYERS = new Set([
+  'enemy-recon-drone', 'enemy-gunship', 'enemy-shield-drone', 'enemy-repair-drone', 'enemy-lien-drone', 'boss-overseer',
+]);
 const MENU_W = 154;
 /** Where a hit on each part of the player's mech lands, inside the pose box. */
 const PLAYER_HIT: Record<FrameSlot, { x: number; y: number }> = {
@@ -199,13 +203,13 @@ export class BattleScreen {
   }
 
   private drawEnemies(ctx: CanvasRenderingContext2D): void {
-    const enemies = this.flow.state.units.slice(1);
+    const enemies = this.flow.state.units.slice(1).filter((enemy) => !this.hidden(enemy));
     const marked = this.flow.objective?.target;
+    // The machines first, back to front as they were placed.
     enemies.forEach((enemy, i) => {
-      if (this.hidden(enemy)) return;
       const r = this.enemyRect(enemy);
       // Flying units bob; anything that stands on the ground stays put.
-      const flies = enemy.sprite === 'enemy-recon-drone' || enemy.sprite === 'enemy-gunship';
+      const flies = FLYERS.has(enemy.sprite ?? '');
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
       if (this.duel()) {
         const parts = mechSprites(this.sprites, enemy.build, enemy.paint);
@@ -221,7 +225,11 @@ export class BattleScreen {
       } else {
         this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx, r.y + dy, r.w, r.h));
       }
-      if (enemy.destroyed) return;
+    });
+    // Then everything that is written over them, so no machine hides another's bars.
+    for (const enemy of enemies) {
+      if (enemy.destroyed) continue;
+      const r = this.enemyRect(enemy);
       const core = enemy.parts.core!;
       drawMeter(ctx, r.x + 8, r.y + r.h + 2, r.w - 16, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
       // Under the armour line, how much balance the enemy has left.
@@ -231,7 +239,7 @@ export class BattleScreen {
       // The enemy the objective is about wears small amber corners all battle long.
       if (enemy.id === marked) this.drawBrackets(ctx, r.x - 1, r.y - 1, r.w + 2, r.h + 2, COLORS.heat, 3);
       if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, r.x - 2, r.y - 2, r.w + 4, r.h + 4);
-    });
+    }
   }
 
   /** The one state worth flagging over an enemy's head: a bomb about to go off comes first, then a charge about to land. */

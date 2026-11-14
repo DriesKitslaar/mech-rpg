@@ -195,14 +195,16 @@ const isHelper = (unit: UnitState): boolean =>
 function autoTarget(state: BattleState, enemies: UnitState[]): { target: UnitState; limb?: FrameSlot } {
   const weakest = (units: UnitState[]) => units.reduce((a, b) => (b.parts.core!.ap < a.parts.core!.ap ? b : a));
   const marked = objectiveTarget(state);
+  const helpers = enemies.filter((e) => isHelper(e) && e !== marked);
   if (marked && !marked.destroyed) {
     // A machine wanted in one piece loses its legs, then its arms, and is never shot in the core.
+    // Whatever mends or covers it goes first: limbs that grow back are never finished.
     if (state.objective.type === 'disable') {
+      if (helpers.length > 0) return { target: weakest(helpers) };
       return { target: marked, limb: (['legs', 'arms'] as const).find((slot) => (marked.parts[slot]?.ap ?? 0) > 0) ?? 'legs' };
     }
     return { target: marked };
   }
-  const helpers = enemies.filter(isHelper);
   const reeling = enemies.filter((e) => e.staggered > 0);
   return { target: weakest(helpers.length > 0 ? helpers : reeling.length > 0 ? reeling : enemies) };
 }
@@ -224,8 +226,10 @@ export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Ac
   if (core.ap < core.maxAp * 0.35 && me.fired.length === 0 && can(state, repair, catalog)) return repair;
 
   if (!me.usedBoost && !me.usedGuard) {
-    // A bomb that goes off before the next turn is braced for now, while there is energy for it.
-    if (enemies.some((e) => e.fuse === 1) && can(state, { type: 'guard' }, catalog)) return { type: 'guard' };
+    // A bomb that goes off before the next turn, or a charged shot that is about to be fired, is
+    // braced for now, while there is energy for it.
+    const incoming = enemies.some((e) => e.fuse === 1 || e.charged.length > 0);
+    if (incoming && can(state, { type: 'guard' }, catalog)) return { type: 'guard' };
     // A battle that only has to be outlasted is fought from cover: stance first, shooting with what is left.
     if (state.objective.type === 'survive') {
       const braced = stance(state, me, enemies, catalog);

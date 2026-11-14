@@ -4,7 +4,12 @@ export type Snap = {
   screen: string; credits: number | null; battlesWon: number | null; message?: string;
   build: Record<string, string> | null; inventory: Record<string, number> | null;
   menu: { items: { id: string; label: string; enabled: boolean; note?: string }[]; cursor: number };
-  battle?: { phase: string; outcome: string; round: number; message: string; mission: string; index: number; of: number };
+  battle?: {
+    phase: string; outcome: string; round: number; message: string; mission: string; index: number; of: number;
+    objective: string | null; spoken: string | null; enemies: string[];
+  };
+  scene?: string;
+  ending?: string;
   completed: string[] | null;
   settlement?: { net: number; won: boolean };
 };
@@ -43,11 +48,18 @@ export async function waitForPhase(page: Page, phase: string): Promise<void> {
   await page.waitForFunction((name) => (window as any).__game.snapshot().battle?.phase === name, phase);
 }
 
+/** Reads past whatever pages of story are due and waits for the hub. */
+export async function enterHub(page: Page): Promise<void> {
+  await page.waitForFunction(() => ['hub', 'scene', 'ending'].includes((window as any).__game.snapshot().screen));
+  for (let i = 0; i < 8 && (await snap(page)).screen !== 'hub'; i++) await press(page, 'Enter');
+  await waitForScreen(page, 'hub');
+}
+
 /** From the title screen into the first battle, waiting until the player may act. */
 export async function startBattle(page: Page, url?: string): Promise<void> {
   await open(page, url);
   await choose(page, 'new');
-  await waitForScreen(page, 'hub');
+  await enterHub(page);
   await acceptContract(page, 'intro-1');
 }
 
@@ -80,6 +92,18 @@ export async function finishBattle(page: Page): Promise<Snap> {
       const wanted = s.menu.items[0].enabled ? 'fire' : 'endTurn';
       await press(page, s.menu.items[s.menu.cursor]?.id === wanted ? 'Enter' : 'ArrowDown');
     } else await nextFrame(page);
+    s = await snap(page);
+  }
+  return s;
+}
+
+/** Plays the current battle to its result with Auto Turn: the game's own automatic player takes every turn. */
+export async function autoBattle(page: Page): Promise<Snap> {
+  let s = await snap(page);
+  for (let i = 0; i < 6000 && s.battle?.phase !== 'result'; i++) {
+    if (s.battle?.phase === 'action') await press(page, s.menu.items[s.menu.cursor]?.id === 'auto' ? 'Enter' : 'ArrowDown');
+    else if (s.battle?.phase === 'talk') await press(page, 'Enter');
+    else await nextFrame(page);
     s = await snap(page);
   }
   return s;

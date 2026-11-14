@@ -29,6 +29,7 @@ type Snap = {
   battle?: { phase: string; outcome: string; mission: string; index: number; of: number; enemyScale: number };
   settlement?: { net: number; won: boolean; reward: number };
   ending?: string;
+  scene?: string;
   xp: number | null; level: number | null; arenaRank: number | null; cycle: number | null;
   settings: { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: string };
   player?: { maxAp: number; repairsLeft: number };
@@ -48,6 +49,13 @@ const select = (app: App, id: string) => {
 const HUB = ['contracts', 'arena', 'garage', 'shop', 'pilot', 'messages', 'options'];
 const fresh = (): GameState => newGame(CATALOG, STARTER_BUILD);
 const done = (...missionIds: string[]): GameState => missionIds.reduce((g, id) => completeMission(g, id, MISSIONS), fresh());
+/** The first act: the introductions, both contracts of every client, and the rival. */
+const ACT_ONE = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1'];
+/** A client's side of the second act, up to but not including its finale. */
+const war = (faction: string) => [`choice-${faction}`, `${faction}-3`, `${faction}-4`, `${faction}-5`];
+const AUDIT = ['audit-1', 'audit-2', 'audit-3'];
+/** Everything up to the verdict, for the given client. */
+const toVerdict = (faction: string) => [...ACT_ONE, ...war(faction), `finale-${faction}`, ...AUDIT];
 /**
  * The heaviest frame with weapons that never run dry, for tests that are about reaching something
  * rather than about balance: the plain way these tests fight would empty any magazine first.
@@ -65,7 +73,17 @@ function geared(base: GameState, buildName: string): GameState {
   }
   return { ...g, credits: base.credits };
 }
-const inHub = (saved?: GameState, seed?: number) => { const made = makeApp(saved, seed); press(made.app, 'confirm'); return made; };
+/** Past the title and whatever page of story is due, into the hub. */
+function inHub(saved?: GameState, seed?: number) {
+  const made = makeApp(saved, seed);
+  press(made.app, 'confirm');
+  skipScenes(made.app);
+  return made;
+}
+/** Reads past the pages of story that come up between contracts. */
+function skipScenes(app: App): void {
+  for (let i = 0; i < 6 && (snap(app).screen === 'scene' || snap(app).screen === 'ending'); i++) press(app, 'confirm');
+}
 /** From the hub into a contract's first battle. */
 function accept(app: App, missionId: string): void {
   select(app, 'contracts');
@@ -106,15 +124,26 @@ describe('title', () => {
     expect(snap(app).message).toBe('');
   });
 
-  test('a new game opens the hub with the starting credits and is saved at once', () => {
+  test('a new game is saved at once and opens on the first page of the story, then the hub', () => {
     const { app, store } = makeApp();
     press(app, 'confirm');
-    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 1200, battlesWon: 0, completed: [] });
+    expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'act-1', credits: 1200 });
     expect(JSON.parse(store.data[SAVE_KEY]).credits).toBe(1200);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 1200, battlesWon: 0, completed: [] });
+    expect(JSON.parse(store.data[SAVE_KEY]).scenes).toEqual(['act-1']);
+  });
+
+  test('a page of story is shown once: the next time the game is opened it goes straight to the hub', () => {
+    const { app, store } = makeApp();
+    press(app, 'confirm', 'confirm');
+    const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
+    press(again, 'confirm');
+    expect(snap(again).screen).toBe('hub');
   });
 
   test('a valid save offers continue first and loads it', () => {
-    const { app } = makeApp(buy(fresh(), 'wpn-arc-pistol', CATALOG));
+    const { app } = makeApp({ ...buy(fresh(), 'wpn-arc-pistol', CATALOG), scenes: ['act-1'] });
     expect(ids(app)).toEqual(['continue', 'new', 'options']);
     press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'hub', credits: 600 });
@@ -139,6 +168,7 @@ describe('title', () => {
     expect(JSON.parse(store.data[SAVE_KEY]).credits).toBe(4321);
     select(app, 'new');
     select(app, 'yes');
+    skipScenes(app);
     expect(snap(app)).toMatchObject({ screen: 'hub', credits: 1200 });
   });
 
@@ -257,7 +287,7 @@ describe('battle and settlement', () => {
 
   test('a lost contract charges its costs, pays nothing and stays on offer', () => {
     // The starter build alone does not survive the Hadron exclusive contract.
-    const { app } = inHub(done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1'));
+    const { app } = inHub(done(...ACT_ONE));
     accept(app, 'choice-hadron');
     finishMission(app);
     const { net, won } = snap(app).settlement!;
@@ -313,16 +343,17 @@ describe('battle and settlement', () => {
     const store: KeyValueStore = { getItem: () => null, setItem: () => { throw new Error('quota'); }, removeItem() {} };
     const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
     press(app, 'confirm');
+    skipScenes(app);
     expect(app.snapshot()).toMatchObject({ screen: 'hub', saveFailed: true, message: 'Could not save: storage is full or blocked' });
     accept(app, 'patrol');
   });
 });
 
 describe('the campaign', () => {
-  const allButFinale = (choice: string) => done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', `choice-${choice}`);
+  const allButFinale = (choice: string) => done(...ACT_ONE, ...war(choice));
 
-  test.each(['hadron', 'lumen', 'undertow'])('the %s finale leads to its ending and back to a hub with only the patrol', (faction) => {
-    // The best gear there is, and as many attempts as it takes: the point is that the ending is reachable.
+  test.each(['hadron', 'lumen', 'undertow'])('the %s finale ends the war: its page, then the third act, then the audit is on offer', (faction) => {
+    // The best gear there is, and as many attempts as it takes: the point is that the end of the war is reachable.
     const { app } = inHub(geared(allButFinale(faction), 'juggernaut'), 11);
     let won = false;
     for (let attempt = 0; attempt < 12 && !won; attempt++) {
@@ -333,22 +364,59 @@ describe('the campaign', () => {
       if (!won) expect(snap(app).screen).toBe('hub');
     }
     expect(won).toBe(true);
-    expect(snap(app)).toMatchObject({ screen: 'ending', ending: faction });
+    expect(snap(app)).toMatchObject({ screen: 'scene', scene: `war-won-${faction}` });
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'act-3' });
     press(app, 'confirm');
     expect(snap(app).screen).toBe('hub');
+    expect(ids(app)).not.toContain('cycle');
     select(app, 'contracts');
-    expect(story(app)).toEqual(['patrol']);
-    // Seen once: returning to the hub later does not replay it.
+    expect(story(app)).toEqual(['patrol', 'audit-1']);
+    // Seen once: returning to the hub later does not replay them.
     press(app, 'cancel');
     select(app, 'garage');
     press(app, 'cancel');
     expect(snap(app).screen).toBe('hub');
   });
 
-  test('taking one exclusive contract withdraws the other two', () => {
-    const { app } = inHub(allButFinale('lumen'));
+  test('taking one exclusive contract withdraws the other two and opens that client\'s war', () => {
+    const { app } = inHub(done(...ACT_ONE, 'choice-lumen'));
     select(app, 'contracts');
-    expect(story(app)).toEqual(['patrol', 'finale-lumen']);
+    expect(story(app)).toEqual(['patrol', 'lumen-3']);
+  });
+
+  test('the first act: a client\'s second contract follows the first, then the rival, a page of story, and the choice', () => {
+    const second = inHub(done('intro-1', 'intro-2', 'lumen-1')).app;
+    select(second, 'contracts');
+    expect(story(second)).toEqual(['patrol', 'hadron-1', 'lumen-2', 'undertow-1']);
+    const rival = inHub(done(...ACT_ONE.slice(0, 8))).app;
+    select(rival, 'contracts');
+    expect(story(rival)).toEqual(['patrol', 'rival-1']);
+    const made = makeApp(done(...ACT_ONE));
+    press(made.app, 'confirm');
+    expect(snap(made.app)).toMatchObject({ screen: 'scene', scene: 'act-2' });
+    press(made.app, 'confirm');
+    select(made.app, 'contracts');
+    expect(story(made.app)).toEqual(['patrol', 'choice-hadron', 'choice-lumen', 'choice-undertow']);
+  });
+
+  test('after the audit two verdicts are offered; winning one shows the epilogue for the chosen client and ends the story', () => {
+    const { app, store } = inHub({ ...done(...toVerdict('lumen')), scenes: ['war-won-lumen', 'act-3'] });
+    select(app, 'contracts');
+    expect(story(app)).toEqual(['patrol', 'verdict-enforce', 'verdict-default']);
+    select(app, 'verdict-default');
+    expect(snap(app).screen).toBe('briefing');
+    // The fight itself is for the balance tests: here the win is booked directly.
+    app.bookSettlement({ won: true, reward: 8000, ammoCost: 0, repairCost: 0, net: 8000, lines: [] }, MISSIONS.find((m) => m.id === 'verdict-default')!);
+    app.go('hub');
+    expect(snap(app)).toMatchObject({ screen: 'ending', ending: 'lumen', scene: 'ending-default-lumen' });
+    expect(JSON.parse(store.data[SAVE_KEY]).endingSeen).toBe(false);
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+    expect(JSON.parse(store.data[SAVE_KEY])).toMatchObject({ endingSeen: true, scenes: ['war-won-lumen', 'act-3', 'ending-default-lumen'] });
+    expect(ids(app)).toContain('cycle');
+    select(app, 'contracts');
+    expect(story(app)).toEqual(['patrol']);
   });
 });
 
@@ -369,9 +437,9 @@ describe('messages', () => {
 
   test('new messages arrive as contracts are completed, newest first', () => {
     const { app } = inHub(done('intro-1', 'intro-2'));
-    expect(snap(app).menu.items.find((i) => i.id === 'messages')!.note).toBe('3 new');
+    expect(snap(app).menu.items.find((i) => i.id === 'messages')!.note).toBe('4 new');
     select(app, 'messages');
-    expect(ids(app)).toEqual(['clients', 'after-intro-1', 'welcome']);
+    expect(ids(app)).toEqual(['ranks', 'clients', 'after-intro-1', 'welcome']);
   });
 });
 
@@ -457,7 +525,7 @@ describe('closing the game at an awkward moment', () => {
   });
 
   test('an ending that was never seen is shown the next time the hub opens', () => {
-    const finished = { ...done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-undertow', 'finale-undertow') };
+    const finished = { ...done(...toVerdict('undertow'), 'verdict-enforce') };
     const { app, store } = makeApp(finished);
     press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'ending', ending: 'undertow' });
@@ -470,11 +538,11 @@ describe('closing the game at an awkward moment', () => {
     expect(snap(again).screen).toBe('hub');
   });
 
-  test('the ending can be read again as a message afterwards', () => {
-    const finished = { ...done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-lumen', 'finale-lumen'), endingSeen: true };
+  test('the endings can be read again as messages afterwards: the war\'s and the story\'s, for the client that was chosen', () => {
+    const finished = { ...done(...toVerdict('lumen'), 'verdict-default'), endingSeen: true };
     const { app } = inHub(finished);
     select(app, 'messages');
-    expect(ids(app)[0]).toBe('ending-lumen');
+    expect(ids(app).filter((id) => id.startsWith('ending-') || id.startsWith('epilogue-'))).toEqual(['epilogue-default-lumen', 'ending-lumen']);
   });
 
   test('a pilot who owns no weapon at all is issued a rifle on reaching the hub', () => {
@@ -619,7 +687,7 @@ describe('open contracts', () => {
 
 describe('a new cycle', () => {
   const finished = (): GameState => ({
-    ...done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-lumen', 'finale-lumen'),
+    ...done(...toVerdict('lumen'), 'verdict-enforce'),
     endingSeen: true, credits: 5000, xp: 700, arenaRank: 2,
   });
 
@@ -637,6 +705,9 @@ describe('a new cycle', () => {
     expect(snap(app)).toMatchObject({ screen: 'hub', cycle: 0 });
     select(app, 'cycle');
     select(app, 'yes');
+    // The story starts again from its first page.
+    expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'act-1' });
+    press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'hub', cycle: 1, completed: [], credits: 5000, xp: 700, arenaRank: 2 });
     expect(JSON.parse(store.data[SAVE_KEY]).cycle).toBe(1);
     expect(ids(app)).not.toContain('cycle');
@@ -704,6 +775,7 @@ describe('options', () => {
     const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 5, music, sfx: sfx as never });
     expect(tracks.at(-1)).toBe('menu');
     press(app, 'confirm');
+    skipScenes(app);
     accept(app, 'patrol');
     expect(tracks.at(-1)).toBe('battle');
     finishMission(app);

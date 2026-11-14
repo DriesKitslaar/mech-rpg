@@ -24,6 +24,8 @@ function inHub(saved?: GameState, seed = 5) {
   const store = memoryStore(saved ? { [SAVE_KEY]: JSON.stringify(saved) } : {});
   const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed });
   app.onInput('confirm');
+  // Past whatever page of story is due.
+  for (let i = 0; i < 6 && ['scene', 'ending'].includes((app.snapshot() as Snap).screen); i++) app.onInput('confirm');
   return { app, store };
 }
 const snap = (app: App) => app.snapshot() as Snap;

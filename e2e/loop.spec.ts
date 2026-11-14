@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { choose, finishMission, open, press, snap, waitForPhase, waitForScreen } from './helpers';
+import { choose, enterHub, finishMission, open, press, snap, waitForPhase, waitForScreen } from './helpers';
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
@@ -10,7 +10,11 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await open(page);
   await page.screenshot({ path: shot('title') });
   await choose(page, 'new');
-  await waitForScreen(page, 'hub');
+  // A new game opens on the first page of the story.
+  await waitForScreen(page, 'scene');
+  expect((await snap(page)).scene).toBe('act-1');
+  await page.screenshot({ path: shot('scene-act-1') });
+  await enterHub(page);
   await page.screenshot({ path: shot('hub') });
 
   // Shop: the Arc Pistol is on the hand tab, eight tabs to the right.
@@ -91,6 +95,6 @@ test('a corrupt save does not stop the game from starting', async ({ page }) => 
   await open(page);
   expect((await snap(page)).menu.items.map((i) => i.id)).toEqual(['new', 'options']);
   await choose(page, 'new');
-  await waitForScreen(page, 'hub');
+  await enterHub(page);
   expect(errors).toEqual([]);
 });

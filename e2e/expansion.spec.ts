@@ -4,14 +4,18 @@ import { buy, equip, newGame, type GameState } from '../src/core/game';
 import { MISSIONS } from '../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
 import { REFERENCE_BUILDS } from '../src/content/referenceBuilds';
-import { choose, finishMission, open, press, snap, waitForPhase, waitForScreen } from './helpers';
+import { choose, enterHub, finishMission, open, press, snap, waitForPhase, waitForScreen } from './helpers';
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
 /** A pilot who finished the story with late-game gear, some experience and a few arena wins. */
 function veteran(): GameState {
   let g = newGame(CATALOG, STARTER_BUILD);
-  for (const id of ['intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-lumen', 'finale-lumen']) g = completeMission(g, id, MISSIONS);
+  const story = [
+    'intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
+    'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce',
+  ];
+  for (const id of story) g = completeMission(g, id, MISSIONS);
   g = { ...g, credits: 999999 };
   for (const [slot, id] of Object.entries(REFERENCE_BUILDS.tier6)) {
     g = buy(g, id, CATALOG);
@@ -98,6 +102,8 @@ test('arena, pilot, options, open contracts and a new cycle', async ({ page }) =
   await choose(page, 'cycle');
   await page.screenshot({ path: shot('cycle-question') });
   await choose(page, 'yes');
+  // The story starts again from its first page.
+  await enterHub(page);
   const cycled = await snap(page) as any;
   expect(cycled).toMatchObject({ screen: 'hub', cycle: 1, completed: [], arenaRank: 4 });
   await page.reload();

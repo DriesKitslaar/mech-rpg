@@ -80,6 +80,11 @@ export const SHOP_PARTS: Part[] = [
   frame('core-mantis', 'Mantis Thorax', 'core', 200, r(0.15, 0.1, 0.35), 200, 55, 1500, 'undertow'),
   frame('arms-mantis', 'Mantis Claws', 'arms', 100, r(0.1, 0.1, 0.3), 95, 40, 1100, 'undertow', { aim: 10 }),
   frame('legs-mantis', 'Mantis Hoppers', 'legs', 140, r(0.15, 0.1, 0.3), 160, 55, 1500, 'undertow', { capacity: 950, mobility: 44, legType: 'reverse' }),
+  // Auditor: Meridian Mutual's own frame. Nothing about it is cheap and nothing about it is weak. Sold once the audit is over.
+  frame('head-auditor', 'Auditor Mask', 'head', 85, r(0.25, 0.25, 0.2), 45, 30, 3000, 'freelance', { aim: 18 }),
+  frame('core-auditor', 'Auditor Core', 'core', 330, r(0.3, 0.3, 0.25), 340, 80, 4000, 'freelance'),
+  frame('arms-auditor', 'Auditor Arms', 'arms', 165, r(0.25, 0.25, 0.2), 160, 50, 3000, 'freelance', { aim: 12 }),
+  frame('legs-auditor', 'Auditor Greaves', 'legs', 220, r(0.25, 0.25, 0.2), 270, 70, 3600, 'freelance', { capacity: 1500, mobility: 30 }),
   // Legs that are not legs. Each changes a rule of its own; see LEG_TYPES.
   frame('legs-crawler', 'Crawler Treads', 'legs', 300, r(0.35, 0.1, 0.25), 420, 50, 2200, 'hadron', { capacity: 2200, mobility: 8, legType: 'tank' }),
   frame('legs-spider', 'Spider Quad', 'legs', 220, r(0.2, 0.2, 0.2), 300, 70, 2800, 'freelance', { capacity: 1500, mobility: 22, legType: 'quad' }),
@@ -118,6 +123,9 @@ export const SHOP_PARTS: Part[] = [
   weapon('wpn-disruptor', 'Disruptor', 'hand', 'energy', 36, 84, 110, 24, null, 0, 75, 2300, 'lumen', 'drain', 80),
   weapon('wpn-plasma', 'Plasma Thrower', 'hand', 'energy', 50, 86, 120, 28, null, 0, 100, 2100, 'hadron', 'thermal', 22),
   weapon('wpn-coil-pistol', 'Coil Pistol', 'hand', 'kinetic', 100, 88, 100, 22, 10, 50, 90, 1300, 'hadron', undefined, undefined, { charge: true }),
+  // Meridian's sidearms, on the market once the audit is over.
+  weapon('wpn-writ', 'Writ Rifle', 'hand', 'kinetic', 70, 88, 120, 26, 16, 55, 120, 3800, 'freelance', 'pierce'),
+  weapon('wpn-gavel', 'Gavel', 'hand', 'kinetic', 105, 90, 120, 12, null, 0, 150, 3600, 'freelance', undefined, undefined, { melee: true, impact: 180 }),
   shield('shd-riot', 'Riot Shield', 0.4, 90, 1100, 'hadron'),
   shield('shd-barrier', 'Barrier Emitter', 0.32, 50, 2200, 'lumen'),
   shield('shd-tower', 'Tower Shield', 0.25, 190, 2600, 'hadron'),
@@ -137,6 +145,7 @@ export const SHOP_PARTS: Part[] = [
   weapon('wpn-buzzsaw', 'Buzzsaw Battery', 'shoulder', 'kinetic', 22, 66, 140, 38, 12, 80, 210, 2500, 'hadron', 'burst', 4),
   weapon('wpn-storm-array', 'Storm Array', 'shoulder', 'energy', 38, 82, 170, 40, null, 0, 150, 3000, 'lumen', 'salvo'),
   weapon('wpn-gauss', 'Gauss Driver', 'shoulder', 'kinetic', 210, 86, 200, 50, 6, 160, 280, 4200, 'freelance', 'pierce', undefined, { charge: true }),
+  weapon('wpn-decree', 'Decree Lance', 'shoulder', 'energy', 185, 90, 180, 42, null, 0, 170, 4400, 'freelance', 'drain', 60, { charge: true }),
 
   // Boosters: thrust is the evasion a boost gives, cost the share of a turn's energy it takes.
   // The stock parts weigh and drain nothing: they are what every mech had built in.
@@ -202,6 +211,71 @@ const ENEMY_PARTS: Part[] = [
   frame('core-tower', 'Tower Column', 'core', 160, r(0.3, 0.2, 0.2), 300, 0, 0, undefined),
   generator('gen-tower', 'Tower Capacitor', 180, 20, 60, 0),
   weapon('wpn-tower-lance', 'Sentry Lance', 'shoulder', 'kinetic', 44, 88, 130, 40, null, 0, 200, 0),
+
+  // Units that help the others. Each is frail: the point is to shoot it first.
+  frame('core-shield-drone', 'Projector Shell', 'core', 80, r(0.1, 0.3, 0.1), 80, 0, 0, undefined),
+  frame('core-repair-drone', 'Tender Shell', 'core', 70, r(0.1, 0.1, 0.1), 80, 0, 0, undefined),
+  weapon('wpn-drone-welder', 'Arc Welder', 'shoulder', 'energy', 10, 72, 50, 8, null, 0, 30, 0),
+  frame('core-jammer', 'Mast Column', 'core', 220, r(0.3, 0.3, 0.2), 300, 0, 0, undefined),
+  // The walking bomb: no weapon, a fuse.
+  frame('core-bomb', 'Charge Drum', 'core', 80, r(0.25, 0.1, 0.3), 120, 0, 0, undefined),
+  frame('legs-bomb', 'Scuttle Legs', 'legs', 50, r(0.2, 0.1, 0.2), 60, 0, 0, undefined, { capacity: 600, mobility: 18 }),
+  // The drone carrier: thick, slow, and never alone for long.
+  frame('core-carrier', 'Carrier Hull', 'core', 300, r(0.4, 0.2, 0.15), 600, 0, 0, undefined),
+  frame('legs-carrier', 'Carrier Wheels', 'legs', 150, r(0.3, 0.2, 0.1), 300, 0, 0, undefined, { capacity: 2500, mobility: 10 }),
+  generator('gen-carrier', 'Carrier Plant', 200, 20, 150, 0),
+  weapon('wpn-carrier-gun', 'Deck Autocannon', 'shoulder', 'kinetic', 26, 70, 90, 20, null, 0, 120, 0),
+  // More weapons for enemy mechs.
+  weapon('wpn-enemy-longbow', 'Guard Longbow', 'hand', 'kinetic', 96, 88, 150, 34, null, 0, 140, 0, undefined, 'pierce', undefined, { charge: true }),
+  weapon('wpn-enemy-claw', 'Ripper Claw', 'hand', 'kinetic', 40, 86, 90, 12, null, 0, 90, 0, undefined, undefined, undefined, { melee: true, impact: 80 }),
+  weapon('wpn-enemy-pinpoint', 'Sable Rifle', 'hand', 'kinetic', 30, 90, 120, 26, null, 0, 120, 0, undefined, 'pierce'),
+  weapon('wpn-enemy-edge', 'Duelling Edge', 'hand', 'energy', 44, 90, 110, 14, null, 0, 60, 0, undefined, undefined, undefined, { melee: true, impact: 70 }),
+  weapon('wpn-enemy-cutter', 'Scrap Cutter', 'hand', 'energy', 40, 88, 100, 16, null, 0, 70, 0, undefined, 'thermal', 14, { melee: true, impact: 60 }),
+  weapon('wpn-enemy-flak', 'Yard Flak', 'hand', 'explosive', 16, 66, 85, 22, null, 0, 115, 0, undefined, 'burst', 2),
+  weapon('wpn-enemy-siege', 'Foreman Cannon', 'shoulder', 'explosive', 66, 60, 130, 38, null, 0, 260, 0),
+  // Meridian Mutual.
+  frame('core-lien-drone', 'Lien Shell', 'core', 95, r(0.2, 0.2, 0.2), 80, 0, 0, undefined),
+  frame('legs-lien-drone', 'Ducted Fans', 'legs', 55, r(0.1, 0.1, 0.1), 50, 0, 0, undefined, { capacity: 400, mobility: 40 }),
+  generator('gen-lien-drone', 'Lien Cell', 110, 20, 30, 0),
+  weapon('wpn-lien-clamp', 'Lien Clamp', 'shoulder', 'energy', 18, 76, 80, 14, null, 0, 40, 0, undefined, 'drain', 20),
+  weapon('wpn-enemy-writ', 'Service Writ', 'hand', 'kinetic', 30, 82, 120, 26, null, 0, 120, 0, undefined, 'pierce'),
+  weapon('wpn-enemy-seizer', 'Seizure Coil', 'hand', 'energy', 18, 80, 100, 20, null, 0, 90, 0, undefined, 'drain', 25),
+  weapon('wpn-enemy-gavel', 'Service Gavel', 'hand', 'kinetic', 44, 88, 110, 14, null, 0, 150, 0, undefined, undefined, undefined, { melee: true, impact: 100 }),
+  weapon('wpn-enemy-decree', 'Service Decree', 'shoulder', 'energy', 56, 86, 170, 40, null, 0, 170, 0, undefined, 'drain', 25, { charge: true }),
+  // The Strip-Miner: armour against bullets, tracks, and a wheel that throws rubble.
+  frame('core-miner', 'Miner Hull', 'core', 480, r(0.45, 0.15, 0.3), 900, 0, 0, undefined),
+  frame('legs-miner', 'Miner Tracks', 'legs', 220, r(0.45, 0.15, 0.25), 600, 0, 0, undefined, { capacity: 6000, mobility: 6, legType: 'tank' }),
+  frame('arms-miner', 'Bucket Wheel Arm', 'arms', 180, r(0.4, 0.1, 0.2), 500, 0, 0, undefined),
+  frame('head-miner', 'Operator Cab', 'head', 90, r(0.2, 0.1, 0.1), 100, 0, 0, undefined, { aim: 6 }),
+  generator('gen-miner', 'Miner Diesel', 330, 30, 400, 0),
+  weapon('wpn-miner-wheel', 'Bucket Wheel', 'hand', 'kinetic', 20, 70, 110, 22, null, 0, 300, 0, undefined, 'burst', 3),
+  weapon('wpn-miner-charge', 'Blasting Charges', 'shoulder', 'explosive', 52, 62, 130, 34, null, 0, 300, 0),
+  weapon('wpn-miner-chute', 'Rock Chute', 'hand', 'kinetic', 28, 68, 80, 14, null, 0, 300, 0, undefined, undefined, undefined, { impact: 80 }),
+  // The Overseer: floats, sees everything, laughs at energy weapons.
+  frame('core-overseer', 'Overseer Core', 'core', 300, r(0.2, 0.45, 0.2), 700, 0, 0, undefined),
+  frame('legs-overseer', 'Lift Ring', 'legs', 180, r(0.15, 0.4, 0.15), 300, 0, 0, undefined, { capacity: 5000, mobility: 16, legType: 'hover' }),
+  frame('head-overseer', 'Great Eye', 'head', 110, r(0.1, 0.4, 0.1), 100, 0, 0, undefined, { aim: 14 }),
+  generator('gen-overseer', 'Overseer Reactor', 360, 34, 300, 0),
+  weapon('wpn-overseer-eye', 'Eye Beam', 'shoulder', 'energy', 58, 88, 160, 36, null, 0, 200, 0, undefined, undefined, undefined, { charge: true }),
+  weapon('wpn-overseer-ring', 'Emitter Ring', 'hand', 'energy', 12, 80, 100, 20, null, 0, 150, 0, undefined, 'twin'),
+  // The Leviathan: a barge that rams, and that blasts barely scratch.
+  frame('core-leviathan', 'Barge Hull', 'core', 370, r(0.3, 0.2, 0.45), 1200, 0, 0, undefined),
+  frame('legs-leviathan', 'Wheel Rows', 'legs', 200, r(0.25, 0.15, 0.35), 500, 0, 0, undefined, { capacity: 8000, mobility: 10 }),
+  frame('arms-leviathan', 'Deck Crane', 'arms', 160, r(0.2, 0.1, 0.3), 300, 0, 0, undefined),
+  frame('head-leviathan', 'Barge Bridge', 'head', 100, r(0.2, 0.1, 0.2), 100, 0, 0, undefined, { aim: 4 }),
+  generator('gen-leviathan', 'Barge Boilers', 340, 28, 500, 0),
+  weapon('wpn-leviathan-jaw', 'Scrap Jaw', 'hand', 'kinetic', 54, 84, 120, 18, null, 0, 400, 0, undefined, undefined, undefined, { melee: true, impact: 90 }),
+  weapon('wpn-leviathan-gun', 'Deck Gun', 'shoulder', 'explosive', 32, 64, 110, 28, null, 0, 250, 0),
+  // The Adjuster: the last word of Meridian Mutual.
+  frame('core-adjuster', 'Seal of Office', 'core', 480, r(0.35, 0.35, 0.3), 1500, 0, 0, undefined),
+  frame('legs-adjuster', 'Plinth', 'legs', 260, r(0.35, 0.3, 0.3), 800, 0, 0, undefined, { capacity: 9000, mobility: 8, legType: 'tank' }),
+  frame('arms-adjuster', 'Scales of Office', 'arms', 220, r(0.3, 0.3, 0.25), 400, 0, 0, undefined, { aim: 8 }),
+  frame('head-adjuster', 'Mask of Record', 'head', 130, r(0.25, 0.3, 0.2), 120, 0, 0, undefined, { aim: 12 }),
+  generator('gen-adjuster', 'Reserve Fund', 420, 36, 600, 0),
+  weapon('wpn-adjuster-writ', 'Final Notice', 'hand', 'kinetic', 30, 84, 120, 24, null, 0, 300, 0, undefined, 'pierce'),
+  weapon('wpn-adjuster-lien', 'Garnishment', 'hand', 'energy', 20, 82, 100, 18, null, 0, 200, 0, undefined, 'drain', 30),
+  weapon('wpn-adjuster-decree', 'Foreclosure', 'shoulder', 'energy', 70, 88, 180, 40, null, 0, 400, 0, undefined, 'drain', 30, { charge: true }),
+  weapon('wpn-adjuster-liquidation', 'Liquidation', 'hand', 'kinetic', 12, 78, 100, 20, null, 0, 300, 0, undefined, 'burst', 3),
 ];
 
 /** The contract (or 'choice' for any exclusive contract) that puts a part in the shop. Unlisted parts are always in stock. */
@@ -241,6 +315,9 @@ export const SHOP_UNLOCKS: Record<string, string> = {
   // More arena prizes.
   'mod-oracle': 'arena:3', 'bst-phase': 'arena:5', 'legs-spider': 'arena:6', 'mod-aegis': 'arena:6', 'fcs-omni': 'arena:7',
   'wpn-gauss': 'arena:8', 'gen-singularity': 'arena:10',
+  // Meridian's stock comes on the market when the audit is over, whichever way it ended.
+  'head-auditor': 'verdict', 'core-auditor': 'verdict', 'arms-auditor': 'verdict', 'legs-auditor': 'verdict',
+  'wpn-writ': 'verdict', 'wpn-gavel': 'verdict', 'wpn-decree': 'verdict',
 };
 
 export const CATALOG: Catalog = Object.fromEntries([...SHOP_PARTS, ...ENEMY_PARTS].map((part) => [part.id, part]));

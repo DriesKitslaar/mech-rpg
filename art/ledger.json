@@ -1329,5 +1329,73 @@
    },
    "total_tokens": 270
   }
+ },
+ {
+  "id": "wpn-writ",
+  "at": "2026-11-14T11:22:37.290Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.03,
+  "failed": true
+ },
+ {
+  "id": "wpn-gavel",
+  "at": "2026-11-14T11:22:47.642Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1177,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 153
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1373
+  }
+ },
+ {
+  "id": "wpn-decree",
+  "at": "2026-11-14T11:23:06.206Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1180,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 156
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1376
+  }
+ },
+ {
+  "id": "wpn-writ",
+  "at": "2026-11-14T11:23:26.846Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1188,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 164
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1384
+  }
  }
 ]

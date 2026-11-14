@@ -1,15 +1,26 @@
 import { validatePlayerBuild } from '../../src/core/build';
+import type { Faction, Mission } from '../../src/core/campaign';
+import { startMissionBattle } from '../../src/core/mission';
 import type { Build, FramePart, Weapon } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
-import { ENDINGS, MESSAGES, MISSIONS } from '../../src/content/missions';
+import { ENDINGS, EPILOGUES, MESSAGES, MISSIONS } from '../../src/content/missions';
 import { CATALOG, DEMO_BUILD, SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../../src/content/parts';
+import { SCENES } from '../../src/content/scenes';
 import SPRITES from '../../src/content/sprites.json';
+import { TALK_CHARS, TALK_LINES } from '../../src/ui/battleScreen';
+import { BRIEFING_CHARS, briefingRows, objectiveLines } from '../../src/ui/briefingScreen';
+import { SCENE_LINES, sceneRows } from '../../src/ui/sceneScreen';
+import { charsFor, wrap } from '../../src/ui/widgets';
 
-const SLOT_KIND: Record<keyof Build, string> = {
-  head: 'head', core: 'core', arms: 'arms', legs: 'legs', generator: 'generator',
-  booster: 'booster', fcs: 'fcs', module: 'module',
-  rightHand: 'weapon', leftHand: 'weapon', shoulder: 'weapon',
+/** What may sit in each slot: a shield goes where a left-hand weapon would. */
+const SLOT_KINDS: Record<keyof Build, string[]> = {
+  head: ['head'], core: ['core'], arms: ['arms'], legs: ['legs'], generator: ['generator'],
+  booster: ['booster'], fcs: ['fcs'], module: ['module'],
+  rightHand: ['weapon'], leftHand: ['weapon', 'shield'], shoulder: ['weapon'],
 };
+const FACTIONS: Faction[] = ['hadron', 'lumen', 'undertow'];
+/** The conditions something can wait for that are not the id of a contract. */
+const isKeyword = (condition: string): boolean => ['start', 'choice', 'finale', 'verdict'].includes(condition) || /^arena:([1-9]|10)$/.test(condition);
 const builds: [string, Build][] = [
   ['starter', STARTER_BUILD], ['demo', DEMO_BUILD],
   ...Object.values(ENEMIES).map((e): [string, Build] => [e.id, e.build]),
@@ -18,7 +29,7 @@ const builds: [string, Build][] = [
 test.each(builds)('build %s references existing parts of the right kind', (_name, build) => {
   for (const [slot, id] of Object.entries(build)) {
     expect(CATALOG[id], `${slot}: ${id}`).toBeDefined();
-    expect(CATALOG[id].kind).toBe(SLOT_KIND[slot as keyof Build]);
+    expect(SLOT_KINDS[slot as keyof Build], `${slot}: ${id}`).toContain(CATALOG[id].kind);
   }
 });
 
@@ -52,15 +63,15 @@ describe('shop catalogue', () => {
 
   test('the shelf: frame parts, generators, weapons, shields, boosters, fire control and modules', () => {
     const count = (kind: string) => SHOP_PARTS.filter((p) => p.kind === kind).length;
-    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([7, 7, 7, 10]);
+    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([8, 8, 8, 11]);
     expect(count('generator')).toBe(8);
     expect(count('booster')).toBe(7);
     expect(count('fcs')).toBe(7);
     expect(count('module')).toBe(11);
-    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(22);
-    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(16);
+    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(24);
+    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(17);
     expect(count('shield')).toBe(3);
-    expect(SHOP_PARTS).toHaveLength(105);
+    expect(SHOP_PARTS).toHaveLength(112);
   });
 
   test('every trait has what it needs, and each trait is used', () => {
@@ -105,7 +116,8 @@ describe('shop catalogue', () => {
   });
 
   test.each(['scout-mk1|hauler|rigger|strider', 'halo|halo|halo|halo', 'bulwark|bulwark|bulwark|bulwark', 'ronin|ronin|ronin|ronin',
-    'wraith|wraith|wraith|wraith', 'colossus|colossus|colossus|colossus', 'mantis|mantis|mantis|mantis'])(
+    'wraith|wraith|wraith|wraith', 'colossus|colossus|colossus|colossus', 'mantis|mantis|mantis|mantis',
+    'auditor|auditor|auditor|auditor'])(
     'family %s makes a valid build with every generator', (family) => {
       const [head, core, arms, legs] = family.split('|');
       for (const generator of ['gen-kd1', 'gen-prism', 'gen-furnace']) {
@@ -171,21 +183,36 @@ describe('sprites', () => {
 });
 
 describe('campaign content', () => {
-  test('there are eleven story contracts and one patrol, with unique ids', () => {
-    expect(MISSIONS.filter((m) => m.phase !== 'patrol')).toHaveLength(11);
-    expect(MISSIONS.filter((m) => m.phase === 'patrol')).toHaveLength(1);
+  const story = MISSIONS.filter((m) => m.phase !== 'patrol');
+  const of = (phase: Mission['phase']) => MISSIONS.filter((m) => m.phase === phase);
+
+  test('there are twenty-nine story contracts and one patrol, with unique ids, none of them called like the archive', () => {
+    expect(story).toHaveLength(29);
+    expect(of('patrol')).toHaveLength(1);
     expect(new Set(MISSIONS.map((m) => m.id)).size).toBe(MISSIONS.length);
+    expect(MISSIONS.some((m) => m.id === 'archive')).toBe(false);
   });
 
-  test('two introductions, and one contract per client in each later phase', () => {
-    expect(MISSIONS.filter((m) => m.phase === 'intro')).toHaveLength(2);
-    for (const phase of ['faction', 'choice', 'finale'] as const) {
-      expect(MISSIONS.filter((m) => m.phase === phase).map((m) => m.faction).sort()).toEqual(['hadron', 'lumen', 'undertow']);
+  test('the story has its shape: two introductions, two contracts a client, the rival, the choice, three a client, the finales, the audit, two verdicts', () => {
+    expect(of('intro')).toHaveLength(2);
+    expect(of('rival')).toHaveLength(1);
+    expect(of('audit')).toHaveLength(3);
+    for (const faction of FACTIONS) {
+      const mine = (phase: Mission['phase']) => of(phase).filter((m) => m.faction === faction);
+      expect(mine('faction').map((m) => [m.id, m.after])).toEqual([[`${faction}-1`, undefined], [`${faction}-2`, `${faction}-1`]]);
+      expect(mine('choice').map((m) => m.id)).toEqual([`choice-${faction}`]);
+      expect(mine('path').map((m) => m.id)).toEqual([3, 4, 5].map((n) => `${faction}-${n}`));
+      expect(mine('finale').map((m) => m.id)).toEqual([`finale-${faction}`]);
     }
+    expect(of('verdict').map((m) => m.verdict).sort()).toEqual(['default', 'enforce']);
+    // Only the contracts that belong to a client name one.
+    for (const m of [...of('intro'), ...of('rival'), ...of('audit'), ...of('verdict')]) expect(m.faction, m.id).toBeUndefined();
   });
 
   test.each(MISSIONS.map((m) => [m.id, m] as const))('contract %s is complete and fights known enemies', (_id, mission) => {
     expect(mission.title.length).toBeGreaterThan(0);
+    // The hub lists the title with the fee beside it.
+    expect(mission.title.length).toBeLessThanOrEqual(18);
     expect(mission.briefing.length).toBeGreaterThan(0);
     expect(mission.debrief.length).toBeGreaterThan(0);
     expect(mission.reward).toBeGreaterThan(0);
@@ -200,41 +227,137 @@ describe('campaign content', () => {
     if (mission.portrait) expect(mission.portrait in SPRITES, mission.portrait).toBe(true);
   });
 
+  test.each(MISSIONS.map((m) => [m.id, m] as const))('every battle of %s can be started as it is written', (_id, mission) => {
+    for (let i = 0; i < mission.battles.length; i++) {
+      const battle = mission.battles[i];
+      const state = startMissionBattle(DEMO_BUILD, mission, i, ENEMIES, CATALOG, 1);
+      expect(state.objective.type).toBe(battle.objective?.type ?? 'destroy');
+      // A machine wanted in one piece is not for an ally to shoot at, and a named enemy must be worth naming.
+      if (battle.objective?.type === 'disable') expect(battle.support, `${mission.id} battle ${i + 1}`).toBeUndefined();
+      if (battle.objective?.type === 'leader') expect(battle.enemies.length, `${mission.id} battle ${i + 1}`).toBeGreaterThan(1);
+    }
+  });
+
+  test.each(MISSIONS.map((m) => [m.id, m] as const))('the words of %s fit where they are shown', (_id, mission) => {
+    // The briefing: every line is drawn, above whatever lines of objectives there are.
+    const rows = briefingRows(mission);
+    expect(objectiveLines(mission).length, 'objective lines').toBeLessThanOrEqual(3);
+    for (const line of objectiveLines(mission)) expect(line.length, line).toBeLessThanOrEqual(BRIEFING_CHARS);
+    let y = 0;
+    for (const paragraph of mission.briefing) {
+      for (const _line of wrap(paragraph, BRIEFING_CHARS)) {
+        expect(y, `briefing of ${mission.id} is too long`).toBeLessThanOrEqual((rows - 1) * 11);
+        y += 11;
+      }
+      y += 4;
+    }
+    // The debrief: three lines on the settlement.
+    expect(wrap(mission.debrief, charsFor(210)).length, mission.debrief).toBeLessThanOrEqual(3);
+    // Talk: three lines in the box, said at a moment that exists, by someone with a face that exists.
+    for (const battle of mission.battles) {
+      for (const line of battle.talk ?? []) {
+        expect(wrap(line.text, TALK_CHARS).length, line.text).toBeLessThanOrEqual(TALK_LINES);
+        expect(line.who.length).toBeGreaterThan(0);
+        expect(line.at === 'start' || line.at === 'win' || (Number.isInteger(line.at) && (line.at as number) >= 1), String(line.at)).toBe(true);
+        if (line.portrait) expect(line.portrait in SPRITES, line.portrait).toBe(true);
+      }
+    }
+  });
+
   test('every enemy has a sprite and a build made of known parts', () => {
     for (const enemy of Object.values(ENEMIES)) {
       expect(enemy.sprite in SPRITES, enemy.sprite).toBe(true);
       for (const id of Object.values(enemy.build)) expect(CATALOG[id], `${enemy.id}: ${id}`).toBeDefined();
+      if (enemy.portrait) expect(enemy.portrait in SPRITES, enemy.portrait).toBe(true);
     }
-    expect(Object.keys(ENEMIES)).toHaveLength(10);
+    expect(Object.keys(ENEMIES)).toHaveLength(30);
   });
 
-  test('enemies that are drawn from their parts have a sprite for every part they show', () => {
+  test('every enemy appears in the story', () => {
+    const used = new Set(MISSIONS.flatMap((m) => m.battles.flatMap((b) => b.enemies)));
+    expect(Object.keys(ENEMIES).filter((id) => !used.has(id))).toEqual([]);
+  });
+
+  test('enemies that are drawn from their parts have a sprite for every part they show, in every phase', () => {
     const composed = Object.values(ENEMIES).filter((e) => e.composed);
-    expect(composed.map((e) => e.id).sort()).toEqual(['heavy-mech', 'juggernaut', 'light-mech', 'rival', 'stalker']);
+    expect(composed.map((e) => e.id).sort()).toEqual([
+      'ashfall-unbound', 'assessor', 'bailiff', 'bulldozer', 'heavy-mech', 'juggernaut', 'krell', 'light-mech', 'marksman',
+      'ripper', 'rival', 'rival-2', 'rook', 'sable', 'stalker',
+    ]);
     for (const enemy of composed) {
-      const { head, core, arms, legs, rightHand, leftHand, shoulder } = enemy.build;
-      const ids = [head, core, legs, `${arms}.near`, `${arms}.far`, rightHand, leftHand, shoulder].filter(Boolean) as string[];
+      const { head, core, arms, legs } = enemy.build;
+      const carried = [enemy.build, ...(enemy.phases ?? []).map((p) => p.refit ?? {})].flatMap((b) => [b.rightHand, b.leftHand, b.shoulder]);
+      const ids = [head, core, legs, `${arms}.near`, `${arms}.far`, ...carried].filter(Boolean) as string[];
       for (const id of ids) expect(id in SPRITES, `${enemy.id}: ${id}`).toBe(true);
     }
   });
 
-  test('every client has an ending', () => {
+  test('what enemies can do is well formed: phases in order, parts named briefly, carriers launching known units', () => {
+    for (const enemy of Object.values(ENEMIES)) {
+      const shares = (enemy.phases ?? []).map((p) => p.at);
+      for (const [i, at] of shares.entries()) {
+        expect(at, enemy.id).toBeGreaterThan(0);
+        expect(at, enemy.id).toBeLessThan(i === 0 ? 1 : shares[i - 1]);
+      }
+      for (const phase of enemy.phases ?? []) {
+        expect(phase.line, enemy.id).toBeTruthy();
+        expect(wrap(phase.line!, TALK_CHARS).length, phase.line).toBeLessThanOrEqual(TALK_LINES);
+        for (const id of Object.values(phase.refit ?? {})) expect(CATALOG[id!], `${enemy.id}: ${id}`).toBeDefined();
+      }
+      // The part column of the battle panel holds five characters with room to spare before the bar.
+      for (const name of Object.values(enemy.partNames ?? {})) expect(name.length, `${enemy.id}: ${name}`).toBeLessThanOrEqual(5);
+      const { carrier, bomb, aegis, jam, mend } = enemy.abilities ?? {};
+      if (carrier) {
+        expect(ENEMIES[carrier.unit.id], enemy.id).toBe(carrier.unit);
+        expect(carrier.unit.abilities?.carrier, enemy.id).toBeUndefined();
+        expect(carrier.every).toBeGreaterThanOrEqual(1);
+      }
+      if (bomb) expect(bomb.fuse).toBeGreaterThanOrEqual(2);
+      if (aegis !== undefined) expect(aegis > 0 && aegis < 1, enemy.id).toBe(true);
+      if (jam !== undefined) expect(jam > 0 && jam <= 30, enemy.id).toBe(true);
+      if (mend !== undefined) expect(mend > 0 && mend <= 0.5, enemy.id).toBe(true);
+    }
+  });
+
+  test('every client has an end to their war, and every verdict an epilogue for every client', () => {
     expect(Object.keys(ENDINGS).sort()).toEqual(['hadron', 'lumen', 'undertow']);
+    expect(Object.keys(EPILOGUES).sort()).toEqual(['default', 'enforce']);
+    for (const verdict of ['enforce', 'default'] as const) expect(Object.keys(EPILOGUES[verdict]).sort()).toEqual(['hadron', 'lumen', 'undertow']);
+    const titles = [...Object.values(ENDINGS), ...Object.values(EPILOGUES).flatMap((e) => Object.values(e))].map((e) => e.title);
+    expect(new Set(titles).size).toBe(9);
+  });
+
+  test('scenes: unique ids, real conditions and pictures, text that fits the page, and an ending for every way the story can end', () => {
+    expect(new Set(SCENES.map((s) => s.id)).size).toBe(SCENES.length);
+    for (const scene of SCENES) {
+      for (const condition of [scene.after, ...(scene.before ? [scene.before] : [])]) {
+        expect(isKeyword(condition) || MISSIONS.some((m) => m.id === condition), `${scene.id}: ${condition}`).toBe(true);
+      }
+      if (scene.picture) expect(scene.picture in SPRITES, scene.picture).toBe(true);
+      expect(sceneRows(scene), scene.id).toBeLessThanOrEqual(SCENE_LINES);
+      expect(scene.title.length, scene.id).toBeLessThanOrEqual(14);
+    }
+    expect(SCENES.filter((s) => !s.ending && !s.faction).map((s) => s.id)).toEqual(['act-1', 'act-2', 'act-3']);
+    const endings = SCENES.filter((s) => s.ending);
+    expect(endings.map((s) => `${s.after}|${s.faction}`).sort()).toEqual(
+      ['enforce', 'default'].flatMap((v) => FACTIONS.map((f) => `verdict-${v}|${f}`)).sort());
   });
 
   test('messages have unique ids and wait for events that exist', () => {
     expect(new Set(MESSAGES.map((m) => m.id)).size).toBe(MESSAGES.length);
     for (const message of MESSAGES) {
-      const known = message.after === 'start' || message.after === 'choice' || MISSIONS.some((m) => m.id === message.after);
-      expect(known, message.id).toBe(true);
+      expect(isKeyword(message.after) || MISSIONS.some((m) => m.id === message.after), message.id).toBe(true);
       if (message.portrait) expect(message.portrait in SPRITES, message.portrait).toBe(true);
+      // The body panel of the inbox holds fourteen lines.
+      const rows = message.body.reduce((sum, paragraph) => sum + wrap(paragraph, BRIEFING_CHARS).length, 0) + (message.body.length - 1) * 0.5;
+      expect(rows, message.id).toBeLessThanOrEqual(14);
     }
   });
 
-  test('shop unlocks name real parts and real contracts, and the starter kit is never locked', () => {
+  test('shop unlocks name real parts and real conditions, and the starter kit is never locked', () => {
     for (const [partId, condition] of Object.entries(SHOP_UNLOCKS)) {
       expect(SHOP_PARTS.some((p) => p.id === partId), partId).toBe(true);
-      expect(condition === 'choice' || /^arena:([1-9]|10)$/.test(condition) || MISSIONS.some((m) => m.id === condition), condition).toBe(true);
+      expect(isKeyword(condition) || MISSIONS.some((m) => m.id === condition), condition).toBe(true);
     }
     for (const id of Object.values(STARTER_BUILD)) expect(id in SHOP_UNLOCKS, id).toBe(false);
   });

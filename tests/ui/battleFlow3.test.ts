@@ -167,15 +167,15 @@ describe('why a battle ended', () => {
 });
 
 describe('parts by another name', () => {
-  const machine = mech({ name: 'Strip-Miner', partNames: { core: 'Hull', legs: 'Tracks', arms: 'Drill' } });
+  const machine = mech({ name: 'Strip-Miner', partNames: { core: 'Hull', legs: 'Tread', arms: 'Drill' } });
 
   test('the target menu and the messages use the names the enemy gives its parts', () => {
     const flow = flowOf(battle([machine]));
     pick(flow, 'fire');
     pick(flow, 'rightHand');
-    expect(flow.menu.items.map((i) => i.label)).toEqual(['Hull', 'Tracks', 'Drill', 'Head']);
+    expect(flow.menu.items.map((i) => i.label)).toEqual(['Hull', 'Tread', 'Drill', 'Head']);
     flow.onInput('down');
     flow.onInput('confirm');
-    expect(flow.message).toMatch(/^Rivet Rifle (hits Strip-Miner - Tracks -\d+|misses Strip-Miner)$/);
+    expect(flow.message).toMatch(/^Rivet Rifle (hits Strip-Miner - Tread -\d+|misses Strip-Miner)$/);
   });
 });

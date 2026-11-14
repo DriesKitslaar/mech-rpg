@@ -1052,6 +1052,76 @@
       "hi": 0.329
     }
   },
+  "wpn-writ": {
+    "file": "sprites/wpn-writ.png",
+    "w": 58,
+    "h": 11
+  },
+  "wpn-gavel": {
+    "file": "sprites/wpn-gavel.png",
+    "w": 34,
+    "h": 22
+  },
+  "wpn-decree": {
+    "file": "sprites/wpn-decree.png",
+    "w": 44,
+    "h": 22
+  },
+  "wpn-enemy-longbow": {
+    "file": "sprites/wpn-enemy-longbow.png",
+    "w": 58,
+    "h": 21
+  },
+  "wpn-enemy-claw": {
+    "file": "sprites/wpn-enemy-claw.png",
+    "w": 57,
+    "h": 22
+  },
+  "wpn-enemy-pinpoint": {
+    "file": "sprites/wpn-enemy-pinpoint.png",
+    "w": 58,
+    "h": 13
+  },
+  "wpn-enemy-edge": {
+    "file": "sprites/wpn-enemy-edge.png",
+    "w": 58,
+    "h": 11
+  },
+  "wpn-enemy-cutter": {
+    "file": "sprites/wpn-enemy-cutter.png",
+    "w": 57,
+    "h": 22
+  },
+  "wpn-enemy-flak": {
+    "file": "sprites/wpn-enemy-flak.png",
+    "w": 39,
+    "h": 22
+  },
+  "wpn-enemy-siege": {
+    "file": "sprites/wpn-enemy-siege.png",
+    "w": 43,
+    "h": 26
+  },
+  "wpn-enemy-writ": {
+    "file": "sprites/wpn-enemy-writ.png",
+    "w": 58,
+    "h": 11
+  },
+  "wpn-enemy-seizer": {
+    "file": "sprites/wpn-enemy-seizer.png",
+    "w": 50,
+    "h": 22
+  },
+  "wpn-enemy-gavel": {
+    "file": "sprites/wpn-enemy-gavel.png",
+    "w": 34,
+    "h": 22
+  },
+  "wpn-enemy-decree": {
+    "file": "sprites/wpn-enemy-decree.png",
+    "w": 44,
+    "h": 22
+  },
   "wpn-enemy-carbine": {
     "file": "sprites/wpn-enemy-carbine.png",
     "w": 42,
