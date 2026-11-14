@@ -153,6 +153,15 @@ export function availableMissions(state: GameState, missions: Mission[]): Missio
   return [...all(missions, 'patrol'), ...story];
 }
 
+/**
+ * The patrol as a pilot flies it whose own mech cannot deploy: in a stock frame lent for it. The
+ * pay is the patrol's and so is the bill for ammunition and repairs. It is what keeps a pilot in
+ * work who has traded their way into a mech they cannot field and has no money left to put it right.
+ */
+export function lentPatrol(patrol: Mission, build: Build, note: string): Mission {
+  return { ...patrol, loaner: build, briefing: [note, ...patrol.briefing.slice(-1)] };
+}
+
 /** Share of a contract's pay that playing it again from the archive earns. */
 export const ARCHIVE_PAY = 0.3;
 

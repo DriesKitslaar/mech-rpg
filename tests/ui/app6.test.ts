@@ -46,7 +46,7 @@ describe('training', () => {
     for (const id of ['head-bulwark', 'core-bulwark', 'arms-bulwark']) g = buy(g, id, CATALOG);
     g = equip(equip(equip(g, 'head', 'head-bulwark', CATALOG), 'core', 'core-bulwark', CATALOG), 'arms', 'arms-bulwark', CATALOG);
     const { app } = inHub(quiet(g));
-    expect(snap(app).menu.items.find((i) => i.id === 'contracts')).toMatchObject({ enabled: false });
+    expect(snap(app).menu.items.find((i) => i.id === 'contracts')).toMatchObject({ note: 'Overweight' });
     expect(snap(app).menu.items.find((i) => i.id === 'training')).toMatchObject({ enabled: true });
     openDrill(app, 'drill-aim');
     expect(snap(app).briefing).toMatchObject({ reward: 150, objectives: ['Disable, do not destroy: Halo Guard'] });

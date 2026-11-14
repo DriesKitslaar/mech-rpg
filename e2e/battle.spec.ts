@@ -9,10 +9,10 @@ test('a battle can be played to its end with the keyboard alone', async ({ page 
 
   await press(page, 'Enter');
   await waitForPhase(page, 'weapon');
-  await page.screenshot({ path: testInfo.outputPath('battle-weapon.png') });
+  await page.screenshot({ path: 'docs/screenshots/battle-weapon.png' });
   await press(page, 'Enter');
   await waitForPhase(page, 'target');
-  await page.screenshot({ path: testInfo.outputPath('battle-target.png') });
+  await page.screenshot({ path: 'docs/screenshots/battle-target.png' });
   await press(page, 'Escape');
   await press(page, 'Escape');
   await waitForPhase(page, 'action');
@@ -21,7 +21,7 @@ test('a battle can be played to its end with the keyboard alone', async ({ page 
   expect(end.battle?.phase).toBe('result');
   expect(['victory', 'defeat']).toContain(end.battle?.outcome);
   expect(end.battle?.message).toBe(end.battle?.outcome === 'victory' ? 'VICTORY' : 'DEFEAT');
-  await page.screenshot({ path: testInfo.outputPath('battle-result.png') });
+  await page.screenshot({ path: 'docs/screenshots/battle-result.png' });
   expect(errors).toEqual([]);
 });
 

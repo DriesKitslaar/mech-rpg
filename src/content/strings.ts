@@ -201,6 +201,8 @@ export const STRINGS = {
     finale: 'THE LAST MOVE OF THE WAR', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT',
     verdict: 'VERDICT: your answer ends the story. The other offer is withdrawn.',
     replay: 'ARCHIVE: pays less. Nothing in the story changes.',
+    lent: 'LENT MECH: yours cannot deploy. The bill is still yours.',
+    lentNote: 'Your own mech cannot deploy as it stands, so Dispatch lends you a stock frame for this one. Put yours right in the Garage; until then this is the work there is.',
     support: (name: string) => `Fire support: ${name}`,
   },
   mission: {

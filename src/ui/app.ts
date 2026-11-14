@@ -3,7 +3,7 @@ import { MIRROR_ID, arenaMission, checkChallenge, mirrorEnemy, mirrorMission, mi
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
-  archiveMissions, availableMissions, campaignComplete, completeMission, dueScenes, forCycle, introductionsDone, markRead,
+  archiveMissions, availableMissions, campaignComplete, completeMission, dueScenes, forCycle, introductionsDone, lentPatrol, markRead,
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
@@ -446,6 +446,11 @@ export class App {
   missions(): Mission[] {
     const game = this.game;
     if (!game) return [];
+    // A pilot whose own mech cannot deploy is not left without work: the patrol, as it is in the first
+    // cycle, in a stock frame Dispatch lends. Everything else waits for the mech to be put right.
+    if (this.buildErrors().length > 0) {
+      return MISSIONS.filter((m) => m.id === 'patrol').map((m) => lentPatrol(m, STARTER_BUILD, STRINGS.briefing.lentNote));
+    }
     const story = availableMissions(game, MISSIONS).map((m) => forCycle(m, game.cycle));
     return this.sideWorkOpen() ? [...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT)] : story;
   }
@@ -565,10 +570,10 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission));
   }
 
-  /** Starts a contract, unless the build may not deploy or the contract is not on offer. A drill lends its own mech. */
+  /** Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends no mech of its own. */
   startMission(missionId: string, replay = false): void {
     const mission = this.offered(missionId, replay);
-    if (!mission || (!isDrill(mission) && this.buildErrors().length > 0)) return;
+    if (!mission || (mission.loaner === undefined && this.buildErrors().length > 0)) return;
     this.seed = (this.seed + 101) % 2147483647;
     this.show('battle', new MissionHost(this, mission, this.seed));
   }

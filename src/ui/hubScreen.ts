@@ -35,7 +35,8 @@ export class HubScreen implements Screen {
     const points = perkPoints(app.game!, PERKS);
     const sideWork = app.sideWorkOpen();
     this.main = new MenuList([
-      { id: 'contracts', label: H.contractsItem, enabled: errors.length === 0, note: errors[0] ? STRINGS.buildErrors[errors[0]] : undefined },
+      // Open even when the mech cannot deploy: the patrol is then flown in a lent one. The note says what is wrong.
+      { id: 'contracts', label: H.contractsItem, enabled: true, note: errors[0] ? STRINGS.buildErrors[errors[0]] : undefined },
       // Until the arena opens, the entry says what opens it: the last of the introductory contracts.
       { id: 'arena', label: H.arena, enabled: sideWork && errors.length === 0, note: sideWork ? undefined : H.opensAfter(lastIntroduction()) },
       { id: 'training', label: H.training, enabled: true },
@@ -48,7 +49,7 @@ export class HubScreen implements Screen {
       ...(app.canStartCycle() ? [{ id: 'cycle', label: H.cycle, enabled: true }] : []),
       // With a build that may not deploy the cursor starts on the garage, where that is fixed.
     ], errors.length === 0 ? 0 : 3);
-    if (list && errors.length === 0) {
+    if (list) {
       this.openContracts();
       if (list === 'archive' && this.app.archive().length > 0) this.openArchive();
       const index = this.sub!.items.findIndex((item) => item.id === at);
@@ -60,7 +61,8 @@ export class HubScreen implements Screen {
   private openContracts(): void {
     this.asking = false;
     this.inArchive = false;
-    const done = this.app.archive().length;
+    // The archive is flown in the pilot's own mech: it is not offered while that cannot deploy.
+    const done = this.app.buildErrors().length === 0 ? this.app.archive().length : 0;
     const missions = this.app.missions();
     // The patrol heads the list, but the cursor starts on the next contract of the story: the same
     // button pressed again and again should lead on, not round and round the patrol.

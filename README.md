@@ -18,8 +18,8 @@ uitleg staat in de [handleiding](docs/handleiding.md).
 | A | Bevestigen |
 | B | Terug |
 | L1 / R1 | Bladeren: pagina's, tabbladen, verf in de garage, doelwit in een gevecht |
-| Links / rechts | Kopen of verkopen in de winkel, van doelwit wisselen, bladeren |
-| Start | Invoer-venster aan of uit (toont de code van elke knop) |
+| Links / rechts | In de winkel wisselen tussen de koop- en de verkooplijst, in een gevecht van doelwit wisselen |
+| Start | Invoer-venster aan of uit (toont de code van elke knop en de grootte waarop het spel getekend wordt) |
 
 Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B Buttons** op
 **Swapped**. Op een computer: pijltjestoetsen, Enter, Escape, Q/E en spatie.

@@ -1,5 +1,6 @@
 import type { Advice } from '../core/advice';
 import type { Mission } from '../core/campaign';
+import { isDrill } from '../core/training';
 import type { Settlement } from '../core/economy';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -55,7 +56,7 @@ export class SettlementScreen implements Screen {
     const right = x + w - 10;
     drawPanel(ctx, x, 20, w, 230);
     drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
-    const drill = this.mission.loaner !== undefined;
+    const drill = isDrill(this.mission);
     const heading = drill ? (s.won ? STRINGS.training.won : STRINGS.training.lost) : s.won ? S.won : S.lost;
     drawText(ctx, heading, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
     const fast = this.app.deps.fast;

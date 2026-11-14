@@ -321,22 +321,27 @@ describe('hub', () => {
     expect(snap(app).screen).toBe('hub');
   });
 
-  test('a build that breaks a limit cannot take contracts, and the hub says why', () => {
+  test('a build that breaks a limit cannot take its contracts, and the hub says why: only the patrol in a lent mech is left', () => {
     let g = { ...fresh(), credits: 20000 };
     for (const id of ['head-bulwark', 'core-bulwark', 'arms-bulwark']) g = buy(g, id, CATALOG);
     g = equip(equip(equip(g, 'head', 'head-bulwark', CATALOG), 'core', 'core-bulwark', CATALOG), 'arms', 'arms-bulwark', CATALOG);
     const { app } = inHub(g);
-    expect(snap(app).menu.items[0]).toMatchObject({ id: 'contracts', enabled: false, note: 'Overweight' });
+    expect(snap(app).menu.items[0]).toMatchObject({ id: 'contracts', enabled: true, note: 'Overweight' });
     // The cursor starts on the garage, where the problem can be fixed.
     expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('garage');
     select(app, 'contracts');
     expect(snap(app).screen).toBe('hub');
-    expect(ids(app)).toEqual(HUB);
+    expect(ids(app)).toEqual(['patrol']);
+    // No contract of the story starts in a mech that may not deploy.
+    app.startMission('intro-1');
+    expect(snap(app).screen).toBe('hub');
   });
 
-  test('a mech without any weapon cannot take contracts', () => {
+  test('a mech without any weapon fitted cannot take its contracts either', () => {
     const { app } = inHub(equip(fresh(), 'rightHand', null, CATALOG));
-    expect(snap(app).menu.items[0]).toMatchObject({ id: 'contracts', enabled: false, note: 'No weapon' });
+    expect(snap(app).menu.items[0]).toMatchObject({ id: 'contracts', enabled: true, note: 'No weapon' });
+    select(app, 'contracts');
+    expect(ids(app)).toEqual(['patrol']);
   });
 });
 

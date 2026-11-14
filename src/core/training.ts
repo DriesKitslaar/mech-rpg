@@ -25,7 +25,8 @@ export interface Drill {
 /** What a drill pays, once: the first time it is passed. */
 export const DRILL_PAY = 150;
 
-export const isDrill = (mission: Mission): boolean => mission.loaner !== undefined;
+/** A drill is known by its id. A lent mech alone does not make one: the patrol can be flown in a lent mech too. */
+export const isDrill = (mission: Mission): boolean => mission.id.startsWith('drill-');
 export const drillPassed = (game: GameState, drillId: string): boolean => game.drills.includes(drillId);
 /**
  * Whether a drill can be run. Once open it stays open: a drill that was passed is never locked

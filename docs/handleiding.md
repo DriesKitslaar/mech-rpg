@@ -19,17 +19,22 @@ reparaties uit je eigen loon. De tekst in het spel is Engels; deze handleiding i
 | A | Bevestigen |
 | B | Terug |
 | L1 / R1 | Bladeren: pagina's, tabbladen, verf in de garage, doelwit in een gevecht |
-| Links / rechts | Kopen of verkopen in de winkel, wisselen van doelwit, bladeren |
-| Start | Venster dat laat zien welke knop het toestel doorgeeft (handig als een knop niets doet) |
+| Links / rechts | In de winkel wisselen tussen de koop- en de verkooplijst (A koopt of verkoopt), in een gevecht van doelwit wisselen |
+| Start | Venster met wat het toestel doorgeeft: welke knop, en op welke grootte het spel getekend wordt. Nog eens Start sluit het. |
 
 ## Je eerste kwartier
 
-1. Kies **New Game**, kies een opslagplek en geef je piloot een roepnaam.
-2. In het hoofdkwartier kies je **Contracts** en neem je **Shakedown Run** aan.
+1. Kies **New Game** en geef je piloot een roepnaam. (Heb je al een spel staan, dan kies je eerst
+   een opslagplek.)
+2. In het hoofdkwartier kies je **Contracts**. De cursor staat al op **Shakedown Run**, het eerste
+   contract van het verhaal; de patrouille erboven is er voor als je geld nodig hebt.
 3. In het gevecht kies je **Fire**, een wapen en een onderdeel van de vijand. De romp (Core) is
-   het makkelijkst te raken en de enige die een vijand uitschakelt.
+   het makkelijkst te raken en de enige die een vijand uitschakelt. Staan er meer vijanden, dan
+   wissel je met L1/R1 van doelwit; het spel mikt vanzelf op het doel van de opdracht, of op wie je
+   het laatst beschoot.
 4. Na het gevecht zie je de afrekening: loon, min munitie en reparaties.
-5. Koop in de **Shop** een tweede wapen en zet het in de **Garage** op je mecha.
+5. Koop in de **Shop** een tweede wapen en zet het in de **Garage** op je mecha (kopen alleen
+   is niet genoeg).
 6. Doe daarna een paar oefeningen onder **Training**. Ze kosten niets en leggen elk één ding uit.
 
 ## Het hoofdkwartier
@@ -37,14 +42,14 @@ reparaties uit je eigen loon. De tekst in het spel is Engels; deze handleiding i
 | Menu | Wat je er doet |
 |---|---|
 | Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld) en drie wisselende losse contracten. Onderaan staat het archief. |
-| Arena | Een ladder van tien piloten. Elke rang levert een premie op en opent betere onderdelen in de winkel. |
+| Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
 | Training | Tien oefeningen in een geleende mecha. |
 | Garage | Onderdelen wisselen, verf kiezen (L1/R1), drie builds bewaren (links/rechts). |
 | Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
 | Pilot | Niveau en vaardigheden, medailles, en een logboek van alles wat je gedaan hebt. |
 | Messages | Berichten van je opdrachtgevers. |
 | Database | Fiches van elke vijand die je bent tegengekomen, achtergrond over de stad, en de spelregels. |
-| Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid, A en B omwisselen, de aftiteling opnieuw bekijken, terug naar het titelscherm. |
+| Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid, A en B omwisselen, de aftiteling opnieuw bekijken, terug naar het titelscherm. De opties gelden voor alle drie de opslagplekken. |
 
 ## Een gevecht
 
@@ -65,6 +70,9 @@ Elke beurt krijg je energie van je generator. Daarmee kun je:
 
 Onder de pantserbalk van elke mecha staat een dunne balk: het evenwicht. Is die leeg, dan wankelt
 de mecha een beurt: hij kan niet ontwijken en krijgt 30% meer schade. Zware wapens duwen het hardst.
+
+Verlies je een gevecht, dan staat op de afrekening een tip van Dispatch over wat er misging
+(bijvoorbeeld dat je nooit geboost of bewaakt hebt).
 
 Sommige vijanden helpen de rest: een schilddrone dekt de anderen af, een reparatiedrone last ze
 weer aan elkaar, een stoorzender verpest je richten. Schiet die helpers eerst neer.
@@ -88,6 +96,9 @@ Niet elk gevecht win je door alles te vernietigen. Boven het veld staat wat er g
 - Je kunt hoogstens 2000 credits schuld hebben. Wat een rekening daar nog bovenop zou zetten, wordt
   kwijtgescholden. Met schuld kun je niets kopen, maar wel altijd vliegen: de patrouille brengt je er
   weer bovenop.
+- Mag je eigen mecha niet uitrukken (te zwaar, te weinig energie, geen wapen) en heb je geen geld om
+  dat op te lossen, dan kun je de patrouille nog steeds vliegen: Dispatch leent je daarvoor een
+  standaardmecha. De rest van de contracten wacht tot je eigen mecha weer in orde is.
 
 ## Het verhaal
 
@@ -120,6 +131,8 @@ zo snel af.
   en zet die op **Swapped**. Het spel onthoudt dat.
 - **Een knop doet niets**: druk op Start. Het venster toont welke code het toestel doorgeeft; geef
   die code door, dan kan de knop worden toegevoegd.
+- **Een zwarte rand om het beeld, of het beeld is klein**: druk op Start en geef de regel *screen*
+  door (bijvoorbeeld `1240x1080 x4`). Het spel hoort het scherm van de Retroid precies te vullen.
 - **Geen geluid**: kijk onder Options of Sound Effects en Music aan staan, en of het volume van het
   toestel open staat.
 - **Geen trillen**: kijk onder Options of Rumble aan staat. Niet elk toestel heeft een trilmotor.
