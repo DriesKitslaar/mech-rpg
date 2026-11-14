@@ -104,3 +104,15 @@ test.each(MISSIONS.map((m) => m.id))('contract %s always plays to an outcome wit
     expect(end.outcome).not.toBe('ongoing');
   }
 });
+
+test.each(Object.keys(ENEMIES))('a duel against %s plays to an outcome with legal actions only', (id) => {
+  for (let seed = 1; seed <= 8; seed++) {
+    const end = runBattle(createBattle(DEMO_BUILD, [ENEMIES[id]], CATALOG, seed), CATALOG, chooseAutoPlayerAction);
+    expect(end.outcome).not.toBe('ongoing');
+  }
+});
+
+test('whether an enemy is drawn from its parts is carried onto its unit', () => {
+  const s = createBattle(DEMO_BUILD, [ENEMIES.rival, ENEMIES['recon-drone']], CATALOG, 1);
+  expect(s.units.map((u) => u.composed)).toEqual([false, true, false]);
+});

@@ -57,6 +57,12 @@ export interface Weapon {
   weight: number;
   price: number;
   vendor?: Vendor;
+  /**
+   * A special effect: `pierce` halves the target's resistance; `thermal` adds `traitPower` heat on a hit;
+   * `drain` takes `traitPower` from the target's next turn of energy on a hit; `twin` fires two shots.
+   */
+  trait?: 'pierce' | 'thermal' | 'drain' | 'twin';
+  traitPower?: number;
 }
 
 export type Part = FramePart | Generator | Weapon;
@@ -92,7 +98,10 @@ export interface EnemyDef {
   name: string;
   build: Build;
   ai: AiProfile;
+  /** The single image used when the enemy is one of several. */
   sprite: string;
+  /** A mech that, when it fights alone, is drawn full size from the sprites of its parts. */
+  composed?: boolean;
 }
 
 export const FRAME_SLOTS: FrameSlot[] = ['core', 'legs', 'arms', 'head'];

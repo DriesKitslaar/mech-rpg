@@ -2,6 +2,7 @@ import '@fontsource/vt323/latin-400.css';
 import { CATALOG } from './content/parts';
 import manifest from './content/sprites.json';
 import { Sfx, soundForInput } from './platform/audio';
+import { Music } from './platform/music';
 import { InputMapper, attachInput, type InputAction } from './platform/input';
 import { SaveFile, type KeyValueStore } from './platform/storage';
 import { App } from './ui/app';
@@ -48,8 +49,8 @@ async function start(): Promise<void> {
   ]);
 
   const sfx = new Sfx();
-  sfx.muted = fast;
-  const app = new App({ catalog: CATALOG, save: new SaveFile(openStore(), CATALOG), sprites, sfx, fast, seed });
+  const music = new Music(() => sfx.context);
+  const app = new App({ catalog: CATALOG, save: new SaveFile(openStore(), CATALOG), sprites, sfx, music, fast, seed });
 
   const mapper = new InputMapper();
   const input = attachInput(window, mapper);
@@ -59,7 +60,7 @@ async function start(): Promise<void> {
   (window as any).__game = { snapshot: () => app.snapshot() };
 
   const handle = (action: InputAction): void => {
-    sfx.unlock(); // browsers only allow sound after an input
+    if (!fast) sfx.unlock(); // browsers only allow sound after an input; test runs stay silent
     if (action === 'menu') { debug.toggle(); return; }
     // Comparing what the app reports before and after tells whether the input did anything.
     const before = JSON.stringify(app.snapshot());
@@ -75,6 +76,7 @@ async function start(): Promise<void> {
     input.sample(now);
     for (const action of mapper.poll(now)) { debug.action(action); handle(action); }
     app.update(dt);
+    music.update();
     ctx.imageSmoothingEnabled = false;
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     app.draw(ctx);

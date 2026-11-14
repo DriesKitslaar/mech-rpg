@@ -72,7 +72,7 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   // A reload must find the same game.
   await page.reload();
   await page.waitForFunction(() => (window as any).__game?.snapshot().screen === 'title');
-  expect((await snap(page)).menu.items.map((i) => i.id)).toEqual(['continue', 'new']);
+  expect((await snap(page)).menu.items.map((i) => i.id)).toEqual(['continue', 'new', 'options']);
   await choose(page, 'continue');
   await waitForScreen(page, 'hub');
   const loaded = await snap(page);
@@ -89,7 +89,7 @@ test('a corrupt save does not stop the game from starting', async ({ page }) => 
   page.on('pageerror', (e) => errors.push(e.message));
   await page.addInitScript(() => window.localStorage.setItem('ironwage-save', '{"version":1,"credits":'));
   await open(page);
-  expect((await snap(page)).menu.items.map((i) => i.id)).toEqual(['new']);
+  expect((await snap(page)).menu.items.map((i) => i.id)).toEqual(['new', 'options']);
   await choose(page, 'new');
   await waitForScreen(page, 'hub');
   expect(errors).toEqual([]);

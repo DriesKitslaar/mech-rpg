@@ -56,7 +56,7 @@ test('clear removes the save, and survives storage that refuses', () => {
 });
 
 test('a save from the first version is upgraded instead of thrown away', () => {
-  const { completed: _c, read: _r, endingSeen: _e, ...rest } = game();
+  const { completed: _c, read: _r, endingSeen: _e, xp: _x, perks: _p, arenaRank: _a, cycle: _y, settings: _s, ...rest } = game();
   const old = { ...rest, version: 1 };
   const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify(old) }), CATALOG).load();
   expect(loaded).toEqual({ ...game(), completed: [], read: [], endingSeen: false });
@@ -71,8 +71,41 @@ test('unusable save data is reported as such, a missing save is not', () => {
 });
 
 test('a save from the second version is upgraded too, keeping its campaign progress', () => {
-  const { endingSeen: _e, ...rest } = { ...game(), completed: ['intro-1'], read: ['welcome'] };
+  const { endingSeen: _e, xp: _x, perks: _p, arenaRank: _a, cycle: _y, settings: _s, ...rest } = { ...game(), completed: ['intro-1'], read: ['welcome'] };
   const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 2 }) }), CATALOG).load();
   expect(loaded).toMatchObject({ completed: ['intro-1'], read: ['welcome'], endingSeen: false });
-  expect(loaded?.version).toBe(3);
+  expect(loaded?.version).toBe(4);
+});
+
+test('a save from the third version gains a pilot and settings and keeps everything else', () => {
+  const { xp: _x, perks: _p, arenaRank: _a, cycle: _y, settings: _s, ...rest } = { ...game(), completed: ['intro-1'], endingSeen: true, battlesWon: 7 };
+  const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 3 }) }), CATALOG).load();
+  expect(loaded).toMatchObject({
+    version: 4, completed: ['intro-1'], endingSeen: true, battlesWon: 7, credits: game().credits,
+    xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { sfx: true, music: true, fastBattles: false },
+  });
+});
+
+describe('settings', () => {
+  const mem = (initial: Record<string, string> = {}) => {
+    const data = { ...initial };
+    return { data, getItem: (k: string) => (k in data ? data[k] : null), setItem: (k: string, v: string) => { data[k] = v; }, removeItem: (k: string) => { delete data[k]; } };
+  };
+
+  test('are stored apart from the game and read back', () => {
+    const store = mem();
+    const file = new SaveFile(store, CATALOG);
+    expect(file.loadSettings()).toBeNull();
+    expect(file.saveSettings({ sfx: false, music: true, fastBattles: true })).toBe(true);
+    expect(new SaveFile(store, CATALOG).loadSettings()).toEqual({ sfx: false, music: true, fastBattles: true });
+  });
+
+  test.each(['{oops', '[]', '{"sfx":"yes","music":true,"fastBattles":false}', '{"sfx":true}'])('unusable settings %s count as none', (raw) => {
+    expect(new SaveFile(mem({ 'ironwage-settings': raw }), CATALOG).loadSettings()).toBeNull();
+  });
+
+  test('a device that refuses to store them is reported', () => {
+    const store = { getItem: () => null, setItem: () => { throw new Error('full'); }, removeItem: () => {} };
+    expect(new SaveFile(store, CATALOG).saveSettings({ sfx: true, music: true, fastBattles: false })).toBe(false);
+  });
 });

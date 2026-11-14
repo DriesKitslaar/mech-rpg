@@ -3,7 +3,7 @@ import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
-import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/storage';
+import { SAVE_KEY, SETTINGS_KEY, SaveFile, type KeyValueStore } from '../../src/platform/storage';
 import type { InputAction } from '../../src/platform/input';
 import { App } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
@@ -26,17 +26,25 @@ type Snap = {
   saveFailed: boolean; build: Record<string, string> | null;
   menu: { items: { id: string; label: string; enabled: boolean; note?: string }[]; cursor: number };
   battle?: { phase: string; outcome: string; mission: string; index: number; of: number };
-  settlement?: { net: number; won: boolean };
+  settlement?: { net: number; won: boolean; reward: number };
   ending?: string;
+  xp: number | null; level: number | null; arenaRank: number | null; cycle: number | null;
+  settings: { sfx: boolean; music: boolean; fastBattles: boolean };
+  player?: { maxAp: number; repairsLeft: number };
+  pilot?: { level: number; points: number };
 };
 const snap = (app: App) => app.snapshot() as Snap;
 const press = (app: App, ...actions: InputAction[]) => actions.forEach((a) => app.onInput(a));
 const ids = (app: App) => snap(app).menu.items.map((i) => i.id);
+/** The contracts on the list that are not generated ones. */
+const story = (app: App) => ids(app).filter((id) => !id.startsWith('open-'));
+const open = (app: App) => ids(app).filter((id) => id.startsWith('open-'));
 const select = (app: App, id: string) => {
   for (let i = 0; i < 40 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');
   expect(snap(app).menu.items[snap(app).menu.cursor]?.id).toBe(id);
   press(app, 'confirm');
 };
+const HUB = ['contracts', 'arena', 'garage', 'shop', 'pilot', 'messages', 'options'];
 const fresh = (): GameState => newGame(CATALOG, STARTER_BUILD);
 const done = (...missionIds: string[]): GameState => missionIds.reduce((g, id) => completeMission(g, id, MISSIONS), fresh());
 /** A save that owns and wears one of the reference builds. */
@@ -85,7 +93,7 @@ describe('title', () => {
   test('without a save only a new game is offered', () => {
     const { app } = makeApp();
     expect(snap(app).screen).toBe('title');
-    expect(ids(app)).toEqual(['new']);
+    expect(ids(app)).toEqual(['new', 'options']);
     expect(snap(app).message).toBe('');
   });
 
@@ -98,7 +106,7 @@ describe('title', () => {
 
   test('a valid save offers continue first and loads it', () => {
     const { app } = makeApp(buy(fresh(), 'wpn-arc-pistol', CATALOG));
-    expect(ids(app)).toEqual(['continue', 'new']);
+    expect(ids(app)).toEqual(['continue', 'new', 'options']);
     press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'hub', credits: 600 });
   });
@@ -106,7 +114,7 @@ describe('title', () => {
   test('a save that cannot be used is treated as no save, and the player is told', () => {
     const store = memoryStore({ [SAVE_KEY]: '{not json' });
     const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
-    expect(ids(app)).toEqual(['new']);
+    expect(ids(app)).toEqual(['new', 'options']);
     expect(snap(app).message).toBe('Your saved game could not be read.');
   });
 
@@ -118,7 +126,7 @@ describe('title', () => {
     expect(snap(app).menu.cursor).toBe(0);
     expect(snap(app).message).toBe('Start over? This erases your save.');
     press(app, 'confirm');
-    expect(ids(app)).toEqual(['continue', 'new']);
+    expect(ids(app)).toEqual(['continue', 'new', 'options']);
     expect(JSON.parse(store.data[SAVE_KEY]).credits).toBe(4321);
     select(app, 'new');
     select(app, 'yes');
@@ -129,15 +137,15 @@ describe('title', () => {
     const { app } = makeApp(fresh());
     select(app, 'new');
     press(app, 'cancel');
-    expect(ids(app)).toEqual(['continue', 'new']);
+    expect(ids(app)).toEqual(['continue', 'new', 'options']);
   });
 });
 
 describe('hub', () => {
   test('offers contracts, garage, shop and messages, and counts unread messages', () => {
     const { app } = inHub();
-    expect(ids(app)).toEqual(['contracts', 'garage', 'shop', 'messages']);
-    expect(snap(app).menu.items[3].note).toBe('1 new');
+    expect(ids(app)).toEqual(['contracts', 'arena', 'garage', 'shop', 'pilot', 'messages', 'options']);
+    expect(snap(app).menu.items[5].note).toBe('1 new');
   });
 
   test('cancel does nothing', () => {
@@ -156,7 +164,7 @@ describe('hub', () => {
     expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('garage');
     select(app, 'contracts');
     expect(snap(app).screen).toBe('hub');
-    expect(ids(app)).toEqual(['contracts', 'garage', 'shop', 'messages']);
+    expect(ids(app)).toEqual(HUB);
   });
 
   test('a mech without any weapon cannot take contracts', () => {
@@ -178,7 +186,7 @@ describe('contracts and briefings', () => {
     const { app } = inHub();
     select(app, 'contracts');
     press(app, 'cancel');
-    expect(ids(app)).toEqual(['contracts', 'garage', 'shop', 'messages']);
+    expect(ids(app)).toEqual(HUB);
   });
 
   test('a contract opens its briefing, and declining returns to the contract list', () => {
@@ -194,7 +202,7 @@ describe('contracts and briefings', () => {
     press(app, 'cancel');
     expect(ids(app)).toEqual(['patrol', 'intro-1']);
     press(app, 'cancel');
-    expect(ids(app)).toEqual(['contracts', 'garage', 'shop', 'messages']);
+    expect(ids(app)).toEqual(HUB);
   });
 
   test('accepting starts the first battle of the contract', () => {
@@ -211,7 +219,7 @@ describe('contracts and briefings', () => {
   test('the three clients appear after the introductions', () => {
     const { app } = inHub(done('intro-1', 'intro-2'));
     select(app, 'contracts');
-    expect(ids(app)).toEqual(['patrol', 'hadron-1', 'lumen-1', 'undertow-1']);
+    expect(story(app)).toEqual(['patrol', 'hadron-1', 'lumen-1', 'undertow-1']);
   });
 });
 
@@ -320,7 +328,7 @@ describe('the campaign', () => {
     press(app, 'confirm');
     expect(snap(app).screen).toBe('hub');
     select(app, 'contracts');
-    expect(ids(app)).toEqual(['patrol']);
+    expect(story(app)).toEqual(['patrol']);
     // Seen once: returning to the hub later does not replay it.
     press(app, 'cancel');
     select(app, 'garage');
@@ -331,7 +339,7 @@ describe('the campaign', () => {
   test('taking one exclusive contract withdraws the other two', () => {
     const { app } = inHub(allButFinale('lumen'));
     select(app, 'contracts');
-    expect(ids(app)).toEqual(['patrol', 'finale-lumen']);
+    expect(story(app)).toEqual(['patrol', 'finale-lumen']);
   });
 });
 
@@ -347,12 +355,12 @@ describe('messages', () => {
     expect(snap(app).menu.items[0].note).toBeUndefined();
     press(app, 'cancel');
     expect(snap(app).screen).toBe('hub');
-    expect(snap(app).menu.items[3].note).toBeUndefined();
+    expect(snap(app).menu.items.find((i) => i.id === 'messages')!.note).toBeUndefined();
   });
 
   test('new messages arrive as contracts are completed, newest first', () => {
     const { app } = inHub(done('intro-1', 'intro-2'));
-    expect(snap(app).menu.items[3].note).toBe('3 new');
+    expect(snap(app).menu.items.find((i) => i.id === 'messages')!.note).toBe('3 new');
     select(app, 'messages');
     expect(ids(app)).toEqual(['clients', 'after-intro-1', 'welcome']);
   });
@@ -470,5 +478,212 @@ describe('closing the game at an awkward moment', () => {
     select(app, 'wpn-rivet-rifle');
     press(app, 'cancel');
     expect(snap(app).menu.items[0]).toMatchObject({ id: 'contracts', enabled: true });
+  });
+});
+
+describe('pilot levels and perks', () => {
+  test('a won contract teaches a tenth of its pay', () => {
+    const { app } = inHub();
+    accept(app, 'patrol');
+    finishMission(app);
+    expect(snap(app).settlement!.won).toBe(true);
+    expect(snap(app)).toMatchObject({ xp: 40, level: 1 });
+  });
+
+  test('perks change the mech in battle, in every battle of a contract', () => {
+    const plain = inHub(geared(done('intro-1', 'intro-2'), 'tier1')).app;
+    accept(plain, 'hadron-1');
+    const base = snap(plain).player!;
+    expect(base.repairsLeft).toBe(2);
+
+    const { app } = inHub({ ...geared(done('intro-1', 'intro-2'), 'tier1'), xp: 5400, perks: { plating: 3, fieldTech: 2 } });
+    accept(app, 'hadron-1');
+    expect(snap(app).player!.repairsLeft).toBe(4);
+    expect(snap(app).player!.maxAp).toBeGreaterThan(base.maxAp * 1.17);
+    expect(snap(app).player!.maxAp).toBeLessThan(base.maxAp * 1.19);
+    finishBattle(app);
+    if (snap(app).battle!.outcome === 'victory') {
+      press(app, 'confirm');
+      expect(snap(app).battle!.index).toBe(1);
+      expect(snap(app).player!.maxAp).toBeGreaterThan(base.maxAp * 1.17);
+      expect(snap(app).player!.maxAp).toBeLessThan(base.maxAp * 1.19);
+    }
+  });
+
+  test('the haggler perk raises the pay', () => {
+    const { app } = inHub({ ...fresh(), xp: 5400, perks: { haggler: 3 } });
+    accept(app, 'patrol');
+    finishMission(app);
+    expect(snap(app).settlement).toMatchObject({ won: true, reward: 496 });
+  });
+
+  test('a perk point is spent on the pilot screen, once, and saved', () => {
+    const { app, store } = inHub({ ...fresh(), xp: 200 });
+    select(app, 'pilot');
+    expect(snap(app)).toMatchObject({ screen: 'pilot', pilot: { level: 2, points: 1 } });
+    select(app, 'marksman');
+    expect(snap(app).pilot).toMatchObject({ points: 0 });
+    expect(snap(app).menu.items.find((i) => i.id === 'marksman')!.note).toBe('1/3');
+    press(app, 'confirm');
+    expect(JSON.parse(store.data[SAVE_KEY]).perks).toEqual({ marksman: 1 });
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+  });
+});
+
+describe('the arena', () => {
+  const ready = (extra: Partial<GameState> = {}) => inHub({ ...geared(done('intro-1', 'intro-2'), 'tier3'), ...extra }, 3);
+
+  test('is locked until the introductions are done', () => {
+    const { app } = inHub();
+    const item = snap(app).menu.items.find((i) => i.id === 'arena')!;
+    expect(item.enabled).toBe(false);
+  });
+
+  test('lists the ladder; only the next opponent and beaten ones can be picked', () => {
+    const { app } = ready({ arenaRank: 2 });
+    select(app, 'arena');
+    expect(snap(app).screen).toBe('arena');
+    const items = snap(app).menu.items;
+    expect(items.map((i) => i.id)).toEqual(['rank-1', 'rank-2', 'rank-3', 'rank-4', 'rank-5', 'rank-6', 'rank-7', 'rank-8', 'rank-9', 'rank-10']);
+    expect(items.map((i) => i.enabled)).toEqual([true, true, true, false, false, false, false, false, false, false]);
+    expect(items.slice(0, 3).map((i) => i.note)).toEqual(['200', '300', '1600']);
+    expect(snap(app).menu.cursor).toBe(2);
+    press(app, 'down', 'confirm');
+    expect(snap(app).screen).toBe('arena');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+  });
+
+  test('a fight is briefed, fought and paid like a contract, and raises the rank once', () => {
+    const { app } = ready();
+    const before = snap(app).credits!;
+    select(app, 'arena');
+    select(app, 'rank-1');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'arena-1' } });
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('arena');
+    select(app, 'rank-1');
+    select(app, 'accept');
+    expect(snap(app)).toMatchObject({ screen: 'battle', battle: { mission: 'arena-1' } });
+    finishMission(app);
+    expect(snap(app).settlement).toMatchObject({ won: true, reward: 800 });
+    expect(snap(app)).toMatchObject({ arenaRank: 1, completed: ['intro-1', 'intro-2'] });
+    expect(snap(app).credits).toBe(before + snap(app).settlement!.net);
+
+    // A rematch pays a quarter and leaves the rank alone.
+    press(app, 'confirm');
+    select(app, 'arena');
+    select(app, 'rank-1');
+    select(app, 'accept');
+    finishMission(app);
+    if (snap(app).settlement!.won) expect(snap(app).settlement!.reward).toBe(200);
+    expect(snap(app).arenaRank).toBe(1);
+  });
+});
+
+describe('open contracts', () => {
+  test('three appear once the introductions are done, and not before', () => {
+    const early = inHub().app;
+    select(early, 'contracts');
+    expect(open(early)).toEqual([]);
+    const { app } = inHub(done('intro-1', 'intro-2'));
+    select(app, 'contracts');
+    expect(open(app)).toHaveLength(3);
+  });
+
+  test('winning one is never recorded and brings a new board', () => {
+    const { app } = inHub(geared(done('intro-1', 'intro-2'), 'tier3'), 3);
+    select(app, 'contracts');
+    const board = open(app);
+    press(app, 'cancel');
+    accept(app, board[0]);
+    finishMission(app);
+    expect(snap(app).settlement!.won).toBe(true);
+    expect(snap(app).completed).toEqual(['intro-1', 'intro-2']);
+    press(app, 'confirm');
+    select(app, 'contracts');
+    expect(open(app)).toHaveLength(3);
+    expect(open(app)).not.toEqual(board);
+  });
+});
+
+describe('a new cycle', () => {
+  const finished = (): GameState => ({
+    ...done('intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-lumen', 'finale-lumen'),
+    endingSeen: true, credits: 5000, xp: 700, arenaRank: 2,
+  });
+
+  test('is not offered before the campaign is over', () => {
+    const { app } = inHub(done('intro-1', 'intro-2'));
+    expect(ids(app)).not.toContain('cycle');
+  });
+
+  test('asks first, then restarts the story with everything kept, tougher and better paid', () => {
+    const { app, store } = inHub(finished());
+    expect(ids(app)).toContain('cycle');
+    select(app, 'cycle');
+    expect(ids(app)).toEqual(['no', 'yes']);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', cycle: 0 });
+    select(app, 'cycle');
+    select(app, 'yes');
+    expect(snap(app)).toMatchObject({ screen: 'hub', cycle: 1, completed: [], credits: 5000, xp: 700, arenaRank: 2 });
+    expect(JSON.parse(store.data[SAVE_KEY]).cycle).toBe(1);
+    expect(ids(app)).not.toContain('cycle');
+    select(app, 'contracts');
+    expect(story(app)).toEqual(['patrol', 'intro-1']);
+    expect(open(app)).toHaveLength(3);
+    expect(snap(app).menu.items.find((i) => i.id === 'intro-1')!.note).toBe('900');
+    expect(snap(app).menu.items.find((i) => i.id === 'patrol')!.note).toBe('400');
+  });
+});
+
+describe('options', () => {
+  test('can be changed before a game exists, and the choice is remembered', () => {
+    const { app, store } = makeApp();
+    expect(ids(app)).toEqual(['new', 'options']);
+    select(app, 'options');
+    expect(snap(app).screen).toBe('options');
+    expect(snap(app).menu.items.map((i) => [i.id, i.note])).toEqual([['sfx', 'On'], ['music', 'On'], ['fastBattles', 'Off']]);
+    press(app, 'confirm');
+    expect(snap(app).menu.items[0].note).toBe('Off');
+    expect(JSON.parse(store.data[SETTINGS_KEY]).sfx).toBe(false);
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('title');
+    select(app, 'new');
+    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false });
+
+    const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
+    expect(snap(again).settings.sfx).toBe(false);
+  });
+
+  test('opened from the hub they return to the hub, and are saved with the game', () => {
+    const { app, store } = inHub();
+    select(app, 'options');
+    select(app, 'fastBattles');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+    expect(JSON.parse(store.data[SAVE_KEY]).settings.fastBattles).toBe(true);
+  });
+
+  test('sound and music follow the settings and the screen', () => {
+    const store = memoryStore();
+    const tracks: (string | null)[] = [];
+    const music = { enabled: true, play: (t: string | null) => { tracks.push(t); } };
+    const sfx = { muted: false, play: () => {}, unlock: () => {} };
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 5, music, sfx: sfx as never });
+    expect(tracks.at(-1)).toBe('menu');
+    press(app, 'confirm');
+    accept(app, 'patrol');
+    expect(tracks.at(-1)).toBe('battle');
+    finishMission(app);
+    expect(tracks.at(-1)).toBe('menu');
+    press(app, 'confirm');
+    select(app, 'options');
+    select(app, 'music');
+    expect(music.enabled).toBe(false);
+    select(app, 'sfx');
+    expect(sfx.muted).toBe(true);
   });
 });

@@ -217,3 +217,25 @@ test('a new game has not seen an ending, and the flag must be a boolean', () => 
   const { endingSeen: _flag, ...without } = fresh();
   expect(isValidState(without, CATALOG)).toBe(false);
 });
+
+describe('the pilot and settings in a new game', () => {
+  test('start at zero with sound and music on', () => {
+    expect(fresh()).toMatchObject({
+      xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { sfx: true, music: true, fastBattles: false },
+    });
+  });
+
+  const bad: [string, (g: any) => unknown][] = [
+    ['negative experience', (g) => ({ ...g, xp: -1 })],
+    ['a perk rank that is not a whole number', (g) => ({ ...g, perks: { marksman: 1.5 } })],
+    ['a huge perk rank', (g) => ({ ...g, perks: { marksman: 50 } })],
+    ['perks as a list', (g) => ({ ...g, perks: [] })],
+    ['a negative arena rank', (g) => ({ ...g, arenaRank: -1 })],
+    ['a cycle that is not a number', (g) => ({ ...g, cycle: 'two' })],
+    ['settings missing', (g) => { const { settings: _s, ...rest } = g; return rest; }],
+    ['a setting that is not a boolean', (g) => ({ ...g, settings: { ...g.settings, music: 1 } })],
+  ];
+  test.each(bad)('rejects %s', (_name, make) => {
+    expect(isValidState(make(fresh()), CATALOG)).toBe(false);
+  });
+});

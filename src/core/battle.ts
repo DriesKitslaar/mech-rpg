@@ -7,6 +7,32 @@ import {
 
 export interface PartState { ap: number; maxAp: number }
 
+/**
+ * Adjustments to a unit: pilot perks for the player, difficulty scaling for enemies.
+ * `aim` to `repairs` are added; `armour` is an added fraction; `damage` and `toughness` multiply.
+ */
+export interface UnitMods {
+  aim: number;
+  evasion: number;
+  energy: number;
+  cooling: number;
+  repairs: number;
+  armour: number;
+  damage: number;
+  toughness: number;
+}
+export const NO_MODS: UnitMods = { aim: 0, evasion: 0, energy: 0, cooling: 0, repairs: 0, armour: 0, damage: 1, toughness: 1 };
+
+/** What `createBattle` may be told beyond who fights. */
+export interface BattleOptions {
+  /** Continues a mission: the player starts as the previous battle left them. */
+  carry?: Carry;
+  /** The player's modifiers, from pilot perks. */
+  mods?: Partial<UnitMods>;
+  /** Multiplies enemy armour and damage. */
+  enemyScale?: number;
+}
+
 export interface UnitState {
   id: string;
   name: string;
@@ -14,6 +40,8 @@ export interface UnitState {
   build: Build;
   ai?: AiProfile;
   sprite?: string;
+  /** See `EnemyDef.composed`. */
+  composed: boolean;
   /** Only the frame slots the build has. */
   parts: Partial<Record<FrameSlot, PartState>>;
   heat: number;
@@ -28,6 +56,9 @@ export interface UnitState {
   fired: WeaponSlot[];
   repairsLeft: number;
   destroyed: boolean;
+  mods: UnitMods;
+  /** Energy drained by enemy weapons, taken off the next turn's supply. */
+  energyDebt: number;
 }
 
 export type BattleEvent =
@@ -81,23 +112,27 @@ const HAND_SLOTS: WeaponSlot[] = ['rightHand', 'leftHand'];
 
 function createUnit(
   id: string, name: string, side: UnitState['side'], build: Build, catalog: Catalog,
-  extra: Pick<UnitState, 'ai' | 'sprite'> = {},
+  extra: Partial<Pick<UnitState, 'ai' | 'sprite' | 'composed'>> = {}, modifiers: Partial<UnitMods> = {},
 ): UnitState {
+  const mods: UnitMods = { ...NO_MODS, ...modifiers };
   const parts: UnitState['parts'] = {};
   for (const slot of FRAME_SLOTS) {
     const part = framePart(build, slot, catalog);
-    if (part) parts[slot] = { ap: part.ap, maxAp: part.ap };
+    if (!part) continue;
+    const ap = Math.round(part.ap * (1 + mods.armour) * mods.toughness);
+    parts[slot] = { ap, maxAp: ap };
   }
   if (!parts.core) throw new Error(`unit ${id} has no core`);
   generatorOf(build, catalog);
   const ammo: UnitState['ammo'] = {};
   for (const slot of WEAPON_SLOTS) {
     const weapon = weaponIn(build, slot, catalog);
-    if (weapon) ammo[slot] = weapon.ammo;
+    // Enemies are not on a budget: they never run dry.
+    if (weapon) ammo[slot] = side === 'enemy' ? null : weapon.ammo;
   }
   return {
-    id, name, side, build, ...extra, parts, heat: 0, energy: 0, ammo, boosted: false, overheated: false,
-    usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION, destroyed: false,
+    id, name, side, build, composed: false, ...extra, parts, heat: 0, energy: 0, ammo, boosted: false, overheated: false,
+    usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
   };
 }
 
@@ -112,10 +147,13 @@ export function currentMobility(unit: UnitState, catalog: Catalog): number {
 
 export function evasion(unit: UnitState, catalog: Catalog): number {
   if (!isAlive(unit.parts.legs)) return 0;
-  return currentMobility(unit, catalog) + (unit.boosted ? BOOST_EVASION : 0);
+  return currentMobility(unit, catalog) + unit.mods.evasion + (unit.boosted ? BOOST_EVASION : 0);
 }
 
-export const turnEnergyOf = (unit: UnitState, catalog: Catalog): number => computeBuildStats(unit.build, catalog).turnEnergy;
+export const turnEnergyOf = (unit: UnitState, catalog: Catalog): number =>
+  computeBuildStats(unit.build, catalog).turnEnergy + unit.mods.energy;
+/** Heat a unit sheds at the end of its turn, and with the cool action. */
+export const coolingOf = (unit: UnitState, catalog: Catalog): number => generatorOf(unit.build, catalog).cooling + unit.mods.cooling;
 export const boostCost = (unit: UnitState, catalog: Catalog): number => Math.ceil(0.3 * turnEnergyOf(unit, catalog));
 export const coolCost = (unit: UnitState, catalog: Catalog): number => Math.ceil(0.2 * turnEnergyOf(unit, catalog));
 
@@ -157,7 +195,8 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
       state.turn += 1;
       continue;
     }
-    unit.energy = turnEnergyOf(unit, catalog);
+    unit.energy = Math.max(0, turnEnergyOf(unit, catalog) - unit.energyDebt);
+    unit.energyDebt = 0;
     unit.usedBoost = false;
     unit.usedCool = false;
     unit.fired = [];
@@ -168,7 +207,7 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
 
 function finishTurn(state: BattleState, catalog: Catalog): void {
   const unit = activeUnit(state);
-  unit.heat = Math.max(0, unit.heat - generatorOf(unit.build, catalog).cooling);
+  unit.heat = Math.max(0, unit.heat - coolingOf(unit, catalog));
   state.turn += 1;
   beginTurns(state, catalog);
 }
@@ -209,13 +248,15 @@ function applyCarry(unit: UnitState, carry: Carry): void {
   unit.repairsLeft = carry.repairsLeft;
 }
 
-/** `carry` continues a mission: the player starts as the previous battle left them. Enemies are always fresh. */
-export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalog, seed: number, carry?: Carry): BattleState {
-  const playerUnit = createUnit('player', 'You', 'player', player, catalog);
-  if (carry) applyCarry(playerUnit, carry);
+/** Enemies always start fresh; the player may carry on from an earlier battle (see `BattleOptions`). */
+export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalog, seed: number, opts: BattleOptions = {}): BattleState {
+  const playerUnit = createUnit('player', 'You', 'player', player, catalog, {}, opts.mods);
+  if (opts.carry) applyCarry(playerUnit, opts.carry);
+  const scale = opts.enemyScale ?? 1;
+  const enemyMods = { damage: scale, toughness: scale };
   const units = [
     playerUnit,
-    ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite })),
+    ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite, composed: e.composed ?? false }, enemyMods)),
   ];
   const state: BattleState = { units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing' };
   state.order = roundOrder(state, catalog);
@@ -225,14 +266,14 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
 
 export function previewShot(
   state: BattleState, attackerId: string, slot: WeaponSlot, targetId: string, part: FrameSlot, catalog: Catalog,
-): { hitChance: number; damage: number } {
+): { hitChance: number; damage: number; shots: number } {
   const attacker = findUnit(state, attackerId);
   const target = findUnit(state, targetId);
   const weapon = attacker && weaponIn(attacker.build, slot, catalog);
   const targetPart = target && framePart(target.build, part, catalog);
   if (!attacker || !target || !weapon || !targetPart) throw new Error('previewShot: no such attacker, weapon, target or part');
 
-  let aim = 0;
+  let aim = attacker.mods.aim;
   let headPenalty = 0;
   const head = framePart(attacker.build, 'head', catalog);
   if (head) {
@@ -243,12 +284,14 @@ export function previewShot(
   if (arms && HAND_SLOTS.includes(slot) && isAlive(attacker.parts.arms)) aim += arms.aim ?? 0;
 
   const raw = weapon.accuracy + aim - evasion(target, catalog) + PART_MODIFIER[part] - headPenalty;
-  const full = Math.max(1, Math.round(weapon.damage * (1 - targetPart.resist[weapon.damageType])));
+  const resist = targetPart.resist[weapon.damageType] * (weapon.trait === 'pierce' ? 0.5 : 1);
+  const full = Math.max(1, Math.round(weapon.damage * (1 - resist) * attacker.mods.damage));
   // A part that is already destroyed passes half the damage on to the core.
   const passesOn = target.parts[part]!.ap <= 0;
   return {
     hitChance: Math.min(95, Math.max(10, raw)),
     damage: passesOn ? Math.max(1, Math.floor(full / 2)) : full,
+    shots: weapon.trait === 'twin' ? 2 : 1,
   };
 }
 
@@ -303,32 +346,45 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   const unit = activeUnit(state);
   const target = findUnit(state, action.target)!;
   const weapon = weaponIn(unit.build, action.weapon, catalog)!;
-  const { hitChance, damage } = previewShot(state, unit.id, action.weapon, target.id, action.part, catalog);
 
   unit.energy -= weapon.energy;
   unit.fired.push(action.weapon);
   const ammo = unit.ammo[action.weapon];
   if (typeof ammo === 'number') unit.ammo[action.weapon] = ammo - 1;
 
-  let value: number;
-  if (roll) value = roll();
-  else ({ value, state: state.rng } = nextRandom(state.rng));
-  const hit = value * 100 < hitChance;
-  const appliedTo: FrameSlot = target.parts[action.part]!.ap > 0 ? action.part : 'core';
-  state.events.push({
-    type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: action.part, appliedTo, hit,
-    damage: hit ? damage : 0,
-  });
-  if (hit) damagePart(state, target, appliedTo, damage);
-
-  unit.heat += weapon.heat;
-  if (unit.heat > HEAT_LIMIT && !unit.overheated) {
-    unit.overheated = true;
-    state.events.push({ type: 'overheat', unit: unit.id });
+  // A twin weapon fires twice; each shot is rolled and previewed on its own, because the first
+  // may destroy the part (or the target) the second was aimed at.
+  const shots = weapon.trait === 'twin' ? 2 : 1;
+  for (let i = 0; i < shots && !target.destroyed; i++) {
+    const { hitChance, damage } = previewShot(state, unit.id, action.weapon, target.id, action.part, catalog);
+    let value: number;
+    if (roll) value = roll();
+    else ({ value, state: state.rng } = nextRandom(state.rng));
+    const hit = value * 100 < hitChance;
+    const appliedTo: FrameSlot = target.parts[action.part]!.ap > 0 ? action.part : 'core';
+    state.events.push({
+      type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: action.part, appliedTo, hit,
+      damage: hit ? damage : 0,
+    });
+    if (!hit) continue;
+    damagePart(state, target, appliedTo, damage);
+    if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
+    if (weapon.trait === 'drain') target.energyDebt += weapon.traitPower ?? 0;
   }
+
+  heatUp(state, unit, weapon.heat);
 
   if (state.units.every((u) => u.side !== 'enemy' || u.destroyed)) setOutcome(state, 'victory');
   else if (findUnit(state, 'player')!.destroyed) setOutcome(state, 'defeat');
+}
+
+/** Adds heat; passing the limit marks the unit overheated, which costs it its next turn. */
+function heatUp(state: BattleState, unit: UnitState, amount: number): void {
+  unit.heat += amount;
+  if (unit.heat > HEAT_LIMIT && !unit.overheated && !unit.destroyed) {
+    unit.overheated = true;
+    state.events.push({ type: 'overheat', unit: unit.id });
+  }
 }
 
 /**
@@ -351,7 +407,7 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
       state.events.push({ type: 'boost', unit: unit.id });
       break;
     case 'cool': {
-      const amount = Math.min(unit.heat, generatorOf(unit.build, catalog).cooling);
+      const amount = Math.min(unit.heat, coolingOf(unit, catalog));
       unit.energy -= coolCost(unit, catalog);
       unit.usedCool = true;
       unit.heat -= amount;

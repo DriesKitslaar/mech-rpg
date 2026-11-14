@@ -21,6 +21,10 @@ export interface Mission {
   reward: number;
   /** Fought in order; damage, heat and ammunition carry from one to the next. */
   battles: { enemies: string[]; background: string }[];
+  /** Multiplies enemy armour and damage; 1 when absent. */
+  scale?: number;
+  /** Set on an arena fight: the rank of the opponent. */
+  arenaRank?: number;
 }
 
 export interface Message {
@@ -77,6 +81,30 @@ export function loyalty(state: GameState, missions: Mission[]): Record<Faction, 
   return points;
 }
 
+/** True once the introductions are behind the pilot, in this cycle or an earlier one. */
+export function introductionsDone(state: GameState, missions: Mission[]): boolean {
+  return state.cycle > 0 || all(missions, 'intro').every((m) => state.completed.includes(m.id));
+}
+
+export const CYCLE_SCALE = 0.35;
+export const CYCLE_PAY = 0.5;
+
+/** A story contract as it is offered in the given cycle: tougher enemies, better pay. The patrol never changes. */
+export function forCycle(mission: Mission, cycle: number): Mission {
+  if (cycle <= 0 || mission.phase === 'patrol') return mission;
+  return {
+    ...mission,
+    reward: Math.round(mission.reward * (1 + CYCLE_PAY * cycle)),
+    scale: Math.round((mission.scale ?? 1) * (1 + CYCLE_SCALE * cycle) * 100) / 100,
+  };
+}
+
+/** Starts the story again. Credits, parts, pilot level, perks and arena rank all stay. */
+export function startNewCycle(state: GameState, missions: Mission[]): GameState {
+  if (!campaignComplete(state, missions)) throw new Error('the campaign is not complete');
+  return { ...state, completed: [], read: [], endingSeen: false, cycle: state.cycle + 1 };
+}
+
 export function campaignComplete(state: GameState, missions: Mission[]): boolean {
   return done(state, missions, 'finale').length > 0;
 }
@@ -85,12 +113,20 @@ export function campaignComplete(state: GameState, missions: Mission[]): boolean
 function reached(state: GameState, condition: string, missions: Mission[]): boolean {
   if (condition === 'start') return true;
   if (condition === 'choice') return chosenFaction(state, missions) !== null;
+  // "arena:N": the arena rank is at least N.
+  if (condition.startsWith('arena:')) return state.arenaRank >= Number(condition.slice(6));
   return state.completed.includes(condition);
 }
 
-/** What the shop sells now. `unlocks` maps a part id to the contract (or `'choice'`) that puts it in stock. */
+/**
+ * What the shop sells now. `unlocks` maps a part id to the contract (or `'choice'`, or `'arena:N'`)
+ * that puts it in stock. Vendors do not forget a pilot: from the second cycle on, everything a
+ * contract unlocks stays in stock. Arena prizes always need the rank.
+ */
 export function stockFor(state: GameState, parts: Part[], unlocks: Record<string, string>, missions: Mission[]): Part[] {
-  return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || reached(state, unlocks[part.id], missions));
+  const open = (condition: string): boolean =>
+    (state.cycle > 0 && !condition.startsWith('arena:')) || reached(state, condition, missions);
+  return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || open(unlocks[part.id]));
 }
 
 /** Messages that have arrived, oldest first. */

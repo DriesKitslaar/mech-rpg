@@ -49,12 +49,20 @@ describe('shop catalogue', () => {
   const frames = SHOP_PARTS.filter((p): p is FramePart => 'resist' in p);
   const weapons = SHOP_PARTS.filter((p): p is Weapon => p.kind === 'weapon');
 
-  test('thirty parts: sixteen frame parts, three generators, eleven weapons', () => {
-    expect(SHOP_PARTS).toHaveLength(30);
-    expect(frames).toHaveLength(16);
-    expect(SHOP_PARTS.filter((p) => p.kind === 'generator')).toHaveLength(3);
-    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(7);
-    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(4);
+  test('forty-eight parts: twenty-four frame parts, five generators, nineteen weapons', () => {
+    expect(SHOP_PARTS).toHaveLength(48);
+    expect(frames).toHaveLength(24);
+    expect(SHOP_PARTS.filter((p) => p.kind === 'generator')).toHaveLength(5);
+    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(11);
+    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(8);
+  });
+
+  test('every trait has what it needs, and each trait is used', () => {
+    for (const w of weapons) {
+      if (w.trait === 'thermal' || w.trait === 'drain') expect(w.traitPower, w.id).toBeGreaterThan(0);
+      else expect(w.traitPower, w.id).toBeUndefined();
+    }
+    expect(new Set(weapons.map((w) => w.trait).filter(Boolean))).toEqual(new Set(['pierce', 'thermal', 'drain', 'twin']));
   });
 
   test('every shop part has a price and a vendor and is in the catalogue', () => {
@@ -70,11 +78,12 @@ describe('shop catalogue', () => {
     expect(CATALOG['core-drone'].vendor).toBeUndefined();
   });
 
-  test.each(['head', 'core', 'arms', 'legs'] as const)('there are four %s parts', (kind) => {
-    expect(frames.filter((p) => p.kind === kind)).toHaveLength(4);
+  test.each(['head', 'core', 'arms', 'legs'] as const)('there are six %s parts', (kind) => {
+    expect(frames.filter((p) => p.kind === kind)).toHaveLength(6);
   });
 
-  test.each(['scout-mk1|hauler|rigger|strider', 'halo|halo|halo|halo', 'bulwark|bulwark|bulwark|bulwark', 'ronin|ronin|ronin|ronin'])(
+  test.each(['scout-mk1|hauler|rigger|strider', 'halo|halo|halo|halo', 'bulwark|bulwark|bulwark|bulwark', 'ronin|ronin|ronin|ronin',
+    'wraith|wraith|wraith|wraith', 'colossus|colossus|colossus|colossus'])(
     'family %s makes a valid build with every generator', (family) => {
       const [head, core, arms, legs] = family.split('|');
       for (const generator of ['gen-kd1', 'gen-prism', 'gen-furnace']) {
@@ -91,6 +100,12 @@ describe('shop catalogue', () => {
     expect(CATALOG['gen-prism']).toMatchObject({ output: 520, cooling: 22 });
     expect(CATALOG['head-scout-mk1'].price).toBe(300);
     expect(CATALOG['wpn-halo-array']).toMatchObject({ ammo: null, mount: 'shoulder', damageType: 'energy' });
+    expect(CATALOG['legs-wraith']).toMatchObject({ capacity: 800, mobility: 60, price: 2600 });
+    expect(CATALOG['core-colossus']).toMatchObject({ ap: 400, weight: 480 });
+    expect(CATALOG['wpn-needler']).toMatchObject({ trait: 'twin', damage: 26, ammo: 16 });
+    expect(CATALOG['wpn-null-beam']).toMatchObject({ trait: 'drain', traitPower: 100, mount: 'shoulder' });
+    expect(CATALOG['gen-tidal']).toMatchObject({ output: 600, cooling: 30 });
+    expect(SHOP_UNLOCKS).toMatchObject({ 'wpn-breaker-cannon': 'arena:9', 'wpn-needler': 'undertow-1', 'gen-ember': 'arena:3', 'head-colossus': 'arena:8' });
   });
 
 });
@@ -153,7 +168,17 @@ describe('campaign content', () => {
       expect(enemy.sprite in SPRITES, enemy.sprite).toBe(true);
       for (const id of Object.values(enemy.build)) expect(CATALOG[id], `${enemy.id}: ${id}`).toBeDefined();
     }
-    expect(Object.keys(ENEMIES)).toHaveLength(6);
+    expect(Object.keys(ENEMIES)).toHaveLength(10);
+  });
+
+  test('enemies that are drawn from their parts have a sprite for every part they show', () => {
+    const composed = Object.values(ENEMIES).filter((e) => e.composed);
+    expect(composed.map((e) => e.id).sort()).toEqual(['heavy-mech', 'juggernaut', 'light-mech', 'rival', 'stalker']);
+    for (const enemy of composed) {
+      const { head, core, arms, legs, rightHand, leftHand, shoulder } = enemy.build;
+      const ids = [head, core, legs, `${arms}.near`, `${arms}.far`, rightHand, leftHand, shoulder].filter(Boolean) as string[];
+      for (const id of ids) expect(id in SPRITES, `${enemy.id}: ${id}`).toBe(true);
+    }
   });
 
   test('every client has an ending', () => {
@@ -172,7 +197,7 @@ describe('campaign content', () => {
   test('shop unlocks name real parts and real contracts, and the starter kit is never locked', () => {
     for (const [partId, condition] of Object.entries(SHOP_UNLOCKS)) {
       expect(SHOP_PARTS.some((p) => p.id === partId), partId).toBe(true);
-      expect(condition === 'choice' || MISSIONS.some((m) => m.id === condition), condition).toBe(true);
+      expect(condition === 'choice' || /^arena:([1-9]|10)$/.test(condition) || MISSIONS.some((m) => m.id === condition), condition).toBe(true);
     }
     for (const id of Object.values(STARTER_BUILD)) expect(id in SHOP_UNLOCKS, id).toBe(false);
   });

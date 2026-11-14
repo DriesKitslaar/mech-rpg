@@ -1,5 +1,5 @@
 import type { Mission } from '../core/campaign';
-import { ENEMIES } from '../content/enemies';
+import { ALL_ENEMIES } from '../content/arena';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -13,7 +13,7 @@ const B = STRINGS.briefing;
 export function hostiles(mission: Mission): string[] {
   const counts = new Map<string, number>();
   for (const battle of mission.battles) for (const id of battle.enemies) counts.set(id, (counts.get(id) ?? 0) + 1);
-  return [...counts].map(([id, n]) => `${ENEMIES[id]?.name ?? id}${n > 1 ? ` x${n}` : ''}`);
+  return [...counts].map(([id, n]) => `${ALL_ENEMIES[id]?.name ?? id}${n > 1 ? ` x${n}` : ''}`);
 }
 
 /** A contract's briefing: who is asking, what they say, what to expect, and whether to take it. */
@@ -30,10 +30,10 @@ export class BriefingScreen implements Screen {
   onInput(action: InputAction): void {
     if (action === 'up') this.list.move(-1);
     else if (action === 'down') this.list.move(1);
-    else if (action === 'cancel') this.app.openHub(true);
+    else if (action === 'cancel') this.app.closeBriefing(this.mission);
     else if (action === 'confirm') {
       if (this.list.selected?.id === 'accept') this.app.startMission(this.mission.id);
-      else this.app.openHub(true); // back to the list the briefing was opened from
+      else this.app.closeBriefing(this.mission); // back to the list the briefing was opened from
     }
   }
 
@@ -63,7 +63,9 @@ export class BriefingScreen implements Screen {
     }
     drawText(ctx, mission.title.toUpperCase(), 72, 8, { size: 16, color: COLORS.accent });
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
-    const tag = mission.phase === 'choice' ? B.exclusive : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable : '';
+    const tag = mission.arenaRank !== undefined ? STRINGS.arena.fight
+      : mission.id.startsWith('open-') ? B.open
+      : mission.phase === 'choice' ? B.exclusive : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable : '';
     wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
       drawText(ctx, line, 72, 40 + i * 11, { color: mission.phase === 'choice' ? COLORS.danger : COLORS.dim }));
 

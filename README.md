@@ -36,6 +36,17 @@ Op een computer: pijltjestoetsen, Enter, Escape, Q/E en spatie.
 - **Campagne**: twee introducties, daarna drie opdrachtgevers in vrije volgorde, dan één
   exclusief contract dat de andere twee uitsluit, en de finale van de gekozen opdrachtgever.
   Er zijn drie eindes. De patrouille is altijd beschikbaar.
+- **Arena**: tien tegenstanders met elk een eigen mecha. Elke rang levert een premie op en
+  hogere rangen openen de beste onderdelen in de winkel.
+- **Losse contracten**: na de introducties staan er altijd drie wisselende contracten op het
+  bord, van licht tot zwaar. Ze worden zwaarder naarmate je meer wint.
+- **Piloot**: gewonnen contracten geven ervaring. Elk niveau levert een punt op voor een van
+  acht vaardigheden.
+- **Nieuwe ronde**: na het einde kun je het verhaal opnieuw beginnen met alles wat je hebt,
+  tegen sterkere vijanden en voor meer loon.
+- **Opties**: geluid, muziek en snelle gevechten.
+
+![Arena](docs/screenshots/arena.png)
 
 ## Ontwikkelen
 
@@ -52,7 +63,7 @@ npm run dev
 | `npm test` | Tests op de spelregels, de inhoud en de schermlogica |
 | `npm run e2e` | Browsertests die het spel met het toetsenbord doorspelen |
 | `npm run typecheck` | Typecontrole |
-| `npm run simulate -- --all` | Speelt elk contract honderden keren automatisch en toont winstkans en opbrengst |
+| `npm run simulate -- --all` | Speelt elk contract honderden keren automatisch en toont winstkans en opbrengst (`--arena`, `--board` en `--cycle 1` voor de uitbreiding) |
 | `npm run build` | Bouwt de webversie in `dist/` |
 
 De APK wordt bij elke push gebouwd door de workflow in `.github/workflows/android.yml`.
@@ -61,10 +72,10 @@ De APK wordt bij elke push gebouwd door de workflow in `.github/workflows/androi
 
 | Map | Inhoud |
 |---|---|
-| `src/core` | Spelregels zonder beeld of opslag: gevecht, builds, economie, campagne |
+| `src/core` | Spelregels zonder beeld of opslag: gevecht, builds, economie, campagne, piloot, arena, contractbord |
 | `src/content` | Onderdelen, vijanden, contracten, berichten en alle speltekst |
 | `src/ui` | Schermen: per scherm een logicaklasse en een tekenklasse |
-| `src/platform` | Invoer, geluid en opslag |
+| `src/platform` | Invoer, geluid, muziek en opslag |
 | `scripts/art` | Beeld genereren en verwerken tot sprites |
 | `android` | De Android-schil (Capacitor) |
 | `docs/superpowers` | Het ontwerp en de bouwplannen |

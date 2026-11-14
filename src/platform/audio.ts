@@ -81,6 +81,11 @@ export class Sfx {
 
   constructor(private createContext: () => AudioContext = () => new AudioContext()) {}
 
+  /** The audio engine once it has been unlocked; null before that or on a device without sound. */
+  get context(): AudioContext | null {
+    return this.ctx;
+  }
+
   /** Call on the first input. Safe to call again. A device without audio simply stays silent. */
   unlock(): void {
     if (this.failed) return;

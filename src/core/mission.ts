@@ -1,4 +1,4 @@
-import { carryFrom, createBattle, type BattleState } from './battle';
+import { carryFrom, createBattle, type BattleOptions, type BattleState } from './battle';
 import type { Mission } from './campaign';
 import type { Build, Catalog, EnemyDef } from './types';
 
@@ -24,7 +24,7 @@ function fieldService(state: BattleState): void {
  */
 export function startMissionBattle(
   build: Build, mission: Mission, index: number, enemies: Record<string, EnemyDef>, catalog: Catalog,
-  seed: number, previous?: BattleState,
+  seed: number, previous?: BattleState, opts: Pick<BattleOptions, 'mods' | 'enemyScale'> = {},
 ): BattleState {
   const battle = mission.battles[index];
   if (!battle) throw new Error(`mission ${mission.id} has no battle ${index}`);
@@ -32,7 +32,7 @@ export function startMissionBattle(
     if (!Object.hasOwn(enemies, id)) throw new Error(`unknown enemy: ${id}`);
     return enemies[id];
   });
-  const state = createBattle(build, defs, catalog, seed + index, previous ? carryFrom(previous) : undefined);
+  const state = createBattle(build, defs, catalog, seed + index, { ...opts, carry: previous ? carryFrom(previous) : undefined });
   if (previous) fieldService(state);
   return state;
 }
@@ -40,11 +40,11 @@ export function startMissionBattle(
 /** Plays a whole mission with the given way of playing one battle. Returns the last battle fought. */
 export function playMission(
   build: Build, mission: Mission, enemies: Record<string, EnemyDef>, catalog: Catalog, seed: number,
-  playBattle: (state: BattleState) => BattleState,
+  playBattle: (state: BattleState) => BattleState, opts: Pick<BattleOptions, 'mods' | 'enemyScale'> = {},
 ): BattleState {
   let state: BattleState | undefined;
   for (let i = 0; i < mission.battles.length; i++) {
-    state = playBattle(startMissionBattle(build, mission, i, enemies, catalog, seed, state));
+    state = playBattle(startMissionBattle(build, mission, i, enemies, catalog, seed, state, opts));
     if (state.outcome !== 'victory') break;
   }
   return state!;

@@ -17,4 +17,19 @@ export const REFERENCE_BUILDS: Record<string, Build> = {
     ...DEMO_BUILD, head: 'head-halo', core: 'core-bulwark', legs: 'legs-bulwark', generator: 'gen-furnace',
     leftHand: 'wpn-pulse-carbine',
   },
+  /** After the campaign: a full Ronin with a rail lance and a shoulder array. */
+  tier4: {
+    head: 'head-ronin', core: 'core-ronin', arms: 'arms-ronin', legs: 'legs-ronin', generator: 'gen-prism',
+    rightHand: 'wpn-rail-lance', leftHand: 'wpn-pulse-carbine', shoulder: 'wpn-halo-array',
+  },
+  /** Deep into the arena: a Wraith striker with a void rifle. */
+  tier5: {
+    head: 'head-wraith', core: 'core-wraith', arms: 'arms-wraith', legs: 'legs-wraith', generator: 'gen-tidal',
+    rightHand: 'wpn-void-rifle', leftHand: 'wpn-arc-caster', shoulder: 'wpn-halo-array',
+  },
+  /** The top of the ladder: a full Colossus carrying the heaviest guns there are. */
+  tier6: {
+    head: 'head-colossus', core: 'core-colossus', arms: 'arms-colossus', legs: 'legs-colossus', generator: 'gen-tidal',
+    rightHand: 'wpn-void-rifle', leftHand: 'wpn-lance-emitter', shoulder: 'wpn-breaker-cannon',
+  },
 };

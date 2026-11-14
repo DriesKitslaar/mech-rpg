@@ -19,13 +19,16 @@ export type { BattlePhase, MenuView } from './battleFlow';
 
 const MESSAGE_MS = 600;
 const DEFAULT_BACKGROUND = 'bg-neon-district';
-const MECH_ORIGIN = { x: 0, y: 16 };
+const MECH_ORIGIN = { x: -8, y: 16 };
 /** Where each enemy stands (the bottom centre of its sprite), by how many there are. */
 const ENEMY_ANCHORS: Record<number, { x: number; y: number }[]> = {
   1: [{ x: 250, y: 150 }],
   2: [{ x: 240, y: 120 }, { x: 270, y: 174 }],
   3: [{ x: 252, y: 96 }, { x: 274, y: 174 }, { x: 210, y: 174 }],
 };
+/** Right edge of the mirrored pose box of a duelling enemy mech, and the area its body covers. */
+const DUEL_RIGHT = 324;
+const DUEL_BODY = { x: 186, y: 22, w: 118, h: 150 };
 const PANEL_Y = 178;
 const MENU_W = 154;
 /** Where a hit on each part of the player's mech lands, inside the pose box. */
@@ -43,12 +46,14 @@ export class BattleScreen {
 
   constructor(
     private flow: BattleFlow, private sprites: SpriteStore, private catalog: Catalog,
-    private opts: { fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string },
+    private opts: { fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string; speed?: number },
   ) {
     this.shownAp = new ApDisplay(flow.state.units);
   }
 
-  update(dtMs: number): void {
+  update(realMs: number): void {
+    // The fast-battles option plays every pause and effect at a multiple of normal speed.
+    const dtMs = realMs * (this.opts.speed ?? 1);
     this.clock += dtMs;
     this.spawnEffects();
     this.fx.update(dtMs);
@@ -136,9 +141,17 @@ export class BattleScreen {
       drawMech(ctx, this.playerSprites(), MECH_ORIGIN.x, MECH_ORIGIN.y, { dx, dy: 0 }, dy));
   }
 
+  /** True when the battle's single enemy is a mech drawn full size from its parts, mirrored. */
+  private duel(): boolean {
+    const units = this.flow.state.units;
+    return units.length === 2 && units[1].composed;
+  }
+
   private enemyRect(index: number): { x: number; y: number; w: number; h: number; sprite: Sprite } {
     const enemies = this.flow.state.units.length - 1;
     const enemy = this.flow.state.units[index + 1];
+    // A duelling mech fills the mirrored pose box; this is the part of it the body occupies.
+    if (this.duel()) return { x: DUEL_BODY.x, y: DUEL_BODY.y, w: DUEL_BODY.w, h: DUEL_BODY.h, sprite: { image: null as unknown as CanvasImageSource, w: 0, h: 0 } };
     const anchor = (ENEMY_ANCHORS[enemies] ?? ENEMY_ANCHORS[3])[index] ?? ENEMY_ANCHORS[3][2];
     const sprite = this.sprites.get(enemy.sprite ?? enemy.id, { w: 48, h: 48, label: enemy.name });
     return { x: Math.round(anchor.x - sprite.w / 2), y: anchor.y - sprite.h, w: sprite.w, h: sprite.h, sprite };
@@ -150,8 +163,22 @@ export class BattleScreen {
       if (this.hidden(enemy)) return;
       const r = this.enemyRect(i);
       // Flying units bob; anything that stands on the ground stays put.
-      const hover = enemy.sprite === 'enemy-recon-drone' ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
-      this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx, r.y + dy, r.w, r.h));
+      const flies = enemy.sprite === 'enemy-recon-drone' || enemy.sprite === 'enemy-gunship';
+      const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
+      if (this.duel()) {
+        const parts = mechSprites(this.sprites, enemy.build);
+        const sway = Math.round(Math.sin(this.clock / 520 + 2));
+        this.withTransform(ctx, enemy, sway, (dx, dy) => {
+          // Mirror the pose box so the mech faces left; a shift to the right is a shift to the left in there.
+          ctx.save();
+          ctx.translate(DUEL_RIGHT, MECH_ORIGIN.y);
+          ctx.scale(-1, 1);
+          drawMech(ctx, parts, 0, 0, { dx: -dx, dy: 0 }, dy);
+          ctx.restore();
+        });
+      } else {
+        this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx, r.y + dy, r.w, r.h));
+      }
       if (enemy.destroyed) return;
       const core = enemy.parts.core!;
       drawMeter(ctx, r.x + 8, r.y + r.h + 2, r.w - 16, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
@@ -164,9 +191,19 @@ export class BattleScreen {
     const isPlayer = (id: string) => id === 'player';
     const enemyIndex = (id: string) => this.flow.state.units.findIndex((u) => u.id === id) - 1;
     const at = (p: { x: number; y: number }) => ({ x: MECH_ORIGIN.x + p.x, y: MECH_ORIGIN.y + p.y });
+    /** A point of the pose box as it lands on screen for the mirrored enemy. */
+    const mirror = (p: { x: number; y: number }) => ({ x: DUEL_RIGHT - p.x, y: MECH_ORIGIN.y + p.y });
     return {
       muzzle: (id, weapon) => {
         if (!isPlayer(id)) {
+          if (this.duel()) {
+            const enemy = this.flow.state.units[1];
+            const w = mechSprites(this.sprites, enemy.build)[weapon]?.w ?? 40;
+            const p = weapon === 'rightHand' ? { x: NEAR_FIST.x + 0.8 * w, y: NEAR_FIST.y - 2 }
+              : weapon === 'leftHand' ? { x: FAR_FIST.x + 0.8 * w, y: FAR_FIST.y - 2 }
+              : { x: BACK_MOUNT.x + 0.4 * w, y: BACK_MOUNT.y };
+            return mirror(p);
+          }
           const r = this.enemyRect(enemyIndex(id));
           return { x: r.x + 2, y: r.y + Math.round(r.h * 0.62) };
         }
@@ -177,12 +214,14 @@ export class BattleScreen {
       },
       hitPoint: (id, part) => {
         if (isPlayer(id)) return at(PLAYER_HIT[part]);
+        if (this.duel()) return mirror(PLAYER_HIT[part]);
         const r = this.enemyRect(enemyIndex(id));
         const offset = { core: 0.5, legs: 0.25, arms: 0.5, head: 0.2 }[part];
         return { x: r.x + r.w / 2, y: r.y + r.h * offset };
       },
       centre: (id) => {
         if (isPlayer(id)) return at({ x: 78, y: 70 });
+        if (this.duel()) return mirror({ x: 78, y: 70 });
         const r = this.enemyRect(enemyIndex(id));
         return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
       },
@@ -232,7 +271,8 @@ export class BattleScreen {
       drawText(ctx, target.name.toUpperCase(), x, PANEL_Y + 5, { color: COLORS.accent });
       const y = this.drawParts(ctx, target, x, PANEL_Y + 5 + LINE + 1, this.flow.targetPart);
       const p = this.flow.preview!;
-      drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}`, x, y + 3, { size: 16 });
+      const twice = p.shots > 1 ? ` x${p.shots}` : '';
+      drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}${twice}`, x, y + 3, { size: 16 });
       // Energy and heat stay in view while aiming, at the foot of the menu panel.
       this.drawEnergyAndHeat(ctx, player, 6, LOGICAL_H - 2 * LINE - 4, 132);
     } else {

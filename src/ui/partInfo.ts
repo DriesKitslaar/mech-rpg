@@ -11,6 +11,7 @@ export function partLines(part: Part): string[] {
       `${I.types[part.damageType]}  ${I.damage} ${part.damage}  ${I.accuracy} ${part.accuracy}`,
       `${I.energy} ${part.energy}  ${I.heat} ${part.heat}  ${I.weight} ${part.weight}`,
       part.ammo === null ? `${I.ammo} ${I.unlimited}` : `${I.ammo} ${part.ammo}  ${part.costPerShot} ${I.perShot}`,
+      ...(part.trait ? [I.traits[part.trait](part.traitPower ?? 0)] : []),
     ];
   }
   if (part.kind === 'generator') {
