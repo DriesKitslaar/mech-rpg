@@ -52,6 +52,9 @@ test('a destroyed unit fades out, then counts as gone', () => {
   const fx = new BattleFx(scene);
   fx.onEvent({ type: 'unitDestroyed', unit: 'enemy-0' });
   expect(fx.isGone('enemy-0')).toBe(false);
+  // Whole for the first half, so it is seen coming apart; fading after that.
+  fx.update(DEATH_MS / 4);
+  expect(fx.transform('enemy-0').alpha).toBe(1);
   fx.update(DEATH_MS / 2);
   const mid = fx.transform('enemy-0');
   expect(mid.alpha).toBeGreaterThan(0);

@@ -18,7 +18,6 @@ export const POSE_MS: Record<ActionName, number> = {
   fireNear: 220, fireFar: 220, fireShoulder: 300, hit: 260, boost: 420, strike: 320, destroyed: 550,
 };
 
-const UPPER: SpriteSlot[] = ['core', 'head', 'armNear', 'armFar', 'rightHand', 'leftHand', 'shoulder'];
 const r = (n: number): number => Math.round(n) || 0;
 /** A sharp start that dies away: 1 at the beginning, 0 at the end. */
 const kick = (p: number): number => (1 - p) * (1 - p);
@@ -133,6 +132,8 @@ export class Puppet {
   private now = 0;
   private acts: { name: ActionName; start: number }[] = [];
   private wrecked = false;
+  /** How the unit stood at the moment it began to come apart: it is held there, not snapped upright. */
+  private last: Pose | null = null;
 
   /** `breathes` is false for a machine that is one picture and stands on the ground: a turret does not heave. */
   constructor(private phase = 0, private moving = true, private breathes = true) {}
@@ -165,8 +166,60 @@ export class Puppet {
     if (!this.moving) return {};
     if (this.wrecked) return actionPose('destroyed', 1);
     const playing = this.acts.filter((act) => this.now >= act.start).map((act) => actionPose(act.name, (this.now - act.start) / POSE_MS[act.name]));
-    // A mech that is coming apart does nothing else.
-    if (this.acts.some((act) => act.name === 'destroyed' && this.now >= act.start)) return addPoses(...playing);
+    // A mech that is coming apart no longer breathes or sways: it breaks up from however it stood.
+    if (this.acts.some((act) => act.name === 'destroyed' && this.now >= act.start)) {
+      this.last ??= addPoses(this.breathes ? idlePose(clockMs, this.phase) : {}, statePose(stance, clockMs));
+      return addPoses(this.last, ...playing);
+    }
     return addPoses(this.breathes ? idlePose(clockMs, this.phase) : {}, statePose(stance, clockMs), ...playing);
   }
+}
+
+/** The events that change how a unit stands. */
+type StanceEvent = { type: string; unit?: string };
+interface StanceSource { id: string; destroyed: boolean; guarding: boolean; staggered: number; overheated: boolean }
+
+/**
+ * How each unit stands as far as the screen has shown: the rules are always a few messages ahead of
+ * what is on screen, so a guard that the rules have already dropped is kept up until the screen gets
+ * to the turn that drops it, and a stagger starts with its own message, not with the shot before it.
+ */
+export class ShownStance {
+  private shown = new Map<string, Required<Stance>>();
+
+  private entry(id: string): Required<Stance> {
+    let s = this.shown.get(id);
+    if (!s) { s = { guarding: false, staggered: false, overheated: false }; this.shown.set(id, s); }
+    return s;
+  }
+
+  /** An event has just been shown. */
+  onEvent(event: StanceEvent): void {
+    if (!event.unit) return;
+    const s = this.entry(event.unit);
+    switch (event.type) {
+      case 'guard': s.guarding = true; break;
+      case 'stagger': s.staggered = true; break;
+      case 'recover': s.staggered = false; break;
+      case 'overheat': s.overheated = true; break;
+      // A turn that is taken starts upright; one that is lost to heat is spent hanging.
+      case 'turnStart': s.guarding = false; s.overheated = false; break;
+      case 'turnSkipped': s.guarding = false; break;
+      default: break;
+    }
+  }
+
+  /** Everything has been shown: the screen and the rules agree, so take the rules' word. A wreck stays as it fell. */
+  sync(units: StanceSource[]): void {
+    for (const u of units) {
+      if (u.destroyed) continue;
+      const s = this.entry(u.id);
+      s.guarding = u.guarding;
+      s.staggered = u.staggered > 0;
+      // Heat that cost the turn just shown keeps the mech hanging until its next turn starts.
+      if (u.overheated) s.overheated = true;
+    }
+  }
+
+  of(id: string): Stance { return this.entry(id); }
 }
