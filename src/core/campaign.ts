@@ -186,16 +186,23 @@ export function introductionsDone(state: GameState, missions: Mission[]): boolea
   return state.cycle > 0 || all(missions, 'intro').every((m) => state.completed.includes(m.id));
 }
 
-export const CYCLE_SCALE = 0.35;
+export const CYCLE_SCALE = 0.25;
 export const CYCLE_PAY = 0.5;
 
-/** A story contract as it is offered in the given cycle: tougher enemies, better pay. The patrol never changes. */
+/**
+ * A story contract as it is offered in the given cycle: tougher enemies, better pay. What has to be
+ * protected grows sturdier by as much as the enemies grow tougher: it loses armour by the head of
+ * enemy standing, and tougher enemies stand longer. The patrol never changes.
+ */
 export function forCycle(mission: Mission, cycle: number): Mission {
   if (cycle <= 0 || mission.phase === 'patrol') return mission;
+  const tougher = 1 + CYCLE_SCALE * cycle;
   return {
     ...mission,
     reward: Math.round(mission.reward * (1 + CYCLE_PAY * cycle)),
-    scale: Math.round((mission.scale ?? 1) * (1 + CYCLE_SCALE * cycle) * 100) / 100,
+    scale: Math.round((mission.scale ?? 1) * tougher * 100) / 100,
+    battles: mission.battles.map((battle) =>
+      (battle.objective?.type === 'protect' ? { ...battle, objective: { ...battle.objective, hp: Math.ceil(battle.objective.hp * tougher) } } : battle)),
   };
 }
 
