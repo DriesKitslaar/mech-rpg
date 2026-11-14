@@ -8,6 +8,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
+import { idlePose } from './pose';
 import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const H = STRINGS.hub;
@@ -130,7 +131,7 @@ export class HubScreen implements Screen {
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
 
-    drawMech(ctx, mechSprites(sprites, game.build, game.paint), -8, 78, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
+    drawMech(ctx, mechSprites(sprites, game.build, game.paint), -8, 78, { dx: 0, dy: 0 }, 0, this.app.deps.fast ? {} : idlePose(this.clock));
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, H.heading, 5, 1, { color: COLORS.accent });

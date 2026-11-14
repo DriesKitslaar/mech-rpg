@@ -6,6 +6,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
+import { idlePose } from './pose';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawText, wrap } from './widgets';
 
 const A = STRINGS.arena;
@@ -78,7 +79,7 @@ export class ArenaScreen implements Screen {
     ctx.save();
     ctx.translate(LOGICAL_W + 6, 18);
     ctx.scale(-1, 1);
-    drawMech(ctx, mechSprites(sprites, shown.build, shown.paint), 0, 0, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
+    drawMech(ctx, mechSprites(sprites, shown.build, shown.paint), 0, 0, { dx: 0, dy: 0 }, 0, this.app.deps.fast ? {} : idlePose(this.clock));
     ctx.restore();
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);

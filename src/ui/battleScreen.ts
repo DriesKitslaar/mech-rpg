@@ -12,7 +12,9 @@ import { soundsForEvent } from '../platform/audio';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
+import { HitStop } from './hitStop';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
+import { Particles } from './particles';
 import { Puppet, type Pose } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 import { fitTags, labelFits, markPosition, tagWidth, type Tag } from './tags';
@@ -68,6 +70,10 @@ export class BattleScreen {
   private fx = new BattleFx(this.scene());
   /** What moves each unit's layers: one puppet a unit, made when it is first drawn. */
   private puppets = new Map<string, Puppet>();
+  /** Casings, sparks, wreckage, smoke and dust. */
+  private particles: Particles;
+  /** The beat the field holds when something is destroyed. */
+  private hitStop: HitStop;
   /** Events already handed to the effects. */
   private fxDone = 0;
   /** Armour as shown, which trails the rules until each shot has landed. */
@@ -106,6 +112,8 @@ export class BattleScreen {
       jingle?: (won: boolean) => boolean;
     },
   ) {
+    this.particles = new Particles(7, !opts.fast);
+    this.hitStop = new HitStop(!opts.fast);
     this.introTotal = opts.fast ? 0 : opts.boss ? WARNING_MS : INTRO_MS;
     this.intro = this.introTotal;
     this.shownAp = new ApDisplay(flow.state.units);
@@ -145,8 +153,11 @@ export class BattleScreen {
       return;
     }
     this.spawnEffects();
-    this.fx.update(dtMs);
-    for (const puppet of this.puppets.values()) puppet.update(dtMs);
+    // A killing blow holds everything that moves for a few frames.
+    const moved = this.hitStop.pass(dtMs);
+    this.fx.update(moved);
+    for (const puppet of this.puppets.values()) puppet.update(moved);
+    this.particles.update(moved);
     this.shownAp.update(dtMs);
     this.updateTalk(realMs);
     const rumble = this.fx.takeRumble();
@@ -273,7 +284,12 @@ export class BattleScreen {
       drawWeather(ctx, weatherFor(background), this.clock, LOGICAL_W, PANEL_Y - FIELD_Y);
       ctx.restore();
     }
+    this.particles.draw(ctx);
     this.fx.draw(ctx);
+    if (this.hitStop.flash > 0) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
+      ctx.fillRect(0, 14, LOGICAL_W, PANEL_Y - 14);
+    }
     ctx.restore();
 
     this.drawMessage(ctx);
@@ -374,6 +390,41 @@ export class BattleScreen {
   /** Sets the units an event is about in motion: the one that fires kicks, the one that is hit flinches. */
   private move(event: BattleEvent, melee: boolean, flight: number): void {
     const unit = (id: string): UnitState | undefined => this.flow.state.units.find((u) => u.id === id);
+    const scene = this.scene();
+    const ground = PANEL_Y - 6;
+    if (event.type === 'shot') {
+      const dtype = scene.damageType(event.unit, event.weapon);
+      // A gun that fires bullets throws a casing; whatever lands throws sparks in its own colour.
+      if (!melee && dtype === 'kinetic') this.particles.emit('casing', scene.muzzle(event.unit, event.weapon), scene.facing(event.unit), 0, ground);
+      if (event.hit) {
+        const at = scene.hitPoint(event.target, event.appliedTo);
+        this.particles.emit('sparks', at, scene.facing(event.unit), flight, undefined, { kinetic: '#ffe9a8', energy: '#7fe9ff', explosive: '#ffb46b' }[dtype]);
+        if (dtype === 'explosive') this.particles.emit('smoke', at, 1, flight + 60);
+      }
+    }
+    if (event.type === 'boost') {
+      const c = scene.centre(event.unit);
+      this.particles.emit('dust', { x: c.x, y: ground }, scene.facing(event.unit));
+    }
+    if (event.type === 'partDestroyed') {
+      const at = scene.hitPoint(event.unit, event.part);
+      this.particles.emit('debris', at, 1, 0, ground);
+      this.particles.emit('smoke', at, 1, 80);
+    }
+    if (event.type === 'unitDestroyed') {
+      this.hitStop.strike(event.unit === 'player' ? 160 : 90);
+      const c = scene.centre(event.unit);
+      this.particles.emit('debris', c, 1, 60, ground);
+      this.particles.emit('debris', c, 1, 180, ground);
+      this.particles.emit('embers', c, 1, 60);
+      this.particles.emit('smoke', c, 1, 120);
+      this.particles.emit('smoke', c, 1, 320);
+    }
+    if (event.type === 'blast') {
+      const c = scene.centre(event.target);
+      this.particles.emit('embers', c, 1);
+      this.particles.emit('smoke', c, 1, 100);
+    }
     if (event.type === 'shot') {
       const shooter = unit(event.unit);
       const kick = melee ? 'strike' : event.weapon === 'rightHand' ? 'fireNear' : event.weapon === 'leftHand' ? 'fireFar' : 'fireShoulder';
