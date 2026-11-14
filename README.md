@@ -67,7 +67,7 @@ npm run dev
 | `npm run e2e` | Browsertests die het spel met het toetsenbord doorspelen |
 | `npm run typecheck` | Typecontrole |
 | `npm run simulate -- --table` | Speelt elk contract honderden keren automatisch en toont de winstkans per referentiebuild (`--arena`, `--board`, `--cycle 1`, `--why`) |
-| `npm run career -- --all` | Laat een piloot hele loopbanen zelf uitspelen: elke route, elke moeilijkheid |
+| `npm run career -- --all` | Laat een piloot hele loopbanen zelf uitspelen: elke route, elke moeilijkheid. Hij vecht alleen met Auto Turn en koopt onderdelen via de spelregels, niet via de winkelschermen |
 | `npm run build` | Bouwt de webversie in `dist/` |
 
 De APK wordt bij elke push gebouwd door de workflow in `.github/workflows/android.yml`.
