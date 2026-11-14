@@ -179,8 +179,10 @@ const linesOf = (s: Song): { pattern: string; steps: number; voice: string; toke
   Object.entries(s.patterns).flatMap(([pattern, { steps, lines }]) =>
     Object.entries(lines).map(([voice, text]) => ({ pattern, steps, voice, tokens: lineTokens(text) })));
 
-test('the game has its ten songs', () => {
-  expect(Object.keys(SONGS).sort()).toEqual(['arena', 'battle', 'battle2', 'boss', 'briefing', 'defeat', 'ending', 'hub', 'title', 'victory']);
+test('the game has its fourteen songs', () => {
+  expect(Object.keys(SONGS).sort()).toEqual([
+    'arena', 'battle', 'battle2', 'boss', 'briefing', 'defeat', 'ending', 'hadron', 'hub', 'lumen', 'rival', 'title', 'undertow', 'victory',
+  ]);
 });
 
 test.each(ALL)('%s parses', (_name, s) => {
@@ -292,8 +294,10 @@ test.each(LOOPS)('something sounds in every bar of %s', (_name, s) => {
   expect(sounding.size).toBe(compiled.steps / bar);
 });
 
-test('the looping songs are the eight the game moves between', () => {
-  expect(LOOPS.map(([name]) => name).sort()).toEqual(['arena', 'battle', 'battle2', 'boss', 'briefing', 'ending', 'hub', 'title']);
+test('the looping songs are the twelve the game moves between', () => {
+  expect(LOOPS.map(([name]) => name).sort()).toEqual([
+    'arena', 'battle', 'battle2', 'boss', 'briefing', 'ending', 'hadron', 'hub', 'lumen', 'rival', 'title', 'undertow',
+  ]);
 });
 
 test.each(['victory', 'defeat'] as const)('%s plays once and lasts between two and four seconds', (name) => {

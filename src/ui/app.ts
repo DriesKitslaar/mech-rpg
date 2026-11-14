@@ -46,7 +46,7 @@ import { OptionsScreen } from './optionsScreen';
 import { PilotScreen } from './pilotScreen';
 import { SceneScreen } from './sceneScreen';
 import { SettlementScreen } from './settlementScreen';
-import { battleTrack, trackFor } from './soundtrack';
+import { battleTrack, briefingTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
@@ -480,7 +480,7 @@ export class App {
 
   openArenaBriefing(rank: number): void {
     const mission = this.arenaFight(rank);
-    if (mission) this.show('briefing', new BriefingScreen(this, mission));
+    if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
   /** The mirror match, if the arena offers it to this pilot. */
@@ -492,7 +492,7 @@ export class App {
 
   openMirrorBriefing(): void {
     const mission = this.mirrorFight();
-    if (mission) this.show('briefing', new BriefingScreen(this, mission));
+    if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
   /** Every enemy a battle can field, the opponent of a mirror match made from the pilot's build as it is now. */
@@ -514,7 +514,7 @@ export class App {
 
   openDrillBriefing(drillId: string): void {
     const mission = this.drillFight(drillId);
-    if (mission) this.show('briefing', new BriefingScreen(this, mission));
+    if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
   /** Books a drill: the first pass pays and is remembered; nothing else changes. */
@@ -567,7 +567,7 @@ export class App {
   /** Opens a contract's briefing; `replay` for one from the archive. */
   openBriefing(missionId: string, replay = false): void {
     const mission = this.offered(missionId, replay);
-    if (mission) this.show('briefing', new BriefingScreen(this, mission));
+    if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
   /** Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends no mech of its own. */
