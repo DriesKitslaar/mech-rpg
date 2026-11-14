@@ -99,7 +99,8 @@ export class CreditsScreen implements Screen {
   }
 
   view(): ScreenView {
-    return { menu: { items: [], cursor: 0 }, credits: { done: this.done } };
+    // A press in the first moments is held off: it is passed over, not refused.
+    return { menu: { items: [], cursor: 0 }, credits: { done: this.done }, busy: !this.app.deps.fast && this.clock < CREDITS_HOLD_MS };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

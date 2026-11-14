@@ -2,7 +2,8 @@ import { createBattle, type BattleOptions } from '../../src/core/battle';
 import { completeMission } from '../../src/core/campaign';
 import type { EnemyDef } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
-import { BattleFlow, BattleScreen, INTRO_MS, TALK_HOLD_MS, WARNING_MS } from '../../src/ui/battleScreen';
+import { BattleFlow, BattleScreen, INTRO_MS, TALK_CHARS, TALK_HOLD_MS, TALK_LINES, WARNING_MS } from '../../src/ui/battleScreen';
+import { SCENE_HOLD_MS } from '../../src/ui/sceneScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { WORLD } from '../../src/content/codex';
 import { MISSIONS } from '../../src/content/missions';
@@ -10,7 +11,7 @@ import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/storage';
 import type { InputAction } from '../../src/platform/input';
-import { App } from '../../src/ui/app';
+import { App, SHUTTER_MS } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
 
 /** A canvas context that accepts anything and remembers what was called. */
@@ -28,7 +29,10 @@ function store(saved?: GameState): KeyValueStore {
   const data: Record<string, string> = saved ? { [SAVE_KEY]: JSON.stringify(saved) } : {};
   return { getItem: (k) => data[k] ?? null, setItem: (k, v) => { data[k] = v; }, removeItem: (k) => { delete data[k]; } };
 }
-const snap = (app: App) => app.snapshot() as { screen: string; menu: { items: { id: string }[]; cursor: number }; battle?: { phase: string } };
+const snap = (app: App) => app.snapshot() as {
+  screen: string; busy: boolean; typing?: boolean; menu: { items: { id: string }[]; cursor: number };
+  battle?: { phase: string; banner: boolean; typing: boolean };
+};
 const press = (app: App, ...actions: InputAction[]) => actions.forEach((a) => app.onInput(a));
 function select(app: App, id: string): void {
   for (let i = 0; i < 60 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');
@@ -113,11 +117,34 @@ describe('the screens the three-act story added', () => {
     app.draw(ctx);
     expect(texts(calls)).toEqual(expect.arrayContaining(['ACT I', 'THE WAGE']));
     expect(calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'still-varn')).toBe(true);
+    // A press as the page comes up is held off; a later one writes the page out; one straight after
+    // that is held off again; only then does a press leave.
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'scene', typing: true, busy: true });
+    app.update(SCENE_HOLD_MS);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'scene', typing: false, busy: true });
     press(app, 'confirm');
     expect(snap(app).screen).toBe('scene');
-    app.update(900);
+    app.update(SCENE_HOLD_MS);
+    expect(snap(app)).toMatchObject({ busy: false });
     press(app, 'confirm');
     expect(snap(app).screen).toBe('hub');
+  });
+
+  test('a button mashed through a page of story still leaves it up long enough to be noticed', () => {
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store(), CATALOG), sprites, fast: false, seed: 3 });
+    // A new game: the callsign on offer is taken, and the first page of the story comes up.
+    press(app, 'confirm', 'confirm');
+    expect(snap(app).screen).toBe('scene');
+    let up = 0;
+    for (let i = 0; i < 200 && snap(app).screen === 'scene'; i++) {
+      press(app, 'confirm');
+      app.update(120);
+      up += 120;
+    }
+    expect(snap(app).screen).toBe('hub');
+    expect(up).toBeGreaterThanOrEqual(1000);
   });
 
   test('a contract with an objective shows it in the briefing, opens with its talk, and shows the objective in battle', () => {
@@ -148,7 +175,7 @@ describe('the screens the three-act story added', () => {
     expect(texts(calls)).not.toContain('OVERBURDEN');
     expect(calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'portrait-dispatch')).toBe(true);
     // The line is still being written: the first press finishes it, the second goes on.
-    const line = 'Count the hostiles. That is what the train loses';
+    const line = 'Count the hostiles. That is what the train';
     expect(texts(calls)).not.toContain(line);
     app.update(TALK_HOLD_MS);
     press(app, 'confirm');
@@ -301,7 +328,7 @@ describe('the screens the three-act story added', () => {
 
   test('a press that comes too soon after a line appears, or after the press that finished writing it, does nothing', () => {
     const { flow, screen, drawn } = talking();
-    const whole = 'Two hostiles. The one on the ground cannot dodge,';
+    const whole = 'Two hostiles. The one on the ground cannot';
     // Mashed at once: the line goes on writing itself.
     screen.onInput('confirm');
     expect(drawn().some((d) => d.text === whole)).toBe(false);
@@ -316,6 +343,99 @@ describe('the screens the three-act story added', () => {
     screen.update(40);
     screen.onInput('confirm');
     expect(flow.phase).not.toBe('talk');
+  });
+
+  test('a line that comes up by itself is never shown whole before it is written, and cannot be skipped the moment it appears', () => {
+    // A line for the second round: nobody presses anything to bring it up.
+    const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['gun-turret']], CATALOG, 7);
+    const text = 'Second round. They have your range now, so do not stand where you stood.';
+    const flow = new BattleFlow(state, CATALOG, { talk: [{ at: 2, who: 'Dispatch', text }] });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false });
+    const whole = 'Second round. They have your range now, so do';
+    const drawnWhole = () => {
+      const { ctx, calls } = recorder();
+      screen.draw(ctx);
+      return calls.some((c) => c.name === 'fillText' && String(c.args[0]).startsWith(whole));
+    };
+    let flashed = false;
+    let skipped = false;
+    for (let i = 0; i < 4000 && flow.state.round < 3 && flow.phase !== 'result'; i++) {
+      screen.update(16);
+      if (flow.phase === 'talk') {
+        // Drawn on the very frame it comes up, and pressed on the same frame, as a waiting thumb would.
+        if (drawnWhole()) flashed = true;
+        screen.onInput('confirm');
+        if (flow.phase !== 'talk') skipped = true;
+        break;
+      }
+      if (flow.phase === 'action') {
+        for (let j = 0; j < 12 && flow.menu.items[flow.menu.cursor]?.id !== 'endTurn'; j++) screen.onInput('down');
+        screen.onInput('confirm');
+      }
+    }
+    expect(flow.phase).toBe('talk');
+    expect(flashed).toBe(false);
+    expect(skipped).toBe(false);
+  });
+
+  test('the banner says what the battle asks for, in the words of the briefing', () => {
+    const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['recon-drone']], CATALOG, 7, { objective: { type: 'protect', name: 'Ore Train', hp: 12 } });
+    const screen = new BattleScreen(new BattleFlow(state, CATALOG, { quiet: true }), sprites, CATALOG, { fast: false, title: 'OVERBURDEN' });
+    screen.update(300);
+    const { ctx, calls } = recorder();
+    screen.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['OVERBURDEN', 'Protect: Ore Train', 'ORE TRAIN 12/12']));
+  });
+
+  test('a speaker\'s face is drawn at its own size, and a line may run to four rows beside it', () => {
+    const { flow, screen } = talking();
+    expect(flow.phase).toBe('talk');
+    expect([TALK_CHARS, TALK_LINES]).toEqual([46, 4]);
+    const { ctx, calls } = recorder();
+    screen.draw(ctx);
+    // No face of his own: Dispatch has the plain terminal mark, 56 pixels square.
+    const mark = calls.filter((c) => c.name === 'fillRect').find((c) => c.args[2] === 56 && c.args[3] === 56);
+    expect(mark).toBeDefined();
+  });
+
+  test('rain falls at its own pace whatever the battle speed', () => {
+    const rain = (speed: number) => {
+      const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['gun-turret']], CATALOG, 7);
+      const screen = new BattleScreen(new BattleFlow(state, CATALOG, { quiet: true }), sprites, CATALOG, { fast: false, speed, background: 'bg-neon-district' });
+      for (let i = 0; i < 120; i++) screen.update(16);
+      const { ctx, calls } = recorder();
+      screen.draw(ctx);
+      // Raindrops are the thin dashes drawn inside the field's own frame of reference.
+      return calls.filter((c) => c.name === 'fillRect' && c.args[2] === 1 && Number(c.args[3]) >= 3 && Number(c.args[3]) <= 6).map((c) => c.args.join(','));
+    };
+    expect(rain(1).length).toBeGreaterThan(10);
+    expect(rain(2.5)).toEqual(rain(1));
+  });
+
+  test('a battle that is over is marked by one fanfare: the jingle where there is music, the effect where there is not', () => {
+    const outcome = (jingle?: (won: boolean) => boolean) => {
+      const played: string[] = [];
+      const sfx = { muted: false, play: (name: string) => { played.push(name); } } as unknown as import('../../src/platform/audio').Sfx;
+      const state = structuredClone(createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['recon-drone']], CATALOG, 7));
+      state.units[1].parts.core!.ap = 1;
+      const flow = new BattleFlow(state, CATALOG, { quiet: true });
+      const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, sfx, ...(jingle ? { jingle } : {}) });
+      for (let i = 0; i < 6000 && flow.phase !== 'result'; i++) {
+        screen.update(16);
+        if (flow.phase === 'action') {
+          for (let j = 0; j < 12 && flow.menu.items[flow.menu.cursor]?.id !== 'auto'; j++) screen.onInput('down');
+          screen.onInput('confirm');
+        }
+      }
+      expect(flow.state.outcome).toBe('victory');
+      for (let i = 0; i < 60; i++) screen.update(16);
+      return played;
+    };
+    const asked: boolean[] = [];
+    expect(outcome((won) => { asked.push(won); return true; })).not.toContain('victory');
+    expect(asked).toEqual([true]);
+    expect(outcome()).toContain('victory');
+    expect(outcome(() => false)).toContain('victory');
   });
 
   test('a boss with phases says its line, and every new kind of event has something to draw', () => {
@@ -391,6 +511,42 @@ describe('the screens the three-act story added', () => {
     expect(leaves[0][1]).toBe(0);
     expect(leaves[1][1]).toBe(270 - (leaves[1][3] as number));
     expect(leaves[0][3]).toBeGreaterThan(100);
+  });
+
+  test('nothing is pressed on a battle the shutter still hides: the banner is there when it has opened', () => {
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store(done('intro-1')), CATALOG), sprites, fast: false, seed: 3 });
+    press(app, 'confirm');
+    select(app, 'contracts');
+    select(app, 'patrol');
+    select(app, 'accept');
+    app.update(48);
+    expect(snap(app)).toMatchObject({ screen: 'battle', busy: true, battle: { banner: true } });
+    press(app, 'confirm');
+    expect(snap(app).battle).toMatchObject({ banner: true });
+    // Once it has opened, a press dismisses the banner as before.
+    app.update(SHUTTER_MS);
+    expect(snap(app).busy).toBe(false);
+    press(app, 'confirm');
+    expect(snap(app).battle).toMatchObject({ banner: false });
+  });
+
+  test('the field and the title are drawn pixel for pixel while nothing shakes', () => {
+    // Stretched by a few pixels, a pixel picture loses its grid: rows and columns double up unevenly.
+    const title = new App({ catalog: CATALOG, save: new SaveFile(store(), CATALOG), sprites, fast: false, seed: 3 });
+    const shown = (app: App, id: string) => {
+      const { ctx, calls } = recorder();
+      app.update(700);
+      app.draw(ctx);
+      return calls.filter((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === id).map((c) => c.args.slice(3));
+    };
+    for (const size of shown(title, 'still-varn')) expect(size).toEqual([310, 270]);
+    const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['gun-turret']], CATALOG, 7);
+    const screen = new BattleScreen(new BattleFlow(state, CATALOG, { quiet: true }), sprites, CATALOG, { fast: false, background: 'bg-mine' });
+    screen.update(INTRO_MS + 16);
+    const { ctx, calls } = recorder();
+    screen.draw(ctx);
+    const field = calls.filter((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'bg-mine');
+    expect(field.map((c) => c.args.slice(1))).toEqual([[0, 0, 310, 270]]);
   });
 
   test('every objective draws its line', () => {

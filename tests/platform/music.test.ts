@@ -611,6 +611,47 @@ test('switching songs cuts the old one short and starts the new one at once', ()
   expect(audio.sources.slice(1).every((s) => SCALE_HERTZ.some((hertz) => Math.abs(hertz - s.frequency) < 1e-6))).toBe(true);
 });
 
+test('the hub song goes on from where it was left, so coming back from a briefing does not start it over', () => {
+  const audio = fakeAudio();
+  const music = new Music(audio.context, { hub: SCALE, briefing: DRONE });
+  begin(audio, music, 'hub');
+  // Left in the middle of its fourth note.
+  run(audio, music, 0.05 + 3 * STEP + 0.02);
+  music.play('briefing');
+  run(audio, music, 2);
+  const before = audio.sources.length;
+  music.play('hub');
+  music.update();
+  const now = audio.ctx.currentTime;
+  const back = audio.sources.slice(before);
+  // It picks up at the note it was on, not at the first; nothing is queued in the past or all at once.
+  expect(back.length).toBeGreaterThanOrEqual(1);
+  expect(back.length).toBeLessThanOrEqual(4);
+  expect(Math.abs(back[0].frequency - SCALE_HERTZ[0])).toBeGreaterThan(1);
+  expect(SCALE_HERTZ.slice(3, 6).some((hertz) => Math.abs(hertz - back[0].frequency) < 1e-6)).toBe(true);
+  for (const s of back) expect(s.startsAt).toBeGreaterThanOrEqual(now - 1e-9);
+  // And from there it runs on its grid as ever.
+  run(audio, music, 2);
+  const later = audio.sources.slice(before).filter((s) => SCALE_HERTZ.some((hertz) => Math.abs(hertz - s.frequency) < 1e-6));
+  for (let i = 1; i < later.length; i++) expect(later[i].startsAt - later[i - 1].startsAt).toBeCloseTo(STEP, 9);
+  expect(audio.problems).toEqual([]);
+});
+
+test('a battle song always starts from the top, however often it is left and come back to', () => {
+  const audio = fakeAudio();
+  const music = new Music(audio.context, { battle: SCALE, hub: DRONE });
+  begin(audio, music, 'battle');
+  run(audio, music, 0.05 + 3 * STEP + 0.02);
+  music.play('hub');
+  run(audio, music, 1);
+  const before = audio.sources.length;
+  music.play('battle');
+  music.update();
+  const back = audio.sources.slice(before);
+  expect(back[0].frequency).toBeCloseTo(SCALE_HERTZ[0], 6);
+  expect(back[0].startsAt).toBeCloseTo(audio.ctx.currentTime + FIRST, 9);
+});
+
 test('asking for the song that is already playing changes nothing', () => {
   const audio = fakeAudio();
   const music = new Music(audio.context, { battle: SCALE });

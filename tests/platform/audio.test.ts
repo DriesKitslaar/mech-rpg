@@ -48,6 +48,12 @@ test('menu input maps to move, confirm, cancel or deny', () => {
   expect(soundForInput('menu', true)).toBeNull();
 });
 
+test('a press on a screen that is not taking input yet is silent, not refused', () => {
+  expect(soundForInput('confirm', false, true)).toBeNull();
+  expect(soundForInput('confirm', true, true)).toBe('confirm');
+  expect(soundForInput('cancel', false, true)).toBeNull();
+});
+
 test('every sound has at least one audible tone', () => {
   for (const [name, tones] of Object.entries(SOUNDS)) {
     expect(tones.length, name).toBeGreaterThan(0);
