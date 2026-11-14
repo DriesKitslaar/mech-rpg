@@ -1,9 +1,0 @@
-{
-  "id": "family-heavy",
-  "model": "gpt-image-2",
-  "size": "1024x1024",
-  "quality": "low",
-  "method": "generate",
-  "references": [],
-  "prompt": "16-bit pixel art sprite of an original Japanese anime-style mecha (original design, not from any existing series), three-quarter view facing right, dynamic combat stance with legs apart and knees slightly bent, the near arm extended forward at hip height with a closed empty fist, the far arm bent slightly behind the body, whole body visible from head to feet. No weapons, nothing held in the hands. Heavy imposing proportions inspired by samurai armour: layered shoulder plates, helmet-like head with a single curved crest, armoured skirt plates over the hips, dark lacquered charcoal and deep red armour with glowing magenta accent lines. Crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
-}

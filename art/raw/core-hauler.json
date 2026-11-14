@@ -5,7 +5,7 @@
   "quality": "low",
   "method": "edit",
   "references": [
-    "art/raw/family-light.png"
+    "art/raw/family-salvage.png"
   ],
   "prompt": "Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 as the background. Do not move, redraw, rescale or recentre anything. Keep: only the torso: chest, abdomen and back, from the waist up to the neck. Erase the head, both arms with their shoulder armour, the hips and the legs."
 }

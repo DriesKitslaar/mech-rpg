@@ -1,0 +1,12 @@
+{
+  "id": "family-halo",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png",
+    "art/reference/ref-light.png"
+  ],
+  "prompt": "The first image shows a mecha in a combat stance. Redraw it as a different mecha design in exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, elbows, hands, hips, knees, feet) stays in the same place. The new design, shown in the second image, is: a slender white and navy mecha with sharp angular armour panels, glowing cyan accent lights and a compact helmet head with a horizontal cyan visor band and one swept-back blade antenna; slimmer limbs than the first image. Keep the same proportions between joints. No weapons, empty hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

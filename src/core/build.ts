@@ -66,6 +66,8 @@ export function validatePlayerBuild(build: Build, catalog: Catalog): BuildError[
   const stats = computeBuildStats(build, catalog);
   if (stats.weight > stats.capacity) errors.add('overweight');
   const costs = WEAPON_SLOTS.flatMap((slot) => weaponIn(build, slot, catalog)?.energy ?? []);
+  // An unarmed mech can only lose: it may not leave the garage.
+  if (costs.length === 0) errors.add('noWeapon');
   if (costs.length > 0 && stats.turnEnergy < Math.min(...costs)) errors.add('insufficientEnergy');
   return [...errors];
 }

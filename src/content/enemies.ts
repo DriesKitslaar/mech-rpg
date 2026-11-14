@@ -16,3 +16,9 @@ export const ENCOUNTERS: Record<string, string[]> = {
   intro: ['recon-drone', 'recon-drone'],
   outpost: ['gun-turret', 'recon-drone'],
 };
+
+/** How many contracts must be won before each encounter is offered. The patrol is always available. */
+export const ENCOUNTER_UNLOCK: Record<string, number> = { intro: 0, outpost: 1 };
+
+/** Credits paid for winning each encounter. */
+export const ENCOUNTER_REWARD: Record<string, number> = { intro: 600, outpost: 1100 };

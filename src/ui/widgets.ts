@@ -49,6 +49,24 @@ export function drawMeter(
   ctx.fillRect(x, y, fill, h);
 }
 
+/** Draws a scrolling list: cursor mark, label, and the item's note at the right edge. */
+export function drawList(
+  ctx: CanvasRenderingContext2D, list: { cursor: number; items: unknown[]; visible(rows: number): { items: { label: string; enabled: boolean; note?: string }[]; offset: number } },
+  x: number, y: number, width: number, rows: number,
+): void {
+  const { items, offset } = list.visible(rows);
+  items.forEach((item, i) => {
+    const selected = offset + i === list.cursor;
+    const color = !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text;
+    if (selected) drawText(ctx, '>', x, y + i * LINE, { color: COLORS.accent });
+    drawText(ctx, item.label, x + 8, y + i * LINE, { color });
+    if (item.note) drawText(ctx, item.note, x + width, y + i * LINE, { color: item.enabled ? COLORS.dim : COLORS.danger, align: 'right' });
+  });
+  // Small marks show that the list continues above or below.
+  if (offset > 0) drawText(ctx, '^', x + width + 4, y, { color: COLORS.dim });
+  if (offset + rows < list.items.length) drawText(ctx, 'v', x + width + 4, y + (rows - 1) * LINE, { color: COLORS.dim });
+}
+
 export function drawMenu(
   ctx: CanvasRenderingContext2D, x: number, y: number,
   items: { label: string; enabled: boolean }[], cursor: number,

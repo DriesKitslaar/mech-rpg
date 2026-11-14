@@ -1,6 +1,6 @@
 import { coolCost, boostCost, turnEnergyOf, HEAT_LIMIT, type UnitState } from '../core/battle';
 import { weaponIn } from '../core/build';
-import { FRAME_SLOTS, type Build, type Catalog, type FrameSlot } from '../core/types';
+import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { BattleFlow } from './battleFlow';
@@ -9,7 +9,8 @@ import type { Sfx } from '../platform/audio';
 import { soundsForEvent } from '../platform/audio';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, flightFor, type Scene } from './battleFx';
-import { BACK_MOUNT, FAR_FIST, NEAR_FIST, layoutMech, type SpriteSize, type SpriteSlot } from './mechLayout';
+import { BACK_MOUNT, FAR_FIST, NEAR_FIST } from './mechLayout';
+import { drawMech, mechSprites, type MechSprites } from './mechView';
 import type { Sprite, SpriteStore } from './sprites';
 import { COLORS, LINE, drawMenu, drawMeter, drawPanel, drawText } from './widgets';
 
@@ -23,28 +24,10 @@ const ENEMY_BOX = 64;
 const ENEMY_SPOTS = [{ x: 204, y: 30 }, { x: 244, y: 64 }, { x: 204, y: 100 }];
 const PANEL_Y = 178;
 const MENU_W = 154;
-/** Placeholder boxes, roughly where each layer sits in the pose, for when a sprite is missing. */
-const FALLBACK: Record<SpriteSlot, SpriteSize> = {
-  armFar: { w: 30, h: 42, ox: 18, oy: 38 }, legs: { w: 96, h: 84, ox: 14, oy: 72 }, core: { w: 42, h: 52, ox: 54, oy: 28 },
-  head: { w: 24, h: 24, ox: 66, oy: 6 }, armNear: { w: 54, h: 30, ox: 88, oy: 34 },
-  rightHand: { w: 70, h: 24 }, leftHand: { w: 40, h: 20 }, shoulder: { w: 44, h: 26 },
-};
 /** Where a hit on each part of the player's mech lands, inside the pose box. */
 const PLAYER_HIT: Record<FrameSlot, { x: number; y: number }> = {
   head: { x: 76, y: 20 }, core: { x: 78, y: 50 }, arms: { x: 108, y: 44 }, legs: { x: 76, y: 108 },
 };
-/** Which sprite a slot shows for a build: the arms part supplies two layers. */
-const SPRITE_ID: Record<SpriteSlot, (build: Build) => string | undefined> = {
-  armFar: (b) => b.arms && `${b.arms}.far`,
-  legs: (b) => b.legs,
-  core: (b) => b.core,
-  head: (b) => b.head,
-  armNear: (b) => b.arms && `${b.arms}.near`,
-  rightHand: (b) => b.rightHand,
-  leftHand: (b) => b.leftHand,
-  shoulder: (b) => b.shoulder,
-};
-
 export class BattleScreen {
   private timer = 0;
   private clock = 0;
@@ -135,30 +118,17 @@ export class BattleScreen {
     ctx.globalAlpha = 1;
   }
 
-  private playerSprites(): Partial<Record<SpriteSlot, Sprite>> {
-    const build = this.flow.state.units[0].build;
-    const parts: Partial<Record<SpriteSlot, Sprite>> = {};
-    for (const slot of Object.keys(SPRITE_ID) as SpriteSlot[]) {
-      const id = SPRITE_ID[slot](build);
-      if (id) parts[slot] = this.sprites.get(id, { ...FALLBACK[slot], label: id });
-    }
-    return parts;
+  private playerSprites(): MechSprites {
+    return mechSprites(this.sprites, this.flow.state.units[0].build);
   }
 
   private drawPlayer(ctx: CanvasRenderingContext2D): void {
     const player = this.flow.state.units[0];
     if (this.hidden(player)) return;
-    const parts = this.playerSprites();
-    // A slow one-pixel sway keeps the mech from looking frozen.
+    // A slow one-pixel sway of the upper body keeps the mech from looking frozen.
     const idle = Math.round(Math.sin(this.clock / 520));
-    this.withTransform(ctx, player, idle, (dx, dy) => {
-      for (const cmd of layoutMech(parts)) {
-        const sprite = parts[cmd.slot]!;
-        // The legs stay planted; only the upper body sways.
-        const sway = cmd.slot === 'legs' ? 0 : dy;
-        ctx.drawImage(sprite.image, MECH_ORIGIN.x + cmd.x + dx, MECH_ORIGIN.y + cmd.y + sway, sprite.w, sprite.h);
-      }
-    });
+    this.withTransform(ctx, player, idle, (dx, dy) =>
+      drawMech(ctx, this.playerSprites(), MECH_ORIGIN.x, MECH_ORIGIN.y, { dx, dy: 0 }, dy));
   }
 
   private enemyRect(index: number): { x: number; y: number; w: number; h: number; sprite: Sprite } {
