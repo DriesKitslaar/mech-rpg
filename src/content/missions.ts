@@ -178,6 +178,7 @@ export const MISSIONS: Mission[] = [
     battles: [
       battle(['gunship', 'gun-turret'], NEON),
       battle(['rival'], NEON, {
+        par: 6,
         objective: { type: 'driveOff', target: 0, share: 0.4 },
         talk: [
           ashfall('start', 'So you are the other booking. Nothing personal. I am simply more expensive than you.'),
@@ -235,6 +236,7 @@ export const MISSIONS: Mission[] = [
       }),
       battle(['marksman', 'shield-drone'], VAULT),
       battle(['sable'], VAULT, {
+        par: 9,
         talk: [
           sable('start', 'A Hadron contractor. I have read your file. It is short, and I am about to end it.'),
           sable('win', 'Noted. I will correct for you next time.'),
@@ -255,6 +257,7 @@ export const MISSIONS: Mission[] = [
         talk: [dispatch('start', 'Repair drone. Whatever you break, it mends. You know what to shoot first.')],
       }),
       battle(['leviathan'], SLUICE, {
+        par: 10,
         talk: [dispatch('start', 'There she is. Every few turns she drops a crawler. Do not let them pile up.')],
       }),
     ],
@@ -290,6 +293,7 @@ export const MISSIONS: Mission[] = [
         talk: [dispatch('start', 'Bulldozer. Tracks and a riot shield. It cannot dodge, so nothing you fire at it is wasted.')],
       }),
       battle(['strip-miner'], FOUNDRY, {
+        par: 9,
         talk: [varga('start', 'The hull resists kinetic fire. The wheel arm and the cab resist very little.')],
       }),
     ],
@@ -305,6 +309,7 @@ export const MISSIONS: Mission[] = [
     battles: [
       battle(['bomb-crawler', 'tank', 'bomb-crawler'], UNDER, { talk: [dispatch('start', 'Two crawlers, two fuses. Kill one, brace for the other.')] }),
       battle(['rook'], UNDER, {
+        par: 8,
         talk: [
           rook('start', 'Lumen sent a person! I was told they only had spreadsheets. Come on, then.'),
           rook('win', 'Ha! All right, all right. That one is yours. Buy me a drink when this is over.'),
@@ -338,6 +343,7 @@ export const MISSIONS: Mission[] = [
     battles: [
       battle(['gun-turret', 'jammer', 'gun-turret'], FOUNDRY, { objective: { type: 'leader', target: 1 } }),
       battle(['krell'], FOUNDRY, {
+        par: 9,
         talk: [
           krell('start', 'A scab for the scavengers. I have buried better pilots than you under better rock.'),
           krell('win', 'Huh. Tell Tamsin the pits are hers tonight. Only tonight.'),
@@ -355,7 +361,7 @@ export const MISSIONS: Mission[] = [
     debrief: 'The Eye falls into the plaza fountain. For one night nobody below is being counted.',
     battles: [
       battle(['marksman', 'shield-drone'], PLAZA),
-      battle(['overseer', 'shield-drone'], PLAZA, { talk: [tamsin('start', 'That is it. Shoot the drone first, then put out the lens.')] }),
+      battle(['overseer', 'shield-drone'], PLAZA, { par: 10, talk: [tamsin('start', 'That is it. Shoot the drone first, then put out the lens.')] }),
     ],
   },
   {
@@ -384,6 +390,7 @@ export const MISSIONS: Mission[] = [
       battle(['light-mech', 'recon-drone'], PLAZA),
       battle(['gun-turret', 'tank'], PLAZA),
       battle(['rival-2'], PLAZA, {
+        par: 8,
         talk: [
           ashfall('start', 'Lumen pays better than you would think. Shall we?'),
           ashfall('win', 'Well fought. Remember that it was only ever a contract.'),
@@ -402,6 +409,7 @@ export const MISSIONS: Mission[] = [
       battle(['heavy-mech', 'tank'], MINE),
       battle(['gun-turret', 'gun-turret', 'tank'], MINE),
       battle(['rival-2'], MINE, {
+        par: 8,
         talk: [
           ashfall('start', 'Hadron hired me to hold a hole in the ground. I have had worse postings.'),
           ashfall('win', 'There it is. Spend it wisely. They will not thank you.'),
@@ -420,6 +428,7 @@ export const MISSIONS: Mission[] = [
       battle(['heavy-mech'], NEON),
       battle(['light-mech', 'recon-drone'], NEON),
       battle(['rival-2'], NEON, {
+        par: 8,
         talk: [
           ashfall('start', 'Both of them are paying me tonight. Twice the fee to close one gate. You understand.'),
           ashfall('win', 'Keep your gate. I hope it is worth what it cost you.'),
@@ -479,6 +488,7 @@ export const MISSIONS: Mission[] = [
         talk: [ashfall('start', 'I am on the east roof. One shot a round, at the biggest thing you have not killed yet.')],
       }),
       battle(['assessor'], ROOFTOP, {
+        par: 8,
         support: ASHFALL_FIRE,
         talk: [
           actuary('start', 'Two debtors on one roof. Efficient. The Assessor will value you both.'),
@@ -498,6 +508,7 @@ export const MISSIONS: Mission[] = [
     debrief: 'Ashfall\'s frame goes dark on the roof. The Actuary shakes your hand. His is dry and very cold.',
     battles: [
       battle(['ashfall-unbound'], ROOFTOP, {
+        par: 11,
         talk: [
           ashfall('start', 'I wondered which of us they would ask. I am almost flattered that it was you.'),
           ashfall('win', 'Paid in full, then. Look after the city. Somebody should have.'),
@@ -516,6 +527,7 @@ export const MISSIONS: Mission[] = [
     battles: [
       battle(['bailiff', 'lien-drone', 'shield-drone'], CLEARING, { support: ASHFALL_ALL_IN }),
       battle(['adjuster'], CLEARING, {
+        par: 12,
         support: ASHFALL_ALL_IN,
         talk: [
           actuary('start', 'You are making an uninsurable decision. I want that on the record.'),

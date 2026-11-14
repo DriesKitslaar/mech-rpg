@@ -116,7 +116,7 @@ test('the machines: each one is on screen with its own part names, and what it l
   expect(errors).toEqual([]);
 });
 
-test('the Strip-Miner and the Overseer', async ({ page }) => {
+test('the Strip-Miner fills its side of the field', async ({ page }) => {
   await load(page, pilot([...ACT_ONE, 'choice-lumen']));
   await enterHub(page);
   await reachBattle(page, 'lumen-3', 1);
