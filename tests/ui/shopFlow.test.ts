@@ -1,4 +1,5 @@
 import { buy, newGame, type GameState } from '../../src/core/game';
+import type { FramePart, Shield, Weapon } from '../../src/core/types';
 import { CATALOG, SHOP_PARTS, STARTER_BUILD } from '../../src/content/parts';
 import type { InputAction } from '../../src/platform/input';
 import { partLines } from '../../src/ui/partInfo';
@@ -7,11 +8,11 @@ import { SHOP_TABS, ShopFlow } from '../../src/ui/shopFlow';
 const fresh = (credits = 1200): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), credits });
 const shop = (game: GameState = fresh()) => new ShopFlow(game, CATALOG, SHOP_PARTS);
 const press = (flow: ShopFlow, ...actions: InputAction[]) => actions.map((a) => flow.onInput(a));
-const toTab = (flow: ShopFlow, tab: string) => { for (let i = 0; i < 8 && flow.tab !== tab; i++) flow.onInput('next'); expect(flow.tab).toBe(tab); };
+const toTab = (flow: ShopFlow, tab: string) => { for (let i = 0; i < 12 && flow.tab !== tab; i++) flow.onInput('next'); expect(flow.tab).toBe(tab); };
 const pick = (flow: ShopFlow, id: string) => { for (let i = 0; i < 20 && flow.list.selected?.id !== id; i++) flow.onInput('down'); expect(flow.list.selected?.id).toBe(id); };
 
-test('there are seven tabs and they wrap in both directions', () => {
-  expect(SHOP_TABS).toEqual(['head', 'core', 'arms', 'legs', 'generator', 'hand', 'shoulder']);
+test('there are ten tabs and they wrap in both directions', () => {
+  expect(SHOP_TABS).toEqual(['head', 'core', 'arms', 'legs', 'generator', 'booster', 'fcs', 'module', 'hand', 'shoulder']);
   const flow = shop();
   expect(flow.tab).toBe('head');
   press(flow, 'prev');
@@ -25,11 +26,25 @@ test('each tab lists its stock with the price', () => {
   expect(flow.list.items.map((i) => i.id)).toEqual(['head-scout-mk1', 'head-halo', 'head-bulwark', 'head-ronin', 'head-wraith', 'head-colossus']);
   expect(flow.list.items[1]).toMatchObject({ label: 'Halo Visor', note: '900', enabled: true });
   toTab(flow, 'hand');
-  expect(flow.list.items).toHaveLength(11);
+  expect(flow.list.items).toHaveLength(16);
+  expect(flow.list.items.at(-1)).toMatchObject({ id: 'shd-riot', note: '1100' });
   toTab(flow, 'shoulder');
-  expect(flow.list.items).toHaveLength(8);
+  expect(flow.list.items).toHaveLength(10);
   toTab(flow, 'generator');
   expect(flow.list.items).toHaveLength(5);
+  toTab(flow, 'booster');
+  expect(flow.list.items.map((i) => i.id)).toEqual(['bst-stock', 'bst-sprint', 'bst-vector', 'bst-ram']);
+  toTab(flow, 'fcs');
+  expect(flow.list.items[0]).toMatchObject({ id: 'fcs-stock', label: 'Stock FCS (1)', note: '100' });
+  toTab(flow, 'module');
+  expect(flow.list.items).toHaveLength(6);
+});
+
+test('a shield is sold on the hand tab', () => {
+  const shield: Shield = { id: 'shd-test', name: 'Test Shield', kind: 'shield', guard: 0.4, weight: 90, price: 500, vendor: 'hadron' };
+  const flow = new ShopFlow(fresh(), { ...CATALOG, [shield.id]: shield }, [...SHOP_PARTS, shield]);
+  toTab(flow, 'hand');
+  expect(flow.list.items.at(-1)).toMatchObject({ id: 'shd-test', note: '500' });
 });
 
 test('buying deducts the price and reports it', () => {
@@ -125,8 +140,14 @@ test('the shop never changes the game it was given', () => {
 });
 
 test('part descriptions cover every kind of part', () => {
-  expect(partLines(CATALOG['wpn-rivet-rifle'])).toEqual(['Kinetic  DMG 38  ACC 75', 'EN 60  HEAT 12  WT 80', 'AMMO 30  15 per shot']);
-  expect(partLines(CATALOG['wpn-arc-pistol'])[2]).toBe('AMMO unlimited');
+  expect(partLines(CATALOG['wpn-rivet-rifle'])).toEqual(['Kinetic  DMG 38  ACC 75', 'EN 60  HEAT 12  IMP 38', 'WT 80  AMMO 30  15/shot']);
+  expect(partLines(CATALOG['wpn-arc-pistol'])).toEqual(['Energy  DMG 30  ACC 80', 'EN 90  HEAT 22  IMP 15', 'WT 50  AMMO unlimited']);
+  expect(partLines(CATALOG['bst-vector'])).toEqual(['THRUST 38  BOOST COST 30%', 'WT 50  DRAIN 15']);
+  expect(partLines(CATALOG['fcs-lattice'])).toEqual(['AIM K/E/X +0/+8/+0', 'FOCUS 25%  WT 15  DRAIN 20']);
+  expect(partLines(CATALOG['mod-coolant'])).toEqual(['Vents 60 heat at once.', 'USES 2  WT 30  DRAIN 0']);
+  expect(partLines(CATALOG['mod-barrier'])).toEqual(['Absorbs the next 90 damage', 'until your next turn.', 'USES 1  WT 40  DRAIN 10']);
+  expect(partLines({ id: 's', name: 'S', kind: 'shield', guard: 0.4, weight: 90, price: 1 })).toEqual(['GUARD: blocks 60%', 'WT 90']);
+  for (const part of SHOP_PARTS) for (const line of partLines(part)) expect(line.length, `${part.id}: ${line}`).toBeLessThanOrEqual(28);
   expect(partLines(CATALOG['gen-prism'])).toEqual(['OUTPUT 520', 'COOLING 22  WT 90']);
   expect(partLines(CATALOG['legs-halo'])).toEqual(['AP 110  WT 140  DRAIN 55', 'RES K/E/X 10/25/5', 'LOAD 850  MOB 48']);
   expect(partLines(CATALOG['core-hauler'])).toHaveLength(2);
@@ -148,6 +169,18 @@ test('a part that is owned but not in stock can still be sold', () => {
   expect(flow.list.items.map((i) => i.id)).not.toContain('head-halo');
   press(flow, 'right');
   expect(flow.list.items.map((i) => i.id)).toContain('head-halo');
+});
+
+test('the kind of legs and the way a weapon is used are described', () => {
+  const quad = { ...(CATALOG['legs-strider'] as FramePart), legType: 'quad' as const };
+  expect(partLines(quad).at(-1)).toBe('QUAD: steady, shoulder +6');
+  expect(partLines({ ...(CATALOG['legs-strider'] as FramePart), legType: 'tank' }).at(-1)).toBe('TRACKS: no boost, guards well');
+  const rifle = CATALOG['wpn-rivet-rifle'] as Weapon;
+  expect(partLines({ ...rifle, charge: true }).at(-1)).toBe('CHARGE: fires a turn later');
+  expect(partLines({ ...rifle, melee: true }).at(-1)).toBe('MELEE: needs Boost');
+  expect(partLines({ ...rifle, trait: 'burst', traitPower: 3 }).at(-1)).toBe('BURST: fires 3 times');
+  expect(partLines({ ...rifle, trait: 'salvo' }).at(-1)).toBe('SALVO: hits every enemy');
+  expect(partLines({ ...rifle, impact: 140 })[1]).toBe('EN 60  HEAT 12  IMP 140');
 });
 
 test('a weapon\'s special effect is described', () => {

@@ -1,26 +1,62 @@
 import type { FrameSlot } from '../core/types';
 
+/** The name battles give the player's own mech. */
+export const PLAYER_NAME = 'You';
+/** "You boost" but "Halo Guard boosts": the verb form that goes with the unit's name. */
+const does = (unit: string, they: string, you: string): string => `${unit} ${unit === PLAYER_NAME ? you : they}`;
+/** The unit's name where it is the one acted on: "hits you", "hits Halo Guard". */
+const obj = (unit: string): string => (unit === PLAYER_NAME ? 'you' : unit);
+
 /** All player-facing text. UI code never contains literal copy. */
 export const STRINGS = {
   title: 'IRONWAGE',
-  actions: { fire: 'Fire', boost: 'Boost', cool: 'Cool', repair: 'Field Repair', endTurn: 'End Turn', retreat: 'Retreat' },
+  actions: {
+    fire: 'Fire', boost: 'Boost', guard: 'Guard', cool: 'Cool', module: 'Module', repair: 'Field Repair', auto: 'Auto Turn',
+    endTurn: 'End Turn', retreat: 'Retreat',
+  },
   retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
   parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
   meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
-  headings: { you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?' },
-  preview: { hit: 'HIT', damage: 'DMG' },
+  headings: { you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?', paint: 'MARK WHICH ENEMY?' },
+  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL' },
+  weaponMenu: {
+    charge: 'CHARGE', ready: 'READY',
+    reasons: {
+      alreadyFired: 'fired', noAmmo: 'no ammo', noEnergy: 'no energy', weaponDisabled: 'arms destroyed', needsBoost: 'needs Boost',
+      alreadyUsed: 'charged', notCharged: 'not charged', invalidTarget: 'no target',
+    },
+  },
+  tags: {
+    boost: 'BOOST', guard: 'GUARD', stagger: 'STAGGER', charged: 'CHARGED', charging: 'CHARGING', painted: 'PAINTED',
+    barrier: (n: number) => `BARRIER ${n}`, chaff: 'CHAFF', stability: 'STAB',
+  },
   yourTurn: (round: number) => `Round ${round} - your move`,
-  hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${target} - ${part} -${damage}`,
-  miss: (weapon: string, target: string) => `${weapon} misses ${target}`,
+  hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${obj(target)} - ${part} -${damage}`,
+  miss: (weapon: string, target: string) => `${weapon} misses ${obj(target)}`,
   partDestroyed: (unit: string, part: string) => `${unit}: ${part} destroyed`,
-  unitDestroyed: (unit: string) => `${unit} destroyed`,
-  boost: (unit: string) => `${unit} boosts`,
-  cool: (unit: string, amount: number) => `${unit} vents heat -${amount}`,
-  repair: (unit: string, part: string, amount: number) => `${unit} repair ${part} +${amount}`,
+  unitDestroyed: (unit: string) => does(unit, 'destroyed', 'are destroyed'),
+  boost: (unit: string) => does(unit, 'boosts', 'boost'),
+  guard: (unit: string) => does(unit, 'braces', 'brace'),
+  stagger: (unit: string) => does(unit, 'is STAGGERED', 'are STAGGERED'),
+  recover: (unit: string) => does(unit, 'steadies', 'steady'),
+  charge: (unit: string, weapon: string) => does(unit, `charges ${weapon}`, `charge ${weapon}`),
+  barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} hits ${obj(target)} - barrier -${absorbed}`,
+  module: {
+    coolant: (unit: string, amount: number) => does(unit, `flushes coolant -${amount} heat`, `flush coolant -${amount} heat`),
+    barrier: (unit: string, amount: number) => does(unit, `raises a barrier ${amount}`, `raise a barrier ${amount}`),
+    overclock: (unit: string, amount: number) => does(unit, `overclocks +${amount} EN`, `overclock +${amount} EN`),
+    painter: (unit: string, _amount: number, target: string) => does(unit, `paints ${obj(target)}`, `paint ${obj(target)}`),
+    nanites: (unit: string, amount: number) => does(unit, `runs nanites +${amount} armour`, `run nanites +${amount} armour`),
+    shock: (unit: string) => does(unit, 'fires a shock pulse', 'fire a shock pulse'),
+    chaff: (unit: string) => does(unit, 'scatters chaff', 'scatter chaff'),
+    limiter: (unit: string) => does(unit, 'releases the limiter', 'release the limiter'),
+  },
+  cool: (unit: string, amount: number) => does(unit, `vents heat -${amount}`, `vent heat -${amount}`),
+  repair: (unit: string, part: string, amount: number) => does(unit, `repairs ${part} +${amount}`, `repair ${part} +${amount}`),
   overheatPlayer: 'Overheated! Next turn lost',
   overheatWarning: 'Warning: this shot will overheat',
-  overheat: (unit: string) => `${unit} overheats`,
-  turnSkipped: (unit: string) => `${unit} cooling down - turn lost`,
+  overheat: (unit: string) => does(unit, 'overheats', 'overheat'),
+  turnSkipped: (unit: string) => does(unit, 'is cooling down - turn lost', 'are cooling down - turn lost'),
   victory: 'VICTORY',
   defeat: 'DEFEAT',
   hints: { result: 'Press A to continue' },
@@ -50,7 +86,14 @@ export const STRINGS = {
     hint: 'A: spend a point   B: back', noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
   },
   options: {
-    heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', fastBattles: 'Fast Battles', on: 'On', off: 'Off',
+    heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
+    on: 'On', off: 'Off',
+    difficulties: { story: 'Story', standard: 'Standard', veteran: 'Veteran' },
+    difficultyHelp: {
+      story: 'Enemies have 20% less armour and firepower.',
+      standard: 'The game as it was balanced.',
+      veteran: 'Enemies have 20% more armour and firepower.',
+    },
     hint: 'A: change   B: back',
   },
   buildErrors: {
@@ -75,15 +118,23 @@ export const STRINGS = {
   saveFailed: 'Could not save: storage is full or blocked',
   slots: {
     head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Generator',
+    booster: 'Booster', fcs: 'FCS', module: 'Module',
     rightHand: 'Right Hand', leftHand: 'Left Hand', shoulder: 'Shoulder',
   },
   garage: {
     heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
-    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', back: 'B: back',
+    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', back: 'B: back',
+    slotTags: {
+      head: 'HEAD', core: 'CORE', arms: 'ARMS', legs: 'LEGS', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
+      rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SHLDR',
+    },
   },
   shop: {
     heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'CR',
-    tabs: { head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', hand: 'Hand', shoulder: 'Shldr' },
+    tabs: {
+      head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', booster: 'Bst', fcs: 'FCS', module: 'Mod',
+      hand: 'Hand', shoulder: 'Shldr',
+    },
     bought: (name: string) => `Bought ${name}`,
     sold: (name: string, price: number) => `Sold ${name} +${price}`,
     cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
@@ -93,16 +144,41 @@ export const STRINGS = {
   partInfo: {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',
     output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',
-    unlimited: 'unlimited', perShot: 'per shot',
+    impact: 'IMP', unlimited: 'unlimited', perShot: '/shot',
+    thrust: 'THRUST', boostCost: 'BOOST COST', aimByType: 'AIM K/E/X', focus: 'FOCUS', uses: 'USES',
+    guard: (blocked: number) => `GUARD: blocks ${blocked}%`,
+    charge: 'CHARGE: fires a turn later', melee: 'MELEE: needs Boost',
     traits: {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',
       thermal: (power: number) => `THERMAL: +${power} heat on target`,
       drain: (power: number) => `DRAIN: -${power} energy on target`,
+      burst: (power: number) => `BURST: fires ${power} times`,
+      salvo: () => 'SALVO: hits every enemy',
+    },
+    legTypes: {
+      biped: '', reverse: 'REVERSE: boost +8 evasion', quad: 'QUAD: steady, shoulder +6',
+      tank: 'TRACKS: no boost, guards well', hover: 'HOVER: cheap boost, unsteady',
+    },
+    modules: {
+      coolant: (p: number) => `Vents ${p} heat at once.`,
+      barrier: (p: number) => `Absorbs the next ${p} damage until your next turn.`,
+      overclock: (p: number) => `+${p} energy this turn, +25 heat.`,
+      painter: (p: number) => `Marks a target: +${p} to hit it for 3 turns.`,
+      nanites: (p: number) => `Restores ${p}% armour on every working part.`,
+      shock: (p: number) => `${p} impact and 15 damage to every enemy.`,
+      chaff: (p: number) => `-${p} to hit you until your next turn.`,
+      limiter: (p: number) => `+${p}% damage this turn, +30 heat.`,
     },
     types: { kinetic: 'Kinetic', energy: 'Energy', explosive: 'Explosive' },
     vendors: { undertow: 'The Undertow', lumen: 'Lumen Systems', hadron: 'Hadron Mining', freelance: 'Freelance' },
   },
-  fx: { miss: 'MISS', overheat: 'OVERHEAT' },
+  fx: {
+    miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', block: (n: number) => `BLOCK ${n}`,
+    modules: {
+      coolant: 'COOLANT', barrier: 'BARRIER', overclock: 'OVERCLOCK', painter: 'PAINTED', nanites: 'NANITES', shock: 'SHOCK',
+      chaff: 'CHAFF', limiter: 'LIMITER',
+    },
+  },
   debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
 } as const;

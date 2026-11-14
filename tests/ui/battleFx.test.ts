@@ -7,6 +7,7 @@ const scene: Scene = {
   centre: (unit) => (unit === 'player' ? { x: 80, y: 80 } : { x: 240, y: 60 }),
   facing: (unit) => (unit === 'player' ? 1 : -1),
   damageType: () => 'kinetic',
+  isMelee: () => false,
 };
 const shot = (hit: boolean): BattleEvent => ({
   type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit, damage: hit ? 38 : 0,

@@ -108,7 +108,11 @@ export const ARENA: ArenaOpponent[] = LADDER.map(({ ai: _ai, build: _build, ...e
 
 export const ARENA_ENEMIES: Record<string, EnemyDef> = Object.fromEntries(LADDER.map((entry, i) => [
   enemyId(i + 1),
-  { id: enemyId(i + 1), name: entry.name, ai: entry.ai, build: entry.build, sprite: 'enemy-rival', composed: true },
+  {
+    id: enemyId(i + 1), name: entry.name, ai: entry.ai, sprite: 'enemy-rival', composed: true,
+    // Whoever does not name a booster or fire control flies the stock ones.
+    build: { booster: 'bst-stock', fcs: 'fcs-stock', ...entry.build },
+  },
 ]));
 
 /** Every enemy a battle can field: contract enemies and arena opponents. */

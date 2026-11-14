@@ -7,6 +7,7 @@ import SPRITES from '../../src/content/sprites.json';
 
 const SLOT_KIND: Record<keyof Build, string> = {
   head: 'head', core: 'core', arms: 'arms', legs: 'legs', generator: 'generator',
+  booster: 'booster', fcs: 'fcs', module: 'module',
   rightHand: 'weapon', leftHand: 'weapon', shoulder: 'weapon',
 };
 const builds: [string, Build][] = [
@@ -49,20 +50,43 @@ describe('shop catalogue', () => {
   const frames = SHOP_PARTS.filter((p): p is FramePart => 'resist' in p);
   const weapons = SHOP_PARTS.filter((p): p is Weapon => p.kind === 'weapon');
 
-  test('forty-eight parts: twenty-four frame parts, five generators, nineteen weapons', () => {
-    expect(SHOP_PARTS).toHaveLength(48);
+  test('the shelf: frame parts, generators, weapons, boosters, fire control and modules', () => {
+    const count = (kind: string) => SHOP_PARTS.filter((p) => p.kind === kind).length;
     expect(frames).toHaveLength(24);
-    expect(SHOP_PARTS.filter((p) => p.kind === 'generator')).toHaveLength(5);
-    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(11);
-    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(8);
+    expect(count('generator')).toBe(5);
+    expect(count('booster')).toBe(4);
+    expect(count('fcs')).toBe(4);
+    expect(count('module')).toBe(6);
+    expect(SHOP_PARTS).toHaveLength(24 + 5 + 4 + 4 + 6 + weapons.length + count('shield'));
+    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(15);
+    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(10);
+    expect(count('shield')).toBe(1);
   });
 
   test('every trait has what it needs, and each trait is used', () => {
     for (const w of weapons) {
-      if (w.trait === 'thermal' || w.trait === 'drain') expect(w.traitPower, w.id).toBeGreaterThan(0);
+      if (w.trait === 'thermal' || w.trait === 'drain' || w.trait === 'burst') expect(w.traitPower, w.id).toBeGreaterThan(0);
       else expect(w.traitPower, w.id).toBeUndefined();
     }
-    expect(new Set(weapons.map((w) => w.trait).filter(Boolean))).toEqual(new Set(['pierce', 'thermal', 'drain', 'twin']));
+    expect(new Set(weapons.map((w) => w.trait).filter(Boolean))).toEqual(new Set(['pierce', 'thermal', 'drain', 'twin', 'burst', 'salvo']));
+  });
+
+  test('blades and charge weapons: a blade needs no ammunition and pushes hard, and both kinds exist in each mount they come in', () => {
+    const blades = weapons.filter((w) => w.melee);
+    const chargers = weapons.filter((w) => w.charge);
+    expect(blades.length).toBeGreaterThanOrEqual(2);
+    for (const blade of blades) {
+      expect(blade.mount, blade.id).toBe('hand');
+      expect(blade.ammo, blade.id).toBeNull();
+      expect(blade.impact, blade.id).toBeGreaterThan(blade.damage);
+      expect(blade.charge, blade.id).toBeUndefined();
+    }
+    expect(new Set(chargers.map((w) => w.mount))).toEqual(new Set(['hand', 'shoulder']));
+    // A charged shot has to be worth the turn it takes: clearly more than any uncharged weapon of its mount.
+    for (const charger of chargers) {
+      const rest = weapons.filter((w) => w.mount === charger.mount && !w.charge && !w.melee);
+      expect(charger.damage, charger.id).toBeGreaterThan(Math.max(...rest.map((w) => w.damage)));
+    }
   });
 
   test('every shop part has a price and a vendor and is in the catalogue', () => {
@@ -88,7 +112,8 @@ describe('shop catalogue', () => {
       const [head, core, arms, legs] = family.split('|');
       for (const generator of ['gen-kd1', 'gen-prism', 'gen-furnace']) {
         const build: Build = {
-          head: `head-${head}`, core: `core-${core}`, arms: `arms-${arms}`, legs: `legs-${legs}`, generator, rightHand: 'wpn-rivet-rifle',
+          head: `head-${head}`, core: `core-${core}`, arms: `arms-${arms}`, legs: `legs-${legs}`, generator,
+          booster: 'bst-stock', fcs: 'fcs-stock', rightHand: 'wpn-rivet-rifle',
         };
         expect(validatePlayerBuild(build, CATALOG), `${family} + ${generator}`).toEqual([]);
       }
@@ -114,7 +139,8 @@ describe('sprites', () => {
   test('every part the player can see has a sprite', () => {
     const missing: string[] = [];
     for (const part of SHOP_PARTS) {
-      if (part.kind === 'generator') continue; // generators sit inside the mech and are never drawn
+      // Generators, boosters, fire control and modules sit inside the mech and are never drawn.
+      if (['generator', 'booster', 'fcs', 'module'].includes(part.kind)) continue;
       const ids = part.kind === 'arms' ? [`${part.id}.near`, `${part.id}.far`] : [part.id];
       for (const id of ids) if (!(id in SPRITES)) missing.push(id);
     }

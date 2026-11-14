@@ -13,6 +13,8 @@ export interface Scene {
   /** 1 when the unit faces right, -1 when it faces left. */
   facing(unitId: string): 1 | -1;
   damageType(unitId: string, weapon: WeaponSlot): DamageType;
+  /** True when the weapon is a blade or a ram: it is swung, not fired. */
+  isMelee(unitId: string, weapon: WeaponSlot): boolean;
 }
 
 export interface UnitTransform { dx: number; dy: number; flash: boolean; alpha: number }
@@ -28,6 +30,15 @@ const RECOIL_MS = 140;
 const LUNGE_MS = 320;
 const STEAM_MS = 520;
 const SPARK_MS = 380;
+const SLASH_MS = 200;
+const SHIELD_MS = 420;
+const GATHER_MS = 480;
+/** How long a blade takes to reach its target: the lunge, not a flight. */
+export const MELEE_MS = 150;
+const MODULE_COLOR: Record<string, string> = {
+  coolant: '#dfe6f5', barrier: COLORS.energy, overclock: COLORS.heat, painter: COLORS.danger, nanites: COLORS.armor,
+  shock: '#ffe9a8', chaff: COLORS.dim, limiter: COLORS.accent,
+};
 
 type Timed = { start: number; dur: number };
 type Fx = Timed & (
@@ -42,6 +53,9 @@ type Fx = Timed & (
   | { kind: 'sparks'; at: Pt; color: string }
   | { kind: 'steam'; at: Pt }
   | { kind: 'text'; at: Pt; text: string; color: string }
+  | { kind: 'slash'; at: Pt; dir: number; color: string }
+  | { kind: 'shield'; at: Pt; dir: number }
+  | { kind: 'gather'; at: Pt; color: string }
 );
 
 const TYPE_COLOR: Record<DamageType, string> = { kinetic: '#ffe9a8', energy: '#7fe9ff', explosive: '#ffb46b' };
@@ -76,16 +90,24 @@ export class BattleFx {
         const from = s.muzzle(event.unit, event.weapon);
         const target = s.hitPoint(event.target, event.appliedTo);
         const dir = s.facing(event.unit);
-        const flight = flightFor(dtype);
-        // A miss flies on past the target.
-        const to = event.hit ? target : { x: target.x + dir * 34, y: target.y - 16 };
-        this.add(0, 70, { kind: 'muzzle', at: from, dtype });
-        this.add(0, RECOIL_MS, { kind: 'recoil', unit: event.unit, dir });
-        this.add(0, flight, { kind: 'projectile', from, to, dtype });
+        const melee = s.isMelee(event.unit, event.weapon);
+        const flight = melee ? MELEE_MS : flightFor(dtype);
+        if (melee) {
+          // A blade is carried to the target by the mech itself.
+          this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir, from: s.centre(event.unit) });
+          this.add(flight, SLASH_MS, { kind: 'slash', at: target, dir, color: TYPE_COLOR[dtype] });
+        } else {
+          // A miss flies on past the target.
+          const to = event.hit ? target : { x: target.x + dir * 34, y: target.y - 16 };
+          this.add(0, 70, { kind: 'muzzle', at: from, dtype });
+          this.add(0, RECOIL_MS, { kind: 'recoil', unit: event.unit, dir });
+          this.add(0, flight, { kind: 'projectile', from, to, dtype });
+        }
         if (event.hit) {
           this.add(flight, HIT_MS, { kind: 'hit', unit: event.target });
           this.add(flight, HIT_MS, { kind: 'burst', at: target, size: dtype === 'explosive' ? 14 : 7, color: TYPE_COLOR[dtype] });
-          this.say(flight, target, `-${event.damage}`, '#ffffff');
+          if (event.absorbed) this.say(flight, { x: target.x, y: target.y - 12 }, STRINGS.fx.block(event.absorbed), COLORS.energy);
+          if (event.damage > 0 || !event.absorbed) this.say(flight, target, `-${event.damage}`, '#ffffff');
         } else {
           this.say(flight, target, STRINGS.fx.miss, '#c9c6e8');
         }
@@ -123,6 +145,27 @@ export class BattleFx {
         this.add(0, 480, { kind: 'pulse', unit: event.unit });
         this.say(0, s.centre(event.unit), STRINGS.fx.overheat, COLORS.danger);
         break;
+      case 'guard':
+        this.add(0, SHIELD_MS, { kind: 'shield', at: s.centre(event.unit), dir: s.facing(event.unit) });
+        break;
+      case 'stagger': {
+        const at = s.centre(event.unit);
+        this.add(0, 480, { kind: 'pulse', unit: event.unit });
+        this.add(0, SPARK_MS, { kind: 'sparks', at, color: COLORS.heat });
+        this.say(0, at, STRINGS.fx.stagger, COLORS.heat);
+        break;
+      }
+      case 'charge':
+        this.add(0, GATHER_MS, { kind: 'gather', at: s.muzzle(event.unit, event.weapon), color: TYPE_COLOR[s.damageType(event.unit, event.weapon)] });
+        break;
+      case 'module': {
+        const at = s.centre(event.unit);
+        const color = MODULE_COLOR[event.effect] ?? COLORS.text;
+        this.add(0, 320, { kind: 'burst', at, size: 22, color });
+        this.say(0, at, STRINGS.fx.modules[event.effect], color);
+        break;
+      }
+      case 'recover':
       case 'turnStart':
       case 'outcome':
         break;
@@ -185,6 +228,9 @@ export class BattleFx {
         case 'sparks': this.sparks(ctx, fx.at, p, fx.color); break;
         case 'steam': this.steam(ctx, fx.at, p); break;
         case 'lunge': this.streaks(ctx, fx.from, fx.dir, p); break;
+        case 'slash': this.slash(ctx, fx.at, fx.dir, p, fx.color); break;
+        case 'shield': this.shield(ctx, fx.at, fx.dir, p); break;
+        case 'gather': this.gather(ctx, fx.at, p, fx.color); break;
         case 'text':
           ctx.globalAlpha = 1 - p * p;
           drawText(ctx, fx.text, px(fx.at.x) + 1, px(fx.at.y - 16 * p) + 1, { size: 16, align: 'center', color: '#000000' });
@@ -227,6 +273,38 @@ export class BattleFx {
       this.dot(ctx, { x: at.x - 16 + i * 8 + Math.sin(p * 6 + i) * 2, y: at.y - 20 - (18 + i * 3) * p }, 3 + 3 * p, '#dfe6f5');
     }
     ctx.globalAlpha = 1;
+  }
+
+  /** A blade's arc: a diagonal sweep of bright dots across the point of impact. */
+  private slash(ctx: CanvasRenderingContext2D, at: Pt, dir: number, p: number, color: string): void {
+    ctx.globalAlpha = 1 - p * p;
+    for (let i = 0; i < 9; i++) {
+      const t = i / 8 - 0.5;
+      const reach = Math.min(1, p * 2.5);
+      if (Math.abs(t) > reach / 2 + 0.05) continue;
+      this.dot(ctx, { x: at.x + dir * t * 30, y: at.y + t * 34 }, i % 2 ? 3 : 2, i % 3 === 0 ? '#ffffff' : color);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** A guard: a curved wall of dots between the unit and whoever it faces. */
+  private shield(ctx: CanvasRenderingContext2D, at: Pt, dir: number, p: number): void {
+    ctx.globalAlpha = Math.sin(Math.PI * Math.min(1, p * 1.2)) * 0.9;
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 8 - 0.5) * 1.6;
+      this.dot(ctx, { x: at.x + dir * (26 + Math.cos(a) * 10), y: at.y + Math.sin(a) * 36 }, 2, i % 2 ? COLORS.armor : '#ffffff');
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** A charge: motes drawn in towards the weapon. */
+  private gather(ctx: CanvasRenderingContext2D, at: Pt, p: number, color: string): void {
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + p * 2;
+      const d = 22 * (1 - p);
+      this.dot(ctx, { x: at.x + Math.cos(a) * d, y: at.y + Math.sin(a) * d }, 2, i % 2 ? color : '#ffffff');
+    }
+    if (p > 0.6) this.dot(ctx, at, 4, '#ffffff');
   }
 
   private streaks(ctx: CanvasRenderingContext2D, from: Pt, dir: number, p: number): void {

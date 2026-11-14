@@ -304,6 +304,41 @@
     "w": 43,
     "h": 26
   },
+  "wpn-arc-blade": {
+    "file": "sprites/wpn-arc-blade.png",
+    "w": 58,
+    "h": 11
+  },
+  "wpn-breach-pick": {
+    "file": "sprites/wpn-breach-pick.png",
+    "w": 38,
+    "h": 22
+  },
+  "wpn-chain-gun": {
+    "file": "sprites/wpn-chain-gun.png",
+    "w": 27,
+    "h": 22
+  },
+  "wpn-longbow": {
+    "file": "sprites/wpn-longbow.png",
+    "w": 58,
+    "h": 21
+  },
+  "wpn-hornet-salvo": {
+    "file": "sprites/wpn-hornet-salvo.png",
+    "w": 44,
+    "h": 21
+  },
+  "wpn-sunlance": {
+    "file": "sprites/wpn-sunlance.png",
+    "w": 44,
+    "h": 25
+  },
+  "shd-riot": {
+    "file": "sprites/shd-riot.png",
+    "w": 33,
+    "h": 52
+  },
   "enemy-gunship": {
     "file": "sprites/enemy-gunship.png",
     "w": 64,

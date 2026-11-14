@@ -1,5 +1,7 @@
 export type DamageType = 'kinetic' | 'energy' | 'explosive';
 export type FrameSlot = 'head' | 'core' | 'arms' | 'legs';
+/** How a pair of legs moves. Each type but the plain biped changes a rule; see `LEG_TYPES` in build.ts. */
+export type LegType = 'biped' | 'reverse' | 'quad' | 'tank' | 'hover';
 export type WeaponSlot = 'rightHand' | 'leftHand' | 'shoulder';
 /** Fraction of damage ignored per damage type, 0..0.6. */
 export type Resist = Record<DamageType, number>;
@@ -24,6 +26,66 @@ export interface FramePart {
   capacity?: number;
   /** Legs only. */
   mobility?: number;
+  /** Legs only; a plain biped when absent. */
+  legType?: LegType;
+  vendor?: Vendor;
+}
+
+/** Thrusters: how well and how cheaply a mech dodges. */
+export interface Booster {
+  id: string;
+  name: string;
+  kind: 'booster';
+  /** Evasion gained while boosted. */
+  thrust: number;
+  /** Share of a turn's energy a boost costs, 0..1. */
+  cost: number;
+  weight: number;
+  drain: number;
+  price: number;
+  vendor?: Vendor;
+}
+
+/** Fire control: hit chance per kind of weapon, and help with aiming at limbs. */
+export interface Fcs {
+  id: string;
+  name: string;
+  kind: 'fcs';
+  aim: Record<DamageType, number>;
+  /** Share of the penalty for aiming at a part other than the core that is removed, 0..1. */
+  focus: number;
+  weight: number;
+  drain: number;
+  price: number;
+  vendor?: Vendor;
+}
+
+export type ModuleEffect = 'coolant' | 'barrier' | 'overclock' | 'painter' | 'nanites' | 'shock' | 'chaff' | 'limiter';
+
+/** One piece of equipment with a button: used a few times a battle, at no energy cost. */
+export interface Module {
+  id: string;
+  name: string;
+  kind: 'module';
+  effect: ModuleEffect;
+  power: number;
+  /** Activations per battle. */
+  uses: number;
+  weight: number;
+  drain: number;
+  price: number;
+  vendor?: Vendor;
+}
+
+/** Carried in the left hand instead of a weapon: makes guarding stronger. */
+export interface Shield {
+  id: string;
+  name: string;
+  kind: 'shield';
+  /** Share of the damage that still gets through while guarding. */
+  guard: number;
+  weight: number;
+  price: number;
   vendor?: Vendor;
 }
 
@@ -59,13 +121,20 @@ export interface Weapon {
   vendor?: Vendor;
   /**
    * A special effect: `pierce` halves the target's resistance; `thermal` adds `traitPower` heat on a hit;
-   * `drain` takes `traitPower` from the target's next turn of energy on a hit; `twin` fires two shots.
+   * `drain` takes `traitPower` from the target's next turn of energy on a hit; `twin` fires two shots and
+   * `burst` fires `traitPower` shots; `salvo` fires one shot at every enemy.
    */
-  trait?: 'pierce' | 'thermal' | 'drain' | 'twin';
+  trait?: 'pierce' | 'thermal' | 'drain' | 'twin' | 'burst' | 'salvo';
   traitPower?: number;
+  /** How hard a hit pushes the target off balance; derived from damage and type when absent. */
+  impact?: number;
+  /** Must be charged in one turn before it can be fired in a later one. */
+  charge?: boolean;
+  /** A blade or a ram: usable only in a turn in which the mech has boosted. */
+  melee?: boolean;
 }
 
-export type Part = FramePart | Generator | Weapon;
+export type Part = FramePart | Generator | Weapon | Booster | Fcs | Module | Shield;
 export type Catalog = Record<string, Part>;
 
 /** Part ids per slot. Player builds need every frame slot; enemies may leave head, arms or legs out. */
@@ -75,7 +144,12 @@ export interface Build {
   head?: string;
   arms?: string;
   legs?: string;
+  /** Players must fit a booster and an FCS; enemies without them use the stock values. */
+  booster?: string;
+  fcs?: string;
+  module?: string;
   rightHand?: string;
+  /** A hand weapon or a shield. */
   leftHand?: string;
   shoulder?: string;
 }
@@ -88,6 +162,8 @@ export interface BuildStats {
   mobility: number;
   /** Energy available each turn. */
   turnEnergy: number;
+  /** How much impact the mech takes before it staggers. */
+  stability: number;
 }
 
 export type BuildError = 'missingSlot' | 'overweight' | 'insufficientEnergy' | 'wrongMount' | 'unknownPart' | 'noWeapon';

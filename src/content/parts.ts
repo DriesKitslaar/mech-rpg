@@ -1,4 +1,7 @@
-import type { Build, Catalog, DamageType, FramePart, FrameSlot, Generator, Part, Resist, Vendor, Weapon } from '../core/types';
+import type {
+  Booster, Build, Catalog, DamageType, Fcs, FramePart, FrameSlot, Generator, Module, ModuleEffect, Part, Resist, Shield, Vendor,
+  Weapon,
+} from '../core/types';
 
 const r = (kinetic: number, energy: number, explosive: number): Resist => ({ kinetic, energy, explosive });
 
@@ -15,11 +18,28 @@ const generator = (
 const weapon = (
   id: string, name: string, mount: Weapon['mount'], damageType: DamageType, damage: number, accuracy: number,
   energy: number, heat: number, ammo: number | null, costPerShot: number, weight: number, price: number, vendor?: Vendor,
-  trait?: Weapon['trait'], traitPower?: number,
+  trait?: Weapon['trait'], traitPower?: number, extra: Pick<Weapon, 'impact' | 'charge' | 'melee'> = {},
 ): Weapon => ({
   id, name, kind: 'weapon', mount, damageType, damage, accuracy, energy, heat, ammo, costPerShot, weight, price,
-  ...(vendor ? { vendor } : {}), ...(trait ? { trait } : {}), ...(traitPower !== undefined ? { traitPower } : {}),
+  ...(vendor ? { vendor } : {}), ...(trait ? { trait } : {}), ...(traitPower !== undefined ? { traitPower } : {}), ...extra,
 });
+
+const shield = (id: string, name: string, guard: number, weight: number, price: number, vendor: Vendor): Shield =>
+  ({ id, name, kind: 'shield', guard, weight, price, vendor });
+
+const booster = (
+  id: string, name: string, thrust: number, cost: number, weight: number, drain: number, price: number, vendor: Vendor,
+): Booster => ({ id, name, kind: 'booster', thrust, cost, weight, drain, price, vendor });
+
+const fcs = (
+  id: string, name: string, kinetic: number, energy: number, explosive: number, focus: number, weight: number, drain: number,
+  price: number, vendor: Vendor,
+): Fcs => ({ id, name, kind: 'fcs', aim: { kinetic, energy, explosive }, focus, weight, drain, price, vendor });
+
+const module = (
+  id: string, name: string, effect: ModuleEffect, power: number, uses: number, weight: number, drain: number, price: number,
+  vendor: Vendor,
+): Module => ({ id, name, kind: 'module', effect, power, uses, weight, drain, price, vendor });
 
 /** Everything the player can own, in shop order. Values are fixed by the garage-and-shop plan. */
 export const SHOP_PARTS: Part[] = [
@@ -72,6 +92,13 @@ export const SHOP_PARTS: Part[] = [
   weapon('wpn-thermal-lance', 'Thermal Lance', 'hand', 'energy', 40, 76, 120, 24, null, 0, 90, 2200, 'lumen', 'thermal', 18),
   weapon('wpn-arc-caster', 'Arc Caster', 'hand', 'energy', 34, 82, 100, 22, null, 0, 60, 1900, 'freelance', 'drain', 60),
   weapon('wpn-void-rifle', 'Void Rifle', 'hand', 'kinetic', 64, 84, 140, 30, 12, 60, 120, 3000, 'freelance', 'pierce'),
+  // Blades: no ammunition and a heavy push, but only in a turn that started with a boost.
+  weapon('wpn-arc-blade', 'Arc Blade', 'hand', 'energy', 95, 92, 110, 14, null, 0, 60, 1700, 'lumen', undefined, undefined, { melee: true, impact: 110 }),
+  weapon('wpn-breach-pick', 'Breach Pick', 'hand', 'kinetic', 80, 88, 90, 10, null, 0, 110, 1500, 'hadron', 'pierce', undefined, { melee: true, impact: 140 }),
+  weapon('wpn-chain-gun', 'Chain Gun', 'hand', 'kinetic', 20, 70, 90, 22, 20, 30, 120, 1400, 'hadron', 'burst', 3),
+  // Charge weapons: a turn to charge, then the hardest single hits there are.
+  weapon('wpn-longbow', 'Longbow Rail', 'hand', 'kinetic', 150, 90, 150, 34, 8, 90, 140, 2800, 'freelance', 'pierce', undefined, { charge: true }),
+  shield('shd-riot', 'Riot Shield', 0.4, 90, 1100, 'hadron'),
   weapon('wpn-mortar-pod', 'Mortar Pod', 'shoulder', 'explosive', 70, 60, 80, 30, 8, 60, 140, 700, 'undertow'),
   weapon('wpn-siege-cannon', 'Siege Cannon', 'shoulder', 'kinetic', 110, 58, 120, 38, 6, 110, 240, 2000, 'hadron'),
   weapon('wpn-halo-array', 'Halo Array', 'shoulder', 'energy', 60, 85, 150, 34, null, 0, 120, 1900, 'lumen'),
@@ -80,6 +107,29 @@ export const SHOP_PARTS: Part[] = [
   weapon('wpn-inferno-pod', 'Inferno Pod', 'shoulder', 'explosive', 60, 64, 110, 32, 8, 80, 170, 2400, 'undertow', 'thermal', 30),
   weapon('wpn-null-beam', 'Null Beam', 'shoulder', 'energy', 50, 80, 160, 38, null, 0, 130, 3200, 'freelance', 'drain', 100),
   weapon('wpn-breaker-cannon', 'Breaker Cannon', 'shoulder', 'explosive', 120, 56, 150, 44, 5, 150, 260, 3600, 'freelance', 'pierce'),
+  weapon('wpn-hornet-salvo', 'Hornet Salvo', 'shoulder', 'explosive', 44, 72, 130, 34, 8, 110, 190, 2400, 'undertow', 'salvo'),
+  weapon('wpn-sunlance', 'Sunlance', 'shoulder', 'energy', 170, 84, 190, 46, null, 0, 160, 3000, 'lumen', undefined, undefined, { charge: true }),
+
+  // Boosters: thrust is the evasion a boost gives, cost the share of a turn's energy it takes.
+  // The stock parts weigh and drain nothing: they are what every mech had built in.
+  booster('bst-stock', 'Stock Thrusters', 30, 0.3, 0, 0, 100, 'undertow'),
+  booster('bst-sprint', 'Sprint Pack', 30, 0.2, 40, 10, 900, 'undertow'),
+  booster('bst-vector', 'Vector Jets', 38, 0.3, 50, 15, 1200, 'lumen'),
+  booster('bst-ram', 'Ram Booster', 46, 0.4, 90, 20, 1600, 'hadron'),
+
+  // Fire control: aim per kind of weapon, and focus, the share of the limb penalty it removes.
+  fcs('fcs-stock', 'Stock FCS', 0, 0, 0, 0, 0, 0, 100, 'undertow'),
+  fcs('fcs-tracer', 'Tracer FCS', 6, 0, 0, 0, 20, 10, 800, 'hadron'),
+  fcs('fcs-lattice', 'Lattice FCS', 0, 8, 0, 0.25, 15, 20, 1400, 'lumen'),
+  fcs('fcs-hawkeye', 'Hawkeye FCS', 3, 3, 3, 0.6, 25, 25, 2000, 'freelance'),
+
+  // Modules: one button each, a few uses a battle.
+  module('mod-coolant', 'Coolant Flush', 'coolant', 60, 2, 30, 0, 700, 'undertow'),
+  module('mod-painter', 'Target Painter', 'painter', 20, 2, 20, 10, 1000, 'lumen'),
+  module('mod-overclock', 'Overclock', 'overclock', 150, 1, 30, 0, 1200, 'hadron'),
+  module('mod-barrier', 'Pulse Barrier', 'barrier', 90, 1, 40, 10, 1500, 'lumen'),
+  module('mod-nanites', 'Repair Nanites', 'nanites', 20, 1, 50, 0, 1800, 'freelance'),
+  module('mod-shock', 'Shock Pulse', 'shock', 70, 1, 60, 15, 2200, 'freelance'),
 ];
 
 /** Parts only enemies use. No vendor, so they never appear in the shop. */
@@ -130,6 +180,13 @@ export const SHOP_UNLOCKS: Record<string, string> = {
   'wpn-void-rifle': 'arena:5', 'gen-tidal': 'arena:6', 'wpn-null-beam': 'arena:7',
   'head-colossus': 'arena:8', 'core-colossus': 'arena:8', 'arms-colossus': 'arena:8', 'legs-colossus': 'arena:8',
   'wpn-breaker-cannon': 'arena:9',
+  // Boosters, fire control and modules. The stock parts, the Sprint Pack and the Coolant Flush are always on the shelf.
+  'bst-vector': 'lumen-1', 'bst-ram': 'hadron-1',
+  'fcs-tracer': 'hadron-1', 'fcs-lattice': 'lumen-1', 'fcs-hawkeye': 'choice',
+  'mod-painter': 'lumen-1', 'mod-barrier': 'lumen-1', 'mod-overclock': 'hadron-1', 'mod-nanites': 'arena:2', 'mod-shock': 'arena:4',
+  // Blades, charge weapons, bursts, salvos and the shield.
+  'wpn-arc-blade': 'lumen-1', 'wpn-breach-pick': 'hadron-1', 'wpn-chain-gun': 'hadron-1', 'shd-riot': 'hadron-1',
+  'wpn-longbow': 'choice', 'wpn-sunlance': 'choice', 'wpn-hornet-salvo': 'choice',
 };
 
 export const CATALOG: Catalog = Object.fromEntries([...SHOP_PARTS, ...ENEMY_PARTS].map((part) => [part.id, part]));
@@ -137,7 +194,7 @@ export const CATALOG: Catalog = Object.fromEntries([...SHOP_PARTS, ...ENEMY_PART
 /** What a new game starts with. */
 export const STARTER_BUILD: Build = {
   head: 'head-scout-mk1', core: 'core-hauler', arms: 'arms-rigger', legs: 'legs-strider',
-  generator: 'gen-kd1', rightHand: 'wpn-rivet-rifle',
+  generator: 'gen-kd1', booster: 'bst-stock', fcs: 'fcs-stock', rightHand: 'wpn-rivet-rifle',
 };
 
 /** Fully armed build used by the simulations and tests. */

@@ -60,19 +60,19 @@ describe('shot preview', () => {
   const p = (attacker: string, weapon: any, target: string, part: any) => previewShot(s, attacker, weapon, target, part, CATALOG);
 
   test('rifle against the drone', () => {
-    expect(p('player', 'rightHand', 'enemy-1', 'core')).toEqual({ hitChance: 57, damage: 38, shots: 1 });
+    expect(p('player', 'rightHand', 'enemy-1', 'core')).toEqual({ hitChance: 57, damage: 38, shots: 1, salvo: false });
     expect(p('player', 'rightHand', 'enemy-1', 'legs').hitChance).toBe(52);
   });
 
   test('weapons against the turret use its resistances', () => {
-    expect(p('player', 'rightHand', 'enemy-0', 'core')).toEqual({ hitChance: 90, damage: 23, shots: 1 });
-    expect(p('player', 'shoulder', 'enemy-0', 'core')).toEqual({ hitChance: 70, damage: 63, shots: 1 });
+    expect(p('player', 'rightHand', 'enemy-0', 'core')).toEqual({ hitChance: 90, damage: 23, shots: 1, salvo: false });
+    expect(p('player', 'shoulder', 'enemy-0', 'core')).toEqual({ hitChance: 70, damage: 63, shots: 1, salvo: false });
     expect(p('player', 'leftHand', 'enemy-0', 'core').damage).toBe(24);
   });
 
   test('enemy weapons against the player', () => {
-    expect(p('enemy-1', 'shoulder', 'player', 'core')).toEqual({ hitChance: 55, damage: 10, shots: 1 });
-    expect(p('enemy-0', 'shoulder', 'player', 'core')).toEqual({ hitChance: 60, damage: 38, shots: 1 });
+    expect(p('enemy-1', 'shoulder', 'player', 'core')).toEqual({ hitChance: 55, damage: 10, shots: 1, salvo: false });
+    expect(p('enemy-0', 'shoulder', 'player', 'core')).toEqual({ hitChance: 60, damage: 38, shots: 1, salvo: false });
   });
 
   test('hit chance is clamped between 10 and 95', () => {
@@ -161,7 +161,7 @@ describe('part destruction', () => {
     s = toPlayer(applyAction(s, END, CATALOG));
     expect(previewShot(s, 'player', 'rightHand', 'enemy-0', 'legs', CATALOG).damage).toBe(19);
     s = applyAction(s, fire('rightHand', 'enemy-0', 'legs'), CATALOG, hit);
-    expect(s.events.at(-1)).toEqual({
+    expect(s.events.filter((e) => e.type === 'shot').at(-1)).toEqual({
       type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'legs', appliedTo: 'core', hit: true, damage: 19,
     });
   });

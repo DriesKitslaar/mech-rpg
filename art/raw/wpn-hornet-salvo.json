@@ -1,0 +1,11 @@
+{
+  "id": "wpn-hornet-salvo",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-salvage.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a shoulder-mounted rack for a robot in a retro video game, gunmetal body with the accent colours and glowing lights of the reference: a wide flat patched box with sixteen small round tubes in two rows of eight on its right face, with a mounting bracket underneath, exactly horizontal. The unit only, no mecha. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

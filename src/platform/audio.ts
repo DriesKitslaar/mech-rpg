@@ -5,7 +5,8 @@ import type { InputAction } from './input';
 export type SoundName =
   | 'move' | 'confirm' | 'cancel' | 'deny'
   | 'shotKinetic' | 'shotEnergy' | 'shotExplosive' | 'hit' | 'miss'
-  | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat';
+  | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat'
+  | 'guard' | 'stagger' | 'charge' | 'module';
 
 /** One synthesised note or burst. Times are in seconds, frequencies in hertz. */
 export interface Tone {
@@ -35,6 +36,10 @@ export const SOUNDS: Record<SoundName, Tone[]> = {
   partDestroyed: [t('noise', 0, 0, 0.08, 0.5), t('noise', 0, 0.1, 0.08, 0.4), t('sawtooth', 300, 0, 0.2, 0.25, 70)],
   unitDestroyed: [t('noise', 0, 0, 0.5, 0.7), t('triangle', 120, 0, 0.5, 0.6, 35)],
   boost: [t('sawtooth', 180, 0, 0.28, 0.3, 720), t('noise', 0, 0, 0.28, 0.2)],
+  guard: [t('square', 150, 0, 0.08, 0.35, 110), t('noise', 0, 0, 0.1, 0.25), t('triangle', 300, 0.08, 0.12, 0.25)],
+  stagger: [t('sawtooth', 620, 0, 0.3, 0.35, 90), t('noise', 0, 0, 0.22, 0.4), t('square', 110, 0.12, 0.2, 0.3, 60)],
+  charge: [t('sawtooth', 160, 0, 0.5, 0.25, 960), t('triangle', 320, 0.1, 0.4, 0.2, 1400)],
+  module: [t('triangle', 660, 0, 0.07, 0.3), t('triangle', 990, 0.07, 0.07, 0.3), t('triangle', 1320, 0.14, 0.14, 0.3)],
   cool: [t('noise', 0, 0, 0.45, 0.25)],
   repair: [t('triangle', 520, 0, 0.08, 0.35), t('triangle', 780, 0.09, 0.12, 0.35)],
   overheat: [t('square', 520, 0, 0.1, 0.35), t('square', 390, 0.16, 0.1, 0.35), t('square', 520, 0.32, 0.1, 0.35)],
@@ -53,6 +58,11 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
     case 'partDestroyed': return now('partDestroyed');
     case 'unitDestroyed': return now('unitDestroyed');
     case 'boost': return now('boost');
+    case 'guard': return now('guard');
+    case 'stagger': return now('stagger');
+    case 'charge': return now('charge');
+    case 'module': return now('module');
+    case 'recover': return [];
     case 'cool':
     case 'turnSkipped': return now('cool');
     case 'repair': return now('repair');

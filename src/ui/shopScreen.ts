@@ -3,6 +3,7 @@ import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
+import { drawPartIcon, hasIcon } from './partIcon';
 import { partLines } from './partInfo';
 import { SHOP_TABS, ShopFlow } from './shopFlow';
 import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
@@ -80,17 +81,12 @@ export class ShopScreen implements Screen {
     if (!part) return;
     const { sprites } = this.app.deps;
 
-    // Picture: arms show the outstretched arm; generators are never drawn in the game, so they get a simple icon.
+    // Picture: arms show the outstretched arm; parts that sit inside the mech get an icon.
     const boxH = 104;
     const cx = x + w / 2;
     const cy = y + 6 + boxH / 2;
-    if (part.kind === 'generator') {
-      ctx.fillStyle = COLORS.empty;
-      ctx.fillRect(cx - 22, cy - 26, 44, 52);
-      ctx.fillStyle = COLORS.energy;
-      for (let i = 0; i < 4; i++) ctx.fillRect(cx - 16, cy - 20 + i * 12, 32 - i * 5, 6);
-      ctx.strokeStyle = COLORS.border;
-      ctx.strokeRect(cx - 22.5, cy - 26.5, 45, 53);
+    if (hasIcon(part.kind)) {
+      drawPartIcon(ctx, part.kind, cx, cy);
     } else {
       const id = part.kind === 'arms' ? `${part.id}.near` : part.id;
       const sprite = sprites.get(id, { w: 48, h: 48, label: part.name });

@@ -31,7 +31,11 @@ export function layoutMech(sizes: Partial<Record<SpriteSlot, SpriteSize>>): Draw
   const { rightHand, leftHand, shoulder } = sizes;
   // Hand weapons are gripped a fifth of the way along; without the arm there is nothing to hold them.
   if (rightHand && sizes.armNear) put('rightHand', NEAR_FIST.x - 0.2 * rightHand.w, NEAR_FIST.y - 0.5 * rightHand.h);
-  if (leftHand && sizes.armFar) put('leftHand', FAR_FIST.x - 0.2 * leftHand.w, FAR_FIST.y - 0.5 * leftHand.h);
+  if (leftHand && sizes.armFar) {
+    // A shield stands upright on the forearm; anything else in that hand is a weapon held by its grip.
+    if (leftHand.h > leftHand.w) put('leftHand', FAR_FIST.x - 0.5 * leftHand.w, FAR_FIST.y - 0.6 * leftHand.h);
+    else put('leftHand', FAR_FIST.x - 0.2 * leftHand.w, FAR_FIST.y - 0.5 * leftHand.h);
+  }
   if (shoulder) put('shoulder', BACK_MOUNT.x - 0.6 * shoulder.w, BACK_MOUNT.y - 0.5 * shoulder.h);
 
   return ORDER.flatMap((slot) => placed.get(slot) ?? []);

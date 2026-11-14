@@ -25,11 +25,11 @@ type Snap = {
   screen: string; credits: number | null; battlesWon: number | null; completed: string[] | null; message?: string;
   saveFailed: boolean; build: Record<string, string> | null;
   menu: { items: { id: string; label: string; enabled: boolean; note?: string }[]; cursor: number };
-  battle?: { phase: string; outcome: string; mission: string; index: number; of: number };
+  battle?: { phase: string; outcome: string; mission: string; index: number; of: number; enemyScale: number };
   settlement?: { net: number; won: boolean; reward: number };
   ending?: string;
   xp: number | null; level: number | null; arenaRank: number | null; cycle: number | null;
-  settings: { sfx: boolean; music: boolean; fastBattles: boolean };
+  settings: { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: string };
   player?: { maxAp: number; repairsLeft: number };
   pilot?: { level: number; points: number };
 };
@@ -384,7 +384,7 @@ describe('shop', () => {
     const { app, store } = inHub();
     select(app, 'shop');
     expect(snap(app).screen).toBe('shop');
-    press(app, 'next', 'next', 'next', 'next', 'next');
+    press(app, 'next', 'next', 'next', 'next', 'next', 'next', 'next', 'next');
     select(app, 'wpn-arc-pistol');
     expect(snap(app).credits).toBe(600);
     expect(JSON.parse(store.data[SAVE_KEY]).inventory['wpn-arc-pistol']).toBe(1);
@@ -406,7 +406,7 @@ describe('shop', () => {
   test('a part bought in the shop can be fitted in the garage and taken into battle', () => {
     const { app } = inHub();
     select(app, 'shop');
-    press(app, 'next', 'next', 'next', 'next', 'next');
+    press(app, 'next', 'next', 'next', 'next', 'next', 'next', 'next', 'next');
     select(app, 'wpn-arc-pistol');
     press(app, 'cancel');
     select(app, 'garage');
@@ -645,17 +645,37 @@ describe('options', () => {
     expect(ids(app)).toEqual(['new', 'options']);
     select(app, 'options');
     expect(snap(app).screen).toBe('options');
-    expect(snap(app).menu.items.map((i) => [i.id, i.note])).toEqual([['sfx', 'On'], ['music', 'On'], ['fastBattles', 'Off']]);
+    expect(snap(app).menu.items.map((i) => [i.id, i.note])).toEqual([['sfx', 'On'], ['music', 'On'], ['fastBattles', 'Off'], ['difficulty', 'Standard']]);
     press(app, 'confirm');
     expect(snap(app).menu.items[0].note).toBe('Off');
     expect(JSON.parse(store.data[SETTINGS_KEY]).sfx).toBe(false);
     press(app, 'cancel');
     expect(snap(app).screen).toBe('title');
     select(app, 'new');
-    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false });
+    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false, difficulty: 'standard' });
 
     const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
     expect(snap(again).settings.sfx).toBe(false);
+  });
+
+  test('the difficulty scales every enemy, on top of the contract\'s own scale', () => {
+    const { app, store } = inHub(geared(done('intro-1', 'intro-2'), 'tier3'));
+    accept(app, 'patrol');
+    expect(snap(app).battle!.enemyScale).toBe(1);
+
+    const easy = inHub({ ...geared(done('intro-1', 'intro-2'), 'tier3'), arenaRank: 0 }).app;
+    select(easy, 'options');
+    select(easy, 'difficulty');
+    select(easy, 'difficulty');
+    expect(snap(easy).settings.difficulty).toBe('story');
+    press(easy, 'left');
+    expect(snap(easy).settings.difficulty).toBe('veteran');
+    press(easy, 'cancel');
+    select(easy, 'arena');
+    select(easy, 'rank-1');
+    select(easy, 'accept');
+    expect(snap(easy).battle!.enemyScale).toBeCloseTo(1.5 * 1.2);
+    expect(JSON.parse(store.data[SAVE_KEY]).settings.difficulty).toBe('standard');
   });
 
   test('opened from the hub they return to the hub, and are saved with the game', () => {

@@ -20,7 +20,14 @@ beforeEach(() => {
 test('generateImage returns the decoded image bytes', async () => {
   const { fn } = fakeFetch(okBody);
   const out = await generateImage({ prompt: 'a mech', quality: 'low' }, { fetch: fn });
-  expect(out.equals(PNG)).toBe(true);
+  expect(out.png.equals(PNG)).toBe(true);
+  expect(out.usage).toBeUndefined();
+});
+
+test('token counts reported by the service are passed on', async () => {
+  const usage = { input_tokens: 120, output_tokens: 272 };
+  const { fn } = fakeFetch({ ok: true, payload: { data: [{ b64_json: PNG.toString('base64') }], usage } });
+  expect((await generateImage({ prompt: 'a mech', quality: 'low' }, { fetch: fn })).usage).toEqual(usage);
 });
 
 test('generateImage posts the generate action to the openai-run function', async () => {

@@ -26,8 +26,8 @@ test('duplicate enemies get distinguishing names', () => {
 test('the player turn opens on the action menu', () => {
   const flow = ready();
   expect(flow.phase).toBe('action');
-  expect(flow.menu.items.map((i) => i.id)).toEqual(['fire', 'boost', 'cool', 'repair', 'endTurn', 'retreat']);
-  expect(flow.menu.items.map((i) => i.label)).toEqual(['Fire', 'Boost', 'Cool', 'Field Repair', 'End Turn', 'Retreat']);
+  expect(flow.menu.items.map((i) => i.id)).toEqual(['fire', 'boost', 'guard', 'cool', 'repair', 'endTurn', 'auto', 'retreat']);
+  expect(flow.menu.items.map((i) => i.label)).toEqual(['Fire', 'Boost', 'Guard', 'Cool', 'Field Repair', 'End Turn', 'Auto Turn', 'Retreat']);
   expect(flow.menu.cursor).toBe(0);
 });
 
@@ -82,7 +82,7 @@ test('confirming a shot applies it and reports the result', () => {
   settle(flow);
   expect(flow.phase).toBe('action');
   press(flow, 'confirm');
-  expect(flow.menu.items.map((i) => i.id)).toEqual(['leftHand', 'shoulder']);
+  expect(flow.menu.items.filter((i) => i.enabled).map((i) => i.id)).toEqual(['leftHand', 'shoulder']);
 });
 
 test('a disabled menu item does nothing and ending the turn passes play', () => {
@@ -138,10 +138,10 @@ test('input during enemy turns is ignored', () => {
   expect(flow.state).toEqual(before);
 });
 
-test('weapon labels show the heat each shot adds', () => {
+test('the line under a weapon shows the energy and the heat each shot takes', () => {
   const flow = ready();
   press(flow, 'confirm');
-  expect(flow.menu.items[0].label).toContain('HEAT 12');
+  expect(flow.menu.items[0]).toMatchObject({ label: 'Rivet Rifle x30', note: 'EN 60  HEAT 12' });
 });
 
 test('targeting warns when the shot would overheat the mech', () => {

@@ -1,4 +1,5 @@
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
+import type { Shield } from '../../src/core/types';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import type { InputAction } from '../../src/platform/input';
 import { GarageFlow } from '../../src/ui/garageFlow';
@@ -8,7 +9,7 @@ const rich = (...ids: string[]): GameState => ids.reduce((g, id) => buy(g, id, C
 const press = (flow: GarageFlow, ...actions: InputAction[]) => actions.map((a) => flow.onInput(a));
 /** Moves the slot cursor to a slot and opens its part list. */
 function openSlot(flow: GarageFlow, slot: string): void {
-  for (let i = 0; i < 10 && flow.slots.selected?.id !== slot; i++) flow.onInput('down');
+  for (let i = 0; i < 12 && flow.slots.selected?.id !== slot; i++) flow.onInput('down');
   expect(flow.slots.selected?.id).toBe(slot);
   flow.onInput('confirm');
   expect(flow.mode).toBe('parts');
@@ -18,14 +19,44 @@ function pick(flow: GarageFlow, id: string) {
   expect(flow.parts.selected?.id).toBe(id);
 }
 
-test('the slot list names what is fitted in each of the eight slots', () => {
+test('the slot list names what is fitted in each of the eleven slots', () => {
   const flow = new GarageFlow(fresh(), CATALOG);
   expect(flow.mode).toBe('slots');
   expect(flow.slots.items.map((i) => [i.id, i.note])).toEqual([
     ['head', 'Scout Mk1'], ['core', 'Hauler Core'], ['arms', 'Rigger Arms'], ['legs', 'Strider Legs'],
-    ['generator', 'KD-1 Cell'], ['rightHand', 'Rivet Rifle'], ['leftHand', 'Empty'], ['shoulder', 'Empty'],
+    ['generator', 'KD-1 Cell'], ['booster', 'Stock Thrusters'], ['fcs', 'Stock FCS'], ['module', 'Empty'],
+    ['rightHand', 'Rivet Rifle'], ['leftHand', 'Empty'], ['shoulder', 'Empty'],
   ]);
-  expect(flow.slots.items.map((i) => i.label)).toEqual(['Head', 'Core', 'Arms', 'Legs', 'Generator', 'Right Hand', 'Left Hand', 'Shoulder']);
+  expect(flow.slots.items.map((i) => i.label)).toEqual([
+    'Head', 'Core', 'Arms', 'Legs', 'Generator', 'Booster', 'FCS', 'Module', 'Right Hand', 'Left Hand', 'Shoulder',
+  ]);
+});
+
+test('the module slot can be left empty; the booster and fire control slots cannot', () => {
+  const flow = new GarageFlow(rich('mod-coolant', 'bst-sprint'), CATALOG);
+  openSlot(flow, 'module');
+  expect(flow.parts.items.map((i) => i.id)).toEqual(['(none)', 'mod-coolant']);
+  pick(flow, 'mod-coolant');
+  expect(flow.preview.weight).toBe(flow.stats.weight + 30);
+  expect(flow.onInput('confirm')).toBe('changed');
+  expect(flow.game.build.module).toBe('mod-coolant');
+  press(flow, 'cancel');
+  const again = new GarageFlow(flow.game, CATALOG);
+  openSlot(again, 'booster');
+  expect(again.parts.items.map((i) => i.id)).toEqual(['bst-stock', 'bst-sprint']);
+});
+
+test('the left hand also lists shields; the right hand does not', () => {
+  const shield: Shield = { id: 'shd-test', name: 'Test Shield', kind: 'shield', guard: 0.4, weight: 90, price: 500, vendor: 'hadron' };
+  const catalog = { ...CATALOG, [shield.id]: shield };
+  const game = buy(fresh(5000), shield.id, catalog);
+  const left = new GarageFlow(game, catalog);
+  openSlot(left, 'leftHand');
+  // The rifle is listed too, but its only copy is in the other hand.
+  expect(left.parts.items.map((i) => [i.id, i.enabled])).toEqual([['(none)', true], ['wpn-rivet-rifle', false], ['shd-test', true]]);
+  const right = new GarageFlow(game, catalog);
+  openSlot(right, 'rightHand');
+  expect(right.parts.items.map((i) => i.id)).toEqual(['(none)', 'wpn-rivet-rifle']);
 });
 
 test('a weapon slot lists (none) and the owned weapons, starting on the fitted one', () => {

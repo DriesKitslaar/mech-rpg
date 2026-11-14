@@ -1,4 +1,4 @@
-import { coolCost, boostCost, turnEnergyOf, HEAT_LIMIT, type UnitState } from '../core/battle';
+import { coolCost, boostCost, guardCost, turnEnergyOf, HEAT_LIMIT, type UnitState } from '../core/battle';
 import { weaponIn } from '../core/build';
 import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
@@ -8,11 +8,11 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import type { Sfx } from '../platform/audio';
 import { soundsForEvent } from '../platform/audio';
 import { ApDisplay } from './apDisplay';
-import { BattleFx, flightFor, type Scene } from './battleFx';
+import { BattleFx, MELEE_MS, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST } from './mechLayout';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import type { Sprite, SpriteStore } from './sprites';
-import { COLORS, LINE, drawMenu, drawMeter, drawPanel, drawText } from './widgets';
+import { COLORS, LINE, drawMeter, drawPanel, drawScrollMenu, drawText } from './widgets';
 
 export { BattleFlow } from './battleFlow';
 export type { BattlePhase, MenuView } from './battleFlow';
@@ -75,8 +75,11 @@ export class BattleScreen {
       const event = events[i];
       const dtype = event.type === 'shot' ? this.scene().damageType(event.unit, event.weapon) : 'kinetic';
       // In fast mode messages fly by within a frame: no effects, no sound, no waiting.
-      const flight = this.opts.fast || event.type !== 'shot' ? 0 : flightFor(dtype);
+      const melee = event.type === 'shot' && this.scene().isMelee(event.unit, event.weapon);
+      const flight = this.opts.fast || event.type !== 'shot' ? 0 : melee ? MELEE_MS : flightFor(dtype);
       this.shownAp.schedule(event, flight);
+      // A module changes armour without a shot or a repair to say so; the state already holds the result.
+      if (event.type === 'module') this.shownAp.refresh(this.flow.state.units);
       if (this.opts.fast) continue;
       this.fx.onEvent(event);
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
@@ -182,8 +185,60 @@ export class BattleScreen {
       if (enemy.destroyed) return;
       const core = enemy.parts.core!;
       drawMeter(ctx, r.x + 8, r.y + r.h + 2, r.w - 16, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
+      // Under the armour line, how much balance the enemy has left.
+      drawMeter(ctx, r.x + 8, r.y + r.h + 5, r.w - 16, 1, enemy.staggerMax - enemy.stagger, enemy.staggerMax, COLORS.heat);
+      const mark = this.fieldMark(enemy);
+      if (mark) drawText(ctx, mark.text, Math.round(r.x + r.w / 2), Math.max(15, r.y - 10), { align: 'center', size: 10, color: mark.color });
       if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, r.x - 2, r.y - 2, r.w + 4, r.h + 4);
     });
+  }
+
+  /** The one state worth flagging over an enemy's head: a charge about to land comes first. */
+  private fieldMark(unit: UnitState): { text: string; color: string } | null {
+    const T = STRINGS.tags;
+    const blink = Math.floor(this.clock / 260) % 2 === 0;
+    if (unit.charged.length > 0) return { text: T.charging, color: blink ? COLORS.danger : COLORS.heat };
+    if (unit.staggered > 0) return { text: T.stagger, color: blink ? COLORS.heat : COLORS.text };
+    if (unit.guarding) return { text: T.guard, color: COLORS.armor };
+    if (unit.boosted) return { text: T.boost, color: COLORS.energy };
+    return null;
+  }
+
+  /** Short labels for everything that is on a unit right now. */
+  private tagsOf(unit: UnitState): { text: string; color: string }[] {
+    const T = STRINGS.tags;
+    return [
+      ...(unit.boosted ? [{ text: T.boost, color: COLORS.energy }] : []),
+      ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor }] : []),
+      ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat }] : []),
+      ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy }] : []),
+      ...(unit.painted > 0 ? [{ text: T.painted, color: COLORS.danger }] : []),
+      ...(unit.chaff > 0 ? [{ text: T.chaff, color: COLORS.dim }] : []),
+    ];
+  }
+
+  /** Draws a unit's tags in a row; from the right edge when `right` is set. Returns whether there were any. */
+  private drawTags(ctx: CanvasRenderingContext2D, unit: UnitState, x: number, y: number, right = false): boolean {
+    const tags = this.tagsOf(unit);
+    const width = (text: string) => text.length * 4 + 5;
+    let at = right ? x - tags.reduce((sum, t) => sum + width(t.text), 0) + 5 : x;
+    for (const tag of tags) {
+      drawText(ctx, tag.text, at, y + 1, { size: 10, color: tag.color });
+      at += width(tag.text);
+    }
+    return tags.length > 0;
+  }
+
+  /** The stability row: what balance is left, or the word STAGGER while there is none. */
+  private drawStability(ctx: CanvasRenderingContext2D, unit: UnitState, x: number, y: number, width: number): number {
+    const left = unit.staggerMax - unit.stagger;
+    const down = unit.staggered > 0;
+    const blink = Math.floor(this.clock / 260) % 2 === 0;
+    drawText(ctx, STRINGS.tags.stability, x, y, { color: COLORS.dim });
+    drawMeter(ctx, x + 30, y + 4, width - 70, 4, down ? 0 : left, unit.staggerMax, COLORS.heat);
+    if (down) drawText(ctx, STRINGS.tags.stagger, x + width, y, { align: 'right', color: blink ? COLORS.danger : COLORS.heat });
+    else drawText(ctx, String(left), x + width, y, { align: 'right', color: left <= unit.staggerMax / 2 ? COLORS.heat : COLORS.text });
+    return y + LINE;
   }
 
   /** Screen positions the effects need: where shots leave from and where they land. */
@@ -230,6 +285,10 @@ export class BattleScreen {
         const unit = this.flow.state.units.find((u) => u.id === id)!;
         return weaponIn(unit.build, weapon, this.catalog)?.damageType ?? 'kinetic';
       },
+      isMelee: (id, weapon) => {
+        const unit = this.flow.state.units.find((u) => u.id === id)!;
+        return !!weaponIn(unit.build, weapon, this.catalog)?.melee;
+      },
     };
   }
 
@@ -256,38 +315,61 @@ export class BattleScreen {
     drawPanel(ctx, MENU_W - 1, PANEL_Y, LOGICAL_W - MENU_W + 1, h);
     const { phase, menu } = this.flow;
     const player = this.flow.state.units[0];
+    const aiming = phase === 'target' || phase === 'moduleTarget';
 
     const heading = phase === 'weapon' ? STRINGS.headings.weapons
       : phase === 'repairPart' ? STRINGS.headings.repair
       : phase === 'target' ? STRINGS.headings.target
+      : phase === 'moduleTarget' ? STRINGS.headings.paint
       : phase === 'confirmRetreat' ? STRINGS.actions.retreat.toUpperCase() : '';
-    let menuY = PANEL_Y + 5;
-    if (heading) { drawText(ctx, heading, 6, menuY, { color: COLORS.dim }); menuY += LINE + 1; }
-    drawMenu(ctx, 6, menuY, phase === 'action' ? this.actionLabels() : menu.items, menu.cursor);
+    let menuY = PANEL_Y + 3;
+    if (heading) { drawText(ctx, heading, 6, menuY, { color: COLORS.dim }); menuY += LINE; }
+    // While aiming, the foot of the menu panel shows energy and heat, so the list above it is shorter.
+    const rows = aiming ? 4 : heading ? 7 : 8;
+    if (phase === 'weapon') this.drawWeaponMenu(ctx, 6, menuY);
+    else drawScrollMenu(ctx, 6, menuY, phase === 'action' ? this.actionLabels() : menu.items, menu.cursor, rows);
 
     const x = MENU_W + 5;
-    if (phase === 'target' && this.flow.targetId) {
-      const target = this.flow.state.units.find((u) => u.id === this.flow.targetId)!;
-      drawText(ctx, target.name.toUpperCase(), x, PANEL_Y + 5, { color: COLORS.accent });
-      const y = this.drawParts(ctx, target, x, PANEL_Y + 5 + LINE + 1, this.flow.targetPart);
-      const p = this.flow.preview!;
-      const twice = p.shots > 1 ? ` x${p.shots}` : '';
-      drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}${twice}`, x, y + 3, { size: 16 });
-      // Energy and heat stay in view while aiming, at the foot of the menu panel.
-      this.drawEnergyAndHeat(ctx, player, 6, LOGICAL_H - 2 * LINE - 4, 132);
+    const top = PANEL_Y + 3;
+    const width = 144;
+    const target = aiming && this.flow.targetId ? this.flow.state.units.find((u) => u.id === this.flow.targetId) : undefined;
+    if (target) {
+      drawText(ctx, target.name.toUpperCase(), x, top, { color: COLORS.accent });
+      this.drawTags(ctx, target, x + width, top, true);
+      let y = this.drawParts(ctx, target, x, top + LINE, this.flow.targetPart);
+      y = this.drawStability(ctx, target, x, y, width);
+      const p = this.flow.preview;
+      if (phase === 'target' && p) {
+        const times = p.salvo ? ` ${STRINGS.preview.all}` : p.shots > 1 ? ` x${p.shots}` : '';
+        drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}${times}`, x, y + 1, { size: 16 });
+      }
+      this.drawEnergyAndHeat(ctx, player, 6, LOGICAL_H - 2 * LINE - 2, 132);
     } else {
-      drawText(ctx, STRINGS.headings.you, x, PANEL_Y + 5, { color: COLORS.dim });
-      drawText(ctx, `${STRINGS.meters.repairs} ${player.repairsLeft}`, x + 144, PANEL_Y + 5, { color: COLORS.dim, align: 'right' });
-      const y = this.drawParts(ctx, player, x, PANEL_Y + 5 + LINE + 1, null);
-      this.drawEnergyAndHeat(ctx, player, x, y, 144);
+      if (!this.drawTags(ctx, player, x, top)) drawText(ctx, STRINGS.headings.you, x, top, { color: COLORS.dim });
+      drawText(ctx, `${STRINGS.meters.repairs} ${player.repairsLeft}`, x + width, top, { color: COLORS.dim, align: 'right' });
+      let y = this.drawParts(ctx, player, x, top + LINE, null);
+      y = this.drawStability(ctx, player, x, y, width);
+      this.drawEnergyAndHeat(ctx, player, x, y, width);
     }
+  }
+
+  /** The weapon menu: each weapon's name, and under it what firing it costs or why it cannot be fired. */
+  private drawWeaponMenu(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    const { items, cursor } = this.flow.menu;
+    items.forEach((item, i) => {
+      const selected = i === cursor;
+      const top = y + i * (2 * LINE);
+      if (selected) drawText(ctx, '>', x, top, { color: COLORS.accent });
+      drawText(ctx, item.label, x + 8, top, { color: !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text });
+      if (item.note) drawText(ctx, item.note, x + 14, top + LINE - 1, { color: item.enabled ? COLORS.dim : COLORS.danger, size: 10 });
+    });
   }
 
   /** Action menu labels with their energy cost where there is one. */
   private actionLabels(): { label: string; enabled: boolean }[] {
     const player = this.flow.state.units[0];
     const cost: Record<string, number | undefined> = {
-      boost: boostCost(player, this.catalog), cool: coolCost(player, this.catalog),
+      boost: boostCost(player, this.catalog), guard: guardCost(player, this.catalog), cool: coolCost(player, this.catalog),
     };
     return this.flow.menu.items.map((item) => ({
       ...item, label: cost[item.id] !== undefined ? `${item.label}  ${STRINGS.meters.energy} ${cost[item.id]}` : item.label,

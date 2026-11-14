@@ -100,3 +100,14 @@ export function drawMenu(
     });
   });
 }
+
+/** Like `drawMenu`, but shows only `rows` items, scrolled so the cursor stays in view, with marks when there is more. */
+export function drawScrollMenu(
+  ctx: CanvasRenderingContext2D, x: number, y: number,
+  items: { label: string; enabled: boolean }[], cursor: number, rows: number,
+): void {
+  const offset = Math.max(0, Math.min(cursor - Math.floor(rows / 2), items.length - rows));
+  drawMenu(ctx, x, y, items.slice(offset, offset + rows), cursor - offset);
+  if (offset > 0) drawText(ctx, '^', x + 140, y, { color: COLORS.dim });
+  if (offset + rows < items.length) drawText(ctx, 'v', x + 140, y + (rows - 1) * LINE, { color: COLORS.dim });
+}

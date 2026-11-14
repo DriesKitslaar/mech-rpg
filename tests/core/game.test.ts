@@ -1,7 +1,8 @@
 import {
-  SAVE_VERSION, STARTING_CREDITS, buy, checkBuy, checkEquip, checkSell, ensureArmed, equip, equippedCount, fits, isValidState,
+  BUILD_SLOTS, DIFFICULTIES, OPTIONAL_SLOTS, SAVE_VERSION, STARTING_CREDITS, buy, checkBuy, checkEquip, checkSell, ensureArmed, equip, equippedCount, fits, isValidState,
   newGame, sell, spareCount, type GameState,
 } from '../../src/core/game';
+import type { Catalog, Shield } from '../../src/core/types';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 
 const fresh = (): GameState => newGame(CATALOG, STARTER_BUILD);
@@ -15,6 +16,7 @@ describe('a new game', () => {
     expect(g.build).toEqual(STARTER_BUILD);
     expect(g.inventory).toEqual({
       'head-scout-mk1': 1, 'core-hauler': 1, 'arms-rigger': 1, 'legs-strider': 1, 'gen-kd1': 1, 'wpn-rivet-rifle': 1,
+      'bst-stock': 1, 'fcs-stock': 1,
     });
     expect(g.battlesWon).toBe(0);
     expect(g.completed).toEqual([]);
@@ -108,13 +110,30 @@ describe('equipping', () => {
     expect(() => equip(fresh(), 'head', 'head-halo', CATALOG)).toThrow('illegal equip: notOwned');
   });
 
-  test('frame slots and the generator cannot be emptied, weapon slots can', () => {
-    for (const slot of ['head', 'core', 'arms', 'legs', 'generator'] as const) {
+  test('frame slots, generator, booster and fire control cannot be emptied; weapon slots and the module can', () => {
+    for (const slot of ['head', 'core', 'arms', 'legs', 'generator', 'booster', 'fcs'] as const) {
       expect(checkEquip(fresh(), slot, null, CATALOG)).toBe('required');
     }
     const g = equip(fresh(), 'rightHand', null, CATALOG);
     expect(g.build.rightHand).toBeUndefined();
     expect('rightHand' in g.build).toBe(false);
+    const withModule = equip(buy(fresh(), 'mod-coolant', CATALOG), 'module', 'mod-coolant', CATALOG);
+    expect(withModule.build.module).toBe('mod-coolant');
+    expect('module' in equip(withModule, 'module', null, CATALOG).build).toBe(false);
+    expect(OPTIONAL_SLOTS).toEqual(['module', 'rightHand', 'leftHand', 'shoulder']);
+  });
+
+  test('boosters, fire control, modules and shields each fit their own slot only', () => {
+    const shield: Shield = { id: 'shd-test', name: 'Test Shield', kind: 'shield', guard: 0.4, weight: 90, price: 500, vendor: 'hadron' };
+    expect(fits(CATALOG['bst-vector'], 'booster')).toBe(true);
+    expect(fits(CATALOG['bst-vector'], 'fcs')).toBe(false);
+    expect(fits(CATALOG['fcs-tracer'], 'fcs')).toBe(true);
+    expect(fits(CATALOG['mod-coolant'], 'module')).toBe(true);
+    expect(fits(CATALOG['mod-coolant'], 'shoulder')).toBe(false);
+    expect(fits(shield, 'leftHand')).toBe(true);
+    expect(fits(shield, 'rightHand')).toBe(false);
+    expect(fits(shield, 'shoulder')).toBe(false);
+    expect(BUILD_SLOTS).toEqual(['head', 'core', 'arms', 'legs', 'generator', 'booster', 'fcs', 'module', 'rightHand', 'leftHand', 'shoulder']);
   });
 
   test('swapping a part frees the old one', () => {
@@ -152,6 +171,9 @@ describe('validating loaded data', () => {
     ['a fractional count', (g) => ({ ...g, inventory: { ...g.inventory, 'head-halo': 0.5 } })],
     ['a fitted part that is not owned', (g) => ({ ...g, inventory: { ...g.inventory, 'core-hauler': 0 } })],
     ['a missing required slot', (g) => { const { legs: _legs, ...build } = g.build; return { ...g, build }; }],
+    ['no booster', (g) => { const { booster: _b, ...build } = g.build; return { ...g, build }; }],
+    ['no fire control', (g) => { const { fcs: _f, ...build } = g.build; return { ...g, build }; }],
+    ['a booster in the module slot', (g) => ({ ...g, inventory: { ...g.inventory, 'bst-stock': 2 }, build: { ...g.build, module: 'bst-stock' } })],
     ['a part in the wrong slot', (g) => ({ ...g, build: { ...g.build, core: 'head-scout-mk1' } })],
     ['one weapon in both hands', (g) => ({ ...g, build: { ...g.build, leftHand: 'wpn-rivet-rifle' } })],
     ['a slot that does not exist', (g) => ({ ...g, build: { ...g.build, tail: 'wpn-rivet-rifle' } })],
@@ -221,8 +243,12 @@ test('a new game has not seen an ending, and the flag must be a boolean', () => 
 describe('the pilot and settings in a new game', () => {
   test('start at zero with sound and music on', () => {
     expect(fresh()).toMatchObject({
-      xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { sfx: true, music: true, fastBattles: false },
+      xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { sfx: true, music: true, fastBattles: false, difficulty: 'standard' },
     });
+    expect(DIFFICULTIES).toEqual(['story', 'standard', 'veteran']);
+    for (const difficulty of DIFFICULTIES) {
+      expect(isValidState({ ...fresh(), settings: { ...fresh().settings, difficulty } }, CATALOG)).toBe(true);
+    }
   });
 
   const bad: [string, (g: any) => unknown][] = [
@@ -234,8 +260,31 @@ describe('the pilot and settings in a new game', () => {
     ['a cycle that is not a number', (g) => ({ ...g, cycle: 'two' })],
     ['settings missing', (g) => { const { settings: _s, ...rest } = g; return rest; }],
     ['a setting that is not a boolean', (g) => ({ ...g, settings: { ...g.settings, music: 1 } })],
+    ['a difficulty that does not exist', (g) => ({ ...g, settings: { ...g.settings, difficulty: 'nightmare' } })],
+    ['no difficulty', (g) => { const { difficulty: _d, ...settings } = g.settings; return { ...g, settings }; }],
   ];
   test.each(bad)('rejects %s', (_name, make) => {
     expect(isValidState(make(fresh()), CATALOG)).toBe(false);
+  });
+});
+
+describe('shields', () => {
+  const shield: Shield = { id: 'shd-test', name: 'Test Shield', kind: 'shield', guard: 0.4, weight: 90, price: 500, vendor: 'hadron' };
+  const catalog: Catalog = { ...CATALOG, [shield.id]: shield };
+
+  test('are bought, fitted to the left hand and saved like any part', () => {
+    const g = equip(buy(fresh(), shield.id, catalog), 'leftHand', shield.id, catalog);
+    expect(g.build.leftHand).toBe(shield.id);
+    expect(isValidState(g, catalog)).toBe(true);
+    expect(checkEquip(buy(fresh(), shield.id, catalog), 'rightHand', shield.id, catalog)).toBe('wrongSlot');
+  });
+
+  test('do not count as a weapon: the last real weapon still cannot be sold, and a rifle is still issued', () => {
+    const owner = buy(fresh(), shield.id, catalog);
+    expect(checkSell(equip(owner, 'rightHand', null, catalog), 'wpn-rivet-rifle', catalog)).toBe('lastWeapon');
+    expect(checkSell(owner, shield.id, catalog)).toBeNull();
+    const { 'wpn-rivet-rifle': _gone, ...inventory } = owner.inventory;
+    const { rightHand: _slot, ...build } = owner.build;
+    expect(ensureArmed({ ...owner, inventory, build }, catalog, 'wpn-rivet-rifle').inventory['wpn-rivet-rifle']).toBe(1);
   });
 });
