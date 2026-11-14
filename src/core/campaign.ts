@@ -1,6 +1,6 @@
 import type { Support } from './battle';
 import type { GameState } from './game';
-import type { Objective, Part } from './types';
+import type { Build, Objective, Part } from './types';
 
 export type Faction = 'hadron' | 'lumen' | 'undertow';
 /**
@@ -62,6 +62,8 @@ export interface Mission {
   scale?: number;
   /** Set on an arena fight: the rank of the opponent. */
   arenaRank?: number;
+  /** Set on a training drill: the mech that is lent for it. See training.ts. */
+  loaner?: Build;
 }
 
 export interface Message {
@@ -218,8 +220,8 @@ export function campaignComplete(state: GameState, missions: Mission[]): boolean
   return done(state, missions, last).length > 0;
 }
 
-/** True once the event a part, a message or a scene waits for has happened. */
-function reached(state: GameState, condition: Condition, missions: Mission[]): boolean {
+/** True once the event a part, a message, a scene or a database entry waits for has happened. */
+export function reached(state: GameState, condition: Condition, missions: Mission[]): boolean {
   if (condition === 'start') return true;
   if (condition === 'choice') return chosenFaction(state, missions) !== null;
   if (condition === 'finale' || condition === 'verdict') return done(state, missions, condition).length > 0;

@@ -5,6 +5,7 @@ import { ENEMIES } from '../../src/content/enemies';
 import { BattleFlow, BattleScreen, INTRO_MS, TALK_CHARS, TALK_HOLD_MS, TALK_LINES, WARNING_MS } from '../../src/ui/battleScreen';
 import { SCENE_HOLD_MS } from '../../src/ui/sceneScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
+import { WORLD } from '../../src/content/codex';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
@@ -110,7 +111,8 @@ describe('the screens the three-act story added', () => {
   test('a page of story draws its heading, title and picture, and waits a moment before it can be closed', () => {
     const { ctx, calls } = recorder();
     const app = new App({ catalog: CATALOG, save: new SaveFile(store(), CATALOG), sprites, fast: false, seed: 3 });
-    press(app, 'confirm');
+    // New game, then the callsign on offer.
+    press(app, 'confirm', 'confirm');
     expect(snap(app).screen).toBe('scene');
     app.draw(ctx);
     expect(texts(calls)).toEqual(expect.arrayContaining(['ACT I', 'THE WAGE']));
@@ -132,7 +134,9 @@ describe('the screens the three-act story added', () => {
 
   test('a button mashed through a page of story still leaves it up long enough to be noticed', () => {
     const app = new App({ catalog: CATALOG, save: new SaveFile(store(), CATALOG), sprites, fast: false, seed: 3 });
-    press(app, 'confirm');
+    // A new game: the callsign on offer is taken, and the first page of the story comes up.
+    press(app, 'confirm', 'confirm');
+    expect(snap(app).screen).toBe('scene');
     let up = 0;
     for (let i = 0; i < 200 && snap(app).screen === 'scene'; i++) {
       press(app, 'confirm');
@@ -550,5 +554,178 @@ describe('the screens the three-act story added', () => {
     expect(watch([ENEMIES['gun-turret']], { objective: { type: 'survive', rounds: 4 } }, 30).said).toEqual(expect.arrayContaining(['HOLD OUT 1/4']));
     expect(watch([ENEMIES.ripper], { objective: { type: 'disable', target: 0 } }, 30).said).toEqual(expect.arrayContaining(['DISABLE: MANTIS RIPPER']));
     expect(watch([ENEMIES.rival], { objective: { type: 'driveOff', target: 0, share: 0.5 } }, 30).said).toEqual(expect.arrayContaining(['DRIVE OFF: ASHFALL']));
+  });
+});
+
+describe('the screens the pilot\'s record added', () => {
+  const texts = (calls: { name: string; args: unknown[] }[]) => calls.filter((c) => c.name === 'fillText').map((c) => String(c.args[0]));
+
+  test('the pilot screen draws its three pages, each under its own tab', () => {
+    const app = start({ ...done('intro-1'), callsign: 'VANTA', medals: ['first-contract'], ranks: { 'intro-1': 'S' }, scenes: ['act-1'] });
+    select(app, 'pilot');
+    const page = () => { const { ctx, calls } = recorder(); app.update(16); app.draw(ctx); return texts(calls); };
+    const perks = page();
+    expect(perks).toEqual(expect.arrayContaining(['PILOT', 'VANTA', 'PERKS', 'MEDALS', 'RECORD', 'Marksman']));
+    press(app, 'next');
+    const medals = page();
+    expect(medals).toEqual(expect.arrayContaining(['First Invoice', 'EARNED', 'FIRST INVOICE', 'Complete a contract.']));
+    // Thirteen rows of medals, however many there are.
+    expect(medals).not.toContain('Fully Vested');
+    press(app, 'next');
+    const record = page();
+    expect(record).toEqual(expect.arrayContaining(['CONTRACTS WON', 'TIME PLAYED', 'RANKS HELD', 'S', 'D']));
+  });
+
+  test('a medal is announced over whatever screen is up, with its name and what it pays', () => {
+    const app = start({ ...done('intro-1'), scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
+    app.commit({ ...app.game!, arenaRank: 1 });
+    const { ctx, calls } = recorder();
+    // One frame brings it up, the next few slide it into view.
+    app.update(16);
+    app.update(400);
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['MEDAL EARNED', 'On the Ladder', '+100 c']));
+    // It sits along the bottom edge, clear of the name of the screen and of any heading.
+    const heading = calls.find((c) => c.name === 'fillText' && c.args[0] === 'MEDAL EARNED')!;
+    expect(Number(heading.args[2])).toBeGreaterThanOrEqual(238);
+    expect(Number(heading.args[2])).toBeLessThan(270);
+    // It goes away by itself.
+    const later = recorder();
+    app.update(3000);
+    app.draw(later.ctx);
+    expect(texts(later.calls)).not.toContain('MEDAL EARNED');
+  });
+
+  test('the database draws its three pages: a unit with its picture and figures, an entry about the world, a topic of the manual', () => {
+    const app = start({ ...done('intro-1'), met: ['recon-drone', 'gun-turret'], scenes: ['act-1'] });
+    select(app, 'database');
+    const page = () => { const { ctx, calls } = recorder(); app.update(16); app.draw(ctx); return { said: texts(calls), calls }; };
+    press(app, 'down', 'down', 'down', 'down', 'down');
+    const unit = page();
+    expect(unit.said).toEqual(expect.arrayContaining([
+      'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'MET 2/30', '? ? ?',
+    ]));
+    expect(unit.calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'enemy-gun-turret')).toBe(true);
+    press(app, 'next');
+    expect(page().said).toEqual(expect.arrayContaining(['VARN', 'Varn', 'The Licence', 'Hadron Mining']));
+    press(app, 'next');
+    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Leg Types', `${22} TOPICS`]));
+  });
+
+  test('the database growing is announced with its own mark, and medals after it one by one', () => {
+    // A game from before there was a database: its entries open as it is loaded.
+    const app = start({ ...done('intro-1'), scenes: ['act-1'] }, false);
+    const strip = () => { const { ctx, calls } = recorder(); app.update(400); app.draw(ctx); return texts(calls); };
+    expect(strip()).toEqual(expect.arrayContaining(['DATABASE', '6 new entries']));
+    app.commit({ ...app.game!, arenaRank: 10 });
+    app.update(3000);
+    expect(strip()).toEqual(expect.arrayContaining(['MEDAL EARNED', 'On the Ladder', '+100 c']));
+    app.update(3000);
+    expect(strip()).toEqual(expect.arrayContaining(['MEDAL EARNED', 'Champion of Varn', '+1200 c']));
+  });
+
+  test('the training screen lists the drills, shows the mech the selected one lends, and says what it is about', () => {
+    const app = start({ ...done('intro-1'), drills: ['drill-heat'], scenes: ['act-1'] });
+    select(app, 'training');
+    const { ctx, calls } = recorder();
+    app.update(16);
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining([
+      'TRAINING', 'PASSED 1/10', 'Take It Apart', 'Heat Discipline', 'PASSED', 'LOCKED', '150', 'TAKE IT APART', 'Aim at parts', 'OPEN',
+    ]));
+    // The lent mech is drawn from its parts: the Halo head of the first drill is among them.
+    expect(calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'head-halo')).toBe(true);
+    // A locked drill says when it opens instead of what it teaches in full.
+    press(app, 'down', 'down', 'down');
+    const locked = recorder();
+    app.draw(locked.ctx);
+    expect(texts(locked.calls).some((text) => text.startsWith('The simulator opens this drill'))).toBe(true);
+  });
+
+  test('a drill\'s briefing and settlement say that it is a drill', () => {
+    const app = start({ ...done('intro-1'), scenes: ['act-1'] });
+    select(app, 'training');
+    select(app, 'drill-aim');
+    const briefing = recorder();
+    app.update(16);
+    app.draw(briefing.ctx);
+    expect(texts(briefing.calls)).toEqual(expect.arrayContaining(['TAKE IT APART', 'Training Simulator', 'PAYS 150']));
+    expect(texts(briefing.calls).some((text) => text.startsWith('TRAINING: a lent mech'))).toBe(true);
+    const mission = { id: 'drill-aim', phase: 'patrol' as const, title: 'Take It Apart', client: 'x', briefing: [], debrief: 'Done.', reward: 150, battles: [], loaner: REFERENCE_BUILDS.tier1 };
+    app.showSettlement({ won: true, reward: 150, ammoCost: 0, repairCost: 0, net: 150, lines: [] }, mission);
+    const settlement = recorder();
+    app.update(16);
+    app.draw(settlement.ctx);
+    expect(texts(settlement.calls)).toEqual(expect.arrayContaining(['DRILL PASSED', 'Take It Apart']));
+    expect(texts(settlement.calls)).not.toContain('CONTRACT COMPLETE');
+  });
+
+  test('the end roll draws what is on screen as it climbs, and its last line stops in the middle', () => {
+    const app = start({ ...done('intro-1'), callsign: 'VANTA', endingSeen: true, scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
+    app.showCredits();
+    const frame = () => { const { ctx, calls } = recorder(); app.draw(ctx); return calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) })); };
+    // At first nothing has climbed into view.
+    expect(frame().map((d) => d.text)).not.toContain('IRONWAGE');
+    for (let i = 0; i < 60; i++) app.update(100);
+    const early = frame();
+    expect(early.map((d) => d.text)).toEqual(expect.arrayContaining(['IRONWAGE', 'FLOWN BY', 'VANTA']));
+    expect(early.every((d) => d.y > -40 && d.y < 270)).toBe(true);
+    // A press too soon after it opens does nothing; later it skips to the end, where the goodbye sits mid-screen.
+    for (let i = 0; i < 2000; i++) app.update(100);
+    const end = frame();
+    const thanks = end.find((d) => d.text === 'THANK YOU FOR FLYING')!;
+    expect(thanks.y).toBeGreaterThan(100);
+    expect(thanks.y).toBeLessThan(150);
+    expect(end.map((d) => d.text)).not.toContain('IRONWAGE');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+  });
+
+  test('the end roll says how to skip it while it climbs, and no longer once it has stopped', () => {
+    const app = start({ ...done('intro-1'), callsign: 'VANTA', endingSeen: true, scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
+    app.showCredits();
+    const frame = () => { const { ctx, calls } = recorder(); app.draw(ctx); return texts(calls); };
+    for (let i = 0; i < 20; i++) app.update(100);
+    expect(frame()).toContain('A: skip');
+    for (let i = 0; i < 2000; i++) app.update(100);
+    expect(frame()).not.toContain('A: skip');
+  });
+
+  test('once the story is over, the line that says so is clear of the menu: no row is written over', () => {
+    const story = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
+      'choice-hadron', 'hadron-3', 'hadron-4', 'hadron-5', 'finale-hadron', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
+    const app = start({ ...done(...story), endingSeen: true, scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) });
+    expect(snap(app).screen).toBe('hub');
+    expect(snap(app).menu.items.map((item) => item.id)).toContain('cycle');
+    const { ctx, calls } = recorder();
+    app.update(16);
+    app.draw(ctx);
+    const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) }));
+    const over = drawn.find((d) => d.text === 'The war is over. The work is not.')!;
+    expect(over).toBeDefined();
+    for (const label of ['Contracts', 'Arena', 'Training', 'Garage', 'Shop', 'Pilot', 'Messages', 'Database', 'Options', 'New Cycle']) {
+      const row = drawn.find((d) => d.text === label)!;
+      expect(row, label).toBeDefined();
+      expect(Math.abs(over.y - row.y), label).toBeGreaterThanOrEqual(11);
+    }
+    expect(over.y).toBeLessThan(238);
+  });
+
+  test('on the title the pilot\'s name stands clear of Continue, however long it is', () => {
+    const saved = { ...done('intro-1'), callsign: 'ABCDEFGH', scenes: ['act-1'] };
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store(saved), CATALOG), sprites, fast: true, seed: 3 });
+    expect(snap(app).screen).toBe('title');
+    const { ctx, calls } = recorder();
+    app.draw(ctx);
+    const at = (text: string) => Number(calls.find((c) => c.name === 'fillText' && c.args[0] === text)!.args[1]);
+    // The label is written from its left edge, the name up to its right edge; a letter is 4.8 wide.
+    expect(at('ABCDEFGH') - 8 * 4.8).toBeGreaterThanOrEqual(at('Continue') + 8 * 4.8 + 6);
+  });
+
+  test('the hub shows the pilot\'s callsign and level', () => {
+    const app = start({ ...done('intro-1'), callsign: 'VANTA', scenes: ['act-1'] });
+    const { ctx, calls } = recorder();
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['VANTA', 'LV 1']));
   });
 });

@@ -1,4 +1,6 @@
 import type { Page } from '@playwright/test';
+import { MEDAL_PAY } from '../src/core/medals';
+import { MEDALS } from '../src/content/medals';
 
 export type Snap = {
   screen: string; credits: number | null; battlesWon: number | null; message?: string;
@@ -10,11 +12,22 @@ export type Snap = {
   };
   scene?: string;
   ending?: string;
+  /** On the title: which of its lists is showing. */
+  mode?: string;
+  /** On the pilot screen and in the database: the page showing. */
+  page?: string;
+  toast?: string | null;
+  medals?: string[];
+  slot?: number;
+  callsign?: string | null;
   completed: string[] | null;
   settlement?: { net: number; won: boolean };
 };
 
 export const snap = (page: Page): Promise<Snap> => page.evaluate(() => (window as any).__game.snapshot());
+
+/** What the medals a snapshot shows have paid: credits that no contract accounts for. */
+export const medalPay = (s: Snap): number => (s.medals ?? []).reduce((sum, id) => sum + MEDAL_PAY[MEDALS.find((m) => m.id === id)!.tier], 0);
 
 /** Waits two frames: input is handled on the frame after the key event. */
 export const nextFrame = (page: Page): Promise<unknown> =>
@@ -48,10 +61,19 @@ export async function waitForPhase(page: Page, phase: string): Promise<void> {
   await page.waitForFunction((name) => (window as any).__game.snapshot().battle?.phase === name, phase);
 }
 
-/** Reads past whatever pages of story are due and waits for the hub. */
+/**
+ * From wherever a new or continued game has got to, on to the hub: takes the slot under the cursor,
+ * accepts the callsign on offer, and reads past whatever pages of story are due.
+ */
 export async function enterHub(page: Page): Promise<void> {
-  await page.waitForFunction(() => ['hub', 'scene', 'ending'].includes((window as any).__game.snapshot().screen));
-  for (let i = 0; i < 8 && (await snap(page)).screen !== 'hub'; i++) await press(page, 'Enter');
+  // Pages of story hold a press off for a moment, so this keeps pressing for a while.
+  for (let i = 0; i < 120; i++) {
+    const s = await snap(page);
+    if (s.screen === 'hub') return;
+    const waiting = ['callsign', 'scene', 'ending', 'credits'].includes(s.screen) || (s.screen === 'title' && s.mode !== undefined && s.mode !== 'main');
+    if (waiting) await press(page, 'Enter');
+    else await nextFrame(page);
+  }
   await waitForScreen(page, 'hub');
 }
 

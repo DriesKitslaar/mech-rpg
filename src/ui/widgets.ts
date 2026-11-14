@@ -79,6 +79,54 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, sprites: Sprites, id
   }
 }
 
+/** A row of page names ending at `right`, the current one lit: for screens the shoulder buttons page through. */
+export function drawTabs(ctx: CanvasRenderingContext2D, right: number, y: number, labels: string[], current: number): void {
+  let x = right;
+  for (let i = labels.length - 1; i >= 0; i--) {
+    drawText(ctx, labels[i], x, y, { align: 'right', color: i === current ? COLORS.accent : COLORS.dim });
+    x -= Math.round(labels[i].length * CHAR_W) + 8;
+  }
+}
+
+/** What a medal of each tier is made of: bronze, silver, gold. */
+export const MEDAL_COLORS: Record<1 | 2 | 3, string> = { 1: '#c0773c', 2: '#c3c9d6', 3: '#f2c744' };
+
+/** A medal nine pixels square: a ribbon and a disc in the metal of its tier, or its outline while it is not earned. */
+export function drawMedal(ctx: CanvasRenderingContext2D, x: number, y: number, tier: 1 | 2 | 3, earned: boolean): void {
+  // The ribbon: one band in two colours, narrowing to where the disc hangs.
+  ctx.fillStyle = earned ? COLORS.accent : COLORS.border;
+  ctx.fillRect(x + 1, y, 3, 2);
+  ctx.fillRect(x + 2, y + 2, 2, 1);
+  ctx.fillStyle = earned ? COLORS.energy : COLORS.border;
+  ctx.fillRect(x + 5, y, 3, 2);
+  ctx.fillRect(x + 5, y + 2, 2, 1);
+  ctx.fillStyle = earned ? '#e4e2f0' : COLORS.border;
+  ctx.fillRect(x + 4, y, 1, 3);
+  ctx.fillStyle = earned ? MEDAL_COLORS[tier] : COLORS.border;
+  ctx.fillRect(x + 2, y + 3, 5, 6);
+  ctx.fillRect(x + 1, y + 4, 7, 4);
+  if (!earned) {
+    ctx.fillStyle = COLORS.empty;
+    ctx.fillRect(x + 3, y + 4, 3, 4);
+    ctx.fillRect(x + 2, y + 5, 5, 2);
+  } else {
+    // A glint, so the three metals read as metal.
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.fillRect(x + 3, y + 4, 2, 1);
+    ctx.fillRect(x + 2, y + 5, 1, 1);
+  }
+}
+
+/** A page with lines on it, nine pixels square: the mark of the database. */
+export function drawPage(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.fillStyle = COLORS.energy;
+  ctx.fillRect(x + 1, y, 7, 9);
+  ctx.fillStyle = COLORS.panel;
+  ctx.fillRect(x + 2, y + 1, 5, 7);
+  ctx.fillStyle = COLORS.text;
+  for (const row of [2, 4, 6]) ctx.fillRect(x + 3, y + row, row === 6 ? 2 : 3, 1);
+}
+
 /** A horizontal bar filled to value/max. */
 export function drawMeter(
   ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, value: number, max: number, color: string,

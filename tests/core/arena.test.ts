@@ -1,4 +1,7 @@
-import { arenaPurse, checkChallenge, recordArenaWin } from '../../src/core/arena';
+import {
+  ARENA_RANKS, CHAMPION_RANK, MIRROR_ID, MIRROR_OPENS, MIRROR_PURSE, arenaPurse, checkChallenge, mirrorEnemy, mirrorMission, mirrorOpen,
+  mirrorPurse, recordArenaWin, recordMirrorWin, shownRanks,
+} from '../../src/core/arena';
 import { validatePlayerBuild, weaponIn } from '../../src/core/build';
 import { createBattle, turnEnergyOf } from '../../src/core/battle';
 import { newGame, type GameState } from '../../src/core/game';
@@ -10,10 +13,18 @@ import { paintById } from '../../src/ui/paint';
 const at = (arenaRank: number): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), arenaRank });
 
 describe('the ladder', () => {
-  test('ten opponents, ranked one to ten, with the purses from the plan', () => {
-    expect(ARENA.map((o) => o.rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    expect(ARENA.map((o) => o.purse)).toEqual([800, 1200, 1600, 2000, 2600, 3200, 3800, 4600, 5400, 7000]);
-    expect(new Set(ARENA.map((o) => o.name)).size).toBe(10);
+  test('fifteen opponents: ten on the ladder and five in the back room, each purse larger than the last', () => {
+    expect(ARENA.map((o) => o.rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+    expect(ARENA.map((o) => o.purse)).toEqual([800, 1200, 1600, 2000, 2600, 3200, 3800, 4600, 5400, 7000, 9000, 11000, 13000, 16000, 22000]);
+    expect(new Set(ARENA.map((o) => o.name)).size).toBe(15);
+    expect([CHAMPION_RANK, ARENA_RANKS]).toEqual([10, 15]);
+  });
+
+  test('the back room is shown to the champion and to nobody else', () => {
+    expect(shownRanks(at(0))).toBe(10);
+    expect(shownRanks(at(9))).toBe(10);
+    expect(shownRanks(at(10))).toBe(15);
+    expect(shownRanks(at(15))).toBe(15);
   });
 
   test.each(ARENA.map((o) => [o.name, o] as const))('%s pilots a valid mech whose every part can be drawn', (_name, opponent) => {
@@ -33,7 +44,7 @@ describe('the ladder', () => {
 
   test('most of the ladder wears its own paint, and no two the same', () => {
     const paints = Object.values(ARENA_ENEMIES).flatMap((def) => def.paint ?? []);
-    expect(paints.length).toBeGreaterThanOrEqual(8);
+    expect(paints.length).toBeGreaterThanOrEqual(11);
     expect(new Set(paints).size).toBe(paints.length);
   });
 });
@@ -45,7 +56,9 @@ describe('challenging', () => {
     expect(checkChallenge(at(4), 5)).toBeNull();
     expect(checkChallenge(at(4), 2)).toBeNull();
     expect(checkChallenge(at(4), 6)).toBe('locked');
-    expect(checkChallenge(at(10), 11)).toBe('unknown');
+    expect(checkChallenge(at(9), 11)).toBe('locked');
+    expect(checkChallenge(at(10), 11)).toBeNull();
+    expect(checkChallenge(at(15), 16)).toBe('unknown');
     expect(checkChallenge(at(0), 0)).toBe('unknown');
   });
 
@@ -58,9 +71,53 @@ describe('challenging', () => {
     expect(recordArenaWin(at(2), 3).arenaRank).toBe(3);
     expect(recordArenaWin(at(5), 3).arenaRank).toBe(5);
     expect(recordArenaWin(at(2), 7).arenaRank).toBe(2);
+    expect(recordArenaWin(at(10), 11).arenaRank).toBe(11);
+    expect(recordArenaWin(at(15), 16).arenaRank).toBe(15);
     const g = at(2);
     recordArenaWin(g, 3);
     expect(g.arenaRank).toBe(2);
+  });
+});
+
+describe('the mirror match', () => {
+  const text = { client: 'Arena Office', win: 'Done.', title: 'Mirror Match', name: 'Echo', style: 'Your own build.', taunt: 'After you.' };
+
+  test('opens at the third rank', () => {
+    expect(MIRROR_OPENS).toBe(3);
+    expect(mirrorOpen(at(2))).toBe(false);
+    expect(mirrorOpen(at(3))).toBe(true);
+  });
+
+  test('pays its purse the first time it is won and a quarter after', () => {
+    expect(MIRROR_PURSE).toBe(2400);
+    expect(mirrorPurse(at(3))).toBe(2400);
+    const won = recordMirrorWin(at(3));
+    expect(won.stats.mirrors).toBe(1);
+    expect(mirrorPurse(won)).toBe(600);
+    expect(recordMirrorWin(won).stats.mirrors).toBe(2);
+    expect(at(3).stats.mirrors).toBe(0);
+  });
+
+  test('is a contract of one duel in the arena against an opponent called after what the office calls it', () => {
+    const mission = mirrorMission(at(3), text);
+    // The house tunes its copy a tenth hotter than the original.
+    expect(mission).toMatchObject({ id: MIRROR_ID, title: 'Mirror Match', client: 'Arena Office', reward: 2400, scale: 1.1, phase: 'patrol' });
+    expect(mission.battles).toEqual([{ enemies: ['mirror'], background: 'bg-arena' }]);
+    expect(mission.arenaRank).toBeUndefined();
+    expect(mission.briefing).toEqual(['Your own build.', '"After you."']);
+  });
+
+  test('the opponent flies the pilot\'s own build, part for part, in another paint', () => {
+    const g = { ...at(3), build: { ...DEMO_BUILD }, paint: 'cobalt' };
+    const echo = mirrorEnemy(g, 'Echo');
+    expect(echo).toMatchObject({ id: 'mirror', name: 'Echo', composed: true, ai: 'gunner', build: DEMO_BUILD });
+    expect(echo.build).not.toBe(g.build);
+    expect(echo.paint).toBe('obsidian');
+    // A pilot who flies in obsidian meets an Echo in bone, so the two can be told apart.
+    expect(mirrorEnemy({ ...g, paint: 'obsidian' }, 'Echo').paint).toBe('bone');
+    // It fights: a battle against it can be created and it has the same armour.
+    const s = createBattle(g.build, [echo], CATALOG, 1);
+    expect(s.units[1].parts.core!.maxAp).toBe(s.units[0].parts.core!.maxAp);
   });
 });
 

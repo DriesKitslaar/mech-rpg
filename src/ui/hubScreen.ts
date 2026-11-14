@@ -11,7 +11,7 @@ import { drawMech, mechSprites } from './mechView';
 import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const H = STRINGS.hub;
-const ROWS = 8;
+const ROWS = 10;
 /** The entry of the contract list that opens the archive. No contract has this id. */
 export const ARCHIVE = 'archive';
 
@@ -34,14 +34,16 @@ export class HubScreen implements Screen {
     this.main = new MenuList([
       { id: 'contracts', label: H.contractsItem, enabled: errors.length === 0, note: errors[0] ? STRINGS.buildErrors[errors[0]] : undefined },
       { id: 'arena', label: H.arena, enabled: sideWork && errors.length === 0, note: sideWork ? undefined : H.locked },
+      { id: 'training', label: H.training, enabled: true },
       { id: 'garage', label: H.garage, enabled: true },
       { id: 'shop', label: H.shop, enabled: true },
       { id: 'pilot', label: H.pilot, enabled: true, note: points > 0 ? H.points(points) : undefined },
       { id: 'messages', label: H.messages, enabled: true, note: unread > 0 ? H.unread(unread) : undefined },
+      { id: 'database', label: H.database, enabled: true },
       { id: 'options', label: H.options, enabled: true },
       ...(app.canStartCycle() ? [{ id: 'cycle', label: H.cycle, enabled: true }] : []),
       // With a build that may not deploy the cursor starts on the garage, where that is fixed.
-    ], errors.length === 0 ? 0 : 2);
+    ], errors.length === 0 ? 0 : 3);
     if (list && errors.length === 0) {
       this.openContracts();
       if (list === 'archive' && this.app.archive().length > 0) this.openArchive();
@@ -101,7 +103,7 @@ export class HubScreen implements Screen {
       else if (id === 'cycle') {
         this.asking = true;
         this.sub = new MenuList([{ id: 'no', label: H.no, enabled: true }, { id: 'yes', label: H.yes, enabled: true }]);
-      } else this.app.go(id as 'arena' | 'garage' | 'shop' | 'pilot' | 'messages' | 'options');
+      } else this.app.go(id as 'arena' | 'training' | 'garage' | 'shop' | 'pilot' | 'messages' | 'database' | 'options');
     }
   }
 
@@ -130,8 +132,9 @@ export class HubScreen implements Screen {
     drawPanel(ctx, x, 20, w, 52);
     drawText(ctx, H.credits, x + 6, 25, { color: COLORS.dim });
     drawText(ctx, String(game.credits), x + w - 6, 23, { size: 16, align: 'right', color: game.credits < 0 ? COLORS.danger : COLORS.text });
-    drawText(ctx, H.level, x + 6, 41, { color: COLORS.dim });
-    drawText(ctx, String(levelFor(game.xp)), x + w - 6, 41, { align: 'right' });
+    // The pilot, by callsign.
+    drawText(ctx, game.callsign, x + 6, 41, { color: COLORS.armor });
+    drawText(ctx, H.level(levelFor(game.xp)), x + w - 6, 41, { align: 'right' });
     drawText(ctx, H.battlesWon, x + 6, 53, { color: COLORS.dim });
     drawText(ctx, String(game.battlesWon), x + w - 6, 53, { align: 'right' });
 
@@ -145,6 +148,9 @@ export class HubScreen implements Screen {
       drawList(ctx, this.list, x + 6, 96, w - 16, ROWS);
     }
 
-    if (campaignComplete(game, MISSIONS)) drawText(ctx, H.campaignDone, x + w / 2, 196, { align: 'center', color: COLORS.dim, size: 10 });
+    // Under the menu's panel, clear of its last row and of anything announced along the bottom edge.
+    if (campaignComplete(game, MISSIONS)) {
+      drawText(ctx, H.campaignDone, x + w / 2, 78 + 24 + ROWS * LINE + 4, { align: 'center', color: COLORS.dim, size: 10 });
+    }
   }
 }

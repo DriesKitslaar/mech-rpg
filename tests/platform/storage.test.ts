@@ -1,7 +1,8 @@
 import { computeBuildStats, validatePlayerBuild } from '../../src/core/build';
 import { SAVE_VERSION, buy, newGame } from '../../src/core/game';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
-import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/storage';
+import { NO_STATS } from '../../src/core/stats';
+import { SAVE_KEY, SLOTS, SLOT_KEY, SaveFile, slotKey, type KeyValueStore } from '../../src/platform/storage';
 
 function memoryStore(initial: Record<string, string> = {}): KeyValueStore & { data: Record<string, string> } {
   const data = { ...initial };
@@ -143,6 +144,74 @@ describe('a save from the sixth version', () => {
   test('that had seen the old ending has not seen the new one: the story goes on past it', () => {
     const done = ['intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-lumen', 'finale-lumen'];
     expect(sixth({ completed: done, endingSeen: true })).toMatchObject({ completed: done, endingSeen: false });
+  });
+});
+
+describe('a save from the seventh version', () => {
+  const seventh = () => {
+    const { callsign: _c, stats: _s, medals: _m, met: _e, drills: _d, codex: _x, ...rest } = { ...game(), xp: 300, ranks: { 'intro-1': 'A' } } as Record<string, any>;
+    return new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 7 }) }), CATALOG).load();
+  };
+
+  test('gains a callsign, an empty record, no medals, nobody met and no training, and keeps everything else', () => {
+    expect(seventh()).toEqual({ ...game(), xp: 300, ranks: { 'intro-1': 'A' } });
+    expect(seventh()).toMatchObject({ version: SAVE_VERSION, callsign: 'PILOT', medals: [], met: [], drills: [], codex: [] });
+    expect(seventh()!.stats).toEqual(NO_STATS);
+  });
+
+  test('the one thing it did count goes on the record: the contracts won', () => {
+    const { callsign: _c, stats: _s, medals: _m, met: _e, drills: _d, codex: _x, ...rest } = { ...game(), battlesWon: 12 } as Record<string, any>;
+    const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 7 }) }), CATALOG).load();
+    expect(loaded!.stats).toEqual({ ...NO_STATS, contracts: 12 });
+    // A count that is not a count is not carried over; the save is refused for it anyway.
+    const broken = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 7, battlesWon: 'many' }) }), CATALOG);
+    expect(broken.load()).toBeNull();
+  });
+});
+
+describe('three games', () => {
+  test('are kept apart: the first where the only game always was, the others beside it', () => {
+    const store = memoryStore();
+    const first = new SaveFile(store, CATALOG);
+    const third = first.forSlot(2);
+    expect([first.slot, third.slot]).toEqual([0, 2]);
+    expect([slotKey(0), slotKey(1), slotKey(2)]).toEqual([SAVE_KEY, 'ironwage-save-2', 'ironwage-save-3']);
+    first.save({ ...game(), credits: 111 });
+    third.save({ ...game(), credits: 333 });
+    expect(Object.keys(store.data).sort()).toEqual(['ironwage-save', 'ironwage-save-3']);
+    expect(new SaveFile(store, CATALOG).load()?.credits).toBe(111);
+    expect(new SaveFile(store, CATALOG).forSlot(1).load()).toBeNull();
+    expect(new SaveFile(store, CATALOG).forSlot(2).load()?.credits).toBe(333);
+    third.clear();
+    expect(first.load()?.credits).toBe(111);
+    expect(third.load()).toBeNull();
+  });
+
+  test('a slot that does not exist is refused, and asking for the slot a file already is gives the same file', () => {
+    const file = new SaveFile(memoryStore(), CATALOG);
+    expect(file.forSlot(0)).toBe(file);
+    for (const slot of [-1, SLOTS, 1.5, NaN]) expect(() => file.forSlot(slot)).toThrow('no such slot');
+  });
+
+  test('the game played last is remembered; nothing usable means the first', () => {
+    const store = memoryStore();
+    const file = new SaveFile(store, CATALOG);
+    expect(file.lastSlot()).toBe(0);
+    file.forSlot(2).rememberSlot();
+    expect(new SaveFile(store, CATALOG).lastSlot()).toBe(2);
+    for (const junk of ['7', '-1', 'two', '1.5', '']) {
+      expect(new SaveFile(memoryStore({ [SLOT_KEY]: junk }), CATALOG).lastSlot()).toBe(0);
+    }
+    const broken: KeyValueStore = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('full'); }, removeItem() {} };
+    expect(new SaveFile(broken, CATALOG).lastSlot()).toBe(0);
+    expect(() => new SaveFile(broken, CATALOG).rememberSlot()).not.toThrow();
+  });
+
+  test('unusable data in one slot says nothing about the others', () => {
+    const store = memoryStore({ 'ironwage-save-2': '{oops' });
+    const file = new SaveFile(store, CATALOG);
+    expect(file.hasUnusableData()).toBe(false);
+    expect(file.forSlot(1).hasUnusableData()).toBe(true);
   });
 });
 

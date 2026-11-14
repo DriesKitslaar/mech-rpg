@@ -4,11 +4,13 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
-import { COLORS, drawList, drawPanel, drawText } from './widgets';
+import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const O = STRINGS.options;
 type Toggle = 'sfx' | 'music' | 'fastBattles' | 'rumble';
 const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'difficulty'];
+/** The entry that plays the end roll again. It is not a setting. */
+const CREDITS = 'credits';
 
 /** Sound, music, battle speed and difficulty. Opened from the title or the hub, and returns to where it came from. */
 export class OptionsScreen implements Screen {
@@ -22,7 +24,11 @@ export class OptionsScreen implements Screen {
     const settings = this.app.settings;
     const value = (key: keyof Settings): string =>
       (key === 'difficulty' ? O.difficulties[settings.difficulty] : this.isOn(key as Toggle) ? O.on : O.off);
-    this.list.setItems(KEYS.map((key) => ({ id: key, label: O[key], enabled: true, note: value(key) })));
+    this.list.setItems([
+      ...KEYS.map((key) => ({ id: key as string, label: O[key], enabled: true, note: value(key) })),
+      // Once an ending has been seen, the end roll can be watched again from here.
+      ...(this.app.canWatchCredits() ? [{ id: CREDITS, label: O.credits, enabled: true, note: O.watch }] : []),
+    ]);
   }
 
   /** Whether a switch is on. Rumble is on in a game saved before there was a switch for it. */
@@ -33,6 +39,7 @@ export class OptionsScreen implements Screen {
   /** Flips a switch, or steps the difficulty one way or the other. */
   private change(step: number): void {
     const settings = this.app.settings;
+    if (this.list.selected!.id === CREDITS) return this.app.showCredits();
     const key = this.list.selected!.id as keyof Settings;
     if (key === 'difficulty') {
       const n = DIFFICULTIES.length;
@@ -66,12 +73,15 @@ export class OptionsScreen implements Screen {
 
     const w = 230;
     const x = (LOGICAL_W - w) / 2;
-    drawPanel(ctx, x, 64, w, 124);
+    // The panel grows with the list: the line of help and the hint sit under however many rows there are.
+    const rows = this.list.items.length;
+    const help = 96 + rows * LINE + 6;
+    drawPanel(ctx, x, 64, w, help + 31 - 64);
     drawText(ctx, O.heading, LOGICAL_W / 2, 70, { size: 16, align: 'center', color: COLORS.accent });
-    drawList(ctx, this.list, x + 14, 96, w - 34, KEYS.length);
+    drawList(ctx, this.list, x + 14, 96, w - 34, rows);
     if (this.list.selected?.id === 'difficulty') {
-      drawText(ctx, O.difficultyHelp[this.app.settings.difficulty], LOGICAL_W / 2, 157, { align: 'center', color: COLORS.text, size: 10 });
+      drawText(ctx, O.difficultyHelp[this.app.settings.difficulty], LOGICAL_W / 2, help, { align: 'center', color: COLORS.text, size: 10 });
     }
-    drawText(ctx, O.hint, LOGICAL_W / 2, 171, { align: 'center', color: COLORS.dim });
+    drawText(ctx, O.hint, LOGICAL_W / 2, help + 14, { align: 'center', color: COLORS.dim });
   }
 }

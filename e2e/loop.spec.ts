@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { choose, enterHub, finishMission, open, press, snap, waitForPhase, waitForScreen } from './helpers';
+import { choose, enterHub, finishMission, medalPay, open, press, snap, waitForPhase, waitForScreen } from './helpers';
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
@@ -10,7 +10,10 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await open(page);
   await page.screenshot({ path: shot('title') });
   await choose(page, 'new');
-  // A new game opens on the first page of the story.
+  // A new game asks what the pilot is called, then opens on the first page of the story.
+  await waitForScreen(page, 'callsign');
+  await page.screenshot({ path: shot('callsign') });
+  await press(page, 'Enter');
   await waitForScreen(page, 'scene');
   expect((await snap(page)).scene).toBe('act-1');
   await page.screenshot({ path: shot('scene-act-1') });
@@ -65,12 +68,13 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await finishMission(page);
   const { net, won } = (await snap(page)).settlement!;
   // Booked the moment it is shown.
-  expect((await snap(page)).credits).toBe(600 + net);
+  const booked = await snap(page);
+  expect(booked.credits).toBe(600 + net + medalPay(booked));
   await page.screenshot({ path: shot('settlement') });
   await press(page, 'Enter');
   await waitForScreen(page, 'hub');
   const after = await snap(page);
-  expect(after).toMatchObject({ credits: 600 + net, battlesWon: won ? 1 : 0 });
+  expect(after).toMatchObject({ credits: 600 + net + medalPay(after), battlesWon: won ? 1 : 0 });
   expect(after.completed).toEqual(won ? ['intro-1'] : []);
 
   // A reload must find the same game.

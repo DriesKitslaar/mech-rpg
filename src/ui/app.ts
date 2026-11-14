@@ -1,4 +1,4 @@
-import { arenaMission, checkChallenge, recordArenaWin } from '../core/arena';
+import { MIRROR_ID, arenaMission, checkChallenge, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordMirrorWin } from '../core/arena';
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
@@ -6,26 +6,36 @@ import {
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
+import { metByRecord, openEntries, type Entry } from '../core/codex';
 import { applySettlement, settle, type Settlement } from '../core/economy';
+import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
-import type { BuildError, Catalog, Part } from '../core/types';
+import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
+import { drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill, type Drill } from '../core/training';
+import type { BuildError, Catalog, EnemyDef, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
+import { WORLD } from '../content/codex';
+import { DRILLS } from '../content/drills';
+import { MEDALS } from '../content/medals';
 import { MESSAGES, MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
 import { SCENES } from '../content/scenes';
 import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
 import { STRINGS } from '../content/strings';
-import type { Sfx } from '../platform/audio';
+import type { Sfx, SoundName } from '../platform/audio';
 import type { TrackName } from '../platform/music';
 import type { InputAction } from '../platform/input';
-import type { SaveFile } from '../platform/storage';
-import { ArenaScreen } from './arenaScreen';
+import { SLOTS, type SaveFile } from '../platform/storage';
+import { ArenaScreen, MIRROR } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
+import { CallsignScreen } from './callsignScreen';
+import { CreditsScreen } from './creditsScreen';
+import { DatabaseScreen } from './databaseScreen';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
@@ -39,6 +49,8 @@ import { battleTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
+import { TrainingScreen } from './trainingScreen';
+import { COLORS, drawMedal, drawPage, drawPanel, drawText } from './widgets';
 
 /** What a screen reports about itself, for tests and for telling whether an input did anything. */
 export interface ScreenView {
@@ -55,14 +67,59 @@ export interface Screen {
 }
 
 export type ScreenName =
-  | 'title' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
-  | 'arena' | 'pilot' | 'options';
+  | 'title' | 'callsign' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
+  | 'arena' | 'pilot' | 'options' | 'database' | 'training' | 'credits';
+
+/** One of the kept games as the title shows it: empty, unreadable, or a game. */
+export interface SlotView { slot: number; game: GameState | null; unusable: boolean }
 
 /** How much quicker a battle plays with the fast-battles option on. */
 export const FAST_BATTLE_SPEED = 2.5;
 /** How long a new screen takes to come up out of black, and the shutter over a battle to open. */
 export const FADE_MS = 170;
 export const SHUTTER_MS = 320;
+/** How long a medal's announcement stays up, and how much of that it spends sliding in and out. */
+export const TOAST_MS = 2600;
+const TOAST_SLIDE_MS = 180;
+
+/** More medals than this earned at once are announced together. */
+const TOASTS_AT_ONCE = 3;
+/** Screens that are not interrupted: an announcement waits until they are over. */
+const NO_TOASTS: ScreenName[] = ['battle', 'scene', 'ending', 'credits', 'title', 'callsign'];
+
+/** What the battles of a contract added up to, for the record. */
+export interface Fought { tally: Stats; met: string[]; retreated: boolean }
+
+/** Something to tell the pilot in passing: a medal earned, the database grown. */
+interface Toast {
+  id: string;
+  heading: string;
+  title: string;
+  /** Written at the right: what a medal pays. */
+  note?: string;
+  /** The metal of a medal; an announcement without one is about the database. */
+  tier?: Tier;
+  sound: SoundName;
+}
+
+/** One announcement a medal, or one for all of them when there are many. */
+function medalToasts(earned: Medal[]): Toast[] {
+  const M = STRINGS.medals;
+  if (earned.length > TOASTS_AT_ONCE) {
+    const pay = earned.reduce((sum, medal) => sum + MEDAL_PAY[medal.tier], 0);
+    const best = Math.max(...earned.map((medal) => medal.tier)) as Tier;
+    return [{ id: `medals:${earned.length}`, heading: M.earnedMany, title: M.count(earned.length), note: M.pay(pay), tier: best, sound: 'medal' }];
+  }
+  return earned.map((medal) => ({ id: medal.id, heading: M.earned, title: medal.name, note: M.pay(MEDAL_PAY[medal.tier]), tier: medal.tier, sound: 'medal' as const }));
+}
+
+/** One entry is announced by its title, several as a count. */
+function entryToasts(opened: Entry[]): Toast[] {
+  const D = STRINGS.database;
+  if (opened.length === 0) return [];
+  if (opened.length === 1) return [{ id: `entry:${opened[0].id}`, heading: D.toast, title: opened[0].title, sound: 'entry' }];
+  return [{ id: `entries:${opened.length}`, heading: D.toast, title: D.newEntries(opened.length), sound: 'entry' }];
+}
 
 /** The part of the music player the app steers. */
 export interface MusicControl {
@@ -92,6 +149,9 @@ class MissionHost implements Screen {
   private screen!: BattleScreen;
   /** The contract's outcome, once it has been booked. */
   private settlement: Settlement | null = null;
+  /** What the battles already over added to the record, and the kinds of enemy seen in them. */
+  private tally: Stats = NO_STATS;
+  private met = new Set<string>();
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
@@ -101,20 +161,22 @@ class MissionHost implements Screen {
     const { catalog, sprites, sfx, fast } = this.app.deps;
     const total = this.mission.battles.length;
     // The pilot's perks apply in every battle of the contract, the first and the carried ones alike.
+    // A drill is fought in the simulator's mech as it comes: the pilot's own build and perks stay outside.
     const { aim, evasion, energy, cooling, repairs, armour } = this.app.perks();
+    const drill = isDrill(this.mission);
     const state = startMissionBattle(
-      this.app.game!.build, this.mission, this.index, ALL_ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
-      { enemyScale: this.enemyScale(), mods: { aim, evasion, energy, cooling, repairs, armour } },
+      this.mission.loaner ?? this.app.game!.build, this.mission, this.index, this.app.enemies(), catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
+      { enemyScale: this.enemyScale(), ...(drill ? {} : { mods: { aim, evasion, energy, cooling, repairs, armour } }) },
     );
     // Each battle of a contract has its own song: the last one may be against a boss.
-    this.app.playTrack(battleTrack(this.mission, this.index, ALL_ENEMIES));
+    this.app.playTrack(battleTrack(this.mission, this.index, this.app.enemies()));
     // Tests play without the talk: it is words to read, and they have nobody reading.
     this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast });
     const battle = this.mission.battles[this.index];
-    const boss = battle.enemies.map((id) => ALL_ENEMIES[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
+    const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
     if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
-      fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: this.app.game!.paint,
+      fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: drill ? undefined : this.app.game!.paint,
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
       ...(boss ? { boss: boss.name } : {}),
       background: this.mission.battles[this.index].background,
@@ -123,9 +185,9 @@ class MissionHost implements Screen {
     });
   }
 
-  /** The contract's own scale times the difficulty the player chose. */
+  /** The contract's own scale times the difficulty the player chose. A drill is the same for everyone. */
   private enemyScale(): number {
-    return (this.mission.scale ?? 1) * DIFFICULTY_SCALE[this.app.settings.difficulty];
+    return (this.mission.scale ?? 1) * (isDrill(this.mission) ? 1 : DIFFICULTY_SCALE[this.app.settings.difficulty]);
   }
 
   /** True when winning the current battle leads to another one. */
@@ -140,11 +202,25 @@ class MissionHost implements Screen {
   private bookIfOver(): void {
     const { outcome } = this.flow.state;
     if (this.settlement || outcome === 'ongoing' || (outcome === 'victory' && this.hasNext())) return;
+    if (isDrill(this.mission)) {
+      // The simulator bills nothing and counts for nothing but the list of drills passed.
+      this.settlement = drillSettlement(outcome === 'victory', this.mission);
+      this.app.bookDrill(this.settlement, this.mission);
+      return;
+    }
     const { payBonus, costDiscount } = this.app.perks();
     const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
     this.settlement = rankSettlement(bill, performance);
-    this.app.bookSettlement(this.settlement, this.mission);
+    this.count();
+    this.app.bookSettlement(this.settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state) });
+  }
+
+  /** Adds the battle that has just ended to what the contract has added up to. */
+  private count(): void {
+    this.tally = addStats(this.tally, tallyBattle(this.flow.state));
+    // Whatever was on the field was met, what joined later included.
+    for (const unit of this.flow.state.units) if (unit.side === 'enemy' && unit.kind) this.met.add(unit.kind);
   }
 
   update(dtMs: number): void {
@@ -164,6 +240,7 @@ class MissionHost implements Screen {
     if (this.settlement) this.app.showSettlement(this.settlement, this.mission);
     else {
       this.rounds += this.flow.state.round;
+      this.count();
       this.index += 1;
       this.begin();
     }
@@ -187,6 +264,7 @@ class MissionHost implements Screen {
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
+        enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),
       },
     };
   }
@@ -197,17 +275,27 @@ export class App {
   game: GameState | null = null;
   /** True when the last attempt to save was refused by the device. */
   saveFailed = false;
+  /** True while the options as they are now have not been stored: storing them is tried again with every save. */
+  private settingsUnsaved = false;
   /** Sound, music and battle speed. Stored on their own, so they exist before a game does. */
   settings: Settings;
   private name: ScreenName = 'title';
   private current!: Screen;
   private seed: number;
+  /** The kept game being played: every save goes there. */
+  private file: SaveFile;
   /** The way the current screen is still coming into view: what is left of it and how long it takes. */
   private entering = { left: 0, total: 1, shutter: false };
+  /** What has not been announced yet, and what is being announced with the time it has left. */
+  private toasts: Toast[] = [];
+  private toast: { item: Toast; left: number } | null = null;
+  /** Time played since the record was last brought up to date, in milliseconds. */
+  private played = 0;
 
   constructor(readonly deps: AppDeps) {
     this.seed = deps.seed;
-    this.settings = deps.save.loadSettings() ?? { ...(deps.save.load()?.settings ?? DEFAULT_SETTINGS) };
+    this.file = deps.save.forSlot(deps.save.lastSlot());
+    this.settings = deps.save.loadSettings() ?? { ...DEFAULT_SETTINGS, ...(this.file.load()?.settings ?? {}) };
     this.applySettings();
     this.show('title', new TitleScreen(this));
   }
@@ -251,7 +339,7 @@ export class App {
   setSettings(next: Settings): void {
     this.settings = { ...next };
     this.applySettings();
-    this.deps.save.saveSettings(this.settings);
+    this.settingsUnsaved = !this.deps.save.saveSettings(this.settings);
     if (this.game) this.commit({ ...this.game, settings: { ...this.settings } });
   }
 
@@ -273,30 +361,70 @@ export class App {
     return this.name;
   }
 
-  /** The saved game, if there is a usable one. */
-  loadSave(): GameState | null {
-    return this.deps.save.load();
+  /** The kept games, in order. */
+  slots(): SlotView[] {
+    return Array.from({ length: SLOTS }, (_, slot) => {
+      const file = this.deps.save.forSlot(slot);
+      const game = file.load();
+      return { slot, game, unusable: game === null && file.hasUnusableData() };
+    });
   }
 
-  /** True when something is saved that this version cannot read. */
-  saveIsUnusable(): boolean {
-    return this.deps.save.hasUnusableData();
+  /** The game Continue goes on with: the one played last, or failing that the first one there is. */
+  continueSlot(): number | null {
+    const kept = this.slots().filter((s) => s.game !== null).map((s) => s.slot);
+    const last = this.deps.save.lastSlot();
+    return kept.includes(last) ? last : kept[0] ?? null;
   }
 
-  startNewGame(): void {
-    this.commit({ ...newGame(this.deps.catalog, STARTER_BUILD), settings: { ...this.settings } });
+  /** Asks what the new pilot is called before the game in that slot begins. */
+  askCallsign(slot: number): void {
+    this.show('callsign', new CallsignScreen(this, slot));
+  }
+
+  /** Starts a new game in a slot, over whatever was kept there. */
+  startNewGame(slot = 0, callsign?: string): void {
+    this.file = this.deps.save.forSlot(slot);
+    this.file.rememberSlot();
+    this.played = 0;
+    this.commit({ ...newGame(this.deps.catalog, STARTER_BUILD, callsign), settings: { ...this.settings } });
     this.go('hub');
   }
 
-  continueGame(saved: GameState): void {
-    this.game = { ...saved, settings: { ...this.settings } };
+  /** Goes on with the game kept in a slot, if there is one. */
+  continueGame(slot: number): void {
+    const file = this.deps.save.forSlot(slot);
+    const saved = file.load();
+    if (!saved) return;
+    this.file = file;
+    this.file.rememberSlot();
+    this.played = 0;
+    // Saved at once: a game from an older version is brought up to date where it is kept, and what it
+    // had already done is recognised now (medals, entries of the database, the enemies its finished
+    // contracts put in front of it) rather than at its next save.
+    this.commit({ ...saved, met: metByRecord(saved, MISSIONS, ARENA), settings: { ...this.settings } });
     this.go('hub');
   }
 
-  /** Replaces the game state and saves it. */
+  /**
+   * Replaces the game state and saves it. On the way the record is brought up to date with the
+   * time played, any medal the pilot now has what it takes for is awarded, and the database's
+   * entries whose time has come are opened; both are queued to be announced.
+   */
   commit(next: GameState): void {
-    this.game = next;
-    this.saveFailed = !this.deps.save.save(next);
+    const seconds = Math.floor(this.played / 1000);
+    this.played -= seconds * 1000;
+    const timed = seconds > 0 ? { ...next, stats: { ...next.stats, seconds: next.stats.seconds + seconds } } : next;
+    const { game: awarded, earned } = awardMedals(timed, MEDALS);
+    // The database does not run ahead of the story: while a page of story is waiting to be shown,
+    // nothing opens, so what that page is about to reveal is not announced before it.
+    const waiting = dueScenes(awarded, SCENES, MISSIONS).length > 0;
+    const { game, opened } = waiting ? { game: awarded, opened: [] } : openEntries(awarded, WORLD, MISSIONS);
+    this.toasts.push(...medalToasts(earned), ...entryToasts(opened));
+    this.game = game;
+    this.saveFailed = !this.file.save(game);
+    // Options that could not be stored when they were changed go with the next thing that can be.
+    if (this.settingsUnsaved) this.settingsUnsaved = !this.deps.save.saveSettings(this.settings);
   }
 
   /** Why the current build may not deploy; empty when it may. */
@@ -343,9 +471,57 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission));
   }
 
+  /** The mirror match, if the arena offers it to this pilot. */
+  private mirrorFight(): Mission | undefined {
+    const game = this.game;
+    if (!game || !this.sideWorkOpen() || !mirrorOpen(game)) return undefined;
+    return mirrorMission(game, { client: STRINGS.arena.client, win: STRINGS.arena.win, ...STRINGS.arena.mirror });
+  }
+
+  openMirrorBriefing(): void {
+    const mission = this.mirrorFight();
+    if (mission) this.show('briefing', new BriefingScreen(this, mission));
+  }
+
+  /** Every enemy a battle can field, the opponent of a mirror match made from the pilot's build as it is now. */
+  enemies(): Record<string, EnemyDef> {
+    return this.game ? { ...ALL_ENEMIES, mirror: mirrorEnemy(this.game, STRINGS.arena.mirror.name) } : ALL_ENEMIES;
+  }
+
+  /** The drills in list order, each with whether it is open yet and whether it has been passed. */
+  drillList(): { drill: Drill; open: boolean; passed: boolean }[] {
+    const game = this.game;
+    return game ? DRILLS.map((drill) => ({ drill, open: drillOpen(game, drill, MISSIONS), passed: drillPassed(game, drill.id) })) : [];
+  }
+
+  /** The drill as a contract, if it is open. */
+  private drillFight(drillId: string): Mission | undefined {
+    const entry = this.drillList().find(({ drill }) => drill.id === drillId);
+    return entry?.open ? drillMission(this.game!, entry.drill, STRINGS.training.client) : undefined;
+  }
+
+  openDrillBriefing(drillId: string): void {
+    const mission = this.drillFight(drillId);
+    if (mission) this.show('briefing', new BriefingScreen(this, mission));
+  }
+
+  /** Books a drill: the first pass pays and is remembered; nothing else changes. */
+  bookDrill(settlement: Settlement, mission: Mission): void {
+    const next = recordDrill(this.game!, settlement, mission);
+    if (next !== this.game) this.commit(next);
+  }
+
+  /** Leaves a settlement: a drill for the training list, anything else for the hub. */
+  leaveSettlement(mission: Mission): void {
+    if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
+    else this.go('hub');
+  }
+
   /** Leaves a briefing for the list it was opened from. */
   closeBriefing(mission: Mission): void {
-    if (mission.arenaRank !== undefined) this.go('arena');
+    if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
+    else if (mission.id === MIRROR_ID) this.show('arena', new ArenaScreen(this, MIRROR));
+    else if (mission.arenaRank !== undefined) this.show('arena', new ArenaScreen(this, `rank-${mission.arenaRank}`));
     else this.openHub(mission.replay ? 'archive' : 'contracts', mission.id);
   }
 
@@ -370,6 +546,8 @@ export class App {
 
   private offered(missionId: string, replay: boolean): Mission | undefined {
     if (replay) return this.archive().find((m) => m.id === missionId);
+    if (missionId.startsWith('drill-')) return this.drillFight(missionId);
+    if (missionId === MIRROR_ID) return this.mirrorFight();
     const arena = /^arena-(\d+)$/.exec(missionId);
     return arena ? this.arenaFight(Number(arena[1])) : this.missions().find((m) => m.id === missionId);
   }
@@ -380,10 +558,10 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission));
   }
 
-  /** Starts a contract, unless the build may not deploy or the contract is not on offer. */
+  /** Starts a contract, unless the build may not deploy or the contract is not on offer. A drill lends its own mech. */
   startMission(missionId: string, replay = false): void {
     const mission = this.offered(missionId, replay);
-    if (!mission || this.buildErrors().length > 0) return;
+    if (!mission || (!isDrill(mission) && this.buildErrors().length > 0)) return;
     this.seed = (this.seed + 101) % 2147483647;
     this.show('battle', new MissionHost(this, mission, this.seed));
   }
@@ -396,6 +574,8 @@ export class App {
       case 'shop': return this.show(name, new ShopScreen(this));
       case 'messages': return this.show(name, new MessagesScreen(this));
       case 'pilot': return this.show(name, new PilotScreen(this));
+      case 'database': return this.show(name, new DatabaseScreen(this));
+      case 'training': return this.show(name, new TrainingScreen(this));
       case 'arena': if (this.sideWorkOpen()) this.show(name, new ArenaScreen(this)); return;
       case 'options': return this.openOptions();
       default: return; // briefings, battles, settlements and endings open through their own methods
@@ -422,11 +602,18 @@ export class App {
    * Records a contract's outcome: money and experience, and after a win the contract itself (story
    * contracts) or the new arena rank (arena fights). Open contracts and the patrol leave no record.
    */
-  bookSettlement(settlement: Settlement, mission: Mission): void {
+  bookSettlement(settlement: Settlement, mission: Mission, fought: Fought = { tally: NO_STATS, met: [], retreated: false }): void {
     let next = applySettlement(this.game!, settlement);
     next = addXp(next, xpForContract(mission.reward, settlement.won));
+    const pay = settlement.reward + (settlement.bonus ?? 0);
+    next = {
+      ...next,
+      stats: addStats(next.stats, contractStats(fought.tally, { won: settlement.won, retreated: fought.retreated, pay })),
+      met: [...next.met, ...fought.met.filter((kind) => !next.met.includes(kind))],
+    };
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
+      else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);
       else if (MISSIONS.some((m) => m.id === mission.id)) {
         // Winning a contract again from the archive completes nothing new; its rank can still improve.
         next = completeMission(next, mission.id, MISSIONS);
@@ -441,21 +628,79 @@ export class App {
     this.show('settlement', new SettlementScreen(this, settlement, mission), trackFor('settlement', settlement));
   }
 
-  /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. */
+  /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. An ending is followed by the end roll. */
   finishScene(scene: Scene): void {
     if (this.game) {
       const next = markSceneSeen(this.game, scene);
       if (next !== this.game) this.commit(next);
     }
+    if (scene.ending && this.game) this.showCredits();
+    else this.openHub();
+  }
+
+  /** True once there is an end roll to watch again: an ending has been seen, in this cycle or an earlier one. */
+  canWatchCredits(): boolean {
+    return !!this.game && (this.game.endingSeen || this.game.cycle > 0);
+  }
+
+  showCredits(): void {
+    if (this.game) this.show('credits', new CreditsScreen(this));
+  }
+
+  closeCredits(): void {
     this.openHub();
   }
 
   update(dtMs: number): void {
     this.entering.left = Math.max(0, this.entering.left - dtMs);
     this.current.update(dtMs);
+    if (this.game && this.name !== 'title' && this.name !== 'callsign') this.played += dtMs;
+    this.stepToast(dtMs);
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
+  /** One announcement at a time, and none over a battle or a page of story: they wait for what comes after. */
+  private stepToast(dtMs: number): void {
+    if (this.toast) {
+      // One that is up when a battle or a page of story begins steps aside, and is announced again after it.
+      if (NO_TOASTS.includes(this.name)) {
+        this.toasts.unshift(this.toast.item);
+        this.toast = null;
+        return;
+      }
+      this.toast.left -= dtMs;
+      if (this.toast.left <= 0) this.toast = null;
+      return;
+    }
+    if (this.toasts.length === 0 || NO_TOASTS.includes(this.name)) return;
+    this.toast = { item: this.toasts.shift()!, left: TOAST_MS };
+    this.deps.sfx?.play(this.toast.item.sound);
+  }
+
+  /**
+   * An announcement: a strip that slides up from the bottom edge, stays, and slides back. Down there it
+   * covers a line of button hints for a moment; at the top it would cover the name of the screen, or
+   * the heading of a settlement.
+   */
+  private drawToast(ctx: CanvasRenderingContext2D): void {
+    if (!this.toast) return;
+    const { item, left } = this.toast;
+    const slide = Math.min(1, left / TOAST_SLIDE_MS, (TOAST_MS - left) / TOAST_SLIDE_MS);
+    const w = 176;
+    const h = 28;
+    const x = Math.round((LOGICAL_W - w) / 2);
+    const y = Math.round(LOGICAL_H - (h + 2) * (this.deps.fast ? 1 : Math.max(0, slide)));
+    // Nothing of the screen underneath shows through.
+    ctx.fillStyle = '#0c0c18';
+    ctx.fillRect(x, y, w, h);
+    drawPanel(ctx, x, y, w, h);
+    if (item.tier) drawMedal(ctx, x + 6, y + 9, item.tier, true);
+    else drawPage(ctx, x + 6, y + 9);
+    drawText(ctx, item.heading, x + 20, y + 2, { color: COLORS.dim, size: 10 });
+    drawText(ctx, item.title, x + 20, y + 12, { color: COLORS.accent });
+    if (item.note) drawText(ctx, item.note, x + w - 6, y + 12, { align: 'right', color: COLORS.armor });
+  }
+
+  private drawScreen(ctx: CanvasRenderingContext2D): void {
     this.current.draw(ctx);
     const { left, total, shutter } = this.entering;
     if (left <= 0) return;
@@ -471,6 +716,12 @@ export class App {
       ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     }
   }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    this.drawScreen(ctx);
+    this.drawToast(ctx);
+  }
+
   /** True while a shutter still hides the battle behind it. */
   private get shuttered(): boolean {
     return !this.deps.fast && this.entering.shutter && this.entering.left > 0;
@@ -499,8 +750,14 @@ export class App {
       settings: this.settings,
       paint: game?.paint ?? null,
       loadouts: game?.loadouts.map((build) => build !== null) ?? null,
+      slot: this.file.slot,
+      callsign: game?.callsign ?? null,
       ranks: game?.ranks ?? null,
       scenes: game?.scenes ?? null,
+      medals: game?.medals ?? [],
+      drills: game?.drills ?? [],
+      toast: this.toast?.item.id ?? null,
+      toasts: this.toasts.map((item) => item.id),
       saveFailed: this.saveFailed,
       ...view,
       // Not taking input right now: behind a shutter, or holding a line of text for a moment.

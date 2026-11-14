@@ -400,3 +400,37 @@ describe('saved builds', () => {
     expect(isValidState(g, CATALOG)).toBe(true);
   });
 });
+
+describe('callsign, record and the lists that came with them', () => {
+  test('a new game has the default callsign, an empty record and empty lists; a callsign can be given', () => {
+    const g = newGame(CATALOG, STARTER_BUILD);
+    expect(g).toMatchObject({ callsign: 'PILOT', medals: [], met: [], drills: [], codex: [] });
+    expect(Object.values(g.stats).every((n) => n === 0)).toBe(true);
+    expect(newGame(CATALOG, STARTER_BUILD, 'VANTA7').callsign).toBe('VANTA7');
+    expect(isValidState(newGame(CATALOG, STARTER_BUILD, 'A'), CATALOG)).toBe(true);
+  });
+
+  test.each(['', 'pilot', 'TOOLONGNAME', 'A B', 'É', 'A-1'])('a new game refuses %j as a callsign', (callsign) => {
+    expect(() => newGame(CATALOG, STARTER_BUILD, callsign)).toThrow('not a callsign');
+  });
+
+  const bad: [string, (g: any) => unknown][] = [
+    ['no callsign', (g) => { const { callsign: _c, ...rest } = g; return rest; }],
+    ['a callsign in small letters', (g) => ({ ...g, callsign: 'pilot' })],
+    ['a callsign that is too long', (g) => ({ ...g, callsign: 'ABCDEFGHI' })],
+    ['a callsign that is not text', (g) => ({ ...g, callsign: 7 })],
+    ['no record', (g) => { const { stats: _s, ...rest } = g; return rest; }],
+    ['a record with a counter missing', (g) => { const { shots: _s, ...stats } = g.stats; return { ...g, stats }; }],
+    ['a record with a counter too many', (g) => ({ ...g, stats: { ...g.stats, luck: 3 } })],
+    ['a negative counter', (g) => ({ ...g, stats: { ...g.stats, kills: -1 } })],
+    ['a counter that is not whole', (g) => ({ ...g, stats: { ...g.stats, kills: 1.5 } })],
+    ['medals that are not a list of text', (g) => ({ ...g, medals: [1] })],
+    ['no list of enemies met', (g) => { const { met: _m, ...rest } = g; return rest; }],
+    ['drills that are not a list', (g) => ({ ...g, drills: 'all' })],
+    ['no list of database entries', (g) => { const { codex: _c, ...rest } = g; return rest; }],
+    ['database entries that are not text', (g) => ({ ...g, codex: [null] })],
+  ];
+  test.each(bad)('a save with %s is refused', (_name, make) => {
+    expect(isValidState(make(newGame(CATALOG, STARTER_BUILD)), CATALOG)).toBe(false);
+  });
+});

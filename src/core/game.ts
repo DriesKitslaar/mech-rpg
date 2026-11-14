@@ -1,10 +1,16 @@
+import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
 
 /** How well a contract was done, best first. */
 export type Rank = 'S' | 'A' | 'B' | 'C' | 'D';
 export const RANKS: Rank[] = ['S', 'A', 'B', 'C', 'D'];
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
+/** What a pilot is called until they say otherwise, and how long a callsign may be. */
+export const DEFAULT_CALLSIGN = 'PILOT';
+export const CALLSIGN_MAX = 8;
+/** A callsign is one to eight capital letters and digits. */
+export const isCallsign = (value: unknown): value is string => typeof value === 'string' && /^[A-Z0-9]{1,8}$/.test(value);
 export const STARTING_CREDITS = 1200;
 
 /** Everything about a player's progress that is kept between battles and saved. */
@@ -38,6 +44,18 @@ export interface GameState {
   ranks: Record<string, Rank>;
   /** Ids of the scenes shown in this cycle. */
   scenes: string[];
+  /** What the pilot is called. */
+  callsign: string;
+  /** What the pilot has done, counted. */
+  stats: Stats;
+  /** Ids of the medals earned, in the order they were earned. */
+  medals: string[];
+  /** Kinds of enemy the pilot has met in battle. */
+  met: string[];
+  /** Ids of the training drills passed. */
+  drills: string[];
+  /** Ids of the database's entries about the world that have opened. They stay open through later cycles. */
+  codex: string[];
 }
 
 export const FACTORY_PAINT = 'factory';
@@ -84,7 +102,8 @@ export function fits(part: Part, slot: BuildSlot): boolean {
 }
 
 /** A fresh game: the starter build's parts are owned, one copy each. */
-export function newGame(catalog: Catalog, starter: Build): GameState {
+export function newGame(catalog: Catalog, starter: Build, callsign: string = DEFAULT_CALLSIGN): GameState {
+  if (!isCallsign(callsign)) throw new Error(`not a callsign: ${callsign}`);
   const inventory: Record<string, number> = {};
   for (const id of Object.values(starter)) {
     if (!partOf(catalog, id)) throw new Error(`starter part missing from catalogue: ${id}`);
@@ -94,6 +113,7 @@ export function newGame(catalog: Catalog, starter: Build): GameState {
     version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false,
     xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS },
     paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null), ranks: {}, scenes: [],
+    callsign, stats: { ...NO_STATS }, medals: [], met: [], drills: [], codex: [],
   };
 }
 
@@ -244,6 +264,10 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
+  const { callsign, stats, medals, met, drills, codex } = value;
+  if (!isCallsign(callsign) || !isTextList(medals) || !isTextList(met) || !isTextList(drills) || !isTextList(codex)) return false;
+  // The record holds exactly the counters there are, each a whole number that is not negative.
+  if (!isRecord(stats) || Object.keys(stats).length !== STAT_KEYS.length || !STAT_KEYS.every((key) => isWholeNonNegative(stats[key]))) return false;
   // The scheme itself is the screen's business; here it only has to be a plain short word.
   if (typeof paint !== 'string' || !/^[a-z]{1,24}$/.test(paint)) return false;
   if (!Array.isArray(loadouts) || loadouts.length !== LOADOUT_SLOTS) return false;
