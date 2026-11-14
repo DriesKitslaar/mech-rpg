@@ -403,6 +403,8 @@ export class App {
       arenaRank: game?.arenaRank ?? null,
       cycle: game?.cycle ?? null,
       settings: this.settings,
+      paint: game?.paint ?? null,
+      loadouts: game?.loadouts.map((build) => build !== null) ?? null,
       saveFailed: this.saveFailed,
       ...this.current.view(),
     };

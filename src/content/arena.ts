@@ -97,7 +97,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'The Magistrate', ai: 'bruiser', scale: 1.4, paint: 'royal',
+    name: 'The Magistrate', ai: 'bruiser', scale: 1.25, paint: 'royal',
     style: 'The champion. Colossus armour, a Wraith mask, a void rifle and a null beam that drains your generator.',
     taunt: 'The ladder ends here. Most careers do.',
     build: {

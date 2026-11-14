@@ -29,9 +29,9 @@ export const REFERENCE_BUILDS: Record<string, Build> = {
     head: 'head-wraith', core: 'core-wraith', arms: 'arms-wraith', legs: 'legs-wraith', generator: 'gen-tidal',
     booster: 'bst-phase', fcs: 'fcs-surgeon', module: 'mod-oracle', rightHand: 'wpn-void-rifle', leftHand: 'wpn-arc-blade',
   },
-  /** The top of the ladder: a full Colossus with the best generator, a void rifle, a breaker cannon and a barrier. */
+  /** The top of the ladder: a full Colossus with the best generator, a lance emitter that never runs dry, a breaker cannon and a barrier. */
   tier6: {
     head: 'head-colossus', core: 'core-colossus', arms: 'arms-colossus', legs: 'legs-colossus', generator: 'gen-singularity',
-    booster: 'bst-stock', fcs: 'fcs-omni', module: 'mod-aegis', rightHand: 'wpn-void-rifle', shoulder: 'wpn-breaker-cannon',
+    booster: 'bst-stock', fcs: 'fcs-omni', module: 'mod-aegis', rightHand: 'wpn-lance-emitter', shoulder: 'wpn-breaker-cannon',
   },
 };

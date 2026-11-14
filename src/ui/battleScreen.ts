@@ -27,8 +27,10 @@ const ENEMY_ANCHORS: Record<number, { x: number; y: number }[]> = {
   3: [{ x: 252, y: 96 }, { x: 274, y: 174 }, { x: 210, y: 174 }],
 };
 /** Right edge of the mirrored pose box of a duelling enemy mech, and the area its body covers. */
-const DUEL_RIGHT = 324;
-const DUEL_BODY = { x: 186, y: 22, w: 118, h: 150 };
+const DUEL_RIGHT = 330;
+const DUEL_BODY = { x: 192, y: 22, w: 118, h: 150 };
+/** In a duel the player's mech stands this much further left, so two full-size mechs cross weapons, not bodies. */
+const DUEL_SHIFT = 6;
 const PANEL_Y = 178;
 const MENU_W = 154;
 /** Where a hit on each part of the player's mech lands, inside the pose box. */
@@ -145,7 +147,12 @@ export class BattleScreen {
     // A slow one-pixel sway of the upper body keeps the mech from looking frozen.
     const idle = Math.round(Math.sin(this.clock / 520));
     this.withTransform(ctx, player, idle, (dx, dy) =>
-      drawMech(ctx, this.playerSprites(), MECH_ORIGIN.x, MECH_ORIGIN.y, { dx, dy: 0 }, dy));
+      drawMech(ctx, this.playerSprites(), this.playerX(), MECH_ORIGIN.y, { dx, dy: 0 }, dy));
+  }
+
+  /** Left edge of the player's pose box. */
+  private playerX(): number {
+    return MECH_ORIGIN.x - (this.duel() ? DUEL_SHIFT : 0);
   }
 
   /** True when the battle's single enemy is a mech drawn full size from its parts, mirrored. */
@@ -254,7 +261,7 @@ export class BattleScreen {
     // A mech on tracks carries its upper body lower; every point above the legs comes down with it.
     const lowered = (unitIndex: number, part?: FrameSlot): number =>
       (part === 'legs' ? 0 : dropOf(unitIndex === 0 ? this.playerSprites() : mechSprites(this.sprites, this.flow.state.units[unitIndex].build)));
-    const at = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: MECH_ORIGIN.x + p.x, y: MECH_ORIGIN.y + p.y + lowered(0, part) });
+    const at = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: this.playerX() + p.x, y: MECH_ORIGIN.y + p.y + lowered(0, part) });
     /** A point of the pose box as it lands on screen for the mirrored enemy. */
     const mirror = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: DUEL_RIGHT - p.x, y: MECH_ORIGIN.y + p.y + lowered(1, part) });
     return {

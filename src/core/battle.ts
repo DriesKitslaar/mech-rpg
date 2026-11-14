@@ -54,6 +54,8 @@ export interface UnitState {
   energy: number;
   /** Remaining shots per fitted weapon; null means unlimited. */
   ammo: Partial<Record<WeaponSlot, number | null>>;
+  /** Rounds put back into each magazine between the battles of a contract. They are billed like any round fired. */
+  restocked: Partial<Record<WeaponSlot, number>>;
   boosted: boolean;
   /** Set when heat passes the limit; the unit's next turn is skipped. */
   overheated: boolean;
@@ -192,7 +194,7 @@ function createUnit(
     if (weapon) ammo[slot] = side === 'enemy' ? null : weapon.ammo;
   }
   return {
-    id, name, side, build, composed: false, ...extra, parts, heat: 0, energy: 0, ammo, boosted: false, overheated: false,
+    id, name, side, build, composed: false, ...extra, parts, heat: 0, energy: 0, ammo, restocked: {}, boosted: false, overheated: false,
     usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
     stagger: 0, staggerMax: Math.max(1, Math.round(stats.stability * mods.toughness)), staggered: 0,
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
@@ -317,14 +319,16 @@ function enemyName(enemies: EnemyDef[], index: number): string {
 }
 
 /**
- * What a mech takes from one battle of a mission into the next: armour, heat, ammunition and
- * field repairs. Stagger, guard, charges, barriers, paint and module uses all start afresh.
+ * What a mech takes from one battle of a mission into the next: armour, heat, ammunition (with
+ * what was refilled) and field repairs. Stagger, guard, charges, barriers, paint and module uses
+ * all start afresh.
  */
 export interface Carry {
   /** Remaining armour per frame part. */
   ap: Partial<Record<FrameSlot, number>>;
   heat: number;
   ammo: Partial<Record<WeaponSlot, number | null>>;
+  restocked: Partial<Record<WeaponSlot, number>>;
   repairsLeft: number;
   destroyed: boolean;
 }
@@ -334,7 +338,10 @@ export function carryFrom(state: BattleState): Carry {
   const player = state.units[0];
   const ap: Carry['ap'] = {};
   for (const slot of FRAME_SLOTS) if (player.parts[slot]) ap[slot] = player.parts[slot]!.ap;
-  return { ap, heat: player.heat, ammo: { ...player.ammo }, repairsLeft: player.repairsLeft, destroyed: player.destroyed };
+  return {
+    ap, heat: player.heat, ammo: { ...player.ammo }, restocked: { ...player.restocked }, repairsLeft: player.repairsLeft,
+    destroyed: player.destroyed,
+  };
 }
 
 function applyCarry(unit: UnitState, carry: Carry): void {
@@ -346,6 +353,7 @@ function applyCarry(unit: UnitState, carry: Carry): void {
   }
   unit.heat = Math.max(0, carry.heat);
   for (const slot of WEAPON_SLOTS) if (slot in unit.ammo && slot in carry.ammo) unit.ammo[slot] = carry.ammo[slot];
+  unit.restocked = { ...carry.restocked };
   unit.repairsLeft = carry.repairsLeft;
 }
 
