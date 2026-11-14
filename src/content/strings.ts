@@ -115,7 +115,13 @@ export const STRINGS = {
     heading: 'ARENA', client: 'Arena Office', win: 'The crowd got what it paid for. So did you.',
     rank: (n: number) => `RANK ${n}`, purse: 'PURSE', rematch: 'REMATCH',
     next: 'NEXT OPPONENT', beaten: 'BEATEN', locked: 'LOCKED', champion: 'You are the champion of Varn.',
-    yourRank: (n: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/10`), fight: 'ARENA FIGHT', back: 'A: challenge   B: back',
+    yourRank: (n: number, of: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/${of}`), fight: 'ARENA FIGHT', back: 'A: challenge   B: back',
+    apex: 'There is nobody left to beat. The back room drinks to you.',
+    mirror: {
+      title: 'Mirror Match', name: 'Echo', taunt: 'After you.',
+      style: 'The house pilot flies a copy of your mech as it stands today, part for part, tuned a little hotter. Whatever you bring, it brings.',
+      locked: 'The office offers this to pilots of the third rank and up.',
+    },
   },
   pilot: {
     heading: 'PILOT', level: 'LEVEL', xp: 'XP', next: 'NEXT LEVEL', maxLevel: 'MAX LEVEL', points: 'PERK POINTS',

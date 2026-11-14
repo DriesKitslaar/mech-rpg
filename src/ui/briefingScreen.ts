@@ -1,3 +1,4 @@
+import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
 import { ALL_ENEMIES } from '../content/arena';
 import { STRINGS } from '../content/strings';
@@ -14,7 +15,7 @@ const B = STRINGS.briefing;
 export function hostiles(mission: Mission): string[] {
   const counts = new Map<string, number>();
   for (const battle of mission.battles) for (const id of battle.enemies) counts.set(id, (counts.get(id) ?? 0) + 1);
-  return [...counts].map(([id, n]) => `${ALL_ENEMIES[id]?.name ?? id}${n > 1 ? ` x${n}` : ''}`);
+  return [...counts].map(([id, n]) => `${id === 'mirror' ? STRINGS.arena.mirror.name : ALL_ENEMIES[id]?.name ?? id}${n > 1 ? ` x${n}` : ''}`);
 }
 
 const BO = STRINGS.objectives.brief;
@@ -95,7 +96,7 @@ export class BriefingScreen implements Screen {
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
     const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
     const tag = mission.loaner !== undefined ? STRINGS.training.tag
-      : mission.arenaRank !== undefined ? STRINGS.arena.fight
+      : mission.arenaRank !== undefined || mission.id === MIRROR_ID ? STRINGS.arena.fight
       : mission.replay ? B.replay
       : mission.id.startsWith('open-') ? B.open
       : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict

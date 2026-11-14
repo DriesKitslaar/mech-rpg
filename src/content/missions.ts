@@ -634,6 +634,9 @@ const epilogue = (verdict: Verdict, faction: Faction): Message => ({
   body: EPILOGUES[verdict][faction].body,
 });
 
+/** Letters from the arena office: no face, only letterhead. */
+const OFFICE = { from: 'Arena Office' };
+
 export const MESSAGES: Message[] = [
   {
     id: 'welcome', from: 'Dispatch', portrait: 'portrait-dispatch', subject: 'Your licence is active', after: 'start',
@@ -744,6 +747,22 @@ export const MESSAGES: Message[] = [
     ],
   },
   ...VERDICTS.flatMap((verdict) => FACTIONS.map((faction) => epilogue(verdict, faction))),
+  {
+    ...OFFICE, id: 'mirror-match', subject: 'A proposal', after: 'arena:3',
+    body: [
+      'You have a following now, so the office has a proposal: a mirror match.',
+      'Our house pilot flies a copy of your own mech against you. Your frame, your weapons, whatever you have fitted that day. The crowd loves it.',
+      'Full purse the first time you win, a quarter after that. It is on the arena list under the ladder.',
+    ],
+  },
+  {
+    ...OFFICE, id: 'back-room', subject: 'A door behind the pit', after: 'arena:10',
+    body: [
+      'Champion. There is a room behind the pit that the crowd does not know about.',
+      'Five pilots fight there who stopped caring about the ladder years ago. They have asked to meet you.',
+      'No rules change. The purses do.',
+    ],
+  },
   {
     id: 'meridian-stock', from: 'Dispatch', portrait: 'portrait-dispatch', subject: 'Meridian\'s stock', after: 'verdict',
     body: [

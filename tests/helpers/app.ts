@@ -23,7 +23,9 @@ export interface Item { id: string; label: string; enabled: boolean; note?: stri
 export interface Snap {
   screen: string; credits: number; completed: string[]; callsign: string | null; slot: number; message?: string;
   menu: { items: Item[]; cursor: number };
-  battle?: { phase: string; outcome: string; mission: string; index: number; of: number; enemies: string[]; drill?: string | null };
+  battle?: { phase: string; outcome: string; mission: string; index: number; of: number; enemies: string[]; enemyScale: number; enemyArmour: number };
+  player?: { maxAp: number; repairsLeft: number };
+  arena?: { rank: number; of: number };
   settlement?: { net: number; won: boolean; reward: number; rank: string | null; bonus: number };
   briefing?: { mission: string; replay: boolean; reward: number; objectives: string[] };
   medals: string[]; toast: string | null; toasts: string[];

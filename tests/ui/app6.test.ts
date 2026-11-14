@@ -4,7 +4,7 @@ import { NO_STATS } from '../../src/core/stats';
 import { WORLD } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { CATALOG } from '../../src/content/parts';
-import { autoBattle, done, fresh, ids, inHub, medalPay, press, retreat, savedGame, select, snap } from '../helpers/app';
+import { autoBattle, done, fresh, ids, inHub, medalPay, press, retreat, savedGame, select, snap, strong } from '../helpers/app';
 
 /** A pilot for whom nothing is waiting to be announced, so that credits only move for the reason under test. */
 const quiet = (base = fresh()) => ({ ...base, codex: WORLD.map((entry) => entry.id), scenes: ['act-1'] });
@@ -116,5 +116,80 @@ describe('training', () => {
     autoBattle(app);
     press(app, 'confirm');
     expect(savedGame(store).medals).toContain('drills');
+  });
+});
+
+describe('the arena, past the ladder', () => {
+  const pit = (extra: Partial<ReturnType<typeof fresh>> = {}) => inHub(quiet({ ...strong(done('intro-1', 'intro-2')), ...extra }), 3);
+
+  test('says how far up the pilot is: out of ten on the ladder, out of fifteen once champion', () => {
+    const climbing = pit({ arenaRank: 4 }).app;
+    select(climbing, 'arena');
+    expect(snap(climbing).arena).toMatchObject({ rank: 4, of: 10 });
+    const champion = pit({ arenaRank: 10 }).app;
+    select(champion, 'arena');
+    expect(snap(champion).arena).toMatchObject({ rank: 10, of: 15 });
+  });
+
+  test('the back room is listed for the champion only, and its first pilot can then be challenged', () => {
+    const climbing = pit({ arenaRank: 9 }).app;
+    select(climbing, 'arena');
+    expect(ids(climbing)).toHaveLength(11);
+    expect(ids(climbing)).not.toContain('rank-11');
+
+    const { app } = pit({ arenaRank: 10 });
+    select(app, 'arena');
+    expect(ids(app)).toEqual([...Array.from({ length: 15 }, (_, i) => `rank-${i + 1}`), 'mirror']);
+    expect(snap(app).menu.cursor).toBe(10);
+    expect(snap(app).menu.items[10]).toMatchObject({ id: 'rank-11', label: '11. Longshot', enabled: true, note: '9000' });
+    expect(snap(app).menu.items[11]).toMatchObject({ id: 'rank-12', enabled: false });
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'arena-11', reward: 9000 } });
+    select(app, 'accept');
+    expect(snap(app)).toMatchObject({ screen: 'battle', battle: { mission: 'arena-11', enemies: ['arena-11'] } });
+  });
+
+  test('the mirror match is locked below the third rank', () => {
+    const { app } = pit({ arenaRank: 2 });
+    select(app, 'arena');
+    const mirror = snap(app).menu.items.find((i) => i.id === 'mirror')!;
+    expect(mirror).toMatchObject({ label: 'Mirror Match', enabled: false, note: 'LOCKED' });
+  });
+
+  test('the mirror match is a duel against the pilot\'s own build, and winning it is counted and pays less after', () => {
+    const { app, store } = pit({ arenaRank: 3 });
+    select(app, 'arena');
+    expect(snap(app).menu.items.find((i) => i.id === 'mirror')).toMatchObject({ enabled: true, note: '2400' });
+    select(app, 'mirror');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'arena-mirror', reward: 2400 } });
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('arena');
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('mirror');
+    press(app, 'confirm');
+    select(app, 'accept');
+    expect(snap(app)).toMatchObject({ screen: 'battle', battle: { mission: 'arena-mirror', enemies: ['mirror'] } });
+    // The other mech has what this one has, tuned a tenth hotter.
+    expect(snap(app).battle!.enemyArmour).toBeGreaterThan(snap(app).player!.maxAp);
+    expect(snap(app).battle!.enemyArmour).toBeLessThanOrEqual(Math.ceil(snap(app).player!.maxAp * 1.1) + 4);
+    retreat(app);
+    expect(savedGame(store).stats.mirrors).toBe(0);
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+
+    // Won, it is counted, earns its medal, and the next one pays a quarter.
+    app.bookSettlement({ won: true, reward: 2400, ammoCost: 0, repairCost: 0, net: 2400, lines: [] },
+      { id: 'arena-mirror', phase: 'patrol', title: 'Mirror Match', client: 'Arena Office', briefing: [], debrief: '', reward: 2400, battles: [] });
+    expect(savedGame(store)).toMatchObject({ arenaRank: 3, stats: { mirrors: 1 } });
+    expect(savedGame(store).medals).toContain('mirror');
+    select(app, 'arena');
+    expect(snap(app).menu.items.find((i) => i.id === 'mirror')).toMatchObject({ note: '600' });
+  });
+
+  test('beating the last pilot of the back room earns the last arena medal', () => {
+    const { app, store } = pit({ arenaRank: 14 });
+    app.bookSettlement({ won: true, reward: 22000, ammoCost: 0, repairCost: 0, net: 22000, lines: [] },
+      { id: 'arena-15', phase: 'patrol', title: 'The Founder', client: 'Arena Office', briefing: [], debrief: '', reward: 22000, battles: [], arenaRank: 15 });
+    expect(savedGame(store).arenaRank).toBe(15);
+    expect(savedGame(store).medals).toEqual(expect.arrayContaining(['apex']));
   });
 });

@@ -2,7 +2,7 @@ import type { ArenaOpponent } from '../core/arena';
 import type { AiProfile, Build, EnemyDef } from '../core/types';
 import { ENEMIES } from './enemies';
 
-const PURSES = [800, 1200, 1600, 2000, 2600, 3200, 3800, 4600, 5400, 7000];
+const PURSES = [800, 1200, 1600, 2000, 2600, 3200, 3800, 4600, 5400, 7000, 9000, 11000, 13000, 16000, 22000];
 
 type Entry = Omit<ArenaOpponent, 'rank' | 'enemy' | 'purse'> & { ai: AiProfile; build: Build; paint?: string };
 
@@ -105,6 +105,55 @@ const LADDER: Entry[] = [
       booster: 'bst-phase', fcs: 'fcs-omni', module: 'mod-aegis', rightHand: 'wpn-void-rifle', shoulder: 'wpn-null-beam',
     },
   },
+  // The back room: five who stopped fighting for the ladder long ago. Only a champion is let in. With
+  // the best build there is and no perks the automatic player beats them about 55, 55, 40, 45 and 20
+  // times in a hundred; with six perk ranks all but the last nearly every time, and the last 60.
+  {
+    name: 'Longshot', ai: 'gunner', scale: 1.15, paint: 'desert',
+    style: 'A Ronin on four legs with two rails that charge for a turn and then go through anything. Guard when they glow.',
+    taunt: 'I only need you to stand still twice.',
+    build: {
+      head: 'head-wraith', core: 'core-ronin', arms: 'arms-ronin', legs: 'legs-spider', generator: 'gen-singularity',
+      booster: 'bst-stock', fcs: 'fcs-hawkeye', module: 'mod-painter', rightHand: 'wpn-longbow', shoulder: 'wpn-gauss',
+    },
+  },
+  {
+    name: 'Vesper', ai: 'skirmisher', scale: 1.3, paint: 'toxic',
+    style: 'A Wraith on Halo legs that never stops moving. A disruptor and a null beam: every hit comes out of your next turn.',
+    taunt: 'You will run dry long before I do.',
+    build: {
+      head: 'head-halo', core: 'core-wraith', arms: 'arms-wraith', legs: 'legs-halo', generator: 'gen-prism',
+      booster: 'bst-glide', fcs: 'fcs-lattice', module: 'mod-chaff', rightHand: 'wpn-disruptor', shoulder: 'wpn-null-beam',
+    },
+  },
+  {
+    name: 'Brother Rust', ai: 'bruiser', scale: 1.25,
+    style: 'A Ronin body on Colossus legs. He boosts in with a breach pick and a ram fist, and a howler knocks you flat first.',
+    taunt: 'Kneel. It is easier on the knees than what comes next.',
+    build: {
+      head: 'head-ronin', core: 'core-ronin', arms: 'arms-ronin', legs: 'legs-colossus', generator: 'gen-tidal',
+      booster: 'bst-ram', fcs: 'fcs-stock', module: 'mod-overclock', rightHand: 'wpn-breach-pick', leftHand: 'wpn-ram-fist', shoulder: 'wpn-howler',
+    },
+  },
+  {
+    name: 'Halcyon', ai: 'gunner', scale: 1.15, paint: 'crimson',
+    style: 'Colossus plate on tracks behind a tower shield. A sunlance that charges, and a plasma thrower that cooks you while it does.',
+    taunt: 'Bring water. It gets warm in here.',
+    build: {
+      head: 'head-colossus', core: 'core-colossus', arms: 'arms-bulwark', legs: 'legs-crawler', generator: 'gen-tidal',
+      booster: 'bst-stock', fcs: 'fcs-stock', module: 'mod-cryo', rightHand: 'wpn-plasma', leftHand: 'shd-tower', shoulder: 'wpn-sunlance',
+    },
+  },
+  {
+    name: 'The Founder', ai: 'bruiser', scale: 1.2,
+    style: 'Built the pit and never left it. A void rifle, a breaker cannon and a blade, and nanites that put the armour back.',
+    taunt: 'I dug this hole. I decide who climbs out.',
+    build: {
+      head: 'head-wraith', core: 'core-colossus', arms: 'arms-ronin', legs: 'legs-colossus', generator: 'gen-singularity',
+      booster: 'bst-phase', fcs: 'fcs-omni', module: 'mod-nanites',
+      rightHand: 'wpn-void-rifle', leftHand: 'wpn-arc-blade', shoulder: 'wpn-breaker-cannon',
+    },
+  },
 ];
 
 const enemyId = (rank: number): string => `arena-${rank}`;
@@ -121,5 +170,8 @@ export const ARENA_ENEMIES: Record<string, EnemyDef> = Object.fromEntries(LADDER
   },
 ]));
 
-/** Every enemy a battle can field: contract enemies and arena opponents. */
+/**
+ * Every enemy a battle can field: contract enemies and arena opponents. The opponent of a mirror
+ * match is made from the pilot's build when the fight starts; see `mirrorEnemy`.
+ */
 export const ALL_ENEMIES: Record<string, EnemyDef> = { ...ENEMIES, ...ARENA_ENEMIES };

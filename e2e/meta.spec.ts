@@ -3,6 +3,8 @@ import { completeMission } from '../src/core/campaign';
 import { newGame, type GameState } from '../src/core/game';
 import { xpForLevel } from '../src/core/pilot';
 import { NO_STATS } from '../src/core/stats';
+import { WORLD } from '../src/content/codex';
+import { MEDALS } from '../src/content/medals';
 import { MISSIONS } from '../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
 import { autoBattle, choose, enterHub, nextFrame, open, press, snap, waitForScreen } from './helpers';
@@ -109,6 +111,28 @@ test('training: the list of drills, a briefing, the lent mech on the field, and 
   expect((await snap(page)).settlement).toMatchObject({ won: true, net: 150 });
   await press(page, 'Enter');
   await waitForScreen(page, 'training');
+  expect(errors).toEqual([]);
+});
+
+test('the arena past the ladder: the back room for a champion, and a mirror match against the pilot\'s own mech', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await load(page, veteran({ arenaRank: 10, medals: MEDALS.map((m) => m.id), codex: WORLD.map((e) => e.id) }));
+  await enterHub(page);
+  await choose(page, 'arena');
+  await waitForScreen(page, 'arena');
+  const list = await snap(page);
+  expect(list.menu.items).toHaveLength(16);
+  expect(list.menu.items[list.menu.cursor].id).toBe('rank-11');
+  await page.screenshot({ path: shot('arena-back-room') });
+  await choose(page, 'mirror');
+  await waitForScreen(page, 'briefing');
+  await page.screenshot({ path: shot('arena-mirror-briefing') });
+  await choose(page, 'accept');
+  await waitForScreen(page, 'battle');
+  await page.waitForFunction(() => (window as any).__game.snapshot().battle?.phase === 'action');
+  expect((await snap(page)).battle).toMatchObject({ mission: 'arena-mirror', enemies: ['mirror'] });
+  await page.screenshot({ path: shot('arena-mirror-duel') });
   expect(errors).toEqual([]);
 });
 

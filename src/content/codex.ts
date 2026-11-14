@@ -78,6 +78,10 @@ export const WORLD: Entry[] = [
     text: 'Ranked pilots fight for purses in a pit under the rail yard. It is licensed, legal and heavily bet on. Beat the next rank and the purse is yours in full; beat someone you have beaten before and you get a quarter.',
   },
   {
+    id: 'back-room', title: 'THE BACK ROOM', after: 'arena:10',
+    text: 'Behind the pit is a room the crowd does not know about. Five pilots fight there who stopped caring about the ladder years ago: for larger purses, without an audience, and only against a champion.',
+  },
+  {
     id: 'ashfall', title: 'ASHFALL', after: 'rival-1',
     text: 'A licensed pilot in a Ronin frame, with a longer record than yours. Ashfall takes the contracts that begin with the words "stop this person". Nobody at Dispatch will say who is paying.',
   },

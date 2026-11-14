@@ -745,8 +745,9 @@ describe('the arena', () => {
     select(app, 'arena');
     expect(snap(app).screen).toBe('arena');
     const items = snap(app).menu.items;
-    expect(items.map((i) => i.id)).toEqual(['rank-1', 'rank-2', 'rank-3', 'rank-4', 'rank-5', 'rank-6', 'rank-7', 'rank-8', 'rank-9', 'rank-10']);
-    expect(items.map((i) => i.enabled)).toEqual([true, true, true, false, false, false, false, false, false, false]);
+    // The ladder, and under it the mirror match, which opens at the third rank.
+    expect(items.map((i) => i.id)).toEqual(['rank-1', 'rank-2', 'rank-3', 'rank-4', 'rank-5', 'rank-6', 'rank-7', 'rank-8', 'rank-9', 'rank-10', 'mirror']);
+    expect(items.map((i) => i.enabled)).toEqual([true, true, true, false, false, false, false, false, false, false, false]);
     expect(items.slice(0, 3).map((i) => i.note)).toEqual(['200', '300', '1600']);
     expect(snap(app).menu.cursor).toBe(2);
     press(app, 'down', 'confirm');

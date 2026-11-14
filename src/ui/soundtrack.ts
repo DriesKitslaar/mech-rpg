@@ -1,3 +1,4 @@
+import { MIRROR_ID } from '../core/arena';
 import type { Battle, Mission } from '../core/campaign';
 import type { EnemyDef } from '../core/types';
 import type { TrackName } from '../platform/music';
@@ -11,7 +12,7 @@ export function isBossBattle(battle: Battle | undefined, enemies: Record<string,
 /** The song a battle is fought to. */
 export function battleTrack(mission: Mission, index: number, enemies: Record<string, EnemyDef>): TrackName {
   if (isBossBattle(mission.battles[index], enemies)) return 'boss';
-  if (mission.arenaRank !== undefined) return 'arena';
+  if (mission.arenaRank !== undefined || mission.id === MIRROR_ID) return 'arena';
   // The war, the audit and the verdicts have a harder song than the first act and the odd jobs.
   return ['path', 'finale', 'audit', 'verdict'].includes(mission.phase) ? 'battle2' : 'battle';
 }

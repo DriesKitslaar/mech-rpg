@@ -1,4 +1,4 @@
-import { arenaMission, checkChallenge, recordArenaWin } from '../core/arena';
+import { MIRROR_ID, arenaMission, checkChallenge, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordMirrorWin } from '../core/arena';
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
@@ -15,7 +15,7 @@ import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } fr
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
 import { drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill, type Drill } from '../core/training';
-import type { BuildError, Catalog, Part } from '../core/types';
+import type { BuildError, Catalog, EnemyDef, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
 import { WORLD } from '../content/codex';
@@ -30,7 +30,7 @@ import type { Sfx, SoundName } from '../platform/audio';
 import type { TrackName } from '../platform/music';
 import type { InputAction } from '../platform/input';
 import { SLOTS, type SaveFile } from '../platform/storage';
-import { ArenaScreen } from './arenaScreen';
+import { ArenaScreen, MIRROR } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
 import { CallsignScreen } from './callsignScreen';
@@ -164,15 +164,15 @@ class MissionHost implements Screen {
     const { aim, evasion, energy, cooling, repairs, armour } = this.app.perks();
     const drill = isDrill(this.mission);
     const state = startMissionBattle(
-      this.mission.loaner ?? this.app.game!.build, this.mission, this.index, ALL_ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
+      this.mission.loaner ?? this.app.game!.build, this.mission, this.index, this.app.enemies(), catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
       { enemyScale: this.enemyScale(), ...(drill ? {} : { mods: { aim, evasion, energy, cooling, repairs, armour } }) },
     );
     // Each battle of a contract has its own song: the last one may be against a boss.
-    this.app.playTrack(battleTrack(this.mission, this.index, ALL_ENEMIES));
+    this.app.playTrack(battleTrack(this.mission, this.index, this.app.enemies()));
     // Tests play without the talk: it is words to read, and they have nobody reading.
     this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast });
     const battle = this.mission.battles[this.index];
-    const boss = battle.enemies.map((id) => ALL_ENEMIES[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
+    const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
     if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: drill ? undefined : this.app.game!.paint,
@@ -260,6 +260,7 @@ class MissionHost implements Screen {
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
+        enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),
       },
     };
   }
@@ -451,6 +452,23 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission));
   }
 
+  /** The mirror match, if the arena offers it to this pilot. */
+  private mirrorFight(): Mission | undefined {
+    const game = this.game;
+    if (!game || !this.sideWorkOpen() || !mirrorOpen(game)) return undefined;
+    return mirrorMission(game, { client: STRINGS.arena.client, win: STRINGS.arena.win, ...STRINGS.arena.mirror });
+  }
+
+  openMirrorBriefing(): void {
+    const mission = this.mirrorFight();
+    if (mission) this.show('briefing', new BriefingScreen(this, mission));
+  }
+
+  /** Every enemy a battle can field, the opponent of a mirror match made from the pilot's build as it is now. */
+  enemies(): Record<string, EnemyDef> {
+    return this.game ? { ...ALL_ENEMIES, mirror: mirrorEnemy(this.game, STRINGS.arena.mirror.name) } : ALL_ENEMIES;
+  }
+
   /** The drills in list order, each with whether it is open yet and whether it has been passed. */
   drillList(): { drill: Drill; open: boolean; passed: boolean }[] {
     const game = this.game;
@@ -483,6 +501,7 @@ export class App {
   /** Leaves a briefing for the list it was opened from. */
   closeBriefing(mission: Mission): void {
     if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
+    else if (mission.id === MIRROR_ID) this.show('arena', new ArenaScreen(this, MIRROR));
     else if (mission.arenaRank !== undefined) this.go('arena');
     else this.openHub(mission.replay ? 'archive' : 'contracts', mission.id);
   }
@@ -509,6 +528,7 @@ export class App {
   private offered(missionId: string, replay: boolean): Mission | undefined {
     if (replay) return this.archive().find((m) => m.id === missionId);
     if (missionId.startsWith('drill-')) return this.drillFight(missionId);
+    if (missionId === MIRROR_ID) return this.mirrorFight();
     const arena = /^arena-(\d+)$/.exec(missionId);
     return arena ? this.arenaFight(Number(arena[1])) : this.missions().find((m) => m.id === missionId);
   }
@@ -574,6 +594,7 @@ export class App {
     };
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
+      else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);
       else if (MISSIONS.some((m) => m.id === mission.id)) {
         // Winning a contract again from the archive completes nothing new; its rank can still improve.
         next = completeMission(next, mission.id, MISSIONS);

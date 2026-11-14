@@ -2,6 +2,7 @@ import { completeMission } from '../../src/core/campaign';
 import { newGame, saveLoadout, setPaint, type GameState } from '../../src/core/game';
 import { MEDAL_PAY, awardMedals, medalProgress, type Medal } from '../../src/core/medals';
 import { xpForLevel } from '../../src/core/pilot';
+import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { MEDALS } from '../../src/content/medals';
 import { MISSIONS } from '../../src/content/missions';
@@ -120,8 +121,21 @@ describe('the medals', () => {
     expect(earns('both-verdicts', did('verdict-default'))).toBe(false);
   });
 
-  test('the turns of the third act keep their names to themselves until they are earned', () => {
-    expect(MEDALS.filter((m) => m.secret).map((m) => m.id)).toEqual(['audit', 'verdict-enforce', 'verdict-default', 'both-verdicts']);
+  test('the turns of the third act and the back room of the arena keep their names to themselves until they are earned', () => {
+    expect(MEDALS.filter((m) => m.secret).map((m) => m.id)).toEqual(['audit', 'verdict-enforce', 'verdict-default', 'both-verdicts', 'apex']);
+  });
+
+  test('the arena: the champion at the tenth rank, the back room at the fifteenth, and a mirror match won', () => {
+    expect(earns('champion', { ...fresh(), arenaRank: 10 })).toBe(true);
+    expect(earns('apex', { ...fresh(), arenaRank: 14 })).toBe(false);
+    expect(earns('apex', { ...fresh(), arenaRank: 15 })).toBe(true);
+    expect(earns('mirror', stats({ mirrors: 1 }))).toBe(true);
+    expect(earns('mirror', fresh())).toBe(false);
+  });
+
+  test('every drill passed is a medal', () => {
+    expect(earns('drills', { ...fresh(), drills: DRILLS.map((d) => d.id) })).toBe(true);
+    expect(earns('drills', { ...fresh(), drills: DRILLS.slice(1).map((d) => d.id) })).toBe(false);
   });
 
   test('the arena, the pilot and the hangar', () => {

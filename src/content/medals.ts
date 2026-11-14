@@ -1,4 +1,4 @@
-import { ARENA_RANKS } from '../core/arena';
+import { ARENA_RANKS, CHAMPION_RANK } from '../core/arena';
 import { FACTORY_PAINT, type GameState } from '../core/game';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
@@ -56,7 +56,9 @@ const EARNED: Medal[] = [
   { id: 'cycle', name: 'Renewal', text: 'Start the war again.', tier: 2, progress: count(1, (g) => g.cycle) },
   // The arena.
   { id: 'first-arena', name: 'On the Ladder', text: 'Win an arena fight.', tier: 1, progress: count(1, (g) => g.arenaRank) },
-  { id: 'champion', name: 'Champion of Varn', text: 'Take first place in the arena.', tier: 3, progress: count(ARENA_RANKS, (g) => g.arenaRank) },
+  { id: 'champion', name: 'Champion of Varn', text: 'Take first place in the arena.', tier: 3, progress: count(CHAMPION_RANK, (g) => g.arenaRank) },
+  { id: 'mirror', name: 'Know Thyself', text: 'Win a mirror match against your own build.', tier: 2, progress: count(1, (g) => g.stats.mirrors) },
+  { id: 'apex', name: 'Last One Standing', text: 'Beat everyone in the back room of the arena.', tier: 3, secret: true, progress: count(ARENA_RANKS, (g) => g.arenaRank) },
   // The pilot.
   { id: 'level-5', name: 'Licensed', text: 'Reach pilot level 5.', tier: 1, progress: count(5, (g) => levelFor(g.xp)) },
   { id: 'level-10', name: 'Veteran', text: 'Reach pilot level 10.', tier: 2, progress: count(10, (g) => levelFor(g.xp)) },
