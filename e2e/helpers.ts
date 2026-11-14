@@ -66,7 +66,8 @@ export async function waitForPhase(page: Page, phase: string): Promise<void> {
  * accepts the callsign on offer, and reads past whatever pages of story are due.
  */
 export async function enterHub(page: Page): Promise<void> {
-  for (let i = 0; i < 12; i++) {
+  // Pages of story hold a press off for a moment, so this keeps pressing for a while.
+  for (let i = 0; i < 120; i++) {
     const s = await snap(page);
     if (s.screen === 'hub') return;
     const waiting = ['callsign', 'scene', 'ending', 'credits'].includes(s.screen) || (s.screen === 'title' && s.mode !== undefined && s.mode !== 'main');

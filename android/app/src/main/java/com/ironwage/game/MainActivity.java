@@ -1,10 +1,15 @@
 package com.ironwage.game;
 
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -38,6 +43,37 @@ public class MainActivity extends BridgeActivity {
         KEYS.put(KeyEvent.KEYCODE_BUTTON_START, "Space");
     }
 
+    /**
+     * What the page may ask of the shell. The page cannot make the handheld rumble by itself:
+     * controller presses reach it as script-made key events, which a browser does not count as a
+     * user gesture, and without one its own vibrate call is refused.
+     */
+    public static class Shell {
+        /** No rumble the game asks for is longer than this; anything longer is cut to it. */
+        private static final int MAX_MS = 400;
+        private final Vibrator vibrator;
+
+        Shell(Context context) {
+            vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        }
+
+        /** Runs the motor for a number of milliseconds. A device without one is left alone. */
+        @JavascriptInterface
+        public void vibrate(int ms) {
+            if (vibrator == null || !vibrator.hasVibrator() || ms <= 0) return;
+            int length = Math.min(ms, MAX_MS);
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(length, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    vibrator.vibrate(length);
+                }
+            } catch (RuntimeException e) {
+                // A motor that will not run is no reason to stop the game.
+            }
+        }
+    }
+
     /** Which arrow the D-pad currently holds when it reports as an axis instead of keys. */
     private String hatX = null;
     private String hatY = null;
@@ -50,6 +86,8 @@ public class MainActivity extends BridgeActivity {
         // Controller presses reach the page as synthetic key events, which browsers do not count
         // as a user gesture; without this the game would never be allowed to make a sound.
         getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+        // For the same reason the page asks the shell to run the motor; see Shell.
+        getBridge().getWebView().addJavascriptInterface(new Shell(this), "IronwageShell");
     }
 
     @Override

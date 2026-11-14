@@ -106,8 +106,13 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
   }
 }
 
-/** The sound for a menu input. `changed` says whether the input actually did something. */
-export function soundForInput(action: InputAction, changed: boolean): SoundName | null {
+/**
+ * The sound for a menu input. `changed` says whether the input actually did something; `busy` that
+ * the screen was not taking input (it was still coming up, or holding a line of text for a moment),
+ * in which case a press that did nothing is passed over in silence rather than refused.
+ */
+export function soundForInput(action: InputAction, changed: boolean, busy = false): SoundName | null {
+  if (!changed && busy) return null;
   if (action === 'confirm') return changed ? 'confirm' : 'deny';
   if (!changed) return null;
   if (action === 'cancel') return 'cancel';

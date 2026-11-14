@@ -1,5 +1,5 @@
 import {
-  aegisFactor, coolCost, boostCost, guardCost, jamOn, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type UnitState,
+  aegisFactor, coolCost, boostCost, guardCost, jamOn, objectiveTarget, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type UnitState,
 } from '../core/battle';
 import { weaponIn } from '../core/build';
 import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
@@ -27,9 +27,9 @@ const PANEL_Y = 178;
  * The box a line of talk is shown in: the panel under the field, where the menu is at other times,
  * so that whatever is being talked about stays in view. Lines of `TALK_CHARS`, at most `TALK_LINES`.
  */
-const TALK = { x: 0, y: PANEL_Y, w: LOGICAL_W, h: LOGICAL_H - PANEL_Y, portrait: 48 };
-export const TALK_CHARS = charsFor(TALK.w - TALK.portrait - 26);
-export const TALK_LINES = 3;
+const TALK = { x: 0, y: PANEL_Y, w: LOGICAL_W, h: LOGICAL_H - PANEL_Y, portrait: 56 };
+export const TALK_CHARS = charsFor(TALK.w - TALK.portrait - 30);
+export const TALK_LINES = 4;
 /** How long a press is ignored after a line comes up, and after the press that finished writing it: a mashed button skips nothing unread. */
 export const TALK_HOLD_MS = 250;
 
@@ -96,6 +96,11 @@ export class BattleScreen {
       boss?: string;
       /** Makes the handheld rumble for a number of milliseconds. */
       rumble?: (ms: number) => void;
+      /**
+       * Called when the battle is decided. Returns true when it has started the music's own fanfare,
+       * in which case the sound effect for the outcome is left out: one fanfare is enough.
+       */
+      jingle?: (won: boolean) => boolean;
     },
   ) {
     this.introTotal = opts.fast ? 0 : opts.boss ? WARNING_MS : INTRO_MS;
@@ -108,10 +113,28 @@ export class BattleScreen {
     this.arrived = new Set(flow.state.units.map((u) => u.id).filter((id) => !unseen.includes(id)));
   }
 
+  /** True while the opening banner is up. */
+  get banner(): boolean {
+    return this.intro > 0;
+  }
+
+  /** True while a line of talk is still being written out. */
+  get typing(): boolean {
+    this.syncTalk();
+    return !!this.talkWriter && !this.talkWriter.done;
+  }
+
+  /** True while a press on a line of talk would be ignored. */
+  get holding(): boolean {
+    this.syncTalk();
+    return this.talkHold > 0;
+  }
+
   update(realMs: number): void {
-    // The fast-battles option plays every pause and effect at a multiple of normal speed.
+    // The fast-battles option plays every pause and effect at a multiple of normal speed. What is only
+    // there to be looked at (rain, smoke, the sway of a mech, anything that blinks) keeps its own pace.
     const dtMs = realMs * (this.opts.speed ?? 1);
-    this.clock += dtMs;
+    this.clock += realMs;
     if (this.intro > 0) {
       if (!this.introHeard) this.opts.sfx?.play(this.opts.boss ? 'warning' : 'banner');
       this.introHeard = true;
@@ -130,19 +153,30 @@ export class BattleScreen {
     if (this.opts.fast || this.timer >= MESSAGE_MS) {
       this.timer = 0;
       this.flow.advance();
+      // A line of talk may have come up with that step: it gets its writer before anything is drawn.
+      this.syncTalk();
     }
+  }
+
+  /**
+   * Gives the line on screen its writer and its hold-off. A line can come up at any point of a
+   * frame: by a press, by the banner running out, by the message timer. Whatever draws it or
+   * listens for a press on it asks here first, so it is never shown whole or skipped unwritten.
+   */
+  private syncTalk(): void {
+    const line = this.flow.phase === 'talk' ? this.flow.spoken : null;
+    if (line === this.talkLine) return;
+    this.talkLine = line;
+    this.talkWriter = line ? new Typewriter(wrap(line.text, TALK_CHARS).slice(0, TALK_LINES), undefined, this.opts.fast) : null;
+    this.talkHold = line && !this.opts.fast ? TALK_HOLD_MS : 0;
   }
 
   /** Writes the line of talk out, with a tick now and then. A new line starts a new writer. */
   private updateTalk(realMs: number): void {
-    const line = this.flow.phase === 'talk' ? this.flow.spoken : null;
-    if (line !== this.talkLine) {
-      this.talkLine = line;
-      this.talkWriter = line ? new Typewriter(wrap(line.text, TALK_CHARS).slice(0, TALK_LINES), undefined, this.opts.fast) : null;
-      this.talkHold = line && !this.opts.fast ? TALK_HOLD_MS : 0;
-    } else {
-      this.talkHold = Math.max(0, this.talkHold - realMs);
-    }
+    const before = this.talkLine;
+    this.syncTalk();
+    // A line that has only just come up keeps the whole of its hold-off.
+    if (this.talkLine === before) this.talkHold = Math.max(0, this.talkHold - realMs);
     if (!this.talkWriter) return;
     this.typeTick -= realMs;
     if (this.talkWriter.update(realMs) > 0 && this.typeTick <= 0) {
@@ -172,6 +206,8 @@ export class BattleScreen {
       }
       if (this.opts.fast) continue;
       this.fx.onEvent(event);
+      // The end of a battle is marked once: by the music's fanfare where there is music, by the effect where there is not.
+      if (event.type === 'outcome' && this.opts.jingle?.(event.outcome === 'victory')) continue;
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
     }
     this.fxDone = shown;
@@ -181,8 +217,10 @@ export class BattleScreen {
     // The banner can be dismissed; nothing else is listened to while it is up.
     if (this.intro > 0) {
       if (action === 'confirm') this.intro = 0;
+      this.syncTalk();
       return;
     }
+    this.syncTalk();
     if (this.flow.phase === 'animating') {
       if (action === 'confirm') { this.timer = 0; this.flow.advance(); }
       return;
@@ -214,9 +252,13 @@ export class BattleScreen {
     // The field, which a heavy blow shakes as a whole; the picture behind it is drawn a little
     // larger so that no edge shows when it moves.
     const { dx, dy } = this.fx.shake();
+    this.syncTalk();
     ctx.save();
     ctx.translate(dx, dy);
-    ctx.drawImage(bg.image, -6, -6, LOGICAL_W + 12, LOGICAL_H + 12);
+    // Pixel for pixel while the field is still. Only while a blow moves it is the picture drawn a
+    // little larger, so that no edge shows: stretched, a pixel picture loses its grid.
+    if (dx === 0 && dy === 0) ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
+    else ctx.drawImage(bg.image, -6, -6, LOGICAL_W + 12, LOGICAL_H + 12);
     this.drawPlayer(ctx);
     this.drawEnemies(ctx);
     this.drawSmoke(ctx);
@@ -268,7 +310,22 @@ export class BattleScreen {
     ctx.fillRect(x, y + h - 1, LOGICAL_W, 1);
     const title = this.opts.title ?? this.opts.label ?? '';
     drawText(ctx, title, x + LOGICAL_W / 2, y + 7, { size: 16, align: 'center', color: COLORS.accent });
-    drawText(ctx, this.flow.objective?.text ?? STRINGS.battleIntro.destroy, x + LOGICAL_W / 2, y + 27, { align: 'center', color: COLORS.heat });
+    drawText(ctx, this.instruction(), x + LOGICAL_W / 2, y + 27, { align: 'center', color: COLORS.heat });
+  }
+
+  /** What the battle asks for, in the words the briefing used: the strip above the field keeps the count. */
+  private instruction(): string {
+    const { objective } = this.flow.state;
+    const B = STRINGS.objectives.brief;
+    const name = objectiveTarget(this.flow.state)?.name ?? '';
+    switch (objective.type) {
+      case 'survive': return B.survive(objective.rounds);
+      case 'protect': return B.protect(objective.name);
+      case 'leader': return B.leader(name);
+      case 'disable': return B.disable(name);
+      case 'driveOff': return B.driveOff(name);
+      default: return STRINGS.battleIntro.destroy;
+    }
   }
 
   /** Smoke rising from every destroyed part of a machine that still stands. */
@@ -545,12 +602,13 @@ export class BattleScreen {
     const { x, y, w, h, portrait } = TALK;
     drawPanel(ctx, x, y, w, h);
     if (!line) return;
+    // The face at its own size: squeezed, a pixel portrait smears.
     drawPortrait(ctx, this.sprites, line.portrait, x + 10, y + 10, portrait);
-    const left = x + portrait + 20;
+    const left = x + portrait + 22;
     drawText(ctx, line.who.toUpperCase(), left, y + 10, { color: COLORS.accent });
     const rows = this.talkWriter?.visible() ?? wrap(line.text, TALK_CHARS).slice(0, TALK_LINES);
     // The panel has room to spare: the lines stand a little further apart than usual.
-    rows.forEach((row, i) => drawText(ctx, row, left, y + 26 + i * (LINE + 3)));
+    rows.forEach((row, i) => drawText(ctx, row, left, y + 25 + i * (LINE + 2)));
     // The prompt to go on shows once the line is all there.
     if ((this.talkWriter?.done ?? true) && Math.floor(this.clock / 320) % 2 === 0) drawText(ctx, 'A', x + w - 14, y + h - 16, { color: COLORS.dim });
   }
