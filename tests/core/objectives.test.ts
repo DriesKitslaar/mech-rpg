@@ -6,6 +6,7 @@ import {
 import type { EnemyDef } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
+import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 
 const END: Action = { type: 'endTurn' };
 const hit = () => 0;
@@ -214,6 +215,32 @@ describe('the automatic player plays to the objective', () => {
     const actions = turn(frail);
     expect(salvo(actions)).toBe(false);
     expect(actions.some((a) => a.type === 'fire')).toBe(true);
+  });
+
+  test('keeps its blade sheathed in a battle that only has to be outlasted: a strike would spend the boost it is dodging on', () => {
+    // A duellist on phase jets: a rifle in one hand, a blade in the other.
+    const start = createBattle(REFERENCE_BUILDS.tier5, [ENEMIES.juggernaut], CATALOG, 1, { objective: { type: 'survive', rounds: 6 } });
+    let s = edit(to(start, 'player'), (d) => { d.units[0].energy = 999; });
+    const actions: Action[] = [];
+    for (let i = 0; i < 12 && s.outcome === 'ongoing' && activeUnit(s).id === 'player'; i++) {
+      const action = chooseAutoPlayerAction(s, CATALOG);
+      actions.push(action);
+      s = applyAction(s, action, CATALOG, hit);
+    }
+    expect(actions[0]).toEqual({ type: 'boost' });
+    expect(actions.some((a) => a.type === 'fire' && a.weapon === 'rightHand')).toBe(true);
+    expect(actions.some((a) => a.type === 'fire' && a.weapon === 'leftHand')).toBe(false);
+    // The turn ends with the boost still on.
+    expect(unit(s, 'player').boosted).toBe(true);
+    // In an ordinary battle the same pilot closes in and cuts.
+    let open = edit(to(createBattle(REFERENCE_BUILDS.tier5, [ENEMIES.juggernaut], CATALOG, 1), 'player'), (d) => { d.units[0].energy = 999; });
+    const usual: Action[] = [];
+    for (let i = 0; i < 12 && open.outcome === 'ongoing' && activeUnit(open).id === 'player'; i++) {
+      const action = chooseAutoPlayerAction(open, CATALOG);
+      usual.push(action);
+      open = applyAction(open, action, CATALOG, hit);
+    }
+    expect(usual.some((a) => a.type === 'fire' && a.weapon === 'leftHand')).toBe(true);
   });
 
   test.each([

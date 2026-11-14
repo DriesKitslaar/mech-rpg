@@ -9,7 +9,8 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "typecheck": "tsc --noEmit",
-    "simulate": "tsx scripts/simulate.ts"
+    "simulate": "tsx scripts/simulate.ts",
+    "career": "tsx scripts/career.ts"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.0",

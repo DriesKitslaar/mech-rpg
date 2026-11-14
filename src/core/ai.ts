@@ -212,7 +212,7 @@ function autoTarget(state: BattleState, enemies: UnitState[]): { target: UnitSta
 /**
  * A plain, competent player used by simulations, tests and the Auto Turn action: repairs a failing
  * core, braces for a bomb, plays to the objective, uses its module when it helps, charges and closes
- * in when its weapons need that, cools before overheating, shoots helpers and staggered enemies
+ * in when its weapons need that (but keeps its boost for dodging when the battle only has to be outlasted), cools before overheating, shoots helpers and staggered enemies
  * first and the weakest one otherwise (its legs when it is too nimble to hit), pushing with its
  * heaviest weapons first, and spends leftover energy on a boost or a guard.
  */
@@ -247,6 +247,9 @@ export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Ac
   if (shouldCloseIn(state, catalog)) return { type: 'boost' };
 
   let usable = usableWeapons(state, catalog, target.id, ['rightHand', 'leftHand', 'shoulder']);
+  // In a battle that only has to be outlasted the blade stays sheathed: a strike spends the boost,
+  // and the boost is what keeps a light mech alive until the last round.
+  if (state.objective.type === 'survive') usable = usable.filter((u) => !u.weapon.melee);
   if (limb) {
     // Once a limb is gone, the rest of a burst goes on into the core at half strength: no weapon is
     // fired whose leftover shots could finish a machine that has to survive.
