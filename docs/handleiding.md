@@ -44,7 +44,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels; deze handleiding i
 | Pilot | Niveau en vaardigheden, medailles, en een logboek van alles wat je gedaan hebt. |
 | Messages | Berichten van je opdrachtgevers. |
 | Database | Fiches van elke vijand die je bent tegengekomen, achtergrond over de stad, en de spelregels. |
-| Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid, de aftiteling opnieuw bekijken, terug naar het titelscherm. |
+| Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid, A en B omwisselen, de aftiteling opnieuw bekijken, terug naar het titelscherm. |
 
 ## Een gevecht
 
@@ -115,6 +115,8 @@ zo snel af.
 
 ## Als iets niet werkt
 
+- **A en B zitten andersom** (B bevestigt en A gaat terug): ga naar **Options**, kies **A/B Buttons**
+  en zet die op **Swapped**. Het spel onthoudt dat.
 - **Een knop doet niets**: druk op Start. Het venster toont welke code het toestel doorgeeft; geef
   die code door, dan kan de knop worden toegevoegd.
 - **Geen geluid**: kijk onder Options of Sound Effects en Music aan staan, en of het volume van het

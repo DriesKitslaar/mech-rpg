@@ -241,6 +241,17 @@ describe('settings', () => {
     expect(new SaveFile(store, CATALOG).loadSettings()?.rumble).toBe(false);
   });
 
+  test('swapped A and B buttons are remembered, and settings stored before the option have them as they were', () => {
+    const store = mem();
+    const file = new SaveFile(store, CATALOG);
+    file.saveSettings({ sfx: true, music: true, fastBattles: false, difficulty: 'standard', rumble: true, swapAB: true });
+    expect(new SaveFile(store, CATALOG).loadSettings()).toEqual({ sfx: true, music: true, fastBattles: false, difficulty: 'standard', rumble: true, swapAB: true });
+    file.saveSettings({ sfx: true, music: true, fastBattles: false, difficulty: 'standard', rumble: true, swapAB: false });
+    expect(new SaveFile(store, CATALOG).loadSettings()?.swapAB).toBeUndefined();
+    const odd = mem({ 'ironwage-settings': '{"sfx":true,"music":true,"fastBattles":false,"swapAB":"yes"}' });
+    expect(new SaveFile(odd, CATALOG).loadSettings()?.swapAB).toBeUndefined();
+  });
+
   test('stored before there was a difficulty, or with one that does not exist, get the standard one', () => {
     const before = mem({ 'ironwage-settings': '{"sfx":false,"music":false,"fastBattles":true}' });
     // Rumble came later still: settings stored without it have it on.

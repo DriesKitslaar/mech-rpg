@@ -4,7 +4,7 @@ import { NO_STATS } from '../../src/core/stats';
 import { WORLD } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { CATALOG } from '../../src/content/parts';
-import { autoBattle, done, fresh, ids, inHub, medalPay, press, retreat, savedGame, select, snap, strong } from '../helpers/app';
+import { autoBattle, done, fresh, ids, inHub, makeApp, medalPay, press, retreat, savedGame, select, snap, strong } from '../helpers/app';
 
 /** A pilot for whom nothing is waiting to be announced, so that credits only move for the reason under test. */
 const quiet = (base = fresh()) => ({ ...base, codex: WORLD.map((entry) => entry.id), scenes: ['act-1'] });
@@ -269,5 +269,46 @@ describe('leaving a game for the title', () => {
     expect(snap(app)).toMatchObject({ screen: 'hub', credits: 222, callsign: 'VANTA', slot: 1 });
     expect(savedGame(store, 'ironwage-save-2').stats.seconds).toBe(0);
     expect(savedGame(store).stats.seconds).toBe(0);
+  });
+});
+
+describe('swapped A and B buttons', () => {
+  test('the options have a switch for it, off to begin with', () => {
+    const { app } = inHub(quiet());
+    select(app, 'options');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ label: 'A/B Buttons', note: 'Normal' });
+  });
+
+  test('switched on, the button that went back now confirms and the one that confirmed goes back, and it is remembered', () => {
+    const { app, store } = inHub(quiet());
+    select(app, 'options');
+    select(app, 'swapAB');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Swapped' });
+    expect(JSON.parse(store.data['ironwage-settings']).swapAB).toBe(true);
+    // What used to confirm now backs out of the options...
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+    // ...and what used to go back now opens what is under the cursor.
+    press(app, 'cancel');
+    expect(snap(app)).toMatchObject({ screen: 'hub', list: 'contracts' });
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ list: 'main' });
+    // Switched off again the same way, the buttons are as they were.
+    for (let i = 0; i < 20 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'options'; i++) press(app, 'down');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('options');
+    for (let i = 0; i < 20 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'swapAB'; i++) press(app, 'down');
+    press(app, 'cancel');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Normal' });
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+    expect(JSON.parse(store.data['ironwage-settings']).swapAB).toBeUndefined();
+  });
+
+  test('a game started with the buttons swapped keeps them swapped', () => {
+    const { app } = makeApp(quiet({ ...fresh(), settings: { ...fresh().settings, swapAB: true } }));
+    // On the title, what used to go back is the button that continues.
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
   });
 });

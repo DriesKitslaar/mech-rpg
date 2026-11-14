@@ -862,7 +862,7 @@ describe('options', () => {
     select(app, 'options');
     expect(snap(app).screen).toBe('options');
     expect(snap(app).menu.items.map((i) => [i.id, i.note]))
-      .toEqual([['sfx', 'On'], ['music', 'On'], ['rumble', 'On'], ['fastBattles', 'Off'], ['difficulty', 'Standard']]);
+      .toEqual([['sfx', 'On'], ['music', 'On'], ['rumble', 'On'], ['fastBattles', 'Off'], ['difficulty', 'Standard'], ['swapAB', 'Normal']]);
     press(app, 'confirm');
     expect(snap(app).menu.items[0].note).toBe('Off');
     expect(JSON.parse(store.data[SETTINGS_KEY]).sfx).toBe(false);

@@ -410,6 +410,13 @@ describe('callsign, record and the lists that came with them', () => {
     expect(isValidState(newGame(CATALOG, STARTER_BUILD, 'A'), CATALOG)).toBe(true);
   });
 
+  test('a game may say that the A and B buttons are swapped, or say nothing about it', () => {
+    const g = newGame(CATALOG, STARTER_BUILD);
+    expect(g.settings.swapAB).toBeUndefined();
+    expect(isValidState({ ...g, settings: { ...g.settings, swapAB: true } }, CATALOG)).toBe(true);
+    expect(isValidState({ ...g, settings: { ...g.settings, swapAB: false } }, CATALOG)).toBe(true);
+  });
+
   test.each(['', 'pilot', 'TOOLONGNAME', 'A B', 'É', 'A-1'])('a new game refuses %j as a callsign', (callsign) => {
     expect(() => newGame(CATALOG, STARTER_BUILD, callsign)).toThrow('not a callsign');
   });
@@ -427,6 +434,7 @@ describe('callsign, record and the lists that came with them', () => {
     ['medals that are not a list of text', (g) => ({ ...g, medals: [1] })],
     ['no list of enemies met', (g) => { const { met: _m, ...rest } = g; return rest; }],
     ['drills that are not a list', (g) => ({ ...g, drills: 'all' })],
+    ['swapped buttons that are neither on nor off', (g) => ({ ...g, settings: { ...g.settings, swapAB: 'yes' } })],
     ['no list of database entries', (g) => { const { codex: _c, ...rest } = g; return rest; }],
     ['database entries that are not text', (g) => ({ ...g, codex: [null] })],
   ];

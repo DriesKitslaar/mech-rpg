@@ -735,10 +735,16 @@ export class App {
     return !this.deps.fast && this.entering.shutter && this.entering.left > 0;
   }
 
+  /** What a press means with the A and B buttons the way the options have them. */
+  meant(action: InputAction): InputAction {
+    if (!this.settings.swapAB) return action;
+    return action === 'confirm' ? 'cancel' : action === 'cancel' ? 'confirm' : action;
+  }
+
   onInput(action: InputAction): void {
     // Nothing is pressed on a battle that cannot be seen yet.
     if (this.shuttered) return;
-    this.current.onInput(action);
+    this.current.onInput(this.meant(action));
   }
 
   snapshot(): unknown {

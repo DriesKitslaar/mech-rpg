@@ -43,12 +43,14 @@ type Snap = {
 /** Gets to the hub from wherever the game is, the way a person who has had enough would: back out, give up the fight, press through. */
 function walkToHub(app: App): number {
   const snap = () => app.snapshot() as Snap;
+  // The random presses may have swapped A and B in the options; a person presses whichever now does the job.
+  const push = (want: InputAction): void => app.onInput(app.meant(want));
   for (let presses = 0; presses < 4000; presses++) {
     const s = snap();
     if (s.screen === 'hub') {
       // The hub may have a list open; back out of it.
-      app.onInput('cancel');
-      app.onInput('cancel');
+      push('cancel');
+      push('cancel');
       return presses;
     }
     if (s.screen === 'battle') {
@@ -56,14 +58,14 @@ function walkToHub(app: App): number {
       if (phase === 'animating') app.update(16);
       else if (phase === 'action') {
         const at = s.menu.items[s.menu.cursor]?.id;
-        app.onInput(at === 'retreat' ? 'confirm' : 'down');
+        push(at === 'retreat' ? 'confirm' : 'down');
       } else if (phase === 'confirmRetreat') {
         const at = s.menu.items[s.menu.cursor]?.id;
-        app.onInput(at === 'yes' ? 'confirm' : 'down');
-      } else if (phase === 'talk' || phase === 'result') app.onInput('confirm');
-      else app.onInput('cancel');
-    } else if (['settlement', 'scene', 'ending', 'credits', 'callsign', 'title'].includes(s.screen)) app.onInput('confirm');
-    else app.onInput('cancel');
+        push(at === 'yes' ? 'confirm' : 'down');
+      } else if (phase === 'talk' || phase === 'result') push('confirm');
+      else push('cancel');
+    } else if (['settlement', 'scene', 'ending', 'credits', 'callsign', 'title'].includes(s.screen)) push('confirm');
+    else push('cancel');
   }
   return -1;
 }
@@ -86,7 +88,7 @@ function monkey(seed: number, steps: number, saved: GameState | undefined, refus
     const index = items.findIndex((item) => item.id === enter && item.enabled);
     if (index >= 0) {
       for (let i = 0; i < index; i++) app.onInput('down');
-      app.onInput('confirm');
+      app.onInput(app.meant('confirm'));
     }
   }
   flaky = true;

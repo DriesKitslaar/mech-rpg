@@ -174,6 +174,7 @@ export const STRINGS = {
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
     credits: 'End Roll', watch: 'Watch', title: 'Quit to Title',
+    swapAB: 'A/B Buttons', normal: 'Normal', swapped: 'Swapped', swapHelp: 'Swap them if B confirms on your handheld.',
     on: 'On', off: 'Off',
     difficulties: { story: 'Story', standard: 'Standard', veteran: 'Veteran' },
     difficultyHelp: {

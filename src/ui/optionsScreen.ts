@@ -8,12 +8,12 @@ import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const O = STRINGS.options;
 type Toggle = 'sfx' | 'music' | 'fastBattles' | 'rumble';
-const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'difficulty'];
+const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'difficulty', 'swapAB'];
 /** The entries that are not settings: the end roll once more, and the way back to the title. */
 const CREDITS = 'credits';
 const TITLE = 'title';
 
-/** Sound, music, battle speed and difficulty. Opened from the title or the hub, and returns to where it came from. */
+/** Sound, music, battle speed, difficulty and which button confirms. Opened from the title or the hub, and returns to where it came from. */
 export class OptionsScreen implements Screen {
   private list = new MenuList();
 
@@ -24,7 +24,9 @@ export class OptionsScreen implements Screen {
   private refresh(): void {
     const settings = this.app.settings;
     const value = (key: keyof Settings): string =>
-      (key === 'difficulty' ? O.difficulties[settings.difficulty] : this.isOn(key as Toggle) ? O.on : O.off);
+      key === 'difficulty' ? O.difficulties[settings.difficulty]
+        : key === 'swapAB' ? (settings.swapAB ? O.swapped : O.normal)
+          : this.isOn(key as Toggle) ? O.on : O.off;
     this.list.setItems([
       ...KEYS.map((key) => ({ id: key as string, label: O[key], enabled: true, note: value(key) })),
       // Once an ending has been seen, the end roll can be watched again from here.
@@ -49,6 +51,10 @@ export class OptionsScreen implements Screen {
       const n = DIFFICULTIES.length;
       const difficulty = DIFFICULTIES[(DIFFICULTIES.indexOf(settings.difficulty) + step + n) % n];
       this.app.setSettings({ ...settings, difficulty });
+    } else if (key === 'swapAB') {
+      // Kept only while it is on, so settings without it stay as they always were.
+      const { swapAB, ...rest } = settings;
+      this.app.setSettings(swapAB ? rest : { ...rest, swapAB: true });
     } else this.app.setSettings({ ...settings, [key]: !this.isOn(key as Toggle) });
     this.refresh();
   }
@@ -83,9 +89,9 @@ export class OptionsScreen implements Screen {
     drawPanel(ctx, x, 64, w, help + 31 - 64);
     drawText(ctx, O.heading, LOGICAL_W / 2, 70, { size: 16, align: 'center', color: COLORS.accent });
     drawList(ctx, this.list, x + 14, 96, w - 34, rows);
-    if (this.list.selected?.id === 'difficulty') {
-      drawText(ctx, O.difficultyHelp[this.app.settings.difficulty], LOGICAL_W / 2, help, { align: 'center', color: COLORS.text, size: 10 });
-    }
+    const selected = this.list.selected?.id;
+    const words = selected === 'difficulty' ? O.difficultyHelp[this.app.settings.difficulty] : selected === 'swapAB' ? O.swapHelp : null;
+    if (words) drawText(ctx, words, LOGICAL_W / 2, help, { align: 'center', color: COLORS.text, size: 10 });
     drawText(ctx, O.hint, LOGICAL_W / 2, help + 14, { align: 'center', color: COLORS.dim });
   }
 }

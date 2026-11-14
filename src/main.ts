@@ -71,8 +71,10 @@ async function start(): Promise<void> {
     // Comparing what the app reports before and after tells whether the input did anything.
     const was = app.snapshot() as { busy?: boolean };
     const before = JSON.stringify(was);
+    // With the buttons swapped in the options, the sound follows what the press did, not which button it was.
+    const meant = app.meant(action);
     app.onInput(action);
-    const sound = soundForInput(action, JSON.stringify(app.snapshot()) !== before, was.busy === true);
+    const sound = soundForInput(meant, JSON.stringify(app.snapshot()) !== before, was.busy === true);
     if (sound) sfx.play(sound);
   };
 
