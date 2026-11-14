@@ -12,6 +12,8 @@ import { applySettlement, debtRelief, settle, type Settlement } from '../core/ec
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
+import { wingmanOpen, withWingman, type Wingman } from '../core/wingman';
+import { WINGMEN } from '../content/wingmen';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
@@ -279,6 +281,7 @@ class MissionHost implements Screen {
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
+        support: flow.state.support?.name ?? null,
         enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),
       },
     };
@@ -579,11 +582,20 @@ export class App {
   }
 
   /** Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends no mech of its own. */
-  startMission(missionId: string, replay = false): void {
-    const mission = this.offered(missionId, replay);
-    if (!mission || (mission.loaner === undefined && this.buildErrors().length > 0)) return;
+  startMission(missionId: string, replay = false, wingmanId: string | null = null): void {
+    const offered = this.offered(missionId, replay);
+    if (!offered || (offered.loaner === undefined && this.buildErrors().length > 0)) return;
+    // A second pilot comes along when one was hired who takes calls: their fire, and their share of the fee.
+    const wingman = this.wingmen().find((w) => w.id === wingmanId);
+    const mission = wingman ? withWingman(offered, wingman) : offered;
     this.seed = (this.seed + 101) % 2147483647;
     this.show('battle', new MissionHost(this, mission, this.seed));
+  }
+
+  /** The pilots for hire who take this pilot's calls. */
+  wingmen(): Wingman[] {
+    const game = this.game;
+    return game ? WINGMEN.filter((w) => wingmanOpen(game, w, MISSIONS)) : [];
   }
 
   go(name: ScreenName): void {

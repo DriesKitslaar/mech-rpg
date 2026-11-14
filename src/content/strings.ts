@@ -202,6 +202,11 @@ export const STRINGS = {
     verdict: 'VERDICT: your answer ends the story. The other offer is withdrawn.',
     replay: 'ARCHIVE: pays less. Nothing in the story changes.',
     lent: 'LENT MECH: yours cannot deploy. The bill is still yours.',
+    // A second pilot for the contract: the row in the briefing's menu, and what they cost.
+    wingman: 'Wingman', alone: 'None', wingmanShare: (percent: number) => `-${percent}% fee`,
+    wingmanHint: 'LEFT/RIGHT: choose a wingman',
+    aloneText: 'Fly it alone and keep the whole fee.',
+    wingmanTerms: (damage: number, percent: number) => `Fires for ${damage} each round. Takes ${percent}% of the fee.`,
     lentNote: 'Your own mech cannot deploy as it stands, so Dispatch lends you a stock frame for this one. Put yours right in the Garage; until then this is the work there is.',
     support: (name: string) => `Fire support: ${name}`,
   },

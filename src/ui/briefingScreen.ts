@@ -1,6 +1,7 @@
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
 import { isDrill } from '../core/training';
+import { feeAfter, takesWingman, type Wingman } from '../core/wingman';
 import { ALL_ENEMIES } from '../content/arena';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -45,10 +46,10 @@ export const BRIEFING_CHARS = charsFor(LOGICAL_W - 24);
 
 /** A contract's briefing: who is asking, what they say, what to expect, and whether to take it. */
 export class BriefingScreen implements Screen {
-  private list = new MenuList([
-    { id: 'accept', label: B.accept, enabled: true },
-    { id: 'back', label: B.back, enabled: true },
-  ]);
+  private list: MenuList;
+  /** Who can be hired for this contract, and which of them is: -1 is nobody. */
+  private hires: Wingman[];
+  private hired = -1;
 
   /** The briefing writes itself out; the menu does not wait for it. */
   private rows: string[][];
@@ -57,6 +58,23 @@ export class BriefingScreen implements Screen {
   constructor(private app: App, private mission: Mission) {
     this.rows = mission.briefing.map((paragraph) => wrap(paragraph, BRIEFING_CHARS));
     this.writer = new Typewriter(this.rows.flat(), 150, app.deps.fast);
+    this.hires = takesWingman(mission) ? app.wingmen() : [];
+    this.list = new MenuList([
+      { id: 'accept', label: B.accept, enabled: true },
+      ...(this.hires.length > 0 ? [{ id: 'wingman', label: B.wingman, enabled: true }] : []),
+      { id: 'back', label: B.back, enabled: true },
+    ]);
+  }
+
+  private get wingman(): Wingman | undefined { return this.hires[this.hired]; }
+
+  /** What the contract pays the pilot: the fee, less the share of whoever was hired. */
+  private get fee(): number { return this.wingman ? feeAfter(this.mission.reward, this.wingman) : this.mission.reward; }
+
+  /** Walks through nobody and everyone for hire, round and round. */
+  private choose(step: number): void {
+    const count = this.hires.length + 1;
+    this.hired = ((this.hired + 1 + step + count) % count) - 1;
   }
 
   update(dtMs: number): void {
@@ -67,8 +85,9 @@ export class BriefingScreen implements Screen {
     if (action === 'up') this.list.move(-1);
     else if (action === 'down') this.list.move(1);
     else if (action === 'cancel') this.app.closeBriefing(this.mission);
+    else if (this.list.selected?.id === 'wingman' && (action === 'left' || action === 'right' || action === 'confirm')) this.choose(action === 'left' ? -1 : 1);
     else if (action === 'confirm') {
-      if (this.list.selected?.id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay);
+      if (this.list.selected?.id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay, this.wingman?.id ?? null);
       else this.app.closeBriefing(this.mission); // back to the list the briefing was opened from
     }
   }
@@ -77,7 +96,9 @@ export class BriefingScreen implements Screen {
     return {
       menu: { items: this.list.items, cursor: this.list.cursor },
       briefing: {
-        mission: this.mission.id, replay: !!this.mission.replay, reward: this.mission.reward, objectives: objectiveLines(this.mission),
+        mission: this.mission.id, replay: !!this.mission.replay, reward: this.fee, objectives: objectiveLines(this.mission),
+        wingman: this.hires.length === 0 ? null
+          : { id: this.wingman?.id ?? null, name: this.wingman?.name ?? B.alone, share: Math.round((this.wingman?.share ?? 0) * 100), open: this.hires.length },
         lent: !isDrill(this.mission) && this.mission.loaner !== undefined,
       },
     };
@@ -113,10 +134,18 @@ export class BriefingScreen implements Screen {
     drawPanel(ctx, 4, 72, LOGICAL_W - 8, 122);
     const objectives = objectiveLines(mission);
     const lastRow = 78 + (briefingRows(mission) - 1) * LINE;
+    const onHire = this.list.selected?.id === 'wingman';
     const written = this.writer.visible();
     let at = 0;
     let y = 78;
-    for (const paragraph of this.rows) {
+    if (onHire) {
+      // On the wingman's row the client makes way for a word about whoever is being considered.
+      drawText(ctx, (this.wingman?.name ?? B.alone).toUpperCase(), 12, y, { color: COLORS.accent });
+      wrap(this.wingman?.text ?? B.aloneText, BRIEFING_CHARS).forEach((line, i) => drawText(ctx, line, 12, y + 15 + i * LINE));
+      if (this.wingman) drawText(ctx, B.wingmanTerms(this.wingman.damage, Math.round(this.wingman.share * 100)), 12, y + 15 + 3 * LINE, { color: COLORS.heat });
+      drawText(ctx, B.wingmanHint, 12, 191 - LINE, { color: COLORS.dim });
+    }
+    for (const paragraph of onHire ? [] : this.rows) {
       for (const _full of paragraph) {
         const line = written[at++];
         if (y > lastRow) break;
@@ -126,14 +155,19 @@ export class BriefingScreen implements Screen {
       y += 4;
     }
     // What the contract asks for appears when the client has finished talking.
-    if (this.writer.done) objectives.forEach((line, i) => drawText(ctx, line, 12, 191 - (objectives.length - i) * LINE, { color: COLORS.heat }));
+    if (this.writer.done && !onHire) objectives.forEach((line, i) => drawText(ctx, line, 12, 191 - (objectives.length - i) * LINE, { color: COLORS.heat }));
 
     // Footer: what to expect, what it pays, and the choice.
     drawPanel(ctx, 4, 198, LOGICAL_W - 8, 68);
     drawText(ctx, B.engagements(mission.battles.length), 12, 203, { color: COLORS.dim });
-    drawText(ctx, `${B.reward} ${mission.reward}`, 12, 215, { size: 16, color: COLORS.armor });
+    drawText(ctx, `${B.reward} ${this.fee}`, 12, 215, { size: 16, color: COLORS.armor });
+    if (this.hires.length > 0) {
+      drawText(ctx, B.wingman, 12, 236, { color: COLORS.dim });
+      drawText(ctx, this.wingman?.name ?? B.alone, 12, 246, { color: this.wingman ? COLORS.accent : COLORS.text });
+      if (this.wingman) drawText(ctx, B.wingmanShare(Math.round(this.wingman.share * 100)), 12, 256, { color: COLORS.dim });
+    }
     drawText(ctx, B.hostiles, 104, 203, { color: COLORS.dim });
     hostiles(mission).slice(0, 5).forEach((line, i) => drawText(ctx, line, 104, 213 + i * 10));
-    drawList(ctx, this.list, 236, 216, 56, 2);
+    drawList(ctx, this.list, 236, this.hires.length > 0 ? 210 : 216, 56, 3);
   }
 }
