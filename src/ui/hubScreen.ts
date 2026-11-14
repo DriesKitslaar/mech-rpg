@@ -25,8 +25,8 @@ export class HubScreen implements Screen {
   private inArchive = false;
   private clock = 0;
 
-  /** `list` opens with that list showing, for returning from a briefing. */
-  constructor(private app: App, list?: 'contracts' | 'archive') {
+  /** `list` opens with that list showing, and the cursor on the entry `at`, for returning from a briefing. */
+  constructor(private app: App, list?: 'contracts' | 'archive', at?: string) {
     const errors = app.buildErrors();
     const unread = app.unreadCount();
     const points = perkPoints(app.game!, PERKS);
@@ -45,6 +45,8 @@ export class HubScreen implements Screen {
     if (list && errors.length === 0) {
       this.openContracts();
       if (list === 'archive' && this.app.archive().length > 0) this.openArchive();
+      const index = this.sub!.items.findIndex((item) => item.id === at);
+      if (index >= 0) this.sub!.cursor = index;
     }
   }
 

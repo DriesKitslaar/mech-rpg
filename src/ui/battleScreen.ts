@@ -14,17 +14,24 @@ import { BattleFx, MELEE_MS, PROJECTILE_MS, flightFor, type Scene } from './batt
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import type { Sprite, SpriteStore } from './sprites';
+import { fitTags, tagWidth, type Tag } from './tags';
 import { Typewriter } from './typewriter';
 import { drawWeather, weatherFor } from './weather';
-import { COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
 
 export { BattleFlow } from './battleFlow';
 export type { BattlePhase, FlowOptions, MenuView } from './battleFlow';
 
-/** The box a line of talk is shown in, and how much text fits: lines of `TALK_CHARS`, at most `TALK_LINES` of them. */
-const TALK = { x: 4, y: 116, w: LOGICAL_W - 8, h: 58, portrait: 48 };
-export const TALK_CHARS = charsFor(TALK.w - TALK.portrait - 18);
+const PANEL_Y = 178;
+/**
+ * The box a line of talk is shown in: the panel under the field, where the menu is at other times,
+ * so that whatever is being talked about stays in view. Lines of `TALK_CHARS`, at most `TALK_LINES`.
+ */
+const TALK = { x: 0, y: PANEL_Y, w: LOGICAL_W, h: LOGICAL_H - PANEL_Y, portrait: 48 };
+export const TALK_CHARS = charsFor(TALK.w - TALK.portrait - 26);
 export const TALK_LINES = 3;
+/** How long a press is ignored after a line comes up, and after the press that finished writing it: a mashed button skips nothing unread. */
+export const TALK_HOLD_MS = 250;
 
 const MESSAGE_MS = 600;
 /** How long the banner that opens a battle stays up: longer when it warns of a boss. */
@@ -45,7 +52,6 @@ const DUEL_RIGHT = 330;
 const DUEL_BODY = { x: 192, y: 22, w: 118, h: 150 };
 /** In a duel the player's mech stands this much further left, so two full-size mechs cross weapons, not bodies. */
 const DUEL_SHIFT = 6;
-const PANEL_Y = 178;
 /** Sprites of units that fly: these bob up and down, everything else stands still. */
 const FLYERS = new Set([
   'enemy-recon-drone', 'enemy-gunship', 'enemy-shield-drone', 'enemy-repair-drone', 'enemy-lien-drone', 'boss-overseer',
@@ -70,6 +76,8 @@ export class BattleScreen {
   /** The line of talk being written out, and the writer doing it. */
   private talkLine: unknown = null;
   private talkWriter: Typewriter | null = null;
+  /** What is left of the time a press on a line of talk is ignored. */
+  private talkHold = 0;
   private typeTick = 0;
   /** What is left of the opening banner, and how long it lasts in all. Nothing else moves while it is up. */
   private intro: number;
@@ -131,6 +139,9 @@ export class BattleScreen {
     if (line !== this.talkLine) {
       this.talkLine = line;
       this.talkWriter = line ? new Typewriter(wrap(line.text, TALK_CHARS).slice(0, TALK_LINES), undefined, this.opts.fast) : null;
+      this.talkHold = line && !this.opts.fast ? TALK_HOLD_MS : 0;
+    } else {
+      this.talkHold = Math.max(0, this.talkHold - realMs);
     }
     if (!this.talkWriter) return;
     this.typeTick -= realMs;
@@ -176,10 +187,15 @@ export class BattleScreen {
       if (action === 'confirm') { this.timer = 0; this.flow.advance(); }
       return;
     }
-    // The first press on a line still being written finishes it; the next one goes on.
-    if (this.flow.phase === 'talk' && action === 'confirm' && this.talkWriter && !this.talkWriter.done) {
-      this.talkWriter.finish();
-      return;
+    // The first press on a line still being written finishes it; the next one goes on. A press that
+    // comes straight after the line appeared, or straight after the one that finished it, is ignored.
+    if (this.flow.phase === 'talk' && action === 'confirm') {
+      if (this.talkHold > 0) return;
+      if (this.talkWriter && !this.talkWriter.done) {
+        this.talkWriter.finish();
+        this.talkHold = this.opts.fast ? 0 : TALK_HOLD_MS;
+        return;
+      }
     }
     // In targeting, left/right also switch enemies.
     if (this.flow.phase === 'target' && (action === 'left' || action === 'right')) {
@@ -215,9 +231,11 @@ export class BattleScreen {
 
     this.drawMessage(ctx);
     this.drawObjective(ctx);
-    this.drawBottom(ctx);
+    // While someone talks, their words have the panel: there is nothing to choose until they are done.
+    const talking = this.flow.phase === 'talk' && this.intro <= 0;
+    if (!talking) this.drawBottom(ctx);
     if (this.intro > 0) return this.drawIntro(ctx);
-    if (this.flow.phase === 'talk') this.drawTalk(ctx);
+    if (talking) this.drawTalk(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
   }
 
@@ -381,36 +399,42 @@ export class BattleScreen {
     return null;
   }
 
-  /** Short labels for everything that is on a unit right now, what it does for its side first. */
-  private tagsOf(unit: UnitState): { text: string; color: string }[] {
+  /**
+   * Short labels for everything that is on a unit right now, what it does for its side first. The
+   * rank says what is left out when a row has no room for them all: what a unit is goes before what
+   * is about to happen to the pilot.
+   */
+  private tagsOf(unit: UnitState): Tag[] {
     const T = STRINGS.tags;
     const state = this.flow.state;
     const jammed = unit.side === 'player' ? jamOn(state, unit) : 0;
     return [
-      ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger }] : []),
-      ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy }] : []),
-      ...(unit.abilities.jam !== undefined ? [{ text: T.jammer, color: COLORS.heat }] : []),
-      ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor }] : []),
-      ...(unit.abilities.carrier ? [{ text: T.carrier, color: COLORS.heat }] : []),
-      ...(aegisFactor(state, unit) < 1 ? [{ text: T.covered, color: COLORS.energy }] : []),
-      ...(jammed > 0 ? [{ text: T.jammed(jammed), color: COLORS.heat }] : []),
-      ...(unit.boosted ? [{ text: T.boost, color: COLORS.energy }] : []),
-      ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor }] : []),
-      ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat }] : []),
-      ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy }] : []),
-      ...(unit.painted > 0 ? [{ text: T.painted, color: COLORS.danger }] : []),
-      ...(unit.chaff > 0 ? [{ text: T.chaff, color: COLORS.dim }] : []),
+      ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger, rank: 9 }] : []),
+      ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy, rank: 2 }] : []),
+      ...(unit.abilities.jam !== undefined ? [{ text: T.jammer, color: COLORS.heat, rank: 2 }] : []),
+      ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor, rank: 2 }] : []),
+      ...(unit.abilities.carrier ? [{ text: T.carrier, color: COLORS.heat, rank: 2 }] : []),
+      ...(aegisFactor(state, unit) < 1 ? [{ text: T.covered, color: COLORS.energy, rank: 4 }] : []),
+      ...(jammed > 0 ? [{ text: T.jammed(jammed), color: COLORS.heat, rank: 5 }] : []),
+      ...(unit.boosted ? [{ text: T.boost, color: COLORS.energy, rank: 5 }] : []),
+      ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor, rank: 6 }] : []),
+      ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat, rank: 8 }] : []),
+      ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy, rank: 7 }] : []),
+      ...(unit.painted > 0 ? [{ text: T.painted, color: COLORS.danger, rank: 3 }] : []),
+      ...(unit.chaff > 0 ? [{ text: T.chaff, color: COLORS.dim, rank: 3 }] : []),
     ];
   }
 
-  /** Draws a unit's tags in a row; from the right edge when `right` is set. Returns whether there were any. */
-  private drawTags(ctx: CanvasRenderingContext2D, unit: UnitState, x: number, y: number, right = false): boolean {
-    const tags = this.tagsOf(unit);
-    const width = (text: string) => text.length * 4 + 5;
-    let at = right ? x - tags.reduce((sum, t) => sum + width(t.text), 0) + 5 : x;
+  /**
+   * Draws as many of a unit's tags as fit in `room` pixels, in a row; from the right edge when
+   * `right` is set. Returns whether there were any.
+   */
+  private drawTags(ctx: CanvasRenderingContext2D, unit: UnitState, x: number, y: number, room: number, right = false): boolean {
+    const tags = fitTags(this.tagsOf(unit), room);
+    let at = right ? x - tags.reduce((sum, t) => sum + tagWidth(t.text), 0) + 5 : x;
     for (const tag of tags) {
       drawText(ctx, tag.text, at, y + 1, { size: 10, color: tag.color });
-      at += width(tag.text);
+      at += tagWidth(tag.text);
     }
     return tags.length > 0;
   }
@@ -515,19 +539,20 @@ export class BattleScreen {
     drawMeter(ctx, textW + 9, 18, meterW - 4, 4, value, max, color);
   }
 
-  /** The line being said: the speaker's face, their name, and the words, over the field. */
+  /** The line being said: the speaker's face, their name, and the words, in the panel under the field. */
   private drawTalk(ctx: CanvasRenderingContext2D): void {
     const line = this.flow.spoken;
-    if (!line) return;
     const { x, y, w, h, portrait } = TALK;
     drawPanel(ctx, x, y, w, h);
-    drawPortrait(ctx, this.sprites, line.portrait, x + 5, y + 5, portrait);
-    const left = x + portrait + 12;
-    drawText(ctx, line.who.toUpperCase(), left, y + 5, { color: COLORS.accent });
+    if (!line) return;
+    drawPortrait(ctx, this.sprites, line.portrait, x + 10, y + 10, portrait);
+    const left = x + portrait + 20;
+    drawText(ctx, line.who.toUpperCase(), left, y + 10, { color: COLORS.accent });
     const rows = this.talkWriter?.visible() ?? wrap(line.text, TALK_CHARS).slice(0, TALK_LINES);
-    rows.forEach((row, i) => drawText(ctx, row, left, y + 18 + i * LINE));
+    // The panel has room to spare: the lines stand a little further apart than usual.
+    rows.forEach((row, i) => drawText(ctx, row, left, y + 26 + i * (LINE + 3)));
     // The prompt to go on shows once the line is all there.
-    if ((this.talkWriter?.done ?? true) && Math.floor(this.clock / 320) % 2 === 0) drawText(ctx, 'A', x + w - 10, y + h - 13, { color: COLORS.dim });
+    if ((this.talkWriter?.done ?? true) && Math.floor(this.clock / 320) % 2 === 0) drawText(ctx, 'A', x + w - 14, y + h - 16, { color: COLORS.dim });
   }
 
   private drawBottom(ctx: CanvasRenderingContext2D): void {
@@ -555,8 +580,10 @@ export class BattleScreen {
     const width = 144;
     const target = aiming && this.flow.targetId ? this.flow.state.units.find((u) => u.id === this.flow.targetId) : undefined;
     if (target) {
-      drawText(ctx, target.name.toUpperCase(), x, top, { color: COLORS.accent });
-      this.drawTags(ctx, target, x + width, top, true);
+      const name = target.name.toUpperCase();
+      drawText(ctx, name, x, top, { color: COLORS.accent });
+      // The tags get what the name leaves of the row, less a gap.
+      this.drawTags(ctx, target, x + width, top, width - Math.ceil(name.length * CHAR_W) - 4, true);
       let y = this.drawParts(ctx, target, x, top + LINE, this.flow.targetPart);
       y = this.drawStability(ctx, target, x, y, width);
       const p = this.flow.preview;
@@ -566,8 +593,10 @@ export class BattleScreen {
       }
       this.drawEnergyAndHeat(ctx, player, 6, LOGICAL_H - 2 * LINE - 2, 132);
     } else {
-      if (!this.drawTags(ctx, player, x, top)) drawText(ctx, STRINGS.headings.you, x, top, { color: COLORS.dim });
-      drawText(ctx, `${STRINGS.meters.repairs} ${player.repairsLeft}`, x + width, top, { color: COLORS.dim, align: 'right' });
+      const repairs = `${STRINGS.meters.repairs} ${player.repairsLeft}`;
+      // The pilot's own tags stop short of the repairs count at the other end of the row.
+      if (!this.drawTags(ctx, player, x, top, width - Math.ceil(repairs.length * CHAR_W) - 4)) drawText(ctx, STRINGS.headings.you, x, top, { color: COLORS.dim });
+      drawText(ctx, repairs, x + width, top, { color: COLORS.dim, align: 'right' });
       let y = this.drawParts(ctx, player, x, top + LINE, null);
       y = this.drawStability(ctx, player, x, y, width);
       this.drawEnergyAndHeat(ctx, player, x, y, width);

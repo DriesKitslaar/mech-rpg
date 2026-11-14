@@ -186,16 +186,23 @@ export function introductionsDone(state: GameState, missions: Mission[]): boolea
   return state.cycle > 0 || all(missions, 'intro').every((m) => state.completed.includes(m.id));
 }
 
-export const CYCLE_SCALE = 0.35;
+export const CYCLE_SCALE = 0.25;
 export const CYCLE_PAY = 0.5;
 
-/** A story contract as it is offered in the given cycle: tougher enemies, better pay. The patrol never changes. */
+/**
+ * A story contract as it is offered in the given cycle: tougher enemies, better pay. What has to be
+ * protected grows sturdier by as much as the enemies grow tougher: it loses armour by the head of
+ * enemy standing, and tougher enemies stand longer. The patrol never changes.
+ */
 export function forCycle(mission: Mission, cycle: number): Mission {
   if (cycle <= 0 || mission.phase === 'patrol') return mission;
+  const tougher = 1 + CYCLE_SCALE * cycle;
   return {
     ...mission,
     reward: Math.round(mission.reward * (1 + CYCLE_PAY * cycle)),
-    scale: Math.round((mission.scale ?? 1) * (1 + CYCLE_SCALE * cycle) * 100) / 100,
+    scale: Math.round((mission.scale ?? 1) * tougher * 100) / 100,
+    battles: mission.battles.map((battle) =>
+      (battle.objective?.type === 'protect' ? { ...battle, objective: { ...battle.objective, hp: Math.ceil(battle.objective.hp * tougher) } } : battle)),
   };
 }
 
@@ -224,12 +231,17 @@ export function reached(state: GameState, condition: Condition, missions: Missio
 /**
  * What the shop sells now. `unlocks` maps a part id to the contract (or `'choice'`, or `'arena:N'`)
  * that puts it in stock. Vendors do not forget a pilot: from the second cycle on, everything a
- * contract unlocks stays in stock. Arena prizes always need the rank.
+ * contract unlocks stays in stock. Arena prizes always need the rank. What the third act unlocks
+ * stays only for a pilot who has given a verdict before: a game that reached a later cycle when the
+ * story still ended with the war has never met Meridian, and is not sold its parts.
  */
 export function stockFor(state: GameState, parts: Part[], unlocks: Record<string, string>, missions: Mission[]): Part[] {
-  const open = (condition: string): boolean =>
-    (state.cycle > 0 && !condition.startsWith('arena:')) || reached(state, condition, missions);
-  return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || open(unlocks[part.id]));
+  const actThree = (condition: string): boolean =>
+    condition === 'verdict' || missions.some((m) => m.id === condition && (m.phase === 'audit' || m.phase === 'verdict'));
+  // Every won story contract leaves a rank, and ranks are kept through the cycles.
+  const judged = all(missions, 'verdict').some((m) => Object.hasOwn(state.ranks, m.id));
+  const kept = (condition: string): boolean => state.cycle > 0 && !condition.startsWith('arena:') && (!actThree(condition) || judged);
+  return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || kept(unlocks[part.id]) || reached(state, unlocks[part.id], missions));
 }
 
 /** Messages that have arrived, oldest first. */

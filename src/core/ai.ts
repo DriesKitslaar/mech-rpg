@@ -255,6 +255,13 @@ export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Ac
       return (shot.shots - 1) * Math.ceil(shot.damage / 2) < target.parts.core!.ap;
     });
   }
+  // A salvo aimed at something else also lands on the core of a machine wanted in one piece: it stays
+  // in its rack when that hit could be the one that finishes the machine.
+  const wanted = state.objective.type === 'disable' ? objectiveTarget(state) : undefined;
+  if (wanted && !wanted.destroyed && wanted.id !== target.id) {
+    usable = usable.filter((u) =>
+      u.weapon.trait !== 'salvo' || previewShot(state, me.id, u.slot, wanted.id, 'core', catalog).damage < wanted.parts.core!.ap);
+  }
   // A target that will outlast this turn's volley, and that the volley can knock off balance, gets the
   // hardest-pushing weapons first, so the rest land on a staggered mech. Small fry is shot as it comes.
   const volley = usable.map((u) => previewShot(state, me.id, u.slot, target.id, part, catalog));

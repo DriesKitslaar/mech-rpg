@@ -2,7 +2,7 @@ import { createBattle, type BattleOptions } from '../../src/core/battle';
 import { completeMission } from '../../src/core/campaign';
 import type { EnemyDef } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
-import { BattleFlow, BattleScreen, INTRO_MS, WARNING_MS } from '../../src/ui/battleScreen';
+import { BattleFlow, BattleScreen, INTRO_MS, TALK_HOLD_MS, WARNING_MS } from '../../src/ui/battleScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
@@ -149,11 +149,13 @@ describe('the screens the three-act story added', () => {
     // The line is still being written: the first press finishes it, the second goes on.
     const line = 'Count the hostiles. That is what the train loses';
     expect(texts(calls)).not.toContain(line);
+    app.update(TALK_HOLD_MS);
     press(app, 'confirm');
     expect(snap(app).battle?.phase).toBe('talk');
     calls.length = 0;
     app.draw(ctx);
     expect(texts(calls)).toContain(line);
+    app.update(TALK_HOLD_MS);
     press(app, 'confirm');
     expect(snap(app).battle?.phase).not.toBe('talk');
     for (let i = 0; i < 400 && snap(app).battle?.phase !== 'action'; i++) { app.update(16); app.draw(ctx); }
@@ -206,6 +208,113 @@ describe('the screens the three-act story added', () => {
     expect(flow.phase).toBe('target');
     screen.draw(ctx);
     expect(texts(calls)).toEqual(expect.arrayContaining(['LEVIATHAN', 'CARRIER', 'Hull', 'Wheel', 'Crane', 'Deck']));
+  });
+
+  test('tags never run into the name beside them: with no room for all, the least pressing are left out', () => {
+    // The Adjuster with a barrier up and its decree loaded has three tags and a long name.
+    const state = structuredClone(createBattle(REFERENCE_BUILDS.tier6, [ENEMIES.adjuster], CATALOG, 7));
+    const boss = state.units[1];
+    boss.barrier = 170;
+    boss.charged = ['shoulder'];
+    const flow = new BattleFlow(state, CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: true });
+    for (let i = 0; i < 50 && flow.phase !== 'action'; i++) screen.update(16);
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    expect(flow.phase).toBe('target');
+    const { ctx, calls } = recorder();
+    screen.draw(ctx);
+    const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), x: Number(c.args[1]), y: Number(c.args[2]) }));
+    const name = drawn.find((d) => d.text === 'THE ADJUSTER')!;
+    const row = drawn.filter((d) => ['CARRIER', 'CHARGING', 'BARRIER 170'].includes(d.text) && Math.abs(d.y - name.y) <= 1);
+    // What is about to hurt stays; what the machine is, the briefing has already said.
+    expect(row.map((d) => d.text)).toEqual(['CHARGING', 'BARRIER 170']);
+    expect(Math.min(...row.map((d) => d.x))).toBeGreaterThanOrEqual(name.x + 'THE ADJUSTER'.length * 4.8);
+  });
+
+  test('the pilot\'s own tags stop short of the repairs count', () => {
+    const state = structuredClone(createBattle(REFERENCE_BUILDS.tier6, [ENEMIES.overseer], CATALOG, 7));
+    const me = state.units[0];
+    me.barrier = 170;
+    me.guarding = true;
+    me.boosted = true;
+    me.chaff = 20;
+    const flow = new BattleFlow(state, CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: true });
+    for (let i = 0; i < 50 && flow.phase !== 'action'; i++) screen.update(16);
+    const { ctx, calls } = recorder();
+    screen.draw(ctx);
+    const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), x: Number(c.args[1]), y: Number(c.args[2]) }));
+    const repairs = drawn.find((d) => d.text.startsWith('REPAIRS'))!;
+    const tags = drawn.filter((d) => Math.abs(d.y - repairs.y) <= 1 && d !== repairs);
+    expect(tags.length).toBeGreaterThanOrEqual(2);
+    // The count is written from the right edge; every tag ends before it begins.
+    const repairsLeft = repairs.x - repairs.text.length * 4.8;
+    for (const tag of tags) expect(tag.x + tag.text.length * 4, tag.text).toBeLessThanOrEqual(repairsLeft);
+    expect(tags.map((d) => d.text)).not.toContain('CHAFF');
+  });
+
+  test('a settlement with a rank bonus and four repair lines keeps them clear of what the client says', () => {
+    const app = start({ ...done('intro-1', 'intro-2'), scenes: ['act-1'] });
+    const mission = MISSIONS.find((m) => m.id === 'hadron-1')!;
+    const lines = ['head-scout-mk1', 'core-hauler', 'arms-rigger', 'legs-strider'].map((partId) => ({ partId, lost: 9, cost: 7 }));
+    app.showSettlement({ won: true, reward: 1600, ammoCost: 120, repairCost: 28, net: 1612, lines, rank: 'A', score: 80, bonus: 160 }, mission);
+    const { ctx, calls } = recorder();
+    app.draw(ctx);
+    const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) }));
+    const lowest = Math.max(...drawn.filter((d) => /^ {2}\S/.test(d.text)).map((d) => d.y));
+    expect(drawn.filter((d) => /^ {2}\S/.test(d.text))).toHaveLength(4);
+    expect(drawn.some((d) => d.text === 'Rank A bonus')).toBe(true);
+    const debrief = Math.min(...drawn.filter((d) => d.y >= 140 && d.y < 180).map((d) => d.y));
+    // A line of text is eleven pixels high.
+    expect(lowest + 11).toBeLessThanOrEqual(debrief);
+  });
+
+  /** A battle with one line of talk at its start, past its banner, with the line on screen. */
+  function talking() {
+    const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['gun-turret'], ENEMIES['recon-drone']], CATALOG, 7);
+    const flow = new BattleFlow(state, CATALOG, { talk: [{ at: 'start', who: 'Dispatch', text: 'Two hostiles. The one on the ground cannot dodge, so start with that one.' }] });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false });
+    screen.update(INTRO_MS + 16);
+    screen.update(16);
+    const drawn = () => {
+      const { ctx, calls } = recorder();
+      screen.draw(ctx);
+      return calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) }));
+    };
+    return { flow, screen, drawn };
+  }
+
+  test('talk is written in the panel under the field: nothing on the field is covered, and the menu is put away meanwhile', () => {
+    const { flow, drawn } = talking();
+    expect(flow.phase).toBe('talk');
+    const all = drawn();
+    const who = all.find((d) => d.text === 'DISPATCH')!;
+    // The field ends where the panel begins, 178 pixels down.
+    expect(who.y).toBeGreaterThanOrEqual(178);
+    expect(all.filter((d) => d.y >= 178).every((d) => d.y < 270)).toBe(true);
+    // Nothing of the menu or of the pilot's own panel shows through.
+    expect(all.some((d) => d.text.startsWith('REPAIRS'))).toBe(false);
+    expect(all.some((d) => d.text === 'Fire')).toBe(false);
+  });
+
+  test('a press that comes too soon after a line appears, or after the press that finished writing it, does nothing', () => {
+    const { flow, screen, drawn } = talking();
+    const whole = 'Two hostiles. The one on the ground cannot dodge,';
+    // Mashed at once: the line goes on writing itself.
+    screen.onInput('confirm');
+    expect(drawn().some((d) => d.text === whole)).toBe(false);
+    screen.update(TALK_HOLD_MS);
+    screen.onInput('confirm');
+    expect(drawn().some((d) => d.text === whole)).toBe(true);
+    // Mashed again at once: the line stays up to be read.
+    screen.onInput('confirm');
+    screen.update(TALK_HOLD_MS - 20);
+    screen.onInput('confirm');
+    expect(flow.phase).toBe('talk');
+    screen.update(40);
+    screen.onInput('confirm');
+    expect(flow.phase).not.toBe('talk');
   });
 
   test('a boss with phases says its line, and every new kind of event has something to draw', () => {

@@ -158,16 +158,21 @@ export const ENEMIES: Record<string, EnemyDef> = {
     build: { ...RONIN, generator: 'gen-furnace', module: 'mod-barrier', rightHand: 'wpn-enemy-lance', shoulder: 'wpn-enemy-rack' },
     phases: [{ at: 0.5, damage: 1.2, evasion: 6, line: 'Good. I was told you would be worth the fee.' }],
   },
-  // Ashfall with nothing held back and nobody paying: the last debt on Meridian's list.
+  // Ashfall with nothing held back and nobody paying: the last debt on Meridian's list. Lance and rack
+  // while there is distance to keep; in the last third the edge comes out, and the reactor is run past
+  // its limit to feed a boost, the edge and a gun in the same turn.
   'ashfall-unbound': {
     id: 'ashfall-unbound', name: 'Ashfall', ai: 'bruiser', sprite: 'enemy-rival', composed: true, portrait: 'portrait-rival',
     build: {
       ...RONIN, ...STOCK, generator: 'gen-tidal', booster: 'bst-ram', module: 'mod-barrier',
-      rightHand: 'wpn-enemy-lance', leftHand: 'wpn-enemy-edge', shoulder: 'wpn-enemy-rack',
+      rightHand: 'wpn-enemy-lance', shoulder: 'wpn-enemy-rack',
     },
     phases: [
       { at: 0.66, damage: 1.15, line: 'So you signed. I hope the pen was heavy.' },
-      { at: 0.33, ai: 'skirmisher', damage: 1.2, evasion: 10, line: 'Nobody is paying me for this part. That is how you know I mean it.' },
+      {
+        at: 0.33, ai: 'skirmisher', damage: 1.2, evasion: 10, energy: 60, refit: { leftHand: 'wpn-enemy-edge' },
+        line: 'Nobody is paying me for this part. That is how you know I mean it.',
+      },
     ],
   },
 

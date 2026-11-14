@@ -34,6 +34,8 @@ export function wrap(text: string, maxChars: number): string[] {
 
 /** Characters of the UI font that fit in `width` logical pixels at `size`. */
 export const charsFor = (width: number, size = 12): number => Math.max(1, Math.floor(width / (size * 0.4)));
+/** How wide one character of the UI font is at the usual size. */
+export const CHAR_W = 4.8;
 
 export interface TextOptions { size?: number; color?: string; align?: CanvasTextAlign; strike?: boolean }
 
@@ -76,9 +78,6 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, sprites: Sprites, id
     ctx.fillRect(x + step, y + Math.round(size * 0.18) + i * step, size - 2 * step - i * Math.round(size / 11), Math.max(2, Math.round(size / 18)));
   }
 }
-
-/** How wide one character of the UI font is at the usual size. */
-export const CHAR_W = 4.8;
 
 /** A row of page names ending at `right`, the current one lit: for screens the shoulder buttons page through. */
 export function drawTabs(ctx: CanvasRenderingContext2D, right: number, y: number, labels: string[], current: number): void {

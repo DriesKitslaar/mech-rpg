@@ -272,11 +272,13 @@ export class BattleFlow {
       this.state = applyAction(this.state, action, this.catalog);
       return;
     }
-    // The player's turn: whatever is said at the start of this round is said first, once.
-    const { round } = this.state;
-    const lines = this.roundsSaid.has(round) ? [] : this.lines(round);
-    this.roundsSaid.add(round);
-    this.say(lines, () => this.openActionMenu());
+    // The player's turn: whatever was to be said by this round and has not been is said first, once.
+    // A round the pilot sat out (a turn lost to heat) keeps its line for the next turn they do get.
+    const due = [...new Set((this.opts.talk ?? []).flatMap((line) => (typeof line.at === 'number' ? [line.at] : [])))]
+      .filter((round) => round <= this.state.round && !this.roundsSaid.has(round))
+      .sort((a, b) => a - b);
+    for (const round of due) this.roundsSaid.add(round);
+    this.say(due.flatMap((round) => this.lines(round)), () => this.openActionMenu());
   }
 
   private openActionMenu(): void {
