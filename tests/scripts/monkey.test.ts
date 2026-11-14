@@ -43,8 +43,7 @@ type Snap = {
 /** Gets to the hub from wherever the game is, the way a person who has had enough would: back out, give up the fight, press through. */
 function walkToHub(app: App): number {
   const snap = () => app.snapshot() as Snap;
-  // The random presses may have swapped A and B in the options; a person presses whichever now does the job.
-  const push = (want: InputAction): void => app.onInput(app.meant(want));
+  const push = (want: InputAction): void => app.onInput(want);
   for (let presses = 0; presses < 4000; presses++) {
     const s = snap();
     if (s.screen === 'hub') {
@@ -88,7 +87,7 @@ function monkey(seed: number, steps: number, saved: GameState | undefined, refus
     const index = items.findIndex((item) => item.id === enter && item.enabled);
     if (index >= 0) {
       for (let i = 0; i < index; i++) app.onInput('down');
-      app.onInput(app.meant('confirm'));
+      app.onInput('confirm');
     }
   }
   flaky = true;

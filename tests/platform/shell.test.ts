@@ -26,3 +26,26 @@ test('the launch screen of Android 12 and later is given a colour and an icon th
   expect(readFileSync('android/app/src/main/res/values/ic_launcher_background.xml', 'utf8')).toContain('name="ic_launcher_background"');
   expect(() => readFileSync('android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png')).not.toThrow();
 });
+
+test('every key the shell sends is one the page listens for, and the pad\'s A and B go under names of their own', async () => {
+  const { KEY_MAP, FACE_KEYS } = await import('../../src/platform/input');
+  const java = readFileSync('android/app/src/main/java/com/ironwage/game/MainActivity.java', 'utf8');
+  const sent = Object.fromEntries([...java.matchAll(/KEYS\.put\(KeyEvent\.KEYCODE_(\w+), "(\w+)"\)/g)].map((m) => [m[1], m[2]]));
+  expect(Object.keys(sent).length).toBeGreaterThanOrEqual(12);
+  for (const [key, code] of Object.entries(sent)) expect(Object.hasOwn(KEY_MAP, code), `${key} is sent as ${code}`).toBe(true);
+  // The two buttons the options can swap are told apart from everything else that confirms or goes back.
+  expect(sent.BUTTON_A).toBe('ButtonA');
+  expect(sent.BUTTON_B).toBe('ButtonB');
+  expect([sent.BACK, sent.ENTER, sent.DPAD_CENTER]).toEqual(['Escape', 'Enter', 'Enter']);
+  for (const [key, code] of Object.entries(sent)) expect(FACE_KEYS.has(code), key).toBe(key === 'BUTTON_A' || key === 'BUTTON_B');
+});
+
+test('the picture stays the way the handheld is held, and the game has the whole screen from the start', () => {
+  const manifest = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+  // Not sensorLandscape: a handheld with fixed controls must not turn its picture upside down.
+  expect(manifest).toContain('android:screenOrientation="landscape"');
+  const config = readFileSync('capacitor.config.ts', 'utf8');
+  // The framework's own system-bars plugin would otherwise show the bars at load and pad the page by them.
+  expect(config).toMatch(/SystemBars:\s*\{[^}]*hidden:\s*true/);
+  expect(config).toMatch(/SystemBars:\s*\{[^}]*insetsHandling:\s*'disable'/);
+});

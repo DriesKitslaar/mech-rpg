@@ -7,8 +7,8 @@
     <link rel="icon" type="image/png" href="sprites/app-icon.png" />
     <style>
       html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-      body { display: flex; align-items: center; justify-content: center; }
-      canvas { image-rendering: pixelated; display: block; }
+      /* The game places the canvas itself, on whole device pixels. */
+      canvas { position: absolute; left: 0; top: 0; image-rendering: pixelated; display: block; }
     </style>
   </head>
   <body>

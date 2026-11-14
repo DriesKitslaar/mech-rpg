@@ -175,6 +175,7 @@ export const STRINGS = {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
     credits: 'End Roll', watch: 'Watch', title: 'Quit to Title',
     swapAB: 'A/B Buttons', normal: 'Normal', swapped: 'Swapped', swapHelp: 'Swap them if B confirms on your handheld.',
+    unsaved: 'Not saved', unsavedHelp: 'The last change could not be saved. A again: quit.',
     on: 'On', off: 'Off',
     difficulties: { story: 'Story', standard: 'Standard', veteran: 'Veteran' },
     difficultyHelp: {
@@ -280,5 +281,5 @@ export const STRINGS = {
       chaff: 'CHAFF', limiter: 'LIMITER',
     },
   },
-  debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
+  debug: { title: 'INPUT', action: 'action', key: 'key', screen: 'screen', error: 'error', close: 'START: close', none: '-' },
 } as const;

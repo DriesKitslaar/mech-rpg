@@ -4,7 +4,11 @@ import { NO_STATS } from '../../src/core/stats';
 import { WORLD } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { CATALOG } from '../../src/content/parts';
-import { autoBattle, done, fresh, ids, inHub, makeApp, medalPay, press, retreat, savedGame, select, snap, strong } from '../helpers/app';
+import { SAVE_KEY, SaveFile } from '../../src/platform/storage';
+import { App } from '../../src/ui/app';
+import {
+  autoBattle, done, fresh, ids, inHub, makeApp, medalPay, memoryStore, press, retreat, savedGame, select, snap, sprites, strong,
+} from '../helpers/app';
 
 /** A pilot for whom nothing is waiting to be announced, so that credits only move for the reason under test. */
 const quiet = (base = fresh()) => ({ ...base, codex: WORLD.map((entry) => entry.id), scenes: ['act-1'] });
@@ -272,6 +276,73 @@ describe('leaving a game for the title', () => {
   });
 });
 
+describe('the options, pressed the wrong way', () => {
+  const toRow = (app: App, id: string): void => {
+    for (let i = 0; i < 20 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');
+    expect(snap(app).menu.items[snap(app).menu.cursor]?.id).toBe(id);
+  };
+
+  test('left and right change a setting, but never set off an entry that does something', () => {
+    const { app } = inHub(quiet({ ...fresh(), endingSeen: true, cycle: 1 }));
+    select(app, 'options');
+    toRow(app, 'credits');
+    press(app, 'left', 'right');
+    expect(snap(app).screen).toBe('options');
+    toRow(app, 'title');
+    press(app, 'left', 'right');
+    expect(snap(app)).toMatchObject({ screen: 'options', callsign: 'PILOT' });
+    // A setting still answers to them.
+    press(app, 'up', 'up', 'up');
+    const at = snap(app).menu.items[snap(app).menu.cursor];
+    expect(at.id).toBe('difficulty');
+    press(app, 'right');
+    expect(snap(app).menu.items[snap(app).menu.cursor].note).not.toBe(at.note);
+  });
+
+  /** A game over storage that can be told to refuse every write. */
+  function flaky(saved = quiet({ ...fresh(), credits: 500 })) {
+    const state = { refuse: false };
+    const inner = memoryStore({ [SAVE_KEY]: JSON.stringify(saved) });
+    const store = { ...inner, setItem: (k: string, v: string) => { if (state.refuse) throw new Error('full'); inner.setItem(k, v); } };
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 2 });
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+    return { app, inner, state };
+  }
+
+  test('leaving for the title after a change that could not be saved warns first, and leaves on the second press', () => {
+    const { app, inner, state } = flaky();
+    state.refuse = true;
+    select(app, 'garage');
+    press(app, 'next', 'cancel');
+    expect(snap(app).saveFailed).toBe(true);
+    select(app, 'options');
+    toRow(app, 'title');
+    press(app, 'confirm');
+    // Still here, and the entry says why.
+    expect(snap(app)).toMatchObject({ screen: 'options', callsign: 'PILOT' });
+    expect(snap(app).menu.items.find((i) => i.id === 'title')!.note).toBe('Not saved');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('title');
+    expect(savedGame(inner).paint).toBe('factory');
+  });
+
+  test('if storage takes the game after all, leaving saves it on the way out and says nothing', () => {
+    const { app, inner, state } = flaky();
+    state.refuse = true;
+    select(app, 'garage');
+    press(app, 'next', 'cancel');
+    expect(savedGame(inner).paint).toBe('factory');
+    state.refuse = false;
+    select(app, 'options');
+    toRow(app, 'title');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('title');
+    // The repaint that could not be written then is written now.
+    expect(savedGame(inner).paint).not.toBe('factory');
+  });
+});
+
 describe('swapped A and B buttons', () => {
   test('the options have a switch for it, off to begin with', () => {
     const { app } = inHub(quiet());
@@ -279,36 +350,39 @@ describe('swapped A and B buttons', () => {
     expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ label: 'A/B Buttons', note: 'Normal' });
   });
 
-  test('switched on, the button that went back now confirms and the one that confirmed goes back, and it is remembered', () => {
+  test('switching it on is remembered with the options and the game; switching it off again forgets it', () => {
     const { app, store } = inHub(quiet());
     select(app, 'options');
     select(app, 'swapAB');
     expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Swapped' });
     expect(JSON.parse(store.data['ironwage-settings']).swapAB).toBe(true);
-    // What used to confirm now backs out of the options...
+    expect(savedGame(store).settings.swapAB).toBe(true);
+    expect((snap(app).settings as { swapAB?: boolean }).swapAB).toBe(true);
     press(app, 'confirm');
-    expect(snap(app).screen).toBe('hub');
-    // ...and what used to go back now opens what is under the cursor.
-    press(app, 'cancel');
-    expect(snap(app)).toMatchObject({ screen: 'hub', list: 'contracts' });
-    press(app, 'confirm');
-    expect(snap(app)).toMatchObject({ list: 'main' });
-    // Switched off again the same way, the buttons are as they were.
-    for (let i = 0; i < 20 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'options'; i++) press(app, 'down');
-    press(app, 'cancel');
-    expect(snap(app).screen).toBe('options');
-    for (let i = 0; i < 20 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'swapAB'; i++) press(app, 'down');
-    press(app, 'cancel');
     expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Normal' });
-    press(app, 'cancel');
-    expect(snap(app).screen).toBe('hub');
     expect(JSON.parse(store.data['ironwage-settings']).swapAB).toBeUndefined();
+    expect(savedGame(store).settings.swapAB).toBeUndefined();
   });
 
-  test('a game started with the buttons swapped keeps them swapped', () => {
-    const { app } = makeApp(quiet({ ...fresh(), settings: { ...fresh().settings, swapAB: true } }));
-    // On the title, what used to go back is the button that continues.
+  test('the app takes presses as they are handed to it: the swap is made where the buttons are read, not here', () => {
+    // The system's Back key and a keyboard's Enter and Escape must keep their meaning with the swap on,
+    // so the app cannot be the one to swap: it never knows which button a press came from.
+    const { app } = inHub(quiet({ ...fresh(), settings: { ...fresh().settings, swapAB: true } }));
+    select(app, 'options');
+    expect(snap(app).screen).toBe('options');
     press(app, 'cancel');
     expect(snap(app).screen).toBe('hub');
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', list: 'contracts' });
+  });
+
+  test('left and right on the row switch it too, so a player who swapped by accident can undo it with the D-pad alone', () => {
+    const { app } = inHub(quiet());
+    select(app, 'options');
+    for (let i = 0; i < 20 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'swapAB'; i++) press(app, 'down');
+    press(app, 'right');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Swapped' });
+    press(app, 'left');
+    expect(snap(app).menu.items.find((i) => i.id === 'swapAB')).toMatchObject({ note: 'Normal' });
   });
 });

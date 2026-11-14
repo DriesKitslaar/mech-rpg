@@ -26,17 +26,21 @@ import java.util.Map;
  * and makes every handheld behave the same.
  */
 public class MainActivity extends BridgeActivity {
-    /** Android key code to the KeyboardEvent.code the game maps to an action. */
+    /**
+     * Android key code to the KeyboardEvent.code the game maps to an action. The pad's A and B go
+     * under names of their own, not as Enter and Escape: the game's options can swap those two, for a
+     * handheld that reports them the other way round, and that must not change what Back does.
+     */
     private static final Map<Integer, String> KEYS = new HashMap<>();
     static {
         KEYS.put(KeyEvent.KEYCODE_DPAD_UP, "ArrowUp");
         KEYS.put(KeyEvent.KEYCODE_DPAD_DOWN, "ArrowDown");
         KEYS.put(KeyEvent.KEYCODE_DPAD_LEFT, "ArrowLeft");
         KEYS.put(KeyEvent.KEYCODE_DPAD_RIGHT, "ArrowRight");
-        KEYS.put(KeyEvent.KEYCODE_BUTTON_A, "Enter");
+        KEYS.put(KeyEvent.KEYCODE_BUTTON_A, "ButtonA");
         KEYS.put(KeyEvent.KEYCODE_DPAD_CENTER, "Enter");
         KEYS.put(KeyEvent.KEYCODE_ENTER, "Enter");
-        KEYS.put(KeyEvent.KEYCODE_BUTTON_B, "Escape");
+        KEYS.put(KeyEvent.KEYCODE_BUTTON_B, "ButtonB");
         KEYS.put(KeyEvent.KEYCODE_BACK, "Escape");
         KEYS.put(KeyEvent.KEYCODE_BUTTON_L1, "KeyQ");
         KEYS.put(KeyEvent.KEYCODE_BUTTON_R1, "KeyE");

@@ -16,6 +16,8 @@ const TITLE = 'title';
 /** Sound, music, battle speed, difficulty and which button confirms. Opened from the title or the hub, and returns to where it came from. */
 export class OptionsScreen implements Screen {
   private list = new MenuList();
+  /** True once the player has been told that leaving now loses a change that could not be saved. */
+  private warned = false;
 
   constructor(private app: App, private back: () => void) {
     this.refresh();
@@ -32,8 +34,13 @@ export class OptionsScreen implements Screen {
       // Once an ending has been seen, the end roll can be watched again from here.
       ...(this.app.canWatchCredits() ? [{ id: CREDITS, label: O.credits, enabled: true, note: O.watch }] : []),
       // While a game is on, this is the way to the title: to another kept game, or a new one.
-      ...(this.app.game ? [{ id: TITLE, label: O.title, enabled: true }] : []),
+      ...(this.app.game ? [{ id: TITLE, label: O.title, enabled: true, ...(this.warned ? { note: O.unsaved } : {}) }] : []),
     ]);
+  }
+
+  private isAction(): boolean {
+    const id = this.list.selected?.id;
+    return id === CREDITS || id === TITLE;
   }
 
   /** Whether a switch is on. Rumble is on in a game saved before there was a switch for it. */
@@ -41,12 +48,27 @@ export class OptionsScreen implements Screen {
     return key === 'rumble' ? this.app.settings.rumble !== false : this.app.settings[key];
   }
 
+  /** The entries that do something rather than hold a setting: only a confirm sets them off. */
+  private act(): void {
+    if (this.list.selected!.id === CREDITS) return this.app.showCredits();
+    // Every change is saved as it is made. One that could not be is tried once more; if it still cannot
+    // be, leaving would lose it, so the first press only says so.
+    if (!this.app.saveNow() && !this.warned) {
+      this.warned = true;
+      return this.refresh();
+    }
+    this.app.quitToTitle();
+  }
+
   /** Flips a switch, or steps the difficulty one way or the other. */
   private change(step: number): void {
     const settings = this.app.settings;
-    if (this.list.selected!.id === CREDITS) return this.app.showCredits();
-    if (this.list.selected!.id === TITLE) return this.app.quitToTitle();
-    const key = this.list.selected!.id as keyof Settings;
+    const id = this.list.selected!.id;
+    if (id === CREDITS || id === TITLE) {
+      if (step === 0) this.act();
+      return;
+    }
+    const key = id as keyof Settings;
     if (key === 'difficulty') {
       const n = DIFFICULTIES.length;
       const difficulty = DIFFICULTIES[(DIFFICULTIES.indexOf(settings.difficulty) + step + n) % n];
@@ -65,7 +87,8 @@ export class OptionsScreen implements Screen {
     if (action === 'up') this.list.move(-1);
     else if (action === 'down') this.list.move(1);
     else if (action === 'cancel') this.back();
-    else if (action === 'confirm' || action === 'right') this.change(1);
+    else if (action === 'confirm') this.change(this.isAction() ? 0 : 1);
+    else if (action === 'right') this.change(1);
     else if (action === 'left') this.change(-1);
   }
 
@@ -90,7 +113,8 @@ export class OptionsScreen implements Screen {
     drawText(ctx, O.heading, LOGICAL_W / 2, 70, { size: 16, align: 'center', color: COLORS.accent });
     drawList(ctx, this.list, x + 14, 96, w - 34, rows);
     const selected = this.list.selected?.id;
-    const words = selected === 'difficulty' ? O.difficultyHelp[this.app.settings.difficulty] : selected === 'swapAB' ? O.swapHelp : null;
+    const words = selected === 'difficulty' ? O.difficultyHelp[this.app.settings.difficulty]
+      : selected === 'swapAB' ? O.swapHelp : selected === TITLE && this.warned ? O.unsavedHelp : null;
     if (words) drawText(ctx, words, LOGICAL_W / 2, help, { align: 'center', color: COLORS.text, size: 10 });
     drawText(ctx, O.hint, LOGICAL_W / 2, help + 14, { align: 'center', color: COLORS.dim });
   }

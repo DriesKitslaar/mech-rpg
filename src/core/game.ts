@@ -69,7 +69,8 @@ export const DIFFICULTY_SCALE: Record<Difficulty, number> = { story: 0.8, standa
 
 /**
  * `rumble` came later than the rest: a game saved without it has it on. `swapAB` is only there when
- * it is on: the confirm and back buttons then change places, for a handheld that reports them the other way round.
+ * it is on: the pad's A and B buttons then change places, for a handheld that reports them the other way
+ * round. The swap is made where the buttons are read (`InputMapper.swapFace`), to those two buttons only.
  */
 export interface Settings { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: Difficulty; rumble?: boolean; swapAB?: boolean }
 /** No perk has more ranks than this; a save claiming more is not a real save. */

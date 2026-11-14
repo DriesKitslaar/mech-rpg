@@ -655,11 +655,20 @@ export class App {
     this.openHub();
   }
 
+  /** Stores the game as it is if the last attempt failed; true when what is kept is the game being played. */
+  saveNow(): boolean {
+    if (this.game && this.saveFailed) this.saveFailed = !this.file.save(this.game);
+    return !this.saveFailed;
+  }
+
   /**
    * Leaves the game being played for the title, where another kept game can be continued or a new
-   * one started. Nothing has to be saved: every change was saved as it was made.
+   * one started. Every change was saved as it was made; one that could not be is tried once more here,
+   * and is lost if it still cannot be (the options warn before they call this).
    */
   quitToTitle(): void {
+    this.saveNow();
+    this.saveFailed = false;
     this.game = null;
     this.toasts = [];
     this.toast = null;
@@ -743,16 +752,10 @@ export class App {
     return !this.deps.fast && this.entering.shutter && this.entering.left > 0;
   }
 
-  /** What a press means with the A and B buttons the way the options have them. */
-  meant(action: InputAction): InputAction {
-    if (!this.settings.swapAB) return action;
-    return action === 'confirm' ? 'cancel' : action === 'cancel' ? 'confirm' : action;
-  }
-
   onInput(action: InputAction): void {
     // Nothing is pressed on a battle that cannot be seen yet.
     if (this.shuttered) return;
-    this.current.onInput(this.meant(action));
+    this.current.onInput(action);
   }
 
   snapshot(): unknown {
