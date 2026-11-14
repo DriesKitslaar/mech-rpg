@@ -505,6 +505,11 @@ function unplug(nodes: AudioNode[]): void {
  */
 export class Music {
   enabled = true;
+  /**
+   * True while the battle is going badly for the pilot: the song that is playing gets a fast ticking
+   * on top, from its own drum kit, for as long as this is set.
+   */
+  tense = false;
   private wanted: SongName | null = null;
   private playing: Playing | null = null;
   private rig: Rig | null = null;
@@ -658,6 +663,12 @@ export class Music {
         const instrument = playing.channels[note.voice].instrument;
         if (left > 1 && !('drums' in instrument) && instrument.sustain > 0) notes.push({ ...note, step: from, length: left });
       }
+    }
+    // Going badly: a tick on every off step, on the song's own kit, where it has one.
+    const kit = this.tense ? playing.channels.findIndex((channel) => 'drums' in channel.instrument) : -1;
+    if (kit >= 0) {
+      const every = compiled.song.stepsPerBeat % 2 === 0 ? 2 : 1;
+      for (let step = from; step < to; step++) if (step % every === every - 1) notes.push({ voice: kit, step, length: 1, drum: 'tick' });
     }
     // Moved on before anything is built: if building a note fails, it is lost rather than played twice.
     playing.next = to;

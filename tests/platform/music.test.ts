@@ -761,3 +761,30 @@ test.each(ALL)('%s plays through a strict audio engine without a single bad valu
     expect(source.stopsAt).toBeLessThan(source.startsAt + 30);
   }
 });
+
+describe('a battle going badly', () => {
+  const queued = (tense: boolean, track: TrackName = 'battle'): number => {
+    const audio = fakeAudio();
+    const music = new Music(audio.context);
+    music.tense = tense;
+    begin(audio, music, track);
+    run(audio, music, 4);
+    expect(audio.problems).toEqual([]);
+    return audio.sources.length;
+  };
+
+  test('adds a fast ticking to the song that is playing, and takes it away again', () => {
+    expect(queued(true)).toBeGreaterThan(queued(false) + 10);
+    const audio = fakeAudio();
+    const music = new Music(audio.context);
+    begin(audio, music, 'battle');
+    music.tense = true;
+    run(audio, music, 2);
+    const during = audio.sources.length;
+    music.tense = false;
+    run(audio, music, 2);
+    const after = audio.sources.length - during;
+    // The same two seconds without the ticking hold fewer notes.
+    expect(after).toBeLessThan(during);
+  });
+});

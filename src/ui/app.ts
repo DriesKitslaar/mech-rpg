@@ -125,6 +125,8 @@ function entryToasts(opened: Entry[]): Toast[] {
 /** The part of the music player the app steers. */
 export interface MusicControl {
   enabled: boolean;
+  /** Set while a battle is going badly for the pilot; the song then ticks faster. */
+  tense?: boolean;
   play(track: TrackName | null): void;
 }
 
@@ -236,6 +238,12 @@ class MissionHost implements Screen {
   }
 
   draw(ctx: CanvasRenderingContext2D): void { this.screen.draw(ctx); }
+
+  /** True while the pilot's core is nearly gone and the battle is still on: the music is told. */
+  get tense(): boolean {
+    const core = this.flow.state.units[0].parts.core;
+    return this.flow.state.outcome === 'ongoing' && !!core && core.ap > 0 && core.ap < core.maxAp * 0.35;
+  }
 
   onInput(action: InputAction): void {
     if (this.flow.phase !== 'result') {
@@ -689,6 +697,7 @@ export class App {
   update(dtMs: number): void {
     this.entering.left = Math.max(0, this.entering.left - dtMs);
     this.current.update(dtMs);
+    if (this.deps.music) this.deps.music.tense = this.current instanceof MissionHost && this.current.tense;
     if (this.game && this.name !== 'title' && this.name !== 'callsign') this.played += dtMs;
     this.stepToast(dtMs);
   }
