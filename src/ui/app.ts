@@ -336,7 +336,7 @@ export class App {
   /** Leaves a briefing for the list it was opened from. */
   closeBriefing(mission: Mission): void {
     if (mission.arenaRank !== undefined) this.go('arena');
-    else this.openHub(mission.replay ? 'archive' : 'contracts');
+    else this.openHub(mission.replay ? 'archive' : 'contracts', mission.id);
   }
 
   /** The story contracts already done, as they can be played again: for less pay, and without changing the story. */
@@ -393,11 +393,11 @@ export class App {
   }
 
   /**
-   * Opens the hub, optionally straight on one of its lists. Two things are checked on the way in:
+   * Opens the hub, optionally straight on one of its lists with the cursor on an entry. Two things are checked on the way in:
    * a pilot without any weapon is issued one, and a scene that is due (the opening of an act, an
    * ending that was earned but never seen) is shown first.
    */
-  openHub(list?: 'contracts' | 'archive'): void {
+  openHub(list?: 'contracts' | 'archive', at?: string): void {
     const game = this.game;
     if (game) {
       const armed = ensureArmed(game, this.deps.catalog, STARTER_BUILD.rightHand!);
@@ -405,7 +405,7 @@ export class App {
       const scene = dueScenes(armed, SCENES, MISSIONS)[0];
       if (scene) return this.show(scene.ending ? 'ending' : 'scene', new SceneScreen(this, scene));
     }
-    this.show('hub', new HubScreen(this, list));
+    this.show('hub', new HubScreen(this, list, at));
   }
 
   /**

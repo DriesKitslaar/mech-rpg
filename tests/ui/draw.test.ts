@@ -207,6 +207,66 @@ describe('the screens the three-act story added', () => {
     expect(texts(calls)).toEqual(expect.arrayContaining(['LEVIATHAN', 'CARRIER', 'Hull', 'Wheel', 'Crane', 'Deck']));
   });
 
+  test('tags never run into the name beside them: with no room for all, the least pressing are left out', () => {
+    // The Adjuster with a barrier up and its decree loaded has three tags and a long name.
+    const state = structuredClone(createBattle(REFERENCE_BUILDS.tier6, [ENEMIES.adjuster], CATALOG, 7));
+    const boss = state.units[1];
+    boss.barrier = 170;
+    boss.charged = ['shoulder'];
+    const flow = new BattleFlow(state, CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: true });
+    for (let i = 0; i < 50 && flow.phase !== 'action'; i++) screen.update(16);
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    expect(flow.phase).toBe('target');
+    const { ctx, calls } = recorder();
+    screen.draw(ctx);
+    const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), x: Number(c.args[1]), y: Number(c.args[2]) }));
+    const name = drawn.find((d) => d.text === 'THE ADJUSTER')!;
+    const row = drawn.filter((d) => ['CARRIER', 'CHARGING', 'BARRIER 170'].includes(d.text) && Math.abs(d.y - name.y) <= 1);
+    // What is about to hurt stays; what the machine is, the briefing has already said.
+    expect(row.map((d) => d.text)).toEqual(['CHARGING', 'BARRIER 170']);
+    expect(Math.min(...row.map((d) => d.x))).toBeGreaterThanOrEqual(name.x + 'THE ADJUSTER'.length * 4.8);
+  });
+
+  test('the pilot\'s own tags stop short of the repairs count', () => {
+    const state = structuredClone(createBattle(REFERENCE_BUILDS.tier6, [ENEMIES.overseer], CATALOG, 7));
+    const me = state.units[0];
+    me.barrier = 170;
+    me.guarding = true;
+    me.boosted = true;
+    me.chaff = 20;
+    const flow = new BattleFlow(state, CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: true });
+    for (let i = 0; i < 50 && flow.phase !== 'action'; i++) screen.update(16);
+    const { ctx, calls } = recorder();
+    screen.draw(ctx);
+    const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), x: Number(c.args[1]), y: Number(c.args[2]) }));
+    const repairs = drawn.find((d) => d.text.startsWith('REPAIRS'))!;
+    const tags = drawn.filter((d) => Math.abs(d.y - repairs.y) <= 1 && d !== repairs);
+    expect(tags.length).toBeGreaterThanOrEqual(2);
+    // The count is written from the right edge; every tag ends before it begins.
+    const repairsLeft = repairs.x - repairs.text.length * 4.8;
+    for (const tag of tags) expect(tag.x + tag.text.length * 4, tag.text).toBeLessThanOrEqual(repairsLeft);
+    expect(tags.map((d) => d.text)).not.toContain('CHAFF');
+  });
+
+  test('a settlement with a rank bonus and four repair lines keeps them clear of what the client says', () => {
+    const app = start({ ...done('intro-1', 'intro-2'), scenes: ['act-1'] });
+    const mission = MISSIONS.find((m) => m.id === 'hadron-1')!;
+    const lines = ['head-scout-mk1', 'core-hauler', 'arms-rigger', 'legs-strider'].map((partId) => ({ partId, lost: 9, cost: 7 }));
+    app.showSettlement({ won: true, reward: 1600, ammoCost: 120, repairCost: 28, net: 1612, lines, rank: 'A', score: 80, bonus: 160 }, mission);
+    const { ctx, calls } = recorder();
+    app.draw(ctx);
+    const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) }));
+    const lowest = Math.max(...drawn.filter((d) => /^ {2}\S/.test(d.text)).map((d) => d.y));
+    expect(drawn.filter((d) => /^ {2}\S/.test(d.text))).toHaveLength(4);
+    expect(drawn.some((d) => d.text === 'Rank A bonus')).toBe(true);
+    const debrief = Math.min(...drawn.filter((d) => d.y >= 140 && d.y < 180).map((d) => d.y));
+    // A line of text is eleven pixels high.
+    expect(lowest + 11).toBeLessThanOrEqual(debrief);
+  });
+
   test('a boss with phases says its line, and every new kind of event has something to draw', () => {
     const { flow, said } = watch([ENEMIES['shield-drone'], ENEMIES.sable, ENEMIES['repair-drone']], { support: { name: 'Ashfall', damage: 45 } });
     const kinds = new Set(flow.state.events.map((e) => e.type));

@@ -187,4 +187,19 @@ describe('what waits for the story', () => {
     expect(stock(after(...ACT_ONE, ...ACT_TWO))).not.toContain('gen-prism');
     expect(stock(after(...ACT_ONE, ...ACT_TWO, ...ACT_THREE, 'verdict-default'))).toContain('gen-prism');
   });
+
+  test('a later cycle keeps what the third act unlocked in stock only for a pilot who has been through it', () => {
+    const unlocks = { 'gen-prism': 'verdict', 'wpn-thermal-lance': 'audit-2', 'wpn-void-rifle': 'lumen-3' };
+    const stock = (g: GameState) => stockFor(g, SHOP_PARTS, unlocks, STORY).map((p) => p.id);
+    // A game from before there was a third act, already in its second cycle: it never met Meridian.
+    const old: GameState = { ...fresh(), cycle: 1 };
+    expect(stock(old)).toContain('wpn-void-rifle');
+    expect(stock(old)).not.toContain('gen-prism');
+    expect(stock(old)).not.toContain('wpn-thermal-lance');
+    // Getting there in this cycle opens them as it would in the first.
+    expect(stock({ ...after(...ACT_ONE, ...ACT_TWO, 'audit-1', 'audit-2'), cycle: 1 })).toContain('wpn-thermal-lance');
+    // A pilot who gave a verdict in an earlier cycle holds a rank on it: for them the shop forgets nothing.
+    const veteran: GameState = { ...fresh(), cycle: 1, ranks: { 'verdict-default': 'C' } };
+    expect(stock(veteran)).toEqual(expect.arrayContaining(['gen-prism', 'wpn-thermal-lance', 'wpn-void-rifle']));
+  });
 });

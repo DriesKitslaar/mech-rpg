@@ -64,6 +64,27 @@ describe('talk', () => {
     expect(flow.phase).toBe('action');
   });
 
+  test('a line for a round the pilot sat out is said on the next turn they get, before that round\'s own', () => {
+    const flow = flowOf(battle(), { talk: [line(2, 'Second round.'), line(3, 'Third round.'), line(4, 'Fourth round.')] });
+    expect(flow.state.round).toBe(1);
+    // Overheated in the first round: the second passes without a turn for the pilot.
+    flow.state = edit(flow.state, (d) => { d.units[0].overheated = true; });
+    pick(flow, 'endTurn');
+    settle(flow);
+    expect(flow.state.round).toBe(3);
+    expect(flow.phase).toBe('talk');
+    expect(flow.spoken?.text).toBe('Second round.');
+    flow.onInput('confirm');
+    expect(flow.spoken?.text).toBe('Third round.');
+    flow.onInput('confirm');
+    expect(flow.phase).toBe('action');
+    pick(flow, 'endTurn');
+    settle(flow);
+    expect(flow.spoken?.text).toBe('Fourth round.');
+    flow.onInput('confirm');
+    expect(flow.phase).toBe('action');
+  });
+
   test('a boss says its line as its phase begins, and the battle waits for it', () => {
     const boss = mech({ name: 'Sable', portrait: 'portrait-sable', phases: [{ at: 0.5, damage: 1.2, line: 'Now I am awake.' }] });
     const flow = flowOf(edit(battle([boss]), (d) => { d.units[1].parts.core!.ap = 115; }));

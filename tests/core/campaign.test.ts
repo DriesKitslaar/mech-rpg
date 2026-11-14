@@ -154,9 +154,27 @@ describe('a new cycle', () => {
   test('story contracts get tougher and pay more with each cycle', () => {
     const base = MISSIONS.find((x) => x.id === 'hadron-1')!;
     expect(forCycle(base, 0)).toBe(base);
-    expect(forCycle(base, 1)).toMatchObject({ reward: 150, scale: 1.35, id: 'hadron-1' });
-    expect(forCycle(base, 2)).toMatchObject({ reward: 200, scale: 1.7 });
+    expect(forCycle(base, 1)).toMatchObject({ reward: 150, scale: 1.25, id: 'hadron-1' });
+    expect(forCycle(base, 2)).toMatchObject({ reward: 200, scale: 1.5 });
     expect(forCycle(MISSIONS[0], 3)).toBe(MISSIONS[0]); // the patrol stays a patrol
+  });
+
+  test('what has to be protected is as much sturdier as the enemies are tougher, so there is still time to save it', () => {
+    const guarded: Mission = {
+      ...MISSIONS.find((x) => x.id === 'hadron-1')!,
+      battles: [
+        { enemies: ['recon-drone'], background: 'bg', objective: { type: 'protect', name: 'Convoy', hp: 10 } },
+        { enemies: ['recon-drone'], background: 'bg', objective: { type: 'survive', rounds: 6 } },
+        { enemies: ['recon-drone'], background: 'bg' },
+      ],
+    };
+    const later = forCycle(guarded, 1);
+    expect(later.battles[0].objective).toEqual({ type: 'protect', name: 'Convoy', hp: 13 });
+    expect(forCycle(guarded, 2).battles[0].objective).toEqual({ type: 'protect', name: 'Convoy', hp: 15 });
+    // Nothing else about the battles changes, and the contract it was made from is left as it was.
+    expect(later.battles[1]).toEqual(guarded.battles[1]);
+    expect(later.battles[2]).toBe(guarded.battles[2]);
+    expect(guarded.battles[0].objective).toEqual({ type: 'protect', name: 'Convoy', hp: 10 });
   });
 });
 

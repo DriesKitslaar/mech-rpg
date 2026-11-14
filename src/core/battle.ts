@@ -696,7 +696,9 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
 function damagePart(state: BattleState, target: UnitState, slot: FrameSlot, amount: number): void {
   const part = target.parts[slot]!;
   const before = part.ap;
-  part.ap = Math.max(0, part.ap - amount);
+  // A pilot who is being driven off breaks away before the blow that would finish them: the core keeps a point.
+  const spared = slot === 'core' && state.objective.type === 'driveOff' && objectiveTarget(state)?.id === target.id;
+  part.ap = Math.max(spared ? Math.min(1, before) : 0, part.ap - amount);
   if (before > 0 && part.ap === 0) {
     state.events.push({ type: 'partDestroyed', unit: target.id, part: slot });
     // Without arms the hand weapons are finished, and whatever charge they held goes with them.
