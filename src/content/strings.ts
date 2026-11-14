@@ -38,6 +38,8 @@ export const STRINGS = {
     fuse: (n: number) => `FUSE ${n}`, aegis: 'AEGIS', jammer: 'JAMMER', mender: 'MENDER', carrier: 'CARRIER',
     covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`,
   },
+  // What an enemy is about to do, read from how it moves: shown with its tags while it is aimed at.
+  intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', charge: 'CHARGING' },
   objectives: {
     survive: (round: number, rounds: number) => `HOLD OUT ${round}/${rounds}`,
     protect: (name: string, hp: number, max: number) => `${name.toUpperCase()} ${hp}/${max}`,

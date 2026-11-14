@@ -70,4 +70,19 @@ describe('hiring a wingman from the briefing', () => {
     press(app, 'confirm');
     if (snap(app).screen === 'briefing') expect(ids(app)).toEqual(['accept', 'back']);
   });
+
+  test('while an enemy is aimed at, the battle says what it is about to do', () => {
+    const { app } = inHub(strong(done('intro-1', 'intro-2')));
+    select(app, 'contracts');
+    select(app, 'patrol');
+    select(app, 'accept');
+    const battle = () => snap(app).battle as unknown as { intent: string | null; phase: string; targetId: string | null };
+    for (let i = 0; i < 4000 && battle().phase !== 'target'; i++) {
+      // Talk on screen holds a press for a moment; time passes and the press is tried again.
+      app.update(16);
+      if (battle().phase !== 'animating') press(app, 'confirm');
+    }
+    expect(battle().phase).toBe('target');
+    expect(battle().intent).toMatch(/^(AIMS (CORE|HEAD|LEGS|ARMS)|DARTING|MENDING)$/);
+  });
 });

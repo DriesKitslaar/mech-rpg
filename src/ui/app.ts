@@ -14,6 +14,8 @@ import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameStat
 import { startMissionBattle } from '../core/mission';
 import { wingmanOpen, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
+import { intentOf } from '../core/intent';
+import { intentText } from './tags';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
@@ -282,6 +284,8 @@ class MissionHost implements Screen {
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
         support: flow.state.support?.name ?? null,
+        // What the enemy being aimed at is about to do.
+        intent: intentText(intentOf(flow.state, flow.state.units.find((u) => u.id === flow.targetId) ?? flow.state.units[0])),
         enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),
       },
     };

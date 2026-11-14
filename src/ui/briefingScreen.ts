@@ -162,9 +162,9 @@ export class BriefingScreen implements Screen {
     drawText(ctx, B.engagements(mission.battles.length), 12, 203, { color: COLORS.dim });
     drawText(ctx, `${B.reward} ${this.fee}`, 12, 215, { size: 16, color: COLORS.armor });
     if (this.hires.length > 0) {
-      drawText(ctx, B.wingman, 12, 236, { color: COLORS.dim });
-      drawText(ctx, this.wingman?.name ?? B.alone, 12, 246, { color: this.wingman ? COLORS.accent : COLORS.text });
-      if (this.wingman) drawText(ctx, B.wingmanShare(Math.round(this.wingman.share * 100)), 12, 256, { color: COLORS.dim });
+      drawText(ctx, B.wingman, 12, 233, { color: COLORS.dim });
+      drawText(ctx, this.wingman?.name ?? B.alone, 12, 243, { color: this.wingman ? COLORS.accent : COLORS.text });
+      if (this.wingman) drawText(ctx, B.wingmanShare(Math.round(this.wingman.share * 100)), 12, 253, { color: COLORS.dim });
     }
     drawText(ctx, B.hostiles, 104, 203, { color: COLORS.dim });
     hostiles(mission).slice(0, 5).forEach((line, i) => drawText(ctx, line, 104, 213 + i * 10));
