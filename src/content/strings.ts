@@ -3,7 +3,10 @@ import type { FrameSlot } from '../core/types';
 /** All player-facing text. UI code never contains literal copy. */
 export const STRINGS = {
   title: 'IRONWAGE',
-  actions: { fire: 'Fire', boost: 'Boost', cool: 'Cool', repair: 'Field Repair', endTurn: 'End Turn', retreat: 'Retreat' },
+  actions: {
+    fire: 'Fire', boost: 'Boost', guard: 'Guard', cool: 'Cool', module: 'Module', repair: 'Field Repair', auto: 'Auto Turn',
+    endTurn: 'End Turn', retreat: 'Retreat',
+  },
   retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
   parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
   meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
@@ -15,6 +18,21 @@ export const STRINGS = {
   partDestroyed: (unit: string, part: string) => `${unit}: ${part} destroyed`,
   unitDestroyed: (unit: string) => `${unit} destroyed`,
   boost: (unit: string) => `${unit} boosts`,
+  guard: (unit: string) => `${unit} braces`,
+  stagger: (unit: string) => `${unit} is STAGGERED`,
+  recover: (unit: string) => `${unit} steadies`,
+  charge: (unit: string, weapon: string) => `${unit} charges ${weapon}`,
+  barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} hits ${target} - barrier -${absorbed}`,
+  module: {
+    coolant: (unit: string, amount: number) => `${unit} flushes coolant -${amount} heat`,
+    barrier: (unit: string, amount: number) => `${unit} raises a barrier ${amount}`,
+    overclock: (unit: string, amount: number) => `${unit} overclocks +${amount} EN`,
+    painter: (unit: string, _amount: number, target: string) => `${unit} paints ${target}`,
+    nanites: (unit: string, amount: number) => `${unit} nanites +${amount} armour`,
+    shock: (unit: string) => `${unit} fires a shock pulse`,
+    chaff: (unit: string) => `${unit} scatters chaff`,
+    limiter: (unit: string) => `${unit} releases the limiter`,
+  },
   cool: (unit: string, amount: number) => `${unit} vents heat -${amount}`,
   repair: (unit: string, part: string, amount: number) => `${unit} repair ${part} +${amount}`,
   overheatPlayer: 'Overheated! Next turn lost',

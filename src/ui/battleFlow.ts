@@ -76,14 +76,25 @@ export class BattleFlow {
       case 'shot': {
         const attacker = this.state.units.find((u) => u.id === event.unit)!;
         const weapon = weaponIn(attacker.build, event.weapon, this.catalog)?.name ?? event.weapon;
-        return event.hit
-          ? STRINGS.hit(weapon, name(event.target), STRINGS.parts[event.appliedTo], event.damage)
-          : STRINGS.miss(weapon, name(event.target));
+        if (!event.hit) return STRINGS.miss(weapon, name(event.target));
+        // A hit the barrier took whole shows what the barrier lost instead of armour.
+        return event.damage === 0 && event.absorbed
+          ? STRINGS.barrierHit(weapon, name(event.target), event.absorbed)
+          : STRINGS.hit(weapon, name(event.target), STRINGS.parts[event.appliedTo], event.damage);
       }
       case 'partDestroyed':
         return event.part === 'core' ? null : STRINGS.partDestroyed(name(event.unit), STRINGS.parts[event.part]);
       case 'unitDestroyed': return STRINGS.unitDestroyed(name(event.unit));
       case 'boost': return STRINGS.boost(name(event.unit));
+      case 'guard': return STRINGS.guard(name(event.unit));
+      case 'stagger': return STRINGS.stagger(name(event.unit));
+      case 'recover': return STRINGS.recover(name(event.unit));
+      case 'charge': {
+        const unit = this.state.units.find((u) => u.id === event.unit)!;
+        return STRINGS.charge(name(event.unit), weaponIn(unit.build, event.weapon, this.catalog)?.name ?? event.weapon);
+      }
+      case 'module':
+        return STRINGS.module[event.effect](name(event.unit), event.amount, event.target ? name(event.target) : '');
       case 'cool': return STRINGS.cool(name(event.unit), event.amount);
       case 'repair': return STRINGS.repair(name(event.unit), STRINGS.parts[event.part], event.amount);
       case 'overheat': return event.unit === 'player' ? STRINGS.overheatPlayer : STRINGS.overheat(name(event.unit));
