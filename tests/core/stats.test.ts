@@ -1,5 +1,5 @@
-import { applyAction, createBattle, type BattleEvent, type BattleState } from '../../src/core/battle';
-import { NO_STATS, STAT_KEYS, addStats, tallyBattle } from '../../src/core/stats';
+import { activeUnit, applyAction, createBattle, type BattleEvent, type BattleState } from '../../src/core/battle';
+import { NO_STATS, STAT_KEYS, addStats, contractStats, retreated, tallyBattle } from '../../src/core/stats';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 
@@ -76,4 +76,38 @@ test('records add up counter by counter, and neither is changed', () => {
   const b = { ...NO_STATS, shots: 2, hits: 2 };
   expect(addStats(a, b)).toEqual({ ...NO_STATS, shots: 5, hits: 2, kills: 1 });
   expect(a.shots).toBe(3);
+});
+
+describe('a contract on the record', () => {
+  const fought = { ...NO_STATS, shots: 9, hits: 6, kills: 2, taken: 40, rounds: 7 };
+
+  test('won: one more contract, what it paid, and everything its battles added up to', () => {
+    expect(contractStats(fought, { won: true, retreated: false, pay: 1250 })).toEqual({ ...fought, contracts: 1, earned: 1250 });
+  });
+
+  test('won without being hit once is also a flawless one', () => {
+    expect(contractStats({ ...fought, taken: 0 }, { won: true, retreated: false, pay: 600 })).toMatchObject({ contracts: 1, flawless: 1 });
+  });
+
+  test('lost: a loss, no pay; walked away from: a retreat and not a loss', () => {
+    expect(contractStats(fought, { won: false, retreated: false, pay: 900 })).toEqual({ ...fought, lost: 1 });
+    expect(contractStats(fought, { won: false, retreated: true, pay: 900 })).toEqual({ ...fought, retreats: 1 });
+    // Nothing is flawless about a contract that was not won.
+    expect(contractStats({ ...fought, taken: 0 }, { won: false, retreated: true, pay: 0 }).flawless).toBe(0);
+  });
+
+  test('a battle the pilot walked away from says so', () => {
+    let s = createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 3);
+    expect(retreated(s)).toBe(false);
+    while (activeUnit(s).id !== 'player') s = applyAction(s, { type: 'endTurn' }, CATALOG);
+    s = applyAction(s, { type: 'retreat' }, CATALOG);
+    expect(s.outcome).toBe('defeat');
+    expect(retreated(s)).toBe(true);
+  });
+
+  test('the record counts time played and mirror matches won, and no longer what was spent', () => {
+    expect(STAT_KEYS).toContain('seconds');
+    expect(STAT_KEYS).toContain('mirrors');
+    expect(STAT_KEYS).not.toContain('spent');
+  });
 });

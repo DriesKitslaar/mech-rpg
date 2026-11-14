@@ -8,6 +8,7 @@ import { SAVE_KEY, SETTINGS_KEY, SaveFile, type KeyValueStore } from '../../src/
 import type { InputAction } from '../../src/platform/input';
 import { App } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
+import { medalPay } from '../helpers/app';
 
 const sprites: SpriteStore = { get: (_id, fallback) => ({ image: {} as CanvasImageSource, w: fallback.w, h: fallback.h }) };
 
@@ -37,8 +38,11 @@ type Snap = {
   settings: { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: string };
   player?: { maxAp: number; repairsLeft: number };
   pilot?: { level: number; points: number };
+  medals: string[];
 };
 const snap = (app: App) => app.snapshot() as Snap;
+/** What the medals earned so far have added to the pilot's credits. */
+const paid = (app: App) => medalPay(snap(app).medals);
 const press = (app: App, ...actions: InputAction[]) => actions.forEach((a) => app.onInput(a));
 const ids = (app: App) => snap(app).menu.items.map((i) => i.id);
 /** The contracts on the list that are not generated ones. */
@@ -387,16 +391,19 @@ describe('battle and settlement', () => {
     // The starter build wins the first introduction with this seed; revisit if content changes that.
     expect(won).toBe(true);
     expect(net).toBeGreaterThan(0);
-    expect(snap(app)).toMatchObject({ credits: 1200 + net, battlesWon: 1, completed: ['intro-1'] });
-    expect(JSON.parse(store.data[SAVE_KEY])).toMatchObject({ credits: 1200 + net, battlesWon: 1, completed: ['intro-1'] });
+    // The first contract also earns the first medal, and medals pay a little.
+    expect(snap(app).medals).toContain('first-contract');
+    const credits = 1200 + net + paid(app);
+    expect(snap(app)).toMatchObject({ credits, battlesWon: 1, completed: ['intro-1'] });
+    expect(JSON.parse(store.data[SAVE_KEY])).toMatchObject({ credits, battlesWon: 1, completed: ['intro-1'] });
 
     // Closing the game on the settlement screen must not lose the reward.
     const reopened = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
     press(reopened, 'confirm');
-    expect(snap(reopened)).toMatchObject({ screen: 'hub', credits: 1200 + net, completed: ['intro-1'] });
+    expect(snap(reopened)).toMatchObject({ screen: 'hub', credits, completed: ['intro-1'] });
 
     press(app, 'confirm');
-    expect(snap(app)).toMatchObject({ screen: 'hub', credits: 1200 + net });
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits });
     select(app, 'contracts');
     expect(ids(app)).toEqual(['patrol', 'intro-2', 'archive']);
   });
@@ -409,7 +416,7 @@ describe('battle and settlement', () => {
     const { net, won } = snap(app).settlement!;
     expect(won).toBe(false);
     expect(net).toBeLessThan(0);
-    expect(snap(app)).toMatchObject({ credits: 1200 + net, battlesWon: 0 });
+    expect(snap(app)).toMatchObject({ credits: 1200 + net + paid(app), battlesWon: 0 });
     expect(snap(app).completed).not.toContain('choice-hadron');
     press(app, 'confirm');
     select(app, 'contracts');
@@ -432,7 +439,7 @@ describe('battle and settlement', () => {
     finishMission(app);
     const { net } = snap(app).settlement!;
     press(app, 'confirm', 'confirm', 'cancel');
-    expect(snap(app).credits).toBe(1200 + net);
+    expect(snap(app).credits).toBe(1200 + net + paid(app));
   });
 
   test('other keys on the result screen do not skip ahead', () => {
@@ -637,7 +644,7 @@ describe('closing the game at an awkward moment', () => {
     for (let i = 0; i < 400 && snap(app).battle!.phase !== 'action'; i++) app.update(16);
     select(app, 'retreat');
     select(app, 'yes');
-    expect(JSON.parse(store.data[SAVE_KEY]).credits).toBeLessThan(1200);
+    expect(JSON.parse(store.data[SAVE_KEY]).credits - paid(app)).toBeLessThan(1200);
   });
 
   test('an ending that was never seen is shown the next time the hub opens', () => {
@@ -762,7 +769,7 @@ describe('the arena', () => {
     finishMission(app);
     expect(snap(app).settlement).toMatchObject({ won: true, reward: 800 });
     expect(snap(app)).toMatchObject({ arenaRank: 1, completed: ['intro-1', 'intro-2'] });
-    expect(snap(app).credits).toBe(before + snap(app).settlement!.net);
+    expect(snap(app).credits).toBe(before + snap(app).settlement!.net + paid(app));
 
     // A rematch pays a quarter and leaves the rank alone.
     press(app, 'confirm');
@@ -824,7 +831,8 @@ describe('a new cycle', () => {
     // The story starts again from its first page.
     expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'act-1' });
     press(app, 'confirm');
-    expect(snap(app)).toMatchObject({ screen: 'hub', cycle: 1, completed: [], credits: 5000, xp: 700, arenaRank: 2 });
+    expect(snap(app).medals).toContain('cycle');
+    expect(snap(app)).toMatchObject({ screen: 'hub', cycle: 1, completed: [], credits: 5000 + paid(app), xp: 700, arenaRank: 2 });
     expect(JSON.parse(store.data[SAVE_KEY]).cycle).toBe(1);
     expect(ids(app)).not.toContain('cycle');
     select(app, 'contracts');

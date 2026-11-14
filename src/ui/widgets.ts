@@ -77,6 +77,30 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, sprites: Sprites, id
   }
 }
 
+/** What a medal of each tier is made of: bronze, silver, gold. */
+export const MEDAL_COLORS: Record<1 | 2 | 3, string> = { 1: '#c0773c', 2: '#c3c9d6', 3: '#f2c744' };
+
+/** A medal nine pixels square: a ribbon and a disc in the metal of its tier, or its outline while it is not earned. */
+export function drawMedal(ctx: CanvasRenderingContext2D, x: number, y: number, tier: 1 | 2 | 3, earned: boolean): void {
+  ctx.fillStyle = earned ? COLORS.accent : COLORS.border;
+  ctx.fillRect(x + 2, y, 2, 3);
+  ctx.fillStyle = earned ? COLORS.energy : COLORS.border;
+  ctx.fillRect(x + 5, y, 2, 3);
+  ctx.fillStyle = earned ? MEDAL_COLORS[tier] : COLORS.border;
+  ctx.fillRect(x + 2, y + 3, 5, 6);
+  ctx.fillRect(x + 1, y + 4, 7, 4);
+  if (!earned) {
+    ctx.fillStyle = COLORS.empty;
+    ctx.fillRect(x + 3, y + 4, 3, 4);
+    ctx.fillRect(x + 2, y + 5, 5, 2);
+  } else {
+    // A glint, so the three metals read as metal.
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.fillRect(x + 3, y + 4, 2, 1);
+    ctx.fillRect(x + 2, y + 5, 1, 1);
+  }
+}
+
 /** A horizontal bar filled to value/max. */
 export function drawMeter(
   ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, value: number, max: number, color: string,

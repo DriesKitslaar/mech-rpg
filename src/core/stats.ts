@@ -25,14 +25,17 @@ export interface Stats {
   /** Battles won against a boss. */
   bosses: number;
   rounds: number;
-  /** Credits paid out by contracts, and credits spent in the shop. */
+  /** Credits paid out by contracts. */
   earned: number;
-  spent: number;
+  /** Mirror matches won in the arena. */
+  mirrors: number;
+  /** Time played, in seconds. */
+  seconds: number;
 }
 
 export const NO_STATS: Stats = {
   contracts: 0, lost: 0, retreats: 0, flawless: 0, shots: 0, hits: 0, damage: 0, taken: 0, kills: 0, parts: 0, staggers: 0,
-  overheats: 0, bombs: 0, bosses: 0, rounds: 0, earned: 0, spent: 0,
+  overheats: 0, bombs: 0, bosses: 0, rounds: 0, earned: 0, mirrors: 0, seconds: 0,
 };
 export const STAT_KEYS = Object.keys(NO_STATS) as (keyof Stats)[];
 
@@ -79,4 +82,21 @@ export function tallyBattle(state: BattleState): Stats {
   }
   if (state.outcome === 'victory' && state.units.some((u) => u.side === 'enemy' && u.phases.length > 0)) tally.bosses = 1;
   return tally;
+}
+
+/** True when the pilot walked away from this battle. */
+export const retreated = (state: BattleState): boolean => state.retreated === true;
+
+/**
+ * What a finished contract adds to the record: everything its battles added up to, and how it
+ * ended. Flawless means won without being hit once, whatever was repaired along the way.
+ */
+export function contractStats(battles: Stats, end: { won: boolean; retreated: boolean; pay: number }): Stats {
+  return addStats(battles, {
+    contracts: end.won ? 1 : 0,
+    lost: !end.won && !end.retreated ? 1 : 0,
+    retreats: !end.won && end.retreated ? 1 : 0,
+    flawless: end.won && battles.taken === 0 ? 1 : 0,
+    earned: end.won ? end.pay : 0,
+  });
 }

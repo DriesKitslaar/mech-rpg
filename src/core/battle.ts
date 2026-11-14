@@ -172,6 +172,8 @@ export interface BattleState {
   support?: Support;
   /** Multiplies the armour and damage of every enemy, those that join later included. */
   enemyScale: number;
+  /** Set when the battle ended because the pilot walked away from it. */
+  retreated?: boolean;
 }
 
 export type Action =
@@ -950,6 +952,7 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
       finishTurn(state, catalog);
       break;
     case 'retreat':
+      state.retreated = true;
       setOutcome(state, 'defeat');
       break;
   }

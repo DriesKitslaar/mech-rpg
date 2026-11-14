@@ -7,6 +7,7 @@ import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/stora
 import type { InputAction } from '../../src/platform/input';
 import { App } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
+import { medalPay } from '../helpers/app';
 
 const sprites: SpriteStore = { get: (_id, fallback) => ({ image: {} as CanvasImageSource, w: fallback.w, h: fallback.h }) };
 function memoryStore(initial: Record<string, string> = {}): KeyValueStore & { data: Record<string, string> } {
@@ -89,7 +90,7 @@ describe('ranks', () => {
     expect(bonus).toBe(rank === 'S' ? Math.round(reward * 0.25) : rank === 'A' ? Math.round(reward * 0.1) : 0);
     expect(net).toBe(reward + bonus - ammoCost - repairCost);
     expect(saved(store).ranks).toEqual({ 'intro-1': rank });
-    expect(saved(store).credits).toBe(1200 + net);
+    expect(saved(store).credits).toBe(1200 + net + medalPay(saved(store).medals));
   });
 
   test('the patrol is ranked like any contract, but no rank is kept for it', () => {
@@ -151,7 +152,7 @@ describe('the archive', () => {
     const s = snap(app).settlement!;
     expect(s).toMatchObject({ won: true, reward: 180 });
     expect(saved(store).completed).toEqual(['intro-1', 'intro-2']);
-    expect(saved(store).credits).toBe(base.credits + s.net);
+    expect(saved(store).credits).toBe(base.credits + s.net + medalPay(saved(store).medals));
     expect(saved(store).ranks).toEqual({ 'intro-1': s.rank });
     press(app, 'confirm');
     expect(snap(app).screen).toBe('hub');

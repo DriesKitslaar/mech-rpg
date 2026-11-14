@@ -7,13 +7,16 @@ import {
   type Mission, type Scene,
 } from '../core/campaign';
 import { applySettlement, settle, type Settlement } from '../core/economy';
+import { MEDAL_PAY, awardMedals, type Medal } from '../core/medals';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
+import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
 import type { BuildError, Catalog, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
+import { MEDALS } from '../content/medals';
 import { MESSAGES, MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
 import { SCENES } from '../content/scenes';
@@ -40,6 +43,7 @@ import { battleTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
+import { COLORS, drawMedal, drawPanel, drawText } from './widgets';
 
 /** What a screen reports about itself, for tests and for telling whether an input did anything. */
 export interface ScreenView {
@@ -67,6 +71,12 @@ export const FAST_BATTLE_SPEED = 2.5;
 /** How long a new screen takes to come up out of black, and the shutter over a battle to open. */
 export const FADE_MS = 170;
 export const SHUTTER_MS = 320;
+/** How long a medal's announcement stays up, and how much of that it spends sliding in and out. */
+export const TOAST_MS = 2600;
+const TOAST_SLIDE_MS = 180;
+
+/** What the battles of a contract added up to, for the record. */
+export interface Fought { tally: Stats; met: string[]; retreated: boolean }
 
 /** The part of the music player the app steers. */
 export interface MusicControl {
@@ -96,6 +106,9 @@ class MissionHost implements Screen {
   private screen!: BattleScreen;
   /** The contract's outcome, once it has been booked. */
   private settlement: Settlement | null = null;
+  /** What the battles already over added to the record, and the kinds of enemy seen in them. */
+  private tally: Stats = NO_STATS;
+  private met = new Set<string>();
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
@@ -148,7 +161,15 @@ class MissionHost implements Screen {
     const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
     this.settlement = rankSettlement(bill, performance);
-    this.app.bookSettlement(this.settlement, this.mission);
+    this.count();
+    this.app.bookSettlement(this.settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state) });
+  }
+
+  /** Adds the battle that has just ended to what the contract has added up to. */
+  private count(): void {
+    this.tally = addStats(this.tally, tallyBattle(this.flow.state));
+    // Whatever was on the field was met, what joined later included.
+    for (const unit of this.flow.state.units) if (unit.side === 'enemy' && unit.kind) this.met.add(unit.kind);
   }
 
   update(dtMs: number): void {
@@ -168,6 +189,7 @@ class MissionHost implements Screen {
     if (this.settlement) this.app.showSettlement(this.settlement, this.mission);
     else {
       this.rounds += this.flow.state.round;
+      this.count();
       this.index += 1;
       this.begin();
     }
@@ -207,6 +229,11 @@ export class App {
   private file: SaveFile;
   /** The way the current screen is still coming into view: what is left of it and how long it takes. */
   private entering = { left: 0, total: 1, shutter: false };
+  /** Medals earned and not yet announced, and the one being announced with the time it has left. */
+  private toasts: Medal[] = [];
+  private toast: { medal: Medal; left: number } | null = null;
+  /** Time played since the record was last brought up to date, in milliseconds. */
+  private played = 0;
 
   constructor(readonly deps: AppDeps) {
     this.seed = deps.seed;
@@ -295,6 +322,7 @@ export class App {
   startNewGame(slot = 0, callsign?: string): void {
     this.file = this.deps.save.forSlot(slot);
     this.file.rememberSlot();
+    this.played = 0;
     this.commit({ ...newGame(this.deps.catalog, STARTER_BUILD, callsign), settings: { ...this.settings } });
     this.go('hub');
   }
@@ -306,14 +334,23 @@ export class App {
     if (!saved) return;
     this.file = file;
     this.file.rememberSlot();
+    this.played = 0;
     this.game = { ...saved, settings: { ...this.settings } };
     this.go('hub');
   }
 
-  /** Replaces the game state and saves it. */
+  /**
+   * Replaces the game state and saves it. On the way the record is brought up to date with the
+   * time played, and any medal the pilot now has what it takes for is awarded and queued to be announced.
+   */
   commit(next: GameState): void {
-    this.game = next;
-    this.saveFailed = !this.file.save(next);
+    const seconds = Math.floor(this.played / 1000);
+    this.played -= seconds * 1000;
+    const timed = seconds > 0 ? { ...next, stats: { ...next.stats, seconds: next.stats.seconds + seconds } } : next;
+    const { game, earned } = awardMedals(timed, MEDALS);
+    this.toasts.push(...earned);
+    this.game = game;
+    this.saveFailed = !this.file.save(game);
   }
 
   /** Why the current build may not deploy; empty when it may. */
@@ -439,9 +476,15 @@ export class App {
    * Records a contract's outcome: money and experience, and after a win the contract itself (story
    * contracts) or the new arena rank (arena fights). Open contracts and the patrol leave no record.
    */
-  bookSettlement(settlement: Settlement, mission: Mission): void {
+  bookSettlement(settlement: Settlement, mission: Mission, fought: Fought = { tally: NO_STATS, met: [], retreated: false }): void {
     let next = applySettlement(this.game!, settlement);
     next = addXp(next, xpForContract(mission.reward, settlement.won));
+    const pay = settlement.reward + (settlement.bonus ?? 0);
+    next = {
+      ...next,
+      stats: addStats(next.stats, contractStats(fought.tally, { won: settlement.won, retreated: fought.retreated, pay })),
+      met: [...next.met, ...fought.met.filter((kind) => !next.met.includes(kind))],
+    };
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
       else if (MISSIONS.some((m) => m.id === mission.id)) {
@@ -470,9 +513,39 @@ export class App {
   update(dtMs: number): void {
     this.entering.left = Math.max(0, this.entering.left - dtMs);
     this.current.update(dtMs);
+    if (this.game && this.name !== 'title' && this.name !== 'callsign') this.played += dtMs;
+    this.stepToast(dtMs);
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
+  /** One announcement at a time, and none over a battle: they wait for the settlement. */
+  private stepToast(dtMs: number): void {
+    if (this.toast) {
+      this.toast.left -= dtMs;
+      if (this.toast.left <= 0) this.toast = null;
+      return;
+    }
+    if (this.toasts.length === 0 || this.name === 'battle') return;
+    this.toast = { medal: this.toasts.shift()!, left: TOAST_MS };
+    this.deps.sfx?.play('medal');
+  }
+
+  /** A medal's announcement: a strip that slides down from the top edge, stays, and slides back. */
+  private drawToast(ctx: CanvasRenderingContext2D): void {
+    if (!this.toast) return;
+    const { medal, left } = this.toast;
+    const slide = Math.min(1, left / TOAST_SLIDE_MS, (TOAST_MS - left) / TOAST_SLIDE_MS);
+    const w = 176;
+    const h = 28;
+    const x = Math.round((LOGICAL_W - w) / 2);
+    const y = Math.round(-h + (h + 16) * (this.deps.fast ? 1 : Math.max(0, slide)));
+    drawPanel(ctx, x, y, w, h);
+    drawMedal(ctx, x + 6, y + 9, medal.tier, true);
+    drawText(ctx, STRINGS.medals.earned, x + 20, y + 2, { color: COLORS.dim, size: 10 });
+    drawText(ctx, medal.name, x + 20, y + 12, { color: COLORS.accent });
+    drawText(ctx, STRINGS.medals.pay(MEDAL_PAY[medal.tier]), x + w - 6, y + 12, { align: 'right', color: COLORS.armor });
+  }
+
+  private drawScreen(ctx: CanvasRenderingContext2D): void {
     this.current.draw(ctx);
     const { left, total, shutter } = this.entering;
     if (left <= 0) return;
@@ -487,6 +560,11 @@ export class App {
       ctx.fillStyle = `rgba(4, 4, 12, ${p.toFixed(3)})`;
       ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     }
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    this.drawScreen(ctx);
+    this.drawToast(ctx);
   }
   onInput(action: InputAction): void { this.current.onInput(action); }
 
@@ -510,6 +588,9 @@ export class App {
       callsign: game?.callsign ?? null,
       ranks: game?.ranks ?? null,
       scenes: game?.scenes ?? null,
+      medals: game?.medals ?? [],
+      toast: this.toast?.medal.id ?? null,
+      toasts: this.toasts.map((medal) => medal.id),
       saveFailed: this.saveFailed,
       ...this.current.view(),
     };
