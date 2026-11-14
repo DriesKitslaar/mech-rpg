@@ -10,6 +10,10 @@ export type Snap = {
   };
   scene?: string;
   ending?: string;
+  /** On the title: which of its lists is showing. */
+  mode?: string;
+  slot?: number;
+  callsign?: string | null;
   completed: string[] | null;
   settlement?: { net: number; won: boolean };
 };
@@ -48,10 +52,18 @@ export async function waitForPhase(page: Page, phase: string): Promise<void> {
   await page.waitForFunction((name) => (window as any).__game.snapshot().battle?.phase === name, phase);
 }
 
-/** Reads past whatever pages of story are due and waits for the hub. */
+/**
+ * From wherever a new or continued game has got to, on to the hub: takes the slot under the cursor,
+ * accepts the callsign on offer, and reads past whatever pages of story are due.
+ */
 export async function enterHub(page: Page): Promise<void> {
-  await page.waitForFunction(() => ['hub', 'scene', 'ending'].includes((window as any).__game.snapshot().screen));
-  for (let i = 0; i < 8 && (await snap(page)).screen !== 'hub'; i++) await press(page, 'Enter');
+  for (let i = 0; i < 12; i++) {
+    const s = await snap(page);
+    if (s.screen === 'hub') return;
+    const waiting = ['callsign', 'scene', 'ending'].includes(s.screen) || (s.screen === 'title' && s.mode !== undefined && s.mode !== 'main');
+    if (waiting) await press(page, 'Enter');
+    else await nextFrame(page);
+  }
   await waitForScreen(page, 'hub');
 }
 

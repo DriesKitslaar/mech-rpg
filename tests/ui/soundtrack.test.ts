@@ -7,9 +7,9 @@ import { battleTrack, isBossBattle, trackFor } from '../../src/ui/soundtrack';
 const mission = (id: string): Mission => MISSIONS.find((m) => m.id === id)!;
 
 test('every screen has a song, and every song it names exists', () => {
-  const screens = ['title', 'hub', 'garage', 'shop', 'messages', 'pilot', 'options', 'arena', 'briefing', 'scene', 'ending'] as const;
+  const screens = ['title', 'callsign', 'hub', 'garage', 'shop', 'messages', 'pilot', 'options', 'arena', 'briefing', 'scene', 'ending'] as const;
   expect(screens.map((screen) => trackFor(screen))).toEqual([
-    'title', 'hub', 'hub', 'hub', 'hub', 'hub', 'hub', 'hub', 'briefing', 'briefing', 'ending',
+    'title', 'title', 'hub', 'hub', 'hub', 'hub', 'hub', 'hub', 'hub', 'briefing', 'briefing', 'ending',
   ]);
   for (const screen of screens) expect(Object.keys(SONGS)).toContain(trackFor(screen));
 });

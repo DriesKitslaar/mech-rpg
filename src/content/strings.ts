@@ -90,8 +90,16 @@ export const STRINGS = {
   hints: { result: 'Press A to continue' },
   titleScreen: {
     tagline: 'Every contract pays. Not every pilot collects.',
-    continue: 'Continue', newGame: 'New Game', options: 'Options', eraseQuestion: 'Start over? This erases your save.', no: 'No', yes: 'Yes',
+    continue: 'Continue', newGame: 'New Game', loadGame: 'Load Game', options: 'Options',
+    eraseQuestion: 'Start over? This erases that game.', eraseUnreadable: 'Overwrite what is kept there?', no: 'No', yes: 'Yes',
     unusable: 'Your saved game could not be read.',
+    pickNew: 'START IN WHICH SLOT?', pickLoad: 'LOAD WHICH GAME?', empty: 'EMPTY', unreadable: 'UNREADABLE',
+    slot: (n: number, callsign: string, level: number) => `${n}  ${callsign}  LV ${level}`,
+    progress: (done: number, cycle: number) => (cycle > 0 ? `${done} done  C${cycle + 1}` : `${done} done`),
+  },
+  callsign: {
+    heading: 'YOUR CALLSIGN', hint: 'A: pick   B: erase', del: 'DEL', ok: 'OK',
+    rows: ['ABCDEFGHI', 'JKLMNOPQR', 'STUVWXYZ0', '123456789'],
   },
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',

@@ -19,7 +19,8 @@ export function battleTrack(mission: Mission, index: number, enemies: Record<str
 /** The song that goes with a screen. A battle picks its own with `battleTrack`. */
 export function trackFor(screen: ScreenName, settlement?: { won: boolean }): TrackName {
   switch (screen) {
-    case 'title': return 'title';
+    case 'title':
+    case 'callsign': return 'title';
     case 'briefing':
     case 'scene': return 'briefing';
     case 'ending': return 'ending';

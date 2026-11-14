@@ -1,10 +1,16 @@
 import {
-  DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LOADOUT_SLOTS, SAVE_VERSION, isValidState,
+  DEFAULT_CALLSIGN, DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LOADOUT_SLOTS, SAVE_VERSION, isValidState,
   type Difficulty, type GameState, type Settings,
 } from '../core/game';
+import { NO_STATS } from '../core/stats';
 import type { Catalog } from '../core/types';
 
 export const SAVE_KEY = 'ironwage-save';
+/** How many games are kept, and where it is remembered which one was played last. */
+export const SLOTS = 3;
+export const SLOT_KEY = 'ironwage-slot';
+/** Where a game is kept: the first under the key there always was, the others beside it. */
+export const slotKey = (slot: number): string => (slot === 0 ? SAVE_KEY : `${SAVE_KEY}-${slot + 1}`);
 /** Options are kept apart from the game, so they exist before a game does and survive starting over. */
 export const SETTINGS_KEY = 'ironwage-settings';
 
@@ -34,7 +40,11 @@ function upgrade(value: unknown): unknown {
   if (save.version === 5) save = { ...save, version: 6, paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null) };
   // Version 6 had no ranks and no scenes, and its story ended where the third act now begins: whoever
   // saw that ending has not seen the real one, so it is shown when it is earned.
-  if (save.version === 6) save = { ...save, version: SAVE_VERSION, ranks: {}, scenes: [], endingSeen: false };
+  if (save.version === 6) save = { ...save, version: 7, ranks: {}, scenes: [], endingSeen: false };
+  // Version 7 had no callsign, no record, no medals, no list of enemies met and no training.
+  if (save.version === 7) {
+    save = { ...save, version: SAVE_VERSION, callsign: DEFAULT_CALLSIGN, stats: { ...NO_STATS }, medals: [], met: [], drills: [] };
+  }
   return save;
 }
 
@@ -56,13 +66,40 @@ function withStockParts(save: Record<string, unknown>): Record<string, unknown> 
   return { build: nextBuild, inventory: nextInventory, settings: { difficulty: DEFAULT_SETTINGS.difficulty, ...settings } };
 }
 
-/** One save slot. Anything unreadable or invalid counts as no save; nothing here ever throws. */
+/** One of the kept games. Anything unreadable or invalid counts as no save; nothing here ever throws. */
 export class SaveFile {
-  constructor(private store: KeyValueStore, private catalog: Catalog) {}
+  private readonly key: string;
+
+  constructor(private store: KeyValueStore, private catalog: Catalog, readonly slot = 0) {
+    this.key = slotKey(slot);
+  }
+
+  /** The same storage, looking at another of the kept games. */
+  forSlot(slot: number): SaveFile {
+    if (!Number.isInteger(slot) || slot < 0 || slot >= SLOTS) throw new Error(`no such slot: ${slot}`);
+    return slot === this.slot ? this : new SaveFile(this.store, this.catalog, slot);
+  }
+
+  /** The game that was played last; the first when nothing usable says otherwise. */
+  lastSlot(): number {
+    try {
+      const slot = Number(this.store.getItem(SLOT_KEY));
+      return Number.isInteger(slot) && slot >= 0 && slot < SLOTS ? slot : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Remembers this game as the one played last. Failing to is no reason to stop playing. */
+  rememberSlot(): void {
+    try {
+      this.store.setItem(SLOT_KEY, String(this.slot));
+    } catch { /* storage is full or blocked: Continue will offer the first game */ }
+  }
 
   load(): GameState | null {
     try {
-      const raw = this.store.getItem(SAVE_KEY);
+      const raw = this.store.getItem(this.key);
       if (!raw) return null;
       const value = upgrade(JSON.parse(raw));
       return isValidState(value, this.catalog) ? value : null;
@@ -74,7 +111,7 @@ export class SaveFile {
   /** True when something is stored that the game cannot use, so the player can be told why there is no Continue. */
   hasUnusableData(): boolean {
     try {
-      return !!this.store.getItem(SAVE_KEY) && this.load() === null;
+      return !!this.store.getItem(this.key) && this.load() === null;
     } catch {
       return false;
     }
@@ -83,7 +120,7 @@ export class SaveFile {
   /** Returns false when the device refuses to store the game (full or blocked storage). */
   save(state: GameState): boolean {
     try {
-      this.store.setItem(SAVE_KEY, JSON.stringify(state));
+      this.store.setItem(this.key, JSON.stringify(state));
       return true;
     } catch {
       return false;
@@ -121,7 +158,7 @@ export class SaveFile {
 
   clear(): void {
     try {
-      this.store.removeItem(SAVE_KEY);
+      this.store.removeItem(this.key);
     } catch {
       // Nothing to do: a save that cannot be removed is simply overwritten later.
     }

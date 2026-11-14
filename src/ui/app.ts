@@ -22,10 +22,11 @@ import { STRINGS } from '../content/strings';
 import type { Sfx } from '../platform/audio';
 import type { TrackName } from '../platform/music';
 import type { InputAction } from '../platform/input';
-import type { SaveFile } from '../platform/storage';
+import { SLOTS, type SaveFile } from '../platform/storage';
 import { ArenaScreen } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
+import { CallsignScreen } from './callsignScreen';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
@@ -55,8 +56,11 @@ export interface Screen {
 }
 
 export type ScreenName =
-  | 'title' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
+  | 'title' | 'callsign' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
   | 'arena' | 'pilot' | 'options';
+
+/** One of the kept games as the title shows it: empty, unreadable, or a game. */
+export interface SlotView { slot: number; game: GameState | null; unusable: boolean }
 
 /** How much quicker a battle plays with the fast-battles option on. */
 export const FAST_BATTLE_SPEED = 2.5;
@@ -199,12 +203,15 @@ export class App {
   private name: ScreenName = 'title';
   private current!: Screen;
   private seed: number;
+  /** The kept game being played: every save goes there. */
+  private file: SaveFile;
   /** The way the current screen is still coming into view: what is left of it and how long it takes. */
   private entering = { left: 0, total: 1, shutter: false };
 
   constructor(readonly deps: AppDeps) {
     this.seed = deps.seed;
-    this.settings = deps.save.loadSettings() ?? { ...(deps.save.load()?.settings ?? DEFAULT_SETTINGS) };
+    this.file = deps.save.forSlot(deps.save.lastSlot());
+    this.settings = deps.save.loadSettings() ?? { ...DEFAULT_SETTINGS, ...(this.file.load()?.settings ?? {}) };
     this.applySettings();
     this.show('title', new TitleScreen(this));
   }
@@ -263,22 +270,42 @@ export class App {
     return this.name;
   }
 
-  /** The saved game, if there is a usable one. */
-  loadSave(): GameState | null {
-    return this.deps.save.load();
+  /** The kept games, in order. */
+  slots(): SlotView[] {
+    return Array.from({ length: SLOTS }, (_, slot) => {
+      const file = this.deps.save.forSlot(slot);
+      const game = file.load();
+      return { slot, game, unusable: game === null && file.hasUnusableData() };
+    });
   }
 
-  /** True when something is saved that this version cannot read. */
-  saveIsUnusable(): boolean {
-    return this.deps.save.hasUnusableData();
+  /** The game Continue goes on with: the one played last, or failing that the first one there is. */
+  continueSlot(): number | null {
+    const kept = this.slots().filter((s) => s.game !== null).map((s) => s.slot);
+    const last = this.deps.save.lastSlot();
+    return kept.includes(last) ? last : kept[0] ?? null;
   }
 
-  startNewGame(): void {
-    this.commit({ ...newGame(this.deps.catalog, STARTER_BUILD), settings: { ...this.settings } });
+  /** Asks what the new pilot is called before the game in that slot begins. */
+  askCallsign(slot: number): void {
+    this.show('callsign', new CallsignScreen(this, slot));
+  }
+
+  /** Starts a new game in a slot, over whatever was kept there. */
+  startNewGame(slot = 0, callsign?: string): void {
+    this.file = this.deps.save.forSlot(slot);
+    this.file.rememberSlot();
+    this.commit({ ...newGame(this.deps.catalog, STARTER_BUILD, callsign), settings: { ...this.settings } });
     this.go('hub');
   }
 
-  continueGame(saved: GameState): void {
+  /** Goes on with the game kept in a slot, if there is one. */
+  continueGame(slot: number): void {
+    const file = this.deps.save.forSlot(slot);
+    const saved = file.load();
+    if (!saved) return;
+    this.file = file;
+    this.file.rememberSlot();
     this.game = { ...saved, settings: { ...this.settings } };
     this.go('hub');
   }
@@ -286,7 +313,7 @@ export class App {
   /** Replaces the game state and saves it. */
   commit(next: GameState): void {
     this.game = next;
-    this.saveFailed = !this.deps.save.save(next);
+    this.saveFailed = !this.file.save(next);
   }
 
   /** Why the current build may not deploy; empty when it may. */
@@ -479,6 +506,8 @@ export class App {
       settings: this.settings,
       paint: game?.paint ?? null,
       loadouts: game?.loadouts.map((build) => build !== null) ?? null,
+      slot: this.file.slot,
+      callsign: game?.callsign ?? null,
       ranks: game?.ranks ?? null,
       scenes: game?.scenes ?? null,
       saveFailed: this.saveFailed,

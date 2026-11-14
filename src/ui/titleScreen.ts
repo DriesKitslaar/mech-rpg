@@ -1,43 +1,79 @@
-import type { GameState } from '../core/game';
+import { levelFor } from '../core/pilot';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
-import type { App, Screen, ScreenView } from './app';
+import type { App, Screen, ScreenView, SlotView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
-import { MenuList } from './menuList';
+import { MenuList, type ListItem } from './menuList';
 import { drawWeather } from './weather';
 import { COLORS, drawList, drawPanel, drawText } from './widgets';
 
 const T = STRINGS.titleScreen;
+type Mode = 'main' | 'new' | 'load' | 'ask';
+const slotId = (slot: number): string => `slot-${slot + 1}`;
 
-/** New game or continue. Starting over an existing save asks first. */
+/**
+ * Continue, a new game, another of the kept games, or the options. Three games are kept; a new
+ * one is started in the slot the player picks, and starting over a slot that holds anything asks first.
+ */
 export class TitleScreen implements Screen {
-  private saved: GameState | null;
+  private slots: SlotView[];
   private list: MenuList;
-  private asking = false;
+  private mode: Mode = 'main';
+  /** The slot the question on screen is about. */
+  private asked = 0;
   private clock = 0;
 
   constructor(private app: App) {
-    this.saved = app.loadSave();
+    this.slots = app.slots();
     this.list = this.mainMenu();
+  }
+
+  private get kept(): SlotView[] {
+    return this.slots.filter((s) => s.game !== null);
   }
 
   private mainMenu(): MenuList {
     return new MenuList([
-      ...(this.saved ? [{ id: 'continue', label: T.continue, enabled: true }] : []),
+      ...(this.kept.length > 0 ? [{ id: 'continue', label: T.continue, enabled: true }] : []),
       { id: 'new', label: T.newGame, enabled: true },
+      // With one game kept, Continue is all the loading there is to do.
+      ...(this.kept.length > 1 ? [{ id: 'load', label: T.loadGame, enabled: true }] : []),
       { id: 'options', label: T.options, enabled: true },
     ]);
   }
 
+  /** One row per slot: who is kept there and how far along, or that it is empty. */
+  private slotItems(loading: boolean): ListItem[] {
+    return this.slots.map(({ slot, game, unusable }) => ({
+      id: slotId(slot),
+      label: game ? T.slot(slot + 1, game.callsign, levelFor(game.xp)) : `${slot + 1}  ${unusable ? T.unreadable : T.empty}`,
+      // An empty slot cannot be loaded; any slot can be started in.
+      enabled: !loading || game !== null,
+      note: game ? T.progress(game.completed.length, game.cycle) : undefined,
+    }));
+  }
+
   private back(): void {
-    this.asking = false;
+    this.mode = 'main';
     this.list = this.mainMenu();
   }
 
-  /** The question while asking; otherwise why there is no Continue, when a save exists but cannot be used. */
+  private openSlots(mode: 'new' | 'load'): void {
+    this.mode = mode;
+    const items = this.slotItems(mode === 'load');
+    // Loading is offered the first game there is. A new game is offered the first empty slot, and one
+    // holding something unreadable only when no slot is empty: that may be a game from a newer version.
+    const free = (unusable: boolean) => this.slots.findIndex((s) => s.game === null && s.unusable === unusable);
+    const wanted = mode === 'load' ? items.findIndex((item) => item.enabled) : free(false) >= 0 ? free(false) : free(true);
+    this.list = new MenuList(items, Math.max(0, wanted));
+  }
+
+  /** The question while asking; otherwise why there is no Continue, when a game is kept but cannot be read. */
   private notice(): string {
-    if (this.asking) return T.eraseQuestion;
-    return !this.saved && this.app.saveIsUnusable() ? T.unusable : '';
+    if (this.mode === 'ask') return this.slots[this.asked].game ? T.eraseQuestion : T.eraseUnreadable;
+    if (this.mode === 'new') return T.pickNew;
+    if (this.mode === 'load') return T.pickLoad;
+    return this.kept.length === 0 && this.slots.some((s) => s.unusable) ? T.unusable : '';
   }
 
   update(dtMs: number): void {
@@ -45,26 +81,42 @@ export class TitleScreen implements Screen {
   }
 
   onInput(action: InputAction): void {
-    if (action === 'up') this.list.move(-1);
-    else if (action === 'down') this.list.move(1);
-    else if (action === 'cancel' && this.asking) this.back();
-    else if (action === 'confirm') {
-      switch (this.list.selected?.id) {
-        case 'continue': this.app.continueGame(this.saved!); break;
-        case 'new':
-          if (!this.saved) { this.app.startNewGame(); break; }
-          this.asking = true;
-          this.list = new MenuList([{ id: 'no', label: T.no, enabled: true }, { id: 'yes', label: T.yes, enabled: true }]);
-          break;
-        case 'options': this.app.openOptions(); break;
-        case 'yes': this.app.startNewGame(); break;
-        case 'no': this.back(); break;
-      }
+    if (action === 'up') return this.list.move(-1);
+    if (action === 'down') return this.list.move(1);
+    if (action === 'cancel') {
+      if (this.mode === 'ask') this.openSlots('new');
+      else if (this.mode !== 'main') this.back();
+      return;
+    }
+    const item = this.list.selected;
+    if (action !== 'confirm' || !item?.enabled) return;
+    const slot = this.slots.findIndex((s) => slotId(s.slot) === item.id);
+    switch (this.mode) {
+      case 'main':
+        if (item.id === 'continue') this.app.continueGame(this.app.continueSlot()!);
+        // The very first game needs no choosing: it goes in the first slot.
+        else if (item.id === 'new') { if (this.kept.length === 0 && !this.slots.some((s) => s.unusable)) this.app.askCallsign(0); else this.openSlots('new'); }
+        else if (item.id === 'load') this.openSlots('load');
+        else if (item.id === 'options') this.app.openOptions();
+        return;
+      case 'load':
+        return this.app.continueGame(slot);
+      case 'new':
+        // Only a slot with nothing in it is started in without a question.
+        if (this.slots[slot].game === null && !this.slots[slot].unusable) return this.app.askCallsign(slot);
+        this.asked = slot;
+        this.mode = 'ask';
+        this.list = new MenuList([{ id: 'no', label: T.no, enabled: true }, { id: 'yes', label: T.yes, enabled: true }]);
+        return;
+      case 'ask':
+        if (item.id === 'yes') this.app.askCallsign(this.asked);
+        else this.openSlots('new');
+        return;
     }
   }
 
   view(): ScreenView {
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, message: this.notice() };
+    return { menu: { items: this.list.items, cursor: this.list.cursor }, message: this.notice(), mode: this.mode };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -95,12 +147,17 @@ export class TitleScreen implements Screen {
     }
     drawText(ctx, T.tagline, LOGICAL_W / 2, 122, { align: 'center', color: COLORS.text });
 
-    const w = 190;
+    const picking = this.mode === 'new' || this.mode === 'load';
+    const w = picking ? 230 : 190;
     const x = (LOGICAL_W - w) / 2;
     const notice = this.notice();
-    drawPanel(ctx, x, 160, w, notice ? 64 : 50);
-    let y = 166;
-    if (notice) { drawText(ctx, notice, LOGICAL_W / 2, y, { align: 'center', color: COLORS.danger }); y += 14; }
-    drawList(ctx, this.list, x + 60, y, 70, 3);
+    drawPanel(ctx, x, 156, w, notice ? 70 : 56);
+    let y = 162;
+    if (notice) {
+      drawText(ctx, notice, LOGICAL_W / 2, y, { align: 'center', color: this.mode === 'ask' || this.mode === 'main' ? COLORS.danger : COLORS.dim });
+      y += 14;
+    }
+    if (picking) drawList(ctx, this.list, x + 10, y, w - 26, 3);
+    else drawList(ctx, this.list, x + 60, y, 70, 4);
   }
 }

@@ -106,7 +106,8 @@ describe('the screens the three-act story added', () => {
   test('a page of story draws its heading, title and picture, and waits a moment before it can be closed', () => {
     const { ctx, calls } = recorder();
     const app = new App({ catalog: CATALOG, save: new SaveFile(store(), CATALOG), sprites, fast: false, seed: 3 });
-    press(app, 'confirm');
+    // New game, then the callsign on offer.
+    press(app, 'confirm', 'confirm');
     expect(snap(app).screen).toBe('scene');
     app.draw(ctx);
     expect(texts(calls)).toEqual(expect.arrayContaining(['ACT I', 'THE WAGE']));
