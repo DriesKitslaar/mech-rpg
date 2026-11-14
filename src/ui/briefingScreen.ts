@@ -94,7 +94,8 @@ export class BriefingScreen implements Screen {
     drawText(ctx, mission.title.toUpperCase(), 72, 8, { size: 16, color: COLORS.accent });
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
     const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
-    const tag = mission.arenaRank !== undefined ? STRINGS.arena.fight
+    const tag = mission.loaner !== undefined ? STRINGS.training.tag
+      : mission.arenaRank !== undefined ? STRINGS.arena.fight
       : mission.replay ? B.replay
       : mission.id.startsWith('open-') ? B.open
       : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict

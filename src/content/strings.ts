@@ -103,7 +103,7 @@ export const STRINGS = {
   },
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
-    messages: 'Messages', database: 'Database', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
+    messages: 'Messages', database: 'Database', training: 'Training', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
     credits: 'CREDITS', battlesWon: 'BATTLES WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
     locked: 'Locked', campaignDone: 'The war is over. The work is not.',
@@ -147,6 +147,13 @@ export const STRINGS = {
     carrier: (unit: string, every: number) => `Launches ${unit}, every ${every} turns`,
     phases: (n: number) => `Changes tactics ${n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`}`,
     toast: 'DATABASE', newEntries: (n: number) => `${n} new entries`,
+  },
+  training: {
+    heading: 'TRAINING', client: 'Training Simulator', pays: 'PAYS', passed: 'PASSED', locked: 'LOCKED', open: 'OPEN',
+    count: (n: number, of: number) => `PASSED ${n}/${of}`, hint: 'A: briefing   B: back',
+    lockedNote: 'The simulator opens this drill once Dispatch has finished introducing you.',
+    tag: 'TRAINING: a lent mech in the simulator. It costs nothing.',
+    won: 'DRILL PASSED', lost: 'DRILL FAILED',
   },
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',

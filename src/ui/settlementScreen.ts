@@ -27,7 +27,7 @@ export class SettlementScreen implements Screen {
   onInput(action: InputAction): void {
     // The settlement is already booked; this screen only shows it.
     // After a won finale the hub shows the ending first.
-    if (action === 'confirm') this.app.go('hub');
+    if (action === 'confirm') this.app.leaveSettlement(this.mission);
   }
 
   view(): ScreenView {
@@ -48,7 +48,9 @@ export class SettlementScreen implements Screen {
     const right = x + w - 10;
     drawPanel(ctx, x, 20, w, 230);
     drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
-    drawText(ctx, s.won ? S.won : S.lost, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
+    const drill = this.mission.loaner !== undefined;
+    const heading = drill ? (s.won ? STRINGS.training.won : STRINGS.training.lost) : s.won ? S.won : S.lost;
+    drawText(ctx, heading, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
     const fast = this.app.deps.fast;
     if (s.rank) {
       // How well it was done, in the corner: S and A are the ones that pay. It is stamped on a moment after the bill appears.

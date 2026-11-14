@@ -14,10 +14,12 @@ import { startMissionBattle } from '../core/mission';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
+import { drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill, type Drill } from '../core/training';
 import type { BuildError, Catalog, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
 import { WORLD } from '../content/codex';
+import { DRILLS } from '../content/drills';
 import { MEDALS } from '../content/medals';
 import { MESSAGES, MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
@@ -46,6 +48,7 @@ import { battleTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
+import { TrainingScreen } from './trainingScreen';
 import { COLORS, drawMedal, drawPage, drawPanel, drawText } from './widgets';
 
 /** What a screen reports about itself, for tests and for telling whether an input did anything. */
@@ -64,7 +67,7 @@ export interface Screen {
 
 export type ScreenName =
   | 'title' | 'callsign' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
-  | 'arena' | 'pilot' | 'options' | 'database';
+  | 'arena' | 'pilot' | 'options' | 'database' | 'training';
 
 /** One of the kept games as the title shows it: empty, unreadable, or a game. */
 export interface SlotView { slot: number; game: GameState | null; unusable: boolean }
@@ -157,10 +160,12 @@ class MissionHost implements Screen {
     const { catalog, sprites, sfx, fast } = this.app.deps;
     const total = this.mission.battles.length;
     // The pilot's perks apply in every battle of the contract, the first and the carried ones alike.
+    // A drill is fought in the simulator's mech as it comes: the pilot's own build and perks stay outside.
     const { aim, evasion, energy, cooling, repairs, armour } = this.app.perks();
+    const drill = isDrill(this.mission);
     const state = startMissionBattle(
-      this.app.game!.build, this.mission, this.index, ALL_ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
-      { enemyScale: this.enemyScale(), mods: { aim, evasion, energy, cooling, repairs, armour } },
+      this.mission.loaner ?? this.app.game!.build, this.mission, this.index, ALL_ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
+      { enemyScale: this.enemyScale(), ...(drill ? {} : { mods: { aim, evasion, energy, cooling, repairs, armour } }) },
     );
     // Each battle of a contract has its own song: the last one may be against a boss.
     this.app.playTrack(battleTrack(this.mission, this.index, ALL_ENEMIES));
@@ -170,7 +175,7 @@ class MissionHost implements Screen {
     const boss = battle.enemies.map((id) => ALL_ENEMIES[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
     if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
-      fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: this.app.game!.paint,
+      fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: drill ? undefined : this.app.game!.paint,
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms),
       ...(boss ? { boss: boss.name } : {}),
       background: this.mission.battles[this.index].background,
@@ -179,9 +184,9 @@ class MissionHost implements Screen {
     });
   }
 
-  /** The contract's own scale times the difficulty the player chose. */
+  /** The contract's own scale times the difficulty the player chose. A drill is the same for everyone. */
   private enemyScale(): number {
-    return (this.mission.scale ?? 1) * DIFFICULTY_SCALE[this.app.settings.difficulty];
+    return (this.mission.scale ?? 1) * (isDrill(this.mission) ? 1 : DIFFICULTY_SCALE[this.app.settings.difficulty]);
   }
 
   /** True when winning the current battle leads to another one. */
@@ -196,6 +201,12 @@ class MissionHost implements Screen {
   private bookIfOver(): void {
     const { outcome } = this.flow.state;
     if (this.settlement || outcome === 'ongoing' || (outcome === 'victory' && this.hasNext())) return;
+    if (isDrill(this.mission)) {
+      // The simulator bills nothing and counts for nothing but the list of drills passed.
+      this.settlement = drillSettlement(outcome === 'victory', this.mission);
+      this.app.bookDrill(this.settlement, this.mission);
+      return;
+    }
     const { payBonus, costDiscount } = this.app.perks();
     const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
@@ -440,9 +451,39 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission));
   }
 
+  /** The drills in list order, each with whether it is open yet and whether it has been passed. */
+  drillList(): { drill: Drill; open: boolean; passed: boolean }[] {
+    const game = this.game;
+    return game ? DRILLS.map((drill) => ({ drill, open: drillOpen(game, drill, MISSIONS), passed: drillPassed(game, drill.id) })) : [];
+  }
+
+  /** The drill as a contract, if it is open. */
+  private drillFight(drillId: string): Mission | undefined {
+    const entry = this.drillList().find(({ drill }) => drill.id === drillId);
+    return entry?.open ? drillMission(this.game!, entry.drill, STRINGS.training.client) : undefined;
+  }
+
+  openDrillBriefing(drillId: string): void {
+    const mission = this.drillFight(drillId);
+    if (mission) this.show('briefing', new BriefingScreen(this, mission));
+  }
+
+  /** Books a drill: the first pass pays and is remembered; nothing else changes. */
+  bookDrill(settlement: Settlement, mission: Mission): void {
+    const next = recordDrill(this.game!, settlement, mission);
+    if (next !== this.game) this.commit(next);
+  }
+
+  /** Leaves a settlement: a drill for the training list, anything else for the hub. */
+  leaveSettlement(mission: Mission): void {
+    if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
+    else this.go('hub');
+  }
+
   /** Leaves a briefing for the list it was opened from. */
   closeBriefing(mission: Mission): void {
-    if (mission.arenaRank !== undefined) this.go('arena');
+    if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
+    else if (mission.arenaRank !== undefined) this.go('arena');
     else this.openHub(mission.replay ? 'archive' : 'contracts', mission.id);
   }
 
@@ -467,6 +508,7 @@ export class App {
 
   private offered(missionId: string, replay: boolean): Mission | undefined {
     if (replay) return this.archive().find((m) => m.id === missionId);
+    if (missionId.startsWith('drill-')) return this.drillFight(missionId);
     const arena = /^arena-(\d+)$/.exec(missionId);
     return arena ? this.arenaFight(Number(arena[1])) : this.missions().find((m) => m.id === missionId);
   }
@@ -477,10 +519,10 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission));
   }
 
-  /** Starts a contract, unless the build may not deploy or the contract is not on offer. */
+  /** Starts a contract, unless the build may not deploy or the contract is not on offer. A drill lends its own mech. */
   startMission(missionId: string, replay = false): void {
     const mission = this.offered(missionId, replay);
-    if (!mission || this.buildErrors().length > 0) return;
+    if (!mission || (!isDrill(mission) && this.buildErrors().length > 0)) return;
     this.seed = (this.seed + 101) % 2147483647;
     this.show('battle', new MissionHost(this, mission, this.seed));
   }
@@ -494,6 +536,7 @@ export class App {
       case 'messages': return this.show(name, new MessagesScreen(this));
       case 'pilot': return this.show(name, new PilotScreen(this));
       case 'database': return this.show(name, new DatabaseScreen(this));
+      case 'training': return this.show(name, new TrainingScreen(this));
       case 'arena': if (this.sideWorkOpen()) this.show(name, new ArenaScreen(this)); return;
       case 'options': return this.openOptions();
       default: return; // briefings, battles, settlements and endings open through their own methods
@@ -573,7 +616,11 @@ export class App {
     this.deps.sfx?.play(this.toast.item.sound);
   }
 
-  /** An announcement: a strip that slides down from the top edge, stays, and slides back. */
+  /**
+   * An announcement: a strip that slides up from the bottom edge, stays, and slides back. Down there it
+   * covers a line of button hints for a moment; at the top it would cover the name of the screen, or
+   * the heading of a settlement.
+   */
   private drawToast(ctx: CanvasRenderingContext2D): void {
     if (!this.toast) return;
     const { item, left } = this.toast;
@@ -581,7 +628,7 @@ export class App {
     const w = 176;
     const h = 28;
     const x = Math.round((LOGICAL_W - w) / 2);
-    const y = Math.round(-h + (h + 16) * (this.deps.fast ? 1 : Math.max(0, slide)));
+    const y = Math.round(LOGICAL_H - (h + 2) * (this.deps.fast ? 1 : Math.max(0, slide)));
     // Nothing of the screen underneath shows through.
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(x, y, w, h);
@@ -637,6 +684,7 @@ export class App {
       ranks: game?.ranks ?? null,
       scenes: game?.scenes ?? null,
       medals: game?.medals ?? [],
+      drills: game?.drills ?? [],
       toast: this.toast?.item.id ?? null,
       toasts: this.toasts.map((item) => item.id),
       saveFailed: this.saveFailed,

@@ -1,6 +1,6 @@
 import type { Support } from './battle';
 import type { GameState } from './game';
-import type { Objective, Part } from './types';
+import type { Build, Objective, Part } from './types';
 
 export type Faction = 'hadron' | 'lumen' | 'undertow';
 /**
@@ -62,6 +62,8 @@ export interface Mission {
   scale?: number;
   /** Set on an arena fight: the rank of the opponent. */
   arenaRank?: number;
+  /** Set on a training drill: the mech that is lent for it. See training.ts. */
+  loaner?: Build;
 }
 
 export interface Message {

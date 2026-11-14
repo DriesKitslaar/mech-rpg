@@ -126,3 +126,13 @@ export function retreat(app: App): void {
   press(app, 'confirm');
   expect(snap(app).screen).toBe('settlement');
 }
+/** Plays the battle on screen to its result with Auto Turn, reading past whatever is said. */
+export function autoBattle(app: App): void {
+  for (let i = 0; i < 60000 && snap(app).battle?.phase !== 'result'; i++) {
+    const phase = snap(app).battle!.phase;
+    if (phase === 'animating') app.update(16);
+    else if (phase === 'action') select(app, 'auto');
+    else press(app, 'confirm');
+  }
+  expect(snap(app).battle?.phase).toBe('result');
+}

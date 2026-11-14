@@ -2,6 +2,7 @@ import { ARENA_RANKS } from '../core/arena';
 import { FACTORY_PAINT, type GameState } from '../core/game';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
+import { DRILLS } from './drills';
 import { ENEMIES } from './enemies';
 
 type Progress = Medal['progress'];
@@ -60,6 +61,7 @@ const EARNED: Medal[] = [
   { id: 'level-5', name: 'Licensed', text: 'Reach pilot level 5.', tier: 1, progress: count(5, (g) => levelFor(g.xp)) },
   { id: 'level-10', name: 'Veteran', text: 'Reach pilot level 10.', tier: 2, progress: count(10, (g) => levelFor(g.xp)) },
   { id: 'level-20', name: 'Ace', text: 'Reach pilot level 20.', tier: 3, progress: count(20, (g) => levelFor(g.xp)) },
+  { id: 'drills', name: 'Qualified', text: 'Pass every training drill.', tier: 2, progress: count(DRILLS.length, (g) => DRILLS.filter((d) => g.drills.includes(d.id)).length) },
   // The hangar.
   { id: 'painted', name: 'Company Colours', text: 'Repaint your mech.', tier: 1, progress: once((g) => g.paint !== FACTORY_PAINT) },
   { id: 'loadout', name: 'Spare Suit', text: 'Save a build in the garage.', tier: 1, progress: once((g) => g.loadouts.some((build) => build !== null)) },

@@ -5,7 +5,7 @@ import { xpForLevel } from '../src/core/pilot';
 import { NO_STATS } from '../src/core/stats';
 import { MISSIONS } from '../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
-import { choose, enterHub, nextFrame, open, press, snap, waitForScreen } from './helpers';
+import { autoBattle, choose, enterHub, nextFrame, open, press, snap, waitForScreen } from './helpers';
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
@@ -84,6 +84,31 @@ test('the database: units met and not met, the world so far, and the manual', as
   await page.screenshot({ path: shot('database-manual') });
   await press(page, 'Escape');
   await waitForScreen(page, 'hub');
+  expect(errors).toEqual([]);
+});
+
+test('training: the list of drills, a briefing, the lent mech on the field, and a drill passed', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await load(page, veteran({ drills: ['drill-heat'] }));
+  await enterHub(page);
+  await choose(page, 'training');
+  await waitForScreen(page, 'training');
+  await page.screenshot({ path: shot('training') });
+  await choose(page, 'drill-aim');
+  await waitForScreen(page, 'briefing');
+  await page.screenshot({ path: shot('training-briefing') });
+  await choose(page, 'accept');
+  await waitForScreen(page, 'battle');
+  const end = await autoBattle(page);
+  expect(end.battle).toMatchObject({ mission: 'drill-aim', outcome: 'victory' });
+  await page.screenshot({ path: shot('training-result') });
+  await press(page, 'Enter');
+  await waitForScreen(page, 'settlement');
+  await page.screenshot({ path: shot('training-settlement') });
+  expect((await snap(page)).settlement).toMatchObject({ won: true, net: 150 });
+  await press(page, 'Enter');
+  await waitForScreen(page, 'training');
   expect(errors).toEqual([]);
 });
 

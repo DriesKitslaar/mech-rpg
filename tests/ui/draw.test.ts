@@ -424,9 +424,15 @@ describe('the screens the pilot\'s record added', () => {
     const app = start({ ...done('intro-1'), scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
     app.commit({ ...app.game!, arenaRank: 1 });
     const { ctx, calls } = recorder();
+    // One frame brings it up, the next few slide it into view.
+    app.update(16);
     app.update(400);
     app.draw(ctx);
     expect(texts(calls)).toEqual(expect.arrayContaining(['MEDAL EARNED', 'On the Ladder', '+100 c']));
+    // It sits along the bottom edge, clear of the name of the screen and of any heading.
+    const heading = calls.find((c) => c.name === 'fillText' && c.args[0] === 'MEDAL EARNED')!;
+    expect(Number(heading.args[2])).toBeGreaterThanOrEqual(238);
+    expect(Number(heading.args[2])).toBeLessThan(270);
     // It goes away by itself.
     const later = recorder();
     app.update(3000);
@@ -460,6 +466,42 @@ describe('the screens the pilot\'s record added', () => {
     expect(strip()).toEqual(expect.arrayContaining(['MEDAL EARNED', 'On the Ladder', '+100 c']));
     app.update(3000);
     expect(strip()).toEqual(expect.arrayContaining(['MEDAL EARNED', 'Champion of Varn', '+1200 c']));
+  });
+
+  test('the training screen lists the drills, shows the mech the selected one lends, and says what it is about', () => {
+    const app = start({ ...done('intro-1'), drills: ['drill-heat'], scenes: ['act-1'] });
+    select(app, 'training');
+    const { ctx, calls } = recorder();
+    app.update(16);
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining([
+      'TRAINING', 'PASSED 1/10', 'Take It Apart', 'Heat Discipline', 'PASSED', 'LOCKED', '150', 'TAKE IT APART', 'Aim at parts', 'OPEN',
+    ]));
+    // The lent mech is drawn from its parts: the Halo head of the first drill is among them.
+    expect(calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'head-halo')).toBe(true);
+    // A locked drill says when it opens instead of what it teaches in full.
+    press(app, 'down', 'down', 'down');
+    const locked = recorder();
+    app.draw(locked.ctx);
+    expect(texts(locked.calls).some((text) => text.startsWith('The simulator opens this drill'))).toBe(true);
+  });
+
+  test('a drill\'s briefing and settlement say that it is a drill', () => {
+    const app = start({ ...done('intro-1'), scenes: ['act-1'] });
+    select(app, 'training');
+    select(app, 'drill-aim');
+    const briefing = recorder();
+    app.update(16);
+    app.draw(briefing.ctx);
+    expect(texts(briefing.calls)).toEqual(expect.arrayContaining(['TAKE IT APART', 'Training Simulator', 'PAYS 150']));
+    expect(texts(briefing.calls).some((text) => text.startsWith('TRAINING: a lent mech'))).toBe(true);
+    const mission = { id: 'drill-aim', phase: 'patrol' as const, title: 'Take It Apart', client: 'x', briefing: [], debrief: 'Done.', reward: 150, battles: [], loaner: REFERENCE_BUILDS.tier1 };
+    app.showSettlement({ won: true, reward: 150, ammoCost: 0, repairCost: 0, net: 150, lines: [] }, mission);
+    const settlement = recorder();
+    app.update(16);
+    app.draw(settlement.ctx);
+    expect(texts(settlement.calls)).toEqual(expect.arrayContaining(['DRILL PASSED', 'Take It Apart']));
+    expect(texts(settlement.calls)).not.toContain('CONTRACT COMPLETE');
   });
 
   test('the hub shows the pilot\'s callsign and level', () => {

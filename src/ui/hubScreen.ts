@@ -34,6 +34,7 @@ export class HubScreen implements Screen {
     this.main = new MenuList([
       { id: 'contracts', label: H.contractsItem, enabled: errors.length === 0, note: errors[0] ? STRINGS.buildErrors[errors[0]] : undefined },
       { id: 'arena', label: H.arena, enabled: sideWork && errors.length === 0, note: sideWork ? undefined : H.locked },
+      { id: 'training', label: H.training, enabled: true },
       { id: 'garage', label: H.garage, enabled: true },
       { id: 'shop', label: H.shop, enabled: true },
       { id: 'pilot', label: H.pilot, enabled: true, note: points > 0 ? H.points(points) : undefined },
@@ -42,7 +43,7 @@ export class HubScreen implements Screen {
       { id: 'options', label: H.options, enabled: true },
       ...(app.canStartCycle() ? [{ id: 'cycle', label: H.cycle, enabled: true }] : []),
       // With a build that may not deploy the cursor starts on the garage, where that is fixed.
-    ], errors.length === 0 ? 0 : 2);
+    ], errors.length === 0 ? 0 : 3);
     if (list && errors.length === 0) {
       this.openContracts();
       if (list === 'archive' && this.app.archive().length > 0) this.openArchive();
@@ -102,7 +103,7 @@ export class HubScreen implements Screen {
       else if (id === 'cycle') {
         this.asking = true;
         this.sub = new MenuList([{ id: 'no', label: H.no, enabled: true }, { id: 'yes', label: H.yes, enabled: true }]);
-      } else this.app.go(id as 'arena' | 'garage' | 'shop' | 'pilot' | 'messages' | 'database' | 'options');
+      } else this.app.go(id as 'arena' | 'training' | 'garage' | 'shop' | 'pilot' | 'messages' | 'database' | 'options');
     }
   }
 
