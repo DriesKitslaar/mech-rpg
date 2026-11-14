@@ -131,3 +131,21 @@ test('part descriptions cover every kind of part', () => {
   expect(partLines(CATALOG['legs-halo'])).toEqual(['AP 110  WT 140  DRAIN 55', 'RES K/E/X 10/25/5', 'LOAD 850  MOB 48']);
   expect(partLines(CATALOG['core-hauler'])).toHaveLength(2);
 });
+
+test('the last weapon cannot be sold, and the shop says why', () => {
+  const unarmed = { ...fresh(), build: (({ rightHand: _r, ...rest }) => rest)(fresh().build) };
+  const flow = shop(unarmed);
+  toTab(flow, 'hand');
+  press(flow, 'right');
+  expect(flow.list.items).toMatchObject([{ id: 'wpn-rivet-rifle', enabled: false, note: 'Last weapon' }]);
+  expect(flow.onInput('confirm')).toBe('stay');
+  expect(flow.message).toBe('You need at least one weapon');
+});
+
+test('a part that is owned but not in stock can still be sold', () => {
+  const owner = buy(fresh(5000), 'head-halo', CATALOG);
+  const flow = new ShopFlow(owner, CATALOG, SHOP_PARTS.filter((p) => p.id !== 'head-halo'), SHOP_PARTS);
+  expect(flow.list.items.map((i) => i.id)).not.toContain('head-halo');
+  press(flow, 'right');
+  expect(flow.list.items.map((i) => i.id)).toContain('head-halo');
+});

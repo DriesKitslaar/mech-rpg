@@ -14,6 +14,27 @@ export const COLORS = {
 export const FONT = 'VT323';
 export const LINE = 11;
 
+/** Breaks text into lines of at most `maxChars`, at spaces; a longer word is split. The UI font is monospaced. */
+export function wrap(text: string, maxChars: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (let word of text.split(/\s+/).filter(Boolean)) {
+    while (word.length > maxChars) {
+      if (line) { lines.push(line); line = ''; }
+      lines.push(word.slice(0, maxChars));
+      word = word.slice(maxChars);
+    }
+    if (!line) line = word;
+    else if (line.length + 1 + word.length <= maxChars) line += ` ${word}`;
+    else { lines.push(line); line = word; }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/** Characters of the UI font that fit in `width` logical pixels at `size`. */
+export const charsFor = (width: number, size = 12): number => Math.max(1, Math.floor(width / (size * 0.4)));
+
 export interface TextOptions { size?: number; color?: string; align?: CanvasTextAlign; strike?: boolean }
 
 export function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, opts: TextOptions = {}): void {

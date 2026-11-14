@@ -1,40 +1,47 @@
 /**
- * Plays an encounter many times and reports how it tends to go.
- * Usage: npm run simulate -- --encounter outpost --build demo --seeds 500
+ * Plays a contract many times and reports how it tends to go.
+ * Usage: npm run simulate -- --mission hadron-1 --build tier1 --seeds 300
+ *        npm run simulate -- --all            every contract with every reference build
  */
 import { chooseAutoPlayerAction, runBattle } from '../src/core/ai';
-import { createBattle } from '../src/core/battle';
-import { ENCOUNTERS, ENEMIES } from '../src/content/enemies';
-import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../src/content/parts';
+import { settle } from '../src/core/economy';
+import { playMission } from '../src/core/mission';
+import { validatePlayerBuild } from '../src/core/build';
+import { ENEMIES } from '../src/content/enemies';
+import { MISSIONS } from '../src/content/missions';
+import { CATALOG } from '../src/content/parts';
+import { REFERENCE_BUILDS } from '../src/content/referenceBuilds';
 
 const arg = (name: string, fallback: string): string => {
   const i = process.argv.indexOf(name);
   return i >= 0 ? process.argv[i + 1] : fallback;
 };
-const BUILDS = { demo: DEMO_BUILD, starter: STARTER_BUILD };
 
-const encounter = arg('--encounter', 'intro');
-const buildName = arg('--build', 'demo') as keyof typeof BUILDS;
-const seeds = Number(arg('--seeds', '500'));
-if (!ENCOUNTERS[encounter]) throw new Error(`unknown encounter: ${encounter} (have: ${Object.keys(ENCOUNTERS).join(', ')})`);
-if (!BUILDS[buildName]) throw new Error(`unknown build: ${buildName} (have: ${Object.keys(BUILDS).join(', ')})`);
-if (!Number.isInteger(seeds) || seeds < 1) throw new Error('--seeds must be a positive whole number');
+function report(missionId: string, buildName: string, seeds: number): string {
+  const mission = MISSIONS.find((m) => m.id === missionId);
+  const build = REFERENCE_BUILDS[buildName];
+  if (!mission) throw new Error(`unknown mission: ${missionId} (have: ${MISSIONS.map((m) => m.id).join(', ')})`);
+  if (!build) throw new Error(`unknown build: ${buildName} (have: ${Object.keys(REFERENCE_BUILDS).join(', ')})`);
+  const errors = validatePlayerBuild(build, CATALOG);
+  if (errors.length) throw new Error(`build ${buildName} is not valid: ${errors.join(', ')}`);
 
-let wins = 0;
-let rounds = 0;
-let coreLeft = 0;
-for (let seed = 1; seed <= seeds; seed++) {
-  const start = createBattle(BUILDS[buildName], ENCOUNTERS[encounter].map((id) => ENEMIES[id]), CATALOG, seed);
-  const end = runBattle(start, CATALOG, chooseAutoPlayerAction);
-  if (end.outcome === 'victory') wins++;
-  rounds += end.round;
-  coreLeft += end.units[0].parts.core!.ap;
+  let wins = 0;
+  let net = 0;
+  for (let seed = 1; seed <= seeds; seed++) {
+    const end = playMission(build, mission, ENEMIES, CATALOG, seed * 7919, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction));
+    if (end.outcome === 'victory') wins++;
+    net += settle(end, mission.reward, CATALOG).net;
+  }
+  return `${missionId.padEnd(16)} ${buildName.padEnd(8)} win ${(100 * wins / seeds).toFixed(0).padStart(3)}%   mean net ${(net / seeds).toFixed(0).padStart(6)}`;
 }
-console.log(`${encounter} with ${buildName} build over ${seeds} battles`);
-console.log(`  win rate            ${(100 * wins / seeds).toFixed(1)}%`);
-console.log(`  mean rounds         ${(rounds / seeds).toFixed(1)}`);
-console.log(`  mean core AP left   ${(coreLeft / seeds).toFixed(0)} of ${start_core()}`);
 
-function start_core(): number {
-  return createBattle(BUILDS[buildName], [], CATALOG, 1).units[0].parts.core!.maxAp;
+const seeds = Number(arg('--seeds', '300'));
+if (!Number.isInteger(seeds) || seeds < 1) throw new Error('--seeds must be a positive whole number');
+if (process.argv.includes('--all')) {
+  for (const mission of MISSIONS) {
+    for (const build of Object.keys(REFERENCE_BUILDS)) console.log(report(mission.id, build, seeds));
+    console.log('');
+  }
+} else {
+  console.log(report(arg('--mission', 'patrol'), arg('--build', 'starter'), seeds));
 }

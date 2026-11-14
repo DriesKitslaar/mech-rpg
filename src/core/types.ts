@@ -85,7 +85,7 @@ export interface BuildStats {
 }
 
 export type BuildError = 'missingSlot' | 'overweight' | 'insufficientEnergy' | 'wrongMount' | 'unknownPart' | 'noWeapon';
-export type AiProfile = 'gunner' | 'skirmisher' | 'bruiser';
+export type AiProfile = 'gunner' | 'skirmisher' | 'bruiser' | 'sprayer';
 
 export interface EnemyDef {
   id: string;

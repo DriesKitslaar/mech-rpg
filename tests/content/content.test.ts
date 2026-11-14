@@ -1,7 +1,8 @@
 import { validatePlayerBuild } from '../../src/core/build';
 import type { Build, FramePart, Weapon } from '../../src/core/types';
-import { ENCOUNTERS, ENCOUNTER_REWARD, ENEMIES } from '../../src/content/enemies';
-import { CATALOG, DEMO_BUILD, SHOP_PARTS, STARTER_BUILD } from '../../src/content/parts';
+import { ENEMIES } from '../../src/content/enemies';
+import { ENDINGS, MESSAGES, MISSIONS } from '../../src/content/missions';
+import { CATALOG, DEMO_BUILD, SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
 
 const SLOT_KIND: Record<keyof Build, string> = {
@@ -26,14 +27,6 @@ test('catalogue keys match part ids', () => {
 
 test('enemy keys match enemy ids', () => {
   for (const [key, enemy] of Object.entries(ENEMIES)) expect(enemy.id).toBe(key);
-});
-
-test('encounters reference existing enemies and have one to three of them', () => {
-  for (const [name, ids] of Object.entries(ENCOUNTERS)) {
-    expect(ids.length, name).toBeGreaterThanOrEqual(1);
-    expect(ids.length, name).toBeLessThanOrEqual(3);
-    for (const id of ids) expect(ENEMIES[id], `${name}: ${id}`).toBeDefined();
-  }
 });
 
 test('resist values stay between 0 and 0.6', () => {
@@ -100,10 +93,6 @@ describe('shop catalogue', () => {
     expect(CATALOG['wpn-halo-array']).toMatchObject({ ammo: null, mount: 'shoulder', damageType: 'energy' });
   });
 
-  test('every encounter pays a reward', () => {
-    for (const name of Object.keys(ENCOUNTERS)) expect(ENCOUNTER_REWARD[name], name).toBeGreaterThan(0);
-    expect(ENCOUNTER_REWARD).toMatchObject({ intro: 600, outpost: 1100 });
-  });
 });
 
 describe('sprites', () => {
@@ -126,5 +115,71 @@ describe('sprites', () => {
 
   test('both backgrounds and both enemies have sprites', () => {
     for (const id of ['bg-neon-district', 'bg-garage', 'enemy-recon-drone', 'enemy-gun-turret']) expect(id in SPRITES, id).toBe(true);
+  });
+});
+
+describe('campaign content', () => {
+  test('there are eleven story contracts and one patrol, with unique ids', () => {
+    expect(MISSIONS.filter((m) => m.phase !== 'patrol')).toHaveLength(11);
+    expect(MISSIONS.filter((m) => m.phase === 'patrol')).toHaveLength(1);
+    expect(new Set(MISSIONS.map((m) => m.id)).size).toBe(MISSIONS.length);
+  });
+
+  test('two introductions, and one contract per client in each later phase', () => {
+    expect(MISSIONS.filter((m) => m.phase === 'intro')).toHaveLength(2);
+    for (const phase of ['faction', 'choice', 'finale'] as const) {
+      expect(MISSIONS.filter((m) => m.phase === phase).map((m) => m.faction).sort()).toEqual(['hadron', 'lumen', 'undertow']);
+    }
+  });
+
+  test.each(MISSIONS.map((m) => [m.id, m] as const))('contract %s is complete and fights known enemies', (_id, mission) => {
+    expect(mission.title.length).toBeGreaterThan(0);
+    expect(mission.briefing.length).toBeGreaterThan(0);
+    expect(mission.debrief.length).toBeGreaterThan(0);
+    expect(mission.reward).toBeGreaterThan(0);
+    expect(mission.battles.length).toBeGreaterThanOrEqual(1);
+    expect(mission.battles.length).toBeLessThanOrEqual(3);
+    for (const battle of mission.battles) {
+      expect(battle.enemies.length).toBeGreaterThanOrEqual(1);
+      expect(battle.enemies.length).toBeLessThanOrEqual(3);
+      for (const id of battle.enemies) expect(ENEMIES[id], id).toBeDefined();
+      expect(battle.background in SPRITES, battle.background).toBe(true);
+    }
+    if (mission.portrait) expect(mission.portrait in SPRITES, mission.portrait).toBe(true);
+  });
+
+  test('every enemy has a sprite and a build made of known parts', () => {
+    for (const enemy of Object.values(ENEMIES)) {
+      expect(enemy.sprite in SPRITES, enemy.sprite).toBe(true);
+      for (const id of Object.values(enemy.build)) expect(CATALOG[id], `${enemy.id}: ${id}`).toBeDefined();
+    }
+    expect(Object.keys(ENEMIES)).toHaveLength(6);
+  });
+
+  test('every client has an ending', () => {
+    expect(Object.keys(ENDINGS).sort()).toEqual(['hadron', 'lumen', 'undertow']);
+  });
+
+  test('messages have unique ids and wait for events that exist', () => {
+    expect(new Set(MESSAGES.map((m) => m.id)).size).toBe(MESSAGES.length);
+    for (const message of MESSAGES) {
+      const known = message.after === 'start' || message.after === 'choice' || MISSIONS.some((m) => m.id === message.after);
+      expect(known, message.id).toBe(true);
+      if (message.portrait) expect(message.portrait in SPRITES, message.portrait).toBe(true);
+    }
+  });
+
+  test('shop unlocks name real parts and real contracts, and the starter kit is never locked', () => {
+    for (const [partId, condition] of Object.entries(SHOP_UNLOCKS)) {
+      expect(SHOP_PARTS.some((p) => p.id === partId), partId).toBe(true);
+      expect(condition === 'choice' || MISSIONS.some((m) => m.id === condition), condition).toBe(true);
+    }
+    for (const id of Object.values(STARTER_BUILD)) expect(id in SHOP_UNLOCKS, id).toBe(false);
+  });
+
+  test('a second and third weapon can be bought before any client has been worked for', () => {
+    const open = SHOP_PARTS.filter((p) => !(p.id in SHOP_UNLOCKS) && p.kind === 'weapon');
+    expect(open.filter((p) => p.kind === 'weapon' && p.mount === 'hand').length).toBeGreaterThanOrEqual(2);
+    expect(open.filter((p) => p.kind === 'weapon' && p.mount === 'shoulder').length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -1,5 +1,5 @@
 import { createBattle, type BattleState } from '../../src/core/battle';
-import { applySettlement, settle } from '../../src/core/economy';
+import { REPAIR_COST_PER_AP, applySettlement, settle } from '../../src/core/economy';
 import { newGame } from '../../src/core/game';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
@@ -33,26 +33,34 @@ test('weapons without ammunition cost nothing to fire', () => {
   expect(settle(finished('victory', (b) => { b.units[0].ammo.rightHand = 29; }), 600, CATALOG).ammoCost).toBe(15);
 });
 
-test('repairs cost half the part price in proportion to the armour lost', () => {
+test('repairs cost a flat rate per point of armour lost', () => {
+  expect(REPAIR_COST_PER_AP).toBe(0.8);
   const s = settle(finished('victory', (b) => { b.units[0].parts.core!.ap = 110; }), 600, CATALOG);
-  expect(s.repairCost).toBe(75);
-  expect(s.lines).toEqual([{ partId: 'core-hauler', lost: 110, cost: 75 }]);
+  expect(s.repairCost).toBe(88);
+  expect(s.lines).toEqual([{ partId: 'core-hauler', lost: 110, cost: 88 }]);
 });
 
-test('a destroyed part costs half its price', () => {
+test('an expensive part costs no more to repair per point than a cheap one', () => {
+  const heavy = structuredClone(createBattle({ ...DEMO_BUILD, core: 'core-bulwark', legs: 'legs-bulwark' }, [ENEMIES['recon-drone']], CATALOG, 1));
+  heavy.outcome = 'victory';
+  heavy.units[0].parts.core!.ap -= 110;
+  expect(settle(heavy, 600, CATALOG).lines).toEqual([{ partId: 'core-bulwark', lost: 110, cost: 88 }]);
+});
+
+test('a destroyed part is billed for all its armour', () => {
   const s = settle(finished('victory', (b) => { b.units[0].parts.arms!.ap = 0; }), 600, CATALOG);
-  expect(s.lines).toEqual([{ partId: 'arms-rigger', lost: 110, cost: 150 }]);
+  expect(s.lines).toEqual([{ partId: 'arms-rigger', lost: 110, cost: 88 }]);
 });
 
 test('several damaged parts each get a line, in slot order', () => {
   const s = settle(finished('victory', (b) => { b.units[0].parts.head!.ap = 30; b.units[0].parts.legs!.ap = 75; }), 600, CATALOG);
   expect(s.lines.map((l) => l.partId)).toEqual(['legs-strider', 'head-scout-mk1']);
-  expect(s.repairCost).toBe(75 + 75);
+  expect(s.repairCost).toBe(24 + 60);
 });
 
 test('a defeat pays nothing but still charges ammunition and repairs', () => {
   const s = settle(finished('defeat', (b) => { b.units[0].ammo.rightHand = 20; b.units[0].parts.core!.ap = 0; }), 600, CATALOG);
-  expect(s).toMatchObject({ won: false, reward: 0, ammoCost: 150, repairCost: 150, net: -300 });
+  expect(s).toMatchObject({ won: false, reward: 0, ammoCost: 150, repairCost: 176, net: -326 });
 });
 
 test('a battle that is still going cannot be settled', () => {
@@ -64,6 +72,6 @@ test('applying a settlement changes credits and counts wins', () => {
   const won = applySettlement(game, settle(finished('victory'), 600, CATALOG));
   expect(won).toMatchObject({ credits: 1800, battlesWon: 1 });
   const lost = applySettlement({ ...game, credits: 100 }, settle(finished('defeat', (b) => { b.units[0].parts.core!.ap = 0; b.units[0].parts.legs!.ap = 0; }), 600, CATALOG));
-  expect(lost).toMatchObject({ credits: -200, battlesWon: 0 });
+  expect(lost).toMatchObject({ credits: -196, battlesWon: 0 });
   expect(game.credits).toBe(1200);
 });

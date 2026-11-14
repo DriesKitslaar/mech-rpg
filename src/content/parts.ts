@@ -67,9 +67,29 @@ const ENEMY_PARTS: Part[] = [
   frame('core-turret', 'Turret Housing', 'core', 260, r(0.4, 0.2, 0.1), 400, 0, 0, undefined),
   generator('gen-drone', 'Drone Cell', 70, 20, 30, 0),
   generator('gen-turret', 'Turret Feed', 200, 15, 50, 0),
-  weapon('wpn-drone-stinger', 'Stinger', 'shoulder', 'kinetic', 14, 70, 50, 10, null, 0, 30, 0),
-  weapon('wpn-turret-cannon', 'Bastion Cannon', 'shoulder', 'kinetic', 60, 75, 120, 35, null, 0, 200, 0),
+  weapon('wpn-drone-stinger', 'Stinger', 'shoulder', 'kinetic', 12, 70, 50, 10, null, 0, 30, 0),
+  weapon('wpn-turret-cannon', 'Bastion Cannon', 'shoulder', 'kinetic', 48, 75, 120, 35, null, 0, 200, 0),
+  // Tank: shrugs off bullets, has no answer to explosives.
+  frame('core-tank', 'Tank Hull', 'core', 200, r(0.5, 0.2, 0), 500, 0, 0, undefined),
+  frame('legs-tracks', 'Tank Treads', 'legs', 120, r(0.5, 0.2, 0), 300, 0, 0, undefined, { capacity: 2000, mobility: 12 }),
+  generator('gen-tank', 'Tank Engine', 220, 20, 150, 0),
+  weapon('wpn-tank-gun', 'Howitzer', 'shoulder', 'explosive', 38, 66, 110, 30, null, 0, 200, 0),
+  // Weapons of enemy mechs: weaker than what the shop sells, so a duel is a fight and not an execution.
+  weapon('wpn-enemy-carbine', 'Security Carbine', 'hand', 'energy', 24, 74, 100, 24, null, 0, 70, 0),
+  weapon('wpn-enemy-shotgun', 'Breaching Gun', 'hand', 'kinetic', 36, 60, 80, 20, null, 0, 110, 0),
+  weapon('wpn-enemy-lance', 'Duelist Lance', 'hand', 'kinetic', 46, 80, 120, 28, null, 0, 150, 0),
+  weapon('wpn-enemy-rack', 'Duelist Rack', 'shoulder', 'explosive', 50, 66, 110, 34, null, 0, 180, 0),
 ];
+
+/** The contract (or 'choice' for any exclusive contract) that puts a part in the shop. Unlisted parts are always in stock. */
+export const SHOP_UNLOCKS: Record<string, string> = {
+  'head-halo': 'lumen-1', 'core-halo': 'lumen-1', 'arms-halo': 'lumen-1', 'legs-halo': 'lumen-1',
+  'gen-prism': 'lumen-1', 'wpn-pulse-carbine': 'lumen-1', 'wpn-halo-array': 'lumen-1',
+  'head-bulwark': 'hadron-1', 'core-bulwark': 'hadron-1', 'arms-bulwark': 'hadron-1', 'legs-bulwark': 'hadron-1',
+  'gen-furnace': 'hadron-1', 'wpn-rail-lance': 'hadron-1', 'wpn-siege-cannon': 'hadron-1',
+  'wpn-swarm-rack': 'undertow-1',
+  'head-ronin': 'choice', 'core-ronin': 'choice', 'arms-ronin': 'choice', 'legs-ronin': 'choice', 'wpn-lance-emitter': 'choice',
+};
 
 export const CATALOG: Catalog = Object.fromEntries([...SHOP_PARTS, ...ENEMY_PARTS].map((part) => [part.id, part]));
 

@@ -1,7 +1,7 @@
 # IRONWAGE — ontwerp eerste versie
 
 Datum: 2026-11-10
-Status: ter goedkeuring
+Status: gebouwd. Hoofdstuk 15 beschrijft waar de gebouwde versie van dit ontwerp afwijkt; bij verschil geldt hoofdstuk 15.
 
 "IRONWAGE" is een werktitel. Alle namen in dit document (wereld, partijen, onderdelen)
 zijn eigen verzinsels en mogen nog veranderen.
@@ -381,3 +381,80 @@ onderdeel-sprites verschilt.
 
 De spelregels worden zo opgezet dat een arena, extra missies en extra onderdelen later als
 data toegevoegd kunnen worden.
+
+## 15. Wat er bij het bouwen anders is geworden
+
+Tijdens het bouwen is het ontwerp op een aantal punten bijgesteld, meestal omdat een test of
+een simulatie liet zien dat de oorspronkelijke regel het spel oneerlijk of onspeelbaar maakte.
+
+### 15.1 Gevecht
+
+- **Terugtrekken**: de speler kan in zijn beurt een gevecht opgeven. Dat telt als nederlaag
+  en vraagt eerst om bevestiging. Zonder deze actie kon een gevecht zonder munitie tientallen
+  beurten duren.
+- **Zonder wapen niet vertrekken**: een build zonder enig wapen mag de garage niet verlaten.
+- **Schot op een uitgevallen onderdeel**: de voorspelling en de melding tonen de schade die
+  de romp werkelijk krijgt (de helft).
+- **Oververhitting**: de straf verlaagt de hitte naar 50 en verhoogt haar nooit.
+
+### 15.2 Vijanden
+
+| Vijand | Gedrag |
+|---|---|
+| Recon Drone | Spreidt zijn vuur over alle onderdelen |
+| Gun Turret | Schiet op de romp, kan niet ontwijken |
+| Salvage Tank | Spreidt zijn vuur; bestand tegen kogels, weerloos tegen explosieven |
+| Halo Guard (lichte mecha) | Mikt op de kop, boost elke derde ronde |
+| Bulwark Enforcer (zware mecha) | Schiet op het meest beschadigde onderdeel |
+| Ashfall (de rivaal) | Als de zware mecha, met twee wapens |
+
+Vijandelijke mecha's gebruiken zwakkere wapens dan de winkel verkoopt. Hun plaatje is de
+tekening van de bijbehorende familie, gespiegeld.
+
+### 15.3 Missies
+
+- **Veldbeurt**: tussen twee gevechten van één contract verdwijnt de hitte en krijgt elk
+  onderdeel 40% van zijn pantser terug, ook een uitgevallen onderdeel. Munitie en
+  noodreparaties worden niet aangevuld. Zonder veldbeurt was een contract na het verlies
+  van de kop in het eerste gevecht niet meer te winnen.
+- **Finale**: de keuze voor een exclusief contract bepaalt de finale. Loyaliteit wordt wel
+  geteld, maar beslist niets.
+- **Einde**: het einde wordt één keer getoond, bij het eerste bezoek aan het hoofdkwartier
+  na de finale, en staat daarna als bericht in de inbox.
+- **Winkelaanbod**: de onderdelen van een partij komen in de winkel na het eerste contract
+  voor die partij; het Ronin-frame en de Lance Emitter na het exclusieve contract. Het
+  startframe en vijf wapens zijn altijd te koop.
+
+### 15.4 Geld
+
+- **Reparatie**: 0,8 credit per verloren pantserpunt, ongeacht de prijs van het onderdeel.
+  Met een deel van de prijs werd een zwaarder frame een achteruitgang: het kostte meer om
+  te repareren dan het aan bescherming opleverde.
+- **Boeken**: de uitkomst van een contract wordt geboekt en opgeslagen op het moment dat het
+  laatste gevecht beslist is. Het spel afsluiten op het eindscherm verandert daar niets aan.
+  Afsluiten midden in een gevecht kost niets; dat is bewust zo gelaten.
+- **Laatste wapen**: het laatste wapen dat een speler bezit kan niet verkocht worden. Een
+  speler die toch geen wapen bezit, krijgt in het hoofdkwartier het startgeweer.
+- **Startsaldo**: 1200 credits.
+
+### 15.5 Inhoud
+
+- Dertig onderdelen in vier families: Salvage (start), Halo, Bulwark en Ronin.
+- Twaalf contracten: de patrouille, twee introducties, drie klantcontracten, drie exclusieve
+  contracten en drie finales.
+- Zes vijanden, vier portretten en vijf achtergronden (vier slagvelden en de hangar).
+- De tabellen met alle waarden staan in `src/content`; die bestanden zijn leidend.
+
+### 15.6 Opslag
+
+Het opslagbestand heeft versie 3. Bestanden van versie 1 en 2 worden bij het laden
+opgewaardeerd in plaats van geweigerd. Staat er iets opgeslagen dat niet te lezen is, dan
+meldt het titelscherm dat.
+
+### 15.7 Balans
+
+Elk contract is honderden keren gespeeld door een automatische speler met een uitrusting
+die op dat moment betaalbaar is. Die speler wint de introducties altijd, de klantcontracten
+in 88 tot 100% van de gevallen, de exclusieve contracten in 73 tot 100% en de finales in 55
+tot 74%. De balans is niet met mensen getest.
+

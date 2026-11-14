@@ -31,6 +31,12 @@ export class TitleScreen implements Screen {
     this.list = this.mainMenu();
   }
 
+  /** The question while asking; otherwise why there is no Continue, when a save exists but cannot be used. */
+  private notice(): string {
+    if (this.asking) return T.eraseQuestion;
+    return !this.saved && this.app.saveIsUnusable() ? T.unusable : '';
+  }
+
   update(): void {}
 
   onInput(action: InputAction): void {
@@ -52,7 +58,7 @@ export class TitleScreen implements Screen {
   }
 
   view(): ScreenView {
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, message: this.asking ? T.eraseQuestion : '' };
+    return { menu: { items: this.list.items, cursor: this.list.cursor }, message: this.notice() };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -67,11 +73,12 @@ export class TitleScreen implements Screen {
     drawText(ctx, STRINGS.title, LOGICAL_W / 2, 60, { size: 64, align: 'center', color: COLORS.accent });
     drawText(ctx, T.tagline, LOGICAL_W / 2, 122, { align: 'center', color: COLORS.text });
 
-    const w = 150;
+    const w = 190;
     const x = (LOGICAL_W - w) / 2;
-    drawPanel(ctx, x, 160, w, this.asking ? 52 : 40);
+    const notice = this.notice();
+    drawPanel(ctx, x, 160, w, notice ? 52 : 40);
     let y = 166;
-    if (this.asking) { drawText(ctx, T.eraseQuestion, LOGICAL_W / 2, y, { align: 'center', color: COLORS.danger, size: 10 }); y += 14; }
-    drawList(ctx, this.list, x + 40, y, 70, 3);
+    if (notice) { drawText(ctx, notice, LOGICAL_W / 2, y, { align: 'center', color: COLORS.danger }); y += 14; }
+    drawList(ctx, this.list, x + 60, y, 70, 3);
   }
 }

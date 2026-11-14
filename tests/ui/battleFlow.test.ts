@@ -1,9 +1,9 @@
 import { createBattle, previewShot, type BattleState } from '../../src/core/battle';
-import { ENCOUNTERS, ENEMIES } from '../../src/content/enemies';
+import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { BattleFlow } from '../../src/ui/battleFlow';
 
-const intro = (seed = 1): BattleState => createBattle(DEMO_BUILD, ENCOUNTERS.intro.map((id) => ENEMIES[id]), CATALOG, seed);
+const intro = (seed = 1): BattleState => createBattle(DEMO_BUILD, [ENEMIES['recon-drone'], ENEMIES['recon-drone']], CATALOG, seed);
 
 /** Plays out queued messages and enemy turns until the player may act (or the battle is over). */
 function settle(flow: BattleFlow): BattleFlow {
@@ -12,6 +12,11 @@ function settle(flow: BattleFlow): BattleFlow {
   return flow;
 }
 const ready = (state: BattleState = intro()) => settle(new BattleFlow(state, CATALOG));
+/** Moves the cursor to a menu item, giving up after one lap so a missing item fails instead of hanging. */
+function toItem(flow: BattleFlow, id: string): void {
+  for (let i = 0; i < 12 && flow.menu.items[flow.menu.cursor]?.id !== id; i++) flow.onInput('down');
+  expect(flow.menu.items[flow.menu.cursor]?.id).toBe(id);
+}
 const press = (flow: BattleFlow, ...actions: Parameters<BattleFlow['onInput']>[0][]) => actions.forEach((a) => flow.onInput(a));
 
 test('duplicate enemies get distinguishing names', () => {
@@ -21,8 +26,8 @@ test('duplicate enemies get distinguishing names', () => {
 test('the player turn opens on the action menu', () => {
   const flow = ready();
   expect(flow.phase).toBe('action');
-  expect(flow.menu.items.map((i) => i.id)).toEqual(['fire', 'boost', 'cool', 'repair', 'endTurn']);
-  expect(flow.menu.items.map((i) => i.label)).toEqual(['Fire', 'Boost', 'Cool', 'Field Repair', 'End Turn']);
+  expect(flow.menu.items.map((i) => i.id)).toEqual(['fire', 'boost', 'cool', 'repair', 'endTurn', 'retreat']);
+  expect(flow.menu.items.map((i) => i.label)).toEqual(['Fire', 'Boost', 'Cool', 'Field Repair', 'End Turn', 'Retreat']);
   expect(flow.menu.cursor).toBe(0);
 });
 
@@ -64,7 +69,7 @@ test('targeting cycles enemies and parts, and cancel steps back', () => {
 test('menus wrap around', () => {
   const flow = ready();
   press(flow, 'up');
-  expect(flow.menu.items[flow.menu.cursor].id).toBe('endTurn');
+  expect(flow.menu.items[flow.menu.cursor].id).toBe('retreat');
   press(flow, 'down');
   expect(flow.menu.items[flow.menu.cursor].id).toBe('fire');
 });
@@ -162,4 +167,30 @@ test('a hit on a destroyed part is reported as core damage', () => {
   press(flow, 'confirm', 'confirm', 'down');
   expect(flow.targetPart).toBe('legs');
   expect(flow.preview!.damage).toBe(19);
+});
+
+test('retreat asks first, with no selected, and then ends the battle in defeat', () => {
+  const flow = ready();
+  toItem(flow, 'retreat');
+  press(flow, 'confirm');
+  expect(flow.phase).toBe('confirmRetreat');
+  expect(flow.menu.items.map((i) => i.id)).toEqual(['no', 'yes']);
+  expect(flow.menu.cursor).toBe(0);
+  press(flow, 'confirm');
+  expect(flow.phase).toBe('action');
+  expect(flow.state.outcome).toBe('ongoing');
+
+  toItem(flow, 'retreat');
+  press(flow, 'confirm', 'down', 'confirm');
+  settle(flow);
+  expect(flow.state.outcome).toBe('defeat');
+  expect(flow.phase).toBe('result');
+  expect(flow.message).toBe('DEFEAT');
+});
+
+test('cancel backs out of the retreat question', () => {
+  const flow = ready();
+  toItem(flow, 'retreat');
+  press(flow, 'confirm', 'cancel');
+  expect(flow.phase).toBe('action');
 });

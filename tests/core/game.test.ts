@@ -1,5 +1,5 @@
 import {
-  SAVE_VERSION, STARTING_CREDITS, buy, checkBuy, checkEquip, checkSell, equip, equippedCount, fits, isValidState,
+  SAVE_VERSION, STARTING_CREDITS, buy, checkBuy, checkEquip, checkSell, ensureArmed, equip, equippedCount, fits, isValidState,
   newGame, sell, spareCount, type GameState,
 } from '../../src/core/game';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
@@ -17,6 +17,8 @@ describe('a new game', () => {
       'head-scout-mk1': 1, 'core-hauler': 1, 'arms-rigger': 1, 'legs-strider': 1, 'gen-kd1': 1, 'wpn-rivet-rifle': 1,
     });
     expect(g.battlesWon).toBe(0);
+    expect(g.completed).toEqual([]);
+    expect(g.read).toEqual([]);
     expect(g.version).toBe(SAVE_VERSION);
     expect(isValidState(g, CATALOG)).toBe(true);
   });
@@ -156,6 +158,11 @@ describe('validating loaded data', () => {
     ['no build', (g) => ({ ...g, build: undefined })],
     ['an inventory that is a list', (g) => ({ ...g, inventory: [] })],
     ['negative battles won', (g) => ({ ...g, battlesWon: -1 })],
+    ['completed contracts that are not a list', (g) => ({ ...g, completed: 'intro-1' })],
+    ['a completed entry that is not text', (g) => ({ ...g, completed: [1] })],
+    ['read messages missing', (g) => { const { read: _read, ...rest } = g; return rest; }],
+    ['fractional credits', (g) => ({ ...g, credits: 10.5 })],
+    ['absurdly many copies', (g) => ({ ...g, inventory: { ...g.inventory, 'head-halo': 1e308 } })],
   ];
   test.each(broken)('rejects %s', (_name, make) => {
     expect(isValidState(make(fresh()), CATALOG)).toBe(false);
@@ -171,4 +178,42 @@ describe('validating loaded data', () => {
   test('accepts negative credits', () => {
     expect(isValidState(withCredits(-300), CATALOG)).toBe(true);
   });
+});
+
+test('ids that only exist on every object are not parts', () => {
+  for (const id of ['constructor', '__proto__', 'toString']) {
+    expect(checkSell(fresh(), id, CATALOG)).toBe('notOwned');
+    expect(checkBuy(withCredits(99999), id, CATALOG)).toBe('notForSale');
+    expect(checkEquip(fresh(), 'head', id, CATALOG)).toBe('notOwned');
+  }
+});
+
+describe('never without a weapon', () => {
+  test('the last weapon a pilot owns cannot be sold, fitted or not', () => {
+    expect(checkSell(equip(fresh(), 'rightHand', null, CATALOG), 'wpn-rivet-rifle', CATALOG)).toBe('lastWeapon');
+    expect(checkSell(fresh(), 'wpn-rivet-rifle', CATALOG)).toBe('equipped');
+  });
+
+  test('with two weapons a spare one can be sold', () => {
+    const g = buy(fresh(), 'wpn-arc-pistol', CATALOG);
+    expect(checkSell(g, 'wpn-arc-pistol', CATALOG)).toBeNull();
+  });
+
+  test('a pilot who somehow owns no weapon is issued the starter rifle', () => {
+    const { 'wpn-rivet-rifle': _gone, ...inventory } = fresh().inventory;
+    const { rightHand: _slot, ...build } = fresh().build;
+    const unarmed = { ...fresh(), inventory, build };
+    const armed = ensureArmed(unarmed, CATALOG, 'wpn-rivet-rifle');
+    expect(armed.inventory['wpn-rivet-rifle']).toBe(1);
+    expect(armed.credits).toBe(unarmed.credits);
+    const already = fresh();
+    expect(ensureArmed(already, CATALOG, 'wpn-rivet-rifle')).toBe(already);
+  });
+});
+
+test('a new game has not seen an ending, and the flag must be a boolean', () => {
+  expect(fresh().endingSeen).toBe(false);
+  expect(isValidState({ ...fresh(), endingSeen: 'no' }, CATALOG)).toBe(false);
+  const { endingSeen: _flag, ...without } = fresh();
+  expect(isValidState(without, CATALOG)).toBe(false);
 });

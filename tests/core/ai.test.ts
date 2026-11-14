@@ -1,7 +1,9 @@
 import { chooseAutoPlayerAction, chooseEnemyAction, runBattle } from '../../src/core/ai';
 import { activeUnit, applyAction, createBattle, type BattleState } from '../../src/core/battle';
 import type { AiProfile, EnemyDef } from '../../src/core/types';
-import { ENCOUNTERS, ENEMIES } from '../../src/content/enemies';
+import { playMission } from '../../src/core/mission';
+import { ENEMIES } from '../../src/content/enemies';
+import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 
 const END = { type: 'endTurn' } as const;
@@ -42,16 +44,20 @@ test('an enemy that cannot cool does not fire itself into overheating', () => {
   expect(chooseEnemyAction(s, CATALOG)).toEqual(END);
 });
 
-test('a skirmisher boosts first and aims for the head', () => {
-  let s = toEnemy(createBattle(DEMO_BUILD, [mechEnemy('skirmisher')], CATALOG, 1));
+test('a skirmisher boosts every third round and aims for the head', () => {
+  const start = toEnemy(createBattle(DEMO_BUILD, [mechEnemy('skirmisher')], CATALOG, 1));
+  // Rounds one and two: no boost, straight to the shot.
+  expect(chooseEnemyAction(start, CATALOG)).toEqual({ type: 'fire', weapon: 'rightHand', target: 'player', part: 'head' });
+  expect(chooseEnemyAction(edit(start, (d) => { d.round = 2; }), CATALOG)).toMatchObject({ type: 'fire' });
+  // Round three: boost first, then shoot.
+  let s = edit(start, (d) => { d.round = 3; });
   expect(chooseEnemyAction(s, CATALOG)).toEqual({ type: 'boost' });
   s = applyAction(s, { type: 'boost' }, CATALOG);
   expect(chooseEnemyAction(s, CATALOG)).toEqual({ type: 'fire', weapon: 'rightHand', target: 'player', part: 'head' });
 });
 
 test('a skirmisher switches to the core once the head is gone', () => {
-  let s = edit(toEnemy(createBattle(DEMO_BUILD, [mechEnemy('skirmisher')], CATALOG, 1)), (d) => { d.units[0].parts.head!.ap = 0; });
-  s = applyAction(s, { type: 'boost' }, CATALOG);
+  const s = edit(toEnemy(createBattle(DEMO_BUILD, [mechEnemy('skirmisher')], CATALOG, 1)), (d) => { d.units[0].parts.head!.ap = 0; });
   expect(chooseEnemyAction(s, CATALOG)).toMatchObject({ type: 'fire', part: 'core' });
 });
 
@@ -65,17 +71,36 @@ test('a bruiser breaks ties in favour of the core', () => {
   expect(chooseEnemyAction(s, CATALOG)).toMatchObject({ type: 'fire', part: 'core' });
 });
 
+test('a sprayer works its way around the parts instead of hammering the core', () => {
+  const sprayer = mechEnemy('sprayer');
+  const targets = new Set<string>();
+  let s = createBattle(DEMO_BUILD, [sprayer], CATALOG, 1);
+  for (let i = 0; i < 40 && s.outcome === 'ongoing' && targets.size < 4; i++) {
+    const action = activeUnit(s).side === 'enemy' ? chooseEnemyAction(s, CATALOG) : END;
+    if (action.type === 'fire') targets.add(action.part);
+    s = applyAction(s, action, CATALOG, () => 0.999);
+  }
+  expect([...targets].sort()).toEqual(['arms', 'core', 'head', 'legs']);
+});
+
+test('a sprayer skips parts that are already destroyed', () => {
+  let s = edit(toEnemy(createBattle(DEMO_BUILD, [mechEnemy('sprayer')], CATALOG, 1)), (d) => {
+    d.units[0].parts.legs!.ap = 0; d.units[0].parts.arms!.ap = 0; d.units[0].parts.head!.ap = 0;
+  });
+  expect(chooseEnemyAction(s, CATALOG)).toMatchObject({ type: 'fire', part: 'core' });
+});
+
 test('the auto-player shoots the enemy with the weakest core', () => {
   let s = createBattle(DEMO_BUILD, [ENEMIES['gun-turret'], ENEMIES['recon-drone']], CATALOG, 1);
   while (activeUnit(s).id !== 'player') s = applyAction(s, END, CATALOG);
   expect(chooseAutoPlayerAction(s, CATALOG)).toEqual({ type: 'fire', weapon: 'rightHand', target: 'enemy-1', part: 'core' });
 });
 
-test.each(Object.keys(ENCOUNTERS))('encounter %s always plays to an outcome with legal actions only', (name) => {
-  for (let seed = 1; seed <= 30; seed++) {
-    const start = createBattle(DEMO_BUILD, ENCOUNTERS[name].map((id) => ENEMIES[id]), CATALOG, seed);
+test.each(MISSIONS.map((m) => m.id))('contract %s always plays to an outcome with legal actions only', (id) => {
+  const mission = MISSIONS.find((m) => m.id === id)!;
+  for (let seed = 1; seed <= 10; seed++) {
     // applyAction throws on an illegal action, so finishing proves every choice was legal.
-    const end = runBattle(start, CATALOG, chooseAutoPlayerAction);
+    const end = playMission(DEMO_BUILD, mission, ENEMIES, CATALOG, seed, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction));
     expect(end.outcome).not.toBe('ongoing');
   }
 });

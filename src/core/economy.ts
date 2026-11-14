@@ -3,8 +3,11 @@ import { framePart, weaponIn } from './build';
 import type { GameState } from './game';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog } from './types';
 
-/** Rebuilding a destroyed part costs this share of its price; damage is charged in proportion. */
-export const REPAIR_RATE = 0.5;
+/**
+ * Credits per point of armour repaired, whatever the part cost: heavy armour takes more hits
+ * for the same bill, so buying a sturdier frame is never a step back.
+ */
+export const REPAIR_COST_PER_AP = 0.8;
 
 export interface Settlement {
   won: boolean;
@@ -36,7 +39,7 @@ export function settle(battle: BattleState, reward: number, catalog: Catalog): S
     const part = framePart(player.build, slot, catalog);
     if (!state || !part || state.ap >= state.maxAp) continue;
     const lost = state.maxAp - state.ap;
-    lines.push({ partId: part.id, lost, cost: Math.round((lost / state.maxAp) * part.price * REPAIR_RATE) });
+    lines.push({ partId: part.id, lost, cost: Math.round(lost * REPAIR_COST_PER_AP) });
   }
   const repairCost = lines.reduce((sum, line) => sum + line.cost, 0);
   const paid = won ? reward : 0;

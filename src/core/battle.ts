@@ -60,7 +60,9 @@ export type Action =
   | { type: 'boost' }
   | { type: 'cool' }
   | { type: 'repair'; part: FrameSlot }
-  | { type: 'endTurn' };
+  | { type: 'endTurn' }
+  /** The player gives the battle up: a defeat, without waiting to be destroyed. */
+  | { type: 'retreat' };
 
 export type Refusal =
   | 'noEnergy' | 'noAmmo' | 'alreadyFired' | 'weaponDisabled' | 'noWeapon' | 'invalidTarget'
@@ -177,9 +179,42 @@ function enemyName(enemies: EnemyDef[], index: number): string {
   return same.length > 1 ? `${enemies[index].name} ${String.fromCharCode(65 + same.indexOf(index))}` : enemies[index].name;
 }
 
-export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalog, seed: number): BattleState {
+/** What a mech takes from one battle of a mission into the next. */
+export interface Carry {
+  /** Remaining armour per frame part. */
+  ap: Partial<Record<FrameSlot, number>>;
+  heat: number;
+  ammo: Partial<Record<WeaponSlot, number | null>>;
+  repairsLeft: number;
+  destroyed: boolean;
+}
+
+/** The player's condition at the end of a battle, to start the next one with. */
+export function carryFrom(state: BattleState): Carry {
+  const player = state.units[0];
+  const ap: Carry['ap'] = {};
+  for (const slot of FRAME_SLOTS) if (player.parts[slot]) ap[slot] = player.parts[slot]!.ap;
+  return { ap, heat: player.heat, ammo: { ...player.ammo }, repairsLeft: player.repairsLeft, destroyed: player.destroyed };
+}
+
+function applyCarry(unit: UnitState, carry: Carry): void {
+  if (carry.destroyed) throw new Error('a destroyed mech cannot enter a battle');
+  for (const slot of FRAME_SLOTS) {
+    const part = unit.parts[slot];
+    const ap = carry.ap[slot];
+    if (part && typeof ap === 'number') part.ap = Math.max(0, Math.min(part.maxAp, ap));
+  }
+  unit.heat = Math.max(0, carry.heat);
+  for (const slot of WEAPON_SLOTS) if (slot in unit.ammo && slot in carry.ammo) unit.ammo[slot] = carry.ammo[slot];
+  unit.repairsLeft = carry.repairsLeft;
+}
+
+/** `carry` continues a mission: the player starts as the previous battle left them. Enemies are always fresh. */
+export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalog, seed: number, carry?: Carry): BattleState {
+  const playerUnit = createUnit('player', 'You', 'player', player, catalog);
+  if (carry) applyCarry(playerUnit, carry);
   const units = [
-    createUnit('player', 'You', 'player', player, catalog),
+    playerUnit,
     ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite })),
   ];
   const state: BattleState = { units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing' };
@@ -223,6 +258,8 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
   switch (action.type) {
     case 'endTurn':
       return null;
+    case 'retreat':
+      return unit.side === 'player' ? null : 'invalidTarget';
     case 'fire': {
       const weapon = weaponIn(unit.build, action.weapon, catalog);
       if (!weapon) return 'noWeapon';
@@ -332,6 +369,9 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
     }
     case 'endTurn':
       finishTurn(state, catalog);
+      break;
+    case 'retreat':
+      setOutcome(state, 'defeat');
       break;
   }
   return state;

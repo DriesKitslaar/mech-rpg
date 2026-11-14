@@ -1,20 +1,22 @@
+import type { Mission } from '../core/campaign';
 import type { Settlement } from '../core/economy';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
-import { COLORS, LINE, drawPanel, drawText } from './widgets';
+import { COLORS, LINE, charsFor, drawPanel, drawText, wrap } from './widgets';
 
 const S = STRINGS.settlement;
 
 /** The bill after a battle: reward, ammunition, repairs and what is left. */
 export class SettlementScreen implements Screen {
-  constructor(private app: App, private settlement: Settlement) {}
+  constructor(private app: App, private settlement: Settlement, private mission: Mission) {}
 
   update(): void {}
 
   onInput(action: InputAction): void {
     // The settlement is already booked; this screen only shows it.
+    // After a won finale the hub shows the ending first.
     if (action === 'confirm') this.app.go('hub');
   }
 
@@ -35,9 +37,10 @@ export class SettlementScreen implements Screen {
     const w = LOGICAL_W - 80;
     const right = x + w - 10;
     drawPanel(ctx, x, 20, w, 230);
+    drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
     drawText(ctx, s.won ? S.won : S.lost, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
 
-    let y = 52;
+    let y = 56;
     const row = (label: string, amount: number, color: string = COLORS.text): void => {
       drawText(ctx, label, x + 10, y, { color: COLORS.text });
       drawText(ctx, amount > 0 ? `+${amount}` : String(amount), right, y, { align: 'right', color });
@@ -46,11 +49,17 @@ export class SettlementScreen implements Screen {
     row(S.reward, s.reward, s.reward > 0 ? COLORS.armor : COLORS.dim);
     row(S.ammo, -s.ammoCost, s.ammoCost > 0 ? COLORS.danger : COLORS.dim);
     row(S.repairs, -s.repairCost, s.repairCost > 0 ? COLORS.danger : COLORS.dim);
-    // Up to six repair lines fit; the total above always covers all of them.
-    for (const line of s.lines.slice(0, 6)) {
+    // Four repair lines fit; the total above always covers all of them.
+    for (const line of s.lines.slice(0, 4)) {
       drawText(ctx, `  ${catalog[line.partId]?.name ?? line.partId}`, x + 10, y, { color: COLORS.dim });
       drawText(ctx, String(-line.cost), right, y, { align: 'right', color: COLORS.dim });
       y += LINE;
+    }
+
+    // After a win, what the client had to say about it.
+    if (s.won) {
+      wrap(this.mission.debrief, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
+        drawText(ctx, line, x + 10, 144 + i * LINE, { color: COLORS.dim }));
     }
 
     ctx.fillStyle = COLORS.border;
