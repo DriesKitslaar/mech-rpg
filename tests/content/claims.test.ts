@@ -134,3 +134,16 @@ describe('the medals', () => {
     for (const id of ['first-s', 's-10', 's-25']) expect(MEDALS.find((m) => m.id === id)!.text, id).toMatch(/story contract/);
   });
 });
+
+describe('field repairs', () => {
+  test('a field repair ends the turn, and the manual and the battle menu both say so', () => {
+    const s = structuredClone(toPlayer(createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], CATALOG, 2)));
+    s.units[0].parts.core!.ap -= 50;
+    expect(activeUnit(s).side).toBe('player');
+    const after = applyAction(s, { type: 'repair', part: 'core' }, CATALOG);
+    expect(after.units[0].repairsLeft).toBe(s.units[0].repairsLeft - 1);
+    expect(activeUnit(after).side).toBe('enemy');
+    expect(topic('repairs')).toMatch(/ends your turn/);
+    expect(STRINGS.actionNotes.repair).toBe('ends turn');
+  });
+});

@@ -1,3 +1,4 @@
+import { adviceAfter, type Advice } from '../core/advice';
 import { MIRROR_ID, arenaMission, checkChallenge, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordMirrorWin } from '../core/arena';
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
@@ -152,6 +153,8 @@ class MissionHost implements Screen {
   /** What the battles already over added to the record, and the kinds of enemy seen in them. */
   private tally: Stats = NO_STATS;
   private met = new Set<string>();
+  /** What there is to say about the battle the contract was lost in; null after a win or a retreat. */
+  private tip: Advice | null = null;
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
@@ -202,6 +205,8 @@ class MissionHost implements Screen {
   private bookIfOver(): void {
     const { outcome } = this.flow.state;
     if (this.settlement || outcome === 'ongoing' || (outcome === 'victory' && this.hasNext())) return;
+    // After a defeat Dispatch has a word about what went wrong in the battle that was lost.
+    this.tip = adviceAfter(this.flow.state);
     if (isDrill(this.mission)) {
       // The simulator bills nothing and counts for nothing but the list of drills passed.
       this.settlement = drillSettlement(outcome === 'victory', this.mission);
@@ -239,7 +244,7 @@ class MissionHost implements Screen {
       return;
     }
     if (action !== 'confirm') return;
-    if (this.settlement) this.app.showSettlement(this.settlement, this.mission);
+    if (this.settlement) this.app.showSettlement(this.settlement, this.mission, this.tip);
     else {
       this.rounds += this.flow.state.round;
       this.count();
@@ -628,8 +633,8 @@ export class App {
   }
 
   /** Shows a settlement that has already been booked. */
-  showSettlement(settlement: Settlement, mission: Mission): void {
-    this.show('settlement', new SettlementScreen(this, settlement, mission), trackFor('settlement', settlement));
+  showSettlement(settlement: Settlement, mission: Mission, tip: Advice | null = null): void {
+    this.show('settlement', new SettlementScreen(this, settlement, mission, tip), trackFor('settlement', settlement));
   }
 
   /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. An ending is followed by the end roll. */

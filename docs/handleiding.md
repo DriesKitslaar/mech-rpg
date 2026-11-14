@@ -58,7 +58,8 @@ Elke beurt krijg je energie van je generator. Daarmee kun je:
   **CHARGING** of **FUSE 1** staat: dan komt er de volgende beurt een zware klap.
 - **Vent**: hitte lozen. Elk schot maakt je mecha warmer; boven de 100 verlies je je volgende beurt.
 - **Module**: je speciale uitrusting, een paar keer per gevecht, kost geen energie.
-- **Field Repair**: twee keer per contract een beschadigd onderdeel oplappen.
+- **Field Repair**: twee keer per contract een beschadigd onderdeel oplappen. Dat beëindigt je
+  beurt, dus schiet eerst.
 - **Auto Turn**: de computer speelt deze beurt voor je.
 - **Retreat**: het contract opgeven. Je betaalt wel de kosten.
 

@@ -187,7 +187,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'repairs', title: 'FIELD REPAIRS',
-    text: 'Twice per contract you can patch a damaged part in the field, which restores 40% of its armour. A destroyed part cannot be patched. Each repair you use lowers your rank a little.',
+    text: 'Twice per contract you can patch a damaged part in the field, which restores 40% of its armour. A destroyed part cannot be patched. A repair ends your turn, so fire first. Each one you use lowers your rank a little.',
   },
   {
     id: 'tricks', title: 'ENEMY TRICKS',

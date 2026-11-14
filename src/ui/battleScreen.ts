@@ -623,7 +623,7 @@ export class BattleScreen {
 
     const heading = phase === 'weapon' ? STRINGS.headings.weapons
       : phase === 'repairPart' ? STRINGS.headings.repair
-      : phase === 'target' ? STRINGS.headings.target
+      : phase === 'target' ? this.targetHeading()
       : phase === 'moduleTarget' ? STRINGS.headings.paint
       : phase === 'confirmRetreat' ? STRINGS.actions.retreat.toUpperCase() : '';
     let menuY = PANEL_Y + 3;
@@ -661,6 +661,12 @@ export class BattleScreen {
     }
   }
 
+  /** Over the list of parts while aiming: with a choice of enemies, which one this is and how to get to the next. */
+  private targetHeading(): string {
+    const { at, of } = this.flow.targetChoice;
+    return of > 1 ? STRINGS.headings.targetOf(at, of) : STRINGS.headings.target;
+  }
+
   /** The weapon menu: each weapon's name, and under it what firing it costs or why it cannot be fired. */
   private drawWeaponMenu(ctx: CanvasRenderingContext2D, x: number, y: number): void {
     const { items, cursor } = this.flow.menu;
@@ -680,7 +686,9 @@ export class BattleScreen {
       boost: boostCost(player, this.catalog), guard: guardCost(player, this.catalog), cool: coolCost(player, this.catalog),
     };
     return this.flow.menu.items.map((item) => ({
-      ...item, label: cost[item.id] !== undefined ? `${item.label}  ${STRINGS.meters.energy} ${cost[item.id]}` : item.label,
+      ...item,
+      label: cost[item.id] !== undefined ? `${item.label}  ${STRINGS.meters.energy} ${cost[item.id]}`
+        : item.id === 'repair' ? `${item.label}  ${STRINGS.actionNotes.repair}` : item.label,
     }));
   }
 

@@ -6,7 +6,7 @@ import { CATALOG } from '../../src/content/parts';
 import { SAVE_KEY, SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
 import { App } from '../../src/ui/app';
 import {
-  accept, done, finishMission, fresh, inHub, makeApp, medalPay, memoryStore, press, savedGame, select, skipScenes, snap, sprites, strong,
+  accept, done, finishMission, fresh, inHub, makeApp, medalPay, memoryStore, press, retreat, savedGame, select, skipScenes, snap, sprites, strong,
 } from '../helpers/app';
 
 /** A pilot the database and the story have nothing to announce to, so that only medals are announced. */
@@ -259,5 +259,81 @@ describe('the end roll', () => {
     expect(snap(app)).toMatchObject({ screen: 'credits', credits: { done: true } });
     press(app, 'cancel');
     expect(snap(app).screen).toBe('hub');
+  });
+});
+
+describe('the list of contracts', () => {
+  test('opens with the cursor on the next contract of the story, not on the patrol above it', () => {
+    const { app } = inHub(quiet());
+    select(app, 'contracts');
+    const { items, cursor } = snap(app).menu;
+    expect(items[0].id).toBe('patrol');
+    expect(items[cursor].id).toBe('intro-1');
+    // Pressing the same button again and again leads into the story.
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'intro-1' } });
+  });
+
+  test('with no story contract on offer, on the patrol', () => {
+    const story = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
+      'choice-hadron', 'hadron-3', 'hadron-4', 'hadron-5', 'finale-hadron', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
+    const { app } = inHub(quiet({ ...done(...story), endingSeen: true }));
+    select(app, 'contracts');
+    const { items, cursor } = snap(app).menu;
+    expect(items[cursor].id).toBe('patrol');
+  });
+
+  test('coming back from a briefing still leaves the cursor on that contract', () => {
+    const { app } = inHub(quiet());
+    select(app, 'contracts');
+    press(app, 'up');
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('patrol');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('briefing');
+    press(app, 'cancel');
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('patrol');
+  });
+});
+
+describe('after a defeat', () => {
+  /** Ends every turn without doing anything until the battle is lost. */
+  function standStill(app: App): void {
+    for (let i = 0; i < 60000 && snap(app).battle?.phase !== 'result'; i++) {
+      if (snap(app).battle!.phase === 'action') select(app, 'endTurn');
+      else if (snap(app).battle!.phase === 'animating') app.update(16);
+      else press(app, 'confirm');
+    }
+    expect(snap(app).battle).toMatchObject({ phase: 'result', outcome: 'defeat' });
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('settlement');
+  }
+
+  test('the settlement carries a word about what went wrong: here, a pilot who never boosted or guarded', () => {
+    const { app } = inHub(quiet());
+    accept(app, 'intro-1');
+    standStill(app);
+    expect(snap(app).settlement).toMatchObject({ won: false, tip: 'stance' });
+  });
+
+  test('a contract that was won, or walked away from, carries none', () => {
+    const won = inHub(strong(quiet())).app;
+    accept(won, 'intro-1');
+    finishMission(won);
+    expect(snap(won).settlement).toMatchObject({ won: true, tip: null });
+    const left = inHub(quiet()).app;
+    accept(left, 'intro-1');
+    retreat(left);
+    expect(snap(left).settlement).toMatchObject({ won: false, tip: null });
+  });
+
+  test('a drill that was failed carries one too', () => {
+    const { app } = inHub(quiet());
+    select(app, 'training');
+    select(app, 'drill-heat');
+    select(app, 'accept');
+    expect(snap(app).screen).toBe('battle');
+    standStill(app);
+    expect(snap(app).settlement).toMatchObject({ won: false });
+    expect(snap(app).settlement!.tip).not.toBeNull();
   });
 });

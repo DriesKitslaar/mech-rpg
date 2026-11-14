@@ -57,10 +57,14 @@ export class HubScreen implements Screen {
     this.asking = false;
     this.inArchive = false;
     const done = this.app.archive().length;
+    const missions = this.app.missions();
+    // The patrol heads the list, but the cursor starts on the next contract of the story: the same
+    // button pressed again and again should lead on, not round and round the patrol.
+    const story = missions.findIndex((m) => m.phase !== 'patrol');
     this.sub = new MenuList([
-      ...this.app.missions().map((m) => ({ id: m.id, label: m.title, enabled: true, note: String(m.reward) })),
+      ...missions.map((m) => ({ id: m.id, label: m.title, enabled: true, note: String(m.reward) })),
       ...(done > 0 ? [{ id: ARCHIVE, label: H.archive, enabled: true, note: String(done) }] : []),
-    ]);
+    ], Math.max(0, story));
   }
 
   /** The contracts already done, each with the best rank earned on it. */

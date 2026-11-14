@@ -14,10 +14,16 @@ export const STRINGS = {
     fire: 'Fire', boost: 'Boost', guard: 'Guard', cool: 'Vent', module: 'Module', repair: 'Field Repair', auto: 'Auto Turn',
     endTurn: 'End Turn', retreat: 'Retreat',
   },
+  /** What an action costs other than energy, said beside it in the list. */
+  actionNotes: { repair: 'ends turn' },
   retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
   parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
   meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
-  headings: { you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?', paint: 'MARK WHICH ENEMY?' },
+  headings: {
+    you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?', paint: 'MARK WHICH ENEMY?',
+    // With more than one enemy to aim at: which one this is, and the buttons that go to the next.
+    targetOf: (n: number, of: number) => `TARGET ${n}/${of}  L1/R1`,
+  },
   preview: { hit: 'HIT', damage: 'DMG', all: 'ALL' },
   weaponMenu: {
     charge: 'CHARGE', ready: 'READY',
@@ -209,6 +215,18 @@ export const STRINGS = {
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
     relief: (credits: number) => `Debt limit reached: ${credits} written off`,
+  },
+  /** What Dispatch says after a lost battle; `adviceAfter` picks which. Each fits three lines of the settlement. */
+  advice: {
+    disable: 'The machine was wanted in one piece. Aim at its legs and arms; leave the core alone.',
+    protect: 'It loses a point a round for every hostile still standing. Thin them out, weakest first.',
+    heat: 'You overheated and lost a turn. Vent before the heat bar passes 100.',
+    stance: 'You never used Boost or Guard. Boost makes you hard to hit; Guard blunts what lands.',
+    repairs: 'You went down with field repairs unused. A repair ends your turn: fire, then patch.',
+    time: 'The fight ran out of time. Bring more firepower, and aim at what the contract names.',
+    patrol: 'Short of parts? The patrol always pays, and a second weapon changes most fights.',
+    drills: 'The drills under Training teach one trick each, in a mech lent for the purpose.',
+    auto: 'Auto Turn plays a turn for you. Watch what it does with the same mech.',
   },
   saveFailed: 'Could not save: storage is full or blocked',
   slots: {

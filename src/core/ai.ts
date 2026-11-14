@@ -210,20 +210,16 @@ function autoTarget(state: BattleState, enemies: UnitState[]): { target: UnitSta
 }
 
 /**
- * A plain, competent player used by simulations, tests and the Auto Turn action: repairs a failing
- * core, braces for a bomb, plays to the objective, uses its module when it helps, charges and closes
+ * A plain, competent player used by simulations, tests and the Auto Turn action: braces for a bomb, plays to the objective, uses its module when it helps, charges and closes
  * in when its weapons need that (but keeps its boost for dodging when the battle only has to be outlasted), cools before overheating, shoots helpers and staggered enemies
  * first and the weakest one otherwise (its legs when it is too nimble to hit), pushing with its
- * heaviest weapons first, and spends leftover energy on a boost or a guard.
+ * heaviest weapons first, spends leftover energy on a boost or a guard, and patches a failing core
+ * last of all, because a field repair ends the turn.
  */
 export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Action {
   const me = activeUnit(state);
   const enemies = state.units.filter((u) => u.side === 'enemy' && !u.destroyed);
   if (enemies.length === 0) return { type: 'endTurn' };
-
-  const core = me.parts.core!;
-  const repair: Action = { type: 'repair', part: 'core' };
-  if (core.ap < core.maxAp * 0.35 && me.fired.length === 0 && can(state, repair, catalog)) return repair;
 
   if (!me.usedBoost && !me.usedGuard) {
     // A bomb that goes off before the next turn, or a charged shot that is about to be fired, is
@@ -279,7 +275,15 @@ export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Ac
     const odds = previewShot(state, me.id, choice.weapon, target.id, 'core', catalog).hitChance;
     return odds < 50 && legs && legs.ap > 0 ? { ...choice, part: 'legs' } : choice;
   }
-  if (choice.type === 'endTurn') return stance(state, me, enemies, catalog) ?? choice;
+  if (choice.type === 'endTurn') {
+    const braced = stance(state, me, enemies, catalog);
+    if (braced) return braced;
+    // A field repair ends the turn, so a failing core is patched last: after everything has been fired
+    // and the stance taken, in place of simply ending the turn.
+    const core = me.parts.core!;
+    const repair: Action = { type: 'repair', part: 'core' };
+    return core.ap < core.maxAp * 0.35 && can(state, repair, catalog) ? repair : choice;
+  }
   return choice;
 }
 

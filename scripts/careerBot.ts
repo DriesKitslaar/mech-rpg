@@ -1,10 +1,19 @@
 /**
  * A pilot that plays a whole career by itself: the story to an ending by a chosen road, the arena as
- * far as it can climb, buying better gear as it becomes affordable. It presses the same buttons a
- * player does for everything but the shop and the garage, where it changes the game through the
- * same rules those screens use. It exists to find what a person would find after ten hours: a
- * contract nobody can win with what the shop sells by then, a pilot left without the money to go
- * on, a screen there is no way out of.
+ * far as it can climb, buying better gear as it becomes affordable. It exists to find what a person
+ * would find after ten hours: a contract nobody can win with what the shop sells by then, a pilot
+ * left without the money to go on, a screen there is no way out of.
+ *
+ * What it is, so that nobody reads more into it than there is:
+ * - It gets to its contracts and through them by pressing buttons: the title, the hub's lists, the
+ *   briefing, the battle, the settlement, pages of story, the arena, the question before a new cycle.
+ * - In a battle it only ever presses Auto Turn, so it plays as well as the game's own automatic
+ *   player and no better.
+ * - It runs the game in its fast mode: no banners, no lines of talk, no hold-offs, and nothing is drawn.
+ * - It buys, sells and fits parts through the same rules the shop and the garage use, not through
+ *   those screens, and learns perks and sets the difficulty by asking the app directly. The shop,
+ *   garage, pilot, options, messages, database and training screens are never opened: the
+ *   random-button tests are what presses on those.
  */
 import { validatePlayerBuild } from '../src/core/build';
 import type { Faction, Verdict } from '../src/core/campaign';
@@ -27,6 +36,8 @@ export interface CareerOptions {
   seed: number;
   /** How many times the story is played: 2 goes on into a second cycle. */
   cycles?: number;
+  /** The road taken in the second cycle, the third, and so on; the first road again where none is given. */
+  later?: { faction: Faction; verdict: Verdict }[];
   /** Stop after this many contracts, whatever has been reached. */
   maxContracts?: number;
 }
@@ -43,8 +54,12 @@ export interface CareerReport {
   losses: Record<string, number>;
   /** The contract lost most often in a row, and how often. */
   worst: { id: string; streak: number };
-  /** Patrols and arena rematches flown only for the money. */
+  /** Patrols flown only for the money. */
   grind: number;
+  /** Arena fights lost; they are not among `losses`. */
+  arenaLosses: number;
+  /** The finales and verdicts won, in the order they were: the road actually taken, cycle by cycle. */
+  endings: string[];
   credits: number;
   level: number;
   arenaRank: number;
@@ -99,7 +114,7 @@ export function playCareer(options: CareerOptions): CareerReport {
     if (snap().screen !== 'hub') throw new Stuck(`still on ${snap().screen}`);
   };
   const report: CareerReport = {
-    options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0,
+    options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0, arenaLosses: 0, endings: [],
     credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity,
   };
   let tier = -1;
@@ -140,7 +155,11 @@ export function playCareer(options: CareerOptions): CareerReport {
     return won;
   };
   const contract = (id: string): boolean => fly(() => { select('contracts'); select(id); }, id);
-  const arena = (rank: number): boolean => fly(() => { select('arena'); select(`rank-${rank}`); }, `arena-${rank}`);
+  const arena = (rank: number): boolean => {
+    const won = fly(() => { select('arena'); select(`rank-${rank}`); }, `arena-${rank}`);
+    if (!won) report.arenaLosses += 1;
+    return won;
+  };
 
   /**
    * Moves into the best reference build the shop can supply and the pilot can pay for, selling what
@@ -204,8 +223,9 @@ export function playCareer(options: CareerOptions): CareerReport {
   /** The next story contract on offer, by the road this pilot takes. */
   const nextStory = (): string | undefined => {
     const ids = app.missions().map((m) => m.id).filter((id) => id !== 'patrol' && !id.startsWith('open-'));
-    const choice = ids.find((id) => id === `choice-${options.faction}`);
-    const verdict = ids.find((id) => id === `verdict-${options.verdict}`);
+    const road = app.game!.cycle === 0 ? options : options.later?.[app.game!.cycle - 1] ?? options;
+    const choice = ids.find((id) => id === `choice-${road.faction}`);
+    const verdict = ids.find((id) => id === `verdict-${road.verdict}`);
     return choice ?? verdict ?? ids.find((id) => !id.startsWith('choice-') && !id.startsWith('verdict-'));
   };
 
@@ -243,7 +263,12 @@ export function playCareer(options: CareerOptions): CareerReport {
       const id = nextStory();
       if (!id) throw new Stuck('no story contract on offer and the story is not over');
       const won = contract(id);
-      if (won) { streak = 0; climb(); continue; }
+      if (won) {
+        if (id.startsWith('finale-') || id.startsWith('verdict-')) report.endings.push(id);
+        streak = 0;
+        climb();
+        continue;
+      }
       report.losses[id] = (report.losses[id] ?? 0) + 1;
       streak = id === last ? streak + 1 : 1;
       last = id;
@@ -281,6 +306,7 @@ export function careerLine(r: CareerReport): string {
     `${faction}/${verdict}/${difficulty}/#${seed}`.padEnd(34),
     r.finished ? 'finished' : `STOPPED (${r.stopped})`,
     `contracts ${r.contracts} (won ${r.won})`, `grind ${r.grind}`, `level ${r.level}`, `arena ${r.arenaRank}`, `${r.tier}`,
-    `credits ${r.credits} (low ${r.lowestCredits})`, `medals ${r.medals}`, lost ? `lost: ${lost}` : 'lost nothing',
+    `credits ${r.credits} (low ${r.lowestCredits})`, `medals ${r.medals}`, lost ? `lost: ${lost}` : 'lost no contract',
+    `arena fights lost ${r.arenaLosses}`,
   ].join('  ');
 }

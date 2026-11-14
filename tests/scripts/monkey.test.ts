@@ -69,6 +69,12 @@ function walkToHub(app: App): number {
   return -1;
 }
 
+/** A canvas that accepts anything: what is drawn is not looked at, only that drawing does not throw. */
+const canvas = new Proxy({} as Record<string, unknown>, {
+  get: (target, name: string) => (name in target ? target[name] : name === 'measureText' ? () => ({ width: 10 }) : () => undefined),
+  set: (target, name: string, value) => { target[name] = value; return true; },
+}) as unknown as CanvasRenderingContext2D;
+
 /** `enter` goes to that entry of the hub's menu before the pressing starts, so every screen gets its share. */
 function monkey(seed: number, steps: number, saved: GameState | undefined, refuseShare: number, enter?: string): { screens: Set<string>; refused: number } {
   const roll = dice(seed);
@@ -81,6 +87,12 @@ function monkey(seed: number, steps: number, saved: GameState | undefined, refus
   });
   const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed });
   const screens = new Set<string>();
+  // A kept game is continued before the pressing starts: left to chance, the title would as often start a new one.
+  if (saved) {
+    app.onInput('confirm');
+    expect(app.game, 'the kept game is the one being played').not.toBeNull();
+    expect(app.game!.completed).toEqual(saved.completed);
+  }
   if (enter) {
     expect(walkToHub(app)).toBeGreaterThanOrEqual(0);
     const items = (app.snapshot() as Snap).menu.items;
@@ -100,6 +112,8 @@ function monkey(seed: number, steps: number, saved: GameState | undefined, refus
     if (roll() < 0.02) app.update(Math.floor(roll() * 3000));
     const after = app.snapshot() as Snap;
     expect(() => JSON.stringify(after)).not.toThrow();
+    // Whatever is on screen can be drawn.
+    expect(() => app.draw(canvas), `drawing ${after.screen} at step ${step}`).not.toThrow();
     const game = app.game;
     if (!game) continue;
     expect(Number.isSafeInteger(game.credits), `credits at step ${step}`).toBe(true);
@@ -143,7 +157,8 @@ describe.each(SAVES)('random buttons from %s', (_name, save) => {
 
   test('with storage refusing one write in three, the game goes on and what is stored still loads', () => {
     const { refused } = monkey(4242, 6000, save(), 0.33);
-    expect(refused).toBeGreaterThanOrEqual(0);
+    // Writes really were refused along the way.
+    expect(refused).toBeGreaterThan(0);
   });
 });
 

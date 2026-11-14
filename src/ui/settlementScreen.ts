@@ -1,3 +1,4 @@
+import type { Advice } from '../core/advice';
 import type { Mission } from '../core/campaign';
 import type { Settlement } from '../core/economy';
 import { STRINGS } from '../content/strings';
@@ -18,7 +19,8 @@ const COUNT_MS = 700;
 export class SettlementScreen implements Screen {
   private clock = 0;
 
-  constructor(private app: App, private settlement: Settlement, private mission: Mission) {}
+  /** `tip` is what Dispatch has to say after a defeat, shown where the client's words go after a win. */
+  constructor(private app: App, private settlement: Settlement, private mission: Mission, private tip: Advice | null = null) {}
 
   update(dtMs: number): void {
     const before = this.clock;
@@ -36,7 +38,7 @@ export class SettlementScreen implements Screen {
     const { net, won, reward, ammoCost, repairCost, rank, bonus, relief } = this.settlement;
     return {
       menu: { items: [], cursor: 0 },
-      settlement: { net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0, relief: relief ?? 0 },
+      settlement: { net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0, relief: relief ?? 0, tip: won ? null : this.tip },
     };
   }
 
@@ -90,11 +92,10 @@ export class SettlementScreen implements Screen {
       y += LINE;
     }
 
-    // After a win, what the client had to say about it.
-    if (s.won) {
-      wrap(this.mission.debrief, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
-        drawText(ctx, line, x + 10, 144 + i * LINE, { color: COLORS.dim }));
-    }
+    // After a win, what the client had to say about it; after a defeat, what Dispatch makes of it.
+    const words = s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
+    wrap(words, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
+      drawText(ctx, line, x + 10, 144 + i * LINE, { color: s.won ? COLORS.dim : COLORS.text }));
 
     ctx.fillStyle = COLORS.border;
     ctx.fillRect(x + 10, 180, w - 20, 1);

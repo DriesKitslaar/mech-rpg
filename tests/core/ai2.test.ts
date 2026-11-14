@@ -234,3 +234,51 @@ describe('no policy ever chooses an action the rules refuse', () => {
     expect(end.outcome).not.toBe('ongoing');
   });
 });
+
+describe('the automatic player and field repairs', () => {
+  /** The pilot's turn against a turret, with the core down to a quarter. */
+  const failing = (): BattleState => edit(to(start(ENEMIES['gun-turret']), 'player'), (d) => {
+    const core = d.units[0].parts.core!;
+    core.ap = Math.floor(core.maxAp * 0.25);
+  });
+
+  test('a repair ends the turn, so it comes last: first everything is fired', () => {
+    let s = failing();
+    const taken: string[] = [];
+    for (let i = 0; i < 12 && activeUnit(s).id === 'player' && s.outcome === 'ongoing'; i++) {
+      const action = autoMove(s);
+      taken.push(action.type);
+      s = apply(s, action);
+    }
+    expect(taken[0]).toBe('fire');
+    expect(taken.filter((type) => type === 'fire').length).toBeGreaterThanOrEqual(2);
+    // The repair is the last thing done, and it is the pilot's turn no longer.
+    expect(taken[taken.length - 1]).toBe('repair');
+    expect(taken.indexOf('repair')).toBe(taken.length - 1);
+    expect(s.units[0].repairsLeft).toBe(1);
+  });
+
+  test('with the core in good shape it does not repair at all', () => {
+    let s = to(start(ENEMIES['gun-turret']), 'player');
+    const taken: string[] = [];
+    for (let i = 0; i < 12 && activeUnit(s).id === 'player' && s.outcome === 'ongoing'; i++) {
+      const action = autoMove(s);
+      taken.push(action.type);
+      s = apply(s, action);
+    }
+    expect(taken).not.toContain('repair');
+    expect(taken[taken.length - 1]).toBe('endTurn');
+  });
+
+  test('with no repairs left it ends the turn as before', () => {
+    let s = edit(failing(), (d) => { d.units[0].repairsLeft = 0; });
+    const taken: string[] = [];
+    for (let i = 0; i < 12 && activeUnit(s).id === 'player' && s.outcome === 'ongoing'; i++) {
+      const action = autoMove(s);
+      taken.push(action.type);
+      s = apply(s, action);
+    }
+    expect(taken).not.toContain('repair');
+    expect(taken[taken.length - 1]).toBe('endTurn');
+  });
+});
