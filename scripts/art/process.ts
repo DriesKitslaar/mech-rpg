@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as iq from 'image-q';
 import sharp, { type Sharp } from 'sharp';
 import { BOX, JOBS, POSE_BOX, type ArtJob } from './jobs';
+import { analyse, type PaintInfo } from '../../src/ui/paint';
 import { bounds, chromaKeyGreen, quantize, trim, type RawImage, type RGB } from './imageOps';
 
 const RAW = 'art/raw';
@@ -14,7 +15,7 @@ const OUT = 'public/sprites';
 const PALETTE = 'art/palette.json';
 const MANIFEST = 'src/content/sprites.json';
 
-type Entry = { file: string; w: number; h: number; ox?: number; oy?: number };
+type Entry = { file: string; w: number; h: number; ox?: number; oy?: number; paint?: PaintInfo };
 
 export async function decode(input: string | Buffer | Sharp): Promise<RawImage> {
   const s = typeof input === 'string' || Buffer.isBuffer(input) ? sharp(input) : input;
@@ -76,6 +77,26 @@ async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
   return { file: `sprites/${job.id}.png`, w: out.width, h: out.height };
 }
 
+/**
+ * Records on every frame layer what the paint needs to know about its family: which hues are trim
+ * and how bright the armour runs. All layers cut from one drawing are judged together, so every
+ * part of a family takes a paint scheme the same way.
+ */
+async function addPaintInfo(manifest: Record<string, Entry>): Promise<void> {
+  const families = new Map<string, string[]>();
+  for (const job of JOBS) {
+    if (job.kind !== 'layer' || !manifest[job.id]) continue;
+    const family = job.references?.[0] ?? job.id;
+    families.set(family, [...(families.get(family) ?? []), job.id]);
+  }
+  for (const [family, ids] of families) {
+    const images = await Promise.all(ids.map((id) => decode(`${OUT}/${id}.png`)));
+    const paint = analyse(images);
+    for (const id of ids) manifest[id].paint = paint;
+    console.log(`paint ${family}: trim hues ${JSON.stringify(paint.accent)}, brightness ${paint.lo}/${paint.mid}/${paint.hi}`);
+  }
+}
+
 async function main(): Promise<void> {
   if (process.argv[2] === 'palette') return buildPalette();
   const palette = JSON.parse(readFileSync(PALETTE, 'utf8')) as RGB[];
@@ -94,6 +115,7 @@ async function main(): Promise<void> {
       console.error(`FAIL ${job.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
+  await addPaintInfo(manifest);
   writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
   if (failed) process.exitCode = 1;
 }
