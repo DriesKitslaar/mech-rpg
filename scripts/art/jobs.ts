@@ -413,6 +413,9 @@ export const JOBS: ArtJob[] = [
 
   portrait('portrait-dispatch', 'a tired night-shift dispatcher in their forties with a headset over messy tied-back hair, wearing a worn grey hoodie, lit by the glow of monitors'),
   portrait('portrait-sable', 'a pale, sharp-featured woman ace pilot with silver-white hair in a tight braid and a cold stare, wearing a white flight suit with thin glowing cyan piping'),
+  portrait('portrait-kite', 'a nervous but eager young rookie pilot barely twenty with freckles and untidy sandy hair, wearing a second-hand olive flight jacket a size too large with a fresh paper licence tag clipped to the collar'),
+  portrait('portrait-marrow', 'a hard-faced woman siege gunner in her forties with a shaved undercut and a burn scar along her jaw, wearing a heavy charcoal armoured vest with the yellow and black hazard stripes scratched off'),
+  portrait('portrait-sixty', 'a dignified old veteran pilot in his seventies with a trimmed white beard, deep lines and kind tired eyes, wearing a faded navy flight coat with a row of small brass contract pins'),
   portrait('portrait-rook', 'a broad, grinning scrapyard pilot with a shaved head and welding goggles pushed up on his forehead, wearing a patched teal jacket with a rust-orange armband'),
   portrait('portrait-krell', 'a scarred veteran security chief with a square jaw and a grey buzz cut, wearing a heavy charcoal uniform with yellow and black hazard-striped shoulder boards'),
   portrait('portrait-actuary', 'a thin, immaculate insurance adjuster with slicked dark hair, round gold-rimmed glasses and a faint polite smile, wearing a black high-collared suit with a small gold pin shaped like a balance scale'),

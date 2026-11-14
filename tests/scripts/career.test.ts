@@ -21,10 +21,12 @@ const SEEDS = [1, 2, 3];
  * What a career may cost at most: the longest run of losses on one contract, and the patrols flown
  * only for money. Measured over nine seeds a road the worst were 0 and 0 on Story, 3 and 5 on
  * Standard, and 16 and 50 on Veteran, where the last fight of the default road is a wall for a pilot
- * that only presses Auto Turn until patrols have paid for more.
+ * that only presses Auto Turn until patrols have paid for more. Since the conversations between
+ * contracts (the pilot here gives the first answer on offer, which moves the money and so the dice)
+ * the worst of these three seeds on that road is 70 patrols, so Veteran's limit has that and a little.
  */
 const LIMITS: Record<Difficulty, { streak: number; grind: number }> = {
-  story: { streak: 3, grind: 5 }, standard: { streak: 6, grind: 12 }, veteran: { streak: 20, grind: 60 },
+  story: { streak: 3, grind: 5 }, standard: { streak: 6, grind: 12 }, veteran: { streak: 20, grind: 75 },
 };
 
 describe.each(['story', 'standard', 'veteran'] as Difficulty[])('careers on %s', (difficulty) => {

@@ -44,6 +44,8 @@ export interface GameState {
   ranks: Record<string, Rank>;
   /** Ids of the scenes shown in this cycle. */
   scenes: string[];
+  /** What the pilot decided when the story asked, by question, in this cycle. Absent in a game from before there were questions. */
+  choices?: Record<string, string>;
   /** What the pilot is called. */
   callsign: string;
   /** What the pilot has done, counted. */
@@ -269,6 +271,9 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
+  const { choices } = value;
+  if (choices !== undefined && (!isRecord(choices) || Object.keys(choices).length > 64
+    || !Object.entries(choices).every(([k, v]) => /^[a-z-]{1,24}$/.test(k) && typeof v === 'string' && /^[a-z-]{1,24}$/.test(v)))) return false;
   const { callsign, stats, medals, met, drills, codex } = value;
   if (!isCallsign(callsign) || !isTextList(medals) || !isTextList(met) || !isTextList(drills) || !isTextList(codex)) return false;
   // The record holds exactly the counters there are, each a whole number that is not negative.

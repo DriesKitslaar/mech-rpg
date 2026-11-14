@@ -51,7 +51,13 @@ export const select = (app: App, id: string) => {
 };
 /** Accepts the callsign on offer and reads past the pages of story that come up between contracts. */
 export function skipScenes(app: App): void {
-  for (let i = 0; i < 8 && ['callsign', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
+  // A conversation takes a press for each thing said, and the first answer on offer is the one given.
+  for (let i = 0; i < 120 && ['callsign', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
+}
+/** Sits through whatever conversations and pages about the pilot's decisions are due, giving the first answer on offer. */
+export function skipTalks(app: App): void {
+  const talking = () => snap(app).screen === 'scene' && /^(talk|left)-/.test(String(snap(app).scene));
+  for (let i = 0; i < 200 && talking(); i++) press(app, 'confirm');
 }
 /** Past the title and whatever page of story is due, into the hub. */
 export function inHub(saved?: GameState, seed?: number, deps: Partial<AppDeps> = {}) {

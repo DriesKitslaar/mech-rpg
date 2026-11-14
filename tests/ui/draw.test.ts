@@ -7,6 +7,7 @@ import { SCENE_HOLD_MS } from '../../src/ui/sceneScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { WORLD } from '../../src/content/codex';
 import { MISSIONS } from '../../src/content/missions';
+import { TALKS } from '../../src/content/talks';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/storage';
@@ -49,7 +50,9 @@ function geared(base: GameState, name: string): GameState {
   return g;
 }
 const start = (saved?: GameState, fast = true) => {
-  const app = new App({ catalog: CATALOG, save: new SaveFile(store(saved), CATALOG), sprites, fast, seed: 3 });
+  // The conversations are for their own tests: here they have been had.
+  const game = saved && { ...saved, scenes: [...saved.scenes, ...TALKS.map((t) => t.id)] };
+  const app = new App({ catalog: CATALOG, save: new SaveFile(store(game), CATALOG), sprites, fast, seed: 3 });
   press(app, 'confirm');
   return app;
 };

@@ -277,14 +277,14 @@ describe('the database', () => {
     // The first meeting with Ashfall opens their entry, once the page of story that follows it has been read.
     app.commit({ ...app.game!, completed: ['intro-1', 'intro-2', 'rival-1'] });
     expect(savedGame(store).codex).not.toContain('ashfall');
-    app.commit({ ...app.game!, scenes: [...app.game!.scenes, 'act-2'] });
+    app.commit({ ...app.game!, scenes: [...app.game!.scenes, 'act-2', 'talk-kite', 'talk-logs', 'talk-rival', 'talk-marrow'] });
     expect(savedGame(store).codex).toEqual(expect.arrayContaining(['ashfall', 'arena', 'freelance']));
     app.update(16);
     expect(snap(app).toast).toBe('entries:3');
     app.update(TOAST_MS);
     app.update(16);
     // Taking a side earns a medal and opens an entry: the medal is announced first.
-    app.commit({ ...app.game!, completed: [...app.game!.completed, 'hadron-1', 'choice-hadron'] });
+    app.commit({ ...app.game!, completed: [...app.game!.completed, 'hadron-1', 'choice-hadron'], scenes: [...app.game!.scenes, 'talk-sixty'] });
     app.update(16);
     expect(snap(app)).toMatchObject({ toast: 'side', toasts: ['entry:war'] });
   });

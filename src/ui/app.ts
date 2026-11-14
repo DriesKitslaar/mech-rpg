@@ -3,7 +3,7 @@ import { MIRROR_ID, arenaMission, checkChallenge, mirrorEnemy, mirrorMission, mi
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
-  archiveMissions, availableMissions, campaignComplete, completeMission, dueScenes, forCycle, introductionsDone, lentPatrol, markRead,
+  archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, forCycle, introductionsDone, lentPatrol, markRead,
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
@@ -12,7 +12,7 @@ import { applySettlement, debtRelief, settle, type Settlement } from '../core/ec
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
-import { wingmanOpen, withWingman, type Wingman } from '../core/wingman';
+import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
 import { intentOf } from '../core/intent';
 import { intentText } from './tags';
@@ -49,6 +49,7 @@ import { MessagesScreen } from './messagesScreen';
 import { OptionsScreen } from './optionsScreen';
 import { PilotScreen } from './pilotScreen';
 import { SceneScreen } from './sceneScreen';
+import { TalkScreen } from './talkScreen';
 import { SettlementScreen } from './settlementScreen';
 import { battleTrack, briefingTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
@@ -599,7 +600,7 @@ export class App {
   /** The pilots for hire who take this pilot's calls. */
   wingmen(): Wingman[] {
     const game = this.game;
-    return game ? WINGMEN.filter((w) => wingmanOpen(game, w, MISSIONS)) : [];
+    return game ? WINGMEN.flatMap((w) => wingmanFor(game, w, MISSIONS) ?? []) : [];
   }
 
   go(name: ScreenName): void {
@@ -629,7 +630,7 @@ export class App {
       const armed = ensureArmed(game, this.deps.catalog, STARTER_BUILD.rightHand!);
       if (armed !== game) this.commit(armed);
       const scene = dueScenes(armed, SCENES, MISSIONS)[0];
-      if (scene) return this.show(scene.ending ? 'ending' : 'scene', new SceneScreen(this, scene));
+      if (scene) return this.show(scene.ending ? 'ending' : 'scene', scene.talk ? new TalkScreen(this, scene) : new SceneScreen(this, scene));
     }
     this.show('hub', new HubScreen(this, list, at));
   }
@@ -667,6 +668,13 @@ export class App {
   }
 
   /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. An ending is followed by the end roll. */
+  /** Records what the pilot answered when the story asked. */
+  decide(choice: string, option: string, pay = 0): void {
+    if (!this.game) return;
+    const next = decide(this.game, choice, option, pay);
+    if (next !== this.game) this.commit(next);
+  }
+
   finishScene(scene: Scene): void {
     if (this.game) {
       const next = markSceneSeen(this.game, scene);

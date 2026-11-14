@@ -1,5 +1,6 @@
 import type { Faction, Scene, Verdict } from '../core/campaign';
 import { ENDINGS, EPILOGUES } from './missions';
+import { AFTERMATH, TALKS } from './talks';
 
 const FACTIONS: Faction[] = ['hadron', 'lumen', 'undertow'];
 const VERDICTS: Verdict[] = ['enforce', 'default'];
@@ -37,6 +38,7 @@ export const SCENES: Scene[] = [
       'Choose who you can live with. Then make it worth it.',
     ],
   },
+  ...TALKS.filter((t) => t.before !== 'verdict'),
   ...FACTIONS.map(warWon),
   {
     id: 'act-3', heading: 'ACT III', title: 'THE AUDIT', picture: 'still-notice', after: 'finale', before: 'verdict',
@@ -46,5 +48,7 @@ export const SCENES: Scene[] = [
       'Your licence is on the list. So is your mech.',
     ],
   },
+  ...TALKS.filter((t) => t.before === 'verdict'),
+  ...AFTERMATH,
   ...VERDICTS.flatMap((verdict) => FACTIONS.map((faction) => ending(verdict, faction))),
 ];

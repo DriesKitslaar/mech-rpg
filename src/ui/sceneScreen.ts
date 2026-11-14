@@ -34,7 +34,9 @@ export class SceneScreen implements Screen {
   private hold: number;
 
   constructor(private app: App, private scene: Scene) {
-    this.rows = scene.lines.map((paragraph) => wrap(paragraph, SCENE_CHARS));
+    // What the pilot decided along the way is written into the page.
+    const lines = [...scene.lines, ...(scene.linesFor?.(app.game?.choices ?? {}) ?? [])];
+    this.rows = lines.map((paragraph) => wrap(paragraph, SCENE_CHARS));
     this.writer = new Typewriter(this.rows.flat(), 60, app.deps.fast);
     this.hold = app.deps.fast ? 0 : SCENE_HOLD_MS;
   }
