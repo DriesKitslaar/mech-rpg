@@ -50,7 +50,14 @@ export const STRINGS = {
     hint: 'A: spend a point   B: back', noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
   },
   options: {
-    heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', fastBattles: 'Fast Battles', on: 'On', off: 'Off',
+    heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
+    on: 'On', off: 'Off',
+    difficulties: { story: 'Story', standard: 'Standard', veteran: 'Veteran' },
+    difficultyHelp: {
+      story: 'Enemies have 20% less armour and firepower.',
+      standard: 'The game as it was balanced.',
+      veteran: 'Enemies have 20% more armour and firepower.',
+    },
     hint: 'A: change   B: back',
   },
   buildErrors: {
@@ -75,15 +82,23 @@ export const STRINGS = {
   saveFailed: 'Could not save: storage is full or blocked',
   slots: {
     head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Generator',
+    booster: 'Booster', fcs: 'FCS', module: 'Module',
     rightHand: 'Right Hand', leftHand: 'Left Hand', shoulder: 'Shoulder',
   },
   garage: {
     heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
-    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', back: 'B: back',
+    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', back: 'B: back',
+    slotTags: {
+      head: 'HEAD', core: 'CORE', arms: 'ARMS', legs: 'LEGS', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
+      rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SHLDR',
+    },
   },
   shop: {
     heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'CR',
-    tabs: { head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', hand: 'Hand', shoulder: 'Shldr' },
+    tabs: {
+      head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', booster: 'Bst', fcs: 'FCS', module: 'Mod',
+      hand: 'Hand', shoulder: 'Shldr',
+    },
     bought: (name: string) => `Bought ${name}`,
     sold: (name: string, price: number) => `Sold ${name} +${price}`,
     cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
@@ -93,12 +108,31 @@ export const STRINGS = {
   partInfo: {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',
     output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',
-    unlimited: 'unlimited', perShot: 'per shot',
+    impact: 'IMP', unlimited: 'unlimited', perShot: '/shot',
+    thrust: 'THRUST', boostCost: 'BOOST COST', aimByType: 'AIM K/E/X', focus: 'FOCUS', uses: 'USES',
+    guard: (blocked: number) => `GUARD: blocks ${blocked}%`,
+    charge: 'CHARGE: fires a turn later', melee: 'MELEE: needs Boost',
     traits: {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',
       thermal: (power: number) => `THERMAL: +${power} heat on target`,
       drain: (power: number) => `DRAIN: -${power} energy on target`,
+      burst: (power: number) => `BURST: fires ${power} times`,
+      salvo: () => 'SALVO: hits every enemy',
+    },
+    legTypes: {
+      biped: '', reverse: 'REVERSE: boost +8 evasion', quad: 'QUAD: steady, shoulder +6',
+      tank: 'TRACKS: no boost, guards well', hover: 'HOVER: cheap boost, unsteady',
+    },
+    modules: {
+      coolant: (p: number) => `Vents ${p} heat at once.`,
+      barrier: (p: number) => `Absorbs the next ${p} damage until your next turn.`,
+      overclock: (p: number) => `+${p} energy this turn, +25 heat.`,
+      painter: (p: number) => `Marks a target: +${p} to hit it for 3 turns.`,
+      nanites: (p: number) => `Restores ${p}% armour on every working part.`,
+      shock: (p: number) => `${p} impact and 15 damage to every enemy.`,
+      chaff: (p: number) => `-${p} to hit you until your next turn.`,
+      limiter: (p: number) => `+${p}% damage this turn, +30 heat.`,
     },
     types: { kinetic: 'Kinetic', energy: 'Energy', explosive: 'Explosive' },
     vendors: { undertow: 'The Undertow', lumen: 'Lumen Systems', hadron: 'Hadron Mining', freelance: 'Freelance' },

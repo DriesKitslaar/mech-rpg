@@ -1,6 +1,6 @@
 import type { Build, Catalog, Part } from './types';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const STARTING_CREDITS = 1200;
 
 /** Everything about a player's progress that is kept between battles and saved. */
@@ -28,14 +28,24 @@ export interface GameState {
   settings: Settings;
 }
 
-export interface Settings { sfx: boolean; music: boolean; fastBattles: boolean }
+/** How tough enemies are: `story` for the tale, `veteran` for a fight. */
+export type Difficulty = 'story' | 'standard' | 'veteran';
+export const DIFFICULTIES: Difficulty[] = ['story', 'standard', 'veteran'];
+/** What each difficulty multiplies enemy armour and damage by. */
+export const DIFFICULTY_SCALE: Record<Difficulty, number> = { story: 0.8, standard: 1, veteran: 1.2 };
+
+export interface Settings { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: Difficulty }
 /** No perk has more ranks than this; a save claiming more is not a real save. */
 export const MAX_PERK_RANK = 3;
-export const DEFAULT_SETTINGS: Settings = { sfx: true, music: true, fastBattles: false };
+export const DEFAULT_SETTINGS: Settings = { sfx: true, music: true, fastBattles: false, difficulty: 'standard' };
 
 export type BuildSlot = keyof Build;
-export const BUILD_SLOTS: BuildSlot[] = ['head', 'core', 'arms', 'legs', 'generator', 'rightHand', 'leftHand', 'shoulder'];
-const REQUIRED: BuildSlot[] = ['head', 'core', 'arms', 'legs', 'generator'];
+export const BUILD_SLOTS: BuildSlot[] = [
+  'head', 'core', 'arms', 'legs', 'generator', 'booster', 'fcs', 'module', 'rightHand', 'leftHand', 'shoulder',
+];
+const REQUIRED: BuildSlot[] = ['head', 'core', 'arms', 'legs', 'generator', 'booster', 'fcs'];
+/** Slots that may be left empty. */
+export const OPTIONAL_SLOTS: BuildSlot[] = BUILD_SLOTS.filter((slot) => !REQUIRED.includes(slot));
 
 /** Looks a part up by id. Names every object has, such as `constructor`, are not parts. */
 export function partOf(catalog: Catalog, id: string): Part | undefined {
@@ -50,9 +60,10 @@ export function ownedCount(state: GameState, partId: string): number {
 export type TradeRefusal = 'notForSale' | 'cannotAfford' | 'notOwned' | 'equipped' | 'lastWeapon';
 export type EquipRefusal = 'notOwned' | 'wrongSlot' | 'noSpare' | 'required';
 
-/** Whether a part may go in a slot: frame parts and generators by kind, weapons by mount. */
+/** Whether a part may go in a slot: weapons by mount, shields in the left hand, everything else by kind. */
 export function fits(part: Part, slot: BuildSlot): boolean {
   if (part.kind === 'weapon') return slot === 'shoulder' ? part.mount === 'shoulder' : (slot === 'rightHand' || slot === 'leftHand') && part.mount === 'hand';
+  if (part.kind === 'shield') return slot === 'leftHand';
   return part.kind === slot;
 }
 
@@ -160,6 +171,7 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const { perks, settings } = value;
   if (!isRecord(perks) || !Object.values(perks).every((rank) => isWholeNonNegative(rank) && rank <= MAX_PERK_RANK)) return false;
   if (!isRecord(settings) || !['sfx', 'music', 'fastBattles'].every((key) => typeof settings[key] === 'boolean')) return false;
+  if (!DIFFICULTIES.includes(settings.difficulty as Difficulty)) return false;
   const { inventory, build } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
 

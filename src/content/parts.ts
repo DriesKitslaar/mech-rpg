@@ -1,4 +1,6 @@
-import type { Build, Catalog, DamageType, FramePart, FrameSlot, Generator, Part, Resist, Vendor, Weapon } from '../core/types';
+import type {
+  Booster, Build, Catalog, DamageType, Fcs, FramePart, FrameSlot, Generator, Module, ModuleEffect, Part, Resist, Vendor, Weapon,
+} from '../core/types';
 
 const r = (kinetic: number, energy: number, explosive: number): Resist => ({ kinetic, energy, explosive });
 
@@ -20,6 +22,20 @@ const weapon = (
   id, name, kind: 'weapon', mount, damageType, damage, accuracy, energy, heat, ammo, costPerShot, weight, price,
   ...(vendor ? { vendor } : {}), ...(trait ? { trait } : {}), ...(traitPower !== undefined ? { traitPower } : {}),
 });
+
+const booster = (
+  id: string, name: string, thrust: number, cost: number, weight: number, drain: number, price: number, vendor: Vendor,
+): Booster => ({ id, name, kind: 'booster', thrust, cost, weight, drain, price, vendor });
+
+const fcs = (
+  id: string, name: string, kinetic: number, energy: number, explosive: number, focus: number, weight: number, drain: number,
+  price: number, vendor: Vendor,
+): Fcs => ({ id, name, kind: 'fcs', aim: { kinetic, energy, explosive }, focus, weight, drain, price, vendor });
+
+const module = (
+  id: string, name: string, effect: ModuleEffect, power: number, uses: number, weight: number, drain: number, price: number,
+  vendor: Vendor,
+): Module => ({ id, name, kind: 'module', effect, power, uses, weight, drain, price, vendor });
 
 /** Everything the player can own, in shop order. Values are fixed by the garage-and-shop plan. */
 export const SHOP_PARTS: Part[] = [
@@ -80,6 +96,27 @@ export const SHOP_PARTS: Part[] = [
   weapon('wpn-inferno-pod', 'Inferno Pod', 'shoulder', 'explosive', 60, 64, 110, 32, 8, 80, 170, 2400, 'undertow', 'thermal', 30),
   weapon('wpn-null-beam', 'Null Beam', 'shoulder', 'energy', 50, 80, 160, 38, null, 0, 130, 3200, 'freelance', 'drain', 100),
   weapon('wpn-breaker-cannon', 'Breaker Cannon', 'shoulder', 'explosive', 120, 56, 150, 44, 5, 150, 260, 3600, 'freelance', 'pierce'),
+
+  // Boosters: thrust is the evasion a boost gives, cost the share of a turn's energy it takes.
+  // The stock parts weigh and drain nothing: they are what every mech had built in.
+  booster('bst-stock', 'Stock Thrusters', 30, 0.3, 0, 0, 100, 'undertow'),
+  booster('bst-sprint', 'Sprint Pack', 30, 0.2, 40, 10, 900, 'undertow'),
+  booster('bst-vector', 'Vector Jets', 38, 0.3, 50, 15, 1200, 'lumen'),
+  booster('bst-ram', 'Ram Booster', 46, 0.4, 90, 20, 1600, 'hadron'),
+
+  // Fire control: aim per kind of weapon, and focus, the share of the limb penalty it removes.
+  fcs('fcs-stock', 'Stock FCS', 0, 0, 0, 0, 0, 0, 100, 'undertow'),
+  fcs('fcs-tracer', 'Tracer FCS', 6, 0, 0, 0, 20, 10, 800, 'hadron'),
+  fcs('fcs-lattice', 'Lattice FCS', 0, 8, 0, 0.25, 15, 20, 1400, 'lumen'),
+  fcs('fcs-hawkeye', 'Hawkeye FCS', 3, 3, 3, 0.6, 25, 25, 2000, 'freelance'),
+
+  // Modules: one button each, a few uses a battle.
+  module('mod-coolant', 'Coolant Flush', 'coolant', 60, 2, 30, 0, 700, 'undertow'),
+  module('mod-painter', 'Target Painter', 'painter', 20, 2, 20, 10, 1000, 'lumen'),
+  module('mod-overclock', 'Overclock', 'overclock', 150, 1, 30, 0, 1200, 'hadron'),
+  module('mod-barrier', 'Pulse Barrier', 'barrier', 90, 1, 40, 10, 1500, 'lumen'),
+  module('mod-nanites', 'Repair Nanites', 'nanites', 20, 1, 50, 0, 1800, 'freelance'),
+  module('mod-shock', 'Shock Pulse', 'shock', 70, 1, 60, 15, 2200, 'freelance'),
 ];
 
 /** Parts only enemies use. No vendor, so they never appear in the shop. */
@@ -130,6 +167,10 @@ export const SHOP_UNLOCKS: Record<string, string> = {
   'wpn-void-rifle': 'arena:5', 'gen-tidal': 'arena:6', 'wpn-null-beam': 'arena:7',
   'head-colossus': 'arena:8', 'core-colossus': 'arena:8', 'arms-colossus': 'arena:8', 'legs-colossus': 'arena:8',
   'wpn-breaker-cannon': 'arena:9',
+  // Boosters, fire control and modules. The stock parts, the Sprint Pack and the Coolant Flush are always on the shelf.
+  'bst-vector': 'lumen-1', 'bst-ram': 'hadron-1',
+  'fcs-tracer': 'hadron-1', 'fcs-lattice': 'lumen-1', 'fcs-hawkeye': 'choice',
+  'mod-painter': 'lumen-1', 'mod-barrier': 'lumen-1', 'mod-overclock': 'hadron-1', 'mod-nanites': 'arena:2', 'mod-shock': 'arena:4',
 };
 
 export const CATALOG: Catalog = Object.fromEntries([...SHOP_PARTS, ...ENEMY_PARTS].map((part) => [part.id, part]));
@@ -137,7 +178,7 @@ export const CATALOG: Catalog = Object.fromEntries([...SHOP_PARTS, ...ENEMY_PART
 /** What a new game starts with. */
 export const STARTER_BUILD: Build = {
   head: 'head-scout-mk1', core: 'core-hauler', arms: 'arms-rigger', legs: 'legs-strider',
-  generator: 'gen-kd1', rightHand: 'wpn-rivet-rifle',
+  generator: 'gen-kd1', booster: 'bst-stock', fcs: 'fcs-stock', rightHand: 'wpn-rivet-rifle',
 };
 
 /** Fully armed build used by the simulations and tests. */

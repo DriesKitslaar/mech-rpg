@@ -13,10 +13,10 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await waitForScreen(page, 'hub');
   await page.screenshot({ path: shot('hub') });
 
-  // Shop: the Arc Pistol is on the hand tab, five tabs to the right.
+  // Shop: the Arc Pistol is on the hand tab, eight tabs to the right.
   await choose(page, 'shop');
   await waitForScreen(page, 'shop');
-  for (let i = 0; i < 5; i++) await press(page, 'KeyE');
+  for (let i = 0; i < 8; i++) await press(page, 'KeyE');
   await choose(page, 'wpn-arc-pistol');
   expect(await snap(page)).toMatchObject({ credits: 600, message: 'Bought Arc Pistol' });
   await page.screenshot({ path: shot('shop') });

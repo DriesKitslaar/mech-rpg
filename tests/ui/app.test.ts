@@ -29,7 +29,7 @@ type Snap = {
   settlement?: { net: number; won: boolean; reward: number };
   ending?: string;
   xp: number | null; level: number | null; arenaRank: number | null; cycle: number | null;
-  settings: { sfx: boolean; music: boolean; fastBattles: boolean };
+  settings: { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: string };
   player?: { maxAp: number; repairsLeft: number };
   pilot?: { level: number; points: number };
 };
@@ -384,7 +384,7 @@ describe('shop', () => {
     const { app, store } = inHub();
     select(app, 'shop');
     expect(snap(app).screen).toBe('shop');
-    press(app, 'next', 'next', 'next', 'next', 'next');
+    press(app, 'next', 'next', 'next', 'next', 'next', 'next', 'next', 'next');
     select(app, 'wpn-arc-pistol');
     expect(snap(app).credits).toBe(600);
     expect(JSON.parse(store.data[SAVE_KEY]).inventory['wpn-arc-pistol']).toBe(1);
@@ -406,7 +406,7 @@ describe('shop', () => {
   test('a part bought in the shop can be fitted in the garage and taken into battle', () => {
     const { app } = inHub();
     select(app, 'shop');
-    press(app, 'next', 'next', 'next', 'next', 'next');
+    press(app, 'next', 'next', 'next', 'next', 'next', 'next', 'next', 'next');
     select(app, 'wpn-arc-pistol');
     press(app, 'cancel');
     select(app, 'garage');
@@ -645,14 +645,14 @@ describe('options', () => {
     expect(ids(app)).toEqual(['new', 'options']);
     select(app, 'options');
     expect(snap(app).screen).toBe('options');
-    expect(snap(app).menu.items.map((i) => [i.id, i.note])).toEqual([['sfx', 'On'], ['music', 'On'], ['fastBattles', 'Off']]);
+    expect(snap(app).menu.items.map((i) => [i.id, i.note])).toEqual([['sfx', 'On'], ['music', 'On'], ['fastBattles', 'Off'], ['difficulty', 'Standard']]);
     press(app, 'confirm');
     expect(snap(app).menu.items[0].note).toBe('Off');
     expect(JSON.parse(store.data[SETTINGS_KEY]).sfx).toBe(false);
     press(app, 'cancel');
     expect(snap(app).screen).toBe('title');
     select(app, 'new');
-    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false });
+    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false, difficulty: 'standard' });
 
     const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
     expect(snap(again).settings.sfx).toBe(false);

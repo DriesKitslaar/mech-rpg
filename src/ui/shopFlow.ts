@@ -4,15 +4,16 @@ import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { MenuList, type ListItem } from './menuList';
 
-export type ShopTab = 'head' | 'core' | 'arms' | 'legs' | 'generator' | 'hand' | 'shoulder';
-export const SHOP_TABS: ShopTab[] = ['head', 'core', 'arms', 'legs', 'generator', 'hand', 'shoulder'];
+export type ShopTab = 'head' | 'core' | 'arms' | 'legs' | 'generator' | 'booster' | 'fcs' | 'module' | 'hand' | 'shoulder';
+export const SHOP_TABS: ShopTab[] = ['head', 'core', 'arms', 'legs', 'generator', 'booster', 'fcs', 'module', 'hand', 'shoulder'];
 
 const S = STRINGS.shop;
 const EMPTY = '(empty)';
-const tabOf = (part: Part): ShopTab => (part.kind === 'weapon' ? part.mount : part.kind);
+/** Weapons are sold by mount; a shield is carried in a hand. */
+const tabOf = (part: Part): ShopTab => (part.kind === 'weapon' ? part.mount : part.kind === 'shield' ? 'hand' : part.kind);
 
 /**
- * The shop without any drawing: seven categories, a buy list and a sell list.
+ * The shop without any drawing: ten categories, a buy list and a sell list.
  * The game it is given is never changed; `game` holds the result.
  */
 export class ShopFlow {

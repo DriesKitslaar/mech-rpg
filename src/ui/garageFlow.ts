@@ -1,5 +1,5 @@
 import { computeBuildStats, framePart, validatePlayerBuild } from '../core/build';
-import { BUILD_SLOTS, checkEquip, equip, fits, spareCount, type BuildSlot, type GameState } from '../core/game';
+import { BUILD_SLOTS, OPTIONAL_SLOTS, checkEquip, equip, fits, spareCount, type BuildSlot, type GameState } from '../core/game';
 import { FRAME_SLOTS, type Build, type BuildError, type BuildStats, type Catalog } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -7,7 +7,6 @@ import { MenuList, type ListItem } from './menuList';
 
 const G = STRINGS.garage;
 const NONE = '(none)';
-const WEAPON_SLOTS: BuildSlot[] = ['rightHand', 'leftHand', 'shoulder'];
 
 /**
  * The garage without any drawing: pick a slot, pick a part for it, and see what the change
@@ -45,7 +44,7 @@ export class GarageFlow {
           note: !usable ? G.inUse : spare > 0 ? `x${spare}` : undefined,
         };
       });
-    return [...(WEAPON_SLOTS.includes(slot) ? [{ id: NONE, label: G.none, enabled: true }] : []), ...owned];
+    return [...(OPTIONAL_SLOTS.includes(slot) ? [{ id: NONE, label: G.none, enabled: true }] : []), ...owned];
   }
 
   /** The slot under the cursor. */

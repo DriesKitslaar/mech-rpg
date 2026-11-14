@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, SAVE_VERSION, isValidState, type GameState, type Settings } from '../core/game';
+import { DEFAULT_SETTINGS, DIFFICULTIES, SAVE_VERSION, isValidState, type Difficulty, type GameState, type Settings } from '../core/game';
 import type { Catalog } from '../core/types';
 
 export const SAVE_KEY = 'ironwage-save';
@@ -22,9 +22,30 @@ function upgrade(value: unknown): unknown {
   if (save.version === 2) save = { ...save, version: 3, endingSeen: false };
   // Version 3 had no pilot levels, arena, cycles or settings.
   if (save.version === 3) {
-    save = { ...save, version: SAVE_VERSION, xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS } };
+    save = { ...save, version: 4, xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS } };
   }
+  // Version 4 had no boosters or fire control: every mech had what are now the stock parts built in.
+  // Issuing those, fitted, changes nothing about how the mech performs.
+  if (save.version === 4) save = { ...save, ...withStockParts(save), version: SAVE_VERSION };
   return save;
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const STOCK = { booster: 'bst-stock', fcs: 'fcs-stock' } as const;
+
+/** The build, inventory and settings of a version 4 save with the stock booster, fire control and difficulty added. */
+function withStockParts(save: Record<string, unknown>): Record<string, unknown> {
+  const { build, inventory, settings } = save;
+  // Anything malformed is left as it is; the validity check refuses it afterwards.
+  if (!isRecord(build) || !isRecord(inventory) || !isRecord(settings)) return {};
+  const nextBuild = { ...build };
+  const nextInventory = { ...inventory };
+  for (const [slot, id] of Object.entries(STOCK)) {
+    if (typeof nextBuild[slot] === 'string') continue;
+    nextBuild[slot] = id;
+    nextInventory[id] = (typeof nextInventory[id] === 'number' ? (nextInventory[id] as number) : 0) + 1;
+  }
+  return { build: nextBuild, inventory: nextInventory, settings: { difficulty: DEFAULT_SETTINGS.difficulty, ...settings } };
 }
 
 /** One save slot. Anything unreadable or invalid counts as no save; nothing here ever throws. */
@@ -68,9 +89,11 @@ export class SaveFile {
       if (!raw) return null;
       const value: unknown = JSON.parse(raw);
       if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-      const { sfx, music, fastBattles } = value as Record<string, unknown>;
+      const { sfx, music, fastBattles, difficulty } = value as Record<string, unknown>;
       if (typeof sfx !== 'boolean' || typeof music !== 'boolean' || typeof fastBattles !== 'boolean') return null;
-      return { sfx, music, fastBattles };
+      // Options added later than the first three fall back to their default when absent or unknown.
+      const known = DIFFICULTIES.includes(difficulty as Difficulty);
+      return { sfx, music, fastBattles, difficulty: known ? (difficulty as Difficulty) : DEFAULT_SETTINGS.difficulty };
     } catch {
       return null;
     }

@@ -1,3 +1,4 @@
+import type { BuildSlot } from '../core/game';
 import type { BuildStats } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -56,23 +57,23 @@ export class GarageScreen implements Screen {
     drawText(ctx, G.back, LOGICAL_W - 5, 1, { align: 'right', color: COLORS.dim });
 
     // Right: the slot list, or the parts for the chosen slot with the highlighted part's statistics.
-    drawPanel(ctx, LIST_X, 20, LIST_W, 170);
+    drawPanel(ctx, LIST_X, 20, LIST_W, 174);
     if (flow.mode === 'slots') {
       flow.slots.items.forEach((item, i) => {
         const selected = i === flow.slots.cursor;
-        const y = 26 + i * 20;
-        if (selected) drawText(ctx, '>', LIST_X + 4, y + 5, { color: COLORS.accent });
-        drawText(ctx, item.label.toUpperCase(), LIST_X + 12, y, { color: COLORS.dim, size: 10 });
-        drawText(ctx, item.note ?? '', LIST_X + 12, y + 8, { color: selected ? COLORS.accent : item.note === G.empty ? COLORS.dim : COLORS.text });
+        const y = 24 + i * 15;
+        if (selected) drawText(ctx, '>', LIST_X + 3, y, { color: COLORS.accent });
+        drawText(ctx, G.slotTags[item.id as BuildSlot], LIST_X + 10, y + 1, { color: COLORS.dim, size: 10 });
+        drawText(ctx, item.note ?? '', LIST_X + 40, y, { color: selected ? COLORS.accent : item.note === G.empty ? COLORS.dim : COLORS.text });
       });
     } else {
       drawText(ctx, STRINGS.slots[flow.slot].toUpperCase(), LIST_X + 6, 24, { color: COLORS.dim });
-      drawList(ctx, flow.parts, LIST_X + 6, 38, LIST_W - 18, 8);
+      drawList(ctx, flow.parts, LIST_X + 6, 37, LIST_W - 18, 7);
       const part = flow.candidate ? catalog[flow.candidate] : undefined;
       if (part) {
         ctx.fillStyle = COLORS.border;
-        ctx.fillRect(LIST_X + 6, 134, LIST_W - 12, 1);
-        partLines(part).forEach((line, i) => drawText(ctx, line, LIST_X + 6, 138 + i * LINE));
+        ctx.fillRect(LIST_X + 6, 119, LIST_W - 12, 1);
+        partLines(part).slice(0, 6).forEach((line, i) => drawText(ctx, line, LIST_X + 6, 123 + i * LINE));
       }
     }
 
@@ -88,7 +89,7 @@ export class GarageScreen implements Screen {
 
     const cell = (label: string, value: string, diff: number, higherIsBetter: boolean, bad: boolean, col: number, row: number): void => {
       const x = 8 + col * 152;
-      const y = STATS_Y + 6 + row * (LINE + 3);
+      const y = STATS_Y + 5 + row * (LINE + 2);
       drawText(ctx, label, x, y, { color: COLORS.dim });
       drawText(ctx, value, x + 92, y, { align: 'right', color: bad ? COLORS.danger : COLORS.text });
       if (diff !== 0) {
@@ -101,9 +102,10 @@ export class GarageScreen implements Screen {
     cell(G.energy, String(next.turnEnergy), next.turnEnergy - now.turnEnergy, true, errors.includes('insufficientEnergy'), 1, 0);
     cell(G.mobility, String(next.mobility), next.mobility - now.mobility, true, false, 0, 1);
     cell(G.armour, String(flow.armour(flow.previewBuild)), flow.armour(flow.previewBuild) - flow.armour(flow.game.build), true, false, 1, 1);
+    cell(G.stability, String(next.stability), next.stability - now.stability, true, false, 0, 2);
 
     if (errors.length > 0) {
-      drawText(ctx, errors.map((e) => STRINGS.buildErrors[e]).join(' - '), LOGICAL_W / 2, STATS_Y + 40, { align: 'center', color: COLORS.danger, size: 16 });
+      drawText(ctx, errors.map((e) => STRINGS.buildErrors[e]).join(' - '), LOGICAL_W / 2, STATS_Y + 54, { align: 'center', color: COLORS.danger, size: 16 });
     }
   }
 }
