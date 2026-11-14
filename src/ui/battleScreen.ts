@@ -600,7 +600,7 @@ export class BattleScreen {
     const T = STRINGS.tags;
     const state = this.flow.state;
     const jammed = unit.side === 'player' ? jamOn(state, unit) : 0;
-    const intent = intentText(intentOf(state, unit));
+    const intent = intentText(intentOf(state, unit, this.catalog));
     return [
       ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger, rank: 9 }] : []),
       ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy, rank: 2 }] : []),
@@ -615,8 +615,9 @@ export class BattleScreen {
       ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy, rank: 7 }] : []),
       ...(unit.painted > 0 ? [{ text: T.painted, color: COLORS.danger, rank: 3 }] : []),
       ...(unit.chaff > 0 ? [{ text: T.chaff, color: COLORS.dim, rank: 3 }] : []),
-      // What an enemy is lining up to do comes last in the row, and makes way for nothing but a fuse.
-      ...(intent ? [{ text: intent, color: COLORS.danger, rank: 8.5 }] : []),
+      // What an enemy is lining up to do comes last in the row, and is the first to make way: everything
+      // else in the row is said nowhere else.
+      ...(intent ? [{ text: intent, color: COLORS.danger, rank: 1 }] : []),
     ];
   }
 

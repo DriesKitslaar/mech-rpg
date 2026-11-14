@@ -82,6 +82,31 @@ describe('a contract flown with a wingman', () => {
     expect(takesWingman(mission('patrol'))).toBe(true);
   });
 
+  test('a contract whose every battle already has an ally takes no wingman: nobody is paid for standing by', () => {
+    const allied = MISSIONS.filter((m) => m.battles.every((b) => b.support));
+    expect(allied.map((m) => m.id)).toEqual(expect.arrayContaining(['audit-3', 'verdict-default']));
+    for (const m of allied) {
+      expect(takesWingman(m), m.id).toBe(false);
+      expect(withWingman(m, sixty)).toBe(m);
+    }
+  });
+
+  test('the share is taken to the credit, whatever the fee', () => {
+    for (const m of MISSIONS) {
+      for (const w of WINGMEN) {
+        const percent = Math.round(w.share * 100);
+        expect(feeAfter(m.reward, w), `${m.id} ${w.id}`).toBe(m.reward - Math.round((m.reward * percent) / 100));
+      }
+    }
+    expect(feeAfter(5250, sixty)).toBe(3412);
+  });
+
+  test('what they are and what they cost is said as it is', () => {
+    expect(STRINGS.briefing.wingmanTerms(40, 35)).toBe('Up to 40 a round from round 2. Takes 35% of fee and XP.');
+    expect(STRINGS.briefing.wingmanTerms(40, 35).length).toBeLessThanOrEqual(BRIEFING_CHARS);
+    expect(kite.text).toContain('strongest');
+  });
+
   test('the briefing has words for the choice', () => {
     expect(STRINGS.briefing.wingman).toBe('Wingman');
     expect(STRINGS.briefing.alone).toBe('None');
