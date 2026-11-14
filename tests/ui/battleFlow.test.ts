@@ -27,7 +27,7 @@ test('the player turn opens on the action menu', () => {
   const flow = ready();
   expect(flow.phase).toBe('action');
   expect(flow.menu.items.map((i) => i.id)).toEqual(['fire', 'boost', 'guard', 'cool', 'repair', 'endTurn', 'auto', 'retreat']);
-  expect(flow.menu.items.map((i) => i.label)).toEqual(['Fire', 'Boost', 'Guard', 'Cool', 'Field Repair', 'End Turn', 'Auto Turn', 'Retreat']);
+  expect(flow.menu.items.map((i) => i.label)).toEqual(['Fire', 'Boost', 'Guard', 'Vent', 'Field Repair', 'End Turn', 'Auto Turn', 'Retreat']);
   expect(flow.menu.cursor).toBe(0);
 });
 

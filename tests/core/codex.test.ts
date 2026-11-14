@@ -1,5 +1,5 @@
 import { completeMission } from '../../src/core/campaign';
-import { openEntries, unitSheet, type Entry } from '../../src/core/codex';
+import { metByRecord, openEntries, unitSheet, type Entry } from '../../src/core/codex';
 import { newGame, type GameState } from '../../src/core/game';
 import { MANUAL, UNITS, WORLD } from '../../src/content/codex';
 import { ENEMIES } from '../../src/content/enemies';
@@ -46,9 +46,44 @@ describe('what the database knows of a unit', () => {
     expect(unitSheet(ENEMIES['shield-drone'], CATALOG)).toMatchObject({ weak: null, strong: 'energy' });
   });
 
+  test('a difference too small to choose a weapon by is not called a weakness or a strength', () => {
+    // The Stalker's core: kinetic 0.15, energy 0.2, explosive 0.1. Five points either way is not worth a line.
+    expect(unitSheet(ENEMIES.stalker, CATALOG)).toMatchObject({ weak: null, strong: null });
+    // A Bailiff is armoured alike all round, as its page says.
+    expect(unitSheet(ENEMIES.bailiff, CATALOG)).toMatchObject({ weak: null, strong: null });
+    // Ten points is.
+    expect(unitSheet(ENEMIES.jammer, CATALOG).weak).toBe('explosive');
+    expect(unitSheet(ENEMIES['lance-tower'], CATALOG).strong).toBe('kinetic');
+    expect(unitSheet(ENEMIES.rival, CATALOG)).toMatchObject({ weak: 'energy', strong: null });
+  });
+
   test('a shield in the hand is no weapon, and a unit without guns has none', () => {
     expect(unitSheet(ENEMIES.bulldozer, CATALOG).weapons.map((w) => w.name)).toEqual(['Breaching Gun', 'Siege Mortar']);
     expect(unitSheet(ENEMIES.jammer, CATALOG).weapons).toEqual([]);
+  });
+});
+
+describe('the kinds a pilot must have met', () => {
+  const ladder = [{ rank: 1, enemy: 'arena-a' }, { rank: 2, enemy: 'arena-b' }, { rank: 3, enemy: 'arena-c' }];
+
+  test('are those of every battle of every contract they have finished, in this cycle or an earlier one', () => {
+    const g = { ...did('intro-1'), ranks: { 'rival-1': 'B' as const } };
+    const met = metByRecord(g, MISSIONS, ladder);
+    const expected = ['intro-1', 'rival-1'].flatMap((id) => MISSIONS.find((m) => m.id === id)!.battles.flatMap((b) => b.enemies));
+    expect([...met].sort()).toEqual([...new Set(expected)].sort());
+    expect(met).toContain('rival');
+  });
+
+  test('and the arena opponents they have beaten', () => {
+    expect(metByRecord({ ...fresh(), arenaRank: 2 }, MISSIONS, ladder)).toEqual(['arena-a', 'arena-b']);
+  });
+
+  test('what the game already lists comes first and is listed once; a pilot who has done nothing has met nobody', () => {
+    expect(metByRecord(fresh(), MISSIONS, ladder)).toEqual([]);
+    const g = { ...did('intro-1'), met: ['gunship', 'recon-drone'] };
+    const met = metByRecord(g, MISSIONS, ladder);
+    expect(met.slice(0, 2)).toEqual(['gunship', 'recon-drone']);
+    expect(new Set(met).size).toBe(met.length);
   });
 });
 

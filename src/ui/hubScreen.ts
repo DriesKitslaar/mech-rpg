@@ -148,6 +148,9 @@ export class HubScreen implements Screen {
       drawList(ctx, this.list, x + 6, 96, w - 16, ROWS);
     }
 
-    if (campaignComplete(game, MISSIONS)) drawText(ctx, H.campaignDone, x + w / 2, 196, { align: 'center', color: COLORS.dim, size: 10 });
+    // Under the menu's panel, clear of its last row and of anything announced along the bottom edge.
+    if (campaignComplete(game, MISSIONS)) {
+      drawText(ctx, H.campaignDone, x + w / 2, 78 + 24 + ROWS * LINE + 4, { align: 'center', color: COLORS.dim, size: 10 });
+    }
   }
 }

@@ -139,8 +139,11 @@ export type BattleEvent =
   | { type: 'stagger'; unit: string }
   | { type: 'recover'; unit: string }
   | { type: 'charge'; unit: string; weapon: WeaponSlot }
-  /** `amount` is what the effect did: heat vented, armour restored, and so on. */
-  | { type: 'module'; unit: string; effect: ModuleEffect; amount: number; target?: string }
+  /**
+   * `amount` is what the effect did: heat vented, armour restored, and so on. A shock pulse also
+   * says in `damage` how much armour it took off those it struck, all told.
+   */
+  | { type: 'module'; unit: string; effect: ModuleEffect; amount: number; target?: string; damage?: number }
   /** An enemy patched up one of its own side. */
   | { type: 'mend'; unit: string; target: string; part: FrameSlot; amount: number }
   /** A bomb's fuse burned down to `left` turns. */
@@ -832,8 +835,11 @@ function strike(state: BattleState, target: UnitState, damage: number, impact: n
   return dealt - absorbed;
 }
 
-/** Runs a module's effect and returns what it amounted to, for the event. */
-function useModule(state: BattleState, unit: UnitState, module: Module, targetId: string | undefined, catalog: Catalog): number {
+/** Runs a module's effect and returns what it amounted to, for the event; a pulse's damage is written on the event itself. */
+function useModule(
+  state: BattleState, unit: UnitState, module: Module, targetId: string | undefined, catalog: Catalog,
+  event: Extract<BattleEvent, { type: 'module' }>,
+): number {
   const { power } = module;
   switch (module.effect) {
     case 'coolant': {
@@ -865,8 +871,9 @@ function useModule(state: BattleState, unit: UnitState, module: Module, targetId
       return restored;
     }
     case 'shock':
+      event.damage = 0;
       for (const enemy of state.units.filter((u) => u.side !== unit.side && !u.destroyed)) {
-        strike(state, enemy, SHOCK_DAMAGE, power, catalog);
+        event.damage += strike(state, enemy, SHOCK_DAMAGE, power, catalog);
       }
       return power;
     case 'chaff':
@@ -927,7 +934,7 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
         type: 'module', unit: unit.id, effect: module.effect, amount: 0, ...(action.target ? { target: action.target } : {}),
       };
       state.events.push(event);
-      event.amount = useModule(state, unit, module, action.target, catalog);
+      event.amount = useModule(state, unit, module, action.target, catalog, event);
       checkOutcome(state);
       break;
     }

@@ -86,6 +86,20 @@ describe('medals', () => {
     expect(snap(app).toast).toBe(game.medals[1] ?? null);
   });
 
+  test('an announcement that is up when a battle begins steps aside and comes back after it', () => {
+    const { app } = inHub(strong({ ...read(), arenaRank: 1, scenes: ['act-1'] }));
+    app.update(16);
+    expect(snap(app).toast).toBe('first-arena');
+    accept(app, 'patrol');
+    app.update(16);
+    expect(snap(app)).toMatchObject({ screen: 'battle', toast: null });
+    expect(snap(app).toasts).toContain('first-arena');
+    finishMission(app);
+    app.update(16);
+    // Back on a screen that can carry it, it is the first thing announced.
+    expect(snap(app)).toMatchObject({ screen: 'settlement', toast: 'first-arena' });
+  });
+
   test('a medal is announced once: loading the game again announces nothing', () => {
     const { app } = inHub({ ...read(), medals: ['first-contract'], stats: { ...NO_STATS, contracts: 1 } });
     app.commit(app.game!);
@@ -260,8 +274,10 @@ describe('the database', () => {
     app.update(TOAST_MS);
     app.update(16);
     expect(snap(app).toast).toBeNull();
-    // The first meeting with Ashfall opens their entry.
+    // The first meeting with Ashfall opens their entry, once the page of story that follows it has been read.
     app.commit({ ...app.game!, completed: ['intro-1', 'intro-2', 'rival-1'] });
+    expect(savedGame(store).codex).not.toContain('ashfall');
+    app.commit({ ...app.game!, scenes: [...app.game!.scenes, 'act-2'] });
     expect(savedGame(store).codex).toEqual(expect.arrayContaining(['ashfall', 'arena', 'freelance']));
     app.update(16);
     expect(snap(app).toast).toBe('entries:3');

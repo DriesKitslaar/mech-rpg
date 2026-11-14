@@ -681,6 +681,47 @@ describe('the screens the pilot\'s record added', () => {
     expect(snap(app).screen).toBe('hub');
   });
 
+  test('the end roll says how to skip it while it climbs, and no longer once it has stopped', () => {
+    const app = start({ ...done('intro-1'), callsign: 'VANTA', endingSeen: true, scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
+    app.showCredits();
+    const frame = () => { const { ctx, calls } = recorder(); app.draw(ctx); return texts(calls); };
+    for (let i = 0; i < 20; i++) app.update(100);
+    expect(frame()).toContain('A: skip');
+    for (let i = 0; i < 2000; i++) app.update(100);
+    expect(frame()).not.toContain('A: skip');
+  });
+
+  test('once the story is over, the line that says so is clear of the menu: no row is written over', () => {
+    const story = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
+      'choice-hadron', 'hadron-3', 'hadron-4', 'hadron-5', 'finale-hadron', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
+    const app = start({ ...done(...story), endingSeen: true, scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) });
+    expect(snap(app).screen).toBe('hub');
+    expect(snap(app).menu.items.map((item) => item.id)).toContain('cycle');
+    const { ctx, calls } = recorder();
+    app.update(16);
+    app.draw(ctx);
+    const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) }));
+    const over = drawn.find((d) => d.text === 'The war is over. The work is not.')!;
+    expect(over).toBeDefined();
+    for (const label of ['Contracts', 'Arena', 'Training', 'Garage', 'Shop', 'Pilot', 'Messages', 'Database', 'Options', 'New Cycle']) {
+      const row = drawn.find((d) => d.text === label)!;
+      expect(row, label).toBeDefined();
+      expect(Math.abs(over.y - row.y), label).toBeGreaterThanOrEqual(11);
+    }
+    expect(over.y).toBeLessThan(238);
+  });
+
+  test('on the title the pilot\'s name stands clear of Continue, however long it is', () => {
+    const saved = { ...done('intro-1'), callsign: 'ABCDEFGH', scenes: ['act-1'] };
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store(saved), CATALOG), sprites, fast: true, seed: 3 });
+    expect(snap(app).screen).toBe('title');
+    const { ctx, calls } = recorder();
+    app.draw(ctx);
+    const at = (text: string) => Number(calls.find((c) => c.name === 'fillText' && c.args[0] === text)!.args[1]);
+    // The label is written from its left edge, the name up to its right edge; a letter is 4.8 wide.
+    expect(at('ABCDEFGH') - 8 * 4.8).toBeGreaterThanOrEqual(at('Continue') + 8 * 4.8 + 6);
+  });
+
   test('the hub shows the pilot\'s callsign and level', () => {
     const app = start({ ...done('intro-1'), callsign: 'VANTA', scenes: ['act-1'] });
     const { ctx, calls } = recorder();

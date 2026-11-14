@@ -59,6 +59,15 @@ export class ShopFlow {
     this.message = '';
   }
 
+  /**
+   * Takes the game back as it was booked: with whatever the booking added (a medal and its pay, time
+   * played). The list is made again, so that what can now be afforded shows.
+   */
+  adopt(game: GameState): void {
+    this.game = game;
+    this.list.setItems(this.items());
+  }
+
   onInput(action: InputAction): 'stay' | 'changed' | 'exit' {
     switch (action) {
       case 'cancel': return 'exit';

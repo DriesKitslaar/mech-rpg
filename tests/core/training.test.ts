@@ -1,10 +1,10 @@
 import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
-import { checkAction, createBattle, type Action, type BattleState } from '../../src/core/battle';
-import { validatePlayerBuild } from '../../src/core/build';
+import { checkAction, createBattle, previewShot, type Action, type BattleState } from '../../src/core/battle';
+import { validatePlayerBuild, weaponIn } from '../../src/core/build';
 import { completeMission } from '../../src/core/campaign';
 import { newGame, type GameState } from '../../src/core/game';
 import { DRILL_PAY, drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill } from '../../src/core/training';
-import { WEAPON_SLOTS, type Catalog } from '../../src/core/types';
+import { WEAPON_SLOTS, type Catalog, type WeaponSlot } from '../../src/core/types';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { DRILLS } from '../../src/content/drills';
 import { MISSIONS } from '../../src/content/missions';
@@ -50,6 +50,12 @@ describe('a drill', () => {
     expect(drillOpen(fresh(), AIM, MISSIONS)).toBe(true);
     expect(drillOpen(fresh(), later, MISSIONS)).toBe(false);
     expect(drillOpen(completeMission(fresh(), 'intro-2', MISSIONS), later, MISSIONS)).toBe(true);
+  });
+
+  test('stays open when the story starts again, and one that was passed is never locked', () => {
+    const later = DRILLS.find((drill) => drill.after === 'intro-2')!;
+    expect(drillOpen({ ...fresh(), cycle: 1 }, later, MISSIONS)).toBe(true);
+    expect(drillOpen({ ...fresh(), drills: [later.id] }, later, MISSIONS)).toBe(true);
   });
 });
 
@@ -108,6 +114,26 @@ describe('what the drills teach', () => {
 
   test.each(DRILLS.map((d) => d.id))('%s is passed four times in five by a player who does what it teaches', (id) => {
     expect(rate(id, chooseAutoPlayerAction)).toBeGreaterThanOrEqual(0.8);
+  });
+
+  test('the damage types drill shows what it says: the blast does most to the tank, the beam most to the enforcer, bullets least to both', () => {
+    const drill = DRILLS.find((d) => d.id === 'drill-types')!;
+    expect(drill.battle.enemies).toEqual(['tank', 'heavy-mech']);
+    const s = createBattle(drill.build, drill.battle.enemies.map((id) => ALL_ENEMIES[id]), CATALOG, 1, { enemyScale: drill.scale ?? 1 });
+    const typeOf = (slot: WeaponSlot) => weaponIn(drill.build, slot, CATALOG)!.damageType;
+    // One weapon of each kind.
+    expect(WEAPON_SLOTS.map(typeOf).sort()).toEqual(['energy', 'explosive', 'kinetic']);
+    const against = (kind: string): Record<string, number> => {
+      const target = s.units.find((u) => u.kind === kind)!;
+      return Object.fromEntries(WEAPON_SLOTS.map((slot) => [typeOf(slot), previewShot(s, 'player', slot, target.id, 'core', CATALOG).damage]));
+    };
+    const tank = against('tank');
+    const enforcer = against('heavy-mech');
+    // The differences are plain to see in the numbers the player is told to compare.
+    expect(tank.explosive).toBeGreaterThan(tank.energy * 1.15);
+    expect(tank.energy).toBeGreaterThan(tank.kinetic);
+    expect(enforcer.energy).toBeGreaterThan(enforcer.explosive * 1.15);
+    expect(enforcer.explosive).toBeGreaterThan(enforcer.kinetic);
   });
 
   // The others teach something that helps without being the only way through.

@@ -24,8 +24,8 @@ export const UNITS: UnitPage[] = [
   { id: 'light-mech', note: 'Lumen security. Quick, and hard to hit while its legs work: shoot those out first.' },
   { id: 'marksman', note: 'Charges a piercing longbow for a turn, then fires it. Guard or boost on the turn it is loaded.' },
   { id: 'heavy-mech', note: 'Hadron muscle. Slow, thick, and it goes for whatever is already damaged. Beams cut through it.' },
-  { id: 'bulldozer', note: 'A Bulwark on tracks behind a riot shield, with a mortar. It never dodges. Beams cut through it.' },
-  { id: 'stalker', note: 'Twin needles on fast legs, picking at your limbs. Staggered, it cannot dodge at all.' },
+  { id: 'bulldozer', note: 'A Bulwark on tracks behind a riot shield, with a mortar. Tracks cannot boost, so it is easy to hit. Beams cut through it.' },
+  { id: 'stalker', note: 'Twin needles on fast legs, aimed at your head to spoil your aim. Staggered, it cannot dodge at all.' },
   { id: 'ripper', note: 'The Undertow\'s jumping frame. It boosts in and strikes with a claw. Blasts barely mark it.' },
   { id: 'juggernaut', note: 'The heaviest frame there is, with a maul and a mortar. Nothing gets through it easily.' },
   { id: 'rival', note: 'A licensed pilot in a Ronin frame, with a lance and a rack. Hits hard and takes it well.' },
@@ -35,7 +35,7 @@ export const UNITS: UnitPage[] = [
   { id: 'rook', note: 'The Undertow\'s champion. He closes in every turn with a cutting torch that heats you up, and drops chaff.' },
   { id: 'krell', note: 'Hadron\'s strike-breaker, in a Colossus behind a tower shield. Slow, and very hard to hurt while he guards.' },
   { id: 'leviathan', note: 'A barge with a jaw. It drops a bomb crawler every fourth turn. Blasts barely mark it; beams do.' },
-  { id: 'strip-miner', note: 'A mining machine the size of a campus. It cannot dodge. Its hull laughs at bullets; use beams.' },
+  { id: 'strip-miner', note: 'A mining machine the size of a campus. It hardly moves, so little misses it. Its hull laughs at bullets; use beams.' },
   { id: 'overseer', note: 'Lumen\'s eye over the lower levels. It spoils your aim and charges a beam. Beams slide off it.' },
   { id: 'lien-drone', note: 'Meridian\'s errand runner. Sturdier than a recon drone, and each hit drains your next turn\'s energy.' },
   { id: 'bailiff', note: 'Meridian\'s Auditor frame: a piercing rifle and a coil that drains your energy. Armoured alike all round.' },
@@ -147,7 +147,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'turn', title: 'YOUR TURN',
-    text: 'Each turn your generator gives you energy. Spend it on firing each weapon once, on Boost, Guard, Vent or your module, then end the turn. The more mobile unit acts first each round. Auto Turn plays one turn for you.',
+    text: 'Each turn your generator gives you energy. Spend it on firing each weapon once, on Boost, Guard or Vent, then end the turn. Your module costs none. The more mobile unit acts first each round. Auto Turn plays one turn for you.',
   },
   {
     id: 'aim', title: 'AIMING',
@@ -155,7 +155,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'parts', title: 'LOSING PARTS',
-    text: 'Without legs a unit cannot dodge or boost. Without arms it cannot use what it holds in its hands. Without a head its aim drops by 30. That is as true of you as of them.',
+    text: 'Without legs a unit cannot dodge or boost. Without arms it cannot fire what it holds in its hands, though a shield there still covers it. Without a head its aim drops by 30. That is as true of you as of them.',
   },
   {
     id: 'types', title: 'DAMAGE TYPES',
@@ -163,7 +163,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'heat', title: 'HEAT',
-    text: 'Firing makes heat, and your generator sheds some at the end of every turn. Reach 100 and you overheat: your next turn is lost. Vent sheds heat at once for a fifth of a turn\'s energy.',
+    text: 'Firing makes heat, and your generator sheds some at the end of every turn. Pass 100 and you overheat: your next turn is lost. Vent sheds heat at once for a fifth of a turn\'s energy.',
   },
   {
     id: 'stagger', title: 'STAGGER',

@@ -6,7 +6,7 @@ import {
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
-import { openEntries, type Entry } from '../core/codex';
+import { metByRecord, openEntries, type Entry } from '../core/codex';
 import { applySettlement, settle, type Settlement } from '../core/economy';
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
@@ -275,6 +275,8 @@ export class App {
   game: GameState | null = null;
   /** True when the last attempt to save was refused by the device. */
   saveFailed = false;
+  /** True while the options as they are now have not been stored: storing them is tried again with every save. */
+  private settingsUnsaved = false;
   /** Sound, music and battle speed. Stored on their own, so they exist before a game does. */
   settings: Settings;
   private name: ScreenName = 'title';
@@ -337,7 +339,7 @@ export class App {
   setSettings(next: Settings): void {
     this.settings = { ...next };
     this.applySettings();
-    this.deps.save.saveSettings(this.settings);
+    this.settingsUnsaved = !this.deps.save.saveSettings(this.settings);
     if (this.game) this.commit({ ...this.game, settings: { ...this.settings } });
   }
 
@@ -398,8 +400,9 @@ export class App {
     this.file.rememberSlot();
     this.played = 0;
     // Saved at once: a game from an older version is brought up to date where it is kept, and what it
-    // had already done is recognised now (medals, entries of the database) rather than at its next save.
-    this.commit({ ...saved, settings: { ...this.settings } });
+    // had already done is recognised now (medals, entries of the database, the enemies its finished
+    // contracts put in front of it) rather than at its next save.
+    this.commit({ ...saved, met: metByRecord(saved, MISSIONS, ARENA), settings: { ...this.settings } });
     this.go('hub');
   }
 
@@ -413,10 +416,15 @@ export class App {
     this.played -= seconds * 1000;
     const timed = seconds > 0 ? { ...next, stats: { ...next.stats, seconds: next.stats.seconds + seconds } } : next;
     const { game: awarded, earned } = awardMedals(timed, MEDALS);
-    const { game, opened } = openEntries(awarded, WORLD, MISSIONS);
+    // The database does not run ahead of the story: while a page of story is waiting to be shown,
+    // nothing opens, so what that page is about to reveal is not announced before it.
+    const waiting = dueScenes(awarded, SCENES, MISSIONS).length > 0;
+    const { game, opened } = waiting ? { game: awarded, opened: [] } : openEntries(awarded, WORLD, MISSIONS);
     this.toasts.push(...medalToasts(earned), ...entryToasts(opened));
     this.game = game;
     this.saveFailed = !this.file.save(game);
+    // Options that could not be stored when they were changed go with the next thing that can be.
+    if (this.settingsUnsaved) this.settingsUnsaved = !this.deps.save.saveSettings(this.settings);
   }
 
   /** Why the current build may not deploy; empty when it may. */
@@ -513,7 +521,7 @@ export class App {
   closeBriefing(mission: Mission): void {
     if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
     else if (mission.id === MIRROR_ID) this.show('arena', new ArenaScreen(this, MIRROR));
-    else if (mission.arenaRank !== undefined) this.go('arena');
+    else if (mission.arenaRank !== undefined) this.show('arena', new ArenaScreen(this, `rank-${mission.arenaRank}`));
     else this.openHub(mission.replay ? 'archive' : 'contracts', mission.id);
   }
 
@@ -653,6 +661,12 @@ export class App {
   /** One announcement at a time, and none over a battle or a page of story: they wait for what comes after. */
   private stepToast(dtMs: number): void {
     if (this.toast) {
+      // One that is up when a battle or a page of story begins steps aside, and is announced again after it.
+      if (NO_TOASTS.includes(this.name)) {
+        this.toasts.unshift(this.toast.item);
+        this.toast = null;
+        return;
+      }
       this.toast.left -= dtMs;
       if (this.toast.left <= 0) this.toast = null;
       return;
