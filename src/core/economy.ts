@@ -1,6 +1,6 @@
 import type { BattleState } from './battle';
 import { framePart, weaponIn } from './build';
-import type { GameState } from './game';
+import type { GameState, Rank } from './game';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog } from './types';
 
 /**
@@ -18,6 +18,10 @@ export interface Settlement {
   net: number;
   /** One entry per damaged part, in slot order. */
   lines: { partId: string; lost: number; cost: number }[];
+  /** How well a won contract was done, the score behind it and what it adds to the fee; see rank.ts. */
+  rank?: Rank;
+  score?: number;
+  bonus?: number;
 }
 
 /** Pilot perks that change the bill: a fraction more pay, a fraction off ammunition and repairs. */

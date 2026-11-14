@@ -31,7 +31,10 @@ function upgrade(value: unknown): unknown {
   // Issuing those, fitted, changes nothing about how the mech performs.
   if (save.version === 4) save = { ...save, ...withStockParts(save), version: 5 };
   // Version 5 had no paint and no saved builds.
-  if (save.version === 5) save = { ...save, version: SAVE_VERSION, paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null) };
+  if (save.version === 5) save = { ...save, version: 6, paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null) };
+  // Version 6 had no ranks and no scenes, and its story ended where the third act now begins: whoever
+  // saw that ending has not seen the real one, so it is shown when it is earned.
+  if (save.version === 6) save = { ...save, version: SAVE_VERSION, ranks: {}, scenes: [], endingSeen: false };
   return save;
 }
 

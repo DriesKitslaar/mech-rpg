@@ -90,7 +90,7 @@ test('a save from the third version gains a pilot and settings and keeps everyth
   const { xp: _x, perks: _p, arenaRank: _a, cycle: _y, settings: _s, ...rest } = { ...old(), completed: ['intro-1'], endingSeen: true, battlesWon: 7 } as Record<string, any>;
   const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 3 }) }), CATALOG).load();
   expect(loaded).toMatchObject({
-    version: SAVE_VERSION, completed: ['intro-1'], endingSeen: true, battlesWon: 7, credits: game().credits,
+    version: SAVE_VERSION, completed: ['intro-1'], battlesWon: 7, credits: game().credits,
     xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { sfx: true, music: true, fastBattles: false, difficulty: 'standard' },
   });
 });
@@ -127,6 +127,33 @@ test('a save from the fifth version gains factory paint and three empty build sl
   const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 5 }) }), CATALOG).load();
   expect(loaded).toEqual({ ...game(), xp: 300, arenaRank: 2 });
   expect(loaded).toMatchObject({ version: SAVE_VERSION, paint: 'factory', loadouts: [null, null, null] });
+});
+
+describe('a save from the sixth version', () => {
+  const sixth = (extra: Record<string, unknown> = {}) => {
+    const { ranks: _r, scenes: _s, ...rest } = { ...game(), xp: 300, arenaRank: 2, ...extra } as Record<string, any>;
+    return new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 6 }) }), CATALOG).load();
+  };
+
+  test('gains an empty list of ranks and of scenes and keeps everything else', () => {
+    expect(sixth()).toEqual({ ...game(), xp: 300, arenaRank: 2 });
+    expect(sixth()).toMatchObject({ version: SAVE_VERSION, ranks: {}, scenes: [] });
+  });
+
+  test('that had seen the old ending has not seen the new one: the story goes on past it', () => {
+    const done = ['intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1', 'choice-lumen', 'finale-lumen'];
+    expect(sixth({ completed: done, endingSeen: true })).toMatchObject({ completed: done, endingSeen: false });
+  });
+});
+
+test('ranks and scenes that are not what the game writes are refused', () => {
+  const load = (extra: Record<string, unknown>) =>
+    new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...game(), ...extra }) }), CATALOG).load();
+  expect(load({ ranks: { 'intro-1': 'S' }, scenes: ['act-1'] })).toMatchObject({ ranks: { 'intro-1': 'S' }, scenes: ['act-1'] });
+  expect(load({ ranks: { 'intro-1': 'Z' } })).toBeNull();
+  expect(load({ ranks: ['S'] })).toBeNull();
+  expect(load({ scenes: [1] })).toBeNull();
+  expect(load({ scenes: 'act-1' })).toBeNull();
 });
 
 describe('settings', () => {

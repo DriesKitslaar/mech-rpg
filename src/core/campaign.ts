@@ -3,7 +3,16 @@ import type { GameState } from './game';
 import type { Objective, Part } from './types';
 
 export type Faction = 'hadron' | 'lumen' | 'undertow';
-export type MissionPhase = 'patrol' | 'intro' | 'faction' | 'choice' | 'finale';
+/**
+ * Where a contract sits in the story. In order: the introductions; two contracts for each client;
+ * the rival; the choice of a client; that client's path; its finale; the audit; the verdict.
+ * The patrol stands outside the story.
+ */
+export type MissionPhase = 'patrol' | 'intro' | 'faction' | 'rival' | 'choice' | 'path' | 'finale' | 'audit' | 'verdict';
+/** How the pilot ends the story: by enforcing the foreclosure, or by defaulting on it. */
+export type Verdict = 'enforce' | 'default';
+/** The story's phases in the order they are played. */
+const STAGES: MissionPhase[] = ['intro', 'faction', 'rival', 'choice', 'path', 'finale', 'audit', 'verdict'];
 
 /** Something said over a battle: when it opens, when a round begins, or when it is won. */
 export interface TalkLine {
@@ -30,8 +39,14 @@ export interface Mission {
   id: string;
   title: string;
   phase: MissionPhase;
-  /** The client, for faction, choice and finale contracts. */
+  /** The client, for faction, choice, path and finale contracts. */
   faction?: Faction;
+  /** A faction contract that is offered only once this other contract is done. */
+  after?: string;
+  /** Which ending a verdict contract leads to. */
+  verdict?: Verdict;
+  /** Set on a contract played again from the archive: it pays less and changes nothing in the story. */
+  replay?: boolean;
   /** Who is speaking in the briefing. */
   client: string;
   /** Sprite id of the client's portrait, if they have one. */
@@ -55,8 +70,35 @@ export interface Message {
   portrait?: string;
   subject: string;
   body: string[];
-  /** Arrives at the start, after a named contract, or after any exclusive contract. */
-  after: 'start' | 'choice' | string;
+  /** Arrives when this has happened; see `Condition`. */
+  after: Condition;
+  /** Only for the pilot who chose this client. */
+  faction?: Faction;
+}
+
+/**
+ * Something a message, a part or a scene waits for: the start, any exclusive contract (`choice`),
+ * any finale, any verdict, an arena rank (`arena:N`), or the id of a contract.
+ */
+export type Condition = 'start' | 'choice' | 'finale' | 'verdict' | string;
+
+/** A page of story between contracts: the opening of an act, or an ending. */
+export interface Scene {
+  id: string;
+  /** A small line over the title, such as the act. */
+  heading?: string;
+  title: string;
+  /** Sprite id of the picture behind the text, if there is one. */
+  picture?: string;
+  lines: string[];
+  /** Shown once this has happened... */
+  after: Condition;
+  /** ...unless this has too: a pilot who is already past a scene is not told it. */
+  before?: Condition;
+  /** Only for the pilot who chose this client. */
+  faction?: Faction;
+  /** An ending of the story: seeing it is what `endingSeen` records. */
+  ending?: boolean;
 }
 
 const done = (state: GameState, missions: Mission[], phase: MissionPhase): Mission[] =>
@@ -68,23 +110,59 @@ export function chosenFaction(state: GameState, missions: Mission[]): Faction | 
   return done(state, missions, 'choice')[0]?.faction ?? null;
 }
 
+/** The verdict the pilot gave, if any. */
+export function chosenVerdict(state: GameState, missions: Mission[]): Verdict | null {
+  return done(state, missions, 'verdict')[0]?.verdict ?? null;
+}
+
+/** What one phase of the story has on offer right now. */
+function offeredIn(phase: MissionPhase, state: GameState, missions: Mission[]): Mission[] {
+  const left = all(missions, phase).filter((m) => !state.completed.includes(m.id));
+  const chosen = chosenFaction(state, missions);
+  switch (phase) {
+    // One at a time, in list order.
+    case 'intro':
+    case 'rival':
+    case 'audit': return left.slice(0, 1);
+    // Every client at once; a client's later contract waits for the one it names.
+    case 'faction': return left.filter((m) => !m.after || state.completed.includes(m.after));
+    case 'choice': return chosen ? [] : all(missions, 'choice');
+    case 'path': return left.filter((m) => m.faction === chosen).slice(0, 1);
+    case 'finale': return done(state, missions, 'finale').length > 0 ? [] : left.filter((m) => m.faction === chosen);
+    case 'verdict': return done(state, missions, 'verdict').length > 0 ? [] : left;
+    case 'patrol': return [];
+  }
+}
+
 /**
- * The contracts on offer, in list order. The patrol is always among them, so there is always work:
- * introductions come one at a time, then the three clients in any order, then one exclusive contract,
- * then that client's finale.
+ * The contracts on offer, in list order. The patrol is always among them, so there is always work.
+ * The story is offered a phase at a time, from the furthest phase the pilot has done anything in:
+ * what an earlier phase still has open is behind them. (That only matters for a pilot whose game
+ * is older than part of the story: one who had already taken a side is not sent back to the others.)
  */
 export function availableMissions(state: GameState, missions: Mission[]): Mission[] {
-  const open = (m: Mission) => !state.completed.includes(m.id);
-  const introsLeft = all(missions, 'intro').filter(open);
-  const factionLeft = all(missions, 'faction').filter(open);
-  const chosen = chosenFaction(state, missions);
-
-  let story: Mission[];
-  if (introsLeft.length > 0) story = [introsLeft[0]];
-  else if (factionLeft.length > 0) story = factionLeft;
-  else if (!chosen) story = all(missions, 'choice');
-  else story = all(missions, 'finale').filter((m) => m.faction === chosen && open(m));
+  let furthest = 0;
+  STAGES.forEach((phase, i) => { if (done(state, missions, phase).length > 0) furthest = i; });
+  let story: Mission[] = [];
+  for (const phase of STAGES.slice(furthest)) {
+    story = offeredIn(phase, state, missions);
+    if (story.length > 0) break;
+  }
   return [...all(missions, 'patrol'), ...story];
+}
+
+/** Share of a contract's pay that playing it again from the archive earns. */
+export const ARCHIVE_PAY = 0.3;
+
+/**
+ * The story contracts the pilot has done, in the order they were done, as they can be played again:
+ * for a share of the pay, and marked so that winning them changes nothing in the story.
+ */
+export function archiveMissions(state: GameState, missions: Mission[]): Mission[] {
+  return state.completed.flatMap((id) => {
+    const mission = missions.find((m) => m.id === id && m.phase !== 'patrol');
+    return mission ? [{ ...mission, reward: Math.round(mission.reward * ARCHIVE_PAY), replay: true }] : [];
+  });
 }
 
 /** Records a won contract. The patrol repeats and is not recorded. */
@@ -121,20 +199,23 @@ export function forCycle(mission: Mission, cycle: number): Mission {
   };
 }
 
-/** Starts the story again. Credits, parts, pilot level, perks and arena rank all stay. */
+/** Starts the story again. Credits, parts, pilot level, perks, arena rank and the best ranks all stay. */
 export function startNewCycle(state: GameState, missions: Mission[]): GameState {
   if (!campaignComplete(state, missions)) throw new Error('the campaign is not complete');
-  return { ...state, completed: [], read: [], endingSeen: false, cycle: state.cycle + 1 };
+  return { ...state, completed: [], read: [], scenes: [], endingSeen: false, cycle: state.cycle + 1 };
 }
 
+/** The story ends with a verdict. A story that has none (a short one) ends with its finale. */
 export function campaignComplete(state: GameState, missions: Mission[]): boolean {
-  return done(state, missions, 'finale').length > 0;
+  const last: MissionPhase = all(missions, 'verdict').length > 0 ? 'verdict' : 'finale';
+  return done(state, missions, last).length > 0;
 }
 
-/** True once the event a part or message waits for has happened. */
-function reached(state: GameState, condition: string, missions: Mission[]): boolean {
+/** True once the event a part, a message or a scene waits for has happened. */
+function reached(state: GameState, condition: Condition, missions: Mission[]): boolean {
   if (condition === 'start') return true;
   if (condition === 'choice') return chosenFaction(state, missions) !== null;
+  if (condition === 'finale' || condition === 'verdict') return done(state, missions, condition).length > 0;
   // "arena:N": the arena rank is at least N.
   if (condition.startsWith('arena:')) return state.arenaRank >= Number(condition.slice(6));
   return state.completed.includes(condition);
@@ -153,7 +234,24 @@ export function stockFor(state: GameState, parts: Part[], unlocks: Record<string
 
 /** Messages that have arrived, oldest first. */
 export function arrivedMessages(state: GameState, messages: Message[], missions: Mission[]): Message[] {
-  return messages.filter((m) => reached(state, m.after, missions));
+  const chosen = chosenFaction(state, missions);
+  return messages.filter((m) => reached(state, m.after, missions) && (!m.faction || m.faction === chosen));
+}
+
+/** The scenes the pilot should be shown now, in list order: reached, not passed, not seen. */
+export function dueScenes(state: GameState, scenes: Scene[], missions: Mission[]): Scene[] {
+  const chosen = chosenFaction(state, missions);
+  return scenes.filter((scene) =>
+    !state.scenes.includes(scene.id)
+    && reached(state, scene.after, missions)
+    && !(scene.before !== undefined && reached(state, scene.before, missions))
+    && (!scene.faction || scene.faction === chosen));
+}
+
+/** Records that a scene has been shown; an ending also closes the story. */
+export function markSceneSeen(state: GameState, scene: Scene): GameState {
+  if (state.scenes.includes(scene.id)) return state;
+  return { ...state, scenes: [...state.scenes, scene.id], ...(scene.ending ? { endingSeen: true } : {}) };
 }
 
 export function unreadMessages(state: GameState, messages: Message[], missions: Mission[]): Message[] {
