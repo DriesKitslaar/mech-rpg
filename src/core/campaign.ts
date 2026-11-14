@@ -1,8 +1,30 @@
+import type { Support } from './battle';
 import type { GameState } from './game';
-import type { Part } from './types';
+import type { Objective, Part } from './types';
 
 export type Faction = 'hadron' | 'lumen' | 'undertow';
 export type MissionPhase = 'patrol' | 'intro' | 'faction' | 'choice' | 'finale';
+
+/** Something said over a battle: when it opens, when a round begins, or when it is won. */
+export interface TalkLine {
+  at: 'start' | 'win' | number;
+  who: string;
+  /** Sprite id of the speaker's face, if they have one. */
+  portrait?: string;
+  text: string;
+}
+
+export interface Battle {
+  enemies: string[];
+  background: string;
+  /** What the battle asks for: every enemy destroyed, when absent. */
+  objective?: Objective;
+  /** An ally who fires into the battle from off the field. */
+  support?: Support;
+  /** Rounds a good pilot needs; 3 plus 2 for each enemy when absent. Ranks are measured against it. */
+  par?: number;
+  talk?: TalkLine[];
+}
 
 export interface Mission {
   id: string;
@@ -20,7 +42,7 @@ export interface Mission {
   debrief: string;
   reward: number;
   /** Fought in order; damage, heat and ammunition carry from one to the next. */
-  battles: { enemies: string[]; background: string }[];
+  battles: Battle[];
   /** Multiplies enemy armour and damage; 1 when absent. */
   scale?: number;
   /** Set on an arena fight: the rank of the opponent. */

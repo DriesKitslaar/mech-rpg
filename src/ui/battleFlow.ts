@@ -117,6 +117,13 @@ export class BattleFlow {
       case 'repair': return STRINGS.repair(name(event.unit), STRINGS.parts[event.part], event.amount);
       case 'overheat': return event.unit === 'player' ? STRINGS.overheatPlayer : STRINGS.overheat(name(event.unit));
       case 'turnSkipped': return STRINGS.turnSkipped(name(event.unit));
+      case 'mend': return STRINGS.mend(name(event.unit), name(event.target), STRINGS.parts[event.part], event.amount);
+      case 'fuse': return STRINGS.fuse(name(event.unit), event.left);
+      case 'blast': return STRINGS.blast(name(event.unit), name(event.target), event.damage);
+      case 'launch': return STRINGS.launch(name(event.unit), name(event.spawned));
+      case 'phase': return STRINGS.phase(name(event.unit));
+      case 'support': return STRINGS.support(event.name, name(event.target), event.damage);
+      case 'asset': return STRINGS.asset(this.state.asset?.name ?? '', event.hp, event.lost);
       case 'turnStart':
       case 'outcome':
         return null;

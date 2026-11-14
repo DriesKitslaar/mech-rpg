@@ -65,7 +65,14 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
     case 'recover': return [];
     case 'cool':
     case 'turnSkipped': return now('cool');
-    case 'repair': return now('repair');
+    case 'repair':
+    case 'mend': return now('repair');
+    case 'fuse': return now('charge');
+    case 'blast': return now('unitDestroyed');
+    case 'launch': return now('boost');
+    case 'phase': return now('stagger');
+    case 'support': return [{ name: 'shotEnergy', delayMs: 0 }, { name: 'hit', delayMs: flightMs }];
+    case 'asset': return now('partDestroyed');
     case 'overheat': return now('overheat');
     case 'outcome': return now(event.outcome === 'victory' ? 'victory' : 'defeat');
     case 'turnStart': return [];

@@ -1,5 +1,6 @@
 import {
-  activeUnit, applyAction, boostCost, checkAction, guardFactor, previewShot, HEAT_LIMIT, LIMITER_HEAT, OVERCLOCK_HEAT,
+  activeUnit, applyAction, boostCost, checkAction, guardFactor, mendablePart, objectiveTarget, previewShot, HEAT_LIMIT, LIMITER_HEAT,
+  OVERCLOCK_HEAT,
   type Action, type BattleState, type UnitState,
 } from './battle';
 import { boostProfile, impactOf, moduleOf, weaponIn } from './build';
@@ -79,7 +80,8 @@ function moduleAction(state: BattleState, catalog: Catalog, foe: UnitState): Act
     case 'limiter': wanted = unit.heat + LIMITER_HEAT <= 60 && unit.fired.length === 0; break;
     // Both heat the unit: neither is worth a lost turn.
     case 'overclock': wanted = unit.heat + OVERCLOCK_HEAT <= 70 && unit.fired.length === 0; break;
-    case 'shock': wanted = true; break;
+    // A pulse hits every core on the field, the one the client wants in one piece included.
+    case 'shock': wanted = unit.side !== 'player' || state.objective.type !== 'disable'; break;
   }
   const action: Action = module.effect === 'painter' ? { type: 'module', target: foe.id } : { type: 'module' };
   return wanted && can(state, action, catalog) ? action : null;
@@ -103,11 +105,32 @@ function sprayerTarget(player: UnitState, round: number, offset: number): FrameS
   return alive.length > 0 ? alive[(round + offset) % alive.length] : 'core';
 }
 
+/** The ally a mender should see to: the one whose worst living part has lost the most. */
+function mendAction(state: BattleState, catalog: Catalog): Action | null {
+  const unit = activeUnit(state);
+  let best: UnitState | null = null;
+  let bestRatio = 1;
+  for (const ally of state.units) {
+    if (ally.side !== unit.side || ally.destroyed || ally.id === unit.id) continue;
+    const slot = mendablePart(ally);
+    if (!slot) continue;
+    const ratio = ally.parts[slot]!.ap / ally.parts[slot]!.maxAp;
+    if (ratio < bestRatio) { bestRatio = ratio; best = ally; }
+  }
+  const action: Action | null = best ? { type: 'mend', target: best.id } : null;
+  return action && can(state, action, catalog) ? action : null;
+}
+
 /** Picks the next action for the active enemy from its behaviour profile. */
 export function chooseEnemyAction(state: BattleState, catalog: Catalog): Action {
   const unit = activeUnit(state);
   const player = state.units.find((u) => u.side === 'player')!;
 
+  // A mender patches before anything else: mending is its whole turn.
+  if (unit.abilities.mend !== undefined) {
+    const mend = mendAction(state, catalog);
+    if (mend) return mend;
+  }
   const module = moduleAction(state, catalog, player);
   if (module) return module;
   // A charge weapon is charged before anything else is fired, so its energy is never spent elsewhere.
@@ -161,12 +184,35 @@ function stance(state: BattleState, me: UnitState, enemies: UnitState[], catalog
   return { type: 'boost' };
 }
 
+/** Enemies that make the others harder to beat, or that will not wait: these are shot before the rest. */
+const isHelper = (unit: UnitState): boolean =>
+  unit.fuse !== undefined || unit.abilities.aegis !== undefined || unit.abilities.mend !== undefined || unit.abilities.jam !== undefined;
+
+/**
+ * Who the automatic player shoots at, and at which part when the objective says so: the enemy the
+ * objective names; failing that a helper, then a staggered enemy, then the weakest.
+ */
+function autoTarget(state: BattleState, enemies: UnitState[]): { target: UnitState; limb?: FrameSlot } {
+  const weakest = (units: UnitState[]) => units.reduce((a, b) => (b.parts.core!.ap < a.parts.core!.ap ? b : a));
+  const marked = objectiveTarget(state);
+  if (marked && !marked.destroyed) {
+    // A machine wanted in one piece loses its legs, then its arms, and is never shot in the core.
+    if (state.objective.type === 'disable') {
+      return { target: marked, limb: (['legs', 'arms'] as const).find((slot) => (marked.parts[slot]?.ap ?? 0) > 0) ?? 'legs' };
+    }
+    return { target: marked };
+  }
+  const helpers = enemies.filter(isHelper);
+  const reeling = enemies.filter((e) => e.staggered > 0);
+  return { target: weakest(helpers.length > 0 ? helpers : reeling.length > 0 ? reeling : enemies) };
+}
+
 /**
  * A plain, competent player used by simulations, tests and the Auto Turn action: repairs a failing
- * core, uses its module when it helps, charges and closes in when its weapons need that, cools
- * before overheating, shoots a staggered enemy first and the weakest one otherwise (its legs when
- * it is too nimble to hit), pushing with its heaviest weapons first, and spends leftover energy on
- * a boost or a guard.
+ * core, braces for a bomb, plays to the objective, uses its module when it helps, charges and closes
+ * in when its weapons need that, cools before overheating, shoots helpers and staggered enemies
+ * first and the weakest one otherwise (its legs when it is too nimble to hit), pushing with its
+ * heaviest weapons first, and spends leftover energy on a boost or a guard.
  */
 export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Action {
   const me = activeUnit(state);
@@ -177,9 +223,18 @@ export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Ac
   const repair: Action = { type: 'repair', part: 'core' };
   if (core.ap < core.maxAp * 0.35 && me.fired.length === 0 && can(state, repair, catalog)) return repair;
 
-  const weakest = (units: UnitState[]) => units.reduce((a, b) => (b.parts.core!.ap < a.parts.core!.ap ? b : a));
-  const reeling = enemies.filter((e) => e.staggered > 0);
-  const target = weakest(reeling.length > 0 ? reeling : enemies);
+  if (!me.usedBoost && !me.usedGuard) {
+    // A bomb that goes off before the next turn is braced for now, while there is energy for it.
+    if (enemies.some((e) => e.fuse === 1) && can(state, { type: 'guard' }, catalog)) return { type: 'guard' };
+    // A battle that only has to be outlasted is fought from cover: stance first, shooting with what is left.
+    if (state.objective.type === 'survive') {
+      const braced = stance(state, me, enemies, catalog);
+      if (braced) return braced;
+    }
+  }
+
+  const { target, limb } = autoTarget(state, enemies);
+  const part: FrameSlot = limb ?? 'core';
 
   const module = moduleAction(state, catalog, target);
   if (module) return module;
@@ -187,17 +242,25 @@ export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Ac
   if (charge) return charge;
   if (shouldCloseIn(state, catalog)) return { type: 'boost' };
 
+  let usable = usableWeapons(state, catalog, target.id, ['rightHand', 'leftHand', 'shoulder']);
+  if (limb) {
+    // Once a limb is gone, the rest of a burst goes on into the core at half strength: no weapon is
+    // fired whose leftover shots could finish a machine that has to survive.
+    usable = usable.filter((u) => {
+      const shot = previewShot(state, me.id, u.slot, target.id, limb, catalog);
+      return (shot.shots - 1) * Math.ceil(shot.damage / 2) < target.parts.core!.ap;
+    });
+  }
   // A target that will outlast this turn's volley, and that the volley can knock off balance, gets the
   // hardest-pushing weapons first, so the rest land on a staggered mech. Small fry is shot as it comes.
-  const usable = usableWeapons(state, catalog, target.id, ['rightHand', 'leftHand', 'shoulder']);
-  const volley = usable.map((u) => previewShot(state, me.id, u.slot, target.id, 'core', catalog));
+  const volley = usable.map((u) => previewShot(state, me.id, u.slot, target.id, part, catalog));
   const damage = volley.reduce((sum, shot) => sum + shot.damage * shot.shots, 0);
   const push = usable.reduce((sum, u, i) => sum + impactOf(u.weapon) * volley[i].shots, 0);
-  if (target.staggered === 0 && damage < target.parts.core!.ap && push >= target.staggerMax - target.stagger) {
+  if (target.staggered === 0 && damage < target.parts[part]!.ap && push >= target.staggerMax - target.stagger) {
     usable.sort((a, b) => impactOf(b.weapon) - impactOf(a.weapon));
   }
-  const choice = coolOrFire(state, catalog, bladesFirst(usable), target.id, 'core');
-  if (choice.type === 'fire') {
+  const choice = coolOrFire(state, catalog, bladesFirst(usable), target.id, part);
+  if (choice.type === 'fire' && !limb) {
     const legs = target.parts.legs;
     const odds = previewShot(state, me.id, choice.weapon, target.id, 'core', catalog).hitChance;
     return odds < 50 && legs && legs.ap > 0 ? { ...choice, part: 'legs' } : choice;
