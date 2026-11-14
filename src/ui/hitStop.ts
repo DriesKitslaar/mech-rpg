@@ -6,6 +6,7 @@
 export class HitStop {
   private left = 0;
   private total = 0;
+  private fresh = false;
 
   constructor(private moving = true) {}
 
@@ -14,11 +15,16 @@ export class HitStop {
     if (!this.moving || ms <= this.left) return;
     this.left = ms;
     this.total = ms;
+    this.fresh = true;
   }
 
-  /** Takes the time of a frame and returns how much of it the field may move by. */
+  /**
+   * Takes the time of a frame and returns how much of it the field may move by. A hold that has just
+   * been struck is not eaten by the frame it was struck in: it is seen for at least one drawn frame.
+   */
   pass(dtMs: number): number {
     if (this.left <= 0) return dtMs;
+    if (this.fresh) { this.fresh = false; return 0; }
     const held = Math.min(this.left, dtMs);
     this.left -= held;
     return dtMs - held;

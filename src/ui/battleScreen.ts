@@ -15,7 +15,7 @@ import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
-import { Puppet, shatter, type Pose } from './pose';
+import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { intentOf } from '../core/intent';
@@ -71,6 +71,7 @@ export class BattleScreen {
   private fx = new BattleFx(this.scene());
   /** What moves each unit's layers: one puppet a unit, made when it is first drawn. */
   private puppets = new Map<string, Puppet>();
+  private stances = new ShownStance();
   /** Casings, sparks, wreckage, smoke and dust. */
   private particles: Particles;
   /** The beat the field holds when something is destroyed. */
@@ -155,7 +156,8 @@ export class BattleScreen {
     }
     this.spawnEffects();
     // A killing blow holds everything that moves for a few frames.
-    const moved = this.hitStop.pass(dtMs);
+    // The hold is counted in real time, so it is as long with fast battles on as without.
+    const moved = this.hitStop.pass(realMs) * (this.opts.speed ?? 1);
     this.fx.update(moved);
     for (const puppet of this.puppets.values()) puppet.update(moved);
     this.particles.update(moved);
@@ -221,6 +223,7 @@ export class BattleScreen {
         this.arrived.add(event.spawned);
       }
       if (this.opts.fast) continue;
+      this.stances.onEvent(event);
       this.fx.onEvent(event);
       this.move(event, melee, flight);
       // The end of a battle is marked once: by the music's fanfare where there is music, by the effect where there is not.
@@ -228,6 +231,16 @@ export class BattleScreen {
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
     }
     this.fxDone = shown;
+    // With every message shown the screen has caught up with the rules.
+    if (shown >= events.length) this.stances.sync(this.flow.state.units);
+  }
+
+  /** What is moving on the field right now, for tests: nobody can watch a test run. */
+  get motion(): { particles: number; flash: number; stance: (id: string) => Stance; breaking: (id: string) => number | null } {
+    return {
+      particles: this.particles.count, flash: this.hitStop.flash, stance: (id) => ({ ...this.stances.of(id) }),
+      breaking: (id) => this.puppets.get(id)?.breaking ?? null,
+    };
   }
 
   onInput(action: InputAction): void {
@@ -376,7 +389,8 @@ export class BattleScreen {
   private puppet(unit: UnitState): Puppet {
     let puppet = this.puppets.get(unit.id);
     if (!puppet) {
-      const layered = unit.side === 'player' || unit.composed;
+      // Only a mech drawn from its parts breathes: in a group an enemy mech is one picture like the rest.
+      const layered = unit.side === 'player' || (unit.composed && this.duel());
       puppet = new Puppet(this.flow.state.units.indexOf(unit) * 2.1, !this.opts.fast, layered);
       this.puppets.set(unit.id, puppet);
     }
@@ -385,7 +399,7 @@ export class BattleScreen {
 
   /** How a unit's layers are shifted right now. */
   private poseOf(unit: UnitState): Pose {
-    return this.puppet(unit).pose({ guarding: unit.guarding, staggered: unit.staggered > 0, overheated: unit.overheated }, this.clock);
+    return this.puppet(unit).pose(this.stances.of(unit.id), this.clock);
   }
 
   /** Sets the units an event is about in motion: the one that fires kicks, the one that is hit flinches. */
@@ -422,9 +436,10 @@ export class BattleScreen {
       this.particles.emit('smoke', c, 1, 320);
     }
     if (event.type === 'blast') {
+      // A bomb's flash and bursts come a beat after its message, and so does everything it throws up.
       const c = scene.centre(event.target);
-      this.particles.emit('embers', c, 1);
-      this.particles.emit('smoke', c, 1, 100);
+      this.particles.emit('embers', c, 1, MELEE_MS);
+      this.particles.emit('smoke', c, 1, MELEE_MS + 100);
     }
     if (event.type === 'shot') {
       const shooter = unit(event.unit);
@@ -437,7 +452,7 @@ export class BattleScreen {
       if (who) this.puppet(who).play('boost');
     } else if (event.type === 'blast' || event.type === 'support') {
       const target = unit(event.target);
-      if (target) this.puppet(target).play('hit', flight);
+      if (target) this.puppet(target).play('hit', event.type === 'blast' ? MELEE_MS : flight);
     } else if (event.type === 'unitDestroyed') {
       const who = unit(event.unit);
       if (who) this.puppet(who).play('destroyed');

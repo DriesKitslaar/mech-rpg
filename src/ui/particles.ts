@@ -59,7 +59,7 @@ export class Particles {
     const add = (p: Omit<Particle, 'age'>): void => { this.live.push({ ...p, age: 0 }); };
     switch (kind) {
       case 'casing':
-        add({ x: from.x - dir * 6, y: from.y - 2, vx: -dir * this.between(40, 70), vy: -this.between(70, 110), life: 700, size: 2, grow: 0, gravity: 520, color: pick(COLORS.casing), floor });
+        add({ x: from.x - dir * 6, y: from.y - 2, vx: -dir * this.between(40, 70), vy: -this.between(70, 110), life: 1500, size: 2, grow: 0, gravity: 520, color: pick(COLORS.casing), floor });
         break;
       case 'sparks':
         for (let i = 0, n = 6 + Math.floor(this.random() * 5); i < n; i++) {
