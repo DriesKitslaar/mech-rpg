@@ -115,6 +115,17 @@ export function actionPose(name: ActionName, p: number): Pose {
 }
 
 /**
+ * Where the four quarters of a machine that is one picture have got to, `q` of the way through its
+ * destruction: each is thrown outward from the middle and falls. Offsets are whole pixels, for the
+ * quarters in reading order (top left, top right, bottom left, bottom right).
+ */
+export function shatter(q: number): LayerOffset[] {
+  const p = Math.max(0, Math.min(1, q));
+  const fall = 40 * p * p;
+  return [[-16, -22], [18, -16], [-12, -4], [14, -8]].map(([x, lift]) => ({ dx: r(x * p), dy: r(lift * p + fall) }));
+}
+
+/**
  * The moving part of one mech: what it has been told to do and when, on top of standing still and
  * whatever state it is in. With motion off (the test mode) it never moves.
  */
@@ -136,6 +147,13 @@ export class Puppet {
     this.now += dtMs;
     for (const act of this.acts) if (act.name === 'destroyed' && this.now >= act.start + POSE_MS.destroyed) this.wrecked = true;
     this.acts = this.acts.filter((act) => this.now < act.start + POSE_MS[act.name]);
+  }
+
+  /** How far along its destruction this unit is, from 0 to 1; null while it is whole. */
+  get breaking(): number | null {
+    if (this.wrecked) return 1;
+    const act = this.acts.find((a) => a.name === 'destroyed' && this.now >= a.start);
+    return act ? Math.min(1, (this.now - act.start) / POSE_MS.destroyed) : null;
   }
 
   /** True while something that was started is still playing or waiting to. */

@@ -1,4 +1,4 @@
-import { POSE_MS, Puppet, actionPose, addPoses, idlePose, statePose, type Pose } from '../../src/ui/pose';
+import { POSE_MS, Puppet, actionPose, addPoses, idlePose, shatter, statePose, type Pose } from '../../src/ui/pose';
 
 const at = (pose: Pose, slot: keyof Pose) => pose[slot] ?? { dx: 0, dy: 0 };
 const UPPER = ['core', 'head', 'armNear', 'armFar', 'rightHand', 'leftHand', 'shoulder'] as const;
@@ -123,5 +123,28 @@ describe('a puppet', () => {
     puppet.play('hit');
     puppet.update(20);
     expect(puppet.pose({ guarding: true, staggered: true }, 500)).toEqual({});
+  });
+});
+
+describe('a machine that is one picture, destroyed', () => {
+  test('breaks into four quarters that start together and end apart, the upper ones thrown up first', () => {
+    expect(shatter(0)).toEqual([{ dx: 0, dy: 0 }, { dx: 0, dy: 0 }, { dx: 0, dy: 0 }, { dx: 0, dy: 0 }]);
+    const end = shatter(1);
+    expect(end[0].dx).toBeLessThan(0);
+    expect(end[1].dx).toBeGreaterThan(0);
+    expect(new Set(end.map((o) => `${o.dx},${o.dy}`)).size).toBe(4);
+    expect(shatter(0.3)[0].dy).toBeLessThan(0);
+    // By the end everything is falling.
+    for (const o of end) expect(o.dy).toBeGreaterThan(10);
+  });
+
+  test('a puppet says how far along its destruction it is', () => {
+    const puppet = new Puppet(0, true, false);
+    expect(puppet.breaking).toBeNull();
+    puppet.play('destroyed');
+    puppet.update(POSE_MS.destroyed / 2);
+    expect(puppet.breaking).toBeCloseTo(0.5, 1);
+    puppet.update(POSE_MS.destroyed);
+    expect(puppet.breaking).toBe(1);
   });
 });

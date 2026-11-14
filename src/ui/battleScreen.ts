@@ -15,7 +15,7 @@ import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
-import { Puppet, type Pose } from './pose';
+import { Puppet, shatter, type Pose } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 import { fitTags, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { Typewriter } from './typewriter';
@@ -519,7 +519,21 @@ export class BattleScreen {
       } else {
         // A machine that is one picture moves as a whole, the way its body would: it faces left, so forward is left.
         const body = this.poseOf(enemy).core ?? { dx: 0, dy: 0 };
-        this.withTransform(ctx, enemy, hover, (dx, dy) => ctx.drawImage(r.sprite.image, r.x + dx - body.dx, r.y + dy + body.dy, r.w, r.h));
+        const breaking = this.puppet(enemy).breaking;
+        this.withTransform(ctx, enemy, hover, (dx, dy) => {
+          if (breaking === null) return ctx.drawImage(r.sprite.image, r.x + dx - body.dx, r.y + dy + body.dy, r.w, r.h);
+          // Destroyed, it comes apart in four quarters cut from its own picture.
+          const image = r.sprite.image as { naturalWidth?: number; naturalHeight?: number; width?: number; height?: number };
+          const iw = (image.naturalWidth || image.width || r.w) / 2;
+          const ih = (image.naturalHeight || image.height || r.h) / 2;
+          const w = Math.ceil(r.w / 2);
+          const h = Math.ceil(r.h / 2);
+          shatter(breaking).forEach((o, i) => {
+            const col = i % 2;
+            const row = i < 2 ? 0 : 1;
+            ctx.drawImage(r.sprite.image, col * iw, row * ih, iw, ih, r.x + col * (r.w - w) + o.dx, r.y + row * (r.h - h) + o.dy, w, h);
+          });
+        });
       }
     });
     // Then everything that is written over them, so no machine hides another's bars.
