@@ -136,6 +136,23 @@ describe('the archive', () => {
     expect(snap(app).list).toBe('main');
   });
 
+  test('backing out of a briefing leaves the cursor on the contract it was about, in the archive and on the list', () => {
+    const { app } = inHub(strong(done('intro-1', 'intro-2', 'hadron-1')));
+    const under = () => snap(app).menu.items[snap(app).menu.cursor].id;
+    select(app, 'contracts');
+    select(app, 'archive');
+    select(app, 'hadron-1');
+    press(app, 'cancel');
+    expect(snap(app)).toMatchObject({ screen: 'hub', list: 'archive' });
+    expect(under()).toBe('hadron-1');
+    // One step back is the contract list, and from there a briefing returns to its own entry too.
+    press(app, 'cancel');
+    select(app, 'lumen-1');
+    press(app, 'cancel');
+    expect(snap(app)).toMatchObject({ screen: 'hub', list: 'contracts' });
+    expect(under()).toBe('lumen-1');
+  });
+
   test('a contract played again pays a share, changes nothing in the story, and returns to the archive', () => {
     const base = strong(done('intro-1', 'intro-2'));
     const { app, store } = inHub(base);
