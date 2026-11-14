@@ -1,0 +1,102 @@
+{
+  "legs-strider": {
+    "file": "sprites/legs-strider.png",
+    "w": 112,
+    "h": 100,
+    "ox": 21,
+    "oy": 54
+  },
+  "core-hauler": {
+    "file": "sprites/core-hauler.png",
+    "w": 32,
+    "h": 41,
+    "ox": 60,
+    "oy": 27
+  },
+  "head-scout-mk1": {
+    "file": "sprites/head-scout-mk1.png",
+    "w": 33,
+    "h": 31,
+    "ox": 58,
+    "oy": 5
+  },
+  "arms-rigger.near": {
+    "file": "sprites/arms-rigger.near.png",
+    "w": 54,
+    "h": 37,
+    "ox": 87,
+    "oy": 26
+  },
+  "arms-rigger.far": {
+    "file": "sprites/arms-rigger.far.png",
+    "w": 41,
+    "h": 61,
+    "ox": 25,
+    "oy": 26
+  },
+  "legs-proof-b": {
+    "file": "sprites/legs-proof-b.png",
+    "w": 118,
+    "h": 90,
+    "ox": 18,
+    "oy": 56
+  },
+  "core-proof-b": {
+    "file": "sprites/core-proof-b.png",
+    "w": 42,
+    "h": 75,
+    "ox": 53,
+    "oy": 24
+  },
+  "head-proof-b": {
+    "file": "sprites/head-proof-b.png",
+    "w": 27,
+    "h": 38,
+    "ox": 62,
+    "oy": 3
+  },
+  "arms-proof-b.near": {
+    "file": "sprites/arms-proof-b.near.png",
+    "w": 55,
+    "h": 43,
+    "ox": 88,
+    "oy": 16
+  },
+  "arms-proof-b.far": {
+    "file": "sprites/arms-proof-b.far.png",
+    "w": 44,
+    "h": 75,
+    "ox": 23,
+    "oy": 12
+  },
+  "wpn-rivet-rifle": {
+    "file": "sprites/wpn-rivet-rifle.png",
+    "w": 58,
+    "h": 17
+  },
+  "wpn-arc-pistol": {
+    "file": "sprites/wpn-arc-pistol.png",
+    "w": 34,
+    "h": 22
+  },
+  "wpn-mortar-pod": {
+    "file": "sprites/wpn-mortar-pod.png",
+    "w": 41,
+    "h": 26
+  },
+  "enemy-recon-drone": {
+    "file": "sprites/enemy-recon-drone.png",
+    "w": 64,
+    "h": 39
+  },
+  "enemy-gun-turret": {
+    "file": "sprites/enemy-gun-turret.png",
+    "w": 64,
+    "h": 36
+  },
+  "bg-neon-district": {
+    "file": "sprites/bg-neon-district.png",
+    "w": 310,
+    "h": 270
+  }
+}

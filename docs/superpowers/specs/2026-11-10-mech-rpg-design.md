@@ -155,9 +155,10 @@ toevalsgenerator met vaste startwaarde, zodat gevechten in tests herhaalbaar zij
 
 ## 6. Wereld en verhaal
 
-De planeet Varn is leeggegraven. Drie partijen vechten om wat er over is, en de speler is
-een onafhankelijke huurling die werkt voor wie betaalt. De toon is droog en zakelijk;
-briefings vertellen zelden de hele waarheid.
+De planeet Varn is leeggegraven. Wat overblijft is één aaneengegroeide industriestad die
+nooit donker wordt: natte straten, kranen en pijpleidingen onder neonreclames. Drie
+partijen vechten om wat er over is, en de speler is een onafhankelijke huurling die werkt
+voor wie betaalt. De toon is droog en zakelijk; briefings vertellen zelden de hele waarheid.
 
 | Partij | Karakter | Winkelaanbod |
 |---|---|---|
@@ -292,23 +293,46 @@ Elke afbeelding wordt bewaard met de prompt, het model en de instellingen waarme
 gemaakt is, zodat er later in dezelfde stijl bijgemaakt kan worden. Interface-elementen
 (kaders, meters, iconen, lettertype) worden in code getekend.
 
-### 10.2 Verwerking
+### 10.2 Stijl
+
+De mecha's zijn mensachtig en in Japanse anime-stijl getekend, in eigen ontwerpen die niet
+op een bestaande reeks lijken. Er zijn twee families, die de speler vrij mag mengen:
+
+| Familie | Uiterlijk | Rol |
+|---|---|---|
+| Licht | Slank, wit en marineblauw, cyaan licht, helm met vizier en één antenne | Wendbaar, weinig pantser |
+| Zwaar | Geïnspireerd op samoeraiharnassen, antraciet en dieprood, magenta licht | Traag, veel pantser |
+
+Elke familie wordt één keer als complete mecha getekend, en alle families staan in exact
+dezelfde actiehouding (schuin van voren, benen uit elkaar, de voorste arm gestrekt naar de
+vijand). De wereld is een neonstad bij nacht; de interface gebruikt dezelfde neonkleuren.
+
+### 10.3 Verwerking
 
 Gegenereerd beeld is 1024×1024 en wordt door een script teruggebracht naar spelformaat:
-achtergrond verwijderen, verkleinen zonder vervaging en kleuren terugbrengen tot een vast
-palet, zodat alle beelden bij elkaar passen.
+groene achtergrond verwijderen, verkleinen en de kleuren terugbrengen tot één gedeeld palet
+dat uit de referentiebeelden is afgeleid. Achtergronden krijgen dat palet niet; ze worden
+donkerder gemaakt, zodat de mecha's ertegen afsteken.
 
-### 10.3 Samengestelde mech
+### 10.4 Samengestelde mech
 
-De mech wordt in zijaanzicht getekend, kijkend naar rechts, uit losse sprites per slot.
-Elk been-onderdeel legt vast waar de romp aansluit; elke romp legt vast waar kop, armen en
-schouderwapen aansluiten. De tekenvolgorde is vast: achterste arm, benen, romp, kop,
-schouderwapen, voorste arm met handwapen.
+De mech werkt als een aankleedpop. De tekening van elke familie wordt in vijf lagen
+geknipt: benen, romp, kop, achterste arm en voorste arm. Elke laag houdt de plek die hij
+in de houding had. Omdat alle families dezelfde houding delen, passen lagen van
+verschillende families op elkaar zonder schalen of verschuiven.
 
-### 10.4 Proef
+Het onderdeel in een slot bepaalt welke laag getoond wordt; het armen-onderdeel levert
+beide armlagen. Het wapen in de rechterhand zit in de vooruitgestoken vuist, dat in de
+linkerhand in de achterste vuist, en het schouderwapen hangt achter de achterste schouder.
+De tekenvolgorde is vast: schouderwapen, achterste arm, linkerhandwapen, benen, romp, kop,
+voorste arm, rechterhandwapen.
 
-De eerste bouwstap is een proef: twee varianten van elk frame-onderdeel en drie wapens
-genereren, verwerken en in alle combinaties samenstellen. De opdrachtgever beoordeelt het
+Een nieuwe familie kost zes beelden: de complete tekening en vijf lagen.
+
+### 10.5 Proef
+
+De eerste bouwstap is een proef: de lichte en de zware familie tekenen, in lagen knippen en
+met drie wapens in alle zestien combinaties samenstellen. De opdrachtgever beoordeelt het
 resultaat.
 
 - **Geslaagd**: alle onderdelen worden gegenereerd.

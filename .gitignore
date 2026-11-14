@@ -1,0 +1,7 @@
+node_modules
+dist
+art/raw-tmp
+test-results
+playwright-report
+.env
+.superpowers

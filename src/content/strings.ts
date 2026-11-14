@@ -1,0 +1,28 @@
+import type { FrameSlot } from '../core/types';
+
+/** All player-facing text. UI code never contains literal copy. */
+export const STRINGS = {
+  title: 'IRONWAGE',
+  actions: { fire: 'Fire', boost: 'Boost', cool: 'Cool', repair: 'Field Repair', endTurn: 'End Turn' },
+  parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
+  meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
+  headings: { you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?' },
+  preview: { hit: 'HIT', damage: 'DMG' },
+  yourTurn: (round: number) => `Round ${round} - your move`,
+  hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${target} - ${part} -${damage}`,
+  miss: (weapon: string, target: string) => `${weapon} misses ${target}`,
+  partDestroyed: (unit: string, part: string) => `${unit}: ${part} destroyed`,
+  unitDestroyed: (unit: string) => `${unit} destroyed`,
+  boost: (unit: string) => `${unit} boosts`,
+  cool: (unit: string, amount: number) => `${unit} vents heat -${amount}`,
+  repair: (unit: string, part: string, amount: number) => `${unit} repair ${part} +${amount}`,
+  overheatPlayer: 'Overheated! Next turn lost',
+  overheatWarning: 'Warning: this shot will overheat',
+  overheat: (unit: string) => `${unit} overheats`,
+  turnSkipped: (unit: string) => `${unit} cooling down - turn lost`,
+  victory: 'VICTORY',
+  defeat: 'DEFEAT',
+  hints: { result: 'Press A for the next battle' },
+  fx: { miss: 'MISS', overheat: 'OVERHEAT' },
+  debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
+} as const;

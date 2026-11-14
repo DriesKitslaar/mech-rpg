@@ -1,0 +1,7 @@
+{
+  "id": "bg-neon-district",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "prompt": "16-bit pixel art background, no anti-aliasing: an industrial megacity district at night seen from street level, wet reflective ground filling the lower third, towering dark buildings, cranes and pipes, many glowing neon signs in pink, cyan and purple with abstract shapes instead of readable text, light haze and rain. No characters, no robots, no vehicles in the foreground."
+}
