@@ -1,0 +1,9 @@
+{
+  "id": "bg-clearing",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art background, no anti-aliasing: the inside of an immense clearing hall of an insurance company, tall black marble pillars with thin gold inlay lines, hanging gold lamps, long empty counters, a polished black floor with gold reflections filling the lower third. No characters, no robots, no vehicles in the foreground, no readable text."
+}

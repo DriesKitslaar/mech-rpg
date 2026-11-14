@@ -169,6 +169,52 @@ export interface BuildStats {
 export type BuildError = 'missingSlot' | 'overweight' | 'insufficientEnergy' | 'wrongMount' | 'unknownPart' | 'noWeapon';
 export type AiProfile = 'gunner' | 'skirmisher' | 'bruiser' | 'sprayer';
 
+/** What a battle asks of the player. A `target` is a position in the battle's list of enemies. */
+export type Objective =
+  /** Destroy every enemy. */
+  | { type: 'destroy' }
+  /** Still be standing when the given number of rounds is over. */
+  | { type: 'survive'; rounds: number }
+  /** Destroy every enemy before they wear the named asset down: it loses 1 for each living enemy at every new round. */
+  | { type: 'protect'; name: string; hp: number }
+  /** Destroy one enemy; the rest give up. */
+  | { type: 'leader'; target: number }
+  /** Destroy one enemy's legs and arms and leave its core standing. */
+  | { type: 'disable'; target: number }
+  /** Bring one enemy's core down to a share of its armour. */
+  | { type: 'driveOff'; target: number; share: number };
+
+/** Things an enemy does beyond shooting. */
+export interface Abilities {
+  /** Share of the damage the other enemies still take while this one lives. */
+  aegis?: number;
+  /** Hit chance the player loses while this one lives. */
+  jam?: number;
+  /** Share of a part's armour it restores on an ally, as its turn. */
+  mend?: number;
+  /** Blows up on the player at the start of its `fuse`th turn, for `damage`. */
+  bomb?: { fuse: number; damage: number };
+  /** Launches a `unit` every `every` of its turns while fewer than three enemies stand. */
+  carrier?: { unit: EnemyDef; every: number };
+}
+
+/** A change a boss goes through when its core has taken enough. */
+export interface BossPhase {
+  /** Begins when the core is at or below this share of its armour. */
+  at: number;
+  ai?: AiProfile;
+  /** Multiplies the damage it deals from here on. */
+  damage?: number;
+  /** Added to its evasion, its aim and its energy per turn from here on. */
+  evasion?: number;
+  aim?: number;
+  energy?: number;
+  /** Weapons and a module that replace what it carried. */
+  refit?: Partial<Pick<Build, WeaponSlot | 'module'>>;
+  /** What it says when the phase begins. */
+  line?: string;
+}
+
 export interface EnemyDef {
   id: string;
   name: string;
@@ -180,6 +226,13 @@ export interface EnemyDef {
   composed?: boolean;
   /** Paint scheme the enemy is drawn in; its own colours when absent. */
   paint?: string;
+  abilities?: Abilities;
+  /** In the order they begin: each `at` lower than the one before. */
+  phases?: BossPhase[];
+  /** What its parts are called on screen: a machine has a hull and tracks, not a core and legs. */
+  partNames?: Partial<Record<FrameSlot, string>>;
+  /** Sprite id of the face shown when it talks. */
+  portrait?: string;
 }
 
 export const FRAME_SLOTS: FrameSlot[] = ['core', 'legs', 'arms', 'head'];

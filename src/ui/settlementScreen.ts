@@ -21,8 +21,8 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost } = this.settlement;
-    return { menu: { items: [], cursor: 0 }, settlement: { net, won, reward, ammoCost, repairCost } };
+    const { net, won, reward, ammoCost, repairCost, rank, bonus } = this.settlement;
+    return { menu: { items: [], cursor: 0 }, settlement: { net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0 } };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -39,14 +39,22 @@ export class SettlementScreen implements Screen {
     drawPanel(ctx, x, 20, w, 230);
     drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
     drawText(ctx, s.won ? S.won : S.lost, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
+    if (s.rank) {
+      // How well it was done, in the corner: S and A are the ones that pay.
+      const color = s.rank === 'S' ? COLORS.accent : s.rank === 'A' ? COLORS.armor : s.rank === 'B' ? COLORS.text : COLORS.dim;
+      drawText(ctx, S.rank, right - 16, 33, { size: 10, align: 'right', color: COLORS.dim });
+      drawText(ctx, s.rank, right, 20, { size: 32, align: 'right', color });
+    }
 
-    let y = 56;
+    // Four rows and four repair lines, a line apart, end just above what the client says.
+    let y = 55;
     const row = (label: string, amount: number, color: string = COLORS.text): void => {
       drawText(ctx, label, x + 10, y, { color: COLORS.text });
       drawText(ctx, amount > 0 ? `+${amount}` : String(amount), right, y, { align: 'right', color });
-      y += LINE + 1;
+      y += LINE;
     };
     row(S.reward, s.reward, s.reward > 0 ? COLORS.armor : COLORS.dim);
+    if (s.rank && s.bonus) row(S.rankBonus(s.rank), s.bonus, COLORS.armor);
     row(S.ammo, -s.ammoCost, s.ammoCost > 0 ? COLORS.danger : COLORS.dim);
     row(S.repairs, -s.repairCost, s.repairCost > 0 ? COLORS.danger : COLORS.dim);
     // Four repair lines fit; the total above always covers all of them.

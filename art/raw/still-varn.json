@@ -1,0 +1,9 @@
+{
+  "id": "still-varn",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art illustration, crisp pixels, no anti-aliasing, no text, no lettering, cinematic composition: a wide view over an industrial megacity at night in the rain: a strip mine lit by yellow floodlights on the left, white and cyan corporate towers in the centre and a dim flooded shanty town of teal and orange lights below them, with one small mecha silhouette standing on a rooftop in the foreground looking out over it all."
+}

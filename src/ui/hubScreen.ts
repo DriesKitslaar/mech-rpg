@@ -12,17 +12,21 @@ import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const H = STRINGS.hub;
 const ROWS = 8;
+/** The entry of the contract list that opens the archive. No contract has this id. */
+export const ARCHIVE = 'archive';
 
 /** The place between contracts: shows the pilot's standing and leads to everything else. */
 export class HubScreen implements Screen {
   private main: MenuList;
-  /** The contract list or the new-cycle question, while one is open. */
+  /** The contract list, the archive or the new-cycle question, while one is open. */
   private sub: MenuList | null = null;
   private asking = false;
+  /** True while the list showing is the archive of contracts already done. */
+  private inArchive = false;
   private clock = 0;
 
-  /** `onContracts` opens with the contract list showing, for returning from a briefing. */
-  constructor(private app: App, onContracts = false) {
+  /** `list` opens with that list showing, and the cursor on the entry `at`, for returning from a briefing. */
+  constructor(private app: App, list?: 'contracts' | 'archive', at?: string) {
     const errors = app.buildErrors();
     const unread = app.unreadCount();
     const points = perkPoints(app.game!, PERKS);
@@ -38,19 +42,41 @@ export class HubScreen implements Screen {
       ...(app.canStartCycle() ? [{ id: 'cycle', label: H.cycle, enabled: true }] : []),
       // With a build that may not deploy the cursor starts on the garage, where that is fixed.
     ], errors.length === 0 ? 0 : 2);
-    if (onContracts && errors.length === 0) this.openContracts();
+    if (list && errors.length === 0) {
+      this.openContracts();
+      if (list === 'archive' && this.app.archive().length > 0) this.openArchive();
+      const index = this.sub!.items.findIndex((item) => item.id === at);
+      if (index >= 0) this.sub!.cursor = index;
+    }
   }
 
+  /** The contracts on offer, and under them the way into the archive once there is something in it. */
   private openContracts(): void {
     this.asking = false;
-    this.sub = new MenuList(this.app.missions().map((m) => ({ id: m.id, label: m.title, enabled: true, note: String(m.reward) })));
+    this.inArchive = false;
+    const done = this.app.archive().length;
+    this.sub = new MenuList([
+      ...this.app.missions().map((m) => ({ id: m.id, label: m.title, enabled: true, note: String(m.reward) })),
+      ...(done > 0 ? [{ id: ARCHIVE, label: H.archive, enabled: true, note: String(done) }] : []),
+    ]);
+  }
+
+  /** The contracts already done, each with the best rank earned on it. */
+  private openArchive(): void {
+    const ranks = this.app.game!.ranks;
+    this.inArchive = true;
+    this.sub = new MenuList(this.app.archive().map((m) => ({
+      id: m.id, label: m.title, enabled: true, note: Object.hasOwn(ranks, m.id) ? ranks[m.id] : H.noRank,
+    })));
   }
 
   private get list(): MenuList {
     return this.sub ?? this.main;
   }
 
+  /** One step back: from the archive to the contracts, from anything else to the main menu. */
   private closeSub(): void {
+    if (this.inArchive) return this.openContracts();
     this.sub = null;
     this.asking = false;
   }
@@ -68,7 +94,9 @@ export class HubScreen implements Screen {
       if (this.asking) {
         if (id === 'yes') this.app.startCycle();
         else this.closeSub();
-      } else if (this.sub) this.app.openBriefing(id);
+      } else if (this.inArchive) this.app.openBriefing(id, true);
+      else if (this.sub && id === ARCHIVE) this.openArchive();
+      else if (this.sub) this.app.openBriefing(id);
       else if (id === 'contracts') this.openContracts();
       else if (id === 'cycle') {
         this.asking = true;
@@ -79,7 +107,7 @@ export class HubScreen implements Screen {
 
   view(): ScreenView {
     const message = this.app.saveFailed ? STRINGS.saveFailed : this.asking ? H.cycleQuestion[0] : '';
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, message };
+    return { menu: { items: this.list.items, cursor: this.list.cursor }, message, list: this.inArchive ? 'archive' : this.sub && !this.asking ? 'contracts' : 'main' };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -112,7 +140,8 @@ export class HubScreen implements Screen {
       H.cycleQuestion.forEach((row, i) => drawText(ctx, row, x + 6, 83 + i * LINE, { color: i === 0 ? COLORS.accent : COLORS.text }));
       drawList(ctx, this.list, x + 6, 96 + H.cycleQuestion.length * LINE, w - 16, 2);
     } else {
-      drawText(ctx, this.sub ? `${H.contracts} - ${H.reward}` : H.heading, x + 6, 83, { color: COLORS.dim, size: 10 });
+      const heading = this.inArchive ? `${H.archive.toUpperCase()} - ${H.bestRank}` : this.sub ? `${H.contracts} - ${H.reward}` : H.heading;
+      drawText(ctx, heading, x + 6, 83, { color: COLORS.dim, size: 10 });
       drawList(ctx, this.list, x + 6, 96, w - 16, ROWS);
     }
 

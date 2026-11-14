@@ -1,0 +1,9 @@
+{
+  "id": "portrait-krell",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a scarred veteran security chief with a square jaw and a grey buzz cut, wearing a heavy charcoal uniform with yellow and black hazard-striped shoulder boards. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

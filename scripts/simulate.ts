@@ -4,9 +4,13 @@
  *        npm run simulate -- --all            every contract with every reference build
  *        npm run simulate -- --arena          every arena opponent with every reference build
  *        npm run simulate -- --board          open contracts at every tier
+ *        npm run simulate -- --table [--only audit,verdict] [--net]   one line a contract: win rate (or mean net pay) per build
+ *        npm run simulate -- --why --mission audit-2 --build tier4   how the contract is lost, and the ranks it earns
  * Add --cycle N for story contracts in a later cycle, and --perks to give the pilot six typical perk ranks.
  */
 import { chooseAutoPlayerAction, runBattle } from '../src/core/ai';
+import { ROUND_LIMIT, objectiveTarget, type BattleState } from '../src/core/battle';
+import { missionPar, performanceOf, rankFor, scoreOf } from '../src/core/rank';
 import { settle } from '../src/core/economy';
 import { playMission } from '../src/core/mission';
 import { validatePlayerBuild } from '../src/core/build';
@@ -88,9 +92,62 @@ function report(missionId: string, buildName: string, seeds: number): string {
   return `${missionId.padEnd(16)} ${buildName.padEnd(8)} win ${String(win).padStart(3)}%   mean net ${String(net).padStart(6)}`;
 }
 
+/** One line a contract: the win rate with every reference build. */
+function table(seeds: number): void {
+  const only = arg('--only', '').split(',').filter(Boolean);
+  console.log(`${'contract'.padEnd(18)}${BUILD_NAMES.map((b) => b.padStart(8)).join('')}`);
+  for (const base of MISSIONS) {
+    if (only.length > 0 && !only.some((prefix) => base.id.startsWith(prefix))) continue;
+    const mission = forCycle(base, cycle);
+    const showNet = process.argv.includes('--net');
+    console.log(`${mission.id.padEnd(18)}${BUILD_NAMES.map((b) => {
+      const result = play(mission, b, seeds);
+      return (showNet ? String(result.net) : `${result.win}%`).padStart(8);
+    }).join('')}`);
+  }
+}
+
+/** Why a lost battle was lost. */
+function reason(end: BattleState): string {
+  if (end.units[0].destroyed) return 'mech destroyed';
+  if (end.asset && end.asset.hp <= 0) return 'asset lost';
+  if (end.objective.type === 'disable' && objectiveTarget(end)?.destroyed) return 'target destroyed';
+  return end.round >= ROUND_LIMIT ? 'out of time' : 'other';
+}
+
+/** How one contract goes with one build: in which battle and why it is lost, how long the battles take, and the ranks of the wins. */
+function why(missionId: string, buildName: string, seeds: number): void {
+  const base = MISSIONS.find((m) => m.id === missionId);
+  if (!base) throw new Error(`unknown mission: ${missionId}`);
+  const mission = forCycle(base, cycle);
+  const tally = new Map<string, number>();
+  const count = (key: string) => tally.set(key, (tally.get(key) ?? 0) + 1);
+  const rounds: number[][] = mission.battles.map(() => []);
+  for (let seed = 1; seed <= seeds; seed++) {
+    let battle = 0;
+    let total = 0;
+    const end = playMission(REFERENCE_BUILDS[buildName], mission, ALL_ENEMIES, CATALOG, seed * 7919, (s) => {
+      const done = runBattle(s, CATALOG, chooseAutoPlayerAction);
+      rounds[battle].push(done.round);
+      total += done.round;
+      battle += 1;
+      return done;
+    }, { mods, enemyScale: mission.scale ?? 1 });
+    if (end.outcome === 'victory') count(`won, rank ${rankFor(scoreOf(performanceOf(end, total, missionPar(mission))))}`);
+    else count(`lost in battle ${battle}: ${reason(end)}`);
+  }
+  console.log(`${missionId} with ${buildName}, ${seeds} tries (par ${missionPar(mission)} rounds)`);
+  for (const [key, n] of [...tally].sort()) console.log(`  ${key.padEnd(40)} ${String(Math.round(100 * n / seeds)).padStart(3)}%`);
+  rounds.forEach((list, i) => {
+    if (list.length > 0) console.log(`  battle ${i + 1}: ${list.length} fought, mean ${(list.reduce((a, b) => a + b, 0) / list.length).toFixed(1)} rounds`);
+  });
+}
+
 const seeds = Number(arg('--seeds', '300'));
 if (!Number.isInteger(seeds) || seeds < 1) throw new Error('--seeds must be a positive whole number');
-if (process.argv.includes('--arena')) arenaReport(seeds);
+if (process.argv.includes('--table')) table(seeds);
+else if (process.argv.includes('--why')) why(arg('--mission', 'patrol'), arg('--build', 'starter'), seeds);
+else if (process.argv.includes('--arena')) arenaReport(seeds);
 else if (process.argv.includes('--board')) boardReport(seeds);
 else if (process.argv.includes('--all')) {
   for (const mission of MISSIONS) {

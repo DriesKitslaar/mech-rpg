@@ -34,6 +34,8 @@ export function wrap(text: string, maxChars: number): string[] {
 
 /** Characters of the UI font that fit in `width` logical pixels at `size`. */
 export const charsFor = (width: number, size = 12): number => Math.max(1, Math.floor(width / (size * 0.4)));
+/** How wide one character of the UI font is at the usual size. */
+export const CHAR_W = 4.8;
 
 export interface TextOptions { size?: number; color?: string; align?: CanvasTextAlign; strike?: boolean }
 
@@ -57,6 +59,24 @@ export function drawPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w
   ctx.strokeStyle = COLORS.border;
   ctx.lineWidth = 1;
   ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+}
+
+/** Where sprites come from, as far as a widget needs to know. */
+interface Sprites { get(id: string, fallback: { w: number; h: number; label: string }): { image: CanvasImageSource } }
+
+/** A speaker's face in a square; without one, the plain terminal mark the dispatcher has. */
+export function drawPortrait(ctx: CanvasRenderingContext2D, sprites: Sprites, id: string | undefined, x: number, y: number, size: number): void {
+  if (id) {
+    ctx.drawImage(sprites.get(id, { w: size, h: size, label: '' }).image, x, y, size, size);
+    return;
+  }
+  ctx.fillStyle = COLORS.empty;
+  ctx.fillRect(x, y, size, size);
+  const step = Math.max(4, Math.round(size / 7));
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = i % 2 ? COLORS.energy : COLORS.accent;
+    ctx.fillRect(x + step, y + Math.round(size * 0.18) + i * step, size - 2 * step - i * Math.round(size / 11), Math.max(2, Math.round(size / 18)));
+  }
 }
 
 /** A horizontal bar filled to value/max. */

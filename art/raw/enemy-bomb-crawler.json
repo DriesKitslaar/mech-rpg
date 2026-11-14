@@ -1,0 +1,11 @@
+{
+  "id": "enemy-bomb-crawler",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-bulwark.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a small four-legged walking robot in the same safety yellow with black hazard stripes: a round barrel-shaped body on four short jointed legs, with one red blinking lamp on top and warning stripes around its belly. The whole robot, nothing else, no mecha. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

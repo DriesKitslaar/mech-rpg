@@ -1,0 +1,9 @@
+{
+  "id": "still-dawn",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art illustration, crisp pixels, no anti-aliasing, no text, no lettering, cinematic composition: sunrise over a megacity whose enormous floodgates stand open, warm golden light pouring into the streets, tiny crowds of people walking up broad ramps into the light, and a battered mecha kneeling at rest in the foreground."
+}

@@ -5,9 +5,11 @@ import {
 import { nextRandom } from './rng';
 import {
   FRAME_SLOTS, WEAPON_SLOTS,
-  type AiProfile, type Build, type Catalog, type EnemyDef, type FrameSlot, type Module, type ModuleEffect, type Weapon,
-  type WeaponSlot,
+  type Abilities, type AiProfile, type BossPhase, type Build, type Catalog, type EnemyDef, type FrameSlot, type Module,
+  type ModuleEffect, type Objective, type Weapon, type WeaponSlot,
 } from './types';
+
+export type { Objective } from './types';
 
 export interface PartState { ap: number; maxAp: number }
 
@@ -35,7 +37,20 @@ export interface BattleOptions {
   mods?: Partial<UnitMods>;
   /** Multiplies enemy armour and damage. */
   enemyScale?: number;
+  /** What the battle asks for: every enemy destroyed, when absent. */
+  objective?: Objective;
+  /** An ally off the field, who fires into it. */
+  support?: Support;
 }
+
+/** An ally who is not on the field: at every new round they hit the strongest enemy for `damage`. */
+export interface Support { name: string; damage: number }
+
+/** Something the player has to keep from being worn down; see the `protect` objective. */
+export interface Asset { name: string; hp: number; maxHp: number }
+
+/** The most enemies that stand on the field at once. A carrier launches no more than this allows. */
+export const MAX_ENEMIES = 3;
 
 export interface UnitState {
   id: string;
@@ -89,6 +104,21 @@ export interface UnitState {
   chaff: number;
   /** Multiplies the unit's damage for the rest of its turn. */
   damageBoost: number;
+  /** The kind of enemy this is: its `EnemyDef.id`. */
+  kind?: string;
+  /** Where an enemy stands on the field, 0 to `MAX_ENEMIES - 1`. One that joins later takes a place left free. */
+  slot?: number;
+  abilities: Abilities;
+  /** Own turns left before a bomb goes off. */
+  fuse?: number;
+  /** Own turns left before a carrier launches again. */
+  launchIn?: number;
+  phases: BossPhase[];
+  /** How many of its phases have begun. */
+  phase: number;
+  /** See `EnemyDef.partNames` and `EnemyDef.portrait`. Only the screen reads them. */
+  partNames?: Partial<Record<FrameSlot, string>>;
+  portrait?: string;
 }
 
 export type BattleEvent =
@@ -111,6 +141,19 @@ export type BattleEvent =
   | { type: 'charge'; unit: string; weapon: WeaponSlot }
   /** `amount` is what the effect did: heat vented, armour restored, and so on. */
   | { type: 'module'; unit: string; effect: ModuleEffect; amount: number; target?: string }
+  /** An enemy patched up one of its own side. */
+  | { type: 'mend'; unit: string; target: string; part: FrameSlot; amount: number }
+  /** A bomb's fuse burned down to `left` turns. */
+  | { type: 'fuse'; unit: string; left: number }
+  /** A bomb went off; `damage` is the armour the target lost. */
+  | { type: 'blast'; unit: string; target: string; damage: number }
+  | { type: 'launch'; unit: string; spawned: string }
+  /** A boss entered its `phase`th phase (1 for the first change). */
+  | { type: 'phase'; unit: string; phase: number }
+  /** The ally off the field fired; `damage` is the armour the target lost. */
+  | { type: 'support'; name: string; target: string; damage: number }
+  /** The protected asset lost `lost` and stands at `hp`. */
+  | { type: 'asset'; hp: number; lost: number }
   | { type: 'outcome'; outcome: 'victory' | 'defeat' };
 
 export interface BattleState {
@@ -123,6 +166,12 @@ export interface BattleState {
   rng: number;
   events: BattleEvent[];
   outcome: 'ongoing' | 'victory' | 'defeat';
+  objective: Objective;
+  /** Present in a `protect` battle. */
+  asset?: Asset;
+  support?: Support;
+  /** Multiplies the armour and damage of every enemy, those that join later included. */
+  enemyScale: number;
 }
 
 export type Action =
@@ -134,6 +183,8 @@ export type Action =
   | { type: 'cool' }
   /** Activates the module. Only the painter takes a target. */
   | { type: 'module'; target?: string }
+  /** Patches up an ally's most damaged part, as the whole turn. Only units with the `mend` ability can. */
+  | { type: 'mend'; target: string }
   | { type: 'repair'; part: FrameSlot }
   | { type: 'endTurn' }
   /** The player gives the battle up: a defeat, without waiting to be destroyed. */
@@ -142,7 +193,7 @@ export type Action =
 export type Refusal =
   | 'noEnergy' | 'noAmmo' | 'alreadyFired' | 'weaponDisabled' | 'noWeapon' | 'invalidTarget'
   | 'alreadyUsed' | 'legsDisabled' | 'noRepairs' | 'partDestroyed' | 'partFull' | 'battleOver'
-  | 'staggered' | 'cannotBoost' | 'notCharged' | 'needsBoost' | 'noModule' | 'noUses';
+  | 'staggered' | 'cannotBoost' | 'notCharged' | 'needsBoost' | 'noModule' | 'noUses' | 'noAbility';
 
 /** What a boost gives a unit that fits no booster. Kept for callers that predate boosters. */
 export const BOOST_EVASION = DEFAULT_BOOST.thrust;
@@ -175,7 +226,7 @@ const HAND_SLOTS: WeaponSlot[] = ['rightHand', 'leftHand'];
 
 function createUnit(
   id: string, name: string, side: UnitState['side'], build: Build, catalog: Catalog,
-  extra: Partial<Pick<UnitState, 'ai' | 'sprite' | 'composed' | 'paint'>> = {}, modifiers: Partial<UnitMods> = {},
+  extra: Partial<UnitState> = {}, modifiers: Partial<UnitMods> = {},
 ): UnitState {
   const mods: UnitMods = { ...NO_MODS, ...modifiers };
   const parts: UnitState['parts'] = {};
@@ -194,7 +245,8 @@ function createUnit(
     if (weapon) ammo[slot] = side === 'enemy' ? null : weapon.ammo;
   }
   return {
-    id, name, side, build, composed: false, ...extra, parts, heat: 0, energy: 0, ammo, restocked: {}, boosted: false, overheated: false,
+    id, name, side, build, composed: false, abilities: {}, phases: [], phase: 0, ...extra, parts, heat: 0, energy: 0, ammo, restocked: {},
+    boosted: false, overheated: false,
     usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
     stagger: 0, staggerMax: Math.max(1, Math.round(stats.stability * mods.toughness)), staggered: 0,
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
@@ -202,8 +254,50 @@ function createUnit(
   };
 }
 
+function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scale: number, catalog: Catalog): UnitState {
+  const abilities = def.abilities ?? {};
+  return createUnit(id, name, 'enemy', def.build, catalog, {
+    ai: def.ai, sprite: def.sprite, composed: def.composed ?? false, kind: def.id, slot, abilities, phases: def.phases ?? [],
+    ...(def.paint ? { paint: def.paint } : {}),
+    ...(def.partNames ? { partNames: def.partNames } : {}),
+    ...(def.portrait ? { portrait: def.portrait } : {}),
+    ...(abilities.bomb ? { fuse: abilities.bomb.fuse } : {}),
+    ...(abilities.carrier ? { launchIn: abilities.carrier.every } : {}),
+  }, { damage: scale, toughness: scale });
+}
+
 const isAlive = (part: PartState | undefined): boolean => !!part && part.ap > 0;
 const findUnit = (state: BattleState, id: string): UnitState | undefined => state.units.find((u) => u.id === id);
+const standing = (state: BattleState, side: UnitState['side']): UnitState[] => state.units.filter((u) => u.side === side && !u.destroyed);
+
+/** The enemy an objective names, if it names one. */
+export function objectiveTarget(state: BattleState): UnitState | undefined {
+  return 'target' in state.objective ? findUnit(state, `enemy-${state.objective.target}`) : undefined;
+}
+
+/** Share of the damage a unit takes that its side's shield units let through: the best of them counts, and none covers itself. */
+export function aegisFactor(state: BattleState, unit: UnitState): number {
+  const shields = standing(state, unit.side).filter((u) => u.id !== unit.id && u.abilities.aegis !== undefined);
+  return Math.min(1, ...shields.map((u) => u.abilities.aegis!));
+}
+
+/** Hit chance a unit loses to the other side's jammers: the strongest of them counts. */
+export function jamOn(state: BattleState, unit: UnitState): number {
+  return Math.max(0, ...state.units.filter((u) => u.side !== unit.side && !u.destroyed).map((u) => u.abilities.jam ?? 0));
+}
+
+/** The part a mender would patch: the living part that has lost the largest share of its armour. */
+export function mendablePart(unit: UnitState): FrameSlot | null {
+  let best: FrameSlot | null = null;
+  let bestRatio = 1;
+  for (const slot of FRAME_SLOTS) { // core, legs, arms, head: earlier slots win ties
+    const part = unit.parts[slot];
+    if (!part || part.ap <= 0 || part.ap >= part.maxAp) continue;
+    const ratio = part.ap / part.maxAp;
+    if (ratio < bestRatio) { bestRatio = ratio; best = slot; }
+  }
+  return best;
+}
 
 /** Mobility right now: zero once the legs are gone. */
 export function currentMobility(unit: UnitState, catalog: Catalog): number {
@@ -252,21 +346,85 @@ function setOutcome(state: BattleState, outcome: 'victory' | 'defeat'): void {
   state.events.push({ type: 'outcome', outcome });
 }
 
-/** Ends the battle if one side is gone. */
+/** Ends the battle if the player is gone or the objective is met (or, for a machine wanted in one piece, lost). */
 function checkOutcome(state: BattleState): void {
-  if (state.units.every((u) => u.side !== 'enemy' || u.destroyed)) setOutcome(state, 'victory');
-  else if (findUnit(state, 'player')!.destroyed) setOutcome(state, 'defeat');
+  if (state.outcome !== 'ongoing') return;
+  if (findUnit(state, 'player')!.destroyed) return setOutcome(state, 'defeat');
+  const objective = state.objective;
+  const target = objectiveTarget(state);
+  if (target && objective.type === 'disable') {
+    if (target.destroyed) return setOutcome(state, 'defeat');
+    if ([target.parts.legs, target.parts.arms].every((part) => !isAlive(part))) return setOutcome(state, 'victory');
+  }
+  if (target && objective.type === 'leader' && target.destroyed) return setOutcome(state, 'victory');
+  if (target && objective.type === 'driveOff') {
+    const core = target.parts.core!;
+    if (core.ap <= objective.share * core.maxAp) return setOutcome(state, 'victory');
+  }
+  if (standing(state, 'enemy').length === 0) setOutcome(state, 'victory');
+}
+
+/**
+ * Starts the next round: the ally off the field fires, the protected asset is worn down, and the
+ * order of turns is set. Returns false when the battle ended instead.
+ */
+function beginRound(state: BattleState, catalog: Catalog): boolean {
+  if (state.objective.type === 'survive' && state.round >= state.objective.rounds) { setOutcome(state, 'victory'); return false; }
+  if (state.round >= ROUND_LIMIT) { setOutcome(state, 'defeat'); return false; }
+  state.round += 1;
+  if (state.support) {
+    // A machine the client wants in one piece is not for the ally to shoot at.
+    const spared = state.objective.type === 'disable' ? objectiveTarget(state) : undefined;
+    const foes = standing(state, 'enemy').filter((u) => u !== spared);
+    if (foes.length > 0) {
+      const target = foes.reduce((a, b) => (b.parts.core!.ap > a.parts.core!.ap ? b : a));
+      const event: Extract<BattleEvent, { type: 'support' }> = { type: 'support', name: state.support.name, target: target.id, damage: 0 };
+      state.events.push(event);
+      event.damage = strike(state, target, state.support.damage, state.support.damage, catalog);
+      checkOutcome(state);
+      if (state.outcome !== 'ongoing') return false;
+    }
+  }
+  if (state.asset) {
+    const lost = Math.min(state.asset.hp, standing(state, 'enemy').length);
+    state.asset.hp -= lost;
+    state.events.push({ type: 'asset', hp: state.asset.hp, lost });
+    if (state.asset.hp <= 0) { setOutcome(state, 'defeat'); return false; }
+  }
+  state.order = roundOrder(state, catalog);
+  state.turn = 0;
+  return true;
+}
+
+/** A bomb goes off: the player takes the blast and the bomb is gone. */
+function detonate(state: BattleState, unit: UnitState, catalog: Catalog): void {
+  const player = findUnit(state, 'player')!;
+  const amount = unit.abilities.bomb!.damage * unit.mods.damage;
+  const event: Extract<BattleEvent, { type: 'blast' }> = { type: 'blast', unit: unit.id, target: player.id, damage: 0 };
+  state.events.push(event);
+  event.damage = strike(state, player, amount, amount, catalog);
+  damagePart(state, unit, 'core', unit.parts.core!.ap);
+  checkOutcome(state);
+}
+
+/** A carrier counts down and, when its time has come and there is room on the field, launches a unit. */
+function launch(state: BattleState, unit: UnitState, catalog: Catalog): void {
+  const { unit: def, every } = unit.abilities.carrier!;
+  unit.launchIn = Math.max(0, (unit.launchIn ?? every) - 1);
+  const enemies = standing(state, 'enemy');
+  if (unit.launchIn > 0 || enemies.length >= MAX_ENEMIES) return;
+  const slot = Array.from({ length: MAX_ENEMIES }, (_, i) => i).find((i) => !enemies.some((u) => u.slot === i)) ?? 0;
+  const sameKind = state.units.filter((u) => u.kind === def.id).length;
+  const id = `enemy-${state.units.length - 1}`;
+  state.units.push(createEnemy(def, id, `${def.name} ${String.fromCharCode(65 + sameKind)}`, slot, state.enemyScale, catalog));
+  unit.launchIn = every;
+  state.events.push({ type: 'launch', unit: unit.id, spawned: id });
 }
 
 /** Starts turns until a unit can actually act (overheated units lose theirs), or the battle ends. */
 function beginTurns(state: BattleState, catalog: Catalog): void {
   while (state.outcome === 'ongoing') {
-    if (state.turn >= state.order.length) {
-      if (state.round >= ROUND_LIMIT) { setOutcome(state, 'defeat'); return; }
-      state.round += 1;
-      state.order = roundOrder(state, catalog);
-      state.turn = 0;
-    }
+    if (state.turn >= state.order.length && !beginRound(state, catalog)) return;
     const unit = activeUnit(state);
     if (unit.destroyed) { state.turn += 1; continue; }
     // What lasted "until the unit's next turn" ends here, whether or not the turn is then lost.
@@ -300,6 +458,17 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     unit.usedModule = false;
     unit.fired = [];
     state.events.push({ type: 'turnStart', unit: unit.id });
+    // A turn lost to overheating is lost to a fuse and a launch bay too: neither gets this far.
+    if (unit.fuse !== undefined) {
+      unit.fuse -= 1;
+      if (unit.fuse <= 0) {
+        detonate(state, unit, catalog);
+        state.turn += 1;
+        continue;
+      }
+      state.events.push({ type: 'fuse', unit: unit.id, left: unit.fuse });
+    }
+    if (unit.abilities.carrier) launch(state, unit, catalog);
     return;
   }
 }
@@ -357,17 +526,35 @@ function applyCarry(unit: UnitState, carry: Carry): void {
   unit.repairsLeft = carry.repairsLeft;
 }
 
+/** Refuses an objective the battle could not be won or lost by. */
+function checkObjective(objective: Objective, enemies: EnemyDef[], catalog: Catalog): void {
+  const bad = (what: string): never => { throw new Error(`objective ${objective.type}: ${what}`); };
+  if ('target' in objective) {
+    const def = enemies[objective.target];
+    if (!Number.isInteger(objective.target) || !def) return bad(`objective names enemy ${objective.target}, which the battle does not have`);
+    if (objective.type === 'disable' && !def.build.legs && !def.build.arms) bad(`${def.id} has no legs or arms to lose`);
+    if (objective.type === 'disable' && !framePart(def.build, 'core', catalog)) bad(`${def.id} has no core`);
+    if (objective.type === 'driveOff' && !(objective.share > 0 && objective.share < 1)) bad('the share must lie between 0 and 1');
+  }
+  if (objective.type === 'survive' && !(Number.isInteger(objective.rounds) && objective.rounds >= 1 && objective.rounds < ROUND_LIMIT)) {
+    bad(`${objective.rounds} is not a number of rounds a battle can last`);
+  }
+  if (objective.type === 'protect' && !(Number.isInteger(objective.hp) && objective.hp >= 1)) bad('the asset must start with something to lose');
+}
+
 /** Enemies always start fresh; the player may carry on from an earlier battle (see `BattleOptions`). */
 export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalog, seed: number, opts: BattleOptions = {}): BattleState {
+  const objective: Objective = opts.objective ?? { type: 'destroy' };
+  checkObjective(objective, enemies, catalog);
   const playerUnit = createUnit('player', 'You', 'player', player, catalog, {}, opts.mods);
   if (opts.carry) applyCarry(playerUnit, opts.carry);
-  const scale = opts.enemyScale ?? 1;
-  const enemyMods = { damage: scale, toughness: scale };
-  const units = [
-    playerUnit,
-    ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite, composed: e.composed ?? false, ...(e.paint ? { paint: e.paint } : {}) }, enemyMods)),
-  ];
-  const state: BattleState = { units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing' };
+  const enemyScale = opts.enemyScale ?? 1;
+  const units = [playerUnit, ...enemies.map((e, i) => createEnemy(e, `enemy-${i}`, enemyName(enemies, i), i, enemyScale, catalog))];
+  const state: BattleState = {
+    units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing', objective, enemyScale,
+    ...(objective.type === 'protect' ? { asset: { name: objective.name, hp: objective.hp, maxHp: objective.hp } } : {}),
+    ...(opts.support ? { support: { ...opts.support } } : {}),
+  };
   state.order = roundOrder(state, catalog);
   beginTurns(state, catalog);
   return state;
@@ -415,12 +602,13 @@ export function previewShot(
     aim += LEG_TYPES[legTypeOf(framePart(attacker.build, 'legs', catalog))].shoulderAim;
   }
   if (target.painted > 0) aim += target.paintBonus;
+  aim -= jamOn(state, attacker);
 
   const limb = Math.round(PART_MODIFIER[part] * (1 - (fcs?.focus ?? 0)));
   const raw = weapon.accuracy + aim - evasion(target, catalog) - target.chaff + limb - headPenalty;
 
   const resist = targetPart.resist[weapon.damageType] * (weapon.trait === 'pierce' ? 0.5 : 1);
-  let amount = weapon.damage * (1 - resist) * attacker.mods.damage * attacker.damageBoost;
+  let amount = weapon.damage * (1 - resist) * attacker.mods.damage * attacker.damageBoost * aegisFactor(state, target);
   if (target.staggered > 0) amount *= STAGGER_DAMAGE;
   if (target.guarding) amount *= guardFactor(target, catalog);
   const full = Math.max(1, Math.round(amount));
@@ -489,6 +677,12 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
       }
       return null;
     }
+    case 'mend': {
+      if (unit.abilities.mend === undefined) return 'noAbility';
+      const target = findUnit(state, action.target);
+      if (!target || target.destroyed || target.side !== unit.side || target.id === unit.id) return 'invalidTarget';
+      return mendablePart(target) ? null : 'partFull';
+    }
     case 'repair': {
       const part = unit.parts[action.part];
       if (!part) return 'invalidTarget';
@@ -502,7 +696,9 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
 function damagePart(state: BattleState, target: UnitState, slot: FrameSlot, amount: number): void {
   const part = target.parts[slot]!;
   const before = part.ap;
-  part.ap = Math.max(0, part.ap - amount);
+  // A pilot who is being driven off breaks away before the blow that would finish them: the core keeps a point.
+  const spared = slot === 'core' && state.objective.type === 'driveOff' && objectiveTarget(state)?.id === target.id;
+  part.ap = Math.max(spared ? Math.min(1, before) : 0, part.ap - amount);
   if (before > 0 && part.ap === 0) {
     state.events.push({ type: 'partDestroyed', unit: target.id, part: slot });
     // Without arms the hand weapons are finished, and whatever charge they held goes with them.
@@ -511,6 +707,38 @@ function damagePart(state: BattleState, target: UnitState, slot: FrameSlot, amou
   if (slot === 'core' && part.ap === 0 && !target.destroyed) {
     target.destroyed = true;
     state.events.push({ type: 'unitDestroyed', unit: target.id });
+  }
+}
+
+/**
+ * Begins every phase a boss's core has fallen far enough for, in order. A phase changes how it
+ * fights, steadies it and refills its module; one that has begun never begins again.
+ */
+function checkPhases(state: BattleState, unit: UnitState, catalog: Catalog): void {
+  const core = unit.parts.core!;
+  while (!unit.destroyed && unit.phase < unit.phases.length && core.ap <= unit.phases[unit.phase].at * core.maxAp) {
+    const phase = unit.phases[unit.phase];
+    unit.phase += 1;
+    if (phase.ai) unit.ai = phase.ai;
+    unit.mods.damage *= phase.damage ?? 1;
+    unit.mods.evasion += phase.evasion ?? 0;
+    unit.mods.aim += phase.aim ?? 0;
+    unit.mods.energy += phase.energy ?? 0;
+    if (phase.refit) {
+      const fitted = Object.fromEntries(Object.entries(phase.refit).filter(([, id]) => id !== undefined));
+      unit.build = { ...unit.build, ...fitted };
+      for (const slot of WEAPON_SLOTS) {
+        if (!(slot in fitted)) continue;
+        // Enemies never run dry; a player unit would get the new weapon's magazine.
+        unit.ammo[slot] = unit.side === 'enemy' ? null : weaponIn(unit.build, slot, catalog)?.ammo ?? null;
+        unit.charged = unit.charged.filter((charged) => charged !== slot);
+        unit.fired = unit.fired.filter((fired) => fired !== slot);
+      }
+    }
+    unit.stagger = 0;
+    unit.staggered = 0;
+    unit.moduleUses = moduleOf(unit.build, catalog)?.uses ?? 0;
+    state.events.push({ type: 'phase', unit: unit.id, phase: unit.phase });
   }
 }
 
@@ -561,7 +789,12 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
       if (weapon.trait === 'drain') target.energyDebt += weapon.traitPower ?? 0;
       addImpact(state, target, Math.round(impactOf(weapon) * (target.guarding ? GUARD_IMPACT : 1)));
+      checkPhases(state, target, catalog);
+      // The objective may be met (or lost) by this very shot: the rest of the volley stays in the barrel.
+      checkOutcome(state);
+      if (state.outcome !== 'ongoing') break;
     }
+    if (state.outcome !== 'ongoing') break;
   }
 
   // Closing in to strike is what the boost was spent on: the mech ends up in the enemy's face, not dodging.
@@ -580,11 +813,12 @@ function heatUp(state: BattleState, unit: UnitState, amount: number): void {
 }
 
 /**
- * Damage that is not a shot (a shock pulse) arriving at a unit: a staggered unit takes more of it,
- * a guarding one less, a barrier takes it before the armour does, and a guard halves the push.
+ * Damage that is not a shot (a shock pulse, a bomb, an ally's fire from off the field) arriving at a
+ * unit's core: a staggered unit takes more of it, a guarding or shielded one less, a barrier takes it
+ * before the armour does, and a guard halves the push. Returns the armour lost.
  */
-function strike(state: BattleState, target: UnitState, damage: number, impact: number, catalog: Catalog): void {
-  let amount = damage;
+function strike(state: BattleState, target: UnitState, damage: number, impact: number, catalog: Catalog): number {
+  let amount = damage * aegisFactor(state, target);
   if (target.staggered > 0) amount *= STAGGER_DAMAGE;
   if (target.guarding) amount *= guardFactor(target, catalog);
   const dealt = Math.max(1, Math.round(amount));
@@ -592,6 +826,8 @@ function strike(state: BattleState, target: UnitState, damage: number, impact: n
   target.barrier -= absorbed;
   if (dealt > absorbed) damagePart(state, target, 'core', dealt - absorbed);
   addImpact(state, target, Math.round(impact * (target.guarding ? GUARD_IMPACT : 1)));
+  checkPhases(state, target, catalog);
+  return dealt - absorbed;
 }
 
 /** Runs a module's effect and returns what it amounted to, for the event. */
@@ -691,6 +927,16 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
       state.events.push(event);
       event.amount = useModule(state, unit, module, action.target, catalog);
       checkOutcome(state);
+      break;
+    }
+    case 'mend': {
+      const target = findUnit(state, action.target)!;
+      const slot = mendablePart(target)!;
+      const part = target.parts[slot]!;
+      const amount = Math.min(part.maxAp - part.ap, Math.round(unit.abilities.mend! * part.maxAp));
+      part.ap += amount;
+      state.events.push({ type: 'mend', unit: unit.id, target: target.id, part: slot, amount });
+      finishTurn(state, catalog);
       break;
     }
     case 'repair': {

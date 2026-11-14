@@ -5,11 +5,27 @@ import { nextRandom } from './rng';
 export const ENEMY_COST: Record<string, number> = {
   'recon-drone': 1, 'gun-turret': 2, tank: 2, gunship: 2, 'lance-tower': 3, 'light-mech': 3, stalker: 4, 'heavy-mech': 4,
   rival: 5, juggernaut: 6,
+  'shield-drone': 2, 'repair-drone': 2, jammer: 2, 'bomb-crawler': 2, carrier: 4, marksman: 4, ripper: 4, bulldozer: 5,
+  'lien-drone': 2, bailiff: 6,
+  sable: 7, rook: 7, krell: 8, 'rival-2': 7, assessor: 9, 'strip-miner': 9, overseer: 9, leviathan: 9, 'ashfall-unbound': 10, adjuster: 12,
 };
 /** At most one of these per battle. */
-export const MECH_ENEMIES = ['light-mech', 'stalker', 'heavy-mech', 'rival', 'juggernaut'];
-/** Enemies that open contracts may field. The rival belongs to the story. */
-const POOL = Object.keys(ENEMY_COST).filter((id) => id !== 'rival');
+export const MECH_ENEMIES = [
+  'light-mech', 'stalker', 'heavy-mech', 'rival', 'juggernaut', 'marksman', 'ripper', 'bulldozer', 'bailiff',
+  'sable', 'rook', 'krell', 'rival-2', 'assessor', 'ashfall-unbound',
+];
+/** Enemies that belong to the story: the named pilots, the great machines, and everything of Meridian's. */
+export const STORY_ENEMIES = [
+  'rival', 'rival-2', 'ashfall-unbound', 'sable', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan',
+  'lien-drone', 'bailiff', 'assessor', 'adjuster',
+];
+/**
+ * Enemies that are no fight on their own: they cover, mend or jam for the others, or simply blow
+ * up. An open contract fields at most one in a battle, and never as the first enemy picked.
+ */
+export const SUPPORT_ENEMIES = ['shield-drone', 'repair-drone', 'jammer', 'bomb-crawler'];
+/** Enemies that open contracts may field. */
+const POOL = Object.keys(ENEMY_COST).filter((id) => !STORY_ENEMIES.includes(id));
 
 export const MAX_TIER = 8;
 export const MAX_BUDGET = 8;
@@ -64,7 +80,9 @@ function rollEnemies(dice: Dice, budget: number): string[] {
   let left = budget;
   for (let slotsLeft = 3; slotsLeft > 0 && left > 0; slotsLeft--) {
     const hasMech = enemies.some((id) => MECH_ENEMIES.includes(id));
-    const affordable = POOL.filter((id) => ENEMY_COST[id] <= left && !(hasMech && MECH_ENEMIES.includes(id)));
+    const noSupport = enemies.length === 0 || enemies.some((id) => SUPPORT_ENEMIES.includes(id));
+    const affordable = POOL.filter((id) =>
+      ENEMY_COST[id] <= left && !(hasMech && MECH_ENEMIES.includes(id)) && !(noSupport && SUPPORT_ENEMIES.includes(id)));
     if (affordable.length === 0) break;
     // Prefer enemies big enough that the remaining slots can use the budget up.
     const share = Math.ceil(left / slotsLeft);

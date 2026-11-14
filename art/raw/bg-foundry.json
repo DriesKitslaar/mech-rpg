@@ -1,0 +1,9 @@
+{
+  "id": "bg-foundry",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art background, no anti-aliasing: the inside of a huge smelting foundry in a megacity at night, channels of glowing molten metal, giant ladles hanging on chains, black steel gantries, harsh orange light and drifting sparks, a flat grated steel floor filling the lower third. No characters, no robots, no vehicles in the foreground, no readable text."
+}

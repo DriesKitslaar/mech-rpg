@@ -1,0 +1,9 @@
+{
+  "id": "bg-vault",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art background, no anti-aliasing: the inside of a vast data vault, endless rows of tall white monolith cabinets with thin cyan light lines receding into the distance, cold mist along a glossy pale floor that fills the lower third. No characters, no robots, no vehicles in the foreground, no readable text."
+}

@@ -45,7 +45,11 @@ export function startMissionBattle(
     if (!Object.hasOwn(enemies, id)) throw new Error(`unknown enemy: ${id}`);
     return enemies[id];
   });
-  const state = createBattle(build, defs, catalog, seed + index, { ...opts, carry: previous ? carryFrom(previous) : undefined });
+  const state = createBattle(build, defs, catalog, seed + index, {
+    ...opts, carry: previous ? carryFrom(previous) : undefined,
+    ...(battle.objective ? { objective: battle.objective } : {}),
+    ...(battle.support ? { support: battle.support } : {}),
+  });
   if (previous) fieldService(state, catalog);
   return state;
 }

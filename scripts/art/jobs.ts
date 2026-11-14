@@ -6,7 +6,8 @@
  * Layers of different families therefore fit on each other without any scaling or shifting.
  */
 export type JobKind =
-  | 'family' | 'layer' | 'handWeapon' | 'shoulderWeapon' | 'shield' | 'enemy' | 'enemyMech' | 'portrait' | 'background';
+  | 'family' | 'layer' | 'handWeapon' | 'shoulderWeapon' | 'shield' | 'enemy' | 'enemyMech' | 'boss' | 'portrait' | 'background'
+  | 'still';
 export type Layer = 'legs' | 'torso' | 'head' | 'armNear' | 'armFar';
 
 export interface ArtJob {
@@ -35,8 +36,12 @@ export const BOX: Record<Exclude<JobKind, 'family' | 'layer'>, { w: number; h: n
   shield: { w: 34, h: 52 },
   enemy: { w: 64, h: 64 },
   enemyMech: { w: 104, h: 104 },
+  // A machine that fills the enemy's half of the field on its own.
+  boss: { w: 136, h: 128 },
   portrait: { w: 56, h: 56 },
   background: { w: 310, h: 270 },
+  // The picture behind a page of story.
+  still: { w: 310, h: 270 },
 };
 
 /**
@@ -133,6 +138,32 @@ function layersOf(fromFamily: string, ids: { legs: string; core: string; head: s
   ];
 }
 
+/** A machine boss: one big sprite, drawn facing right and mirrored to face the player. */
+function boss(id: string, styleFrom: string, subject: string): ArtJob {
+  return {
+    id, kind: 'boss', flip: true, references: [familyFile(styleFrom)],
+    prompt:
+      `${PIXEL} Three-quarter side view facing right. The attached image is the style reference: match its colours, ` +
+      `glowing accents, pixel size, outline weight and shading. Draw a huge war machine from a retro video game: ${subject} ` +
+      `Show only this single machine, whole, centred, filling most of the frame. ${GREEN}`,
+  };
+}
+
+function background(id: string, scene: string): ArtJob {
+  return {
+    id, kind: 'background',
+    prompt: `16-bit pixel art background, no anti-aliasing: ${scene} No characters, no robots, no vehicles in the foreground, no readable text.`,
+  };
+}
+
+/** The picture behind a page of story: a whole scene, not a stage for a battle. */
+function still(id: string, scene: string): ArtJob {
+  return {
+    id, kind: 'still',
+    prompt: `16-bit pixel art illustration, crisp pixels, no anti-aliasing, no text, no lettering, cinematic composition: ${scene}`,
+  };
+}
+
 function item(id: string, kind: 'handWeapon' | 'shoulderWeapon' | 'shield' | 'enemy', styleFrom: string, subject: string, flip = false): ArtJob {
   return {
     id, kind, flip, references: [familyFile(styleFrom)],
@@ -184,6 +215,11 @@ export const JOBS: ArtJob[] = [
     'reverse-jointed grasshopper legs whose knees bend backwards and end in two-toed clawed feet (hips and feet stay ' +
     'where they are in the first image), a narrow waist, forearms with a folded blade-like fin along each, small ' +
     'angular shoulders, and a triangular head with two short antennae and a wide lime visor. Lean and agile.'),
+  family('auditor', 'ronin',
+    'a tall, severe corporate enforcement mecha in glossy black lacquer armour with fine gold trim lines and a few small ' +
+    'white lights: long coat-like armour skirts hanging from the hips at the front and back, narrow shoulders with upright ' +
+    'gold-edged collar plates, slender precise limbs, and a smooth faceless mask head with one thin vertical gold line and ' +
+    'a low crown ridge. Slimmer and taller-looking than the first image, elegant, cold and expensive.'),
   // Free-standing lower bodies: a family drawing with only the legs replaced, from which the legs layer is cut.
   lowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
@@ -202,6 +238,7 @@ export const JOBS: ArtJob[] = [
   ...layersOf('wraith', { legs: 'legs-wraith', core: 'core-wraith', head: 'head-wraith', arms: 'arms-wraith' }),
   ...layersOf('colossus', { legs: 'legs-colossus', core: 'core-colossus', head: 'head-colossus', arms: 'arms-colossus' }),
   ...layersOf('mantis', { legs: 'legs-mantis', core: 'core-mantis', head: 'head-mantis', arms: 'arms-mantis' }),
+  ...layersOf('auditor', { legs: 'legs-auditor', core: 'core-auditor', head: 'head-auditor', arms: 'arms-auditor' }),
   layer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   layer('legs-spider', 'spider', 'legs',
@@ -299,7 +336,25 @@ export const JOBS: ArtJob[] = [
   item('enemy-lance-tower', 'enemy', 'ronin',
     'a tall slender fixed sentry tower in the same dark charcoal and deep red armour with one magenta lens: a narrow column on a tripod base carrying one extremely long thin barrel pointing right. The whole tower, nothing else, no mecha.', true),
 
+  item('wpn-writ', 'handWeapon', 'auditor',
+    `a long, elegant handheld instrument for a toy robot in a retro video game, ${WEAPON_STYLE}: a slim black body with fine gold inlay, one long straight thin tube ending in a gold ring, a small round lens on top and a slender shoulder rest, lying exactly horizontal, pointing right. The object only, no hand, no robot.`),
+  item('wpn-gavel', 'handWeapon', 'auditor',
+    `a heavy ceremonial war hammer for a toy robot in a retro video game, ${WEAPON_STYLE}: a short black shaft with gold bands and a large square black hammer head edged in gold at its right end, lying exactly horizontal, head pointing right. The object only, no hand, no robot.`),
+  item('wpn-decree', 'shoulderWeapon', 'auditor',
+    `a shoulder-mounted beam projector for a toy robot in a retro video game, ${WEAPON_STYLE}: a long black tapering barrel with three thin gold rings and a white glowing lens at its tip, on a black housing with a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no robot.`),
+
   // Enemy-only weapons borrow the look of a shop weapon.
+  { id: 'wpn-enemy-longbow', kind: 'handWeapon', source: 'wpn-longbow', prompt: '' },
+  { id: 'wpn-enemy-claw', kind: 'handWeapon', source: 'wpn-thermal-cutter', prompt: '' },
+  { id: 'wpn-enemy-pinpoint', kind: 'handWeapon', source: 'wpn-void-rifle', prompt: '' },
+  { id: 'wpn-enemy-edge', kind: 'handWeapon', source: 'wpn-arc-blade', prompt: '' },
+  { id: 'wpn-enemy-cutter', kind: 'handWeapon', source: 'wpn-thermal-cutter', prompt: '' },
+  { id: 'wpn-enemy-flak', kind: 'handWeapon', source: 'wpn-flak', prompt: '' },
+  { id: 'wpn-enemy-siege', kind: 'shoulderWeapon', source: 'wpn-breaker-cannon', prompt: '' },
+  { id: 'wpn-enemy-writ', kind: 'handWeapon', source: 'wpn-writ', prompt: '' },
+  { id: 'wpn-enemy-seizer', kind: 'handWeapon', source: 'wpn-arc-caster', prompt: '' },
+  { id: 'wpn-enemy-gavel', kind: 'handWeapon', source: 'wpn-gavel', prompt: '' },
+  { id: 'wpn-enemy-decree', kind: 'shoulderWeapon', source: 'wpn-decree', prompt: '' },
   { id: 'wpn-enemy-carbine', kind: 'handWeapon', source: 'wpn-pulse-carbine', prompt: '' },
   { id: 'wpn-enemy-shotgun', kind: 'handWeapon', source: 'wpn-scatter-gun', prompt: '' },
   { id: 'wpn-enemy-lance', kind: 'handWeapon', source: 'wpn-rail-lance', prompt: '' },
@@ -316,17 +371,61 @@ export const JOBS: ArtJob[] = [
   item('enemy-tank', 'enemy', 'salvage',
     'a squat salvaged battle tank in the same patched teal and rust plating: a low hull on two wide treads with a short stubby turret and one amber lamp. The whole tank, nothing else, no mecha.', true),
 
+  // Units that help the others, and one that will not wait.
+  item('enemy-shield-drone', 'enemy', 'halo',
+    'a hovering support drone in the same white and navy armour with cyan lights: a round body with two small side rotors, carrying in front of it a large upright hexagonal panel of translucent cyan light with a honeycomb pattern. The whole drone, nothing else, no mecha.', true),
+  item('enemy-repair-drone', 'enemy', 'salvage',
+    'a hovering repair drone in the same patched teal and rust plating: a boxy body with two rotors on top, two small jointed tool arms underneath, one ending in a welding torch with a bright spark, and one amber lamp. The whole drone, nothing else, no mecha.', true),
+  item('enemy-jammer', 'enemy', 'ronin',
+    'a field signal mast in the same dark charcoal and deep red armour: a squat tripod base carrying a tall mast with three stacked dish antennas and a crown of thin aerials, with magenta rings of light pulsing from its top. The whole mast, nothing else, no mecha.', true),
+  item('enemy-bomb-crawler', 'enemy', 'bulwark',
+    'a small four-legged walking robot in the same safety yellow with black hazard stripes: a round barrel-shaped body on four short jointed legs, with one red blinking lamp on top and warning stripes around its belly. The whole robot, nothing else, no mecha.', true),
+  item('enemy-carrier', 'enemy', 'ronin',
+    'a heavy six-wheeled carrier vehicle in the same dark charcoal and deep red armour: a long low armoured hull with an open bay on its back holding two small folded drones, a short radar mast and magenta running lights. The whole vehicle, nothing else, no mecha.', true),
+  item('enemy-lien-drone', 'enemy', 'auditor',
+    'a hovering enforcement drone in the same glossy black armour with fine gold trim: a sleek wedge-shaped body with two ducted fans, a single white lens, and a small clamp arm underneath holding a glowing gold tag. The whole drone, nothing else, no mecha.', true),
+
+  // Machines that are a battle on their own.
+  boss('boss-strip-miner', 'bulwark',
+    'a colossal mining machine in the same safety yellow with black hazard stripes and dark steel: a huge armoured cab on two enormous caterpillar tracks, with a giant bucket-wheel excavator arm reaching forward and a row of white work lights. Massive and industrial.'),
+  boss('boss-overseer', 'halo',
+    'a large floating command platform in the same white and navy armour with cyan lights: a wide disc-shaped body with one huge glowing cyan eye lens at its centre, a ring of smaller emitters around its rim and three thrusters glowing underneath. Clean, cold and watchful.'),
+  boss('boss-leviathan', 'salvage',
+    'a huge salvaged amphibious war barge in the same patched teal and rust plating: a long low hull on rows of small wheels, a front ram shaped like a jaw with teeth of scrap steel, a crane arm on its back, two smokestacks and amber lamps. Ugly, heavy and patched together.'),
+  boss('boss-adjuster', 'auditor',
+    'a towering judge-like machine in the same glossy black armour with fine gold trim: a tall narrow body like a robed figure on a wide skirt base, a faceless mask head with a crown of gold spikes, and four long arms, two holding up a large golden balance scale and two ending in long barrels. Imposing, elegant and cold.'),
+
   // Enemy mechs are the family drawings themselves, mirrored: no new image needed.
   { id: 'enemy-light-mech', kind: 'enemyMech', source: 'family-halo', flip: true, prompt: '' },
   { id: 'enemy-heavy-mech', kind: 'enemyMech', source: 'family-bulwark', flip: true, prompt: '' },
   { id: 'enemy-rival', kind: 'enemyMech', source: 'family-ronin', flip: true, prompt: '' },
   { id: 'enemy-stalker', kind: 'enemyMech', source: 'family-wraith', flip: true, prompt: '' },
   { id: 'enemy-juggernaut', kind: 'enemyMech', source: 'family-colossus', flip: true, prompt: '' },
+  { id: 'enemy-ripper', kind: 'enemyMech', source: 'family-mantis', flip: true, prompt: '' },
+  { id: 'enemy-bailiff', kind: 'enemyMech', source: 'family-auditor', flip: true, prompt: '' },
 
   portrait('portrait-hadron', 'a heavyset middle-aged mining executive with tired eyes and slicked-back grey hair, wearing a high-collared charcoal coat with a small yellow and black hazard-striped pin'),
   portrait('portrait-lumen', 'a composed woman analyst with a short dark bob, wearing a white high-tech jacket with thin glowing cyan piping and a translucent data visor over one eye'),
   portrait('portrait-undertow', 'an older resistance organiser with a weathered face and cropped white hair, wearing a patched teal work jacket and a rust-orange scarf, a smudge of oil on one cheek'),
   portrait('portrait-rival', 'a confident mercenary pilot with short black hair with one red streak and a thin scar through one eyebrow, wearing a charcoal and deep red flight suit with a glowing magenta collar ring'),
+
+  portrait('portrait-dispatch', 'a tired night-shift dispatcher in their forties with a headset over messy tied-back hair, wearing a worn grey hoodie, lit by the glow of monitors'),
+  portrait('portrait-sable', 'a pale, sharp-featured woman ace pilot with silver-white hair in a tight braid and a cold stare, wearing a white flight suit with thin glowing cyan piping'),
+  portrait('portrait-rook', 'a broad, grinning scrapyard pilot with a shaved head and welding goggles pushed up on his forehead, wearing a patched teal jacket with a rust-orange armband'),
+  portrait('portrait-krell', 'a scarred veteran security chief with a square jaw and a grey buzz cut, wearing a heavy charcoal uniform with yellow and black hazard-striped shoulder boards'),
+  portrait('portrait-actuary', 'a thin, immaculate insurance adjuster with slicked dark hair, round gold-rimmed glasses and a faint polite smile, wearing a black high-collared suit with a small gold pin shaped like a balance scale'),
+
+  background('bg-foundry', 'the inside of a huge smelting foundry in a megacity at night, channels of glowing molten metal, giant ladles hanging on chains, black steel gantries, harsh orange light and drifting sparks, a flat grated steel floor filling the lower third.'),
+  background('bg-vault', 'the inside of a vast data vault, endless rows of tall white monolith cabinets with thin cyan light lines receding into the distance, cold mist along a glossy pale floor that fills the lower third.'),
+  background('bg-sluice', 'enormous floodgates at the bottom of a megacity at night, towering rusted gate doors standing half open with water pouring between them, catwalks and chains, strings of teal and orange lights, a wet concrete quay filling the lower third.'),
+  background('bg-rooftop', 'the rooftops of a megacity at dawn, antenna masts, water tanks and ventilation units, the sky turning orange and pink behind distant dark towers, a flat gravel roof filling the lower third.'),
+  background('bg-clearing', 'the inside of an immense clearing hall of an insurance company, tall black marble pillars with thin gold inlay lines, hanging gold lamps, long empty counters, a polished black floor with gold reflections filling the lower third.'),
+
+  still('still-varn', 'a wide view over an industrial megacity at night in the rain: a strip mine lit by yellow floodlights on the left, white and cyan corporate towers in the centre and a dim flooded shanty town of teal and orange lights below them, with one small mecha silhouette standing on a rooftop in the foreground looking out over it all.'),
+  still('still-war', 'two giant mecha silhouettes facing each other across a burning city street at night, searchlights and streaks of tracer fire in the sky, flickering neon signs with abstract shapes, seen from a dramatic low angle.'),
+  still('still-notice', 'a colossal featureless black tower with thin gold light lines rising above a dark megacity at night, far taller than everything around it, while thousands of small golden slips of paper fall like snow over the streets.'),
+  still('still-dawn', 'sunrise over a megacity whose enormous floodgates stand open, warm golden light pouring into the streets, tiny crowds of people walking up broad ramps into the light, and a battered mecha kneeling at rest in the foreground.'),
+  still('still-ledger', 'a cold orderly megacity at grey dawn where every tower is the same black with gold lines in perfect rows, the streets clean and empty, and a single mecha in black and gold armour standing guard in the foreground.'),
 
   { id: 'bg-neon-district', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: an industrial megacity district at night seen from street level, wet reflective ground filling the lower third, towering dark buildings, cranes and pipes, many glowing neon signs in pink, cyan and purple with abstract shapes instead of readable text, light haze and rain. No characters, no robots, no vehicles in the foreground.' },

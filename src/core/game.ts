@@ -1,6 +1,10 @@
 import type { Build, Catalog, Part } from './types';
 
-export const SAVE_VERSION = 6;
+/** How well a contract was done, best first. */
+export type Rank = 'S' | 'A' | 'B' | 'C' | 'D';
+export const RANKS: Rank[] = ['S', 'A', 'B', 'C', 'D'];
+
+export const SAVE_VERSION = 7;
 export const STARTING_CREDITS = 1200;
 
 /** Everything about a player's progress that is kept between battles and saved. */
@@ -30,6 +34,10 @@ export interface GameState {
   paint: string;
   /** Saved builds, one per slot; an empty slot is null. */
   loadouts: (Build | null)[];
+  /** The best rank earned on each story contract, by contract id. Kept across cycles. */
+  ranks: Record<string, Rank>;
+  /** Ids of the scenes shown in this cycle. */
+  scenes: string[];
 }
 
 export const FACTORY_PAINT = 'factory';
@@ -84,7 +92,7 @@ export function newGame(catalog: Catalog, starter: Build): GameState {
   return {
     version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false,
     xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS },
-    paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null),
+    paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null), ranks: {}, scenes: [],
   };
 }
 
@@ -231,8 +239,9 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!isRecord(perks) || !Object.values(perks).every((rank) => isWholeNonNegative(rank) && rank <= MAX_PERK_RANK)) return false;
   if (!isRecord(settings) || !['sfx', 'music', 'fastBattles'].every((key) => typeof settings[key] === 'boolean')) return false;
   if (!DIFFICULTIES.includes(settings.difficulty as Difficulty)) return false;
-  const { inventory, build, paint, loadouts } = value;
+  const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
+  if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
   // The scheme itself is the screen's business; here it only has to be a plain short word.
   if (typeof paint !== 'string' || !/^[a-z]{1,24}$/.test(paint)) return false;
   if (!Array.isArray(loadouts) || loadouts.length !== LOADOUT_SLOTS) return false;
