@@ -243,6 +243,8 @@ export function dueScenes(state: GameState, scenes: Scene[], missions: Mission[]
   const chosen = chosenFaction(state, missions);
   return scenes.filter((scene) =>
     !state.scenes.includes(scene.id)
+    // A game that says the ending was seen is believed, whatever its list of scenes holds.
+    && !(scene.ending && state.endingSeen)
     && reached(state, scene.after, missions)
     && !(scene.before !== undefined && reached(state, scene.before, missions))
     && (!scene.faction || scene.faction === chosen));

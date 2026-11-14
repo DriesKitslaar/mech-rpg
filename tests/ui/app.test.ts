@@ -38,7 +38,7 @@ const snap = (app: App) => app.snapshot() as Snap;
 const press = (app: App, ...actions: InputAction[]) => actions.forEach((a) => app.onInput(a));
 const ids = (app: App) => snap(app).menu.items.map((i) => i.id);
 /** The contracts on the list that are not generated ones. */
-const story = (app: App) => ids(app).filter((id) => !id.startsWith('open-'));
+const story = (app: App) => ids(app).filter((id) => !id.startsWith('open-') && id !== 'archive');
 const open = (app: App) => ids(app).filter((id) => id.startsWith('open-'));
 const select = (app: App, id: string) => {
   for (let i = 0; i < 40 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');
@@ -252,7 +252,7 @@ describe('battle and settlement', () => {
     press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'hub', credits: 1200 + net });
     select(app, 'contracts');
-    expect(ids(app)).toEqual(['patrol', 'intro-2']);
+    expect(ids(app)).toEqual(['patrol', 'intro-2', 'archive']);
   });
 
   test('a lost contract charges its costs, pays nothing and stays on offer', () => {

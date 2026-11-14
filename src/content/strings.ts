@@ -29,6 +29,26 @@ export const STRINGS = {
   tags: {
     boost: 'BOOST', guard: 'GUARD', stagger: 'STAGGER', charged: 'CHARGED', charging: 'CHARGING', painted: 'PAINTED',
     barrier: (n: number) => `BARRIER ${n}`, chaff: 'CHAFF', stability: 'STAB',
+    fuse: (n: number) => `FUSE ${n}`, aegis: 'AEGIS', jammer: 'JAMMER', mender: 'MENDER', carrier: 'CARRIER',
+    covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`,
+  },
+  objectives: {
+    survive: (round: number, rounds: number) => `HOLD OUT ${round}/${rounds}`,
+    protect: (name: string, hp: number, max: number) => `${name.toUpperCase()} ${hp}/${max}`,
+    leader: (name: string) => `TARGET: ${name.toUpperCase()}`,
+    disable: (name: string) => `DISABLE: ${name.toUpperCase()}`,
+    driveOff: (name: string) => `DRIVE OFF: ${name.toUpperCase()}`,
+    mark: 'TARGET',
+    won: {
+      survive: 'You held the line.', protect: (name: string) => `${name}: safe.`, leader: 'Their leader is down.',
+      disable: 'Disabled, in one piece.', driveOff: (name: string) => `${name} breaks off.`,
+    },
+    lost: { asset: (name: string) => `${name}: lost.`, target: 'The target was destroyed.', time: 'Out of time.' },
+    brief: {
+      destroy: 'Destroy all hostiles', survive: (rounds: number) => `Hold out for ${rounds} rounds`,
+      protect: (name: string) => `Protect: ${name}`, leader: (name: string) => `Destroy: ${name}`,
+      disable: (name: string) => `Disable, do not destroy: ${name}`, driveOff: (name: string) => `Drive off: ${name}`,
+    },
   },
   yourTurn: (round: number) => `Round ${round} - your move`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${obj(target)} - ${part} -${damage}`,
@@ -74,7 +94,7 @@ export const STRINGS = {
   },
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
-    messages: 'Messages', options: 'Options', cycle: 'New Cycle',
+    messages: 'Messages', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
     credits: 'CREDITS', battlesWon: 'BATTLES WON', level: 'PILOT LEVEL', contracts: 'CONTRACTS', reward: 'pays',
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
     locked: 'Locked', campaignDone: 'The war is over. The work is not.',
@@ -110,7 +130,10 @@ export const STRINGS = {
   briefing: {
     accept: 'Accept', back: 'Back', reward: 'PAYS', engagements: (n: number) => (n === 1 ? '1 ENGAGEMENT' : `${n} ENGAGEMENTS`),
     hostiles: 'EXPECTED', exclusive: 'EXCLUSIVE: the other two clients will withdraw their offers.',
-    finale: 'FINAL CONTRACT', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT',
+    finale: 'THE LAST MOVE OF THE WAR', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT',
+    verdict: 'VERDICT: your answer ends the story. The other offer is withdrawn.',
+    replay: 'ARCHIVE: pays less. Nothing in the story changes.',
+    support: (name: string) => `Fire support: ${name}`,
   },
   mission: {
     engagement: (i: number, n: number) => `ENGAGEMENT ${i}/${n}`,
@@ -118,8 +141,10 @@ export const STRINGS = {
   },
   messagesScreen: { heading: 'MESSAGES', isNew: 'NEW', from: 'FROM', empty: 'No messages', back: 'B: back' },
   ending: { continue: 'Press A to return to headquarters' },
+  scene: { continue: 'Press A to continue' },
   settlement: {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
+    rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
   },
   saveFailed: 'Could not save: storage is full or blocked',
@@ -187,6 +212,7 @@ export const STRINGS = {
   },
   fx: {
     miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', block: (n: number) => `BLOCK ${n}`,
+    phase: (n: number) => `PHASE ${n}`,
     modules: {
       coolant: 'COOLANT', barrier: 'BARRIER', overclock: 'OVERCLOCK', painter: 'PAINTED', nanites: 'NANITES', shock: 'SHOCK',
       chaff: 'CHAFF', limiter: 'LIMITER',

@@ -165,6 +165,57 @@ export class BattleFx {
         this.say(0, at, STRINGS.fx.modules[event.effect], color);
         break;
       }
+      case 'mend': {
+        const at = s.hitPoint(event.target, event.part);
+        this.add(0, SPARK_MS, { kind: 'sparks', at: s.centre(event.unit), color: COLORS.armor });
+        this.add(120, SPARK_MS, { kind: 'sparks', at, color: COLORS.armor });
+        this.say(120, at, `+${event.amount}`, COLORS.armor);
+        break;
+      }
+      case 'fuse':
+        this.add(0, 300, { kind: 'pulse', unit: event.unit });
+        this.say(0, s.centre(event.unit), STRINGS.tags.fuse(event.left), event.left <= 1 ? COLORS.danger : COLORS.heat);
+        break;
+      case 'blast': {
+        // The bomb throws itself at its target and goes up there.
+        const from = s.centre(event.unit);
+        const at = s.hitPoint(event.target, 'core');
+        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir: s.facing(event.unit), from });
+        for (const [i, off] of [[0, 0], [-14, 8], [12, -10], [4, 14]].entries()) {
+          this.add(MELEE_MS + i * 90, 320, { kind: 'burst', at: { x: at.x + off[0], y: at.y + off[1] }, size: 22, color: '#ff8a3c' });
+        }
+        this.add(MELEE_MS, HIT_MS * 2, { kind: 'hit', unit: event.target });
+        this.say(MELEE_MS, at, `-${event.damage}`, '#ffffff');
+        break;
+      }
+      case 'launch': {
+        const from = s.centre(event.unit);
+        const at = s.centre(event.spawned);
+        this.add(0, 260, { kind: 'burst', at: from, size: 12, color: COLORS.heat });
+        this.add(0, 200, { kind: 'projectile', from, to: at, dtype: 'kinetic' });
+        this.add(200, 320, { kind: 'burst', at, size: 16, color: COLORS.heat });
+        break;
+      }
+      case 'phase': {
+        const at = s.centre(event.unit);
+        this.add(0, 700, { kind: 'pulse', unit: event.unit });
+        for (const [i, size] of [18, 30, 44].entries()) this.add(i * 140, 380, { kind: 'burst', at, size, color: COLORS.accent });
+        this.say(0, at, STRINGS.fx.phase(event.phase + 1), COLORS.accent);
+        break;
+      }
+      case 'support': {
+        // Fire from an ally who is not on the field comes in from behind the player.
+        const to = s.hitPoint(event.target, 'core');
+        const from = { x: -6, y: Math.max(20, to.y - 40) };
+        this.add(0, PROJECTILE_MS, { kind: 'projectile', from, to, dtype: 'energy' });
+        this.add(PROJECTILE_MS, HIT_MS, { kind: 'hit', unit: event.target });
+        this.add(PROJECTILE_MS, HIT_MS, { kind: 'burst', at: to, size: 12, color: TYPE_COLOR.energy });
+        this.say(PROJECTILE_MS, to, `-${event.damage}`, '#ffffff');
+        break;
+      }
+      case 'asset':
+        if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger);
+        break;
       case 'recover':
       case 'turnStart':
       case 'outcome':

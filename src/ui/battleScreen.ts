@@ -1,21 +1,28 @@
-import { coolCost, boostCost, guardCost, turnEnergyOf, HEAT_LIMIT, type UnitState } from '../core/battle';
+import {
+  aegisFactor, coolCost, boostCost, guardCost, jamOn, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type UnitState,
+} from '../core/battle';
 import { weaponIn } from '../core/build';
 import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
-import { BattleFlow } from './battleFlow';
+import { BattleFlow, partName } from './battleFlow';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import type { Sfx } from '../platform/audio';
 import { soundsForEvent } from '../platform/audio';
 import { ApDisplay } from './apDisplay';
-import { BattleFx, MELEE_MS, flightFor, type Scene } from './battleFx';
+import { BattleFx, MELEE_MS, PROJECTILE_MS, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import type { Sprite, SpriteStore } from './sprites';
-import { COLORS, LINE, drawMeter, drawPanel, drawScrollMenu, drawText } from './widgets';
+import { COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
 
 export { BattleFlow } from './battleFlow';
-export type { BattlePhase, MenuView } from './battleFlow';
+export type { BattlePhase, FlowOptions, MenuView } from './battleFlow';
+
+/** The box a line of talk is shown in, and how much text fits: lines of `TALK_CHARS`, at most `TALK_LINES` of them. */
+const TALK = { x: 4, y: 116, w: LOGICAL_W - 8, h: 58, portrait: 48 };
+export const TALK_CHARS = charsFor(TALK.w - TALK.portrait - 18);
+export const TALK_LINES = 3;
 
 const MESSAGE_MS = 600;
 const DEFAULT_BACKGROUND = 'bg-neon-district';
@@ -45,6 +52,10 @@ export class BattleScreen {
   private fxDone = 0;
   /** Armour as shown, which trails the rules until each shot has landed. */
   private shownAp: ApDisplay;
+  /** How many places the enemies stand in: as many as the battle opened with, or all of them when more can join. */
+  private places: number;
+  /** Units that are on the field as far as the player has been shown: one that is launched appears with its launch. */
+  private arrived: Set<string>;
 
   constructor(
     private flow: BattleFlow, private sprites: SpriteStore, private catalog: Catalog,
@@ -55,6 +66,11 @@ export class BattleScreen {
     },
   ) {
     this.shownAp = new ApDisplay(flow.state.units);
+    const enemies = flow.state.units.filter((u) => u.side === 'enemy');
+    this.places = enemies.some((u) => u.abilities.carrier)
+      ? MAX_ENEMIES : Math.min(MAX_ENEMIES, Math.max(1, ...enemies.map((u) => (u.slot ?? 0) + 1)));
+    const unseen = flow.state.events.slice(flow.eventsShown).flatMap((e) => (e.type === 'launch' ? [e.spawned] : []));
+    this.arrived = new Set(flow.state.units.map((u) => u.id).filter((id) => !unseen.includes(id)));
   }
 
   update(realMs: number): void {
@@ -82,10 +98,16 @@ export class BattleScreen {
       const dtype = event.type === 'shot' ? this.scene().damageType(event.unit, event.weapon) : 'kinetic';
       // In fast mode messages fly by within a frame: no effects, no sound, no waiting.
       const melee = event.type === 'shot' && this.scene().isMelee(event.unit, event.weapon);
-      const flight = this.opts.fast || event.type !== 'shot' ? 0 : melee ? MELEE_MS : flightFor(dtype);
+      const flight = this.opts.fast ? 0 : event.type === 'support' ? PROJECTILE_MS
+        : event.type !== 'shot' ? 0 : melee ? MELEE_MS : flightFor(dtype);
       this.shownAp.schedule(event, flight);
       // A module changes armour without a shot or a repair to say so; the state already holds the result.
       if (event.type === 'module') this.shownAp.refresh(this.flow.state.units);
+      // A unit that joins the battle is shown as it arrives.
+      if (event.type === 'launch') {
+        this.shownAp.adopt(this.flow.state.units);
+        this.arrived.add(event.spawned);
+      }
       if (this.opts.fast) continue;
       this.fx.onEvent(event);
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
@@ -117,12 +139,15 @@ export class BattleScreen {
     this.drawEnemies(ctx);
     this.fx.draw(ctx);
     this.drawMessage(ctx);
+    this.drawObjective(ctx);
     this.drawBottom(ctx);
+    if (this.flow.phase === 'talk') this.drawTalk(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
   }
 
-  /** A destroyed unit stays on screen until its destruction has played out. */
+  /** A destroyed unit stays on screen until its destruction has played out; a launched one is not there before its launch. */
   private hidden(unit: UnitState): boolean {
+    if (!this.arrived.has(unit.id)) return true;
     if (!unit.destroyed) return false;
     return this.opts.fast || this.fx.isGone(unit.id) || (this.flow.phase === 'result' && !this.fx.busy);
   }
@@ -157,27 +182,28 @@ export class BattleScreen {
 
   /** True when the battle's single enemy is a mech drawn full size from its parts, mirrored. */
   private duel(): boolean {
-    const units = this.flow.state.units;
-    return units.length === 2 && units[1].composed;
+    return this.places === 1 && this.flow.state.units[1].composed;
   }
 
-  private enemyRect(index: number): { x: number; y: number; w: number; h: number; sprite: Sprite } {
-    const enemies = this.flow.state.units.length - 1;
-    const enemy = this.flow.state.units[index + 1];
+  private enemyRect(enemy: UnitState): { x: number; y: number; w: number; h: number; sprite: Sprite } {
     // A duelling mech fills the mirrored pose box; this is the part of it the body occupies.
     if (this.duel()) return { x: DUEL_BODY.x, y: DUEL_BODY.y, w: DUEL_BODY.w, h: DUEL_BODY.h, sprite: { image: null as unknown as CanvasImageSource, w: 0, h: 0 } };
-    const anchor = (ENEMY_ANCHORS[enemies] ?? ENEMY_ANCHORS[3])[index] ?? ENEMY_ANCHORS[3][2];
+    const anchor = (ENEMY_ANCHORS[this.places] ?? ENEMY_ANCHORS[3])[enemy.slot ?? 0] ?? ENEMY_ANCHORS[3][2];
     const fallback = { w: 48, h: 48, label: enemy.name };
     const id = enemy.sprite ?? enemy.id;
     const sprite = enemy.paint && this.sprites.painted ? this.sprites.painted(id, enemy.paint, fallback) : this.sprites.get(id, fallback);
-    return { x: Math.round(anchor.x - sprite.w / 2), y: anchor.y - sprite.h, w: sprite.w, h: sprite.h, sprite };
+    // A machine too big for its place is moved in from the edges rather than cut off by them.
+    const x = Math.max(MENU_W - 20, Math.min(Math.round(anchor.x - sprite.w / 2), LOGICAL_W - sprite.w - 2));
+    const y = Math.max(16, Math.min(anchor.y, PANEL_Y - 8) - sprite.h);
+    return { x, y, w: sprite.w, h: sprite.h, sprite };
   }
 
   private drawEnemies(ctx: CanvasRenderingContext2D): void {
     const enemies = this.flow.state.units.slice(1);
+    const marked = this.flow.objective?.target;
     enemies.forEach((enemy, i) => {
       if (this.hidden(enemy)) return;
-      const r = this.enemyRect(i);
+      const r = this.enemyRect(enemy);
       // Flying units bob; anything that stands on the ground stays put.
       const flies = enemy.sprite === 'enemy-recon-drone' || enemy.sprite === 'enemy-gunship';
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
@@ -200,27 +226,40 @@ export class BattleScreen {
       drawMeter(ctx, r.x + 8, r.y + r.h + 2, r.w - 16, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
       // Under the armour line, how much balance the enemy has left.
       drawMeter(ctx, r.x + 8, r.y + r.h + 5, r.w - 16, 1, enemy.staggerMax - enemy.stagger, enemy.staggerMax, COLORS.heat);
-      const mark = this.fieldMark(enemy);
-      if (mark) drawText(ctx, mark.text, Math.round(r.x + r.w / 2), Math.max(15, r.y - 10), { align: 'center', size: 10, color: mark.color });
+      const mark = this.fieldMark(enemy) ?? (enemy.id === marked ? { text: STRINGS.objectives.mark, color: COLORS.heat } : null);
+      if (mark) drawText(ctx, mark.text, Math.round(r.x + r.w / 2), Math.max(26, r.y - 10), { align: 'center', size: 10, color: mark.color });
+      // The enemy the objective is about wears small amber corners all battle long.
+      if (enemy.id === marked) this.drawBrackets(ctx, r.x - 1, r.y - 1, r.w + 2, r.h + 2, COLORS.heat, 3);
       if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, r.x - 2, r.y - 2, r.w + 4, r.h + 4);
     });
   }
 
-  /** The one state worth flagging over an enemy's head: a charge about to land comes first. */
+  /** The one state worth flagging over an enemy's head: a bomb about to go off comes first, then a charge about to land. */
   private fieldMark(unit: UnitState): { text: string; color: string } | null {
     const T = STRINGS.tags;
     const blink = Math.floor(this.clock / 260) % 2 === 0;
+    if (unit.fuse !== undefined) return { text: T.fuse(unit.fuse), color: unit.fuse <= 1 && blink ? COLORS.danger : COLORS.heat };
     if (unit.charged.length > 0) return { text: T.charging, color: blink ? COLORS.danger : COLORS.heat };
     if (unit.staggered > 0) return { text: T.stagger, color: blink ? COLORS.heat : COLORS.text };
     if (unit.guarding) return { text: T.guard, color: COLORS.armor };
     if (unit.boosted) return { text: T.boost, color: COLORS.energy };
+    if (aegisFactor(this.flow.state, unit) < 1) return { text: T.covered, color: COLORS.energy };
     return null;
   }
 
-  /** Short labels for everything that is on a unit right now. */
+  /** Short labels for everything that is on a unit right now, what it does for its side first. */
   private tagsOf(unit: UnitState): { text: string; color: string }[] {
     const T = STRINGS.tags;
+    const state = this.flow.state;
+    const jammed = unit.side === 'player' ? jamOn(state, unit) : 0;
     return [
+      ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger }] : []),
+      ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy }] : []),
+      ...(unit.abilities.jam !== undefined ? [{ text: T.jammer, color: COLORS.heat }] : []),
+      ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor }] : []),
+      ...(unit.abilities.carrier ? [{ text: T.carrier, color: COLORS.heat }] : []),
+      ...(aegisFactor(state, unit) < 1 ? [{ text: T.covered, color: COLORS.energy }] : []),
+      ...(jammed > 0 ? [{ text: T.jammed(jammed), color: COLORS.heat }] : []),
       ...(unit.boosted ? [{ text: T.boost, color: COLORS.energy }] : []),
       ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor }] : []),
       ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat }] : []),
@@ -257,7 +296,7 @@ export class BattleScreen {
   /** Screen positions the effects need: where shots leave from and where they land. */
   private scene(): Scene {
     const isPlayer = (id: string) => id === 'player';
-    const enemyIndex = (id: string) => this.flow.state.units.findIndex((u) => u.id === id) - 1;
+    const rectOf = (id: string) => this.enemyRect(this.flow.state.units.find((u) => u.id === id)!);
     // A mech on tracks carries its upper body lower; every point above the legs comes down with it.
     const lowered = (unitIndex: number, part?: FrameSlot): number =>
       (part === 'legs' ? 0 : dropOf(unitIndex === 0 ? this.playerSprites() : mechSprites(this.sprites, this.flow.state.units[unitIndex].build)));
@@ -275,7 +314,7 @@ export class BattleScreen {
               : { x: BACK_MOUNT.x + 0.4 * w, y: BACK_MOUNT.y };
             return mirror(p);
           }
-          const r = this.enemyRect(enemyIndex(id));
+          const r = rectOf(id);
           return { x: r.x + 2, y: r.y + Math.round(r.h * 0.62) };
         }
         const w = this.playerSprites()[weapon]?.w ?? 40;
@@ -286,14 +325,14 @@ export class BattleScreen {
       hitPoint: (id, part) => {
         if (isPlayer(id)) return at(PLAYER_HIT[part], part);
         if (this.duel()) return mirror(PLAYER_HIT[part], part);
-        const r = this.enemyRect(enemyIndex(id));
+        const r = rectOf(id);
         const offset = { core: 0.5, legs: 0.25, arms: 0.5, head: 0.2 }[part];
         return { x: r.x + r.w / 2, y: r.y + r.h * offset };
       },
       centre: (id) => {
         if (isPlayer(id)) return at({ x: 78, y: 70 });
         if (this.duel()) return mirror({ x: 78, y: 70 });
-        const r = this.enemyRect(enemyIndex(id));
+        const r = rectOf(id);
         return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
       },
       facing: (id) => (isPlayer(id) ? 1 : -1),
@@ -308,9 +347,8 @@ export class BattleScreen {
     };
   }
 
-  private drawBrackets(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
-    const k = 6;
-    ctx.fillStyle = COLORS.accent;
+  private drawBrackets(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color = COLORS.accent, k = 6): void {
+    ctx.fillStyle = color;
     for (const [cx, cy, dx, dy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]) {
       ctx.fillRect(dx > 0 ? cx : cx - k, dy > 0 ? cy : cy - 1, k, 1);
       ctx.fillRect(dx > 0 ? cx : cx - 1, dy > 0 ? cy : cy - k, 1, k);
@@ -323,6 +361,37 @@ export class BattleScreen {
       drawText(ctx, this.flow.message, 5, 1, { color: this.flow.overheatWarning ? COLORS.danger : COLORS.text });
     }
     if (this.opts.label) drawText(ctx, this.opts.label, LOGICAL_W - 5, 1, { align: 'right', color: COLORS.dim });
+  }
+
+  /** What the battle asks for, under the message bar, with a bar where there is something to count. */
+  private drawObjective(ctx: CanvasRenderingContext2D): void {
+    const objective = this.flow.objective;
+    if (!objective) return;
+    const type = this.flow.state.objective.type;
+    const textW = Math.ceil(objective.text.length * 4.8);
+    const meterW = objective.meter ? 44 : 0;
+    ctx.fillStyle = 'rgba(8, 8, 20, 0.78)';
+    ctx.fillRect(0, 14, textW + meterW + 12, 12);
+    drawText(ctx, objective.text, 5, 14, { color: COLORS.heat });
+    if (!objective.meter) return;
+    const { value, max } = objective.meter;
+    // An asset running out and an enemy close to leaving both deserve the eye.
+    const low = value <= max / 3;
+    const color = type === 'protect' ? (low ? COLORS.danger : COLORS.armor) : type === 'driveOff' ? (low ? COLORS.accent : COLORS.danger) : COLORS.energy;
+    drawMeter(ctx, textW + 9, 18, meterW - 4, 4, value, max, color);
+  }
+
+  /** The line being said: the speaker's face, their name, and the words, over the field. */
+  private drawTalk(ctx: CanvasRenderingContext2D): void {
+    const line = this.flow.spoken;
+    if (!line) return;
+    const { x, y, w, h, portrait } = TALK;
+    drawPanel(ctx, x, y, w, h);
+    drawPortrait(ctx, this.sprites, line.portrait, x + 5, y + 5, portrait);
+    const left = x + portrait + 12;
+    drawText(ctx, line.who.toUpperCase(), left, y + 5, { color: COLORS.accent });
+    wrap(line.text, TALK_CHARS).slice(0, TALK_LINES).forEach((row, i) => drawText(ctx, row, left, y + 18 + i * LINE));
+    if (Math.floor(this.clock / 320) % 2 === 0) drawText(ctx, 'A', x + w - 10, y + h - 13, { color: COLORS.dim });
   }
 
   private drawBottom(ctx: CanvasRenderingContext2D): void {
@@ -399,7 +468,7 @@ export class BattleScreen {
       const ap = this.shownAp.ap(unit.id, slot);
       const dead = ap <= 0;
       const color = slot === highlight ? COLORS.accent : dead ? COLORS.dim : COLORS.text;
-      drawText(ctx, STRINGS.parts[slot], x, y, { color, strike: dead });
+      drawText(ctx, partName(unit, slot), x, y, { color, strike: dead });
       drawMeter(ctx, x + 30, y + 4, 74, 4, ap, part.maxAp, COLORS.armor);
       drawText(ctx, String(ap), x + 144, y, { color, align: 'right' });
       y += LINE;
@@ -423,13 +492,15 @@ export class BattleScreen {
   }
 
   private drawResult(ctx: CanvasRenderingContext2D): void {
+    const note = this.flow.resultNote;
     const w = 170;
-    const h = 60;
+    const h = note ? 72 : 60;
     const x = (LOGICAL_W - w) / 2;
-    const y = 22;
+    const y = 30;
     drawPanel(ctx, x, y, w, h);
     const won = this.flow.state.outcome === 'victory';
     drawText(ctx, this.flow.message, LOGICAL_W / 2, y + 8, { size: 32, align: 'center', color: won ? COLORS.accent : COLORS.danger });
-    drawText(ctx, this.opts.resultHint ?? STRINGS.hints.result, LOGICAL_W / 2, y + 42, { align: 'center', color: COLORS.dim });
+    if (note) drawText(ctx, note, LOGICAL_W / 2, y + 40, { align: 'center' });
+    drawText(ctx, this.opts.resultHint ?? STRINGS.hints.result, LOGICAL_W / 2, y + h - 18, { align: 'center', color: COLORS.dim });
   }
 }

@@ -2,19 +2,21 @@ import { arenaMission, checkChallenge, recordArenaWin } from '../core/arena';
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
-  availableMissions, campaignComplete, chosenFaction, completeMission, forCycle, introductionsDone, markRead, startNewCycle,
-  stockFor, unreadMessages,
-  type Faction, type Mission,
+  archiveMissions, availableMissions, campaignComplete, completeMission, dueScenes, forCycle, introductionsDone, markRead,
+  markSceneSeen, startNewCycle, stockFor, unreadMessages,
+  type Mission, type Scene,
 } from '../core/campaign';
 import { applySettlement, settle, type Settlement } from '../core/economy';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
+import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import type { BuildError, Catalog, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
 import { MESSAGES, MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
+import { SCENES } from '../content/scenes';
 import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
 import { STRINGS } from '../content/strings';
 import type { Sfx } from '../platform/audio';
@@ -23,13 +25,13 @@ import type { SaveFile } from '../platform/storage';
 import { ArenaScreen } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
-import { EndingScreen } from './endingScreen';
 import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
 import type { ListItem } from './menuList';
 import { MessagesScreen } from './messagesScreen';
 import { OptionsScreen } from './optionsScreen';
 import { PilotScreen } from './pilotScreen';
+import { SceneScreen } from './sceneScreen';
 import { SettlementScreen } from './settlementScreen';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
@@ -50,7 +52,7 @@ export interface Screen {
 }
 
 export type ScreenName =
-  | 'title' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'ending'
+  | 'title' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
   | 'arena' | 'pilot' | 'options';
 
 /** How much quicker a battle plays with the fast-battles option on. */
@@ -76,6 +78,8 @@ export interface AppDeps {
 /** A contract in progress: its battles in order, each starting where the last one left the mech. */
 class MissionHost implements Screen {
   private index = 0;
+  /** Rounds fought in the battles already won. */
+  private rounds = 0;
   private flow!: BattleFlow;
   private screen!: BattleScreen;
   /** The contract's outcome, once it has been booked. */
@@ -94,7 +98,8 @@ class MissionHost implements Screen {
       this.app.game!.build, this.mission, this.index, ALL_ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
       { enemyScale: this.enemyScale(), mods: { aim, evasion, energy, cooling, repairs, armour } },
     );
-    this.flow = new BattleFlow(state, catalog);
+    // Tests play without the talk: it is words to read, and they have nobody reading.
+    this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast });
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: this.app.game!.paint,
       background: this.mission.battles[this.index].background,
@@ -121,7 +126,9 @@ class MissionHost implements Screen {
     const { outcome } = this.flow.state;
     if (this.settlement || outcome === 'ongoing' || (outcome === 'victory' && this.hasNext())) return;
     const { payBonus, costDiscount } = this.app.perks();
-    this.settlement = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
+    const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
+    const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
+    this.settlement = rankSettlement(bill, performance);
     this.app.bookSettlement(this.settlement, this.mission);
   }
 
@@ -141,6 +148,7 @@ class MissionHost implements Screen {
     if (action !== 'confirm') return;
     if (this.settlement) this.app.showSettlement(this.settlement, this.mission);
     else {
+      this.rounds += this.flow.state.round;
       this.index += 1;
       this.begin();
     }
@@ -159,6 +167,7 @@ class MissionHost implements Screen {
         phase: flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
+        objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
       },
     };
   }
@@ -275,7 +284,7 @@ export class App {
   startCycle(): void {
     if (!this.canStartCycle()) return;
     this.commit(startNewCycle(this.game!, MISSIONS));
-    this.openHub(false);
+    this.openHub();
   }
 
   /** The arena fight against the opponent of this rank, if the pilot may challenge them. */
@@ -293,7 +302,13 @@ export class App {
   /** Leaves a briefing for the list it was opened from. */
   closeBriefing(mission: Mission): void {
     if (mission.arenaRank !== undefined) this.go('arena');
-    else this.openHub(true);
+    else this.openHub(mission.replay ? 'archive' : 'contracts');
+  }
+
+  /** The story contracts already done, as they can be played again: for less pay, and without changing the story. */
+  archive(): Mission[] {
+    const game = this.game;
+    return game ? archiveMissions(game, MISSIONS.map((m) => forCycle(m, game.cycle))) : [];
   }
 
   /** What the shop sells at this point in the campaign. */
@@ -309,19 +324,21 @@ export class App {
     if (this.game && !this.game.read.includes(id)) this.commit(markRead(this.game, id));
   }
 
-  private offered(missionId: string): Mission | undefined {
+  private offered(missionId: string, replay: boolean): Mission | undefined {
+    if (replay) return this.archive().find((m) => m.id === missionId);
     const arena = /^arena-(\d+)$/.exec(missionId);
     return arena ? this.arenaFight(Number(arena[1])) : this.missions().find((m) => m.id === missionId);
   }
 
-  openBriefing(missionId: string): void {
-    const mission = this.offered(missionId);
+  /** Opens a contract's briefing; `replay` for one from the archive. */
+  openBriefing(missionId: string, replay = false): void {
+    const mission = this.offered(missionId, replay);
     if (mission) this.show('briefing', new BriefingScreen(this, mission));
   }
 
   /** Starts a contract, unless the build may not deploy or the contract is not on offer. */
-  startMission(missionId: string): void {
-    const mission = this.offered(missionId);
+  startMission(missionId: string, replay = false): void {
+    const mission = this.offered(missionId, replay);
     if (!mission || this.buildErrors().length > 0) return;
     this.seed = (this.seed + 101) % 2147483647;
     this.show('battle', new MissionHost(this, mission, this.seed));
@@ -330,7 +347,7 @@ export class App {
   go(name: ScreenName): void {
     switch (name) {
       case 'title': return this.show(name, new TitleScreen(this));
-      case 'hub': return this.openHub(false);
+      case 'hub': return this.openHub();
       case 'garage': return this.show(name, new GarageScreen(this));
       case 'shop': return this.show(name, new ShopScreen(this));
       case 'messages': return this.show(name, new MessagesScreen(this));
@@ -342,18 +359,19 @@ export class App {
   }
 
   /**
-   * Opens the hub, optionally straight on the contract list. Two things are checked on the way in:
-   * a pilot without any weapon is issued one, and an ending that was earned but never seen is shown first.
+   * Opens the hub, optionally straight on one of its lists. Two things are checked on the way in:
+   * a pilot without any weapon is issued one, and a scene that is due (the opening of an act, an
+   * ending that was earned but never seen) is shown first.
    */
-  openHub(onContracts: boolean): void {
+  openHub(list?: 'contracts' | 'archive'): void {
     const game = this.game;
     if (game) {
       const armed = ensureArmed(game, this.deps.catalog, STARTER_BUILD.rightHand!);
       if (armed !== game) this.commit(armed);
-      const faction = chosenFaction(armed, MISSIONS);
-      if (campaignComplete(armed, MISSIONS) && !armed.endingSeen && faction) return this.showEnding(faction);
+      const scene = dueScenes(armed, SCENES, MISSIONS)[0];
+      if (scene) return this.show(scene.ending ? 'ending' : 'scene', new SceneScreen(this, scene));
     }
-    this.show('hub', new HubScreen(this, onContracts));
+    this.show('hub', new HubScreen(this, list));
   }
 
   /**
@@ -365,7 +383,11 @@ export class App {
     next = addXp(next, xpForContract(mission.reward, settlement.won));
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
-      else if (MISSIONS.some((m) => m.id === mission.id)) next = completeMission(next, mission.id, MISSIONS);
+      else if (MISSIONS.some((m) => m.id === mission.id)) {
+        // Winning a contract again from the archive completes nothing new; its rank can still improve.
+        next = completeMission(next, mission.id, MISSIONS);
+        if (mission.phase !== 'patrol' && settlement.rank) next = recordRank(next, mission.id, settlement.rank);
+      }
     }
     this.commit(next);
   }
@@ -375,14 +397,13 @@ export class App {
     this.show('settlement', new SettlementScreen(this, settlement, mission));
   }
 
-  showEnding(faction: Faction): void {
-    this.show('ending', new EndingScreen(this, faction));
-  }
-
-  /** Marks the ending as seen and returns to the hub. */
-  finishEnding(): void {
-    if (this.game && !this.game.endingSeen) this.commit({ ...this.game, endingSeen: true });
-    this.openHub(false);
+  /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. */
+  finishScene(scene: Scene): void {
+    if (this.game) {
+      const next = markSceneSeen(this.game, scene);
+      if (next !== this.game) this.commit(next);
+    }
+    this.openHub();
   }
 
   update(dtMs: number): void { this.current.update(dtMs); }
@@ -405,6 +426,8 @@ export class App {
       settings: this.settings,
       paint: game?.paint ?? null,
       loadouts: game?.loadouts.map((build) => build !== null) ?? null,
+      ranks: game?.ranks ?? null,
+      scenes: game?.scenes ?? null,
       saveFailed: this.saveFailed,
       ...this.current.view(),
     };

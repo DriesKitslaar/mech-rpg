@@ -1,15 +1,38 @@
 import { chooseAutoPlayerAction, chooseEnemyAction } from '../core/ai';
 import {
-  activeUnit, applyAction, checkAction, previewShot, HEAT_LIMIT,
+  activeUnit, applyAction, checkAction, objectiveTarget, previewShot, HEAT_LIMIT, ROUND_LIMIT,
   type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState,
 } from '../core/battle';
 import { moduleOf, weaponIn } from '../core/build';
+import type { TalkLine } from '../core/campaign';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog, type FrameSlot, type WeaponSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 
 export type BattlePhase =
-  | 'action' | 'weapon' | 'target' | 'repairPart' | 'moduleTarget' | 'confirmRetreat' | 'animating' | 'result';
+  | 'action' | 'weapon' | 'target' | 'repairPart' | 'moduleTarget' | 'confirmRetreat' | 'animating' | 'talk' | 'result';
+
+/** A line being said over the battle. */
+export interface Spoken { who: string; portrait?: string; text: string }
+
+/** What the battle asks for, as the screen shows it: a line, and a bar where there is something to count. */
+export interface ObjectiveView {
+  text: string;
+  meter?: { value: number; max: number };
+  /** The enemy the objective is about, if it names one. */
+  target?: string;
+}
+
+export interface FlowOptions {
+  /** Lines said at the start, at the start of a round and after a win. */
+  talk?: TalkLine[];
+  /** Nothing is said at all, a boss's own lines included. Tests play this way. */
+  quiet?: boolean;
+}
+
+const O = STRINGS.objectives;
+/** What a unit calls one of its parts. */
+export const partName = (unit: UnitState, slot: FrameSlot): string => unit.partNames?.[slot] ?? STRINGS.parts[slot];
 /** `note` is a second line: what a weapon costs to fire, or why it cannot be fired. */
 export interface MenuItem { id: string; label: string; enabled: boolean; note?: string }
 export interface MenuView { items: MenuItem[]; cursor: number }
@@ -33,14 +56,91 @@ export class BattleFlow {
   message = '';
   /** The event behind the current message, for the screen to animate. */
   lastEvent: BattleEvent | null = null;
+  /** The line being said, while the phase is `talk`. */
+  spoken: Spoken | null = null;
+  /** Why the battle ended the way it did, when that is not plain to see. */
+  resultNote = '';
 
   private shown = 0;
   private weapon: WeaponSlot | null = null;
   /** Set by Auto Turn: the automatic player acts until this turn is over. */
   private autoTurn = false;
+  private waiting: Spoken[] = [];
+  private afterTalk: () => void = () => {};
+  /** The rounds whose lines have been said. */
+  private roundsSaid = new Set<number>();
 
-  constructor(state: BattleState, private catalog: Catalog) {
+  constructor(state: BattleState, private catalog: Catalog, private opts: FlowOptions = {}) {
     this.state = state;
+    this.say(this.lines('start'), () => { this.phase = 'animating'; });
+  }
+
+  private lines(at: TalkLine['at']): Spoken[] {
+    return (this.opts.talk ?? []).filter((line) => line.at === at).map(({ who, portrait, text }) => ({ who, text, ...(portrait ? { portrait } : {}) }));
+  }
+
+  /** Says the lines one confirm at a time, then carries on with `then`. With nothing to say, or when quiet, at once. */
+  private say(lines: Spoken[], then: () => void): void {
+    if (lines.length === 0 || this.opts.quiet) return then();
+    this.waiting = lines.slice(1);
+    this.spoken = lines[0];
+    this.afterTalk = then;
+    this.phase = 'talk';
+    this.menu = { items: [], cursor: 0 };
+  }
+
+  private nextLine(): void {
+    const next = this.waiting.shift();
+    if (next) { this.spoken = next; return; }
+    this.spoken = null;
+    this.afterTalk();
+  }
+
+  /** What a boss says as the phase an event announces begins, if it says anything. */
+  private phaseLine(event: BattleEvent): Spoken | null {
+    if (event.type !== 'phase') return null;
+    const unit = this.state.units.find((u) => u.id === event.unit);
+    const text = unit?.phases[event.phase - 1]?.line;
+    return unit && text ? { who: unit.name, text, ...(unit.portrait ? { portrait: unit.portrait } : {}) } : null;
+  }
+
+  /** The objective as the screen shows it; null for a plain fight to the end. */
+  get objective(): ObjectiveView | null {
+    const { objective, asset, round } = this.state;
+    const target = objectiveTarget(this.state);
+    switch (objective.type) {
+      case 'destroy': return null;
+      case 'survive': return { text: O.survive(Math.min(round, objective.rounds), objective.rounds), meter: { value: Math.min(round, objective.rounds), max: objective.rounds } };
+      case 'protect': return asset ? { text: O.protect(asset.name, asset.hp, asset.maxHp), meter: { value: asset.hp, max: asset.maxHp } } : null;
+      case 'leader': return target ? { text: O.leader(target.name), target: target.id } : null;
+      case 'disable': return target ? { text: O.disable(target.name), target: target.id } : null;
+      case 'driveOff': {
+        if (!target) return null;
+        const core = target.parts.core!;
+        const floor = objective.share * core.maxAp;
+        return { text: O.driveOff(target.name), target: target.id, meter: { value: Math.max(0, core.ap - floor), max: core.maxAp - floor } };
+      }
+    }
+  }
+
+  /** Why the battle ended as it did, where the objective decided it. */
+  private noteFor(): string {
+    const { objective, outcome, asset, round } = this.state;
+    const target = objectiveTarget(this.state);
+    if (outcome === 'victory') {
+      switch (objective.type) {
+        case 'survive': return O.won.survive;
+        case 'protect': return O.won.protect(objective.name);
+        case 'leader': return O.won.leader;
+        case 'disable': return O.won.disable;
+        case 'driveOff': return target ? O.won.driveOff(target.name) : '';
+        case 'destroy': return '';
+      }
+    }
+    if (this.player.destroyed) return '';
+    if (asset && asset.hp <= 0) return O.lost.asset(asset.name);
+    if (objective.type === 'disable' && target?.destroyed) return O.lost.target;
+    return round >= ROUND_LIMIT ? O.lost.time : '';
   }
 
   /** How many of the state's events have been turned into messages so far. */
@@ -90,6 +190,10 @@ export class BattleFlow {
 
   private describe(event: BattleEvent): string | null {
     const name = (id: string) => this.unitName(id);
+    const part = (id: string, slot: FrameSlot) => {
+      const unit = this.state.units.find((u) => u.id === id);
+      return unit ? partName(unit, slot) : STRINGS.parts[slot];
+    };
     switch (event.type) {
       case 'shot': {
         const attacker = this.state.units.find((u) => u.id === event.unit)!;
@@ -98,10 +202,10 @@ export class BattleFlow {
         // A hit the barrier took whole shows what the barrier lost instead of armour.
         return event.damage === 0 && event.absorbed
           ? STRINGS.barrierHit(weapon, name(event.target), event.absorbed)
-          : STRINGS.hit(weapon, name(event.target), STRINGS.parts[event.appliedTo], event.damage);
+          : STRINGS.hit(weapon, name(event.target), part(event.target, event.appliedTo), event.damage);
       }
       case 'partDestroyed':
-        return event.part === 'core' ? null : STRINGS.partDestroyed(name(event.unit), STRINGS.parts[event.part]);
+        return event.part === 'core' ? null : STRINGS.partDestroyed(name(event.unit), part(event.unit, event.part));
       case 'unitDestroyed': return STRINGS.unitDestroyed(name(event.unit));
       case 'boost': return STRINGS.boost(name(event.unit));
       case 'guard': return STRINGS.guard(name(event.unit));
@@ -114,10 +218,10 @@ export class BattleFlow {
       case 'module':
         return STRINGS.module[event.effect](name(event.unit), event.amount, event.target ? name(event.target) : '');
       case 'cool': return STRINGS.cool(name(event.unit), event.amount);
-      case 'repair': return STRINGS.repair(name(event.unit), STRINGS.parts[event.part], event.amount);
+      case 'repair': return STRINGS.repair(name(event.unit), part(event.unit, event.part), event.amount);
       case 'overheat': return event.unit === 'player' ? STRINGS.overheatPlayer : STRINGS.overheat(name(event.unit));
       case 'turnSkipped': return STRINGS.turnSkipped(name(event.unit));
-      case 'mend': return STRINGS.mend(name(event.unit), name(event.target), STRINGS.parts[event.part], event.amount);
+      case 'mend': return STRINGS.mend(name(event.unit), name(event.target), part(event.target, event.part), event.amount);
       case 'fuse': return STRINGS.fuse(name(event.unit), event.left);
       case 'blast': return STRINGS.blast(name(event.unit), name(event.target), event.damage);
       case 'launch': return STRINGS.launch(name(event.unit), name(event.spawned));
@@ -139,16 +243,22 @@ export class BattleFlow {
       if (text !== null) {
         this.message = text;
         this.lastEvent = event;
+        // A boss has something to say as it changes; the battle waits for it.
+        const line = this.phaseLine(event);
+        if (line) this.say([line], () => { this.phase = 'animating'; });
         return;
       }
     }
     this.lastEvent = null;
     if (this.state.outcome !== 'ongoing') {
       this.autoTurn = false;
-      this.phase = 'result';
-      this.menu = { items: [], cursor: 0 };
-      this.message = this.state.outcome === 'victory' ? STRINGS.victory : STRINGS.defeat;
-      return;
+      const result = (): void => {
+        this.phase = 'result';
+        this.menu = { items: [], cursor: 0 };
+        this.message = this.state.outcome === 'victory' ? STRINGS.victory : STRINGS.defeat;
+        this.resultNote = this.noteFor();
+      };
+      return this.say(this.state.outcome === 'victory' ? this.lines('win') : [], result);
     }
     if (activeUnit(this.state).side === 'enemy') {
       this.autoTurn = false;
@@ -162,7 +272,11 @@ export class BattleFlow {
       this.state = applyAction(this.state, action, this.catalog);
       return;
     }
-    this.openActionMenu();
+    // The player's turn: whatever is said at the start of this round is said first, once.
+    const { round } = this.state;
+    const lines = this.roundsSaid.has(round) ? [] : this.lines(round);
+    this.roundsSaid.add(round);
+    this.say(lines, () => this.openActionMenu());
   }
 
   private openActionMenu(): void {
@@ -222,7 +336,7 @@ export class BattleFlow {
   private openTarget(targetId: string): void {
     const target = this.state.units.find((u) => u.id === targetId)!;
     const items = FRAME_SLOTS.filter((part) => target.parts[part])
-      .map((part) => ({ id: part, label: STRINGS.parts[part], enabled: true }));
+      .map((part) => ({ id: part, label: partName(target, part), enabled: true }));
     this.phase = 'target';
     this.menu = { items, cursor: 0 };
     this.targetId = targetId;
@@ -283,6 +397,10 @@ export class BattleFlow {
 
   onInput(input: InputAction): void {
     if (this.phase === 'animating' || this.phase === 'result') return;
+    if (this.phase === 'talk') {
+      if (input === 'confirm') this.nextLine();
+      return;
+    }
     if (input === 'up' || input === 'down') {
       this.moveCursor(input === 'up' ? -1 : 1);
       if (this.phase === 'target') this.syncTarget();

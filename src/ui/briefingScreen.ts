@@ -5,7 +5,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawText, wrap } from './widgets';
+import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
 
 const B = STRINGS.briefing;
 
@@ -15,6 +15,30 @@ export function hostiles(mission: Mission): string[] {
   for (const battle of mission.battles) for (const id of battle.enemies) counts.set(id, (counts.get(id) ?? 0) + 1);
   return [...counts].map(([id, n]) => `${ALL_ENEMIES[id]?.name ?? id}${n > 1 ? ` x${n}` : ''}`);
 }
+
+const BO = STRINGS.objectives.brief;
+
+/**
+ * What a contract asks for beyond destroying everything, one line per battle that asks it, numbered
+ * when the contract has several battles; and who, if anyone, fires in support.
+ */
+export function objectiveLines(mission: Mission): string[] {
+  const numbered = mission.battles.length > 1;
+  return mission.battles.flatMap((battle, i) => {
+    const o = battle.objective;
+    const name = o && 'target' in o ? (ALL_ENEMIES[battle.enemies[o.target]]?.name ?? '') : '';
+    const asked = !o || o.type === 'destroy' ? []
+      : [o.type === 'survive' ? BO.survive(o.rounds) : o.type === 'protect' ? BO.protect(o.name)
+        : o.type === 'leader' ? BO.leader(name) : o.type === 'disable' ? BO.disable(name) : BO.driveOff(name)];
+    const lines = [...asked, ...(battle.support ? [B.support(battle.support.name)] : [])];
+    return lines.map((text) => (numbered ? `${i + 1}: ${text}` : text));
+  });
+}
+
+/** Rows of briefing text that fit in the body, given how many lines of objectives sit under them. */
+export const BRIEFING_ROWS = 10;
+export const briefingRows = (mission: Mission): number => BRIEFING_ROWS - objectiveLines(mission).length;
+export const BRIEFING_CHARS = charsFor(LOGICAL_W - 24);
 
 /** A contract's briefing: who is asking, what they say, what to expect, and whether to take it. */
 export class BriefingScreen implements Screen {
@@ -32,13 +56,16 @@ export class BriefingScreen implements Screen {
     else if (action === 'down') this.list.move(1);
     else if (action === 'cancel') this.app.closeBriefing(this.mission);
     else if (action === 'confirm') {
-      if (this.list.selected?.id === 'accept') this.app.startMission(this.mission.id);
+      if (this.list.selected?.id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay);
       else this.app.closeBriefing(this.mission); // back to the list the briefing was opened from
     }
   }
 
   view(): ScreenView {
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, briefing: { mission: this.mission.id } };
+    return {
+      menu: { items: this.list.items, cursor: this.list.cursor },
+      briefing: { mission: this.mission.id, replay: !!this.mission.replay, reward: this.mission.reward, objectives: objectiveLines(this.mission) },
+    };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -53,33 +80,32 @@ export class BriefingScreen implements Screen {
 
     // Header: portrait (or a plain terminal mark for the dispatcher), title and client.
     drawPanel(ctx, 4, 4, LOGICAL_W - 8, 64);
-    if (mission.portrait) {
-      const p = sprites.get(mission.portrait, { w: 56, h: 56, label: '' });
-      ctx.drawImage(p.image, 8, 8, 56, 56);
-    } else {
-      ctx.fillStyle = COLORS.empty;
-      ctx.fillRect(8, 8, 56, 56);
-      for (let i = 0; i < 5; i++) { ctx.fillStyle = i % 2 ? COLORS.energy : COLORS.accent; ctx.fillRect(16, 18 + i * 8, 40 - i * 5, 3); }
-    }
+    drawPortrait(ctx, sprites, mission.portrait, 8, 8, 56);
     drawText(ctx, mission.title.toUpperCase(), 72, 8, { size: 16, color: COLORS.accent });
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
+    const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
     const tag = mission.arenaRank !== undefined ? STRINGS.arena.fight
+      : mission.replay ? B.replay
       : mission.id.startsWith('open-') ? B.open
-      : mission.phase === 'choice' ? B.exclusive : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable : '';
+      : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict
+      : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable : '';
     wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
-      drawText(ctx, line, 72, 40 + i * 11, { color: mission.phase === 'choice' ? COLORS.danger : COLORS.dim }));
+      drawText(ctx, line, 72, 40 + i * 11, { color: decisive ? COLORS.danger : COLORS.dim }));
 
-    // Body.
+    // Body: what the client says, and under it what the contract asks for when that is more than a fight.
     drawPanel(ctx, 4, 72, LOGICAL_W - 8, 122);
+    const objectives = objectiveLines(mission);
+    const lastRow = 78 + (briefingRows(mission) - 1) * LINE;
     let y = 78;
     for (const paragraph of mission.briefing) {
-      for (const line of wrap(paragraph, charsFor(LOGICAL_W - 24))) {
-        if (y > 180) break;
+      for (const line of wrap(paragraph, BRIEFING_CHARS)) {
+        if (y > lastRow) break;
         drawText(ctx, line, 12, y);
         y += LINE;
       }
       y += 4;
     }
+    objectives.forEach((line, i) => drawText(ctx, line, 12, 191 - (objectives.length - i) * LINE, { color: COLORS.heat }));
 
     // Footer: what to expect, what it pays, and the choice.
     drawPanel(ctx, 4, 198, LOGICAL_W - 8, 68);

@@ -26,7 +26,16 @@ export class ApDisplay {
       this.pending.push({ due: this.now + delayMs, unit: event.target, part: event.appliedTo, delta: -event.damage });
     } else if (event.type === 'repair') {
       this.pending.push({ due: this.now + delayMs, unit: event.unit, part: event.part, delta: event.amount });
+    } else if (event.type === 'mend') {
+      this.pending.push({ due: this.now + delayMs, unit: event.target, part: event.part, delta: event.amount });
+    } else if (event.type === 'blast' || event.type === 'support') {
+      this.pending.push({ due: this.now + delayMs, unit: event.target, part: 'core', delta: -event.damage });
     }
+  }
+
+  /** Starts showing units that were not there before: the ones a carrier launched. */
+  adopt(units: UnitState[]): void {
+    for (const unit of units) if (!this.shown.has(unit.id)) this.shown.set(unit.id, structuredClone(unit.parts));
   }
 
   update(dtMs: number): void {
