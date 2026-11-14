@@ -337,3 +337,14 @@ describe('after a defeat', () => {
     expect(snap(app).settlement!.tip).not.toBeNull();
   });
 });
+
+describe('the arena before it opens', () => {
+  test('says what opens it, and stops saying so once it is open', () => {
+    const { app } = inHub(quiet());
+    expect(snap(app).menu.items.find((i) => i.id === 'arena')).toMatchObject({ enabled: false, note: 'after Hot Barrel' });
+    const open = inHub(quiet(done('intro-1', 'intro-2'))).app;
+    const arena = snap(open).menu.items.find((i) => i.id === 'arena')!;
+    expect(arena.enabled).toBe(true);
+    expect(arena.note).toBeUndefined();
+  });
+});

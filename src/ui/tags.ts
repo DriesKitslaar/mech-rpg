@@ -25,3 +25,34 @@ export function fitTags<T extends { text: string; rank: number }>(tags: T[], roo
   }
   return kept;
 }
+
+/** A letter of ordinary text is this wide, and the bar's text starts and ends this far from its edges. */
+const LETTER = 4.8;
+const EDGE = 5;
+
+/**
+ * Whether the label at the right end of the message bar (which battle of the contract this is) can be
+ * shown beside the message: a message that needs the room has it, and the label waits.
+ */
+export function labelFits(message: string, label: string, width = 310): boolean {
+  return EDGE + message.length * LETTER + LETTER <= width - EDGE - label.length * LETTER;
+}
+
+export interface Box { x: number; y: number; w: number; h: number }
+
+/**
+ * Where the small mark over a unit on the field is written (a fuse, a charge, the contract's
+ * target): centred just above it, but not on the bars under another unit that stands higher up.
+ * Where it would be, it is written on the unit itself.
+ */
+export function markPosition(unit: Box, others: Box[], textWidth: number): { x: number; y: number; inside: boolean } {
+  const x = Math.round(unit.x + unit.w / 2);
+  const y = Math.max(26, unit.y - 10);
+  const left = x - textWidth / 2;
+  const right = x + textWidth / 2;
+  // Under every unit: its armour line and its balance line, a few pixels below its feet.
+  const onBars = others.some((o) =>
+    left < o.x + o.w - 8 && right > o.x + 8 && y < o.y + o.h + 7 && y + 9 > o.y + o.h + 1);
+  return onBars ? { x, y: unit.y + 2, inside: true } : { x, y, inside: false };
+}
+

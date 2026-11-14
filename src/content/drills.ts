@@ -28,7 +28,7 @@ export const DRILLS: Drill[] = [
       enemies: ['light-mech'], background: HALL, objective: { type: 'disable', target: 0 },
       talk: [
         sim('start', 'Fire, pick a weapon, then pick a part with up and down. Legs first: it is quick, and without them it cannot dodge.'),
-        sim(2, 'This fire control aims at limbs as well as it aims at a core. Most do not: watch the hit chance change as you move down the list.'),
+        sim(2, 'This fire control aims at limbs as well as it aims at a core: the hit chance is the same all the way down the list. With most, it drops.'),
       ],
     },
   },

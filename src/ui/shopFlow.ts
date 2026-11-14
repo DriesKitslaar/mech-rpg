@@ -22,6 +22,8 @@ export class ShopFlow {
   mode: 'buy' | 'sell' = 'buy';
   list = new MenuList();
   message = '';
+  /** True while the message on screen is about a purchase: the shop then adds that it still has to be fitted. */
+  justBought = false;
 
   /** `stock` is what is for sale now; `everything` is every part that exists, so anything owned can be sold. */
   constructor(game: GameState, private catalog: Catalog, private stock: Part[], private everything: Part[] = stock) {
@@ -69,6 +71,7 @@ export class ShopFlow {
   }
 
   onInput(action: InputAction): 'stay' | 'changed' | 'exit' {
+    this.justBought = false;
     switch (action) {
       case 'cancel': return 'exit';
       case 'up': this.list.move(-1); this.message = ''; return 'stay';
@@ -92,6 +95,7 @@ export class ShopFlow {
           if (checkBuy(this.game, part.id, this.catalog) !== null) { this.message = S.cannotAfford; return 'stay'; }
           this.game = buy(this.game, part.id, this.catalog);
           this.message = S.bought(part.name);
+          this.justBought = true;
         } else {
           const refusal = checkSell(this.game, part.id, this.catalog);
           if (refusal !== null) { this.message = refusal === 'lastWeapon' ? S.needWeapon : S.inUse; return 'stay'; }

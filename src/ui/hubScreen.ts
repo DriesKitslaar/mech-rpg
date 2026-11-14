@@ -16,6 +16,9 @@ const ROWS = 10;
 export const ARCHIVE = 'archive';
 
 /** The place between contracts: shows the pilot's standing and leads to everything else. */
+/** The title of the contract that ends the introductions, after which the arena and open contracts are offered. */
+const lastIntroduction = (): string => MISSIONS.filter((m) => m.phase === 'intro').at(-1)?.title ?? '';
+
 export class HubScreen implements Screen {
   private main: MenuList;
   /** The contract list, the archive or the new-cycle question, while one is open. */
@@ -33,7 +36,8 @@ export class HubScreen implements Screen {
     const sideWork = app.sideWorkOpen();
     this.main = new MenuList([
       { id: 'contracts', label: H.contractsItem, enabled: errors.length === 0, note: errors[0] ? STRINGS.buildErrors[errors[0]] : undefined },
-      { id: 'arena', label: H.arena, enabled: sideWork && errors.length === 0, note: sideWork ? undefined : H.locked },
+      // Until the arena opens, the entry says what opens it: the last of the introductory contracts.
+      { id: 'arena', label: H.arena, enabled: sideWork && errors.length === 0, note: sideWork ? undefined : H.opensAfter(lastIntroduction()) },
       { id: 'training', label: H.training, enabled: true },
       { id: 'garage', label: H.garage, enabled: true },
       { id: 'shop', label: H.shop, enabled: true },

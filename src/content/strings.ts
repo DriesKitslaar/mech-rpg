@@ -110,9 +110,9 @@ export const STRINGS = {
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
     messages: 'Messages', database: 'Database', training: 'Training', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
-    credits: 'CREDITS', battlesWon: 'BATTLES WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
+    credits: 'CREDITS', battlesWon: 'CONTRACTS WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
-    locked: 'Locked', campaignDone: 'The war is over. The work is not.',
+    locked: 'Locked', opensAfter: (title: string) => `after ${title}`, campaignDone: 'The war is over. The work is not.',
     cycleLabel: (n: number) => `CYCLE ${n + 1}`,
     cycleQuestion: ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.', 'Enemies get tougher and', 'pay improves.'],
     no: 'No', yes: 'Yes',
@@ -256,7 +256,7 @@ export const STRINGS = {
     sold: (name: string, price: number) => `Sold ${name} +${price}`,
     cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
     lastWeapon: 'Last weapon', needWeapon: 'You need at least one weapon',
-    hint: 'L1/R1 category   LEFT/RIGHT buy or sell   B back',
+    hint: 'A trade  L1/R1 category  LEFT/RIGHT buy/sell list  B back', fitHint: 'Fit it in the Garage.',
   },
   partInfo: {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',

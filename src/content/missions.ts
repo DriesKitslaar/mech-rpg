@@ -96,7 +96,7 @@ export const MISSIONS: Mission[] = [
     briefing: [
       'The ore train out of Seam Nine is behind schedule, and someone has sent machines to make it later.',
       'Keep them off the train. Every one of them left standing takes a bite out of it each round.',
-      'The crawlers are walking charges, and those are meant for you. Kill them or brace before the fuse runs out.',
+      'The crawlers are walking charges, and those are meant for you. Kill them, or Guard before the fuse runs out.',
     ],
     debrief: 'The train rolls. Brenn sends a bonus and an invoice for one dented wagon. They cancel out.',
     battles: [
@@ -140,12 +140,12 @@ export const MISSIONS: Mission[] = [
     briefing: [
       'I will not lie to you: we cannot pay what the others pay.',
       'Lumen is cutting power to the lower levels to starve us out. Their relay is guarded by drones and one of their white machines.',
-      'It is fast. Take its legs first, or you will be shooting at air.',
+      'It is fast, and half of what you fire will miss. Keep firing at its core, and Boost so that it misses you too.',
     ],
     debrief: 'The lower levels have light again. Tamsin sends what she promised, to the credit.',
     battles: [
       battle(['recon-drone', 'recon-drone', 'recon-drone'], PLAZA),
-      battle(['light-mech'], PLAZA, { talk: [tamsin('start', 'There it is. Legs first, pilot. Once it cannot dance, it is only a machine.')] }),
+      battle(['light-mech'], PLAZA, { talk: [tamsin('start', 'There it is. It dances, pilot. Dance back: Boost, and keep your guns on its core.')] }),
     ],
   },
   {
@@ -153,7 +153,7 @@ export const MISSIONS: Mission[] = [
     briefing: [
       'Hadron has found the dock where we move people out of the flooded levels. They are sending machines to close it.',
       'You do not have to win. You have to still be standing when the last boat is away.',
-      'Their carrier keeps launching drones. Shoot what you like, but do not chase: hold, brace, last.',
+      'Their carrier keeps launching drones. Shoot what you like, but do not chase: Boost, Guard, last.',
     ],
     debrief: 'The last boat clears the sluice. Tamsin counts heads twice and gets the same number both times.',
     battles: [
@@ -285,12 +285,12 @@ export const MISSIONS: Mission[] = [
     briefing: [
       'Hadron has armed a mining machine and pointed it at our eastern campus. It is roughly the size of the campus.',
       'It is called the Strip-Miner. Its hull laughs at bullets. Energy weapons are indicated.',
-      'It cannot dodge and it cannot be reasoned with. Remove it before it arrives.',
+      'It barely moves and it cannot be reasoned with. Remove it before it arrives.',
     ],
     debrief: 'The Strip-Miner stops forty metres short of the campus fence. Varga calls the margin adequate.',
     battles: [
       battle(['bulldozer', 'gun-turret'], FOUNDRY, {
-        talk: [dispatch('start', 'Bulldozer. Tracks and a riot shield. It cannot dodge, so nothing you fire at it is wasted.')],
+        talk: [dispatch('start', 'Bulldozer. Tracks and a riot shield. It cannot boost, so little you fire at it is wasted.')],
       }),
       battle(['strip-miner'], FOUNDRY, {
         par: 9,
@@ -307,7 +307,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Rook limps home laughing. Varga files him under "unresolved" and moves on.',
     battles: [
-      battle(['bomb-crawler', 'tank', 'bomb-crawler'], UNDER, { talk: [dispatch('start', 'Two crawlers, two fuses. Kill one, brace for the other.')] }),
+      battle(['bomb-crawler', 'tank', 'bomb-crawler'], UNDER, { talk: [dispatch('start', 'Two crawlers, two fuses. Kill one, Guard against the other.')] }),
       battle(['rook'], UNDER, {
         par: 8,
         talk: [
