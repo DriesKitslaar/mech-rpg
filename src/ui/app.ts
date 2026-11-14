@@ -538,6 +538,9 @@ export class App {
     const h = 28;
     const x = Math.round((LOGICAL_W - w) / 2);
     const y = Math.round(-h + (h + 16) * (this.deps.fast ? 1 : Math.max(0, slide)));
+    // Nothing of the screen underneath shows through.
+    ctx.fillStyle = '#0c0c18';
+    ctx.fillRect(x, y, w, h);
     drawPanel(ctx, x, y, w, h);
     drawMedal(ctx, x + 6, y + 9, medal.tier, true);
     drawText(ctx, STRINGS.medals.earned, x + 20, y + 2, { color: COLORS.dim, size: 10 });

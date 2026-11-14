@@ -290,3 +290,44 @@ describe('the screens the three-act story added', () => {
     expect(watch([ENEMIES.rival], { objective: { type: 'driveOff', target: 0, share: 0.5 } }, 30).said).toEqual(expect.arrayContaining(['DRIVE OFF: ASHFALL']));
   });
 });
+
+describe('the screens the pilot\'s record added', () => {
+  const texts = (calls: { name: string; args: unknown[] }[]) => calls.filter((c) => c.name === 'fillText').map((c) => String(c.args[0]));
+
+  test('the pilot screen draws its three pages, each under its own tab', () => {
+    const app = start({ ...done('intro-1'), callsign: 'VANTA', medals: ['first-contract'], ranks: { 'intro-1': 'S' }, scenes: ['act-1'] });
+    select(app, 'pilot');
+    const page = () => { const { ctx, calls } = recorder(); app.update(16); app.draw(ctx); return texts(calls); };
+    const perks = page();
+    expect(perks).toEqual(expect.arrayContaining(['PILOT', 'VANTA', 'PERKS', 'MEDALS', 'RECORD', 'Marksman']));
+    press(app, 'next');
+    const medals = page();
+    expect(medals).toEqual(expect.arrayContaining(['First Invoice', 'EARNED', 'FIRST INVOICE', 'Complete a contract.']));
+    // Thirteen rows of medals, however many there are.
+    expect(medals).not.toContain('Fully Vested');
+    press(app, 'next');
+    const record = page();
+    expect(record).toEqual(expect.arrayContaining(['CONTRACTS WON', 'TIME PLAYED', 'RANKS HELD', 'S', 'D']));
+  });
+
+  test('a medal is announced over whatever screen is up, with its name and what it pays', () => {
+    const app = start({ ...done('intro-1'), scenes: ['act-1'] }, false);
+    app.commit({ ...app.game!, arenaRank: 1 });
+    const { ctx, calls } = recorder();
+    app.update(400);
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['MEDAL EARNED', 'On the Ladder', '+100 c']));
+    // It goes away by itself.
+    const later = recorder();
+    app.update(3000);
+    app.draw(later.ctx);
+    expect(texts(later.calls)).not.toContain('MEDAL EARNED');
+  });
+
+  test('the hub shows the pilot\'s callsign and level', () => {
+    const app = start({ ...done('intro-1'), callsign: 'VANTA', scenes: ['act-1'] });
+    const { ctx, calls } = recorder();
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['VANTA', 'LV 1']));
+  });
+});

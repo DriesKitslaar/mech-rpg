@@ -104,7 +104,7 @@ export const STRINGS = {
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
     messages: 'Messages', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
-    credits: 'CREDITS', battlesWon: 'BATTLES WON', level: 'PILOT LEVEL', contracts: 'CONTRACTS', reward: 'pays',
+    credits: 'CREDITS', battlesWon: 'BATTLES WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
     locked: 'Locked', campaignDone: 'The war is over. The work is not.',
     cycleLabel: (n: number) => `CYCLE ${n + 1}`,
@@ -119,11 +119,20 @@ export const STRINGS = {
   },
   pilot: {
     heading: 'PILOT', level: 'LEVEL', xp: 'XP', next: 'NEXT LEVEL', maxLevel: 'MAX LEVEL', points: 'PERK POINTS',
-    hint: 'A: spend a point   B: back', noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
+    hint: 'A: spend a point   L1/R1: page   B: back', pageHint: 'L1/R1: page   B: back',
+    noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
+    pages: { perks: 'PERKS', medals: 'MEDALS', record: 'RECORD' },
   },
   medals: {
-    earned: 'MEDAL EARNED', pay: (credits: number) => `+${credits} c`, held: 'EARNED', pays: (credits: number) => `Pays ${credits} c`,
+    heading: 'MEDALS', earned: 'MEDAL EARNED', pay: (credits: number) => `+${credits} c`, held: 'EARNED', pays: (credits: number) => `Pays ${credits} c`,
     secretName: '? ? ?', secretText: 'A turn of the story.',
+  },
+  record: {
+    contracts: 'CONTRACTS WON', lost: 'CONTRACTS LOST', retreats: 'WALKED AWAY', flawless: 'WITHOUT A SCRATCH',
+    kills: 'ENEMIES DESTROYED', parts: 'PARTS SHOT OFF', staggers: 'STAGGERS', bombs: 'BOMBS DEFUSED', bosses: 'BOSSES BEATEN',
+    sRanks: 'S RANKS', arena: 'ARENA RANK', shots: 'SHOTS FIRED', hits: 'SHOTS LANDED', accuracy: 'ACCURACY',
+    damage: 'ARMOUR SHOT OFF', taken: 'ARMOUR LOST', overheats: 'TURNS LOST TO HEAT', rounds: 'ROUNDS FOUGHT',
+    earned: 'CREDITS EARNED', medals: 'MEDALS', cycle: 'CYCLE', time: 'TIME PLAYED', none: '-', ranksHeld: 'RANKS HELD',
   },
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',

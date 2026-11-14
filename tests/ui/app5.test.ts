@@ -1,7 +1,10 @@
 import { xpForLevel } from '../../src/core/pilot';
 import { NO_STATS } from '../../src/core/stats';
+import { MEDALS } from '../../src/content/medals';
 import { TOAST_MS } from '../../src/ui/app';
-import { accept, finishMission, fresh, inHub, makeApp, medalPay, press, retreat, savedGame, skipScenes, snap, strong, toHub } from '../helpers/app';
+import {
+  accept, finishMission, fresh, ids, inHub, makeApp, medalPay, press, retreat, savedGame, select, skipScenes, snap, strong, toHub,
+} from '../helpers/app';
 
 describe('the record', () => {
   test('a won contract is counted: the contract, what it paid, the shots, the kills and the kinds of enemy met', () => {
@@ -92,5 +95,92 @@ describe('medals', () => {
     expect(savedGame(store).medals).toEqual(['first-arena', 'level-5']);
     app.update(16);
     expect(snap(app)).toMatchObject({ toast: 'first-arena', toasts: ['level-5'] });
+  });
+});
+
+describe('the pilot screen', () => {
+  const veteran = () => ({
+    ...fresh(), callsign: 'VANTA', xp: xpForLevel(4), medals: ['first-contract', 'audit'],
+    stats: { ...NO_STATS, contracts: 7, kills: 12, shots: 40, hits: 30 },
+  });
+
+  test('opens on the perks and says who the pilot is', () => {
+    const { app } = inHub(veteran());
+    select(app, 'pilot');
+    expect(snap(app)).toMatchObject({ screen: 'pilot', page: 'perks', callsign: 'VANTA', pilot: { level: 4, points: 3 } });
+    expect(ids(app)).toContain('marksman');
+  });
+
+  test('the shoulder buttons turn the page: perks, medals, record, and round again both ways', () => {
+    const { app } = inHub(veteran());
+    select(app, 'pilot');
+    const pages = () => snap(app).page;
+    press(app, 'next');
+    expect(pages()).toBe('medals');
+    press(app, 'next');
+    expect(pages()).toBe('record');
+    press(app, 'next');
+    expect(pages()).toBe('perks');
+    press(app, 'prev');
+    expect(pages()).toBe('record');
+    // Left and right do the same, for a thumb that is already on the pad.
+    press(app, 'left');
+    expect(pages()).toBe('medals');
+    press(app, 'right', 'right');
+    expect(pages()).toBe('perks');
+  });
+
+  test('the medals page lists every medal: earned ones marked, counted ones with how far along', () => {
+    const { app } = inHub(veteran());
+    select(app, 'pilot');
+    press(app, 'next');
+    const items = snap(app).menu.items;
+    expect(items.map((i) => i.id)).toEqual(MEDALS.map((m) => m.id));
+    expect(items.find((i) => i.id === 'first-contract')).toMatchObject({ label: 'First Invoice', enabled: true, note: 'EARNED' });
+    expect(items.find((i) => i.id === 'contracts-25')).toMatchObject({ label: 'Steady Work', enabled: false, note: '7/25' });
+    expect(items.find((i) => i.id === 'painted')).toMatchObject({ enabled: false, note: undefined });
+    expect(snap(app).medalCount).toEqual({ earned: 2, of: MEDALS.length });
+    // What the one under the cursor takes, and what it pays.
+    expect(snap(app).detail).toEqual({ title: 'First Invoice', lines: ['Complete a contract.'], status: 'EARNED' });
+    press(app, 'down');
+    expect(snap(app).detail).toEqual({ title: 'Steady Work', lines: ['Complete 25 contracts.'], status: 'Pays 400 c' });
+  });
+
+  test('a medal that would give the story away keeps its name to itself until it is earned', () => {
+    const { app } = inHub(veteran());
+    select(app, 'pilot');
+    press(app, 'next');
+    const items = snap(app).menu.items;
+    expect(items.find((i) => i.id === 'audit')).toMatchObject({ label: 'Audited', enabled: true });
+    expect(items.find((i) => i.id === 'verdict-enforce')).toMatchObject({ label: '? ? ?', enabled: false });
+    for (let i = 0; i < 60 && snap(app).menu.items[snap(app).menu.cursor].id !== 'verdict-enforce'; i++) press(app, 'down');
+    expect(snap(app).detail).toEqual({ title: '? ? ?', lines: ['A turn of the story.'], status: 'Pays 1200 c' });
+  });
+
+  test('the record page shows what has been counted', () => {
+    const { app } = inHub(veteran());
+    select(app, 'pilot');
+    press(app, 'prev');
+    expect(snap(app).page).toBe('record');
+    const read = Object.fromEntries(snap(app).record!.map((line) => [line.label, line.value]));
+    expect(read).toMatchObject({ 'CONTRACTS WON': '7', 'ENEMIES DESTROYED': '12', ACCURACY: '75%', MEDALS: `2/${MEDALS.length}` });
+  });
+
+  test('a perk is bought on the perks page only', () => {
+    const { app } = inHub(veteran());
+    select(app, 'pilot');
+    press(app, 'next', 'confirm', 'next', 'confirm');
+    expect(snap(app).pilot).toMatchObject({ points: 3 });
+    press(app, 'next', 'confirm');
+    expect(snap(app)).toMatchObject({ page: 'perks', pilot: { points: 2 } });
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+  });
+});
+
+describe('the hub', () => {
+  test('shows the pilot by callsign', () => {
+    const { app } = inHub({ ...fresh(), callsign: 'VANTA' });
+    expect(snap(app)).toMatchObject({ screen: 'hub', callsign: 'VANTA' });
   });
 });

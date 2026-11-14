@@ -158,6 +158,15 @@ describe('a save from the seventh version', () => {
     expect(seventh()).toMatchObject({ version: SAVE_VERSION, callsign: 'PILOT', medals: [], met: [], drills: [] });
     expect(seventh()!.stats).toEqual(NO_STATS);
   });
+
+  test('the one thing it did count goes on the record: the contracts won', () => {
+    const { callsign: _c, stats: _s, medals: _m, met: _e, drills: _d, ...rest } = { ...game(), battlesWon: 12 } as Record<string, any>;
+    const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 7 }) }), CATALOG).load();
+    expect(loaded!.stats).toEqual({ ...NO_STATS, contracts: 12 });
+    // A count that is not a count is not carried over; the save is refused for it anyway.
+    const broken = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 7, battlesWon: 'many' }) }), CATALOG);
+    expect(broken.load()).toBeNull();
+  });
 });
 
 describe('three games', () => {

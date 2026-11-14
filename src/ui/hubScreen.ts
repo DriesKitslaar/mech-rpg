@@ -128,8 +128,9 @@ export class HubScreen implements Screen {
     drawPanel(ctx, x, 20, w, 52);
     drawText(ctx, H.credits, x + 6, 25, { color: COLORS.dim });
     drawText(ctx, String(game.credits), x + w - 6, 23, { size: 16, align: 'right', color: game.credits < 0 ? COLORS.danger : COLORS.text });
-    drawText(ctx, H.level, x + 6, 41, { color: COLORS.dim });
-    drawText(ctx, String(levelFor(game.xp)), x + w - 6, 41, { align: 'right' });
+    // The pilot, by callsign.
+    drawText(ctx, game.callsign, x + 6, 41, { color: COLORS.armor });
+    drawText(ctx, H.level(levelFor(game.xp)), x + w - 6, 41, { align: 'right' });
     drawText(ctx, H.battlesWon, x + 6, 53, { color: COLORS.dim });
     drawText(ctx, String(game.battlesWon), x + w - 6, 53, { align: 'right' });
 

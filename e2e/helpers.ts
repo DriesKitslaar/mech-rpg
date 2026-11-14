@@ -12,6 +12,10 @@ export type Snap = {
   ending?: string;
   /** On the title: which of its lists is showing. */
   mode?: string;
+  /** On the pilot screen and in the database: the page showing. */
+  page?: string;
+  toast?: string | null;
+  medals?: string[];
   slot?: number;
   callsign?: string | null;
   completed: string[] | null;
