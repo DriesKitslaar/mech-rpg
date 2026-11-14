@@ -20,6 +20,7 @@ import { SCENES } from '../content/scenes';
 import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
 import { STRINGS } from '../content/strings';
 import type { Sfx } from '../platform/audio';
+import type { TrackName } from '../platform/music';
 import type { InputAction } from '../platform/input';
 import type { SaveFile } from '../platform/storage';
 import { ArenaScreen } from './arenaScreen';
@@ -33,6 +34,7 @@ import { OptionsScreen } from './optionsScreen';
 import { PilotScreen } from './pilotScreen';
 import { SceneScreen } from './sceneScreen';
 import { SettlementScreen } from './settlementScreen';
+import { battleTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
@@ -61,7 +63,7 @@ export const FAST_BATTLE_SPEED = 2.5;
 /** The part of the music player the app steers. */
 export interface MusicControl {
   enabled: boolean;
-  play(track: 'menu' | 'battle' | null): void;
+  play(track: TrackName | null): void;
 }
 
 export interface AppDeps {
@@ -98,6 +100,8 @@ class MissionHost implements Screen {
       this.app.game!.build, this.mission, this.index, ALL_ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
       { enemyScale: this.enemyScale(), mods: { aim, evasion, energy, cooling, repairs, armour } },
     );
+    // Each battle of a contract has its own song: the last one may be against a boss.
+    this.app.playTrack(battleTrack(this.mission, this.index, ALL_ENEMIES));
     // Tests play without the talk: it is words to read, and they have nobody reading.
     this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast });
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
@@ -192,11 +196,15 @@ export class App {
     this.show('title', new TitleScreen(this));
   }
 
-  /** Puts a screen up and picks the music that goes with it. */
-  private show(name: ScreenName, screen: Screen): void {
+  /** Puts a screen up and picks the music that goes with it. A battle picks its own as it begins. */
+  private show(name: ScreenName, screen: Screen, track: TrackName = trackFor(name)): void {
     this.current = screen;
     this.name = name;
-    this.deps.music?.play(name === 'battle' ? 'battle' : 'menu');
+    if (name !== 'battle') this.playTrack(track);
+  }
+
+  playTrack(track: TrackName): void {
+    this.deps.music?.play(track);
   }
 
   private applySettings(): void {
@@ -395,7 +403,7 @@ export class App {
 
   /** Shows a settlement that has already been booked. */
   showSettlement(settlement: Settlement, mission: Mission): void {
-    this.show('settlement', new SettlementScreen(this, settlement, mission));
+    this.show('settlement', new SettlementScreen(this, settlement, mission), trackFor('settlement', settlement));
   }
 
   /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. */

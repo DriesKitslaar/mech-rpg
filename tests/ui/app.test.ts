@@ -767,19 +767,36 @@ describe('options', () => {
     expect(JSON.parse(store.data[SAVE_KEY]).settings.fastBattles).toBe(true);
   });
 
+  test('a battle against a boss has its own song', () => {
+    const tracks: (string | null)[] = [];
+    const music = { enabled: true, play: (t: string | null) => { tracks.push(t); } };
+    const store = memoryStore({ [SAVE_KEY]: JSON.stringify({ ...done(...toVerdict('lumen')), scenes: ['war-won-lumen', 'act-3'] }) });
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 5, music });
+    press(app, 'confirm');
+    select(app, 'contracts');
+    select(app, 'verdict-enforce');
+    select(app, 'accept');
+    expect(tracks.at(-1)).toBe('boss');
+  });
+
   test('sound and music follow the settings and the screen', () => {
     const store = memoryStore();
     const tracks: (string | null)[] = [];
     const music = { enabled: true, play: (t: string | null) => { tracks.push(t); } };
     const sfx = { muted: false, play: () => {}, unlock: () => {} };
     const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 5, music, sfx: sfx as never });
-    expect(tracks.at(-1)).toBe('menu');
+    expect(tracks.at(-1)).toBe('title');
     press(app, 'confirm');
+    expect(tracks.at(-1)).toBe('briefing'); // the first page of the story
     skipScenes(app);
-    accept(app, 'patrol');
+    expect(tracks.at(-1)).toBe('hub');
+    select(app, 'contracts');
+    select(app, 'patrol');
+    expect(tracks.at(-1)).toBe('briefing');
+    select(app, 'accept');
     expect(tracks.at(-1)).toBe('battle');
     finishMission(app);
-    expect(tracks.at(-1)).toBe('menu');
+    expect(tracks.at(-1)).toBe(snap(app).settlement!.won ? 'victory' : 'defeat');
     press(app, 'confirm');
     select(app, 'options');
     select(app, 'music');
