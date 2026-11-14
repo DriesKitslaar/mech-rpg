@@ -1,4 +1,6 @@
 /** Client for the external image proxy. The address comes from ART_PROXY_URL; nothing is hard-coded. */
+import type { Usage } from './ledger';
+
 export type Quality = 'low' | 'medium' | 'high';
 export type ProxyDeps = { fetch: typeof fetch };
 
@@ -13,7 +15,10 @@ export class ArtProxyError extends Error {
   }
 }
 
-async function call(path: string, body: Record<string, unknown>, deps?: ProxyDeps): Promise<Buffer> {
+/** An image, with the token counts the service reported for it, if it reported any. */
+export interface ImageResult { png: Buffer; usage?: Usage }
+
+async function call(path: string, body: Record<string, unknown>, deps?: ProxyDeps): Promise<ImageResult> {
   const base = process.env.ART_PROXY_URL;
   if (!base) throw new ArtProxyError(0, 'ART_PROXY_URL is not set');
   const headers: Record<string, string> = { 'content-type': 'application/json' };
@@ -42,10 +47,11 @@ async function call(path: string, body: Record<string, unknown>, deps?: ProxyDep
   }
   const b64 = json.payload?.data?.[0]?.b64_json;
   if (!b64) throw new ArtProxyError(response.status, 'response contained no image data');
-  return Buffer.from(b64, 'base64');
+  const usage = json.payload?.usage;
+  return { png: Buffer.from(b64, 'base64'), ...(usage && typeof usage === 'object' ? { usage: usage as Usage } : {}) };
 }
 
-export function generateImage(req: { prompt: string; quality: Quality }, deps?: ProxyDeps): Promise<Buffer> {
+export function generateImage(req: { prompt: string; quality: Quality }, deps?: ProxyDeps): Promise<ImageResult> {
   return call('openai-run', {
     action: 'imageGenerate', model: MODEL, prompt: req.prompt, size: SIZE, quality: req.quality, n: 1,
   }, deps);
@@ -54,7 +60,7 @@ export function generateImage(req: { prompt: string; quality: Quality }, deps?: 
 export function editImage(
   req: { prompt: string; quality: Quality; references: Buffer[] },
   deps?: ProxyDeps,
-): Promise<Buffer> {
+): Promise<ImageResult> {
   return call('openai-image-edit', {
     action: 'imageEdit', model: MODEL, prompt: req.prompt, size: SIZE, quality: req.quality,
     images: req.references.map((buf, i) => ({

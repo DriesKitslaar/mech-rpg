@@ -5,7 +5,8 @@
  * pose (kind 'family'), then cut into layers (kind 'layer') that keep their place in that pose.
  * Layers of different families therefore fit on each other without any scaling or shifting.
  */
-export type JobKind = 'family' | 'layer' | 'handWeapon' | 'shoulderWeapon' | 'enemy' | 'enemyMech' | 'portrait' | 'background';
+export type JobKind =
+  | 'family' | 'layer' | 'handWeapon' | 'shoulderWeapon' | 'shield' | 'enemy' | 'enemyMech' | 'portrait' | 'background';
 export type Layer = 'legs' | 'torso' | 'head' | 'armNear' | 'armFar';
 
 export interface ArtJob {
@@ -29,6 +30,7 @@ export const POSE_BOX = 160;
 export const BOX: Record<Exclude<JobKind, 'family' | 'layer'>, { w: number; h: number }> = {
   handWeapon: { w: 58, h: 22 },
   shoulderWeapon: { w: 44, h: 26 },
+  shield: { w: 34, h: 52 },
   enemy: { w: 64, h: 64 },
   enemyMech: { w: 104, h: 104 },
   portrait: { w: 56, h: 56 },
@@ -104,7 +106,7 @@ function layersOf(fromFamily: string, ids: { legs: string; core: string; head: s
   ];
 }
 
-function item(id: string, kind: 'handWeapon' | 'shoulderWeapon' | 'enemy', styleFrom: string, subject: string, flip = false): ArtJob {
+function item(id: string, kind: 'handWeapon' | 'shoulderWeapon' | 'shield' | 'enemy', styleFrom: string, subject: string, flip = false): ArtJob {
   return {
     id, kind, flip, references: [familyFile(styleFrom)],
     prompt:
@@ -195,6 +197,21 @@ export const JOBS: ArtJob[] = [
     `a shoulder-mounted emitter for a robot in a retro video game, ${WEAPON_STYLE}: a long tapering dish-tipped projector on a slim housing with a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no mecha.`),
   item('wpn-breaker-cannon', 'shoulderWeapon', 'colossus',
     `a huge shoulder-mounted equipment unit for a robot in a retro video game, ${WEAPON_STYLE}: one very thick short barrel with a heavy muzzle ring on an armoured block with a mounting bracket underneath, exactly horizontal, barrel pointing right. The unit only, no mecha.`),
+
+  item('wpn-arc-blade', 'handWeapon', 'halo',
+    `a long straight energy sword for a robot in a retro video game, ${WEAPON_STYLE}: a short white and navy hilt with a small hand guard at the left end and a long flat blade of bright glowing cyan light, lying exactly horizontal, blade pointing right. The object only, no hand, no mecha.`),
+  item('wpn-breach-pick', 'handWeapon', 'bulwark',
+    `a heavy handheld pile-driver tool for a robot in a retro video game, ${WEAPON_STYLE}: a thick boxy housing with a piston on top and one fat pointed steel spike sticking out of its right end, lying exactly horizontal, spike pointing right. The tool only, no hand, no mecha.`),
+  item('wpn-chain-gun', 'handWeapon', 'bulwark',
+    `a handheld rotary device for a toy robot in a retro video game, ${WEAPON_STYLE}: five short round tubes arranged in a ring at the front of a drum-shaped body, with a square box hanging underneath, lying exactly horizontal, tubes pointing right. The object only, no hand, no robot.`),
+  item('wpn-longbow', 'handWeapon', 'wraith',
+    `an extremely long, thin handheld energy device for a toy robot in a retro video game, ${WEAPON_STYLE}: two very long thin parallel rods with a bright glow between them and a round drum above the handle, lying exactly horizontal, rods pointing right. The object only, no hand, no robot.`),
+  item('wpn-hornet-salvo', 'shoulderWeapon', 'salvage',
+    `a shoulder-mounted rack for a robot in a retro video game, ${WEAPON_STYLE}: a wide flat patched box with sixteen small round tubes in two rows of eight on its right face, with a mounting bracket underneath, exactly horizontal. The unit only, no mecha.`),
+  item('wpn-sunlance', 'shoulderWeapon', 'halo',
+    `a shoulder-mounted beam projector for a robot in a retro video game, ${WEAPON_STYLE}: a long barrel ringed by three glowing focusing rings, a round capacitor at the back and a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no mecha.`),
+  item('shd-riot', 'shield', 'bulwark',
+    `a tall rectangular riot shield for a robot in a retro video game, ${WEAPON_STYLE}: a thick slab of plate armour with a narrow viewing slit near the top, hazard stripes along the bottom edge and rivets around the rim, seen from the front and standing upright. The shield only, no hand, no mecha.`),
 
   item('enemy-gunship', 'enemy', 'ronin',
     'a compact hovering gunship drone in the same dark charcoal and deep red armour: a wedge-shaped body with two side engine pods glowing magenta and two small tube pods under the nose. The whole craft, nothing else, no mecha.', true),

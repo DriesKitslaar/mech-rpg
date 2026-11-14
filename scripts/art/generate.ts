@@ -5,6 +5,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { EnvHttpProxyAgent, fetch as undiciFetch } from 'undici';
 import { JOBS, qualityFor } from './jobs';
+import { ART_BUDGET_USD, appendLedger, costOf, estimateFor, readLedger, totalOf, wouldExceed } from './ledger';
 import { ArtProxyError, editImage, generateImage, type ProxyDeps } from './proxy';
 
 const RAW = 'art/raw';
@@ -43,6 +44,13 @@ async function main(): Promise<void> {
     const references = job.references ?? [];
     const viaEdit = references.length > 0;
     const quality = qualityFor(job);
+    const method = viaEdit ? 'edit' : 'generate';
+    // The budget is checked before every single request: nothing is sent that could pass it.
+    if (wouldExceed(readLedger(), method, quality)) {
+      failed++;
+      console.error(`STOP ${job.id}: the image budget of $${ART_BUDGET_USD} would be passed (spent so far: $${totalOf(readLedger())})`);
+      break;
+    }
     const missing = references.filter((file) => !existsSync(file));
     if (missing.length) {
       failed++;
@@ -54,24 +62,27 @@ async function main(): Promise<void> {
         ? editImage({ prompt, quality, references: references.map((file) => readFileSync(file)) }, deps)
         : generateImage({ prompt, quality }, deps);
       // No automatic retry: a request that times out at a gateway may still be billed.
-      const png = await request();
+      const { png, usage } = await request();
+      appendLedger({ id: job.id, at: new Date().toISOString(), method, quality, usd: costOf(method, quality, usage), ...(usage ? { usage } : {}) });
       const tmp = `${TMP}/${job.id}.png`;
       writeFileSync(tmp, png);
       renameSync(tmp, `${RAW}/${job.id}.png`);
       writeFileSync(`${RAW}/${job.id}.json`, JSON.stringify({
         id: job.id, model: 'gpt-image-2', size: '1024x1024', quality,
-        method: viaEdit ? 'edit' : 'generate', references, prompt,
+        method, references, prompt,
       }, null, 2) + '\n');
       done++;
       console.log(`ok   ${job.id}`);
     } catch (e) {
       failed++;
+      // Counted at the estimate: the request may have been billed even though nothing came back.
+      appendLedger({ id: job.id, at: new Date().toISOString(), method, quality, usd: estimateFor(method, quality), failed: true });
       const status = e instanceof ArtProxyError ? e.status : '-';
       console.error(`FAIL ${job.id} [${status}] ${e instanceof Error ? e.message : String(e)}`);
     }
   }
   rmSync(TMP, { recursive: true, force: true });
-  console.log(`generated ${done} image(s), ${failed} failed`);
+  console.log(`generated ${done} image(s), ${failed} failed; ledger total $${totalOf(readLedger())} of $${ART_BUDGET_USD}`);
   if (failed) process.exitCode = 1;
 }
 

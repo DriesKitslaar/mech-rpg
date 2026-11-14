@@ -1,5 +1,12 @@
 import type { FrameSlot } from '../core/types';
 
+/** The name battles give the player's own mech. */
+export const PLAYER_NAME = 'You';
+/** "You boost" but "Halo Guard boosts": the verb form that goes with the unit's name. */
+const does = (unit: string, they: string, you: string): string => `${unit} ${unit === PLAYER_NAME ? you : they}`;
+/** The unit's name where it is the one acted on: "hits you", "hits Halo Guard". */
+const obj = (unit: string): string => (unit === PLAYER_NAME ? 'you' : unit);
+
 /** All player-facing text. UI code never contains literal copy. */
 export const STRINGS = {
   title: 'IRONWAGE',
@@ -10,35 +17,46 @@ export const STRINGS = {
   retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
   parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
   meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
-  headings: { you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?' },
-  preview: { hit: 'HIT', damage: 'DMG' },
-  yourTurn: (round: number) => `Round ${round} - your move`,
-  hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${target} - ${part} -${damage}`,
-  miss: (weapon: string, target: string) => `${weapon} misses ${target}`,
-  partDestroyed: (unit: string, part: string) => `${unit}: ${part} destroyed`,
-  unitDestroyed: (unit: string) => `${unit} destroyed`,
-  boost: (unit: string) => `${unit} boosts`,
-  guard: (unit: string) => `${unit} braces`,
-  stagger: (unit: string) => `${unit} is STAGGERED`,
-  recover: (unit: string) => `${unit} steadies`,
-  charge: (unit: string, weapon: string) => `${unit} charges ${weapon}`,
-  barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} hits ${target} - barrier -${absorbed}`,
-  module: {
-    coolant: (unit: string, amount: number) => `${unit} flushes coolant -${amount} heat`,
-    barrier: (unit: string, amount: number) => `${unit} raises a barrier ${amount}`,
-    overclock: (unit: string, amount: number) => `${unit} overclocks +${amount} EN`,
-    painter: (unit: string, _amount: number, target: string) => `${unit} paints ${target}`,
-    nanites: (unit: string, amount: number) => `${unit} nanites +${amount} armour`,
-    shock: (unit: string) => `${unit} fires a shock pulse`,
-    chaff: (unit: string) => `${unit} scatters chaff`,
-    limiter: (unit: string) => `${unit} releases the limiter`,
+  headings: { you: 'YOUR MECH', target: 'TARGET', weapons: 'WEAPONS', repair: 'REPAIR WHICH PART?', paint: 'MARK WHICH ENEMY?' },
+  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL' },
+  weaponMenu: {
+    charge: 'CHARGE', ready: 'READY',
+    reasons: {
+      alreadyFired: 'fired', noAmmo: 'no ammo', noEnergy: 'no energy', weaponDisabled: 'arms destroyed', needsBoost: 'needs Boost',
+      alreadyUsed: 'charged', notCharged: 'not charged', invalidTarget: 'no target',
+    },
   },
-  cool: (unit: string, amount: number) => `${unit} vents heat -${amount}`,
-  repair: (unit: string, part: string, amount: number) => `${unit} repair ${part} +${amount}`,
+  tags: {
+    boost: 'BOOST', guard: 'GUARD', stagger: 'STAGGER', charged: 'CHARGED', charging: 'CHARGING', painted: 'PAINTED',
+    barrier: (n: number) => `BARRIER ${n}`, chaff: 'CHAFF', stability: 'STAB',
+  },
+  yourTurn: (round: number) => `Round ${round} - your move`,
+  hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${obj(target)} - ${part} -${damage}`,
+  miss: (weapon: string, target: string) => `${weapon} misses ${obj(target)}`,
+  partDestroyed: (unit: string, part: string) => `${unit}: ${part} destroyed`,
+  unitDestroyed: (unit: string) => does(unit, 'destroyed', 'are destroyed'),
+  boost: (unit: string) => does(unit, 'boosts', 'boost'),
+  guard: (unit: string) => does(unit, 'braces', 'brace'),
+  stagger: (unit: string) => does(unit, 'is STAGGERED', 'are STAGGERED'),
+  recover: (unit: string) => does(unit, 'steadies', 'steady'),
+  charge: (unit: string, weapon: string) => does(unit, `charges ${weapon}`, `charge ${weapon}`),
+  barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} hits ${obj(target)} - barrier -${absorbed}`,
+  module: {
+    coolant: (unit: string, amount: number) => does(unit, `flushes coolant -${amount} heat`, `flush coolant -${amount} heat`),
+    barrier: (unit: string, amount: number) => does(unit, `raises a barrier ${amount}`, `raise a barrier ${amount}`),
+    overclock: (unit: string, amount: number) => does(unit, `overclocks +${amount} EN`, `overclock +${amount} EN`),
+    painter: (unit: string, _amount: number, target: string) => does(unit, `paints ${obj(target)}`, `paint ${obj(target)}`),
+    nanites: (unit: string, amount: number) => does(unit, `runs nanites +${amount} armour`, `run nanites +${amount} armour`),
+    shock: (unit: string) => does(unit, 'fires a shock pulse', 'fire a shock pulse'),
+    chaff: (unit: string) => does(unit, 'scatters chaff', 'scatter chaff'),
+    limiter: (unit: string) => does(unit, 'releases the limiter', 'release the limiter'),
+  },
+  cool: (unit: string, amount: number) => does(unit, `vents heat -${amount}`, `vent heat -${amount}`),
+  repair: (unit: string, part: string, amount: number) => does(unit, `repairs ${part} +${amount}`, `repair ${part} +${amount}`),
   overheatPlayer: 'Overheated! Next turn lost',
   overheatWarning: 'Warning: this shot will overheat',
-  overheat: (unit: string) => `${unit} overheats`,
-  turnSkipped: (unit: string) => `${unit} cooling down - turn lost`,
+  overheat: (unit: string) => does(unit, 'overheats', 'overheat'),
+  turnSkipped: (unit: string) => does(unit, 'is cooling down - turn lost', 'are cooling down - turn lost'),
   victory: 'VICTORY',
   defeat: 'DEFEAT',
   hints: { result: 'Press A to continue' },
@@ -155,6 +173,12 @@ export const STRINGS = {
     types: { kinetic: 'Kinetic', energy: 'Energy', explosive: 'Explosive' },
     vendors: { undertow: 'The Undertow', lumen: 'Lumen Systems', hadron: 'Hadron Mining', freelance: 'Freelance' },
   },
-  fx: { miss: 'MISS', overheat: 'OVERHEAT' },
+  fx: {
+    miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', block: (n: number) => `BLOCK ${n}`,
+    modules: {
+      coolant: 'COOLANT', barrier: 'BARRIER', overclock: 'OVERCLOCK', painter: 'PAINTED', nanites: 'NANITES', shock: 'SHOCK',
+      chaff: 'CHAFF', limiter: 'LIMITER',
+    },
+  },
   debug: { title: 'INPUT', action: 'action', key: 'key', none: '-' },
 } as const;

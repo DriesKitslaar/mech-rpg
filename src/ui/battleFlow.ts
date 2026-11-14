@@ -1,19 +1,20 @@
-import { chooseEnemyAction } from '../core/ai';
+import { chooseAutoPlayerAction, chooseEnemyAction } from '../core/ai';
 import {
   activeUnit, applyAction, checkAction, previewShot, HEAT_LIMIT,
-  type Action, type BattleEvent, type BattleState, type UnitState,
+  type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState,
 } from '../core/battle';
-import { weaponIn } from '../core/build';
+import { moduleOf, weaponIn } from '../core/build';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog, type FrameSlot, type WeaponSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 
-export type BattlePhase = 'action' | 'weapon' | 'target' | 'repairPart' | 'confirmRetreat' | 'animating' | 'result';
+export type BattlePhase =
+  | 'action' | 'weapon' | 'target' | 'repairPart' | 'moduleTarget' | 'confirmRetreat' | 'animating' | 'result';
 export interface MenuItem { id: string; label: string; enabled: boolean }
 export interface MenuView { items: MenuItem[]; cursor: number }
 
-const ACTION_IDS = ['fire', 'boost', 'cool', 'repair', 'endTurn', 'retreat'] as const;
-type ActionId = (typeof ACTION_IDS)[number];
+type ActionId = 'fire' | 'boost' | 'guard' | 'cool' | 'module' | 'repair' | 'auto' | 'endTurn' | 'retreat';
+const W = STRINGS.weaponMenu;
 
 /**
  * The battle screen without any drawing: which menu is open, what is highlighted,
@@ -25,7 +26,7 @@ export class BattleFlow {
   menu: MenuView = { items: [], cursor: 0 };
   targetId: string | null = null;
   targetPart: FrameSlot | null = null;
-  preview: { hitChance: number; damage: number; shots: number } | null = null;
+  preview: ShotPreview | null = null;
   /** True while targeting with a weapon whose shot would push heat past the limit. */
   overheatWarning = false;
   message = '';
@@ -34,6 +35,8 @@ export class BattleFlow {
 
   private shown = 0;
   private weapon: WeaponSlot | null = null;
+  /** Set by Auto Turn: the automatic player acts until this turn is over. */
+  private autoTurn = false;
 
   constructor(state: BattleState, private catalog: Catalog) {
     this.state = state;
@@ -60,10 +63,22 @@ export class BattleFlow {
     return this.state.units.filter((u) => u.side === 'enemy' && !u.destroyed);
   }
 
-  /** Weapons that could be fired at some living enemy right now. */
-  private fireableWeapons(): WeaponSlot[] {
-    return WEAPON_SLOTS.filter((slot) =>
-      this.livingEnemies().some((e) => this.can({ type: 'fire', weapon: slot, target: e.id, part: 'core' })));
+  /** The first living enemy a weapon may be fired at, if any. */
+  private firstTarget(slot: WeaponSlot): UnitState | undefined {
+    return this.livingEnemies().find((e) => this.can({ type: 'fire', weapon: slot, target: e.id, part: 'core' }));
+  }
+
+  /** Why a weapon can neither be fired nor charged right now; null when it can. */
+  private weaponRefusal(slot: WeaponSlot): Refusal | null {
+    if (this.firstTarget(slot) || this.can({ type: 'charge', weapon: slot })) return null;
+    const enemy = this.livingEnemies()[0];
+    const fire = enemy ? checkAction(this.state, { type: 'fire', weapon: slot, target: enemy.id, part: 'core' }, this.catalog) : 'invalidTarget';
+    // A charge weapon that is not charged is refused for whatever stops it from charging.
+    return fire === 'notCharged' ? checkAction(this.state, { type: 'charge', weapon: slot }, this.catalog) : fire;
+  }
+
+  private fittedWeapons(): WeaponSlot[] {
+    return WEAPON_SLOTS.filter((slot) => weaponIn(this.player.build, slot, this.catalog));
   }
 
   private repairableParts(): FrameSlot[] {
@@ -119,28 +134,46 @@ export class BattleFlow {
     }
     this.lastEvent = null;
     if (this.state.outcome !== 'ongoing') {
+      this.autoTurn = false;
       this.phase = 'result';
       this.menu = { items: [], cursor: 0 };
       this.message = this.state.outcome === 'victory' ? STRINGS.victory : STRINGS.defeat;
       return;
     }
     if (activeUnit(this.state).side === 'enemy') {
+      this.autoTurn = false;
       this.state = applyAction(this.state, chooseEnemyAction(this.state, this.catalog), this.catalog);
+      return;
+    }
+    if (this.autoTurn) {
+      const action = chooseAutoPlayerAction(this.state, this.catalog);
+      // Ending the turn and a field repair both hand the turn over: the automatic player stops there.
+      if (action.type === 'endTurn' || action.type === 'repair') this.autoTurn = false;
+      this.state = applyAction(this.state, action, this.catalog);
       return;
     }
     this.openActionMenu();
   }
 
   private openActionMenu(): void {
-    const enabled: Record<ActionId, boolean> = {
-      fire: this.fireableWeapons().length > 0,
-      boost: this.can({ type: 'boost' }),
-      cool: this.can({ type: 'cool' }),
-      repair: this.repairableParts().length > 0,
-      endTurn: true,
-      retreat: true,
-    };
-    const items = ACTION_IDS.map((id) => ({ id, label: STRINGS.actions[id], enabled: enabled[id] }));
+    const module = moduleOf(this.player.build, this.catalog);
+    const fire = this.fittedWeapons().some((slot) => this.weaponRefusal(slot) === null);
+    // The painter needs someone to mark; every other module is checked by the rules as it is.
+    const moduleReady = !!module && (module.effect === 'painter'
+      ? this.livingEnemies().some((e) => this.can({ type: 'module', target: e.id }))
+      : this.can({ type: 'module' }));
+    const entries: [ActionId, string, boolean][] = [
+      ['fire', STRINGS.actions.fire, fire],
+      ['boost', STRINGS.actions.boost, this.can({ type: 'boost' })],
+      ['guard', STRINGS.actions.guard, this.can({ type: 'guard' })],
+      ['cool', STRINGS.actions.cool, this.can({ type: 'cool' })],
+      ...(module ? [['module', `${module.name} x${this.player.moduleUses}`, moduleReady] as [ActionId, string, boolean]] : []),
+      ['repair', STRINGS.actions.repair, this.repairableParts().length > 0],
+      ['endTurn', STRINGS.actions.endTurn, true],
+      ['auto', STRINGS.actions.auto, true],
+      ['retreat', STRINGS.actions.retreat, true],
+    ];
+    const items = entries.map(([id, label, enabled]) => ({ id, label, enabled }));
     this.phase = 'action';
     this.menu = { items, cursor: items.findIndex((i) => i.enabled) };
     this.message = STRINGS.yourTurn(this.state.round);
@@ -151,17 +184,24 @@ export class BattleFlow {
     this.overheatWarning = false;
   }
 
+  private weaponLabel(slot: WeaponSlot): string {
+    const weapon = weaponIn(this.player.build, slot, this.catalog)!;
+    const refusal = this.weaponRefusal(slot);
+    if (refusal) return `${weapon.name} - ${W.reasons[refusal as keyof typeof W.reasons] ?? refusal}`;
+    const ammo = this.player.ammo[slot];
+    const ammoText = typeof ammo === 'number' ? ` x${ammo}` : '';
+    const { energy, heat } = STRINGS.meters;
+    // Kept short to fit the menu panel: "Rivet Rifle x30 EN 60 HEAT 12".
+    if (!weapon.charge) return `${weapon.name}${ammoText} ${energy} ${weapon.energy} ${heat} ${weapon.heat}`;
+    return this.player.charged.includes(slot)
+      ? `${weapon.name}${ammoText} ${W.ready} ${heat} ${weapon.heat}`
+      : `${weapon.name}${ammoText} ${W.charge} ${energy} ${weapon.energy}`;
+  }
+
   private openWeaponMenu(): void {
-    const items = this.fireableWeapons().map((slot) => {
-      const weapon = weaponIn(this.player.build, slot, this.catalog)!;
-      const ammo = this.player.ammo[slot];
-      // Kept short to fit the menu panel: "Rivet Rifle x30 EN 60 HEAT 12".
-      const ammoText = typeof ammo === 'number' ? ` x${ammo}` : '';
-      const label = `${weapon.name}${ammoText} ${STRINGS.meters.energy} ${weapon.energy} ${STRINGS.meters.heat} ${weapon.heat}`;
-      return { id: slot, label, enabled: true };
-    });
+    const items = this.fittedWeapons().map((slot) => ({ id: slot, label: this.weaponLabel(slot), enabled: this.weaponRefusal(slot) === null }));
     this.phase = 'weapon';
-    this.menu = { items, cursor: 0 };
+    this.menu = { items, cursor: Math.max(0, items.findIndex((i) => i.enabled)) };
     this.targetId = null;
     this.targetPart = null;
     this.preview = null;
@@ -195,8 +235,22 @@ export class BattleFlow {
     this.menu = { items, cursor: 0 };
   }
 
+  private openModuleTargets(): void {
+    const items = this.livingEnemies()
+      .filter((e) => this.can({ type: 'module', target: e.id }))
+      .map((e) => ({ id: e.id, label: e.name, enabled: true }));
+    this.phase = 'moduleTarget';
+    this.menu = { items, cursor: 0 };
+    this.targetId = items[0]?.id ?? null;
+  }
+
   private act(action: Action): void {
     this.state = applyAction(this.state, action, this.catalog);
+    this.resume();
+  }
+
+  /** Back to playing out events, from whichever menu was open. */
+  private resume(): void {
     this.phase = 'animating';
     this.menu = { items: [], cursor: 0 };
     this.preview = null;
@@ -221,31 +275,44 @@ export class BattleFlow {
     if (input === 'up' || input === 'down') {
       this.moveCursor(input === 'up' ? -1 : 1);
       if (this.phase === 'target') this.syncTarget();
+      if (this.phase === 'moduleTarget') this.targetId = this.menu.items[this.menu.cursor].id;
       return;
     }
     const item = this.menu.items[this.menu.cursor];
     switch (this.phase) {
       case 'action':
         if (input !== 'confirm' || !item?.enabled) return;
-        if (item.id === 'fire') this.openWeaponMenu();
-        else if (item.id === 'repair') this.openRepairMenu();
-        else if (item.id === 'retreat') {
-          // Giving up loses the contract, so it asks first, with "No" under the cursor.
-          this.phase = 'confirmRetreat';
-          this.menu = { items: [{ id: 'no', label: STRINGS.retreat.no, enabled: true }, { id: 'yes', label: STRINGS.retreat.yes, enabled: true }], cursor: 0 };
-          this.message = STRINGS.retreat.question;
-        } else this.act({ type: item.id as 'boost' | 'cool' | 'endTurn' });
-        return;
+        switch (item.id as ActionId) {
+          case 'fire': return this.openWeaponMenu();
+          case 'repair': return this.openRepairMenu();
+          case 'module':
+            if (moduleOf(this.player.build, this.catalog)?.effect === 'painter') return this.openModuleTargets();
+            return this.act({ type: 'module' });
+          case 'auto':
+            this.autoTurn = true;
+            return this.resume();
+          case 'retreat':
+            // Giving up loses the contract, so it asks first, with "No" under the cursor.
+            this.phase = 'confirmRetreat';
+            this.menu = { items: [{ id: 'no', label: STRINGS.retreat.no, enabled: true }, { id: 'yes', label: STRINGS.retreat.yes, enabled: true }], cursor: 0 };
+            this.message = STRINGS.retreat.question;
+            return;
+          default: return this.act({ type: item.id as 'boost' | 'guard' | 'cool' | 'endTurn' });
+        }
       case 'confirmRetreat':
         if (input === 'cancel' || (input === 'confirm' && item.id === 'no')) return this.openActionMenu();
         if (input === 'confirm') this.act({ type: 'retreat' });
         return;
-      case 'weapon':
+      case 'weapon': {
         if (input === 'cancel') return this.openActionMenu();
-        if (input !== 'confirm') return;
-        this.weapon = item.id as WeaponSlot;
-        return this.openTarget(this.livingEnemies().find((e) =>
-          this.can({ type: 'fire', weapon: this.weapon!, target: e.id, part: 'core' }))!.id);
+        if (input !== 'confirm' || !item?.enabled) return;
+        const slot = item.id as WeaponSlot;
+        const target = this.firstTarget(slot);
+        // A charge weapon that is not ready yet is charged instead of aimed.
+        if (!target) return this.act({ type: 'charge', weapon: slot });
+        this.weapon = slot;
+        return this.openTarget(target.id);
+      }
       case 'target':
         if (input === 'cancel') return this.openWeaponMenu();
         if (input === 'prev') return this.cycleTarget(-1);
@@ -257,6 +324,10 @@ export class BattleFlow {
       case 'repairPart':
         if (input === 'cancel') return this.openActionMenu();
         if (input === 'confirm') this.act({ type: 'repair', part: item.id as FrameSlot });
+        return;
+      case 'moduleTarget':
+        if (input === 'cancel') return this.openActionMenu();
+        if (input === 'confirm' && item) this.act({ type: 'module', target: item.id });
         return;
     }
   }

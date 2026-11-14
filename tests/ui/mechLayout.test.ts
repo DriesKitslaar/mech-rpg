@@ -44,3 +44,11 @@ test('absent slots are simply left out', () => {
 test('a frame layer without a recorded position is placed at the origin', () => {
   expect(layoutMech({ core: { w: 10, h: 10 } })).toEqual([{ slot: 'core', x: 0, y: 0 }]);
 });
+
+test('a shield, taller than it is wide, is strapped to the far forearm instead of gripped by one end', () => {
+  const shield = { w: 33, h: 52 };
+  const cmds = layoutMech({ ...layers, leftHand: shield });
+  expect(cmds.find((c) => c.slot === 'leftHand')).toEqual({
+    slot: 'leftHand', x: Math.round(FAR_FIST.x - 0.5 * shield.w), y: Math.round(FAR_FIST.y - 0.6 * shield.h),
+  });
+});

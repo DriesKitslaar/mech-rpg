@@ -7,7 +7,7 @@ import {
   type Faction, type Mission,
 } from '../core/campaign';
 import { applySettlement, settle, type Settlement } from '../core/economy';
-import { DEFAULT_SETTINGS, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
+import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
 import type { BuildError, Catalog, Part } from '../core/types';
@@ -92,7 +92,7 @@ class MissionHost implements Screen {
     const { aim, evasion, energy, cooling, repairs, armour } = this.app.perks();
     const state = startMissionBattle(
       this.app.game!.build, this.mission, this.index, ALL_ENEMIES, catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
-      { enemyScale: this.mission.scale ?? 1, mods: { aim, evasion, energy, cooling, repairs, armour } },
+      { enemyScale: this.enemyScale(), mods: { aim, evasion, energy, cooling, repairs, armour } },
     );
     this.flow = new BattleFlow(state, catalog);
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
@@ -101,6 +101,11 @@ class MissionHost implements Screen {
       label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
       resultHint: this.hasNext() ? STRINGS.mission.next : STRINGS.hints.result,
     });
+  }
+
+  /** The contract's own scale times the difficulty the player chose. */
+  private enemyScale(): number {
+    return (this.mission.scale ?? 1) * DIFFICULTY_SCALE[this.app.settings.difficulty];
   }
 
   /** True when winning the current battle leads to another one. */
@@ -152,7 +157,7 @@ class MissionHost implements Screen {
       message: flow.message,
       battle: {
         phase: flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
-        mission: this.mission.id, index: this.index, of: this.mission.battles.length,
+        mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
       },
     };

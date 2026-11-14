@@ -25,7 +25,7 @@ type Snap = {
   screen: string; credits: number | null; battlesWon: number | null; completed: string[] | null; message?: string;
   saveFailed: boolean; build: Record<string, string> | null;
   menu: { items: { id: string; label: string; enabled: boolean; note?: string }[]; cursor: number };
-  battle?: { phase: string; outcome: string; mission: string; index: number; of: number };
+  battle?: { phase: string; outcome: string; mission: string; index: number; of: number; enemyScale: number };
   settlement?: { net: number; won: boolean; reward: number };
   ending?: string;
   xp: number | null; level: number | null; arenaRank: number | null; cycle: number | null;
@@ -656,6 +656,26 @@ describe('options', () => {
 
     const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
     expect(snap(again).settings.sfx).toBe(false);
+  });
+
+  test('the difficulty scales every enemy, on top of the contract\'s own scale', () => {
+    const { app, store } = inHub(geared(done('intro-1', 'intro-2'), 'tier3'));
+    accept(app, 'patrol');
+    expect(snap(app).battle!.enemyScale).toBe(1);
+
+    const easy = inHub({ ...geared(done('intro-1', 'intro-2'), 'tier3'), arenaRank: 0 }).app;
+    select(easy, 'options');
+    select(easy, 'difficulty');
+    select(easy, 'difficulty');
+    expect(snap(easy).settings.difficulty).toBe('story');
+    press(easy, 'left');
+    expect(snap(easy).settings.difficulty).toBe('veteran');
+    press(easy, 'cancel');
+    select(easy, 'arena');
+    select(easy, 'rank-1');
+    select(easy, 'accept');
+    expect(snap(easy).battle!.enemyScale).toBeCloseTo(1.5 * 1.2);
+    expect(JSON.parse(store.data[SAVE_KEY]).settings.difficulty).toBe('standard');
   });
 
   test('opened from the hub they return to the hub, and are saved with the game', () => {

@@ -1,0 +1,165 @@
+[
+ {
+  "id": "before-ledger",
+  "at": "2026-11-12T16:00:00Z",
+  "method": "estimate",
+  "usd": 2.5,
+  "note": "Everything generated before this ledger existed: about 105 low-quality images and ten medium-quality attempts that timed out. Estimated generously."
+ },
+ {
+  "id": "wpn-arc-blade",
+  "at": "2026-11-14T09:17:09.082Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1182,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 158
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1378
+  }
+ },
+ {
+  "id": "wpn-breach-pick",
+  "at": "2026-11-14T09:17:19.538Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1179,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 155
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1375
+  }
+ },
+ {
+  "id": "wpn-chain-gun",
+  "at": "2026-11-14T09:17:30.258Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.03,
+  "failed": true
+ },
+ {
+  "id": "wpn-longbow",
+  "at": "2026-11-14T09:17:39.363Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.03,
+  "failed": true
+ },
+ {
+  "id": "wpn-hornet-salvo",
+  "at": "2026-11-14T09:17:48.898Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1172,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 148
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1368
+  }
+ },
+ {
+  "id": "wpn-sunlance",
+  "at": "2026-11-14T09:17:58.176Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1173,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 149
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1369
+  }
+ },
+ {
+  "id": "shd-riot",
+  "at": "2026-11-14T09:18:07.892Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1183,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 159
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1379
+  }
+ },
+ {
+  "id": "wpn-chain-gun",
+  "at": "2026-11-14T09:18:32.688Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1178,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 154
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1374
+  }
+ },
+ {
+  "id": "wpn-longbow",
+  "at": "2026-11-14T09:18:43.756Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1178,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 154
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1374
+  }
+ }
+]

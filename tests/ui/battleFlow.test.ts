@@ -26,8 +26,8 @@ test('duplicate enemies get distinguishing names', () => {
 test('the player turn opens on the action menu', () => {
   const flow = ready();
   expect(flow.phase).toBe('action');
-  expect(flow.menu.items.map((i) => i.id)).toEqual(['fire', 'boost', 'cool', 'repair', 'endTurn', 'retreat']);
-  expect(flow.menu.items.map((i) => i.label)).toEqual(['Fire', 'Boost', 'Cool', 'Field Repair', 'End Turn', 'Retreat']);
+  expect(flow.menu.items.map((i) => i.id)).toEqual(['fire', 'boost', 'guard', 'cool', 'repair', 'endTurn', 'auto', 'retreat']);
+  expect(flow.menu.items.map((i) => i.label)).toEqual(['Fire', 'Boost', 'Guard', 'Cool', 'Field Repair', 'End Turn', 'Auto Turn', 'Retreat']);
   expect(flow.menu.cursor).toBe(0);
 });
 
@@ -82,7 +82,7 @@ test('confirming a shot applies it and reports the result', () => {
   settle(flow);
   expect(flow.phase).toBe('action');
   press(flow, 'confirm');
-  expect(flow.menu.items.map((i) => i.id)).toEqual(['leftHand', 'shoulder']);
+  expect(flow.menu.items.filter((i) => i.enabled).map((i) => i.id)).toEqual(['leftHand', 'shoulder']);
 });
 
 test('a disabled menu item does nothing and ending the turn passes play', () => {
