@@ -26,6 +26,7 @@ import type { SaveFile } from '../platform/storage';
 import { ArenaScreen } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
+import { LOGICAL_H, LOGICAL_W } from './display';
 import { GarageScreen } from './garageScreen';
 import { HubScreen } from './hubScreen';
 import type { ListItem } from './menuList';
@@ -59,6 +60,9 @@ export type ScreenName =
 
 /** How much quicker a battle plays with the fast-battles option on. */
 export const FAST_BATTLE_SPEED = 2.5;
+/** How long a new screen takes to come up out of black, and the shutter over a battle to open. */
+export const FADE_MS = 170;
+export const SHUTTER_MS = 320;
 
 /** The part of the music player the app steers. */
 export interface MusicControl {
@@ -74,6 +78,8 @@ export interface AppDeps {
   music?: MusicControl;
   /** Skips message pauses and effects; used by tests. */
   fast: boolean;
+  /** Makes the device vibrate for a number of milliseconds, where it can. */
+  vibrate?: (ms: number) => void;
   seed: number;
 }
 
@@ -104,8 +110,13 @@ class MissionHost implements Screen {
     this.app.playTrack(battleTrack(this.mission, this.index, ALL_ENEMIES));
     // Tests play without the talk: it is words to read, and they have nobody reading.
     this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast });
+    const battle = this.mission.battles[this.index];
+    const boss = battle.enemies.map((id) => ALL_ENEMIES[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
+    if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: this.app.game!.paint,
+      title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms),
+      ...(boss ? { boss: boss.name } : {}),
       background: this.mission.battles[this.index].background,
       label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
       resultHint: this.hasNext() ? STRINGS.mission.next : STRINGS.hints.result,
@@ -188,6 +199,8 @@ export class App {
   private name: ScreenName = 'title';
   private current!: Screen;
   private seed: number;
+  /** The way the current screen is still coming into view: what is left of it and how long it takes. */
+  private entering = { left: 0, total: 1, shutter: false };
 
   constructor(readonly deps: AppDeps) {
     this.seed = deps.seed;
@@ -201,6 +214,18 @@ export class App {
     this.current = screen;
     this.name = name;
     if (name !== 'battle') this.playTrack(track);
+    if (name === 'battle') this.openShutter();
+    else if (!this.deps.fast) this.entering = { left: FADE_MS, total: FADE_MS, shutter: false };
+  }
+
+  /** A battle comes into view from behind a shutter that opens from the middle. */
+  openShutter(): void {
+    if (!this.deps.fast) this.entering = { left: SHUTTER_MS, total: SHUTTER_MS, shutter: true };
+  }
+
+  /** Rumbles the handheld, unless the player has turned that off. */
+  rumble(ms: number): void {
+    if (this.settings.rumble !== false && !this.deps.fast) this.deps.vibrate?.(ms);
   }
 
   playTrack(track: TrackName): void {
@@ -415,8 +440,27 @@ export class App {
     this.openHub();
   }
 
-  update(dtMs: number): void { this.current.update(dtMs); }
-  draw(ctx: CanvasRenderingContext2D): void { this.current.draw(ctx); }
+  update(dtMs: number): void {
+    this.entering.left = Math.max(0, this.entering.left - dtMs);
+    this.current.update(dtMs);
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    this.current.draw(ctx);
+    const { left, total, shutter } = this.entering;
+    if (left <= 0) return;
+    const p = left / total;
+    if (shutter) {
+      // Two black leaves that draw back to the top and the bottom.
+      const h = Math.ceil((LOGICAL_H / 2) * p);
+      ctx.fillStyle = '#04040c';
+      ctx.fillRect(0, 0, LOGICAL_W, h);
+      ctx.fillRect(0, LOGICAL_H - h, LOGICAL_W, h);
+    } else {
+      ctx.fillStyle = `rgba(4, 4, 12, ${p.toFixed(3)})`;
+      ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    }
+  }
   onInput(action: InputAction): void { this.current.onInput(action); }
 
   snapshot(): unknown {

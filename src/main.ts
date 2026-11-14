@@ -50,7 +50,9 @@ async function start(): Promise<void> {
 
   const sfx = new Sfx();
   const music = new Music(() => sfx.context);
-  const app = new App({ catalog: CATALOG, save: new SaveFile(openStore(), CATALOG), sprites, sfx, music, fast, seed });
+  // Vibration is asked for and nothing more: a device without a motor simply does not answer.
+  const vibrate = (ms: number): void => { try { navigator.vibrate?.(ms); } catch { /* not allowed here */ } };
+  const app = new App({ catalog: CATALOG, save: new SaveFile(openStore(), CATALOG), sprites, sfx, music, fast, seed, vibrate });
 
   const mapper = new InputMapper();
   const input = attachInput(window, mapper);

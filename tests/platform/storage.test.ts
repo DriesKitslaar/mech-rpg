@@ -167,12 +167,17 @@ describe('settings', () => {
     const file = new SaveFile(store, CATALOG);
     expect(file.loadSettings()).toBeNull();
     expect(file.saveSettings({ sfx: false, music: true, fastBattles: true, difficulty: 'veteran' })).toBe(true);
-    expect(new SaveFile(store, CATALOG).loadSettings()).toEqual({ sfx: false, music: true, fastBattles: true, difficulty: 'veteran' });
+    expect(new SaveFile(store, CATALOG).loadSettings()).toEqual({ sfx: false, music: true, fastBattles: true, difficulty: 'veteran', rumble: true });
+    file.saveSettings({ sfx: false, music: true, fastBattles: true, difficulty: 'veteran', rumble: false });
+    expect(new SaveFile(store, CATALOG).loadSettings()?.rumble).toBe(false);
   });
 
   test('stored before there was a difficulty, or with one that does not exist, get the standard one', () => {
     const before = mem({ 'ironwage-settings': '{"sfx":false,"music":false,"fastBattles":true}' });
-    expect(new SaveFile(before, CATALOG).loadSettings()).toEqual({ sfx: false, music: false, fastBattles: true, difficulty: 'standard' });
+    // Rumble came later still: settings stored without it have it on.
+    expect(new SaveFile(before, CATALOG).loadSettings()).toEqual({ sfx: false, music: false, fastBattles: true, difficulty: 'standard', rumble: true });
+    const oddRumble = mem({ 'ironwage-settings': '{"sfx":true,"music":true,"fastBattles":false,"rumble":"hard"}' });
+    expect(new SaveFile(oddRumble, CATALOG).loadSettings()?.rumble).toBe(true);
     const odd = mem({ 'ironwage-settings': '{"sfx":true,"music":true,"fastBattles":false,"difficulty":"nightmare"}' });
     expect(new SaveFile(odd, CATALOG).loadSettings()?.difficulty).toBe('standard');
   });

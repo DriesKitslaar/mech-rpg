@@ -725,17 +725,38 @@ describe('options', () => {
     expect(ids(app)).toEqual(['new', 'options']);
     select(app, 'options');
     expect(snap(app).screen).toBe('options');
-    expect(snap(app).menu.items.map((i) => [i.id, i.note])).toEqual([['sfx', 'On'], ['music', 'On'], ['fastBattles', 'Off'], ['difficulty', 'Standard']]);
+    expect(snap(app).menu.items.map((i) => [i.id, i.note]))
+      .toEqual([['sfx', 'On'], ['music', 'On'], ['rumble', 'On'], ['fastBattles', 'Off'], ['difficulty', 'Standard']]);
     press(app, 'confirm');
     expect(snap(app).menu.items[0].note).toBe('Off');
     expect(JSON.parse(store.data[SETTINGS_KEY]).sfx).toBe(false);
     press(app, 'cancel');
     expect(snap(app).screen).toBe('title');
     select(app, 'new');
-    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false, difficulty: 'standard' });
+    expect(snap(app).settings).toEqual({ sfx: false, music: true, fastBattles: false, difficulty: 'standard', rumble: true });
 
     const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
     expect(snap(again).settings.sfx).toBe(false);
+  });
+
+  test('rumble is asked of the device on a heavy blow, and not when the option is off or in a game saved before the option', () => {
+    const buzz: number[] = [];
+    const make = (settings: Record<string, unknown>) => {
+      const store = memoryStore({ [SETTINGS_KEY]: JSON.stringify(settings) });
+      return new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 1, vibrate: (ms) => buzz.push(ms) });
+    };
+    const on = make({ sfx: true, music: true, fastBattles: false, difficulty: 'standard' });
+    on.rumble(120);
+    expect(buzz).toEqual([120]);
+    const off = make({ sfx: true, music: true, fastBattles: false, difficulty: 'standard', rumble: false });
+    off.rumble(120);
+    expect(buzz).toEqual([120]);
+    // The option is a switch like the others.
+    const { app, store } = makeApp();
+    select(app, 'options');
+    select(app, 'rumble');
+    expect(snap(app).menu.items.find((i) => i.id === 'rumble')!.note).toBe('Off');
+    expect(JSON.parse(store.data[SETTINGS_KEY]).rumble).toBe(false);
   });
 
   test('the difficulty scales every enemy, on top of the contract\'s own scale', () => {

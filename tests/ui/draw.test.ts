@@ -2,7 +2,7 @@ import { createBattle, type BattleOptions } from '../../src/core/battle';
 import { completeMission } from '../../src/core/campaign';
 import type { EnemyDef } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
-import { BattleFlow, BattleScreen } from '../../src/ui/battleScreen';
+import { BattleFlow, BattleScreen, INTRO_MS, WARNING_MS } from '../../src/ui/battleScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
@@ -123,16 +123,38 @@ describe('the screens the three-act story added', () => {
     const app = start({ ...geared(done('intro-1', 'intro-2', 'hadron-1'), 'tier1'), scenes: [] }, false);
     select(app, 'contracts');
     select(app, 'hadron-2');
+    // The briefing writes itself out; what the contract asks for is shown once the client has finished.
+    app.draw(ctx);
+    expect(texts(calls)).not.toContain('1: Protect: Ore Train');
+    app.update(6000);
     app.draw(ctx);
     expect(texts(calls)).toEqual(expect.arrayContaining(['1: Protect: Ore Train', '2: Protect: Ore Train']));
     select(app, 'accept');
+    // The battle opens with a banner: the contract and what it asks for. Nothing else is up yet.
+    calls.length = 0;
+    app.update(16);
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['OVERBURDEN', 'ORE TRAIN 12/12']));
+    expect(texts(calls)).not.toContain('DISPATCH');
+    press(app, 'down');
+    app.update(INTRO_MS + 50);
     calls.length = 0;
     app.update(16);
     app.draw(ctx);
     expect(snap(app).battle?.phase).toBe('talk');
     expect(texts(calls)).toEqual(expect.arrayContaining(['DISPATCH', 'ORE TRAIN 12/12', 'FUSE 3']));
+    expect(texts(calls)).not.toContain('OVERBURDEN');
     expect(calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'portrait-dispatch')).toBe(true);
+    // The line is still being written: the first press finishes it, the second goes on.
+    const line = 'Count the hostiles. That is what the train loses';
+    expect(texts(calls)).not.toContain(line);
     press(app, 'confirm');
+    expect(snap(app).battle?.phase).toBe('talk');
+    calls.length = 0;
+    app.draw(ctx);
+    expect(texts(calls)).toContain(line);
+    press(app, 'confirm');
+    expect(snap(app).battle?.phase).not.toBe('talk');
     for (let i = 0; i < 400 && snap(app).battle?.phase !== 'action'; i++) { app.update(16); app.draw(ctx); }
     expect(snap(app).battle?.phase).toBe('action');
   });
@@ -191,6 +213,73 @@ describe('the screens the three-act story added', () => {
     expect(kinds.has('support')).toBe(true);
     expect(said).toEqual(expect.arrayContaining(['COVERED']));
     if (kinds.has('phase')) expect(said).toEqual(expect.arrayContaining(['SABLE']));
+  });
+
+  test('a battle against a boss opens with a warning and its name; a press dismisses it, and nothing moves before', () => {
+    const { ctx, calls } = recorder();
+    const flow = new BattleFlow(createBattle(REFERENCE_BUILDS.tier6, [ENEMIES.sable], CATALOG, 7), CATALOG);
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, title: 'HOSTILE AUDIT', boss: 'Sable' });
+    const shown = flow.eventsShown;
+    screen.update(WARNING_MS - 100);
+    screen.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['WARNING', 'SABLE']));
+    expect(texts(calls)).not.toContain('HOSTILE AUDIT');
+    expect(flow.eventsShown).toBe(shown);
+    screen.onInput('confirm');
+    calls.length = 0;
+    screen.update(16);
+    screen.draw(ctx);
+    expect(texts(calls)).not.toContain('WARNING');
+  });
+
+  test('a fast battle has no banner, no weather and no smoke: it is drawn as bare as before', () => {
+    const { ctx, calls } = recorder();
+    const flow = new BattleFlow(createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['gun-turret']], CATALOG, 7), CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: true, title: 'PATROL', background: 'bg-neon-district' });
+    screen.update(16);
+    screen.draw(ctx);
+    expect(texts(calls)).not.toContain('PATROL');
+    // Rain would be dozens of one-pixel streaks.
+    expect(calls.filter((c) => c.name === 'fillRect' && c.args[2] === 1 && c.args[3] === 4)).toHaveLength(0);
+  });
+
+  test('rain falls over a battle in the neon district, and smoke rises from a part that is gone', () => {
+    const { ctx, calls } = recorder();
+    const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['gun-turret']], CATALOG, 7);
+    state.units[0].parts.arms!.ap = 0;
+    const flow = new BattleFlow(state, CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, background: 'bg-neon-district' });
+    screen.onInput('confirm');
+    for (let i = 0; i < 40; i++) screen.update(16);
+    screen.draw(ctx);
+    expect(calls.filter((c) => c.name === 'fillRect' && c.args[2] === 1 && c.args[3] === 4).length).toBeGreaterThan(20);
+    const styles: string[] = [];
+    const spy = new Proxy({}, { get: (_t, name: string) => (name === 'measureText' ? () => ({ width: 10 }) : () => {}), set: (_t, name: string, value) => { if (name === 'fillStyle') styles.push(String(value)); return true; } }) as unknown as CanvasRenderingContext2D;
+    screen.draw(spy);
+    expect(styles.some((style) => style.startsWith('rgba(70, 68, 84'))).toBe(true);
+  });
+
+  test('a new screen comes up out of black, and a battle from behind a shutter', () => {
+    const { ctx, calls } = recorder();
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store(done('intro-1')), CATALOG), sprites, fast: false, seed: 3 });
+    press(app, 'confirm');
+    const veil = () => { calls.length = 0; app.draw(ctx); return calls.filter((c) => c.name === 'fillRect').at(-1)!.args; };
+    // The last thing drawn is the veil over the whole screen.
+    expect(veil()).toEqual([0, 0, 310, 270]);
+    app.update(400);
+    expect(veil()).not.toEqual([0, 0, 310, 270]);
+    select(app, 'contracts');
+    select(app, 'patrol');
+    app.update(6000);
+    select(app, 'accept');
+    // Two leaves, top and bottom, drawing back.
+    calls.length = 0;
+    app.update(16);
+    app.draw(ctx);
+    const leaves = calls.filter((c) => c.name === 'fillRect').slice(-2).map((c) => c.args);
+    expect(leaves[0][1]).toBe(0);
+    expect(leaves[1][1]).toBe(270 - (leaves[1][3] as number));
+    expect(leaves[0][3]).toBeGreaterThan(100);
   });
 
   test('every objective draws its line', () => {

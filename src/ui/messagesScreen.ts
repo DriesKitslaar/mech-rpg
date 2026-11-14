@@ -5,6 +5,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
+import { Typewriter } from './typewriter';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawText, wrap } from './widgets';
 
 const M = STRINGS.messagesScreen;
@@ -13,6 +14,9 @@ const M = STRINGS.messagesScreen;
 export class MessagesScreen implements Screen {
   private list: MenuList;
   private reading: Message | null = null;
+  /** The message being read, wrapped, and the writer that types it out. */
+  private rows: string[][] = [];
+  private writer: Typewriter | null = null;
 
   constructor(private app: App) {
     this.list = new MenuList(this.items());
@@ -27,7 +31,9 @@ export class MessagesScreen implements Screen {
     return this.arrived().map((m) => ({ id: m.id, label: m.subject, enabled: true, note: read.includes(m.id) ? undefined : M.isNew }));
   }
 
-  update(): void {}
+  update(dtMs: number): void {
+    this.writer?.update(dtMs);
+  }
 
   onInput(action: InputAction): void {
     if (this.reading) {
@@ -42,7 +48,11 @@ export class MessagesScreen implements Screen {
     else if (action === 'cancel') this.app.go('hub');
     else if (action === 'confirm' && this.list.selected) {
       this.reading = this.arrived().find((m) => m.id === this.list.selected!.id) ?? null;
-      if (this.reading) this.app.readMessage(this.reading.id);
+      if (this.reading) {
+        this.app.readMessage(this.reading.id);
+        this.rows = this.reading.body.map((paragraph) => wrap(paragraph, charsFor(LOGICAL_W - 24)));
+        this.writer = new Typewriter(this.rows.flat(), 150, this.app.deps.fast);
+      }
     }
   }
 
@@ -84,9 +94,11 @@ export class MessagesScreen implements Screen {
       drawText(ctx, line, textX, 50 + i * 14, { size: 16, color: COLORS.accent }));
 
     drawPanel(ctx, 4, 88, LOGICAL_W - 8, 176);
+    const written = this.writer?.visible() ?? this.rows.flat();
+    let at = 0;
     let y = 96;
-    for (const paragraph of message.body) {
-      for (const line of wrap(paragraph, charsFor(LOGICAL_W - 24))) { drawText(ctx, line, 12, y); y += LINE; }
+    for (const paragraph of this.rows) {
+      for (const _full of paragraph) { drawText(ctx, written[at++], 12, y); y += LINE; }
       y += 5;
     }
   }

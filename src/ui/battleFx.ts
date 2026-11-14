@@ -71,6 +71,8 @@ export class BattleFx {
   private now = 0;
   private effects: Fx[] = [];
   private gone = new Set<string>();
+  /** Jolts to the whole field: when each lands, how long it lasts, how far it throws things, and whether it has been felt. */
+  private jolts: { start: number; dur: number; amount: number; felt: boolean }[] = [];
 
   constructor(private scene: Scene) {}
 
@@ -80,6 +82,33 @@ export class BattleFx {
 
   private say(delay: number, at: Pt, text: string, color: string): void {
     this.add(delay, TEXT_MS, { kind: 'text', at: { x: at.x, y: at.y - 10 }, text, color });
+  }
+
+  /** Shakes the whole field by up to `amount` pixels for `dur`, starting after `delay`. */
+  private jolt(delay: number, amount: number, dur: number): void {
+    this.jolts.push({ start: this.now + delay, dur, amount, felt: false });
+  }
+
+  /** How far the field is thrown right now: the hardest jolt that is still going, dying away. */
+  shake(): { dx: number; dy: number } {
+    let amp = 0;
+    for (const j of this.jolts) {
+      if (this.now < j.start || this.now >= j.start + j.dur) continue;
+      amp = Math.max(amp, j.amount * (1 - (this.now - j.start) / j.dur));
+    }
+    if (amp <= 0) return { dx: 0, dy: 0 };
+    return { dx: px(Math.sin(this.now * 0.11) * amp), dy: px(Math.cos(this.now * 0.17) * amp) };
+  }
+
+  /** Milliseconds the handheld should rumble for the jolts that have landed since this was last asked. */
+  takeRumble(): number {
+    let ms = 0;
+    for (const j of this.jolts) {
+      if (j.felt || this.now < j.start) continue;
+      j.felt = true;
+      ms = Math.max(ms, Math.round(j.dur * 0.6));
+    }
+    return ms;
   }
 
   onEvent(event: BattleEvent): void {
@@ -104,6 +133,8 @@ export class BattleFx {
           this.add(0, flight, { kind: 'projectile', from, to, dtype });
         }
         if (event.hit) {
+          // A hit that takes a real bite is felt by the whole field.
+          if (event.damage >= 60) this.jolt(flight, 2, 170);
           this.add(flight, HIT_MS, { kind: 'hit', unit: event.target });
           this.add(flight, HIT_MS, { kind: 'burst', at: target, size: dtype === 'explosive' ? 14 : 7, color: TYPE_COLOR[dtype] });
           if (event.absorbed) this.say(flight, { x: target.x, y: target.y - 12 }, STRINGS.fx.block(event.absorbed), COLORS.energy);
@@ -115,9 +146,11 @@ export class BattleFx {
       }
       case 'partDestroyed':
         this.add(0, SPARK_MS, { kind: 'sparks', at: s.hitPoint(event.unit, event.part), color: '#ffd27f' });
+        this.jolt(0, 2, 180);
         break;
       case 'unitDestroyed': {
         const at = s.centre(event.unit);
+        this.jolt(0, 3, 320);
         this.add(0, DEATH_MS, { kind: 'death', unit: event.unit, at });
         for (const [i, off] of [[0, 0], [-10, 6], [9, -7]].entries()) {
           this.add(i * 130, 300, { kind: 'burst', at: { x: at.x + off[0], y: at.y + off[1] }, size: 16, color: '#ff8a3c' });
@@ -150,6 +183,7 @@ export class BattleFx {
         break;
       case 'stagger': {
         const at = s.centre(event.unit);
+        this.jolt(0, 3, 260);
         this.add(0, 480, { kind: 'pulse', unit: event.unit });
         this.add(0, SPARK_MS, { kind: 'sparks', at, color: COLORS.heat });
         this.say(0, at, STRINGS.fx.stagger, COLORS.heat);
@@ -185,6 +219,7 @@ export class BattleFx {
           this.add(MELEE_MS + i * 90, 320, { kind: 'burst', at: { x: at.x + off[0], y: at.y + off[1] }, size: 22, color: '#ff8a3c' });
         }
         this.add(MELEE_MS, HIT_MS * 2, { kind: 'hit', unit: event.target });
+        this.jolt(MELEE_MS, 5, 450);
         this.say(MELEE_MS, at, `-${event.damage}`, '#ffffff');
         break;
       }
@@ -198,6 +233,7 @@ export class BattleFx {
       }
       case 'phase': {
         const at = s.centre(event.unit);
+        this.jolt(0, 4, 500);
         this.add(0, 700, { kind: 'pulse', unit: event.unit });
         for (const [i, size] of [18, 30, 44].entries()) this.add(i * 140, 380, { kind: 'burst', at, size, color: COLORS.accent });
         this.say(0, at, STRINGS.fx.phase(event.phase + 1), COLORS.accent);
@@ -209,6 +245,7 @@ export class BattleFx {
         const from = { x: -6, y: Math.max(20, to.y - 40) };
         this.add(0, PROJECTILE_MS, { kind: 'projectile', from, to, dtype: 'energy' });
         this.add(PROJECTILE_MS, HIT_MS, { kind: 'hit', unit: event.target });
+        this.jolt(PROJECTILE_MS, 2, 160);
         this.add(PROJECTILE_MS, HIT_MS, { kind: 'burst', at: to, size: 12, color: TYPE_COLOR.energy });
         this.say(PROJECTILE_MS, to, `-${event.damage}`, '#ffffff');
         break;
@@ -230,6 +267,7 @@ export class BattleFx {
       if (done && fx.kind === 'death') this.gone.add(fx.unit);
       return !done;
     });
+    this.jolts = this.jolts.filter((j) => this.now < j.start + j.dur || !j.felt);
   }
 
   private active(): { fx: Fx; p: number }[] {
