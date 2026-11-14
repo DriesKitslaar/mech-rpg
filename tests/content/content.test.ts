@@ -183,7 +183,7 @@ describe('sprites', () => {
 });
 
 describe('campaign content', () => {
-  const story = MISSIONS.filter((m) => m.phase !== 'patrol');
+  const story = MISSIONS.filter((m) => m.phase !== 'patrol' && m.phase !== 'side');
   const of = (phase: Mission['phase']) => MISSIONS.filter((m) => m.phase === phase);
 
   test('there are twenty-nine story contracts and one patrol, with unique ids, none of them called like the archive', () => {
@@ -270,7 +270,7 @@ describe('campaign content', () => {
       for (const id of Object.values(enemy.build)) expect(CATALOG[id], `${enemy.id}: ${id}`).toBeDefined();
       if (enemy.portrait) expect(enemy.portrait in SPRITES, enemy.portrait).toBe(true);
     }
-    expect(Object.keys(ENEMIES)).toHaveLength(30);
+    expect(Object.keys(ENEMIES)).toHaveLength(36);
   });
 
   test('every enemy appears in the story', () => {
@@ -281,8 +281,8 @@ describe('campaign content', () => {
   test('enemies that are drawn from their parts have a sprite for every part they show, in every phase', () => {
     const composed = Object.values(ENEMIES).filter((e) => e.composed);
     expect(composed.map((e) => e.id).sort()).toEqual([
-      'ashfall-unbound', 'assessor', 'bailiff', 'bulldozer', 'heavy-mech', 'juggernaut', 'krell', 'light-mech', 'marksman',
-      'ripper', 'rival', 'rival-2', 'rook', 'sable', 'stalker',
+      'ashfall-unbound', 'assessor', 'bailiff', 'bulldozer', 'dredge', 'heavy-mech', 'hollow', 'juggernaut', 'krell', 'light-mech', 'magpie', 'marksman',
+      'notary', 'paragon', 'ripper', 'rival', 'rival-2', 'rook', 'sable', 'stalker', 'vesper',
     ]);
     for (const enemy of composed) {
       const { head, core, arms, legs } = enemy.build;

@@ -1,3 +1,4 @@
+import { SIDE_WORK } from './sidework';
 import type { Support } from '../core/battle';
 import type { Battle, Faction, Message, Mission, TalkLine, Verdict } from '../core/campaign';
 
@@ -536,6 +537,9 @@ export const MISSIONS: Mission[] = [
       }),
     ],
   },
+
+  // Beside the story: the bounty board, and what comes of the pilot's decisions.
+  ...SIDE_WORK,
 ];
 
 /** How the war ended for each client: shown once after the finale, before the audit begins. */
