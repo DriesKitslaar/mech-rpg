@@ -1,4 +1,6 @@
 import type { Page } from '@playwright/test';
+import { MEDAL_PAY } from '../src/core/medals';
+import { MEDALS } from '../src/content/medals';
 
 export type Snap = {
   screen: string; credits: number | null; battlesWon: number | null; message?: string;
@@ -23,6 +25,9 @@ export type Snap = {
 };
 
 export const snap = (page: Page): Promise<Snap> => page.evaluate(() => (window as any).__game.snapshot());
+
+/** What the medals a snapshot shows have paid: credits that no contract accounts for. */
+export const medalPay = (s: Snap): number => (s.medals ?? []).reduce((sum, id) => sum + MEDAL_PAY[MEDALS.find((m) => m.id === id)!.tier], 0);
 
 /** Waits two frames: input is handled on the frame after the key event. */
 export const nextFrame = (page: Page): Promise<unknown> =>

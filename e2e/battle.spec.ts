@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { acceptContract, choose, finishBattle, open, press, snap, startBattle, waitForPhase, waitForScreen } from './helpers';
+import { acceptContract, choose, finishBattle, medalPay, open, press, snap, startBattle, waitForPhase, waitForScreen } from './helpers';
 
 test('a battle can be played to its end with the keyboard alone', async ({ page }, testInfo) => {
   const errors: string[] = [];
@@ -44,7 +44,8 @@ test('confirming the result leads to the settlement and back to the hub', async 
   expect(won).toBe(end.battle?.outcome === 'victory');
   await press(page, 'Enter');
   await waitForScreen(page, 'hub');
-  expect(await snap(page)).toMatchObject({ credits: 1200 + net, battlesWon: won ? 1 : 0 });
+  const hub = await snap(page);
+  expect(hub).toMatchObject({ credits: 1200 + net + medalPay(hub), battlesWon: won ? 1 : 0 });
 });
 
 test('a contract with two battles moves on to the second after a win', async ({ page }, testInfo) => {
