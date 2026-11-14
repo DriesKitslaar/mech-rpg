@@ -1,0 +1,11 @@
+{
+  "id": "boss-strip-miner",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-bulwark.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Three-quarter side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw a huge war machine from a retro video game: a colossal mining machine in the same safety yellow with black hazard stripes and dark steel: a huge armoured cab on two enormous caterpillar tracks, with a giant bucket-wheel excavator arm reaching forward and a row of white work lights. Massive and industrial. Show only this single machine, whole, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

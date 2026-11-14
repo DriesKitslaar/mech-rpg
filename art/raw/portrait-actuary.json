@@ -1,0 +1,9 @@
+{
+  "id": "portrait-actuary",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a thin, immaculate insurance adjuster with slicked dark hair, round gold-rimmed glasses and a faint polite smile, wearing a black high-collared suit with a small gold pin shaped like a balance scale. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

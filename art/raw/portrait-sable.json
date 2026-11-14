@@ -1,0 +1,9 @@
+{
+  "id": "portrait-sable",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a pale, sharp-featured woman ace pilot with silver-white hair in a tight braid and a cold stare, wearing a white flight suit with thin glowing cyan piping. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

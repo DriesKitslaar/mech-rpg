@@ -1,0 +1,11 @@
+{
+  "id": "enemy-shield-drone",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-halo.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a hovering support drone in the same white and navy armour with cyan lights: a round body with two small side rotors, carrying in front of it a large upright hexagonal panel of translucent cyan light with a honeycomb pattern. The whole drone, nothing else, no mecha. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "bg-sluice",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art background, no anti-aliasing: enormous floodgates at the bottom of a megacity at night, towering rusted gate doors standing half open with water pouring between them, catwalks and chains, strings of teal and orange lights, a wet concrete quay filling the lower third. No characters, no robots, no vehicles in the foreground, no readable text."
+}

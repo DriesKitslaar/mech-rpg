@@ -1,0 +1,11 @@
+{
+  "id": "boss-adjuster",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-auditor.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Three-quarter side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw a huge war machine from a retro video game: a towering judge-like machine in the same glossy black armour with fine gold trim: a tall narrow body like a robed figure on a wide skirt base, a faceless mask head with a crown of gold spikes, and four long arms, two holding up a large golden balance scale and two ending in long barrels. Imposing, elegant and cold. Show only this single machine, whole, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

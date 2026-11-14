@@ -1,0 +1,11 @@
+{
+  "id": "enemy-repair-drone",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-salvage.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a hovering repair drone in the same patched teal and rust plating: a boxy body with two rotors on top, two small jointed tool arms underneath, one ending in a welding torch with a bright spark, and one amber lamp. The whole drone, nothing else, no mecha. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

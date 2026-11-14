@@ -1,0 +1,9 @@
+{
+  "id": "still-ledger",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art illustration, crisp pixels, no anti-aliasing, no text, no lettering, cinematic composition: a cold orderly megacity at grey dawn where every tower is the same black with gold lines in perfect rows, the streets clean and empty, and a single mecha in black and gold armour standing guard in the foreground."
+}

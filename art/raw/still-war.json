@@ -1,0 +1,9 @@
+{
+  "id": "still-war",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art illustration, crisp pixels, no anti-aliasing, no text, no lettering, cinematic composition: two giant mecha silhouettes facing each other across a burning city street at night, searchlights and streaks of tracer fire in the sky, flickering neon signs with abstract shapes, seen from a dramatic low angle."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "still-notice",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art illustration, crisp pixels, no anti-aliasing, no text, no lettering, cinematic composition: a colossal featureless black tower with thin gold light lines rising above a dark megacity at night, far taller than everything around it, while thousands of small golden slips of paper fall like snow over the streets."
+}

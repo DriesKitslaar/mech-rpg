@@ -74,6 +74,9 @@ async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
     // Backgrounds are darkened instead of snapped to the mech palette, so units stand out against them.
     out = await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' })
       .modulate({ brightness: 0.55, saturation: 0.85 }));
+  } else if (job.kind === 'still') {
+    // A still is the picture itself: it keeps its colours, and the scene screen puts its own shade behind the text.
+    out = await decode(sharp(src).resize(box.w, box.h, { fit: 'cover', position: 'centre' }));
   } else {
     const cut = trim(chromaKeyGreen(await decode(src)));
     let small = encode(cut).resize(box.w, box.h, { fit: 'inside' });
@@ -110,7 +113,7 @@ async function addPaintInfo(manifest: Record<string, Entry>): Promise<void> {
   }
   // Enemy sprites are whole pictures: each is judged on its own, so elites can be shown in other colours.
   for (const job of JOBS) {
-    if ((job.kind !== 'enemy' && job.kind !== 'enemyMech') || !manifest[job.id]) continue;
+    if ((job.kind !== 'enemy' && job.kind !== 'enemyMech' && job.kind !== 'boss') || !manifest[job.id]) continue;
     manifest[job.id].paint = analyse([await decode(`${OUT}/${job.id}.png`)]);
   }
 }

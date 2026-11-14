@@ -1,0 +1,11 @@
+{
+  "id": "boss-overseer",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-halo.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Three-quarter side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw a huge war machine from a retro video game: a large floating command platform in the same white and navy armour with cyan lights: a wide disc-shaped body with one huge glowing cyan eye lens at its centre, a ring of smaller emitters around its rim and three thrusters glowing underneath. Clean, cold and watchful. Show only this single machine, whole, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}
