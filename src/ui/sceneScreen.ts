@@ -17,6 +17,11 @@ export function sceneRows(scene: Scene): number {
 
 /** How long the picture is left alone before the text comes up over it. */
 const PICTURE_MS = 900;
+/**
+ * How long a press is ignored after the page comes up, and after the press that wrote it out: a
+ * button mashed through the settlement must not carry the reader past a page of the story.
+ */
+export const SCENE_HOLD_MS = 500;
 
 /** A page of story between contracts: the opening of an act, or how it all ended. Shown once. */
 export class SceneScreen implements Screen {
@@ -25,14 +30,18 @@ export class SceneScreen implements Screen {
   private rows: string[][];
   private writer: Typewriter;
   private typeTick = 0;
+  /** What is left of the time a press is ignored. */
+  private hold: number;
 
   constructor(private app: App, private scene: Scene) {
     this.rows = scene.lines.map((paragraph) => wrap(paragraph, SCENE_CHARS));
     this.writer = new Typewriter(this.rows.flat(), 60, app.deps.fast);
+    this.hold = app.deps.fast ? 0 : SCENE_HOLD_MS;
   }
 
   update(dtMs: number): void {
     this.clock += dtMs;
+    this.hold = Math.max(0, this.hold - dtMs);
     // The picture has the screen to itself for a moment; then the words come.
     if (this.clock < PICTURE_MS && !this.app.deps.fast) return;
     this.typeTick -= dtMs;
@@ -43,18 +52,22 @@ export class SceneScreen implements Screen {
   }
 
   onInput(action: InputAction): void {
-    if (action !== 'confirm') return;
-    // The first press writes the page out; the next one leaves it. A short hold-off keeps a button
-    // mashed through the settlement from skipping the page unread.
+    if (action !== 'confirm' || this.hold > 0) return;
+    // The first press writes the page out; the next one leaves it. Each is held off for a moment
+    // after what came before it, so a mashed button skips nothing unread.
     if (!this.writer.done) {
       this.clock = Math.max(this.clock, PICTURE_MS);
       this.writer.finish();
-    } else if (this.app.deps.fast || this.clock > 800) this.app.finishScene(this.scene);
+      this.hold = this.app.deps.fast ? 0 : SCENE_HOLD_MS;
+    } else this.app.finishScene(this.scene);
   }
 
   view(): ScreenView {
     const { id, ending, faction } = this.scene;
-    return { menu: { items: [], cursor: 0 }, scene: id, ...(ending && faction ? { ending: faction } : {}) };
+    return {
+      menu: { items: [], cursor: 0 }, scene: id, typing: !this.writer.done, busy: this.hold > 0,
+      ...(ending && faction ? { ending: faction } : {}),
+    };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

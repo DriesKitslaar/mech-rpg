@@ -74,7 +74,9 @@ export class TitleScreen implements Screen {
     const drift = fast ? 0 : Math.round(Math.sin(this.clock / 2600) * 3);
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    ctx.drawImage(bg.image, -4, -4 + drift, LOGICAL_W + 8, LOGICAL_H + 8);
+    // Pixel for pixel: once as it is, and once more a few pixels up or down, so the drift never shows an edge.
+    ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
+    if (drift !== 0) ctx.drawImage(bg.image, 0, drift, LOGICAL_W, LOGICAL_H);
     ctx.fillStyle = 'rgba(8, 8, 20, 0.4)';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     if (!fast) drawWeather(ctx, 'rain', this.clock, LOGICAL_W, LOGICAL_H);

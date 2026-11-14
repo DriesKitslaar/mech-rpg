@@ -284,6 +284,11 @@ export const MAX_FEEDBACK = 0.7;
 const LOOKAHEAD = 0.25;
 /** A song starts this long after it is asked for, so that its first notes are not already late. */
 const LEAD_IN = 0.05;
+/**
+ * Songs that go on from where they were left instead of starting over. The hub song is left and come
+ * back to with every briefing; started from the top each time, nobody would hear past its first bars.
+ */
+const RESUMES: SongName[] = ['hub'];
 /** A stopped song is faded out over this long, to cut it short without a click. */
 const FADE = 0.06;
 /** Vibrato waits this long and takes as long again to reach its depth. */
@@ -504,6 +509,8 @@ export class Music {
   private playing: Playing | null = null;
   private rig: Rig | null = null;
   private compiled = new Map<SongName, CompiledSong | null>();
+  /** How far into its loop a song was when it was last left, in seconds, for the songs that pick up where they were. */
+  private left = new Map<SongName, number>();
   /** Songs that were stopped and are waiting for their fade to end before they are unplugged. */
   private fading: { ctx: AudioContext; nodes: AudioNode[]; until: number }[] = [];
 
@@ -524,6 +531,7 @@ export class Music {
       if (!ctx) return;
       const wanted = this.enabled ? this.wanted : null;
       if (this.playing && (this.playing.name !== wanted || this.playing.rig.ctx !== ctx)) {
+        this.remember(this.playing);
         this.silence(this.playing);
         this.playing = null;
       }
@@ -604,7 +612,10 @@ export class Music {
         }
         return { instrument, out, send };
       });
-      return { name, compiled, rig, origin: ctx.currentTime + LEAD_IN, next: 0, bus, channels, nodes, live: [] };
+      // A song that picks up where it was left is laid on the clock as if it had been playing all along:
+      // the queue then skips what is behind and brings in the notes still sounding, as it does after a pause.
+      const into = RESUMES.includes(name) ? this.left.get(name) ?? 0 : 0;
+      return { name, compiled, rig, origin: ctx.currentTime + LEAD_IN - into, next: 0, bus, channels, nodes, live: [] };
     } catch (error) {
       unplug(nodes);
       throw error;
@@ -674,6 +685,15 @@ export class Music {
       const held = playing.origin + stepTime(compiled, note.step + note.length) - at;
       playTone(port, instrument, midiFrequency(note.midi), at, held);
     }
+  }
+
+  /** Notes how far into its loop a song is as it is left. */
+  private remember(playing: Playing): void {
+    const { compiled, name } = playing;
+    if (!compiled.song.loop || !RESUMES.includes(name)) return;
+    const length = compiled.steps * compiled.stepSeconds;
+    const into = playing.rig.ctx.currentTime - playing.origin;
+    this.left.set(name, length > 0 && into > 0 ? into % length : 0);
   }
 
   /** Fades a song out within a tenth of a second and stops everything it had queued. */

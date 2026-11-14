@@ -115,7 +115,7 @@ class MissionHost implements Screen {
     if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: this.app.game!.paint,
-      title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms),
+      title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
       ...(boss ? { boss: boss.name } : {}),
       background: this.mission.battles[this.index].background,
       label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
@@ -178,7 +178,10 @@ class MissionHost implements Screen {
         maxAp: Object.values(player.parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0), repairsLeft: player.repairsLeft,
       },
       message: flow.message,
+      // A line of talk holds its place for a moment: a press then is passed over, not refused.
+      busy: this.screen.holding,
       battle: {
+        banner: this.screen.banner, typing: this.screen.typing,
         phase: flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
@@ -230,6 +233,13 @@ export class App {
 
   playTrack(track: TrackName): void {
     this.deps.music?.play(track);
+  }
+
+  /** Starts the fanfare for a battle won or lost, if there is music to play it. Says whether it did. */
+  jingle(won: boolean): boolean {
+    if (!this.deps.music || !this.settings.music) return false;
+    this.playTrack(won ? 'victory' : 'defeat');
+    return true;
   }
 
   private applySettings(): void {
@@ -461,10 +471,20 @@ export class App {
       ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     }
   }
-  onInput(action: InputAction): void { this.current.onInput(action); }
+  /** True while a shutter still hides the battle behind it. */
+  private get shuttered(): boolean {
+    return !this.deps.fast && this.entering.shutter && this.entering.left > 0;
+  }
+
+  onInput(action: InputAction): void {
+    // Nothing is pressed on a battle that cannot be seen yet.
+    if (this.shuttered) return;
+    this.current.onInput(action);
+  }
 
   snapshot(): unknown {
     const game = this.game;
+    const view = this.current.view();
     return {
       screen: this.name,
       credits: game?.credits ?? null,
@@ -482,7 +502,9 @@ export class App {
       ranks: game?.ranks ?? null,
       scenes: game?.scenes ?? null,
       saveFailed: this.saveFailed,
-      ...this.current.view(),
+      ...view,
+      // Not taking input right now: behind a shutter, or holding a line of text for a moment.
+      busy: this.shuttered || view.busy === true,
     };
   }
 }
