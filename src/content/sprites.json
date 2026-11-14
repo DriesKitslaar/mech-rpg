@@ -1554,6 +1554,11 @@
     "w": 310,
     "h": 270
   },
+  "bg-simulator": {
+    "file": "sprites/bg-simulator.png",
+    "w": 310,
+    "h": 270
+  },
   "bg-clearing": {
     "file": "sprites/bg-clearing.png",
     "w": 310,

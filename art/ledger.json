@@ -1417,5 +1417,25 @@
    },
    "total_tokens": 288
   }
+ },
+ {
+  "id": "bg-simulator",
+  "at": "2026-11-14T15:01:26.885Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 93,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 93
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 289
+  }
  }
 ]

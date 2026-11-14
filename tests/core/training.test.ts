@@ -8,6 +8,7 @@ import { WEAPON_SLOTS, type Catalog } from '../../src/core/types';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { DRILLS } from '../../src/content/drills';
 import { MISSIONS } from '../../src/content/missions';
+import SPRITES from '../../src/content/sprites.json';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { TALK_CHARS, TALK_LINES } from '../../src/ui/battleScreen';
 import { BRIEFING_CHARS, briefingRows, objectiveLines } from '../../src/ui/briefingScreen';
@@ -67,6 +68,9 @@ describe('the drills', () => {
     expect(validatePlayerBuild(drill.build, CATALOG)).toEqual([]);
     for (const part of Object.values(drill.build)) expect(CATALOG[part].vendor, part).toBeDefined();
     for (const id of drill.battle.enemies) expect(Object.hasOwn(ALL_ENEMIES, id), id).toBe(true);
+    // The simulator has a hall of its own, and there is a picture of it.
+    expect(drill.battle.background).toBe('bg-simulator');
+    expect(drill.battle.background in SPRITES).toBe(true);
     expect(drill.title.length).toBeLessThanOrEqual(19);
     expect(drill.lesson.length).toBeLessThanOrEqual(30);
     const mission = drillMission(fresh(), drill, 'Training Simulator');

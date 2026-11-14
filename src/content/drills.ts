@@ -1,7 +1,8 @@
 import type { TalkLine } from '../core/campaign';
 import type { Drill } from '../core/training';
 
-const HALL = 'bg-arena';
+/** Every drill is fought in the simulator's own hall: a grid of light with nothing in it to break. */
+const HALL = 'bg-simulator';
 /** The simulator talks in the plain terminal voice Dispatch uses when nobody is on the line. */
 const sim = (at: TalkLine['at'], text: string): TalkLine => ({ at, who: 'Simulator', text });
 const STOCK = { booster: 'bst-stock', fcs: 'fcs-stock' };

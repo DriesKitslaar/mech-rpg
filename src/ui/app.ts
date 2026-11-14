@@ -669,6 +669,12 @@ export class App {
   /** One announcement at a time, and none over a battle or a page of story: they wait for what comes after. */
   private stepToast(dtMs: number): void {
     if (this.toast) {
+      // One that is up when a battle or a page of story begins steps aside, and is announced again after it.
+      if (NO_TOASTS.includes(this.name)) {
+        this.toasts.unshift(this.toast.item);
+        this.toast = null;
+        return;
+      }
       this.toast.left -= dtMs;
       if (this.toast.left <= 0) this.toast = null;
       return;

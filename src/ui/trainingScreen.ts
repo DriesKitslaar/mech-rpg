@@ -51,7 +51,7 @@ export class TrainingScreen implements Screen {
 
   draw(ctx: CanvasRenderingContext2D): void {
     const { sprites } = this.app.deps;
-    const bg = sprites.get('bg-arena', { w: LOGICAL_W, h: LOGICAL_H, label: '' });
+    const bg = sprites.get('bg-simulator', { w: LOGICAL_W, h: LOGICAL_H, label: '' });
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);

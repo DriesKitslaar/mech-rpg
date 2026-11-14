@@ -7,7 +7,7 @@ export const WEATHER: Record<string, Weather> = {
   'bg-mine': 'dust', 'bg-rooftop': 'dust',
   'bg-foundry': 'embers',
   'bg-vault': 'motes', 'bg-clearing': 'motes', 'bg-plaza': 'motes',
-  'bg-arena': 'none', 'bg-garage': 'none',
+  'bg-arena': 'none', 'bg-garage': 'none', 'bg-simulator': 'none',
 };
 
 export const weatherFor = (background: string): Weather => (Object.hasOwn(WEATHER, background) ? WEATHER[background] : 'none');
