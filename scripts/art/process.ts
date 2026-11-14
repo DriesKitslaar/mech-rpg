@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as iq from 'image-q';
 import sharp, { type Sharp } from 'sharp';
-import { BOX, JOBS, POSE_BOX, type ArtJob } from './jobs';
+import { BOX, JOBS, POSE_BOX, paintFamilyOf, type ArtJob } from './jobs';
 import { analyse, type PaintInfo } from '../../src/ui/paint';
 import { bounds, chromaKeyGreen, quantize, trim, type RawImage, type RGB } from './imageOps';
 
@@ -90,14 +90,20 @@ async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
  * part of a family takes a paint scheme the same way.
  */
 async function addPaintInfo(manifest: Record<string, Entry>): Promise<void> {
-  const families = new Map<string, string[]>();
+  // Per family: the layers cut from its own drawing, which are what it is judged by, and every layer that takes its paint.
+  const families = new Map<string, { own: string[]; all: string[] }>();
   for (const job of JOBS) {
     if (job.kind !== 'layer' || !manifest[job.id]) continue;
-    const family = job.references?.[0] ?? job.id;
-    families.set(family, [...(families.get(family) ?? []), job.id]);
+    const family = paintFamilyOf(job);
+    const group = families.get(family) ?? { own: [], all: [] };
+    group.all.push(job.id);
+    // Free-standing legs come from an edited copy of the drawing: they take the family's paint but do not shift it.
+    if (job.references?.[0]?.endsWith(`family-${family}.png`)) group.own.push(job.id);
+    families.set(family, group);
   }
-  for (const [family, ids] of families) {
-    const images = await Promise.all(ids.map((id) => decode(`${OUT}/${id}.png`)));
+  for (const [family, { own, all }] of families) {
+    const ids = all;
+    const images = await Promise.all((own.length > 0 ? own : all).map((id) => decode(`${OUT}/${id}.png`)));
     const paint = analyse(images);
     for (const id of ids) manifest[id].paint = paint;
     console.log(`paint ${family}: trim hues ${JSON.stringify(paint.accent)}, brightness ${paint.lo}/${paint.mid}/${paint.hi}`);

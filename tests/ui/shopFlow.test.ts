@@ -2,7 +2,7 @@ import { buy, newGame, type GameState } from '../../src/core/game';
 import type { FramePart, Shield, Weapon } from '../../src/core/types';
 import { CATALOG, SHOP_PARTS, STARTER_BUILD } from '../../src/content/parts';
 import type { InputAction } from '../../src/platform/input';
-import { compareParts, fittedFor, partLines } from '../../src/ui/partInfo';
+import { COMPARE_LINE_CHARS, compareParts, fittedFor, partLines } from '../../src/ui/partInfo';
 import { SHOP_TABS, ShopFlow } from '../../src/ui/shopFlow';
 
 const fresh = (credits = 1200): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), credits });
@@ -222,10 +222,25 @@ describe('comparing a part with the one that is fitted', () => {
     expect(chips('mod-barrier', 'mod-coolant')).toEqual([['WT +10', false], ['DRAIN +10', false]]);
   });
 
-  test('the differences are laid out in rows that fit the panel', () => {
+  test('a weapon that fires several shots a pull is judged by the pull, not by one shot', () => {
+    // Three shots of 20 against one of 38: more damage and more push, not less.
+    expect(chips('wpn-chain-gun', 'wpn-rivet-rifle')).toEqual(expect.arrayContaining([['DMG +22', true], ['IMP +22', true]]));
+    expect(chips('wpn-needler', 'wpn-rivet-rifle')).toEqual(expect.arrayContaining([['DMG +14', true], ['IMP +14', true]]));
+    expect(chips('wpn-rivet-rifle', 'wpn-chain-gun')).toEqual(expect.arrayContaining([['DMG -22', false]]));
+  });
+
+  test('the differences are laid out in rows that fit the panel, for every pair of parts the shop can show', () => {
     const rows = compareParts(CATALOG['wpn-rail-lance'], CATALOG['wpn-rivet-rifle']);
     expect(rows.length).toBeGreaterThan(1);
-    for (const row of rows) expect(row.map((c) => c.text).join('  ').length).toBeLessThanOrEqual(28);
+    let widest = 0;
+    for (const a of SHOP_PARTS) {
+      for (const b of SHOP_PARTS) {
+        for (const row of compareParts(a, b)) widest = Math.max(widest, row.map((c) => c.text).join('  ').length);
+      }
+    }
+    expect(widest).toBeGreaterThan(20);
+    expect(widest).toBeLessThanOrEqual(COMPARE_LINE_CHARS);
+    expect(COMPARE_LINE_CHARS).toBeLessThan(28);
   });
 
   test('the part to compare with is the one in the slot the new part would take', () => {

@@ -222,6 +222,20 @@ describe('never without a weapon', () => {
     expect(checkSell(g, 'wpn-arc-pistol', CATALOG)).toBeNull();
   });
 
+  test('a blade does not count: it is no weapon on legs that cannot boost, so the last gun stays', () => {
+    const g = equip(buy({ ...fresh(), credits: 9999 }, 'wpn-ram-fist', CATALOG), 'rightHand', null, CATALOG);
+    expect(checkSell(g, 'wpn-rivet-rifle', CATALOG)).toBe('lastWeapon');
+    // The blade itself can go, and so can a second gun.
+    expect(checkSell(g, 'wpn-ram-fist', CATALOG)).toBeNull();
+    expect(checkSell(buy(g, 'wpn-arc-pistol', CATALOG), 'wpn-rivet-rifle', CATALOG)).toBeNull();
+  });
+
+  test('a pilot who owns nothing but blades is issued the starter rifle too', () => {
+    const { 'wpn-rivet-rifle': _gone, ...inventory } = fresh().inventory;
+    const bladesOnly = { ...fresh(), inventory: { ...inventory, 'wpn-ram-fist': 1 }, build: { ...fresh().build, rightHand: 'wpn-ram-fist' } };
+    expect(ensureArmed(bladesOnly, CATALOG, 'wpn-rivet-rifle').inventory['wpn-rivet-rifle']).toBe(1);
+  });
+
   test('a pilot who somehow owns no weapon is issued the starter rifle', () => {
     const { 'wpn-rivet-rifle': _gone, ...inventory } = fresh().inventory;
     const { rightHand: _slot, ...build } = fresh().build;
@@ -373,6 +387,9 @@ describe('saved builds', () => {
     ['a saved build with a part in the wrong slot', (g) => ({ ...g, loadouts: [{ ...g.build, head: 'core-hauler' }, null, null] })],
     ['a saved build with a slot that does not exist', (g) => ({ ...g, loadouts: [{ ...g.build, tail: 'wpn-rivet-rifle' }, null, null] })],
     ['a saved build with an enemy part', (g) => ({ ...g, loadouts: [{ ...g.build, core: 'core-drone' }, null, null] })],
+    ['an empty saved build', (g) => ({ ...g, loadouts: [{}, null, null] })],
+    ['a saved build without a generator', (g) => { const { generator: _g, ...build } = g.build; return { ...g, loadouts: [build, null, null] }; }],
+    ['a saved build without legs', (g) => { const { legs: _l, ...build } = g.build; return { ...g, loadouts: [null, null, build] }; }],
   ];
   test.each(bad)('a save with %s is refused', (_name, make) => {
     expect(isValidState(make(fresh()), CATALOG)).toBe(false);

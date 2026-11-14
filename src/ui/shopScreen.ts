@@ -111,10 +111,11 @@ export class ShopScreen implements Screen {
       drawText(ctx, STRINGS.partInfo.versus(fitted.name), x + 6, ty, { color: COLORS.dim, size: 10 });
       ty += LINE - 1;
       for (const row of rows) {
-        let cx = x + 6;
+        // Placed by characters from the left edge, so rounding never adds up along a row.
+        let chars = 0;
         for (const chip of row) {
-          drawText(ctx, chip.text, cx, ty, { color: chip.good ? COLORS.armor : COLORS.danger });
-          cx += Math.round((chip.text.length + 2) * 4.8);
+          drawText(ctx, chip.text, x + 6 + Math.round(chars * 4.8), ty, { color: chip.good ? COLORS.armor : COLORS.danger });
+          chars += chip.text.length + 2;
         }
         ty += LINE;
       }

@@ -374,7 +374,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
 }
 
 /** How many times one pull of the trigger fires at a target. */
-function shotsOf(weapon: Weapon): number {
+export function shotsOf(weapon: Weapon): number {
   if (weapon.trait === 'twin') return 2;
   if (weapon.trait === 'burst') return Math.max(1, weapon.traitPower ?? 1);
   return 1;

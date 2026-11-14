@@ -20,6 +20,8 @@ export interface ArtJob {
   source?: string;
   /** Mirror horizontally after processing (enemies face the player). */
   flip?: boolean;
+  /** On a family drawing that is another family with its lower body replaced: that family. */
+  base?: string;
   quality?: 'low' | 'medium' | 'high';
 }
 
@@ -101,13 +103,23 @@ function layer(id: string, fromFamily: string, which: Layer, keep: string = KEEP
  */
 function lowerBody(id: string, fromFamily: string, description: string): ArtJob {
   return {
-    id: `family-${id}`, kind: 'family', references: [familyFile(fromFamily)],
+    id: `family-${id}`, kind: 'family', references: [familyFile(fromFamily)], base: fromFamily,
     prompt:
       'Edit the attached pixel art image of a mecha. Keep everything above the waist exactly as it is: same pixels, ' +
       'same position, same size, same colours. Replace only the lower body (the hips, both legs and both feet) with: ' +
       `${description} The new lower body joins the torso at the same waist and rests on the same ground line as the ` +
       `original feet, and is drawn in the same colours and style as the rest of the mecha. ${PIXEL} ${GREEN}`,
   };
+}
+
+/**
+ * The family whose paint a frame layer takes: the family it was cut from, or, for free-standing
+ * legs, the family their drawing was edited from. Legs then take a paint scheme the way the torso
+ * above them does.
+ */
+export function paintFamilyOf(layerJob: ArtJob): string {
+  const name = /family-([a-z0-9-]+)\.png$/.exec(layerJob.references?.[0] ?? '')?.[1] ?? layerJob.id;
+  return JOBS.find((job) => job.id === `family-${name}`)?.base ?? name;
 }
 
 /** The five layers of one family, named after the parts that use them. */

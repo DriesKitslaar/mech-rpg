@@ -1,3 +1,4 @@
+import { shotsOf } from '../core/battle';
 import { impactOf } from '../core/build';
 import type { Build, Catalog, Part } from '../core/types';
 import { STRINGS } from '../content/strings';
@@ -8,6 +9,8 @@ const pct = (n: number): string => String(Math.round(n * 100));
 const signed = (n: number): string => (n >= 0 ? `+${n}` : String(n));
 /** The widest line the garage and shop panels can show. */
 export const PART_LINE_CHARS = 28;
+/** The widest row of comparison chips: one character short of a full line, so the last chip never touches the screen edge. */
+export const COMPARE_LINE_CHARS = PART_LINE_CHARS - 1;
 
 /** A part's statistics as short lines of text, for the garage and the shop. */
 export function partLines(part: Part): string[] {
@@ -65,10 +68,11 @@ type Fact = [string, number, number, boolean, string?];
 function facts(part: Part, fitted: Part): Fact[] {
   const D = STRINGS.partInfo;
   if (part.kind === 'weapon' && fitted.kind === 'weapon') {
+    // Damage and push are compared by the pull of the trigger: three shots of 20 are more than one of 38.
     return [
-      [D.damage, part.damage, fitted.damage, true], [D.accuracy, part.accuracy, fitted.accuracy, true],
+      [D.damage, part.damage * shotsOf(part), fitted.damage * shotsOf(fitted), true], [D.accuracy, part.accuracy, fitted.accuracy, true],
       [D.energy, part.energy, fitted.energy, false], [D.heat, part.heat, fitted.heat, false],
-      [D.impact, impactOf(part), impactOf(fitted), true], [D.weight, part.weight, fitted.weight, false],
+      [D.impact, impactOf(part) * shotsOf(part), impactOf(fitted) * shotsOf(fitted), true], [D.weight, part.weight, fitted.weight, false],
     ];
   }
   if (part.kind === 'generator' && fitted.kind === 'generator') {
@@ -119,7 +123,7 @@ export function compareParts(part: Part, fitted: Part): DiffChip[][] {
   for (const chip of chips) {
     const row = rows.at(-1);
     const width = row ? row.reduce((sum, c) => sum + c.text.length + 2, 0) + chip.text.length : Infinity;
-    if (row && width <= PART_LINE_CHARS) row.push(chip);
+    if (row && width <= COMPARE_LINE_CHARS) row.push(chip);
     else rows.push([chip]);
   }
   return rows;

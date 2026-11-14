@@ -117,6 +117,8 @@ export class GarageFlow {
   get preview(): BuildStats { return computeBuildStats(this.previewBuild, this.catalog); }
   get errors(): BuildError[] { return validatePlayerBuild(this.game.build, this.catalog); }
   get previewErrors(): BuildError[] { return validatePlayerBuild(this.previewBuild, this.catalog); }
+  /** The errors of the build whose numbers the panel shows: the fitted one while browsing slots, else the one previewed. */
+  get shownErrors(): BuildError[] { return this.mode === 'slots' ? this.errors : this.previewErrors; }
 
   statsOf(build: Build): BuildStats {
     return computeBuildStats(build, this.catalog);

@@ -161,19 +161,25 @@ export function buy(state: GameState, partId: string, catalog: Catalog): GameSta
 export function checkSell(state: GameState, partId: string, catalog: Catalog): TradeRefusal | null {
   if (!partOf(catalog, partId) || ownedCount(state, partId) <= 0) return 'notOwned';
   if (spareCount(state, partId) <= 0) return 'equipped';
-  // A pilot without any weapon and without the money for one could never work again.
-  return partOf(catalog, partId)!.kind === 'weapon' && weaponsOwned(state, catalog) <= 1 ? 'lastWeapon' : null;
+  // A pilot without any gun and without the money for one could never work again.
+  return isGun(partOf(catalog, partId)) && gunsOwned(state, catalog) <= 1 ? 'lastWeapon' : null;
 }
 
-/** How many weapons the pilot owns in total, fitted or not. */
-export function weaponsOwned(state: GameState, catalog: Catalog): number {
-  return Object.entries(state.inventory).reduce((sum, [id, count]) => sum + (partOf(catalog, id)?.kind === 'weapon' ? count : 0), 0);
+/**
+ * A weapon that works on any legs. A blade is swung only in a turn that began with a boost, so on
+ * legs that cannot boost it is no weapon at all: it does not count towards being armed.
+ */
+const isGun = (part: Part | undefined): boolean => part?.kind === 'weapon' && !part.melee;
+
+/** How many guns the pilot owns in total, fitted or not. */
+export function gunsOwned(state: GameState, catalog: Catalog): number {
+  return Object.entries(state.inventory).reduce((sum, [id, count]) => sum + (isGun(partOf(catalog, id)) ? count : 0), 0);
 }
 
-/** Issues a pilot who owns no weapon at all the given one, free. The state is returned unchanged otherwise. */
+/** Issues a pilot who owns no gun at all the given one, free. The state is returned unchanged otherwise. */
 export function ensureArmed(state: GameState, catalog: Catalog, weaponId: string): GameState {
-  if (weaponsOwned(state, catalog) > 0 || partOf(catalog, weaponId)?.kind !== 'weapon') return state;
-  return { ...state, inventory: { ...state.inventory, [weaponId]: 1 } };
+  if (gunsOwned(state, catalog) > 0 || !isGun(partOf(catalog, weaponId))) return state;
+  return { ...state, inventory: { ...state.inventory, [weaponId]: ownedCount(state, weaponId) + 1 } };
 }
 
 /** Selling returns the full price, so trying parts out costs nothing. */
@@ -233,7 +239,9 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   for (const saved of loadouts) {
     if (saved === null) continue;
     if (!isRecord(saved)) return false;
-    // A saved build may name parts that have since been sold (loading it is then refused),
+    // A saved build is a whole build: loading one that lacks a required part would fit a mech that cannot exist.
+    if (!REQUIRED.every((slot) => typeof saved[slot] === 'string')) return false;
+    // It may name parts that have since been sold (loading it is then refused),
     // but every part must be one a player can own, in a slot it fits.
     for (const [slot, id] of Object.entries(saved)) {
       if (!BUILD_SLOTS.includes(slot as BuildSlot) || typeof id !== 'string') return false;

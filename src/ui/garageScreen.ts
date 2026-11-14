@@ -101,7 +101,7 @@ export class GarageScreen implements Screen {
     const { flow } = this;
     const now = flow.stats;
     const next = flow.preview;
-    const errors = flow.mode === 'parts' ? flow.previewErrors : flow.errors;
+    const errors = flow.shownErrors;
     drawPanel(ctx, 0, STATS_Y, LOGICAL_W, LOGICAL_H - STATS_Y);
 
     const cell = (label: string, value: string, diff: number, higherIsBetter: boolean, bad: boolean, col: number, row: number): void => {

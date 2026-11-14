@@ -318,3 +318,40 @@ describe('saved builds', () => {
     expect(flow.mode).toBe('loadouts');
   });
 });
+
+describe('the errors shown belong to the build whose numbers are shown', () => {
+  const HEAVY = { ...STARTER_BUILD, head: 'head-bulwark', core: 'core-bulwark', arms: 'arms-bulwark' };
+  const owning = (): GameState => {
+    let g: GameState = { ...newGame(CATALOG, STARTER_BUILD), credits: 99999 };
+    for (const id of ['head-bulwark', 'core-bulwark', 'arms-bulwark']) g = buy(g, id, CATALOG);
+    return g;
+  };
+
+  test('a saved build over its weight is reported while it is highlighted, before it is loaded', () => {
+    const flow = new GarageFlow({ ...owning(), loadouts: [HEAVY, null, null] }, CATALOG);
+    expect(flow.shownErrors).toEqual([]);
+    flow.onInput('right');
+    expect(flow.mode).toBe('loadouts');
+    expect(flow.preview.weight).toBeGreaterThan(flow.preview.capacity);
+    expect(flow.shownErrors).toEqual(['overweight']);
+    flow.onInput('confirm');
+    expect(flow.mode).toBe('loadoutMenu');
+    expect(flow.shownErrors).toEqual(['overweight']);
+    flow.onInput('cancel');
+    flow.onInput('cancel');
+    expect(flow.shownErrors).toEqual([]);
+  });
+
+  test('a sound saved build is not reported for what is wrong with the build that is fitted', () => {
+    const flow = new GarageFlow({ ...owning(), build: HEAVY, loadouts: [STARTER_BUILD, null, null] }, CATALOG);
+    expect(flow.shownErrors).toEqual(['overweight']);
+    flow.onInput('right');
+    expect(flow.shownErrors).toEqual([]);
+  });
+
+  test('an empty slot shows the fitted build, with its errors', () => {
+    const flow = new GarageFlow({ ...owning(), build: HEAVY }, CATALOG);
+    flow.onInput('right');
+    expect(flow.shownErrors).toEqual(['overweight']);
+  });
+});
