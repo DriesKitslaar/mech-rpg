@@ -21,7 +21,8 @@ uitleg staat in de [handleiding](docs/handleiding.md).
 | Links / rechts | Kopen of verkopen in de winkel, van doelwit wisselen, bladeren |
 | Start | Invoer-venster aan of uit (toont de code van elke knop) |
 
-Op een computer: pijltjestoetsen, Enter, Escape, Q/E en spatie.
+Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B Buttons** op
+**Swapped**. Op een computer: pijltjestoetsen, Enter, Escape, Q/E en spatie.
 
 ## Wat er in zit
 
