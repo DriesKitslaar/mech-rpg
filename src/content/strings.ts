@@ -206,6 +206,7 @@ export const STRINGS = {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
+    relief: (credits: number) => `Debt limit reached: ${credits} written off`,
   },
   saveFailed: 'Could not save: storage is full or blocked',
   slots: {

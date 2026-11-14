@@ -18,6 +18,8 @@ export interface Settlement {
   net: number;
   /** One entry per damaged part, in slot order. */
   lines: { partId: string; lost: number; cost: number }[];
+  /** What Dispatch wrote off of the bill because of the debt limit; set when the settlement is booked. */
+  relief?: number;
   /** How well a won contract was done, the score behind it and what it adds to the fee; see rank.ts. */
   rank?: Rank;
   score?: number;
@@ -58,11 +60,28 @@ export function settle(battle: BattleState, reward: number, catalog: Catalog, te
   return { won, reward: paid, ammoCost, repairCost, net: paid - ammoCost - repairCost, lines };
 }
 
-/** Credits may end below zero: debt blocks buying, never playing. */
+/**
+ * How far into debt a pilot can go. Without a limit a run of lost contracts feeds itself: every
+ * loss is a repair bill, a pilot in debt cannot buy better parts, and worse parts lose again.
+ */
+export const DEBT_LIMIT = -2000;
+
+/**
+ * The part of a bill that is written off because paying it would take the pilot past the debt
+ * limit. A pilot who is past it already (from before there was a limit) is charged nothing more.
+ * Pay is never touched.
+ */
+export function debtRelief(state: GameState, settlement: Settlement): number {
+  if (settlement.net >= 0) return 0;
+  const floor = Math.min(state.credits, DEBT_LIMIT);
+  return Math.max(0, floor - (state.credits + settlement.net));
+}
+
+/** Credits may end below zero, down to the debt limit: debt blocks buying, never playing. */
 export function applySettlement(state: GameState, settlement: Settlement): GameState {
   return {
     ...state,
-    credits: state.credits + settlement.net,
+    credits: state.credits + settlement.net + debtRelief(state, settlement),
     battlesWon: state.battlesWon + (settlement.won ? 1 : 0),
   };
 }

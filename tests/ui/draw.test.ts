@@ -681,6 +681,21 @@ describe('the screens the pilot\'s record added', () => {
     expect(snap(app).screen).toBe('hub');
   });
 
+  test('a settlement that ran into the debt limit says what was written off', () => {
+    const app = start({ ...done('intro-1'), credits: -2000, scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) });
+    const mission = MISSIONS.find((m) => m.id === 'patrol')!;
+    app.showSettlement({ won: false, reward: 0, ammoCost: 80, repairCost: 320, net: -400, lines: [], relief: 400 }, mission);
+    const { ctx, calls } = recorder();
+    app.update(16);
+    app.draw(ctx);
+    expect(texts(calls)).toEqual(expect.arrayContaining(['CONTRACT FAILED', 'Debt limit reached: 400 written off', '-2000']));
+    // One that did not says nothing about it.
+    app.showSettlement({ won: false, reward: 0, ammoCost: 80, repairCost: 320, net: -400, lines: [] }, mission);
+    const plain = recorder();
+    app.draw(plain.ctx);
+    expect(texts(plain.calls).some((text) => text.startsWith('Debt limit'))).toBe(false);
+  });
+
   test('the hub shows the pilot\'s callsign and level', () => {
     const app = start({ ...done('intro-1'), callsign: 'VANTA', scenes: ['act-1'] });
     const { ctx, calls } = recorder();

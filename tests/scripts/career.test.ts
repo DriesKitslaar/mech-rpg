@@ -1,4 +1,5 @@
 import type { Faction, Verdict } from '../../src/core/campaign';
+import { DEBT_LIMIT } from '../../src/core/economy';
 import type { Difficulty } from '../../src/core/game';
 import { careerLine, playCareer } from '../../scripts/careerBot';
 
@@ -16,12 +17,23 @@ describe.each(['story', 'standard', 'veteran'] as Difficulty[])('a career on %s'
   test.each(ROADS)('for %s, giving the verdict "%s", reaches its ending', (faction, verdict) => {
     const report = playCareer({ faction, verdict, difficulty, seed: 1 });
     expect(report.finished, careerLine(report)).toBe(true);
-    // Never ruined: a pilot in debt cannot buy, and one deep in debt never gets out.
-    expect(report.lowestCredits, careerLine(report)).toBeGreaterThan(0);
-    // Hard is allowed. A wall is not: no contract takes more than a few evenings.
-    expect(report.worst.streak, careerLine(report)).toBeLessThanOrEqual(difficulty === 'veteran' ? 40 : 12);
-    expect(report.grind, careerLine(report)).toBeLessThanOrEqual(difficulty === 'veteran' ? 20 : 6);
+    // Never ruined: a pilot in debt cannot buy, and without a limit one deep in debt never gets out.
+    expect(report.lowestCredits, careerLine(report)).toBeGreaterThanOrEqual(DEBT_LIMIT);
+    // Hard is allowed. A wall is not: no contract is lost a dozen times running, and the patrols
+    // flown for money stay a small part of a career, even on the hardest setting.
+    expect(report.worst.streak, careerLine(report)).toBeLessThanOrEqual(12);
+    expect(report.grind, careerLine(report)).toBeLessThanOrEqual(difficulty === 'veteran' ? 60 : 20);
   });
+});
+
+test('a run of bad luck on the hardest setting does not end a career: debt stops at its limit and the pilot climbs back', () => {
+  // With this seed the pilot loses early, and before there was a debt limit never recovered:
+  // 180 losses on one contract and 95,000 credits in debt, in the mech it started with.
+  const report = playCareer({ faction: 'lumen', verdict: 'enforce', difficulty: 'veteran', seed: 6 });
+  expect(report.finished, careerLine(report)).toBe(true);
+  expect(report.worst.streak, careerLine(report)).toBeLessThanOrEqual(12);
+  expect(report.lowestCredits).toBeGreaterThanOrEqual(DEBT_LIMIT);
+  expect(report.lowestCredits).toBeLessThan(0);
 });
 
 test('a second cycle can be played to its ending too, by another road than the first', () => {

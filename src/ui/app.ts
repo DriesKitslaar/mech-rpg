@@ -7,7 +7,7 @@ import {
   type Mission, type Scene,
 } from '../core/campaign';
 import { openEntries, type Entry } from '../core/codex';
-import { applySettlement, settle, type Settlement } from '../core/economy';
+import { applySettlement, debtRelief, settle, type Settlement } from '../core/economy';
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
@@ -211,9 +211,11 @@ class MissionHost implements Screen {
     const { payBonus, costDiscount } = this.app.perks();
     const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
-    this.settlement = rankSettlement(bill, performance);
+    const settlement = rankSettlement(bill, performance);
     this.count();
-    this.app.bookSettlement(this.settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state) });
+    const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state) });
+    // What the debt limit wrote off is shown with the bill.
+    this.settlement = relief > 0 ? { ...settlement, relief } : settlement;
   }
 
   /** Adds the battle that has just ended to what the contract has added up to. */
@@ -594,7 +596,8 @@ export class App {
    * Records a contract's outcome: money and experience, and after a win the contract itself (story
    * contracts) or the new arena rank (arena fights). Open contracts and the patrol leave no record.
    */
-  bookSettlement(settlement: Settlement, mission: Mission, fought: Fought = { tally: NO_STATS, met: [], retreated: false }): void {
+  bookSettlement(settlement: Settlement, mission: Mission, fought: Fought = { tally: NO_STATS, met: [], retreated: false }): number {
+    const relief = debtRelief(this.game!, settlement);
     let next = applySettlement(this.game!, settlement);
     next = addXp(next, xpForContract(mission.reward, settlement.won));
     const pay = settlement.reward + (settlement.bonus ?? 0);
@@ -613,6 +616,7 @@ export class App {
       }
     }
     this.commit(next);
+    return relief;
   }
 
   /** Shows a settlement that has already been booked. */

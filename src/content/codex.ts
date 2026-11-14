@@ -203,7 +203,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'money', title: 'MONEY',
-    text: 'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying.',
+    text: 'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying, and you can owe 2000 at most: what a bill adds beyond that, Dispatch writes off.',
   },
   {
     id: 'garage', title: 'THE GARAGE',

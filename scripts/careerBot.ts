@@ -74,7 +74,9 @@ const TIERS = ['tier1', 'tier2', 'tier3', 'tier4', 'tier5', 'tier6'];
 const RESERVE = 400;
 /** How often a contract is tried before the pilot goes to earn money and gear elsewhere, and how often that is allowed. */
 const TRIES = 3;
-const MAX_GRIND = 60;
+/** Patrols flown in one stretch before the contract is tried again, and in a whole career before it is called stuck. */
+const PATROLS = 10;
+const MAX_GRIND = 150;
 
 class Stuck extends Error {}
 
@@ -247,11 +249,16 @@ export function playCareer(options: CareerOptions): CareerReport {
       last = id;
       if (streak > report.worst.streak) report.worst = { id, streak };
       if (streak % TRIES === 0) {
-        // Three losses in a row: earn somewhere safer, climb the arena for better stock, and come back.
+        // Three losses in a row: what anyone would do is earn somewhere safer until better gear is
+        // within reach, climb the arena for better stock, and only then come back.
         if (report.grind >= MAX_GRIND) throw new Stuck(`${id} cannot be won: lost ${report.losses[id]} times, in ${report.tier}`);
-        contract('patrol');
-        report.grind += 1;
-        climb();
+        const had = tier;
+        for (let i = 0; i < PATROLS && tier === had && report.grind < MAX_GRIND; i++) {
+          contract('patrol');
+          report.grind += 1;
+          climb();
+          gearUp();
+        }
       }
     }
     if (!report.finished && !report.stopped) report.stopped = `stopped after ${report.contracts} contracts`;

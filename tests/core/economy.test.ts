@@ -1,5 +1,5 @@
 import { createBattle, type BattleState } from '../../src/core/battle';
-import { REPAIR_COST_PER_AP, applySettlement, settle } from '../../src/core/economy';
+import { DEBT_LIMIT, REPAIR_COST_PER_AP, applySettlement, debtRelief, settle } from '../../src/core/economy';
 import { newGame } from '../../src/core/game';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
@@ -74,6 +74,45 @@ test('applying a settlement changes credits and counts wins', () => {
   const lost = applySettlement({ ...game, credits: 100 }, settle(finished('defeat', (b) => { b.units[0].parts.core!.ap = 0; b.units[0].parts.legs!.ap = 0; }), 600, CATALOG));
   expect(lost).toMatchObject({ credits: -196, battlesWon: 0 });
   expect(game.credits).toBe(1200);
+});
+
+describe('the debt limit', () => {
+  const bill = (net: number) => ({ won: false, reward: 0, ammoCost: 0, repairCost: -net, net, lines: [] });
+  const paid = (net: number) => ({ won: true, reward: net, ammoCost: 0, repairCost: 0, net, lines: [] });
+  const at = (credits: number) => ({ ...newGame(CATALOG, STARTER_BUILD), credits });
+
+  test('is two thousand credits: a pilot can owe that much and no more', () => {
+    expect(DEBT_LIMIT).toBe(-2000);
+  });
+
+  test('a bill is paid in full while it leaves the pilot above the limit', () => {
+    expect(applySettlement(at(500), bill(-800)).credits).toBe(-300);
+    expect(debtRelief(at(500), bill(-800))).toBe(0);
+    expect(applySettlement(at(-1200), bill(-800)).credits).toBe(-2000);
+    expect(debtRelief(at(-1200), bill(-800))).toBe(0);
+  });
+
+  test('the part of a bill that would take the pilot past the limit is written off', () => {
+    expect(applySettlement(at(-1500), bill(-800)).credits).toBe(-2000);
+    expect(debtRelief(at(-1500), bill(-800))).toBe(300);
+    expect(applySettlement(at(-2000), bill(-800)).credits).toBe(-2000);
+    expect(debtRelief(at(-2000), bill(-800))).toBe(800);
+  });
+
+  test('a pilot who is already past the limit, from before there was one, is charged nothing more', () => {
+    expect(applySettlement(at(-9000), bill(-800)).credits).toBe(-9000);
+    expect(debtRelief(at(-9000), bill(-800))).toBe(800);
+  });
+
+  test('pay always counts in full, whatever is owed', () => {
+    expect(applySettlement(at(-9000), paid(700)).credits).toBe(-8300);
+    expect(applySettlement(at(-2000), paid(700)).credits).toBe(-1300);
+    expect(debtRelief(at(-2000), paid(700))).toBe(0);
+  });
+
+  test('a lost battle past the limit still counts as lost', () => {
+    expect(applySettlement(at(-2000), bill(-800)).battlesWon).toBe(0);
+  });
 });
 
 describe('pilot modifiers on the settlement', () => {

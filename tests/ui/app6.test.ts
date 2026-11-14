@@ -193,3 +193,40 @@ describe('the arena, past the ladder', () => {
     expect(savedGame(store).medals).toEqual(expect.arrayContaining(['apex']));
   });
 });
+
+describe('the debt limit', () => {
+  const lost = (cost: number) => ({ won: false, reward: 0, ammoCost: cost, repairCost: 0, net: -cost, lines: [] });
+  const patrol = { id: 'patrol', phase: 'patrol' as const, title: 'Perimeter Sweep', client: 'Dispatch', briefing: [], debrief: '', reward: 400, battles: [] };
+
+  test('a bill never takes a pilot more than two thousand into debt: the rest is written off, and the settlement says so', () => {
+    // A pilot who already holds the medals a first win and a first loss earn, so that only the bills move the credits.
+    const seasoned = { ...fresh(), credits: -1500, medals: ['first-contract', 'first-loss'], stats: { ...NO_STATS, contracts: 1, lost: 1 } };
+    const { app, store } = inHub(quiet(seasoned));
+    expect(app.bookSettlement(lost(300), patrol)).toBe(0);
+    expect(savedGame(store).credits).toBe(-1800);
+    expect(app.bookSettlement(lost(700), patrol)).toBe(500);
+    expect(savedGame(store).credits).toBe(-2000);
+    expect(app.bookSettlement(lost(700), patrol)).toBe(700);
+    expect(savedGame(store).credits).toBe(-2000);
+    // Pay still counts in full.
+    app.bookSettlement({ won: true, reward: 400, ammoCost: 0, repairCost: 0, net: 400, lines: [] }, patrol);
+    // (A win without a scratch earns a medal of its own, which pays a little.)
+    const earned = savedGame(store).medals.filter((id) => !seasoned.medals.includes(id));
+    expect(savedGame(store).credits).toBe(-1600 + medalPay(earned));
+  });
+
+  test('a contract lost at the limit costs nothing more, and its settlement shows what was written off', () => {
+    const { app, store } = inHub(quiet({ ...fresh(), credits: -2000 }));
+    select(app, 'contracts');
+    select(app, 'patrol');
+    select(app, 'accept');
+    // Fire once so there is a bill, then walk away.
+    for (let i = 0; i < 400 && snap(app).battle!.phase !== 'action'; i++) app.update(16);
+    press(app, 'confirm', 'confirm', 'confirm');
+    retreat(app);
+    const { net, relief } = snap(app).settlement as unknown as { net: number; relief: number };
+    expect(net).toBeLessThan(0);
+    expect(relief).toBe(-net);
+    expect(savedGame(store).credits).toBe(-2000 + medalPay(savedGame(store).medals));
+  });
+});

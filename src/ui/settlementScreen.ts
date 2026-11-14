@@ -31,8 +31,11 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus } = this.settlement;
-    return { menu: { items: [], cursor: 0 }, settlement: { net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0 } };
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief } = this.settlement;
+    return {
+      menu: { items: [], cursor: 0 },
+      settlement: { net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0, relief: relief ?? 0 },
+    };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -100,6 +103,8 @@ export class SettlementScreen implements Screen {
     const balance = this.app.game!.credits; // already includes this settlement
     drawText(ctx, S.balance, x + 10, 206, { color: COLORS.dim });
     drawText(ctx, String(balance), right, 206, { align: 'right', color: balance < 0 ? COLORS.danger : COLORS.text });
+    // A bill that ran into the debt limit: what Dispatch wrote off, between the balance and the way out.
+    if (s.relief) drawText(ctx, S.relief(s.relief), LOGICAL_W / 2, 218, { align: 'center', color: COLORS.heat, size: 10 });
     drawText(ctx, S.continue, LOGICAL_W / 2, 230, { align: 'center', color: COLORS.dim });
   }
 }
