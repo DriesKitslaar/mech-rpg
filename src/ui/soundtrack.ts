@@ -24,7 +24,8 @@ export function trackFor(screen: ScreenName, settlement?: { won: boolean }): Tra
     case 'callsign': return 'title';
     case 'briefing':
     case 'scene': return 'briefing';
-    case 'ending': return 'ending';
+    case 'ending':
+    case 'credits': return 'ending';
     case 'battle': return 'battle';
     case 'settlement': return settlement?.won === false ? 'defeat' : 'victory';
     default: return 'hub';

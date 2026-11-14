@@ -69,7 +69,7 @@ export async function enterHub(page: Page): Promise<void> {
   for (let i = 0; i < 12; i++) {
     const s = await snap(page);
     if (s.screen === 'hub') return;
-    const waiting = ['callsign', 'scene', 'ending'].includes(s.screen) || (s.screen === 'title' && s.mode !== undefined && s.mode !== 'main');
+    const waiting = ['callsign', 'scene', 'ending', 'credits'].includes(s.screen) || (s.screen === 'title' && s.mode !== undefined && s.mode !== 'main');
     if (waiting) await press(page, 'Enter');
     else await nextFrame(page);
   }

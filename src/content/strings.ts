@@ -95,7 +95,7 @@ export const STRINGS = {
     unusable: 'Your saved game could not be read.',
     pickNew: 'START IN WHICH SLOT?', pickLoad: 'LOAD WHICH GAME?', empty: 'EMPTY', unreadable: 'UNREADABLE',
     slot: (n: number, callsign: string, level: number) => `${n}  ${callsign}  LV ${level}`,
-    progress: (done: number, cycle: number) => (cycle > 0 ? `${done} done  C${cycle + 1}` : `${done} done`),
+    progress: (done: number, cycle: number, time: string) => `${done} done  ${cycle > 0 ? `C${cycle + 1}  ` : ''}${time}`,
   },
   callsign: {
     heading: 'YOUR CALLSIGN', hint: 'A: pick   B: erase', del: 'DEL', ok: 'OK',
@@ -161,8 +161,19 @@ export const STRINGS = {
     tag: 'TRAINING: a lent mech in the simulator. It costs nothing.',
     won: 'DRILL PASSED', lost: 'DRILL FAILED',
   },
+  credits: {
+    flownBy: 'FLOWN BY', level: (n: number) => `PILOT LEVEL ${n}`, record: 'THE RECORD', stat: (label: string, value: string) => `${label}  ${value}`,
+    cast: 'IN VARN', unknown: '? ? ?', notMet: 'on a road not taken',
+    roles: {
+      dispatch: 'who found you the work', brenn: 'Hadron Mining', varga: 'Lumen Systems', tamsin: 'The Undertow',
+      ashfall: 'a licensed pilot', sable: 'Lumen\'s best', rook: 'the Undertow\'s champion', krell: 'Hadron\'s strike-breaker',
+      actuary: 'Meridian Mutual',
+    },
+    again: 'THE WAR CAN BE FOUGHT AGAIN', cycle: 'New Cycle, at headquarters', thanks: 'THANK YOU FOR FLYING',
+  },
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
+    credits: 'End Roll', watch: 'Watch',
     on: 'On', off: 'Off',
     difficulties: { story: 'Story', standard: 'Standard', veteran: 'Veteran' },
     difficultyHelp: {

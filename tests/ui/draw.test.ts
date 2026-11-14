@@ -504,6 +504,27 @@ describe('the screens the pilot\'s record added', () => {
     expect(texts(settlement.calls)).not.toContain('CONTRACT COMPLETE');
   });
 
+  test('the end roll draws what is on screen as it climbs, and its last line stops in the middle', () => {
+    const app = start({ ...done('intro-1'), callsign: 'VANTA', endingSeen: true, scenes: ['act-1'], codex: WORLD.map((entry) => entry.id) }, false);
+    app.showCredits();
+    const frame = () => { const { ctx, calls } = recorder(); app.draw(ctx); return calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) })); };
+    // At first nothing has climbed into view.
+    expect(frame().map((d) => d.text)).not.toContain('IRONWAGE');
+    for (let i = 0; i < 60; i++) app.update(100);
+    const early = frame();
+    expect(early.map((d) => d.text)).toEqual(expect.arrayContaining(['IRONWAGE', 'FLOWN BY', 'VANTA']));
+    expect(early.every((d) => d.y > -40 && d.y < 270)).toBe(true);
+    // A press too soon after it opens does nothing; later it skips to the end, where the goodbye sits mid-screen.
+    for (let i = 0; i < 2000; i++) app.update(100);
+    const end = frame();
+    const thanks = end.find((d) => d.text === 'THANK YOU FOR FLYING')!;
+    expect(thanks.y).toBeGreaterThan(100);
+    expect(thanks.y).toBeLessThan(150);
+    expect(end.map((d) => d.text)).not.toContain('IRONWAGE');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+  });
+
   test('the hub shows the pilot\'s callsign and level', () => {
     const app = start({ ...done('intro-1'), callsign: 'VANTA', scenes: ['act-1'] });
     const { ctx, calls } = recorder();

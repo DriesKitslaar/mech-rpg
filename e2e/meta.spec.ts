@@ -136,6 +136,33 @@ test('the arena past the ladder: the back room for a champion, and a mirror matc
   expect(errors).toEqual([]);
 });
 
+test('the end roll can be watched again from the options: it climbs by itself, a press skips to its end, the next leaves', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const seen = veteran({
+    endingSeen: true, cycle: 1, medals: MEDALS.map((m) => m.id), codex: WORLD.map((e) => e.id),
+    met: ['recon-drone', 'rival', 'sable'], ranks: { 'hadron-1': 'S', 'lumen-1': 'A', 'undertow-1': 'B', 'rival-1': 'A', 'audit-1': 'B' },
+  });
+  // Not in fast mode: the roll is meant to be seen moving.
+  await load(page, seen, '/?seed=7');
+  await enterHub(page);
+  await choose(page, 'options');
+  await waitForScreen(page, 'options');
+  await page.screenshot({ path: shot('options-end-roll') });
+  await choose(page, 'credits');
+  await waitForScreen(page, 'credits');
+  await page.waitForTimeout(9000);
+  await page.screenshot({ path: shot('credits-rolling') });
+  expect((await snap(page) as any).credits).toEqual({ done: false });
+  await press(page, 'Enter');
+  expect((await snap(page) as any).credits).toEqual({ done: true });
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: shot('credits-end') });
+  await press(page, 'Enter');
+  await waitForScreen(page, 'hub');
+  expect(errors).toEqual([]);
+});
+
 test('a medal earned is announced over the hub and then goes away', async ({ page }) => {
   // This pilot has done what two medals take but holds neither: the first save awards them.
   await load(page, veteran({ medals: ['first-contract'] }), '/?seed=7');

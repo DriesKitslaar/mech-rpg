@@ -34,6 +34,7 @@ import { ArenaScreen, MIRROR } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
 import { CallsignScreen } from './callsignScreen';
+import { CreditsScreen } from './creditsScreen';
 import { DatabaseScreen } from './databaseScreen';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { GarageScreen } from './garageScreen';
@@ -67,7 +68,7 @@ export interface Screen {
 
 export type ScreenName =
   | 'title' | 'callsign' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
-  | 'arena' | 'pilot' | 'options' | 'database' | 'training';
+  | 'arena' | 'pilot' | 'options' | 'database' | 'training' | 'credits';
 
 /** One of the kept games as the title shows it: empty, unreadable, or a game. */
 export interface SlotView { slot: number; game: GameState | null; unusable: boolean }
@@ -84,7 +85,7 @@ const TOAST_SLIDE_MS = 180;
 /** More medals than this earned at once are announced together. */
 const TOASTS_AT_ONCE = 3;
 /** Screens that are not interrupted: an announcement waits until they are over. */
-const NO_TOASTS: ScreenName[] = ['battle', 'scene', 'ending', 'title', 'callsign'];
+const NO_TOASTS: ScreenName[] = ['battle', 'scene', 'ending', 'credits', 'title', 'callsign'];
 
 /** What the battles of a contract added up to, for the record. */
 export interface Fought { tally: Stats; met: string[]; retreated: boolean }
@@ -609,12 +610,26 @@ export class App {
     this.show('settlement', new SettlementScreen(this, settlement, mission), trackFor('settlement', settlement));
   }
 
-  /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. */
+  /** Marks a scene as seen and goes on to the hub, or to the next scene that is due. An ending is followed by the end roll. */
   finishScene(scene: Scene): void {
     if (this.game) {
       const next = markSceneSeen(this.game, scene);
       if (next !== this.game) this.commit(next);
     }
+    if (scene.ending && this.game) this.showCredits();
+    else this.openHub();
+  }
+
+  /** True once there is an end roll to watch again: an ending has been seen, in this cycle or an earlier one. */
+  canWatchCredits(): boolean {
+    return !!this.game && (this.game.endingSeen || this.game.cycle > 0);
+  }
+
+  showCredits(): void {
+    if (this.game) this.show('credits', new CreditsScreen(this));
+  }
+
+  closeCredits(): void {
     this.openHub();
   }
 

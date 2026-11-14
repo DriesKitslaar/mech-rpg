@@ -4,6 +4,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView, SlotView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList, type ListItem } from './menuList';
+import { playTime } from './record';
 import { drawWeather } from './weather';
 import { COLORS, drawList, drawPanel, drawText } from './widgets';
 
@@ -49,7 +50,7 @@ export class TitleScreen implements Screen {
       label: game ? T.slot(slot + 1, game.callsign, levelFor(game.xp)) : `${slot + 1}  ${unusable ? T.unreadable : T.empty}`,
       // An empty slot cannot be loaded; any slot can be started in.
       enabled: !loading || game !== null,
-      note: game ? T.progress(game.completed.length, game.cycle) : undefined,
+      note: game ? T.progress(game.completed.length, game.cycle, playTime(game.stats.seconds)) : undefined,
     }));
   }
 

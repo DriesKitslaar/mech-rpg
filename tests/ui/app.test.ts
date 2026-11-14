@@ -89,7 +89,7 @@ function inHub(saved?: GameState, seed?: number) {
 }
 /** Accepts the callsign on offer and reads past the pages of story that come up between contracts. */
 function skipScenes(app: App): void {
-  for (let i = 0; i < 8 && ['callsign', 'scene', 'ending'].includes(snap(app).screen); i++) press(app, 'confirm');
+  for (let i = 0; i < 8 && ['callsign', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
 }
 /** From the hub into a contract's first battle. */
 function accept(app: App, missionId: string): void {
@@ -173,7 +173,7 @@ describe('title', () => {
     select(app, 'new');
     expect(snap(app)).toMatchObject({ screen: 'title', message: 'START IN WHICH SLOT?' });
     expect(snap(app).menu.items).toMatchObject([
-      { id: 'slot-1', label: '1  PILOT  LV 1', note: '0 done' }, { id: 'slot-2', label: '2  EMPTY' }, { id: 'slot-3', label: '3  EMPTY' },
+      { id: 'slot-1', label: '1  PILOT  LV 1', note: '0 done  0:00' }, { id: 'slot-2', label: '2  EMPTY' }, { id: 'slot-3', label: '3  EMPTY' },
     ]);
     expect(snap(app).menu.cursor).toBe(1);
     press(app, 'confirm');
@@ -184,6 +184,14 @@ describe('title', () => {
     // The first game is still there, untouched.
     expect(JSON.parse(store.data[SAVE_KEY]).credits).toBe(4321);
     expect(JSON.parse(store.data['ironwage-save-2']).credits).toBe(1200);
+  });
+
+  test('a kept game says how far along it is: contracts done, the cycle once past the first, and the time played', () => {
+    const played = { ...done('intro-1', 'intro-2'), cycle: 2, scenes: ['act-1'] };
+    played.stats = { ...played.stats, seconds: 3 * 3600 + 25 * 60 };
+    const { app } = makeApp(played);
+    select(app, 'new');
+    expect(snap(app).menu.items[0]).toMatchObject({ id: 'slot-1', note: '2 done  C3  3:25' });
   });
 
   test('starting over an occupied slot asks first, with no selected', () => {
@@ -534,6 +542,9 @@ describe('the campaign', () => {
     app.go('hub');
     expect(snap(app)).toMatchObject({ screen: 'ending', ending: 'lumen', scene: 'ending-default-lumen' });
     expect(JSON.parse(store.data[SAVE_KEY]).endingSeen).toBe(false);
+    // The epilogue is followed by the end roll, and that by the hub.
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('credits');
     press(app, 'confirm');
     expect(snap(app).screen).toBe('hub');
     expect(JSON.parse(store.data[SAVE_KEY])).toMatchObject({ endingSeen: true, scenes: ['war-won-lumen', 'act-3', 'ending-default-lumen'] });
@@ -652,7 +663,7 @@ describe('closing the game at an awkward moment', () => {
     const { app, store } = makeApp(finished);
     press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'ending', ending: 'undertow' });
-    press(app, 'confirm');
+    press(app, 'confirm', 'confirm');
     expect(snap(app).screen).toBe('hub');
     expect(JSON.parse(store.data[SAVE_KEY]).endingSeen).toBe(true);
     // And only once.
