@@ -123,7 +123,11 @@ export const STRINGS = {
   },
   garage: {
     heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
-    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', back: 'B: back',
+    weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', cooling: 'Cooling',
+    evasion: 'Boost evade', volley: 'Volley EN', back: 'B: back',
+    factoryPaint: 'Factory', paint: (name: string) => `L1/R1 PAINT: ${name}`, toLoadouts: 'LEFT/RIGHT: SAVED BUILDS',
+    loadouts: 'SAVED BUILDS', emptyLoadout: '(empty)', load: 'Load', save: 'Save current build', clear: 'Clear', backItem: 'Back',
+    missing: (name: string) => `Missing: ${name}`,
     slotTags: {
       head: 'HEAD', core: 'CORE', arms: 'ARMS', legs: 'LEGS', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
       rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SHLDR',
@@ -146,8 +150,9 @@ export const STRINGS = {
     output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',
     impact: 'IMP', unlimited: 'unlimited', perShot: '/shot',
     thrust: 'THRUST', boostCost: 'BOOST COST', aimByType: 'AIM K/E/X', focus: 'FOCUS', uses: 'USES',
-    guard: (blocked: number) => `GUARD: blocks ${blocked}%`,
-    charge: 'CHARGE: fires a turn later', melee: 'MELEE: needs Boost',
+    guard: (blocked: number) => `GUARD: blocks ${blocked}%`, guardShort: 'GUARD',
+    versus: (name: string) => `VS ${name}`,
+    charge: 'CHARGE: fires a turn later', melee: 'MELEE: spends your Boost',
     traits: {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',
@@ -158,7 +163,7 @@ export const STRINGS = {
     },
     legTypes: {
       biped: '', reverse: 'REVERSE: boost +8 evasion', quad: 'QUAD: steady, shoulder +6',
-      tank: 'TRACKS: no boost, guards well', hover: 'HOVER: cheap boost, unsteady',
+      tank: 'TRACKS: no boost, guard 50%', hover: 'HOVER: cheap boost, unsteady',
     },
     modules: {
       coolant: (p: number) => `Vents ${p} heat at once.`,

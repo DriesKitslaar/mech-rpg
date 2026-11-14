@@ -9,7 +9,7 @@ import type { Sfx } from '../platform/audio';
 import { soundsForEvent } from '../platform/audio';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, flightFor, type Scene } from './battleFx';
-import { BACK_MOUNT, FAR_FIST, NEAR_FIST } from './mechLayout';
+import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import type { Sprite, SpriteStore } from './sprites';
 import { COLORS, LINE, drawMeter, drawPanel, drawScrollMenu, drawText } from './widgets';
@@ -27,8 +27,10 @@ const ENEMY_ANCHORS: Record<number, { x: number; y: number }[]> = {
   3: [{ x: 252, y: 96 }, { x: 274, y: 174 }, { x: 210, y: 174 }],
 };
 /** Right edge of the mirrored pose box of a duelling enemy mech, and the area its body covers. */
-const DUEL_RIGHT = 324;
-const DUEL_BODY = { x: 186, y: 22, w: 118, h: 150 };
+const DUEL_RIGHT = 330;
+const DUEL_BODY = { x: 192, y: 22, w: 118, h: 150 };
+/** In a duel the player's mech stands this much further left, so two full-size mechs cross weapons, not bodies. */
+const DUEL_SHIFT = 6;
 const PANEL_Y = 178;
 const MENU_W = 154;
 /** Where a hit on each part of the player's mech lands, inside the pose box. */
@@ -46,7 +48,11 @@ export class BattleScreen {
 
   constructor(
     private flow: BattleFlow, private sprites: SpriteStore, private catalog: Catalog,
-    private opts: { fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string; speed?: number },
+    private opts: {
+      fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string; speed?: number;
+      /** The paint scheme of the player's mech. */
+      paint?: string;
+    },
   ) {
     this.shownAp = new ApDisplay(flow.state.units);
   }
@@ -132,7 +138,7 @@ export class BattleScreen {
   }
 
   private playerSprites(): MechSprites {
-    return mechSprites(this.sprites, this.flow.state.units[0].build);
+    return mechSprites(this.sprites, this.flow.state.units[0].build, this.opts.paint);
   }
 
   private drawPlayer(ctx: CanvasRenderingContext2D): void {
@@ -141,7 +147,12 @@ export class BattleScreen {
     // A slow one-pixel sway of the upper body keeps the mech from looking frozen.
     const idle = Math.round(Math.sin(this.clock / 520));
     this.withTransform(ctx, player, idle, (dx, dy) =>
-      drawMech(ctx, this.playerSprites(), MECH_ORIGIN.x, MECH_ORIGIN.y, { dx, dy: 0 }, dy));
+      drawMech(ctx, this.playerSprites(), this.playerX(), MECH_ORIGIN.y, { dx, dy: 0 }, dy));
+  }
+
+  /** Left edge of the player's pose box. */
+  private playerX(): number {
+    return MECH_ORIGIN.x - (this.duel() ? DUEL_SHIFT : 0);
   }
 
   /** True when the battle's single enemy is a mech drawn full size from its parts, mirrored. */
@@ -156,7 +167,9 @@ export class BattleScreen {
     // A duelling mech fills the mirrored pose box; this is the part of it the body occupies.
     if (this.duel()) return { x: DUEL_BODY.x, y: DUEL_BODY.y, w: DUEL_BODY.w, h: DUEL_BODY.h, sprite: { image: null as unknown as CanvasImageSource, w: 0, h: 0 } };
     const anchor = (ENEMY_ANCHORS[enemies] ?? ENEMY_ANCHORS[3])[index] ?? ENEMY_ANCHORS[3][2];
-    const sprite = this.sprites.get(enemy.sprite ?? enemy.id, { w: 48, h: 48, label: enemy.name });
+    const fallback = { w: 48, h: 48, label: enemy.name };
+    const id = enemy.sprite ?? enemy.id;
+    const sprite = enemy.paint && this.sprites.painted ? this.sprites.painted(id, enemy.paint, fallback) : this.sprites.get(id, fallback);
     return { x: Math.round(anchor.x - sprite.w / 2), y: anchor.y - sprite.h, w: sprite.w, h: sprite.h, sprite };
   }
 
@@ -169,7 +182,7 @@ export class BattleScreen {
       const flies = enemy.sprite === 'enemy-recon-drone' || enemy.sprite === 'enemy-gunship';
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
       if (this.duel()) {
-        const parts = mechSprites(this.sprites, enemy.build);
+        const parts = mechSprites(this.sprites, enemy.build, enemy.paint);
         const sway = Math.round(Math.sin(this.clock / 520 + 2));
         this.withTransform(ctx, enemy, sway, (dx, dy) => {
           // Mirror the pose box so the mech faces left; a shift to the right is a shift to the left in there.
@@ -245,9 +258,12 @@ export class BattleScreen {
   private scene(): Scene {
     const isPlayer = (id: string) => id === 'player';
     const enemyIndex = (id: string) => this.flow.state.units.findIndex((u) => u.id === id) - 1;
-    const at = (p: { x: number; y: number }) => ({ x: MECH_ORIGIN.x + p.x, y: MECH_ORIGIN.y + p.y });
+    // A mech on tracks carries its upper body lower; every point above the legs comes down with it.
+    const lowered = (unitIndex: number, part?: FrameSlot): number =>
+      (part === 'legs' ? 0 : dropOf(unitIndex === 0 ? this.playerSprites() : mechSprites(this.sprites, this.flow.state.units[unitIndex].build)));
+    const at = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: this.playerX() + p.x, y: MECH_ORIGIN.y + p.y + lowered(0, part) });
     /** A point of the pose box as it lands on screen for the mirrored enemy. */
-    const mirror = (p: { x: number; y: number }) => ({ x: DUEL_RIGHT - p.x, y: MECH_ORIGIN.y + p.y });
+    const mirror = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: DUEL_RIGHT - p.x, y: MECH_ORIGIN.y + p.y + lowered(1, part) });
     return {
       muzzle: (id, weapon) => {
         if (!isPlayer(id)) {
@@ -268,8 +284,8 @@ export class BattleScreen {
         return at({ x: BACK_MOUNT.x + 0.4 * w, y: BACK_MOUNT.y });
       },
       hitPoint: (id, part) => {
-        if (isPlayer(id)) return at(PLAYER_HIT[part]);
-        if (this.duel()) return mirror(PLAYER_HIT[part]);
+        if (isPlayer(id)) return at(PLAYER_HIT[part], part);
+        if (this.duel()) return mirror(PLAYER_HIT[part], part);
         const r = this.enemyRect(enemyIndex(id));
         const offset = { core: 0.5, legs: 0.25, arms: 0.5, head: 0.2 }[part];
         return { x: r.x + r.w / 2, y: r.y + r.h * offset };

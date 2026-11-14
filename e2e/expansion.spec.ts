@@ -50,6 +50,21 @@ test('arena, pilot, options, open contracts and a new cycle', async ({ page }) =
   await press(page, 'Escape');
   await waitForScreen(page, 'hub');
 
+  // Garage: R1 steps to the first paint scheme, and the current build goes into the first slot.
+  await choose(page, 'garage');
+  await waitForScreen(page, 'garage');
+  await press(page, 'KeyE');
+  expect((await snap(page) as any).paint).toBe('crimson');
+  await page.screenshot({ path: shot('garage-paint') });
+  await press(page, 'ArrowRight');
+  await press(page, 'Enter');
+  await choose(page, 'save');
+  expect((await snap(page) as any).loadouts).toEqual([true, false, false]);
+  await page.screenshot({ path: shot('garage-builds') });
+  await press(page, 'Escape');
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+
   // Open contracts sit on the list under the story ones.
   await choose(page, 'contracts');
   const list = (await snap(page)).menu.items.map((i) => i.id);
@@ -89,6 +104,8 @@ test('arena, pilot, options, open contracts and a new cycle', async ({ page }) =
   await page.waitForFunction(() => (window as any).__game?.snapshot().screen === 'title');
   await choose(page, 'continue');
   await waitForScreen(page, 'hub');
-  expect(await snap(page) as any).toMatchObject({ cycle: 1, arenaRank: 4, xp: cycled.xp, settings: { fastBattles: true } });
+  expect(await snap(page) as any).toMatchObject({
+    cycle: 1, arenaRank: 4, xp: cycled.xp, settings: { fastBattles: true }, paint: 'crimson', loadouts: [true, false, false],
+  });
   expect(errors).toEqual([]);
 });

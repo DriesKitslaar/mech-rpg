@@ -46,12 +46,16 @@ export interface UnitState {
   sprite?: string;
   /** See `EnemyDef.composed`. */
   composed: boolean;
+  /** See `EnemyDef.paint`. Only the screen reads it. */
+  paint?: string;
   /** Only the frame slots the build has. */
   parts: Partial<Record<FrameSlot, PartState>>;
   heat: number;
   energy: number;
   /** Remaining shots per fitted weapon; null means unlimited. */
   ammo: Partial<Record<WeaponSlot, number | null>>;
+  /** Rounds put back into each magazine between the battles of a contract. They are billed like any round fired. */
+  restocked: Partial<Record<WeaponSlot, number>>;
   boosted: boolean;
   /** Set when heat passes the limit; the unit's next turn is skipped. */
   overheated: boolean;
@@ -171,7 +175,7 @@ const HAND_SLOTS: WeaponSlot[] = ['rightHand', 'leftHand'];
 
 function createUnit(
   id: string, name: string, side: UnitState['side'], build: Build, catalog: Catalog,
-  extra: Partial<Pick<UnitState, 'ai' | 'sprite' | 'composed'>> = {}, modifiers: Partial<UnitMods> = {},
+  extra: Partial<Pick<UnitState, 'ai' | 'sprite' | 'composed' | 'paint'>> = {}, modifiers: Partial<UnitMods> = {},
 ): UnitState {
   const mods: UnitMods = { ...NO_MODS, ...modifiers };
   const parts: UnitState['parts'] = {};
@@ -190,7 +194,7 @@ function createUnit(
     if (weapon) ammo[slot] = side === 'enemy' ? null : weapon.ammo;
   }
   return {
-    id, name, side, build, composed: false, ...extra, parts, heat: 0, energy: 0, ammo, boosted: false, overheated: false,
+    id, name, side, build, composed: false, ...extra, parts, heat: 0, energy: 0, ammo, restocked: {}, boosted: false, overheated: false,
     usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
     stagger: 0, staggerMax: Math.max(1, Math.round(stats.stability * mods.toughness)), staggered: 0,
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
@@ -315,14 +319,16 @@ function enemyName(enemies: EnemyDef[], index: number): string {
 }
 
 /**
- * What a mech takes from one battle of a mission into the next: armour, heat, ammunition and
- * field repairs. Stagger, guard, charges, barriers, paint and module uses all start afresh.
+ * What a mech takes from one battle of a mission into the next: armour, heat, ammunition (with
+ * what was refilled) and field repairs. Stagger, guard, charges, barriers, paint and module uses
+ * all start afresh.
  */
 export interface Carry {
   /** Remaining armour per frame part. */
   ap: Partial<Record<FrameSlot, number>>;
   heat: number;
   ammo: Partial<Record<WeaponSlot, number | null>>;
+  restocked: Partial<Record<WeaponSlot, number>>;
   repairsLeft: number;
   destroyed: boolean;
 }
@@ -332,7 +338,10 @@ export function carryFrom(state: BattleState): Carry {
   const player = state.units[0];
   const ap: Carry['ap'] = {};
   for (const slot of FRAME_SLOTS) if (player.parts[slot]) ap[slot] = player.parts[slot]!.ap;
-  return { ap, heat: player.heat, ammo: { ...player.ammo }, repairsLeft: player.repairsLeft, destroyed: player.destroyed };
+  return {
+    ap, heat: player.heat, ammo: { ...player.ammo }, restocked: { ...player.restocked }, repairsLeft: player.repairsLeft,
+    destroyed: player.destroyed,
+  };
 }
 
 function applyCarry(unit: UnitState, carry: Carry): void {
@@ -344,6 +353,7 @@ function applyCarry(unit: UnitState, carry: Carry): void {
   }
   unit.heat = Math.max(0, carry.heat);
   for (const slot of WEAPON_SLOTS) if (slot in unit.ammo && slot in carry.ammo) unit.ammo[slot] = carry.ammo[slot];
+  unit.restocked = { ...carry.restocked };
   unit.repairsLeft = carry.repairsLeft;
 }
 
@@ -355,7 +365,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
   const enemyMods = { damage: scale, toughness: scale };
   const units = [
     playerUnit,
-    ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite, composed: e.composed ?? false }, enemyMods)),
+    ...enemies.map((e, i) => createUnit(`enemy-${i}`, enemyName(enemies, i), 'enemy', e.build, catalog, { ai: e.ai, sprite: e.sprite, composed: e.composed ?? false, ...(e.paint ? { paint: e.paint } : {}) }, enemyMods)),
   ];
   const state: BattleState = { units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing' };
   state.order = roundOrder(state, catalog);
@@ -364,7 +374,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
 }
 
 /** How many times one pull of the trigger fires at a target. */
-function shotsOf(weapon: Weapon): number {
+export function shotsOf(weapon: Weapon): number {
   if (weapon.trait === 'twin') return 2;
   if (weapon.trait === 'burst') return Math.max(1, weapon.traitPower ?? 1);
   return 1;
@@ -554,6 +564,8 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
     }
   }
 
+  // Closing in to strike is what the boost was spent on: the mech ends up in the enemy's face, not dodging.
+  if (weapon.melee) unit.boosted = false;
   heatUp(state, unit, weapon.heat);
   checkOutcome(state);
 }

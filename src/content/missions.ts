@@ -121,7 +121,7 @@ export const MISSIONS: Mission[] = [
     ],
   },
   {
-    id: 'finale-hadron', phase: 'finale', faction: 'hadron', title: 'Last Shift', client: 'Director Brenn, Hadron Mining',
+    id: 'finale-hadron', phase: 'finale', scale: 1.2, faction: 'hadron', title: 'Last Shift', client: 'Director Brenn, Hadron Mining',
     portrait: 'portrait-hadron', reward: 5000,
     briefing: [
       'Lumen has hired a specialist to stop us. Callsign Ashfall. You may have heard the name.',
@@ -135,7 +135,7 @@ export const MISSIONS: Mission[] = [
     ],
   },
   {
-    id: 'finale-lumen', phase: 'finale', faction: 'lumen', title: 'Zero Day', client: 'Analyst Varga, Lumen Systems',
+    id: 'finale-lumen', phase: 'finale', scale: 1.15, faction: 'lumen', title: 'Zero Day', client: 'Analyst Varga, Lumen Systems',
     portrait: 'portrait-lumen', reward: 5000,
     briefing: [
       'Hadron has retained a mercenary called Ashfall to hold the central pit. The probability that you know each other is high.',
@@ -149,7 +149,7 @@ export const MISSIONS: Mission[] = [
     ],
   },
   {
-    id: 'finale-undertow', phase: 'finale', faction: 'undertow', title: 'Daybreak', client: 'Tamsin, The Undertow',
+    id: 'finale-undertow', phase: 'finale', scale: 1.3, faction: 'undertow', title: 'Daybreak', client: 'Tamsin, The Undertow',
     portrait: 'portrait-undertow', reward: 4000,
     briefing: [
       'They have stopped fighting each other. Both companies are paying one pilot to close the gates again: Ashfall.',

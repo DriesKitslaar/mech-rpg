@@ -266,6 +266,22 @@ describe('melee weapons', () => {
     expect(unit(after, 'enemy-0')).toMatchObject({ staggered: 2 });
   });
 
+  test('a strike spends the boost: the mech that closed in is no harder to hit than one standing still', () => {
+    const boosted = act(start(), { type: 'boost' });
+    expect(evasion(player(boosted), ALL)).toBe(15 + 30);
+    const struck = act(boosted, fire('rightHand'));
+    expect(player(struck).boosted).toBe(false);
+    expect(evasion(player(struck), ALL)).toBe(15);
+    // The boost is still used up for the turn: no second one, and no guard either.
+    expect(can(struck, { type: 'boost' })).toBe('alreadyUsed');
+    expect(can(struck, { type: 'guard' })).toBe('alreadyUsed');
+  });
+
+  test('a ranged shot after a boost keeps the evasion', () => {
+    const s = act(act(toPlayer(battle(['gun-turret'])), { type: 'boost' }), fire('rightHand'));
+    expect(evasion(player(s), ALL)).toBe(15 + 30);
+  });
+
   test('are no use without legs, and the boost does not carry over to the next turn', () => {
     const legless = edit(start(), (d) => { player(d).parts.legs!.ap = 0; });
     expect(can(legless, { type: 'boost' })).toBe('legsDisabled');

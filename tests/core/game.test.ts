@@ -1,5 +1,6 @@
 import {
-  BUILD_SLOTS, DIFFICULTIES, OPTIONAL_SLOTS, SAVE_VERSION, STARTING_CREDITS, buy, checkBuy, checkEquip, checkSell, ensureArmed, equip, equippedCount, fits, isValidState,
+  BUILD_SLOTS, DIFFICULTIES, LOADOUT_SLOTS, OPTIONAL_SLOTS, SAVE_VERSION, STARTING_CREDITS, buy, checkLoadout, clearLoadout,
+  loadLoadout, saveLoadout, setPaint, checkBuy, checkEquip, checkSell, ensureArmed, equip, equippedCount, fits, isValidState,
   newGame, sell, spareCount, type GameState,
 } from '../../src/core/game';
 import type { Catalog, Shield } from '../../src/core/types';
@@ -221,6 +222,20 @@ describe('never without a weapon', () => {
     expect(checkSell(g, 'wpn-arc-pistol', CATALOG)).toBeNull();
   });
 
+  test('a blade does not count: it is no weapon on legs that cannot boost, so the last gun stays', () => {
+    const g = equip(buy({ ...fresh(), credits: 9999 }, 'wpn-ram-fist', CATALOG), 'rightHand', null, CATALOG);
+    expect(checkSell(g, 'wpn-rivet-rifle', CATALOG)).toBe('lastWeapon');
+    // The blade itself can go, and so can a second gun.
+    expect(checkSell(g, 'wpn-ram-fist', CATALOG)).toBeNull();
+    expect(checkSell(buy(g, 'wpn-arc-pistol', CATALOG), 'wpn-rivet-rifle', CATALOG)).toBeNull();
+  });
+
+  test('a pilot who owns nothing but blades is issued the starter rifle too', () => {
+    const { 'wpn-rivet-rifle': _gone, ...inventory } = fresh().inventory;
+    const bladesOnly = { ...fresh(), inventory: { ...inventory, 'wpn-ram-fist': 1 }, build: { ...fresh().build, rightHand: 'wpn-ram-fist' } };
+    expect(ensureArmed(bladesOnly, CATALOG, 'wpn-rivet-rifle').inventory['wpn-rivet-rifle']).toBe(1);
+  });
+
   test('a pilot who somehow owns no weapon is issued the starter rifle', () => {
     const { 'wpn-rivet-rifle': _gone, ...inventory } = fresh().inventory;
     const { rightHand: _slot, ...build } = fresh().build;
@@ -286,5 +301,102 @@ describe('shields', () => {
     const { 'wpn-rivet-rifle': _gone, ...inventory } = owner.inventory;
     const { rightHand: _slot, ...build } = owner.build;
     expect(ensureArmed({ ...owner, inventory, build }, catalog, 'wpn-rivet-rifle').inventory['wpn-rivet-rifle']).toBe(1);
+  });
+});
+
+describe('paint', () => {
+  test('a new game is in factory colours; any scheme id can be set', () => {
+    expect(fresh().paint).toBe('factory');
+    const painted = setPaint(fresh(), 'crimson');
+    expect(painted.paint).toBe('crimson');
+    expect(isValidState(painted, CATALOG)).toBe(true);
+    expect(fresh().paint).toBe('factory');
+  });
+
+  test.each([['missing', undefined], ['a number', 7], ['empty', ''], ['far too long', 'x'.repeat(60)], ['not a plain word', 'red;drop']])(
+    'a save whose paint is %s is refused', (_name, paint) => {
+      expect(isValidState({ ...fresh(), paint }, CATALOG)).toBe(false);
+    });
+});
+
+describe('saved builds', () => {
+  const rich = (...ids: string[]): GameState => ids.reduce((g, id) => buy(g, id, CATALOG), withCredits(50000));
+  const fit = (g: GameState, slots: Record<string, string>): GameState =>
+    Object.entries(slots).reduce((acc, [slot, id]) => equip(acc, slot as keyof GameState['build'], id, CATALOG), g);
+
+  test('a new game has three empty slots', () => {
+    expect(fresh().loadouts).toEqual([null, null, null]);
+    expect(LOADOUT_SLOTS).toBe(3);
+  });
+
+  test('saving copies the current build; later changes to the build do not touch the copy', () => {
+    const start = rich('wpn-arc-pistol');
+    const saved = saveLoadout(start, 1);
+    expect(saved.loadouts).toEqual([null, start.build, null]);
+    const changed = equip(saved, 'leftHand', 'wpn-arc-pistol', CATALOG);
+    expect(changed.loadouts[1]).toEqual(start.build);
+    expect(changed.loadouts[1]).not.toBe(changed.build);
+    expect(start.loadouts).toEqual([null, null, null]);
+  });
+
+  test('loading swaps the whole build, and every part it frees is owned as before', () => {
+    let g = rich('head-halo', 'wpn-arc-pistol', 'mod-coolant');
+    g = saveLoadout(g, 0);
+    g = fit(g, { head: 'head-halo', leftHand: 'wpn-arc-pistol', module: 'mod-coolant' });
+    g = saveLoadout(g, 2);
+    const back = loadLoadout(g, 0, CATALOG);
+    expect(back.build).toEqual(g.loadouts[0]);
+    expect(back.build.module).toBeUndefined();
+    expect(back.inventory).toEqual(g.inventory);
+    expect(loadLoadout(back, 2, CATALOG).build).toEqual(g.loadouts[2]);
+    expect(isValidState(back, CATALOG)).toBe(true);
+  });
+
+  test('an empty slot, or a slot that does not exist, cannot be loaded', () => {
+    expect(checkLoadout(fresh(), 0, CATALOG)).toEqual({ refusal: 'empty' });
+    expect(checkLoadout(fresh(), 3, CATALOG)).toEqual({ refusal: 'unknown' });
+    expect(checkLoadout(fresh(), -1, CATALOG)).toEqual({ refusal: 'unknown' });
+    expect(() => loadLoadout(fresh(), 0, CATALOG)).toThrow('illegal loadout: empty');
+    expect(() => saveLoadout(fresh(), 5)).toThrow('illegal loadout: unknown');
+  });
+
+  test('a build with a part that has been sold cannot be loaded, and the refusal names the part', () => {
+    let g = rich('head-halo');
+    g = saveLoadout(equip(g, 'head', 'head-halo', CATALOG), 0);
+    g = sell(equip(g, 'head', 'head-scout-mk1', CATALOG), 'head-halo', CATALOG);
+    expect(checkLoadout(g, 0, CATALOG)).toEqual({ refusal: 'missingPart', part: 'head-halo' });
+  });
+
+  test('a build that needs two copies of a weapon needs both to be owned', () => {
+    let g = rich('wpn-rivet-rifle');
+    g = saveLoadout(equip(g, 'leftHand', 'wpn-rivet-rifle', CATALOG), 0);
+    g = sell(equip(g, 'leftHand', null, CATALOG), 'wpn-rivet-rifle', CATALOG);
+    expect(checkLoadout(g, 0, CATALOG)).toEqual({ refusal: 'missingPart', part: 'wpn-rivet-rifle' });
+  });
+
+  test('a slot can be cleared', () => {
+    const g = clearLoadout(saveLoadout(fresh(), 0), 0);
+    expect(g.loadouts).toEqual([null, null, null]);
+  });
+
+  const bad: [string, (g: any) => unknown][] = [
+    ['no loadouts', (g) => { const { loadouts: _l, ...rest } = g; return rest; }],
+    ['two slots', (g) => ({ ...g, loadouts: [null, null] })],
+    ['a slot that is not a build', (g) => ({ ...g, loadouts: [null, 'mine', null] })],
+    ['a saved build with an unknown part', (g) => ({ ...g, loadouts: [{ ...g.build, core: 'nope' }, null, null] })],
+    ['a saved build with a part in the wrong slot', (g) => ({ ...g, loadouts: [{ ...g.build, head: 'core-hauler' }, null, null] })],
+    ['a saved build with a slot that does not exist', (g) => ({ ...g, loadouts: [{ ...g.build, tail: 'wpn-rivet-rifle' }, null, null] })],
+    ['a saved build with an enemy part', (g) => ({ ...g, loadouts: [{ ...g.build, core: 'core-drone' }, null, null] })],
+    ['an empty saved build', (g) => ({ ...g, loadouts: [{}, null, null] })],
+    ['a saved build without a generator', (g) => { const { generator: _g, ...build } = g.build; return { ...g, loadouts: [build, null, null] }; }],
+    ['a saved build without legs', (g) => { const { legs: _l, ...build } = g.build; return { ...g, loadouts: [null, null, build] }; }],
+  ];
+  test.each(bad)('a save with %s is refused', (_name, make) => {
+    expect(isValidState(make(fresh()), CATALOG)).toBe(false);
+  });
+
+  test('a saved build may name parts that are no longer owned: loading it is what is refused', () => {
+    const g = { ...fresh(), loadouts: [{ ...fresh().build, head: 'head-halo' }, null, null] };
+    expect(isValidState(g, CATALOG)).toBe(true);
   });
 });

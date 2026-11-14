@@ -6,7 +6,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as iq from 'image-q';
 import sharp, { type Sharp } from 'sharp';
-import { BOX, JOBS, POSE_BOX, type ArtJob } from './jobs';
+import { BOX, JOBS, POSE_BOX, paintFamilyOf, type ArtJob } from './jobs';
+import { analyse, type PaintInfo } from '../../src/ui/paint';
 import { bounds, chromaKeyGreen, quantize, trim, type RawImage, type RGB } from './imageOps';
 
 const RAW = 'art/raw';
@@ -14,7 +15,13 @@ const OUT = 'public/sprites';
 const PALETTE = 'art/palette.json';
 const MANIFEST = 'src/content/sprites.json';
 
-type Entry = { file: string; w: number; h: number; ox?: number; oy?: number };
+type Entry = { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo };
+
+/**
+ * Legs that are lower than a pair of legs: how many pixels the upper body comes down to meet them.
+ * Measured from the proof sheets: ordinary legs start about 60 pixels down the pose box.
+ */
+const LEGS_DROP: Record<string, number> = { 'legs-crawler': 28 };
 
 export async function decode(input: string | Buffer | Sharp): Promise<RawImage> {
   const s = typeof input === 'string' || Buffer.isBuffer(input) ? sharp(input) : input;
@@ -39,7 +46,7 @@ async function buildPalette(): Promise<void> {
   }
   if (kept.length === 0) throw new Error('no family drawings found to build the palette from');
   const container = iq.utils.PointContainer.fromUint8Array(Uint8Array.from(kept), kept.length / 4, 1);
-  const palette = await iq.buildPalette([container], { colors: 48 });
+  const palette = await iq.buildPalette([container], { colors: 64 });
   const colours: RGB[] = palette.getPointContainer().getPointArray().map((p) => [p.r, p.g, p.b]);
   writeFileSync(PALETTE, JSON.stringify(colours) + '\n');
   console.log(`wrote ${colours.length} colours to ${PALETTE}`);
@@ -52,7 +59,8 @@ async function processLayer(job: ArtJob, palette: RGB[]): Promise<Entry> {
   const box = bounds(small);
   if (!box) throw new Error('image is empty after background removal');
   await encode(trim(small)).png().toFile(`${OUT}/${job.id}.png`);
-  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy: box.y };
+  const drop = LEGS_DROP[job.id];
+  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy: box.y, ...(drop ? { drop } : {}) };
 }
 
 async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
@@ -76,6 +84,37 @@ async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
   return { file: `sprites/${job.id}.png`, w: out.width, h: out.height };
 }
 
+/**
+ * Records on every frame layer what the paint needs to know about its family: which hues are trim
+ * and how bright the armour runs. All layers cut from one drawing are judged together, so every
+ * part of a family takes a paint scheme the same way.
+ */
+async function addPaintInfo(manifest: Record<string, Entry>): Promise<void> {
+  // Per family: the layers cut from its own drawing, which are what it is judged by, and every layer that takes its paint.
+  const families = new Map<string, { own: string[]; all: string[] }>();
+  for (const job of JOBS) {
+    if (job.kind !== 'layer' || !manifest[job.id]) continue;
+    const family = paintFamilyOf(job);
+    const group = families.get(family) ?? { own: [], all: [] };
+    group.all.push(job.id);
+    // Free-standing legs come from an edited copy of the drawing: they take the family's paint but do not shift it.
+    if (job.references?.[0]?.endsWith(`family-${family}.png`)) group.own.push(job.id);
+    families.set(family, group);
+  }
+  for (const [family, { own, all }] of families) {
+    const ids = all;
+    const images = await Promise.all((own.length > 0 ? own : all).map((id) => decode(`${OUT}/${id}.png`)));
+    const paint = analyse(images);
+    for (const id of ids) manifest[id].paint = paint;
+    console.log(`paint ${family}: trim hues ${JSON.stringify(paint.accent)}, brightness ${paint.lo}/${paint.mid}/${paint.hi}`);
+  }
+  // Enemy sprites are whole pictures: each is judged on its own, so elites can be shown in other colours.
+  for (const job of JOBS) {
+    if ((job.kind !== 'enemy' && job.kind !== 'enemyMech') || !manifest[job.id]) continue;
+    manifest[job.id].paint = analyse([await decode(`${OUT}/${job.id}.png`)]);
+  }
+}
+
 async function main(): Promise<void> {
   if (process.argv[2] === 'palette') return buildPalette();
   const palette = JSON.parse(readFileSync(PALETTE, 'utf8')) as RGB[];
@@ -94,6 +133,7 @@ async function main(): Promise<void> {
       console.error(`FAIL ${job.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
+  await addPaintInfo(manifest);
   writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
   if (failed) process.exitCode = 1;
 }

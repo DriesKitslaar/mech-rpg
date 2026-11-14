@@ -56,7 +56,7 @@ export class ArenaScreen implements Screen {
     ctx.save();
     ctx.translate(LOGICAL_W + 6, 18);
     ctx.scale(-1, 1);
-    drawMech(ctx, mechSprites(sprites, ARENA_ENEMIES[o.enemy].build), 0, 0, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
+    drawMech(ctx, mechSprites(sprites, ARENA_ENEMIES[o.enemy].build, ARENA_ENEMIES[o.enemy].paint), 0, 0, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
     ctx.restore();
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);

@@ -33,7 +33,10 @@ export function settle(battle: BattleState, reward: number, catalog: Catalog, te
   for (const slot of WEAPON_SLOTS) {
     const weapon = weaponIn(player.build, slot, catalog);
     const left = player.ammo[slot];
-    if (weapon && weapon.ammo !== null && typeof left === 'number') ammoCost += (weapon.ammo - left) * weapon.costPerShot;
+    // Rounds fired: what is missing from the magazine, plus what the crew put back in between battles.
+    if (weapon && weapon.ammo !== null && typeof left === 'number') {
+      ammoCost += (weapon.ammo - left + (player.restocked[slot] ?? 0)) * weapon.costPerShot;
+    }
   }
   const discounted = (cost: number): number => Math.round(cost * (1 - terms.costDiscount));
   ammoCost = discounted(ammoCost);

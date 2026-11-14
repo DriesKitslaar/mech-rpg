@@ -1,0 +1,11 @@
+{
+  "id": "family-glide",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-halo.png"
+  ],
+  "prompt": "Edit the attached pixel art image of a mecha. Keep everything above the waist exactly as it is: same pixels, same position, same size, same colours. Replace only the lower body (the hips, both legs and both feet) with: a hover unit: a flared white skirt of armour panels below the waist with three downward-pointing thruster nozzles glowing cyan under it, floating a little above the ground. No legs and no feet. The new lower body joins the torso at the same waist and rests on the same ground line as the original feet, and is drawn in the same colours and style as the rest of the mecha. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

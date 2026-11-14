@@ -23,12 +23,19 @@ const SPRITE_ID: Record<SpriteSlot, (build: Build) => string | undefined> = {
 
 export type MechSprites = Partial<Record<SpriteSlot, Sprite>>;
 
-/** The sprites that make up a build's mech, with placeholders for any that are missing. */
-export function mechSprites(store: SpriteStore, build: Build): MechSprites {
+const FRAME_LAYERS: SpriteSlot[] = ['armFar', 'legs', 'core', 'head', 'armNear'];
+
+/**
+ * The sprites that make up a build's mech, with placeholders for any that are missing.
+ * With a paint scheme the frame layers come in that scheme; weapons keep their own colours.
+ */
+export function mechSprites(store: SpriteStore, build: Build, paint?: string): MechSprites {
   const parts: MechSprites = {};
   for (const slot of Object.keys(SPRITE_ID) as SpriteSlot[]) {
     const id = SPRITE_ID[slot](build);
-    if (id) parts[slot] = store.get(id, { ...FALLBACK[slot], label: id });
+    if (!id) continue;
+    const fallback = { ...FALLBACK[slot], label: id };
+    parts[slot] = paint && store.painted && FRAME_LAYERS.includes(slot) ? store.painted(id, paint, fallback) : store.get(id, fallback);
   }
   return parts;
 }

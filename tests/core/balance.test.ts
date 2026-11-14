@@ -16,7 +16,8 @@ function play(missionId: string, buildName: string): { winRate: number; meanNet:
   for (let seed = 1; seed <= SEEDS; seed++) {
     // Two unrelated seed families, alternated, so a threshold is not met by one lucky sequence.
     const start = seed % 2 ? seed * 7919 : seed * 104729 + 13;
-    const end = playMission(REFERENCE_BUILDS[buildName], mission, ENEMIES, CATALOG, start, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction));
+    const end = playMission(REFERENCE_BUILDS[buildName], mission, ENEMIES, CATALOG, start, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction),
+      { enemyScale: mission.scale ?? 1 });
     if (end.outcome === 'victory') wins++;
     net += settle(end, mission.reward, CATALOG).net;
   }

@@ -3,8 +3,11 @@
  * Frame layers therefore carry their own position; only weapons are placed by anchor points.
  */
 export type SpriteSlot = 'armFar' | 'legs' | 'core' | 'head' | 'armNear' | 'rightHand' | 'leftHand' | 'shoulder';
-/** `ox`/`oy` is where a frame layer sits inside the pose box. Weapons have none. */
-export type SpriteSize = { w: number; h: number; ox?: number; oy?: number };
+/**
+ * `ox`/`oy` is where a frame layer sits inside the pose box. Weapons have none.
+ * `drop`, on legs only, is how far everything above them sits lower than usual: tracks are not as tall as legs.
+ */
+export type SpriteSize = { w: number; h: number; ox?: number; oy?: number; drop?: number };
 export type DrawCmd = { slot: SpriteSlot; x: number; y: number };
 
 /** Side of the square pose box, in logical pixels. */
@@ -17,12 +20,17 @@ export const FAR_FIST = { x: 31, y: 80 };
 export const BACK_MOUNT = { x: 46, y: 27 };
 
 const FRAME: SpriteSlot[] = ['armFar', 'legs', 'core', 'head', 'armNear'];
+
+/** How far the upper body of this mech sits below its usual place in the pose box. */
+export const dropOf = (sizes: Partial<Record<SpriteSlot, SpriteSize>>): number => sizes.legs?.drop ?? 0;
 const ORDER: SpriteSlot[] = ['shoulder', 'armFar', 'leftHand', 'legs', 'core', 'head', 'armNear', 'rightHand'];
 
 /** Returns top-left corners inside the pose box, in draw order (back to front). */
 export function layoutMech(sizes: Partial<Record<SpriteSlot, SpriteSize>>): DrawCmd[] {
   const placed = new Map<SpriteSlot, DrawCmd>();
-  const put = (slot: SpriteSlot, x: number, y: number) => placed.set(slot, { slot, x: Math.round(x), y: Math.round(y) });
+  const drop = dropOf(sizes);
+  const put = (slot: SpriteSlot, x: number, y: number) =>
+    placed.set(slot, { slot, x: Math.round(x), y: Math.round(y) + (slot === 'legs' ? 0 : drop) });
 
   for (const slot of FRAME) {
     const s = sizes[slot];

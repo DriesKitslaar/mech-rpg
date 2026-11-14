@@ -1,20 +1,33 @@
 import { carryFrom, createBattle, type BattleOptions, type BattleState } from './battle';
+import { weaponIn } from './build';
 import type { Mission } from './campaign';
-import type { Build, Catalog, EnemyDef } from './types';
+import { WEAPON_SLOTS, type Build, type Catalog, type EnemyDef } from './types';
 
 /** Share of each surviving part's armour restored between two battles of one mission. */
 export const FIELD_SERVICE = 0.4;
+/** Share of each magazine refilled between two battles. The rounds are billed at the end like any others. */
+export const FIELD_RESUPPLY = 0.5;
 
 /**
  * Between battles the crew vents the heat and patches every part, destroyed ones included: a mech
  * that lost its head or arms in the first engagement would otherwise be helpless for the rest.
- * The service is free: the settlement bills only the armour missing at the end of the contract.
+ * The patching is free: the settlement bills only the armour missing at the end of the contract.
+ * They also refill half of every magazine, so a mech that lives on ammunition is not left without
+ * any in the last engagement; those rounds go on the bill.
  */
-function fieldService(state: BattleState): void {
+function fieldService(state: BattleState, catalog: Catalog): void {
   const player = state.units[0];
   player.heat = 0;
   for (const part of Object.values(player.parts)) {
     if (part) part.ap = Math.min(part.maxAp, part.ap + Math.round(part.maxAp * FIELD_SERVICE));
+  }
+  for (const slot of WEAPON_SLOTS) {
+    const magazine = weaponIn(player.build, slot, catalog)?.ammo;
+    const left = player.ammo[slot];
+    if (typeof magazine !== 'number' || typeof left !== 'number') continue;
+    const added = Math.max(0, Math.min(magazine - left, Math.ceil(magazine * FIELD_RESUPPLY)));
+    player.ammo[slot] = left + added;
+    if (added > 0) player.restocked[slot] = (player.restocked[slot] ?? 0) + added;
   }
 }
 
@@ -33,7 +46,7 @@ export function startMissionBattle(
     return enemies[id];
   });
   const state = createBattle(build, defs, catalog, seed + index, { ...opts, carry: previous ? carryFrom(previous) : undefined });
-  if (previous) fieldService(state);
+  if (previous) fieldService(state, catalog);
   return state;
 }
 

@@ -52,3 +52,15 @@ test('a shield, taller than it is wide, is strapped to the far forearm instead o
     slot: 'leftHand', x: Math.round(FAR_FIST.x - 0.5 * shield.w), y: Math.round(FAR_FIST.y - 0.6 * shield.h),
   });
 });
+
+test('low legs, such as tracks, lower everything that sits on them', () => {
+  const tracks = { ...layers.legs, oy: 100, drop: 20 };
+  const normal = layoutMech({ ...layers, ...weapons });
+  const lowered = layoutMech({ ...layers, legs: tracks, ...weapons });
+  const at = (cmds: typeof normal, slot: string) => cmds.find((c) => c.slot === slot)!;
+  expect(at(lowered, 'legs')).toMatchObject({ x: 30, y: 100 });
+  for (const slot of ['armFar', 'core', 'head', 'armNear', 'rightHand', 'leftHand', 'shoulder']) {
+    expect(at(lowered, slot).x).toBe(at(normal, slot).x);
+    expect(at(lowered, slot).y).toBe(at(normal, slot).y + 20);
+  }
+});

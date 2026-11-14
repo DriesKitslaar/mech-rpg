@@ -1,0 +1,11 @@
+{
+  "id": "family-mantis",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png"
+  ],
+  "prompt": "The first image shows a mecha in a combat stance. Redraw it as a different mecha design in exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, elbows, hands, hips, knees, feet) stays in the same place. The new design is: a wiry insect-like scrapyard mecha in olive green and sand yellow plating with thin glowing lime light strips: reverse-jointed grasshopper legs whose knees bend backwards and end in two-toed clawed feet (hips and feet stay where they are in the first image), a narrow waist, forearms with a folded blade-like fin along each, small angular shoulders, and a triangular head with two short antennae and a wide lime visor. Lean and agile. Keep the same proportions between joints. No weapons, empty hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

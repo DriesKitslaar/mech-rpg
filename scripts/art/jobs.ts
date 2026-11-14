@@ -20,6 +20,8 @@ export interface ArtJob {
   source?: string;
   /** Mirror horizontally after processing (enemies face the player). */
   flip?: boolean;
+  /** On a family drawing that is another family with its lower body replaced: that family. */
+  base?: string;
   quality?: 'low' | 'medium' | 'high';
 }
 
@@ -84,15 +86,40 @@ const KEEP: Record<Layer, string> = {
   armFar: 'only the arm on the left side of the image that hangs back behind the body, complete with its shoulder armour, forearm and fist. Erase the torso, head, legs and the other arm.',
 };
 
-/** One layer cut from a family drawing. `id` is the sprite id the game asks for. */
-function layer(id: string, fromFamily: string, which: Layer): ArtJob {
+/** One layer cut from a family drawing. `id` is the sprite id the game asks for. `keep` replaces the usual description of the part. */
+function layer(id: string, fromFamily: string, which: Layer, keep: string = KEEP[which]): ArtJob {
   return {
     id, kind: 'layer', references: [familyFile(fromFamily)],
     prompt:
       'Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same ' +
       'position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 ' +
-      `as the background. Do not move, redraw, rescale or recentre anything. Keep: ${KEEP[which]}`,
+      `as the background. Do not move, redraw, rescale or recentre anything. Keep: ${keep}`,
   };
+}
+
+/**
+ * A family drawing with only its lower body replaced: the source of a free-standing pair of legs
+ * (tracks, four legs, a hover unit) that still meets every torso at the same waist.
+ */
+function lowerBody(id: string, fromFamily: string, description: string): ArtJob {
+  return {
+    id: `family-${id}`, kind: 'family', references: [familyFile(fromFamily)], base: fromFamily,
+    prompt:
+      'Edit the attached pixel art image of a mecha. Keep everything above the waist exactly as it is: same pixels, ' +
+      'same position, same size, same colours. Replace only the lower body (the hips, both legs and both feet) with: ' +
+      `${description} The new lower body joins the torso at the same waist and rests on the same ground line as the ` +
+      `original feet, and is drawn in the same colours and style as the rest of the mecha. ${PIXEL} ${GREEN}`,
+  };
+}
+
+/**
+ * The family whose paint a frame layer takes: the family it was cut from, or, for free-standing
+ * legs, the family their drawing was edited from. Legs then take a paint scheme the way the torso
+ * above them does.
+ */
+export function paintFamilyOf(layerJob: ArtJob): string {
+  const name = /family-([a-z0-9-]+)\.png$/.exec(layerJob.references?.[0] ?? '')?.[1] ?? layerJob.id;
+  return JOBS.find((job) => job.id === `family-${name}`)?.base ?? name;
 }
 
 /** The five layers of one family, named after the parts that use them. */
@@ -152,12 +179,35 @@ export const JOBS: ArtJob[] = [
     'enormous rounded pauldrons, a broad barrel chest, forearms like tower shields, thick pillar legs, and a crowned ' +
     'head with three short upright fins. The biggest and heaviest of all, regal and slow.'),
 
+  family('mantis', 'ronin',
+    'a wiry insect-like scrapyard mecha in olive green and sand yellow plating with thin glowing lime light strips: ' +
+    'reverse-jointed grasshopper legs whose knees bend backwards and end in two-toed clawed feet (hips and feet stay ' +
+    'where they are in the first image), a narrow waist, forearms with a folded blade-like fin along each, small ' +
+    'angular shoulders, and a triangular head with two short antennae and a wide lime visor. Lean and agile.'),
+  // Free-standing lower bodies: a family drawing with only the legs replaced, from which the legs layer is cut.
+  lowerBody('crawler', 'bulwark',
+    'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
+    'with hazard stripes on the track guards. No legs and no feet.'),
+  lowerBody('spider', 'ronin',
+    'a four-legged walker base: a compact hip block from which four armoured spider-like legs spread wide, two ' +
+    'towards the front and two towards the back, each ending in a pointed foot planted on the ground.'),
+  lowerBody('glide', 'halo',
+    'a hover unit: a flared white skirt of armour panels below the waist with three downward-pointing thruster ' +
+    'nozzles glowing cyan under it, floating a little above the ground. No legs and no feet.'),
+
   ...layersOf('salvage', { legs: 'legs-strider', core: 'core-hauler', head: 'head-scout-mk1', arms: 'arms-rigger' }),
   ...layersOf('halo', { legs: 'legs-halo', core: 'core-halo', head: 'head-halo', arms: 'arms-halo' }),
   ...layersOf('bulwark', { legs: 'legs-bulwark', core: 'core-bulwark', head: 'head-bulwark', arms: 'arms-bulwark' }),
   ...layersOf('ronin', { legs: 'legs-ronin', core: 'core-ronin', head: 'head-ronin', arms: 'arms-ronin' }),
   ...layersOf('wraith', { legs: 'legs-wraith', core: 'core-wraith', head: 'head-wraith', arms: 'arms-wraith' }),
   ...layersOf('colossus', { legs: 'legs-colossus', core: 'core-colossus', head: 'head-colossus', arms: 'arms-colossus' }),
+  ...layersOf('mantis', { legs: 'legs-mantis', core: 'core-mantis', head: 'head-mantis', arms: 'arms-mantis' }),
+  layer('legs-crawler', 'crawler', 'legs',
+    'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
+  layer('legs-spider', 'spider', 'legs',
+    'only the lower body below the waist: the hip block and all four legs with their feet. Erase the torso, head and both arms.'),
+  layer('legs-glide', 'glide', 'legs',
+    'only the lower body below the waist: the whole hover skirt with its thruster nozzles and their glow. Erase the torso, head and both arms.'),
 
   item('wpn-rivet-rifle', 'handWeapon', 'halo',
     'a long handheld rifle sized for this mecha, in gunmetal and navy with a few cyan lights, lying exactly horizontal, barrel pointing right, grip near the left end. The rifle only, no hand, no mecha.'),
@@ -212,6 +262,37 @@ export const JOBS: ArtJob[] = [
     `a shoulder-mounted beam projector for a robot in a retro video game, ${WEAPON_STYLE}: a long barrel ringed by three glowing focusing rings, a round capacitor at the back and a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no mecha.`),
   item('shd-riot', 'shield', 'bulwark',
     `a tall rectangular riot shield for a robot in a retro video game, ${WEAPON_STYLE}: a thick slab of plate armour with a narrow viewing slit near the top, hazard stripes along the bottom edge and rivets around the rim, seen from the front and standing upright. The shield only, no hand, no mecha.`),
+
+  item('wpn-ram-fist', 'handWeapon', 'salvage',
+    `a huge oversized metal boxing glove for a toy robot in a retro video game, ${WEAPON_STYLE}: a blocky riveted fist with a thick piston behind it, patched and worn, lying exactly horizontal, knuckles pointing right. The object only, no arm, no robot.`),
+  item('wpn-thermal-cutter', 'handWeapon', 'salvage',
+    `a short wide cutting torch blade for a toy robot in a retro video game, ${WEAPON_STYLE}: a stubby worn handle and a broad flat blade glowing white-hot orange along its edge, lying exactly horizontal, blade pointing right. The object only, no hand, no robot.`),
+  item('wpn-marksman', 'handWeapon', 'halo',
+    `a long slim precision device for a toy robot in a retro video game, ${WEAPON_STYLE}: a thin straight tube with a large round scope on top and a slender shoulder rest, lying exactly horizontal, pointing right. The object only, no hand, no robot.`),
+  item('wpn-flak', 'handWeapon', 'salvage',
+    `a chunky handheld launcher for a toy robot in a retro video game, ${WEAPON_STYLE}: two short fat tubes side by side on a boxy body with a carrying handle on top, patched and worn, lying exactly horizontal, pointing right. The object only, no hand, no robot.`),
+  item('wpn-disruptor', 'handWeapon', 'halo',
+    `a compact handheld energy device for a toy robot in a retro video game, ${WEAPON_STYLE}: a short body ending in a ring of three prongs around a glowing violet orb, lying exactly horizontal, pointing right. The object only, no hand, no robot.`),
+  item('wpn-plasma', 'handWeapon', 'bulwark',
+    `a heavy handheld heat projector for a toy robot in a retro video game, ${WEAPON_STYLE}: a wide flared nozzle glowing orange at the front, a ribbed body and a round fuel tank underneath, lying exactly horizontal, nozzle pointing right. The object only, no hand, no robot.`),
+  item('wpn-coil-pistol', 'handWeapon', 'bulwark',
+    `a short handheld device for a toy robot in a retro video game, ${WEAPON_STYLE}: a stubby square body wrapped in four thick copper coils with a glowing tip, lying exactly horizontal, tip pointing right. The object only, no hand, no robot.`),
+  item('shd-barrier', 'shield', 'halo',
+    `a tall energy barrier for a toy robot in a retro video game, ${WEAPON_STYLE}: a small white emitter bar at the centre projecting an upright hexagonal panel of bright translucent cyan light with a honeycomb pattern, seen from the front. The object only, no hand, no robot.`),
+  item('shd-tower', 'shield', 'colossus',
+    `a huge tower shield for a toy robot in a retro video game, ${WEAPON_STYLE}: a very thick tall slab of layered plate armour, slightly curved, with a heavy rim, three vertical ribs and a row of rivets, seen from the front and standing upright. The object only, no hand, no robot.`),
+  item('wpn-micro-salvo', 'shoulderWeapon', 'salvage',
+    `a small shoulder-mounted box for a toy robot in a retro video game, ${WEAPON_STYLE}: a compact patched rectangular case with eight small round openings in two rows of four on its right face, like a honeycomb, with a mounting bracket underneath, exactly horizontal. The object only, no robot.`),
+  item('wpn-gauss', 'shoulderWeapon', 'colossus',
+    `a huge shoulder-mounted accelerator for a toy robot in a retro video game, ${WEAPON_STYLE}: a very long square beam wrapped in six thick glowing rings, with a heavy block at the back and a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no robot.`),
+  item('wpn-flare-mortar', 'shoulderWeapon', 'bulwark',
+    `a shoulder-mounted equipment pod for a toy robot in a retro video game, ${WEAPON_STYLE}: a short fat upward-angled tube on a square housing with orange glowing vents and a mounting bracket underneath. The unit only, no robot.`),
+  item('wpn-buzzsaw', 'shoulderWeapon', 'bulwark',
+    `a shoulder-mounted rotary unit for a toy robot in a retro video game, ${WEAPON_STYLE}: four short thick tubes in a square cluster on a boxy drum with a belt feed on one side and a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no robot.`),
+  item('wpn-storm-array', 'shoulderWeapon', 'halo',
+    `a shoulder-mounted emitter for a toy robot in a retro video game, ${WEAPON_STYLE}: a fan of five slim antenna rods with crackling light between their tips on a slim housing with a mounting bracket underneath. The unit only, no robot.`),
+  item('wpn-howler', 'shoulderWeapon', 'salvage',
+    `a shoulder-mounted horn for a toy robot in a retro video game, ${WEAPON_STYLE}: one very wide flared trumpet-shaped mouth on a patched round body with a mounting bracket underneath, exactly horizontal, mouth pointing right. The unit only, no robot.`),
 
   item('enemy-gunship', 'enemy', 'ronin',
     'a compact hovering gunship drone in the same dark charcoal and deep red armour: a wedge-shaped body with two side engine pods glowing magenta and two small tube pods under the nose. The whole craft, nothing else, no mecha.', true),

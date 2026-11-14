@@ -1,0 +1,11 @@
+{
+  "id": "wpn-storm-array",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-halo.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a shoulder-mounted emitter for a toy robot in a retro video game, gunmetal body with the accent colours and glowing lights of the reference: a fan of five slim antenna rods with crackling light between their tips on a slim housing with a mounting bracket underneath. The unit only, no robot. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}
