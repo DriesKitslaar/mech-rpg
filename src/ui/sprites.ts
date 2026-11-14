@@ -1,9 +1,9 @@
 import { paintById, recolour, type PaintInfo } from './paint';
 import { COLORS, FONT } from './widgets';
 
-export type SpriteManifest = Record<string, { file: string; w: number; h: number; ox?: number; oy?: number; paint?: PaintInfo }>;
-/** `ox`/`oy` is a mech layer's place inside the pose box. */
-export interface Sprite { image: CanvasImageSource; w: number; h: number; ox?: number; oy?: number }
+export type SpriteManifest = Record<string, { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo }>;
+/** `ox`/`oy` is a mech layer's place inside the pose box; `drop` is explained in mechLayout. */
+export interface Sprite { image: CanvasImageSource; w: number; h: number; ox?: number; oy?: number; drop?: number }
 export interface SpriteStore {
   /** Returns the sprite, or a labelled placeholder of the fallback size when it is unavailable. */
   get(id: string, fallback: { w: number; h: number; ox?: number; oy?: number; label: string }): Sprite;
@@ -44,7 +44,7 @@ export async function loadSprites(manifest: SpriteManifest): Promise<SpriteStore
   const loaded = new Map<string, Sprite>();
   await Promise.all(Object.entries(manifest).map(async ([id, entry]) => {
     const image = await loadImage(entry.file);
-    if (image) loaded.set(id, { image, w: entry.w, h: entry.h, ox: entry.ox, oy: entry.oy });
+    if (image) loaded.set(id, { image, w: entry.w, h: entry.h, ox: entry.ox, oy: entry.oy, ...(entry.drop ? { drop: entry.drop } : {}) });
   }));
   const placeholders = new Map<string, Sprite>();
   const paintedSprites = new Map<string, Sprite>();

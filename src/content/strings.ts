@@ -158,7 +158,7 @@ export const STRINGS = {
     },
     legTypes: {
       biped: '', reverse: 'REVERSE: boost +8 evasion', quad: 'QUAD: steady, shoulder +6',
-      tank: 'TRACKS: no boost, guards well', hover: 'HOVER: cheap boost, unsteady',
+      tank: 'TRACKS: no boost, guard 50%', hover: 'HOVER: cheap boost, unsteady',
     },
     modules: {
       coolant: (p: number) => `Vents ${p} heat at once.`,

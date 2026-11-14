@@ -23,21 +23,23 @@ test('there are ten tabs and they wrap in both directions', () => {
 
 test('each tab lists its stock with the price', () => {
   const flow = shop();
-  expect(flow.list.items.map((i) => i.id)).toEqual(['head-scout-mk1', 'head-halo', 'head-bulwark', 'head-ronin', 'head-wraith', 'head-colossus']);
+  expect(flow.list.items.map((i) => i.id)).toEqual([
+    'head-scout-mk1', 'head-halo', 'head-bulwark', 'head-ronin', 'head-wraith', 'head-colossus', 'head-mantis',
+  ]);
   expect(flow.list.items[1]).toMatchObject({ label: 'Halo Visor', note: '900', enabled: true });
   toTab(flow, 'hand');
-  expect(flow.list.items).toHaveLength(16);
-  expect(flow.list.items.at(-1)).toMatchObject({ id: 'shd-riot', note: '1100' });
+  expect(flow.list.items).toHaveLength(25);
+  expect(flow.list.items.slice(-3).map((i) => i.id)).toEqual(['shd-riot', 'shd-barrier', 'shd-tower']);
   toTab(flow, 'shoulder');
-  expect(flow.list.items).toHaveLength(10);
+  expect(flow.list.items).toHaveLength(16);
   toTab(flow, 'generator');
-  expect(flow.list.items).toHaveLength(5);
+  expect(flow.list.items).toHaveLength(8);
   toTab(flow, 'booster');
-  expect(flow.list.items.map((i) => i.id)).toEqual(['bst-stock', 'bst-sprint', 'bst-vector', 'bst-ram']);
+  expect(flow.list.items.map((i) => i.id)).toEqual(['bst-stock', 'bst-sprint', 'bst-vector', 'bst-ram', 'bst-glide', 'bst-after', 'bst-phase']);
   toTab(flow, 'fcs');
   expect(flow.list.items[0]).toMatchObject({ id: 'fcs-stock', label: 'Stock FCS (1)', note: '100' });
   toTab(flow, 'module');
-  expect(flow.list.items).toHaveLength(6);
+  expect(flow.list.items).toHaveLength(11);
 });
 
 test('a shield is sold on the hand tab', () => {
@@ -174,7 +176,7 @@ test('a part that is owned but not in stock can still be sold', () => {
 test('the kind of legs and the way a weapon is used are described', () => {
   const quad = { ...(CATALOG['legs-strider'] as FramePart), legType: 'quad' as const };
   expect(partLines(quad).at(-1)).toBe('QUAD: steady, shoulder +6');
-  expect(partLines({ ...(CATALOG['legs-strider'] as FramePart), legType: 'tank' }).at(-1)).toBe('TRACKS: no boost, guards well');
+  expect(partLines({ ...(CATALOG['legs-strider'] as FramePart), legType: 'tank' }).at(-1)).toBe('TRACKS: no boost, guard 50%');
   const rifle = CATALOG['wpn-rivet-rifle'] as Weapon;
   expect(partLines({ ...rifle, charge: true }).at(-1)).toBe('CHARGE: fires a turn later');
   expect(partLines({ ...rifle, melee: true }).at(-1)).toBe('MELEE: needs Boost');

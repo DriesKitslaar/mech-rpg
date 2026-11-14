@@ -15,7 +15,13 @@ const OUT = 'public/sprites';
 const PALETTE = 'art/palette.json';
 const MANIFEST = 'src/content/sprites.json';
 
-type Entry = { file: string; w: number; h: number; ox?: number; oy?: number; paint?: PaintInfo };
+type Entry = { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo };
+
+/**
+ * Legs that are lower than a pair of legs: how many pixels the upper body comes down to meet them.
+ * Measured from the proof sheets: ordinary legs start about 60 pixels down the pose box.
+ */
+const LEGS_DROP: Record<string, number> = { 'legs-crawler': 28 };
 
 export async function decode(input: string | Buffer | Sharp): Promise<RawImage> {
   const s = typeof input === 'string' || Buffer.isBuffer(input) ? sharp(input) : input;
@@ -40,7 +46,7 @@ async function buildPalette(): Promise<void> {
   }
   if (kept.length === 0) throw new Error('no family drawings found to build the palette from');
   const container = iq.utils.PointContainer.fromUint8Array(Uint8Array.from(kept), kept.length / 4, 1);
-  const palette = await iq.buildPalette([container], { colors: 48 });
+  const palette = await iq.buildPalette([container], { colors: 64 });
   const colours: RGB[] = palette.getPointContainer().getPointArray().map((p) => [p.r, p.g, p.b]);
   writeFileSync(PALETTE, JSON.stringify(colours) + '\n');
   console.log(`wrote ${colours.length} colours to ${PALETTE}`);
@@ -53,7 +59,8 @@ async function processLayer(job: ArtJob, palette: RGB[]): Promise<Entry> {
   const box = bounds(small);
   if (!box) throw new Error('image is empty after background removal');
   await encode(trim(small)).png().toFile(`${OUT}/${job.id}.png`);
-  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy: box.y };
+  const drop = LEGS_DROP[job.id];
+  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy: box.y, ...(drop ? { drop } : {}) };
 }
 
 async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {

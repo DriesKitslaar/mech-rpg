@@ -50,17 +50,17 @@ describe('shop catalogue', () => {
   const frames = SHOP_PARTS.filter((p): p is FramePart => 'resist' in p);
   const weapons = SHOP_PARTS.filter((p): p is Weapon => p.kind === 'weapon');
 
-  test('the shelf: frame parts, generators, weapons, boosters, fire control and modules', () => {
+  test('the shelf: frame parts, generators, weapons, shields, boosters, fire control and modules', () => {
     const count = (kind: string) => SHOP_PARTS.filter((p) => p.kind === kind).length;
-    expect(frames).toHaveLength(24);
-    expect(count('generator')).toBe(5);
-    expect(count('booster')).toBe(4);
-    expect(count('fcs')).toBe(4);
-    expect(count('module')).toBe(6);
-    expect(SHOP_PARTS).toHaveLength(24 + 5 + 4 + 4 + 6 + weapons.length + count('shield'));
-    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(15);
-    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(10);
-    expect(count('shield')).toBe(1);
+    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([7, 7, 7, 10]);
+    expect(count('generator')).toBe(8);
+    expect(count('booster')).toBe(7);
+    expect(count('fcs')).toBe(7);
+    expect(count('module')).toBe(11);
+    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(22);
+    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(16);
+    expect(count('shield')).toBe(3);
+    expect(SHOP_PARTS).toHaveLength(105);
   });
 
   test('every trait has what it needs, and each trait is used', () => {
@@ -74,13 +74,15 @@ describe('shop catalogue', () => {
   test('blades and charge weapons: a blade needs no ammunition and pushes hard, and both kinds exist in each mount they come in', () => {
     const blades = weapons.filter((w) => w.melee);
     const chargers = weapons.filter((w) => w.charge);
-    expect(blades.length).toBeGreaterThanOrEqual(2);
+    expect(blades.length).toBeGreaterThanOrEqual(4);
     for (const blade of blades) {
       expect(blade.mount, blade.id).toBe('hand');
       expect(blade.ammo, blade.id).toBeNull();
-      expect(blade.impact, blade.id).toBeGreaterThan(blade.damage);
+      expect(blade.impact, blade.id).toBeGreaterThan(0);
       expect(blade.charge, blade.id).toBeUndefined();
     }
+    // Most blades push harder than they cut; the thermal one trades its push for heat.
+    expect(blades.filter((blade) => blade.impact! > blade.damage).length).toBeGreaterThanOrEqual(3);
     expect(new Set(chargers.map((w) => w.mount))).toEqual(new Set(['hand', 'shoulder']));
     // A charged shot has to be worth the turn it takes: clearly more than any uncharged weapon of its mount.
     for (const charger of chargers) {
@@ -102,12 +104,8 @@ describe('shop catalogue', () => {
     expect(CATALOG['core-drone'].vendor).toBeUndefined();
   });
 
-  test.each(['head', 'core', 'arms', 'legs'] as const)('there are six %s parts', (kind) => {
-    expect(frames.filter((p) => p.kind === kind)).toHaveLength(6);
-  });
-
   test.each(['scout-mk1|hauler|rigger|strider', 'halo|halo|halo|halo', 'bulwark|bulwark|bulwark|bulwark', 'ronin|ronin|ronin|ronin',
-    'wraith|wraith|wraith|wraith', 'colossus|colossus|colossus|colossus'])(
+    'wraith|wraith|wraith|wraith', 'colossus|colossus|colossus|colossus', 'mantis|mantis|mantis|mantis'])(
     'family %s makes a valid build with every generator', (family) => {
       const [head, core, arms, legs] = family.split('|');
       for (const generator of ['gen-kd1', 'gen-prism', 'gen-furnace']) {
@@ -118,6 +116,19 @@ describe('shop catalogue', () => {
         expect(validatePlayerBuild(build, CATALOG), `${family} + ${generator}`).toEqual([]);
       }
     });
+
+  test('every kind of legs exists, and each free-standing pair carries a frame of its own weight class', () => {
+    const legs = frames.filter((p) => p.kind === 'legs');
+    expect(new Set(legs.map((p) => p.legType ?? 'biped'))).toEqual(new Set(['biped', 'reverse', 'quad', 'tank', 'hover']));
+    const on = (legsId: string, family: string): Build => ({
+      head: `head-${family}`, core: `core-${family}`, arms: `arms-${family}`, legs: legsId, generator: 'gen-kd1',
+      booster: 'bst-stock', fcs: 'fcs-stock', rightHand: 'wpn-rivet-rifle',
+    });
+    expect(validatePlayerBuild(on('legs-crawler', 'colossus'), CATALOG)).toEqual([]);
+    expect(validatePlayerBuild(on('legs-spider', 'ronin'), CATALOG)).toEqual([]);
+    expect(validatePlayerBuild(on('legs-glide', 'halo'), CATALOG)).toEqual([]);
+    expect(validatePlayerBuild(on('legs-glide', 'colossus'), CATALOG)).toEqual(['overweight']);
+  });
 
   test('spot checks against the plan', () => {
     expect(CATALOG['legs-bulwark']).toMatchObject({ capacity: 1500, mobility: 14, price: 1400, vendor: 'hadron' });

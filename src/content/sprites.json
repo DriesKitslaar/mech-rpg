@@ -8,14 +8,15 @@
     "paint": {
       "accent": [
         1,
+        2,
         3,
         5,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.222,
-      "hi": 0.539
+      "mid": 0.202,
+      "hi": 0.524
     }
   },
   "core-hauler": {
@@ -27,14 +28,15 @@
     "paint": {
       "accent": [
         1,
+        2,
         3,
         5,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.222,
-      "hi": 0.539
+      "mid": 0.202,
+      "hi": 0.524
     }
   },
   "head-scout-mk1": {
@@ -46,14 +48,15 @@
     "paint": {
       "accent": [
         1,
+        2,
         3,
         5,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.222,
-      "hi": 0.539
+      "mid": 0.202,
+      "hi": 0.524
     }
   },
   "arms-rigger.near": {
@@ -65,14 +68,15 @@
     "paint": {
       "accent": [
         1,
+        2,
         3,
         5,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.222,
-      "hi": 0.539
+      "mid": 0.202,
+      "hi": 0.524
     }
   },
   "arms-rigger.far": {
@@ -84,14 +88,15 @@
     "paint": {
       "accent": [
         1,
+        2,
         3,
         5,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.222,
-      "hi": 0.539
+      "mid": 0.202,
+      "hi": 0.524
     }
   },
   "legs-halo": {
@@ -102,14 +107,13 @@
     "oy": 54,
     "paint": {
       "accent": [
-        0,
         5,
         6,
         8
       ],
-      "lo": 0.029,
-      "mid": 0.621,
-      "hi": 0.977
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
     }
   },
   "core-halo": {
@@ -120,14 +124,13 @@
     "oy": 27,
     "paint": {
       "accent": [
-        0,
         5,
         6,
         8
       ],
-      "lo": 0.029,
-      "mid": 0.621,
-      "hi": 0.977
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
     }
   },
   "head-halo": {
@@ -138,14 +141,13 @@
     "oy": 5,
     "paint": {
       "accent": [
-        0,
         5,
         6,
         8
       ],
-      "lo": 0.029,
-      "mid": 0.621,
-      "hi": 0.977
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
     }
   },
   "arms-halo.near": {
@@ -156,14 +158,13 @@
     "oy": 26,
     "paint": {
       "accent": [
-        0,
         5,
         6,
         8
       ],
-      "lo": 0.029,
-      "mid": 0.621,
-      "hi": 0.977
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
     }
   },
   "arms-halo.far": {
@@ -174,14 +175,13 @@
     "oy": 26,
     "paint": {
       "accent": [
-        0,
         5,
         6,
         8
       ],
-      "lo": 0.029,
-      "mid": 0.621,
-      "hi": 0.977
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
     }
   },
   "legs-bulwark": {
@@ -192,12 +192,15 @@
     "oy": 55,
     "paint": {
       "accent": [
+        2,
+        5,
         7,
-        8
+        8,
+        11
       ],
       "lo": 0.005,
-      "mid": 0.249,
-      "hi": 0.73
+      "mid": 0.255,
+      "hi": 0.737
     }
   },
   "core-bulwark": {
@@ -208,12 +211,15 @@
     "oy": 13,
     "paint": {
       "accent": [
+        2,
+        5,
         7,
-        8
+        8,
+        11
       ],
       "lo": 0.005,
-      "mid": 0.249,
-      "hi": 0.73
+      "mid": 0.255,
+      "hi": 0.737
     }
   },
   "head-bulwark": {
@@ -224,12 +230,15 @@
     "oy": 8,
     "paint": {
       "accent": [
+        2,
+        5,
         7,
-        8
+        8,
+        11
       ],
       "lo": 0.005,
-      "mid": 0.249,
-      "hi": 0.73
+      "mid": 0.255,
+      "hi": 0.737
     }
   },
   "arms-bulwark.near": {
@@ -240,12 +249,15 @@
     "oy": 7,
     "paint": {
       "accent": [
+        2,
+        5,
         7,
-        8
+        8,
+        11
       ],
       "lo": 0.005,
-      "mid": 0.249,
-      "hi": 0.73
+      "mid": 0.255,
+      "hi": 0.737
     }
   },
   "arms-bulwark.far": {
@@ -256,12 +268,15 @@
     "oy": 11,
     "paint": {
       "accent": [
+        2,
+        5,
         7,
-        8
+        8,
+        11
       ],
       "lo": 0.005,
-      "mid": 0.249,
-      "hi": 0.73
+      "mid": 0.255,
+      "hi": 0.737
     }
   },
   "legs-ronin": {
@@ -279,8 +294,8 @@
         10
       ],
       "lo": 0.005,
-      "mid": 0.12,
-      "hi": 0.423
+      "mid": 0.137,
+      "hi": 0.329
     }
   },
   "core-ronin": {
@@ -298,8 +313,8 @@
         10
       ],
       "lo": 0.005,
-      "mid": 0.12,
-      "hi": 0.423
+      "mid": 0.137,
+      "hi": 0.329
     }
   },
   "head-ronin": {
@@ -317,8 +332,8 @@
         10
       ],
       "lo": 0.005,
-      "mid": 0.12,
-      "hi": 0.423
+      "mid": 0.137,
+      "hi": 0.329
     }
   },
   "arms-ronin.near": {
@@ -336,8 +351,8 @@
         10
       ],
       "lo": 0.005,
-      "mid": 0.12,
-      "hi": 0.423
+      "mid": 0.137,
+      "hi": 0.329
     }
   },
   "arms-ronin.far": {
@@ -355,8 +370,8 @@
         10
       ],
       "lo": 0.005,
-      "mid": 0.12,
-      "hi": 0.423
+      "mid": 0.137,
+      "hi": 0.329
     }
   },
   "legs-wraith": {
@@ -369,12 +384,13 @@
       "accent": [
         0,
         1,
+        2,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.075,
-      "hi": 0.34
+      "mid": 0.124,
+      "hi": 0.366
     }
   },
   "core-wraith": {
@@ -387,12 +403,13 @@
       "accent": [
         0,
         1,
+        2,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.075,
-      "hi": 0.34
+      "mid": 0.124,
+      "hi": 0.366
     }
   },
   "head-wraith": {
@@ -405,12 +422,13 @@
       "accent": [
         0,
         1,
+        2,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.075,
-      "hi": 0.34
+      "mid": 0.124,
+      "hi": 0.366
     }
   },
   "arms-wraith.near": {
@@ -423,12 +441,13 @@
       "accent": [
         0,
         1,
+        2,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.075,
-      "hi": 0.34
+      "mid": 0.124,
+      "hi": 0.366
     }
   },
   "arms-wraith.far": {
@@ -441,12 +460,13 @@
       "accent": [
         0,
         1,
+        2,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.075,
-      "hi": 0.34
+      "mid": 0.124,
+      "hi": 0.366
     }
   },
   "legs-colossus": {
@@ -458,13 +478,15 @@
     "paint": {
       "accent": [
         1,
+        5,
+        6,
         7,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.209,
-      "hi": 0.654
+      "mid": 0.202,
+      "hi": 0.608
     }
   },
   "core-colossus": {
@@ -476,13 +498,15 @@
     "paint": {
       "accent": [
         1,
+        5,
+        6,
         7,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.209,
-      "hi": 0.654
+      "mid": 0.202,
+      "hi": 0.608
     }
   },
   "head-colossus": {
@@ -494,13 +518,15 @@
     "paint": {
       "accent": [
         1,
+        5,
+        6,
         7,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.209,
-      "hi": 0.654
+      "mid": 0.202,
+      "hi": 0.608
     }
   },
   "arms-colossus.near": {
@@ -512,13 +538,15 @@
     "paint": {
       "accent": [
         1,
+        5,
+        6,
         7,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.209,
-      "hi": 0.654
+      "mid": 0.202,
+      "hi": 0.608
     }
   },
   "arms-colossus.far": {
@@ -530,13 +558,165 @@
     "paint": {
       "accent": [
         1,
+        5,
+        6,
         7,
         8,
         11
       ],
       "lo": 0.005,
-      "mid": 0.209,
-      "hi": 0.654
+      "mid": 0.202,
+      "hi": 0.608
+    }
+  },
+  "legs-mantis": {
+    "file": "sprites/legs-mantis.png",
+    "w": 121,
+    "h": 94,
+    "ox": 15,
+    "oy": 61,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "core-mantis": {
+    "file": "sprites/core-mantis.png",
+    "w": 44,
+    "h": 47,
+    "ox": 55,
+    "oy": 32,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "head-mantis": {
+    "file": "sprites/head-mantis.png",
+    "w": 22,
+    "h": 38,
+    "ox": 68,
+    "oy": 6,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "arms-mantis.near": {
+    "file": "sprites/arms-mantis.near.png",
+    "w": 70,
+    "h": 52,
+    "ox": 71,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "arms-mantis.far": {
+    "file": "sprites/arms-mantis.far.png",
+    "w": 47,
+    "h": 68,
+    "ox": 19,
+    "oy": 18,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "legs-crawler": {
+    "file": "sprites/legs-crawler.png",
+    "w": 138,
+    "h": 54,
+    "ox": 11,
+    "oy": 93,
+    "drop": 28,
+    "paint": {
+      "accent": [
+        3,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.664
+    }
+  },
+  "legs-spider": {
+    "file": "sprites/legs-spider.png",
+    "w": 147,
+    "h": 85,
+    "ox": 4,
+    "oy": 70,
+    "paint": {
+      "accent": [
+        0,
+        3,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.412
+    }
+  },
+  "legs-glide": {
+    "file": "sprites/legs-glide.png",
+    "w": 80,
+    "h": 75,
+    "ox": 35,
+    "oy": 66,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.073,
+      "mid": 0.983,
+      "hi": 0.983
     }
   },
   "wpn-rivet-rifle": {
@@ -668,6 +848,81 @@
     "file": "sprites/shd-riot.png",
     "w": 33,
     "h": 52
+  },
+  "wpn-ram-fist": {
+    "file": "sprites/wpn-ram-fist.png",
+    "w": 31,
+    "h": 22
+  },
+  "wpn-thermal-cutter": {
+    "file": "sprites/wpn-thermal-cutter.png",
+    "w": 57,
+    "h": 22
+  },
+  "wpn-marksman": {
+    "file": "sprites/wpn-marksman.png",
+    "w": 58,
+    "h": 19
+  },
+  "wpn-flak": {
+    "file": "sprites/wpn-flak.png",
+    "w": 39,
+    "h": 22
+  },
+  "wpn-disruptor": {
+    "file": "sprites/wpn-disruptor.png",
+    "w": 44,
+    "h": 22
+  },
+  "wpn-plasma": {
+    "file": "sprites/wpn-plasma.png",
+    "w": 38,
+    "h": 22
+  },
+  "wpn-coil-pistol": {
+    "file": "sprites/wpn-coil-pistol.png",
+    "w": 42,
+    "h": 22
+  },
+  "shd-barrier": {
+    "file": "sprites/shd-barrier.png",
+    "w": 30,
+    "h": 52
+  },
+  "shd-tower": {
+    "file": "sprites/shd-tower.png",
+    "w": 30,
+    "h": 52
+  },
+  "wpn-micro-salvo": {
+    "file": "sprites/wpn-micro-salvo.png",
+    "w": 32,
+    "h": 26
+  },
+  "wpn-gauss": {
+    "file": "sprites/wpn-gauss.png",
+    "w": 44,
+    "h": 17
+  },
+  "wpn-flare-mortar": {
+    "file": "sprites/wpn-flare-mortar.png",
+    "w": 23,
+    "h": 26
+  },
+  "wpn-buzzsaw": {
+    "file": "sprites/wpn-buzzsaw.png",
+    "w": 39,
+    "h": 26
+  },
+  "wpn-storm-array": {
+    "file": "sprites/wpn-storm-array.png",
+    "w": 22,
+    "h": 26
+  },
+  "wpn-howler": {
+    "file": "sprites/wpn-howler.png",
+    "w": 27,
+    "h": 26
   },
   "enemy-gunship": {
     "file": "sprites/enemy-gunship.png",

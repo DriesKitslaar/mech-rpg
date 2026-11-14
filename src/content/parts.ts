@@ -5,7 +5,7 @@ import type {
 
 const r = (kinetic: number, energy: number, explosive: number): Resist => ({ kinetic, energy, explosive });
 
-type FrameExtra = Pick<FramePart, 'aim' | 'capacity' | 'mobility'>;
+type FrameExtra = Pick<FramePart, 'aim' | 'capacity' | 'mobility' | 'legType'>;
 const frame = (
   id: string, name: string, kind: FrameSlot, ap: number, resist: Resist, weight: number, drain: number,
   price: number, vendor: Vendor | undefined, extra: FrameExtra = {},
@@ -75,11 +75,24 @@ export const SHOP_PARTS: Part[] = [
   frame('arms-colossus', 'Colossus Arms', 'arms', 200, r(0.3, 0.2, 0.3), 230, 55, 2600, 'freelance', { aim: 6 }),
   frame('legs-colossus', 'Colossus Legs', 'legs', 280, r(0.3, 0.2, 0.3), 380, 75, 3000, 'freelance', { capacity: 1900, mobility: 16 }),
 
+  // Mantis: the Undertow's own frame. Reverse-jointed legs that leap, plating that shrugs off blasts.
+  frame('head-mantis', 'Mantis Eye', 'head', 55, r(0.1, 0.1, 0.3), 30, 25, 1000, 'undertow', { aim: 14 }),
+  frame('core-mantis', 'Mantis Thorax', 'core', 200, r(0.15, 0.1, 0.35), 200, 55, 1500, 'undertow'),
+  frame('arms-mantis', 'Mantis Claws', 'arms', 100, r(0.1, 0.1, 0.3), 95, 40, 1100, 'undertow', { aim: 10 }),
+  frame('legs-mantis', 'Mantis Hoppers', 'legs', 140, r(0.15, 0.1, 0.3), 160, 55, 1500, 'undertow', { capacity: 950, mobility: 44, legType: 'reverse' }),
+  // Legs that are not legs. Each changes a rule of its own; see LEG_TYPES.
+  frame('legs-crawler', 'Crawler Treads', 'legs', 300, r(0.35, 0.1, 0.25), 420, 50, 2200, 'hadron', { capacity: 2200, mobility: 8, legType: 'tank' }),
+  frame('legs-spider', 'Spider Quad', 'legs', 220, r(0.2, 0.2, 0.2), 300, 70, 2800, 'freelance', { capacity: 1500, mobility: 22, legType: 'quad' }),
+  frame('legs-glide', 'Glide Skirt', 'legs', 100, r(0.05, 0.3, 0.05), 110, 70, 2400, 'lumen', { capacity: 750, mobility: 56, legType: 'hover' }),
+
   generator('gen-kd1', 'KD-1 Cell', 400, 25, 100, 500, 'undertow'),
+  generator('gen-dynamo', 'Dynamo Twin', 440, 32, 120, 1000, 'undertow'),
   generator('gen-prism', 'Prism Reactor', 520, 22, 90, 1600, 'lumen'),
   generator('gen-furnace', 'Furnace Block', 460, 38, 170, 1300, 'hadron'),
   generator('gen-ember', 'Ember Stack', 480, 50, 200, 2600, 'freelance'),
   generator('gen-tidal', 'Tidal Core', 600, 30, 140, 3200, 'freelance'),
+  generator('gen-cryo', 'Cryo Core', 430, 70, 160, 2200, 'lumen'),
+  generator('gen-singularity', 'Singularity Cell', 720, 24, 230, 4200, 'freelance'),
 
   weapon('wpn-rivet-rifle', 'Rivet Rifle', 'hand', 'kinetic', 38, 75, 60, 12, 30, 15, 80, 300, 'undertow'),
   weapon('wpn-arc-pistol', 'Arc Pistol', 'hand', 'energy', 30, 80, 90, 22, null, 0, 50, 600, 'lumen'),
@@ -98,7 +111,16 @@ export const SHOP_PARTS: Part[] = [
   weapon('wpn-chain-gun', 'Chain Gun', 'hand', 'kinetic', 20, 70, 90, 22, 20, 30, 120, 1400, 'hadron', 'burst', 3),
   // Charge weapons: a turn to charge, then the hardest single hits there are.
   weapon('wpn-longbow', 'Longbow Rail', 'hand', 'kinetic', 150, 90, 150, 34, 8, 90, 140, 2800, 'freelance', 'pierce', undefined, { charge: true }),
+  weapon('wpn-ram-fist', 'Ram Fist', 'hand', 'kinetic', 55, 86, 70, 8, null, 0, 80, 700, 'undertow', undefined, undefined, { melee: true, impact: 120 }),
+  weapon('wpn-thermal-cutter', 'Thermal Cutter', 'hand', 'energy', 70, 90, 100, 16, null, 0, 70, 1900, 'undertow', 'thermal', 28, { melee: true, impact: 60 }),
+  weapon('wpn-marksman', 'Marksman Rifle', 'hand', 'kinetic', 52, 96, 100, 20, 14, 40, 110, 1600, 'lumen', undefined, undefined, { impact: 30 }),
+  weapon('wpn-flak', 'Flak Repeater', 'hand', 'explosive', 30, 66, 85, 24, 14, 45, 115, 1500, 'undertow', 'burst', 2),
+  weapon('wpn-disruptor', 'Disruptor', 'hand', 'energy', 36, 84, 110, 24, null, 0, 75, 2300, 'lumen', 'drain', 80),
+  weapon('wpn-plasma', 'Plasma Thrower', 'hand', 'energy', 50, 86, 120, 28, null, 0, 100, 2100, 'hadron', 'thermal', 22),
+  weapon('wpn-coil-pistol', 'Coil Pistol', 'hand', 'kinetic', 100, 88, 100, 22, 10, 50, 90, 1300, 'hadron', undefined, undefined, { charge: true }),
   shield('shd-riot', 'Riot Shield', 0.4, 90, 1100, 'hadron'),
+  shield('shd-barrier', 'Barrier Emitter', 0.32, 50, 2200, 'lumen'),
+  shield('shd-tower', 'Tower Shield', 0.25, 190, 2600, 'hadron'),
   weapon('wpn-mortar-pod', 'Mortar Pod', 'shoulder', 'explosive', 70, 60, 80, 30, 8, 60, 140, 700, 'undertow'),
   weapon('wpn-siege-cannon', 'Siege Cannon', 'shoulder', 'kinetic', 110, 58, 120, 38, 6, 110, 240, 2000, 'hadron'),
   weapon('wpn-halo-array', 'Halo Array', 'shoulder', 'energy', 60, 85, 150, 34, null, 0, 120, 1900, 'lumen'),
@@ -109,6 +131,12 @@ export const SHOP_PARTS: Part[] = [
   weapon('wpn-breaker-cannon', 'Breaker Cannon', 'shoulder', 'explosive', 120, 56, 150, 44, 5, 150, 260, 3600, 'freelance', 'pierce'),
   weapon('wpn-hornet-salvo', 'Hornet Salvo', 'shoulder', 'explosive', 44, 72, 130, 34, 8, 110, 190, 2400, 'undertow', 'salvo'),
   weapon('wpn-sunlance', 'Sunlance', 'shoulder', 'energy', 170, 84, 190, 46, null, 0, 160, 3000, 'lumen', undefined, undefined, { charge: true }),
+  weapon('wpn-micro-salvo', 'Micro Salvo', 'shoulder', 'explosive', 28, 70, 100, 26, 10, 60, 130, 1200, 'undertow', 'salvo'),
+  weapon('wpn-flare-mortar', 'Flare Mortar', 'shoulder', 'explosive', 55, 62, 95, 28, 9, 70, 150, 1800, 'hadron', 'thermal', 26),
+  weapon('wpn-howler', 'Howler', 'shoulder', 'explosive', 46, 70, 100, 30, 8, 70, 170, 2000, 'undertow', undefined, undefined, { impact: 170 }),
+  weapon('wpn-buzzsaw', 'Buzzsaw Battery', 'shoulder', 'kinetic', 22, 66, 140, 38, 12, 80, 210, 2500, 'hadron', 'burst', 4),
+  weapon('wpn-storm-array', 'Storm Array', 'shoulder', 'energy', 38, 82, 170, 40, null, 0, 150, 3000, 'lumen', 'salvo'),
+  weapon('wpn-gauss', 'Gauss Driver', 'shoulder', 'kinetic', 210, 86, 200, 50, 6, 160, 280, 4200, 'freelance', 'pierce', undefined, { charge: true }),
 
   // Boosters: thrust is the evasion a boost gives, cost the share of a turn's energy it takes.
   // The stock parts weigh and drain nothing: they are what every mech had built in.
@@ -116,12 +144,18 @@ export const SHOP_PARTS: Part[] = [
   booster('bst-sprint', 'Sprint Pack', 30, 0.2, 40, 10, 900, 'undertow'),
   booster('bst-vector', 'Vector Jets', 38, 0.3, 50, 15, 1200, 'lumen'),
   booster('bst-ram', 'Ram Booster', 46, 0.4, 90, 20, 1600, 'hadron'),
+  booster('bst-glide', 'Glide Unit', 24, 0.12, 30, 10, 1100, 'lumen'),
+  booster('bst-after', 'Afterburner', 56, 0.5, 110, 25, 2400, 'hadron'),
+  booster('bst-phase', 'Phase Jets', 44, 0.26, 60, 30, 3600, 'freelance'),
 
   // Fire control: aim per kind of weapon, and focus, the share of the limb penalty it removes.
   fcs('fcs-stock', 'Stock FCS', 0, 0, 0, 0, 0, 0, 100, 'undertow'),
   fcs('fcs-tracer', 'Tracer FCS', 6, 0, 0, 0, 20, 10, 800, 'hadron'),
   fcs('fcs-lattice', 'Lattice FCS', 0, 8, 0, 0.25, 15, 20, 1400, 'lumen'),
   fcs('fcs-hawkeye', 'Hawkeye FCS', 3, 3, 3, 0.6, 25, 25, 2000, 'freelance'),
+  fcs('fcs-ballista', 'Ballista FCS', 0, 0, 10, 0, 30, 10, 900, 'undertow'),
+  fcs('fcs-surgeon', 'Surgeon FCS', 0, 0, 0, 1, 20, 30, 2600, 'lumen'),
+  fcs('fcs-omni', 'Omni FCS', 6, 6, 6, 0.3, 30, 35, 3800, 'freelance'),
 
   // Modules: one button each, a few uses a battle.
   module('mod-coolant', 'Coolant Flush', 'coolant', 60, 2, 30, 0, 700, 'undertow'),
@@ -130,6 +164,11 @@ export const SHOP_PARTS: Part[] = [
   module('mod-barrier', 'Pulse Barrier', 'barrier', 90, 1, 40, 10, 1500, 'lumen'),
   module('mod-nanites', 'Repair Nanites', 'nanites', 20, 1, 50, 0, 1800, 'freelance'),
   module('mod-shock', 'Shock Pulse', 'shock', 70, 1, 60, 15, 2200, 'freelance'),
+  module('mod-chaff', 'Chaff Pod', 'chaff', 25, 2, 30, 0, 800, 'undertow'),
+  module('mod-limiter', 'Limiter Release', 'limiter', 30, 1, 20, 10, 2000, 'hadron'),
+  module('mod-cryo', 'Cryo Flush', 'coolant', 100, 3, 50, 5, 1900, 'lumen'),
+  module('mod-oracle', 'Oracle Painter', 'painter', 30, 3, 30, 15, 2400, 'freelance'),
+  module('mod-aegis', 'Aegis Barrier', 'barrier', 170, 1, 60, 20, 3000, 'freelance'),
 ];
 
 /** Parts only enemies use. No vendor, so they never appear in the shop. */
@@ -187,6 +226,21 @@ export const SHOP_UNLOCKS: Record<string, string> = {
   // Blades, charge weapons, bursts, salvos and the shield.
   'wpn-arc-blade': 'lumen-1', 'wpn-breach-pick': 'hadron-1', 'wpn-chain-gun': 'hadron-1', 'shd-riot': 'hadron-1',
   'wpn-longbow': 'choice', 'wpn-sunlance': 'choice', 'wpn-hornet-salvo': 'choice',
+  // The Mantis frame and the rest of the Undertow's shelf. The Ram Fist is there from the start.
+  'head-mantis': 'undertow-1', 'core-mantis': 'undertow-1', 'arms-mantis': 'undertow-1', 'legs-mantis': 'undertow-1',
+  'gen-dynamo': 'undertow-1', 'fcs-ballista': 'undertow-1', 'mod-chaff': 'undertow-1', 'wpn-flak': 'undertow-1',
+  'wpn-micro-salvo': 'undertow-1', 'wpn-thermal-cutter': 'choice', 'wpn-howler': 'choice',
+  // Lumen.
+  'bst-glide': 'lumen-1', 'wpn-marksman': 'lumen-1',
+  'legs-glide': 'choice', 'gen-cryo': 'choice', 'fcs-surgeon': 'choice', 'mod-cryo': 'choice', 'wpn-disruptor': 'choice',
+  'shd-barrier': 'choice', 'wpn-storm-array': 'choice',
+  // Hadron.
+  'wpn-coil-pistol': 'hadron-1', 'wpn-flare-mortar': 'hadron-1',
+  'legs-crawler': 'choice', 'bst-after': 'choice', 'mod-limiter': 'choice', 'wpn-plasma': 'choice', 'shd-tower': 'choice',
+  'wpn-buzzsaw': 'choice',
+  // More arena prizes.
+  'mod-oracle': 'arena:3', 'bst-phase': 'arena:5', 'legs-spider': 'arena:6', 'mod-aegis': 'arena:6', 'fcs-omni': 'arena:7',
+  'wpn-gauss': 'arena:8', 'gen-singularity': 'arena:10',
 };
 
 export const CATALOG: Catalog = Object.fromEntries([...SHOP_PARTS, ...ENEMY_PARTS].map((part) => [part.id, part]));
