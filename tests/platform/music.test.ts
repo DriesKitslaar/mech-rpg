@@ -179,8 +179,10 @@ const linesOf = (s: Song): { pattern: string; steps: number; voice: string; toke
   Object.entries(s.patterns).flatMap(([pattern, { steps, lines }]) =>
     Object.entries(lines).map(([voice, text]) => ({ pattern, steps, voice, tokens: lineTokens(text) })));
 
-test('the game has its ten songs', () => {
-  expect(Object.keys(SONGS).sort()).toEqual(['arena', 'battle', 'battle2', 'boss', 'briefing', 'defeat', 'ending', 'hub', 'title', 'victory']);
+test('the game has its fourteen songs', () => {
+  expect(Object.keys(SONGS).sort()).toEqual([
+    'arena', 'battle', 'battle2', 'boss', 'briefing', 'defeat', 'ending', 'hadron', 'hub', 'lumen', 'rival', 'title', 'undertow', 'victory',
+  ]);
 });
 
 test.each(ALL)('%s parses', (_name, s) => {
@@ -292,8 +294,10 @@ test.each(LOOPS)('something sounds in every bar of %s', (_name, s) => {
   expect(sounding.size).toBe(compiled.steps / bar);
 });
 
-test('the looping songs are the eight the game moves between', () => {
-  expect(LOOPS.map(([name]) => name).sort()).toEqual(['arena', 'battle', 'battle2', 'boss', 'briefing', 'ending', 'hub', 'title']);
+test('the looping songs are the twelve the game moves between', () => {
+  expect(LOOPS.map(([name]) => name).sort()).toEqual([
+    'arena', 'battle', 'battle2', 'boss', 'briefing', 'ending', 'hadron', 'hub', 'lumen', 'rival', 'title', 'undertow',
+  ]);
 });
 
 test.each(['victory', 'defeat'] as const)('%s plays once and lasts between two and four seconds', (name) => {
@@ -756,4 +760,31 @@ test.each(ALL)('%s plays through a strict audio engine without a single bad valu
     expect(source.stopsAt).toBeGreaterThan(source.startsAt);
     expect(source.stopsAt).toBeLessThan(source.startsAt + 30);
   }
+});
+
+describe('a battle going badly', () => {
+  const queued = (tense: boolean, track: TrackName = 'battle'): number => {
+    const audio = fakeAudio();
+    const music = new Music(audio.context);
+    music.tense = tense;
+    begin(audio, music, track);
+    run(audio, music, 4);
+    expect(audio.problems).toEqual([]);
+    return audio.sources.length;
+  };
+
+  test('adds a fast ticking to the song that is playing, and takes it away again', () => {
+    expect(queued(true)).toBeGreaterThan(queued(false) + 10);
+    const audio = fakeAudio();
+    const music = new Music(audio.context);
+    begin(audio, music, 'battle');
+    music.tense = true;
+    run(audio, music, 2);
+    const during = audio.sources.length;
+    music.tense = false;
+    run(audio, music, 2);
+    const after = audio.sources.length - during;
+    // The same two seconds without the ticking hold fewer notes.
+    expect(after).toBeLessThan(during);
+  });
 });

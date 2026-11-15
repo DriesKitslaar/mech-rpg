@@ -2,7 +2,7 @@ import type { Mission } from '../../src/core/campaign';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { MISSIONS } from '../../src/content/missions';
 import { SONGS } from '../../src/content/songs';
-import { battleTrack, isBossBattle, trackFor } from '../../src/ui/soundtrack';
+import { battleTrack, briefingTrack, isBossBattle, trackFor } from '../../src/ui/soundtrack';
 
 const mission = (id: string): Mission => MISSIONS.find((m) => m.id === id)!;
 
@@ -36,7 +36,7 @@ describe('in battle', () => {
   test('the first act fights to one song, the war and the audit to another', () => {
     expect(track('intro-1')).toBe('battle');
     expect(track('hadron-2')).toBe('battle');
-    expect(track('rival-1', 1)).toBe('battle');
+    expect(track('rival-1', 0)).toBe('battle');
     expect(track('choice-lumen')).toBe('battle');
     expect(track('hadron-3', 0)).toBe('battle2');
     expect(track('finale-lumen', 0)).toBe('battle2');
@@ -52,5 +52,26 @@ describe('in battle', () => {
     const odd: Mission = { ...mission('patrol'), battles: [{ enemies: ['nobody'], background: 'bg' }] };
     expect(battleTrack(odd, 0, ALL_ENEMIES)).toBe('battle');
     expect(battleTrack(odd, 5, ALL_ENEMIES)).toBe('battle');
+  });
+});
+
+describe('themes', () => {
+  test('a client\'s briefing is read to the client\'s own song; work without a client to the plain one', () => {
+    expect(briefingTrack(mission('hadron-1'))).toBe('hadron');
+    expect(briefingTrack(mission('lumen-2'))).toBe('lumen');
+    expect(briefingTrack(mission('undertow-1'))).toBe('undertow');
+    expect(briefingTrack(mission('choice-lumen'))).toBe('lumen');
+    expect(briefingTrack(mission('finale-undertow'))).toBe('undertow');
+    expect(briefingTrack(mission('patrol'))).toBe('briefing');
+    expect(briefingTrack(mission('intro-1'))).toBe('briefing');
+    for (const m of MISSIONS) expect(Object.keys(SONGS), m.id).toContain(briefingTrack(m));
+  });
+
+  test('a battle against the rival is a duel with a song of its own, whatever machine they fly', () => {
+    const duels = MISSIONS.flatMap((m) => m.battles.map((b, i) => ({ m, i, b }))).filter(({ b }) => b.enemies.some((id) => ['rival', 'rival-2', 'ashfall-unbound'].includes(id)));
+    expect(duels.length).toBeGreaterThanOrEqual(2);
+    // Where the rival fights as a boss, with phases, the boss song has the last word.
+    for (const { m, i, b } of duels) expect(battleTrack(m, i, ALL_ENEMIES), m.id).toBe(isBossBattle(b, ALL_ENEMIES) ? 'boss' : 'rival');
+    expect(battleTrack(mission('rival-1'), 1, ALL_ENEMIES)).toBe('rival');
   });
 });

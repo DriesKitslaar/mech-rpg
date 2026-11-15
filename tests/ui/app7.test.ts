@@ -426,3 +426,27 @@ describe('a pilot whose own mech cannot deploy', () => {
     expect(snap(app).screen).toBe('training');
   });
 });
+
+describe('the music in a battle going badly', () => {
+  test('is told while the pilot\'s core is nearly gone, and no longer once the battle is over', () => {
+    const music = { enabled: true, tense: false, play: () => undefined };
+    const { app } = inHub(quiet(), 5, { music });
+    accept(app, 'intro-1');
+    app.update(16);
+    expect(music.tense).toBe(false);
+    // Stand still until the drones have worn the core down.
+    let wasTense = false;
+    for (let i = 0; i < 60000 && snap(app).battle?.phase !== 'result'; i++) {
+      if (snap(app).battle!.phase === 'action') select(app, 'endTurn');
+      else if (snap(app).battle!.phase === 'animating') app.update(16);
+      else press(app, 'confirm');
+      wasTense ||= music.tense;
+    }
+    expect(wasTense).toBe(true);
+    app.update(16);
+    expect(music.tense).toBe(false);
+    press(app, 'confirm');
+    app.update(16);
+    expect(music.tense).toBe(false);
+  });
+});

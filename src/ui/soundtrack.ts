@@ -9,9 +9,19 @@ export function isBossBattle(battle: Battle | undefined, enemies: Record<string,
   return !!battle && battle.enemies.some((id) => Object.hasOwn(enemies, id) && (enemies[id].phases?.length ?? 0) > 0);
 }
 
+/** The licensed pilot who keeps turning up, in whatever machine: a battle against them is a duel, and has their song. */
+const RIVALS = ['rival', 'rival-2', 'ashfall-unbound'];
+
+/** The song a briefing is read to: the client's own where the contract has a client, the plain one otherwise. */
+export function briefingTrack(mission: Mission): TrackName {
+  return mission.faction ?? 'briefing';
+}
+
 /** The song a battle is fought to. */
 export function battleTrack(mission: Mission, index: number, enemies: Record<string, EnemyDef>): TrackName {
+  // The last word goes to the boss song: the rival at full strength is a boss like any other.
   if (isBossBattle(mission.battles[index], enemies)) return 'boss';
+  if (mission.battles[index]?.enemies.some((id) => RIVALS.includes(id))) return 'rival';
   if (mission.arenaRank !== undefined || mission.id === MIRROR_ID) return 'arena';
   // The war, the audit and the verdicts have a harder song than the first act and the odd jobs.
   return ['path', 'finale', 'audit', 'verdict'].includes(mission.phase) ? 'battle2' : 'battle';

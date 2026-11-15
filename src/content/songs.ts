@@ -1,6 +1,9 @@
 import type { Kit, Song, Tone } from '../platform/music';
 
-export type SongName = 'title' | 'hub' | 'briefing' | 'battle' | 'battle2' | 'boss' | 'arena' | 'ending' | 'victory' | 'defeat';
+export type SongName =
+  | 'title' | 'hub' | 'briefing' | 'battle' | 'battle2' | 'boss' | 'arena' | 'ending' | 'victory' | 'defeat'
+  // A theme for each client, heard in their briefings, and one for the rival, heard in the duels.
+  | 'hadron' | 'lumen' | 'undertow' | 'rival';
 
 // Songs are written the way a tracker shows them: one token per step, "." for a rest, "-" to hold the note
 // before it, "|" between bars for the reader, and for the drums k, s, h, o, c and t (kick, snare, closed and
@@ -821,4 +824,173 @@ const defeat: Song = {
   order: ['lost'],
 };
 
-export const SONGS: Record<SongName, Song> = { title, hub, briefing, battle, battle2, boss, arena, ending, victory, defeat };
+// Hadron Mining. D minor, 92 bpm, 16 bars: a slow, heavy march. Low brass in thirds, a kick on one and
+// three and an anvil on four; the tune climbs a fifth and is pulled back down.
+const HADRON_BASS = figures('1 . . 1 . . 1 . 1 . . 1 . . 2 .', { Dm: 'D2 D3', Bb: 'Bb1 Bb2', C: 'C2 C3', Gm: 'G1 G2' });
+const HADRON_BEAT = { drums: times(4, 'k . . . . . . . k . . . c . . .'), ticks: times(4, 't . t . t . t . t . t . t . t .') };
+const hadron: Song = {
+  bpm: 92, stepsPerBeat: 4, loop: true,
+  scale: ['D', 'E', 'F', 'G', 'A', 'Bb', 'C'],
+  echo: { steps: 3, feedback: 0.3 },
+  instruments: {
+    bass: { ...BASS, gain: 0.26, cutoff: 360 },
+    brass: { ...PAD, gain: 0.11, attack: 0.08, decay: 0.5, release: 0.4, cutoff: 1100, detune: 6 },
+    lead: { ...LEAD, wave: 'sawtooth', gain: 0.1, cutoff: 1500, vibrato: 6 },
+    kit: { ...KIT, gain: 0.4 },
+  },
+  voices: { bass: 'bass', pad1: 'brass', pad2: 'brass', pad3: 'brass', lead: 'lead', drums: 'kit', ticks: 'kit' },
+  pan: { pad2: -0.5, pad3: 0.5, ticks: 0.3 },
+  patterns: {
+    march: {
+      steps: 64,
+      lines: {
+        bass: chart(HADRON_BASS, 'Dm Dm Bb C'), ...pads(16, 'D3 - Bb2 C3', 'F3 - D3 E3', 'A3 - F3 G3'), ...HADRON_BEAT,
+        lead: bars(
+          'D4 - - - - - F4 - - - E4 - D4 - - -', 'A3 - - - - - - - . . . . C4 - D4 -',
+          'F4 - - - - - E4 - - - D4 - Bb3 - - -', 'C4 - - - - - - - E4 - - - G4 - - -',
+        ),
+      },
+    },
+    climb: {
+      steps: 64,
+      lines: {
+        bass: chart(HADRON_BASS, 'Gm Dm Bb C'), ...pads(16, 'G2 D3 Bb2 C3', 'Bb2 F3 D3 E3', 'D3 A3 F3 G3'), ...HADRON_BEAT,
+        lead: bars(
+          'G4 - - - - - Bb4 - - - A4 - G4 - - -', 'F4 - - - - - - - . . . . D4 - F4 -',
+          'D4 - - - - - F4 - - - Bb4 - A4 - - -', 'G4 - - - - - - - E4 - - - C4 - - -',
+        ),
+      },
+    },
+  },
+  order: ['march', 'march', 'climb', 'march'],
+};
+
+// Lumen Systems. A major, 104 bpm, 16 bars: clean and bright and a little too even. Bells over broken
+// chords; nothing in it is out of place, which is the point.
+const LUMEN_ARP = figures('1 2 3 2 1 2 3 2 1 2 3 2 1 2 3 2', {
+  A: 'A3 C#4 E4', 'F#m': 'F#3 A3 C#4', D: 'D4 F#4 A4', E: 'E4 G#4 B4',
+});
+const LUMEN_BASS = figures('1 - - - - - - - 1 - - - 2 - - -', { A: 'A2 E2', 'F#m': 'F#2 C#3', D: 'D2 A2', E: 'E2 B2' });
+const LUMEN_BEAT = { drums: times(4, 'k . . . . . . . k . . . . . . .'), hats: times(4, HATS_8) };
+const lumen: Song = {
+  bpm: 104, stepsPerBeat: 4, loop: true,
+  scale: ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+  echo: { steps: 3, feedback: 0.4 },
+  instruments: {
+    bass: { ...BASS, wave: 'triangle', gain: 0.26, cutoff: 600 },
+    pad: { ...PAD, gain: 0.08, cutoff: 2400 },
+    arp: { ...PLUCK, wave: 'triangle', gain: 0.1 },
+    bell: { ...BELL, gain: 0.16 },
+    kit: { ...KIT, gain: 0.3 },
+  },
+  voices: { bass: 'bass', pad1: 'pad', pad2: 'pad', pad3: 'pad', arp: 'arp', bell: 'bell', drums: 'kit', hats: 'kit' },
+  pan: { pad2: -0.6, pad3: 0.6, arp: -0.3, bell: 0.3 },
+  patterns: {
+    even: {
+      steps: 64,
+      lines: {
+        bass: chart(LUMEN_BASS, 'A F#m D E'), arp: chart(LUMEN_ARP, 'A F#m D E'), ...LUMEN_BEAT,
+        ...pads(16, 'A3 F#3 D3 E3', 'C#4 A3 F#3 G#3', 'E4 C#4 A3 B3'),
+        bell: bars(
+          'E5 - - - - - C#5 - - - - - B4 - - -', 'A4 - - - - - - - - - . . C#5 - E5 -',
+          'F#5 - - - - - E5 - - - - - D5 - - -', 'B4 - - - - - - - - - - - . . . .',
+        ),
+      },
+    },
+    lift: {
+      steps: 64,
+      lines: {
+        bass: chart(LUMEN_BASS, 'D E F#m E'), arp: chart(LUMEN_ARP, 'D E F#m E'), ...LUMEN_BEAT,
+        ...pads(16, 'D3 E3 F#3 E3', 'F#3 G#3 A3 G#3', 'A3 B3 C#4 B3'),
+        bell: bars(
+          'A5 - - - - - F#5 - - - - - D5 - - -', 'E5 - - - - - - - G#5 - - - B5 - - -',
+          'A5 - - - - - G#5 - - - F#5 - C#5 - - -', 'B4 - - - - - - - E5 - - - G#5 - - -',
+        ),
+      },
+    },
+  },
+  order: ['even', 'even', 'lift', 'even'],
+};
+
+// The Undertow. E phrygian, 76 bpm in threes, 16 bars: water moving in the dark. A plucked figure that
+// rocks like a boat, a low drone, and a tune that keeps falling back to where it started.
+const UNDER_PLUCK = figures('1 . 2 . 3 . 2 . 3 . 2 .', {
+  Em: 'E3 B3 E4', F: 'F3 C4 F4', Dm: 'D3 A3 D4', Am: 'A3 E4 A4', G: 'G3 D4 G4',
+});
+const UNDER_BEAT = { drums: times(4, 'k . . . . . t . . . . .') };
+const undertow: Song = {
+  bpm: 76, stepsPerBeat: 3, loop: true,
+  scale: ['E', 'F', 'G', 'A', 'B', 'C', 'D'],
+  echo: { steps: 2, feedback: 0.5 },
+  instruments: {
+    drone: { ...PAD, gain: 0.14, attack: 1.2, release: 2, cutoff: 800 },
+    pluck: { ...PLUCK, gain: 0.12, decay: 0.4, echo: 0.5 },
+    lead: { ...LEAD, wave: 'triangle', gain: 0.14, attack: 0.06, vibrato: 10, echo: 0.4 },
+    kit: { ...KIT, gain: 0.3 },
+  },
+  voices: { drone1: 'drone', drone2: 'drone', pluck: 'pluck', lead: 'lead', drums: 'kit' },
+  pan: { drone2: 0.5, pluck: -0.3, lead: 0.2 },
+  patterns: {
+    ebb: {
+      steps: 48,
+      lines: {
+        drone1: whole('E2 F2 E2 D2', 12), drone2: whole('B2 C3 B2 A2', 12), pluck: chart(UNDER_PLUCK, 'Em F Em Dm'), ...UNDER_BEAT,
+        lead: bars('B4 - - - - - A4 - - G4 - -', 'A4 - - - - - - - - . . .', 'B4 - - - - - C5 - - B4 - -', 'A4 - - - - - - - - F4 - -'),
+      },
+    },
+    flow: {
+      steps: 48,
+      lines: {
+        drone1: whole('A2 G2 F2 E2', 12), drone2: whole('E3 D3 C3 B2', 12), pluck: chart(UNDER_PLUCK, 'Am G F Em'), ...UNDER_BEAT,
+        lead: bars('E5 - - - - - D5 - - C5 - -', 'B4 - - - - - - - - D5 - -', 'C5 - - - - - B4 - - A4 - -', 'G4 - - - - - - - - . . .'),
+      },
+    },
+  },
+  order: ['ebb', 'ebb', 'flow', 'ebb'],
+};
+
+// The rival. B minor, 150 bpm, 16 bars: a duel. Sixteenths in the bass, a tune that answers itself.
+const RIVAL_BASS = figures('1 1 2 1 1 1 2 1 1 1 2 1 1 1 2 1', {
+  Bm: 'B1 B2', G: 'G1 G2', A: 'A1 A2', D: 'D2 D3', 'F#m': 'F#1 F#2',
+});
+const RIVAL_BEAT = { kick: times(4, KICK_4), snare: times(4, SNARE_24), hats: times(4, HATS_16) };
+const rival: Song = {
+  bpm: 150, stepsPerBeat: 4, loop: true,
+  scale: ['B', 'C#', 'D', 'E', 'F#', 'G', 'A'],
+  echo: { steps: 3, feedback: 0.3 },
+  instruments: {
+    bass: { ...BASS, gain: 0.24 },
+    pad: { ...PAD, gain: 0.08, attack: 0.1 },
+    lead: { ...LEAD, gain: 0.12 },
+    kit: { ...KIT, gain: 0.34 },
+  },
+  voices: { bass: 'bass', pad1: 'pad', pad2: 'pad', pad3: 'pad', lead: 'lead', kick: 'kit', snare: 'kit', hats: 'kit' },
+  pan: { pad2: -0.5, pad3: 0.5, hats: 0.3 },
+  patterns: {
+    call: {
+      steps: 64,
+      lines: {
+        bass: chart(RIVAL_BASS, 'Bm G A Bm'), ...pads(16, 'B3 G3 A3 B3', 'D4 B3 C#4 D4', 'F#4 D4 E4 F#4'), ...RIVAL_BEAT,
+        lead: bars(
+          'F#5 - - - E5 - D5 - - - C#5 - D5 - - -', 'B4 - - - - - D5 - E5 - - - D5 - B4 -',
+          'C#5 - - - E5 - A5 - - - G5 - E5 - - -', 'F#5 - - - - - - - D5 - - - B4 - - -',
+        ),
+      },
+    },
+    answer: {
+      steps: 64,
+      lines: {
+        bass: chart(RIVAL_BASS, 'D A G F#m'), ...pads(16, 'D4 A3 G3 F#3', 'F#4 C#4 B3 A3', 'A4 E4 D4 C#4'), ...RIVAL_BEAT,
+        lead: bars(
+          'A5 - - - F#5 - D5 - - - F#5 - A5 - - -', 'E5 - - - - - C#5 - E5 - - - A5 - - -',
+          'B5 - - - A5 - G5 - - - D5 - G5 - - -', 'F#5 - - - - - - - C#5 - - - A4 - - -',
+        ),
+      },
+    },
+  },
+  order: ['call', 'call', 'answer', 'call'],
+};
+
+export const SONGS: Record<SongName, Song> = {
+  title, hub, briefing, battle, battle2, boss, arena, ending, victory, defeat, hadron, lumen, undertow, rival,
+};
