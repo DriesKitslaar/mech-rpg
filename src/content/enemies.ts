@@ -27,7 +27,50 @@ const STOCK = { booster: 'bst-stock', fcs: 'fcs-stock' };
 const RONIN = { head: 'head-ronin', core: 'core-ronin', arms: 'arms-ronin', legs: 'legs-ronin' };
 const AUDITOR = { head: 'head-auditor', core: 'core-auditor', arms: 'arms-auditor', legs: 'legs-auditor' };
 
+const HALO = { head: 'head-halo', core: 'core-halo', arms: 'arms-halo', legs: 'legs-halo' };
+const BULWARK = { head: 'head-bulwark', core: 'core-bulwark', arms: 'arms-bulwark', legs: 'legs-bulwark' };
+const MANTIS = { head: 'head-mantis', core: 'core-mantis', arms: 'arms-mantis', legs: 'legs-mantis' };
+
+/**
+ * The pilots with a price on them: each a mech of ordinary parts in its own colours, flown by
+ * somebody with a name. They are met on the bounty contracts and nowhere else.
+ */
+const WANTED: Record<string, EnemyDef> = {
+  // Quick, and after the head: a thief who strips cockpits.
+  magpie: {
+    id: 'magpie', name: 'Magpie', ai: 'skirmisher', sprite: 'enemy-rival', composed: true, paint: 'royal',
+    build: { ...HALO, generator: 'gen-prism', rightHand: 'wpn-enemy-carbine', leftHand: 'wpn-enemy-needle' },
+  },
+  // A Bulwark on tracks with a mortar: slow, and it hunts whatever is already broken.
+  dredge: {
+    id: 'dredge', name: 'Dredge', ai: 'bruiser', sprite: 'enemy-rival', composed: true, paint: 'desert',
+    build: { ...BULWARK, legs: 'legs-crawler', generator: 'gen-furnace', rightHand: 'wpn-enemy-shotgun', shoulder: 'wpn-enemy-mortar' },
+  },
+  // Charges a rail behind a tower shield.
+  vesper: {
+    id: 'vesper', name: 'Vesper', ai: 'gunner', sprite: 'enemy-rival', composed: true, paint: 'rose',
+    build: { ...HALO, generator: 'gen-prism', rightHand: 'wpn-enemy-longbow', leftHand: 'shd-tower' },
+  },
+  // A hot blade, a leap, and needles for when the blade arm is gone.
+  hollow: {
+    id: 'hollow', name: 'Hollow', ai: 'skirmisher', sprite: 'enemy-rival', composed: true, paint: 'toxic',
+    build: { ...MANTIS, generator: 'gen-tidal', booster: 'bst-ram', rightHand: 'wpn-thermal-cutter', leftHand: 'wpn-enemy-needle' },
+  },
+  // A Ronin that cooks its targets and takes its time.
+  paragon: {
+    id: 'paragon', name: 'Paragon', ai: 'sprayer', sprite: 'enemy-rival', composed: true, paint: 'sunburst',
+    build: { ...RONIN, ...STOCK, generator: 'gen-furnace', module: 'mod-coolant', rightHand: 'wpn-thermal-lance', shoulder: 'wpn-inferno-pod' },
+  },
+  // Meridian's own, gone private: an Auditor frame with a barrier and a decree.
+  notary: {
+    id: 'notary', name: 'The Notary', ai: 'bruiser', sprite: 'enemy-bailiff', composed: true, paint: 'obsidian',
+    build: { ...AUDITOR, generator: 'gen-tidal', module: 'mod-barrier', rightHand: 'wpn-enemy-writ', leftHand: 'wpn-enemy-seizer', shoulder: 'wpn-enemy-decree' },
+    phases: [{ at: 0.4, damage: 1.15, line: 'Witnessed, sealed, and now enforced.' }],
+  },
+};
+
 export const ENEMIES: Record<string, EnemyDef> = {
+  ...WANTED,
   'recon-drone': RECON_DRONE,
   'gun-turret': {
     id: 'gun-turret', name: 'Gun Turret', ai: 'gunner', sprite: 'enemy-gun-turret',

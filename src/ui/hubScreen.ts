@@ -66,8 +66,9 @@ export class HubScreen implements Screen {
     const done = this.app.buildErrors().length === 0 ? this.app.archive().length : 0;
     const missions = this.app.missions();
     // The patrol heads the list, but the cursor starts on the next contract of the story: the same
-    // button pressed again and again should lead on, not round and round the patrol.
-    const story = missions.findIndex((m) => m.phase !== 'patrol');
+    // button pressed again and again should lead on, not round and round the patrol, and not into a
+    // bounty either: side work is chosen, never fallen into.
+    const story = missions.findIndex((m) => m.phase !== 'patrol' && m.phase !== 'side');
     this.sub = new MenuList([
       ...missions.map((m) => ({ id: m.id, label: m.title, enabled: true, note: String(m.reward) })),
       ...(done > 0 ? [{ id: ARCHIVE, label: H.archive, enabled: true, note: String(done) }] : []),

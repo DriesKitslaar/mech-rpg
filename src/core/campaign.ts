@@ -8,7 +8,7 @@ export type Faction = 'hadron' | 'lumen' | 'undertow';
  * the rival; the choice of a client; that client's path; its finale; the audit; the verdict.
  * The patrol stands outside the story.
  */
-export type MissionPhase = 'patrol' | 'intro' | 'faction' | 'rival' | 'choice' | 'path' | 'finale' | 'audit' | 'verdict';
+export type MissionPhase = 'patrol' | 'intro' | 'faction' | 'rival' | 'choice' | 'path' | 'finale' | 'audit' | 'verdict' | 'side';
 /** How the pilot ends the story: by enforcing the foreclosure, or by defaulting on it. */
 export type Verdict = 'enforce' | 'default';
 /** The story's phases in the order they are played. */
@@ -43,6 +43,10 @@ export interface Mission {
   faction?: Faction;
   /** A faction contract that is offered only once this other contract is done. */
   after?: string;
+  /** A side contract is on offer once this has happened; see `Condition`. */
+  when?: Condition;
+  /** Side contracts of one series are offered one at a time, in list order. */
+  series?: string;
   /** Which ending a verdict contract leads to. */
   verdict?: Verdict;
   /** Set on a contract played again from the archive: it pays less and changes nothing in the story. */
@@ -163,7 +167,8 @@ function offeredIn(phase: MissionPhase, state: GameState, missions: Mission[]): 
     case 'path': return left.filter((m) => m.faction === chosen).slice(0, 1);
     case 'finale': return done(state, missions, 'finale').length > 0 ? [] : left.filter((m) => m.faction === chosen);
     case 'verdict': return done(state, missions, 'verdict').length > 0 ? [] : left;
-    case 'patrol': return [];
+    case 'patrol':
+    case 'side': return [];
   }
 }
 
@@ -181,7 +186,23 @@ export function availableMissions(state: GameState, missions: Mission[]): Missio
     story = offeredIn(phase, state, missions);
     if (story.length > 0) break;
   }
-  return [...all(missions, 'patrol'), ...story];
+  return [...all(missions, 'patrol'), ...story, ...sideMissions(state, missions)];
+}
+
+/**
+ * Work beside the story: each contract is on offer once what it waits for has happened, until it is
+ * won. Of a series (the bounties) only the first one still open is on offer. None of it has to be
+ * done for the story to end, and it is all there again when the story starts over.
+ */
+export function sideMissions(state: GameState, missions: Mission[]): Mission[] {
+  const seen = new Set<string>();
+  return all(missions, 'side').filter((m) => {
+    if (state.completed.includes(m.id) || !reached(state, m.when ?? 'start', missions)) return false;
+    if (!m.series) return true;
+    if (seen.has(m.series)) return false;
+    seen.add(m.series);
+    return true;
+  });
 }
 
 /**

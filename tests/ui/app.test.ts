@@ -46,7 +46,7 @@ const paid = (app: App) => medalPay(snap(app).medals);
 const press = (app: App, ...actions: InputAction[]) => actions.forEach((a) => app.onInput(a));
 const ids = (app: App) => snap(app).menu.items.map((i) => i.id);
 /** The contracts on the list that are not generated ones. */
-const story = (app: App) => ids(app).filter((id) => !id.startsWith('open-') && id !== 'archive');
+const story = (app: App) => ids(app).filter((id) => !/^(open|bounty|favour)-/.test(id) && id !== 'archive');
 const open = (app: App) => ids(app).filter((id) => id.startsWith('open-'));
 const select = (app: App, id: string) => {
   for (let i = 0; i < 40 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');

@@ -38,6 +38,14 @@ test('a wingman is hired from the briefing, fires in the battle, and the enemy a
   for (let i = 0; i < 80 && (await snap(page)).screen !== 'hub'; i++) await press(page, 'Enter');
   await waitForScreen(page, 'hub');
   await choose(page, 'contracts');
+  // The board has posted its first notice, and three people owe this pilot a favour.
+  const listed = (await snap(page)).menu.items.map((i) => i.id).filter((id) => /^(bounty|favour)-/.test(id));
+  expect(listed).toEqual(['bounty-1', 'favour-undertow', 'favour-ashfall', 'favour-marrow']);
+  await page.screenshot({ path: shot('contracts-side') });
+  await choose(page, 'bounty-1');
+  await waitForScreen(page, 'briefing');
+  await page.screenshot({ path: shot('briefing-bounty') });
+  await press(page, 'Escape');
   await choose(page, 'patrol');
   await waitForScreen(page, 'briefing');
   const briefing = async () => (await snap(page) as unknown as { briefing: { reward: number; wingman: { id: string | null; open: number } } }).briefing;
