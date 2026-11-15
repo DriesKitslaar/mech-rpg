@@ -34,7 +34,7 @@ export function standing(game: GameState, wingman: Wingman): Standing {
 
 /**
  * The wingman as this pilot can hire them: a friend flies for less, and someone the pilot crossed
- * does not take the call at all. Bonds are made in the story, so they hold in whatever cycle they were made.
+ * does not take the call at all. Bonds are made in the story and last as long as that telling of it does.
  */
 export function wingmanFor(game: GameState, wingman: Wingman, missions: Mission[]): Wingman | null {
   if (!wingmanOpen(game, wingman, missions)) return null;
@@ -43,9 +43,11 @@ export function wingmanFor(game: GameState, wingman: Wingman, missions: Mission[
   return how === 'ally' ? { ...wingman, share: Math.round((wingman.share - ALLY_DISCOUNT) * 100) / 100 } : wingman;
 }
 
-/** Whether this wingman is for hire yet. Once the story has started over, everyone is. */
-export const wingmanOpen = (game: GameState, wingman: Wingman, missions: Mission[]): boolean =>
-  game.cycle > 0 || reached(game, wingman.after, missions);
+/**
+ * Whether this wingman is for hire yet. When the story starts over they come back into it as it
+ * goes, the way everyone else in it does.
+ */
+export const wingmanOpen = (game: GameState, wingman: Wingman, missions: Mission[]): boolean => reached(game, wingman.after, missions);
 
 /**
  * Whether a second pilot can be brought along at all: not into the arena, where fights are one

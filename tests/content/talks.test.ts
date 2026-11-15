@@ -1,4 +1,4 @@
-import { chose, decide, dueScenes, reached, startNewCycle } from '../../src/core/campaign';
+import { chose, decide, dueScenes, reached, settleOldStory, startNewCycle } from '../../src/core/campaign';
 import type { GameState } from '../../src/core/game';
 import { standing, wingmanFor } from '../../src/core/wingman';
 import { MISSIONS } from '../../src/content/missions';
@@ -9,9 +9,9 @@ import { WINGMEN } from '../../src/content/wingmen';
 import { isValidState } from '../../src/core/game';
 import { CATALOG } from '../../src/content/parts';
 import { SCENE_CHARS, SCENE_LINES } from '../../src/ui/sceneScreen';
-import { ANSWER_CHARS, TALK_SCENE_CHARS, TALK_SCENE_LINES } from '../../src/ui/talkScreen';
+import { ANSWER_CHARS, QUESTION_HOLD_MS, TALK_SCENE_CHARS, TALK_SCENE_LINES } from '../../src/ui/talkScreen';
 import { wrap } from '../../src/ui/widgets';
-import { done, fresh, inHub, press, savedGame, skipTalks, snap, strong } from '../helpers/app';
+import { done, fresh, inHub, makeApp, press, savedGame, select, skipTalks, snap, strong } from '../helpers/app';
 
 const [kite, marrow, sixty] = WINGMEN;
 const all = (answer: 0 | 1): Record<string, string> => Object.fromEntries(TALKS.map((t) => [t.choice!.id, t.choice!.options[answer].id]));
@@ -36,8 +36,9 @@ describe('the conversations', () => {
     const due = (g: GameState) => dueScenes({ ...g, scenes: ['act-1', 'act-2', 'act-3'] }, SCENES, MISSIONS).map((s) => s.id);
     expect(due(fresh())).toEqual([]);
     expect(due(done('intro-1', 'intro-2'))).toEqual(['talk-kite']);
-    expect(due(done('intro-1', 'intro-2', 'lumen-1'))).toEqual(['talk-kite', 'talk-logs']);
-    expect(due(done('intro-1', 'intro-2', 'lumen-1', 'rival-1'))).toEqual(['talk-rival', 'talk-marrow']);
+    expect(due(done('intro-1', 'intro-2', 'lumen-1'))).toEqual(['talk-kite']);
+    expect(due(done('intro-1', 'intro-2', 'lumen-1', 'lumen-2'))).toEqual(['talk-kite', 'talk-logs']);
+    expect(due(done('intro-1', 'intro-2', 'lumen-1', 'lumen-2', 'rival-1'))).toEqual(['talk-rival', 'talk-marrow']);
   });
 
   test('an answer is remembered, stands, pays what it says, and is forgotten when the story starts over', () => {
@@ -47,6 +48,9 @@ describe('the conversations', () => {
     expect(decide(g, 'logs', 'keep', 500)).toBe(g);
     expect(reached(g, 'chose:logs=sell', MISSIONS)).toBe(true);
     expect(reached(g, 'chose:logs=keep', MISSIONS)).toBe(false);
+    // A condition that names no answer is never met, asked or not.
+    expect(reached(g, 'chose:logs', MISSIONS)).toBe(false);
+    expect(reached(fresh(), 'chose:kite', MISSIONS)).toBe(false);
     expect(isValidState(g, CATALOG)).toBe(true);
     expect(isValidState({ ...g, choices: { logs: 5 } }, CATALOG)).toBe(false);
     expect(isValidState({ ...g, choices: undefined }, CATALOG)).toBe(true);
@@ -90,7 +94,7 @@ describe('a conversation on screen', () => {
   test('each press brings the next thing said, then the question; the answer is kept, paid and replied to', () => {
     const { app, store } = inHub({ ...strong(done('intro-1', 'intro-2')), scenes: ['act-1', 'talk-kite'] });
     const credits = snap(app).credits;
-    app.commit({ ...app.game!, completed: [...app.game!.completed, 'lumen-1'] });
+    app.commit({ ...app.game!, completed: [...app.game!.completed, 'lumen-1', 'lumen-2'] });
     app.go('hub');
     const talk = () => snap(app).talk as { at: number; of: number; who: string; asking: boolean };
     expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'talk-logs' });
@@ -113,7 +117,7 @@ describe('a conversation on screen', () => {
   });
 
   test('selling pays on the spot', () => {
-    const { app } = inHub({ ...strong(done('intro-1', 'intro-2', 'lumen-1')), scenes: ['act-1', 'talk-kite', 'talk-logs'], choices: {} });
+    const { app } = inHub({ ...strong(done('intro-1', 'intro-2', 'lumen-1', 'lumen-2')), scenes: ['act-1', 'talk-kite', 'talk-logs'], choices: {} });
     const credits = snap(app).credits;
     app.commit({ ...app.game!, scenes: ['act-1', 'talk-kite'] });
     app.go('hub');
@@ -129,5 +133,118 @@ describe('a conversation on screen', () => {
     expect(savedGame(store).choices).toEqual({ kite: 'pass' });
     expect(savedGame(store).scenes).toContain('talk-kite');
     expect(snap(app).screen).toBe('hub');
+  });
+});
+
+describe('what a conversation guards against', () => {
+  function texts(app: ReturnType<typeof inHub>['app']): string[] {
+    const said: string[] = [];
+    const target: Record<string, unknown> = {};
+    const ctx = new Proxy(target, {
+      get: (t, name: string) => (name in t ? t[name] : name === 'measureText' ? () => ({ width: 10 })
+        : (...args: unknown[]) => { if (name === 'fillText') said.push(String(args[0])); }),
+      set: (t, name: string, value) => { t[name] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    app.draw(ctx);
+    return said;
+  }
+
+  test('a button mashed through the talk does not answer the question: it is on screen a good while first', () => {
+    const { app, store } = makeApp({ ...strong(done('intro-1', 'intro-2', 'lumen-1', 'lumen-2')), scenes: ['act-1', 'talk-kite'] }, 5, { fast: false });
+    const talk = () => snap(app).talk as { asking: boolean } | undefined;
+    // From the title into the game: the conversation is the first thing that comes up.
+    for (let t = 0; t < 5000 && snap(app).screen !== 'scene'; t += 100) { app.update(100); press(app, 'confirm'); }
+    expect(snap(app).scene).toBe('talk-logs');
+    // A press every tenth of a second until the question is up, and for a second after.
+    let asked = -1;
+    for (let t = 0; t < 30000 && snap(app).screen === 'scene'; t += 100) {
+      app.update(100);
+      press(app, 'confirm');
+      if (asked < 0 && talk()?.asking) asked = t;
+      if (asked >= 0 && t - asked >= QUESTION_HOLD_MS - 200) break;
+    }
+    expect(asked).toBeGreaterThan(0);
+    expect(talk()?.asking).toBe(true);
+    expect(savedGame(store).choices).toEqual({});
+    expect(QUESTION_HOLD_MS).toBeGreaterThanOrEqual(1500);
+    // Left alone for a moment, the pilot is told the answer stands, and then it is taken.
+    app.update(400);
+    expect(texts(app)).toContain('UP/DOWN: choose   A: answer. It stands.');
+    press(app, 'down', 'confirm');
+    expect(savedGame(store).choices).toEqual({ logs: 'keep' });
+  });
+
+  test('a question answered before the game was closed is not asked again: the answer given is replied to', () => {
+    const { app } = inHub({ ...strong(done('intro-1', 'intro-2', 'lumen-1', 'lumen-2')), scenes: ['act-1', 'talk-kite', 'talk-logs'], choices: { kite: 'pass', logs: 'keep' } });
+    const credits = snap(app).credits;
+    app.commit({ ...app.game!, scenes: ['act-1', 'talk-kite'] });
+    app.go('hub');
+    const talk = () => snap(app).talk as { at: number; of: number; who: string; asking: boolean };
+    press(app, 'confirm', 'confirm', 'confirm');
+    expect(talk()).toMatchObject({ asking: false, who: 'Tamsin', at: 3, of: 4 });
+    expect(texts(app).join(' ')).toContain('That gets around too.');
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'hub', credits });
+  });
+
+  test('what is said is drawn: the speaker, their words, and every answer', () => {
+    const { app } = inHub({ ...strong(done('intro-1', 'intro-2')), scenes: ['act-1'] , choices: { kite: 'pass' } });
+    app.commit({ ...app.game!, scenes: ['act-1'], choices: {} });
+    app.go('hub');
+    expect(texts(app)).toEqual(expect.arrayContaining(['NEW LICENCE', 'DISPATCH']));
+    expect(texts(app).join(' ')).toContain('You have a visitor in the bay. Says he is a pilot. His frame says otherwise.');
+    press(app, 'confirm', 'confirm', 'confirm', 'confirm');
+    expect(texts(app)).toEqual(expect.arrayContaining(['YOUR CALL', 'Vouch for him.', 'Tell him to ask someone else.']));
+  });
+
+  test('what the pilot decided is written on the pages before the epilogue', () => {
+    const judged = done(...MISSIONS.filter((m) => m.phase !== 'side' && m.faction !== 'hadron' && m.faction !== 'undertow' && m.verdict !== 'default').map((m) => m.id));
+    const { app } = makeApp({ ...judged, scenes: SCENES.filter((s) => !s.ending && !s.id.startsWith('left-')).map((s) => s.id), choices: { kite: 'vouch', dispatch: 'cut' } });
+    press(app, 'confirm');
+    expect(snap(app).scene).toBe('left-1');
+    expect(texts(app).join(' ')).toContain('He still undercharges.');
+    press(app, 'confirm');
+    expect(snap(app).scene).toBe('left-2');
+    expect(texts(app).join(' ')).toContain('not on the form.');
+  });
+
+  test('a game from before there were conversations is not told about what is long past', () => {
+    const old = { ...done('intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1', 'choice-lumen', 'lumen-3'), scenes: ['act-1', 'act-2'] };
+    delete (old as { choices?: unknown }).choices;
+    const settled = settleOldStory(old, SCENES, MISSIONS);
+    expect(settled.choices).toEqual({});
+    expect(dueScenes(settled, SCENES, MISSIONS).map((s) => s.id)).toEqual([]);
+    // What is still to come, comes.
+    const later = done.call(null);
+    expect(later.choices).toEqual({});
+    expect(settleOldStory(settled, SCENES, MISSIONS)).toBe(settled);
+    const { app } = inHub(old);
+    expect(snap(app).screen).toBe('hub');
+    expect(app.game!.choices).toEqual({});
+  });
+});
+
+describe('bonds in the briefing', () => {
+  test('a friend is offered at the friend\'s rate, someone crossed is not offered, and nobody is hired into their own trouble', () => {
+    const base = { ...strong(done('intro-1', 'intro-2', 'rival-1')), scenes: SCENES.map((s) => s.id) };
+    const offered = (choices: Record<string, string>, mission: string) => {
+      const { app } = inHub({ ...base, choices });
+      select(app, 'contracts');
+      select(app, mission);
+      const seen: { id: string | null; share: number }[] = [];
+      if (!snap(app).menu.items.some((i) => i.id === 'wingman')) return seen;
+      press(app, 'down');
+      for (let i = 0; i < 3; i++) {
+        press(app, 'right');
+        const w = (snap(app).briefing as unknown as { wingman: { id: string | null; share: number } }).wingman;
+        if (w.id === null) break;
+        seen.push({ id: w.id, share: w.share });
+      }
+      return seen;
+    };
+    expect(offered({ kite: 'vouch', marrow: 'cover' }, 'patrol')).toEqual([{ id: 'kite', share: 10 }, { id: 'marrow', share: 20 }]);
+    expect(offered({ kite: 'pass', marrow: 'sell' }, 'patrol')).toEqual([{ id: 'kite', share: 15 }]);
+    expect(offered({ kite: 'vouch', marrow: 'cover' }, 'favour-kite')).toEqual([{ id: 'marrow', share: 20 }]);
+    expect(offered({ kite: 'vouch', marrow: 'cover' }, 'favour-marrow')).toEqual([{ id: 'kite', share: 10 }]);
   });
 });

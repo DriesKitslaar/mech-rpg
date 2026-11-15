@@ -35,7 +35,7 @@ export const TALKS: Scene[] = [
     },
   },
   {
-    id: 'talk-logs', heading: 'A PRIVATE LINE', title: 'THE SPARE KEY', picture: 'bg-plaza', after: 'lumen-1', before: 'rival-1', lines: [],
+    id: 'talk-logs', heading: 'A PRIVATE LINE', title: 'THE SPARE KEY', picture: 'bg-plaza', after: 'lumen-2', before: 'rival-1', lines: [],
     talk: [
       varga('A small matter. Your mech logs everything it sees on a contract. Hadron\'s yards. The Undertow\'s gates.'),
       varga('Lumen would like copies. Nothing is taken from you. Nobody is hurt this week. The fee is generous.'),
@@ -51,21 +51,21 @@ export const TALKS: Scene[] = [
   {
     id: 'talk-rival', heading: 'THE FREIGHT LANE', title: 'THE WRECK', picture: 'bg-neon-district', after: 'rival-1', before: 'finale', lines: [],
     talk: [
-      dispatch('Ashfall\'s frame is down in the freight lane and the cockpit is jammed. Recovery wants forty minutes. The coolant fire wants ten.'),
+      dispatch('Ashfall walked off the field, and got four blocks. The frame is down in the freight lane with the cockpit jammed. Recovery wants forty minutes. The coolant fire wants ten.'),
       ashfall('Don\'t look at me like that. You took the same contract. Dispatch booked us both and let us find out.'),
-      dispatch('...He is not wrong. I am sorry. It paid twice.'),
+      dispatch('...That is true. I am sorry. It paid twice.'),
     ],
     choice: {
       id: 'rival', options: [
         { id: 'pull', label: 'Tear the hatch off.', reply: ashfall('Hm. I\'ll remember which of us did that. Don\'t make it strange.') },
-        { id: 'leave', label: 'Recovery can have him.', reply: ashfall('Right. Business. I\'d have done the same, and I\'ll remember that too.') },
+        { id: 'leave', label: 'Leave it to recovery.', reply: ashfall('Right. Business. I\'d have done the same, and I\'ll remember that too.') },
       ],
     },
   },
   {
     id: 'talk-marrow', heading: 'THE BAY', title: 'THE DESERTER', picture: 'bg-mine', after: 'rival-1', before: 'finale', lines: [],
     talk: [
-      marrow('You\'re the one who put Ashfall on the pavement. Good. I like working with people who finish things.'),
+      marrow('You\'re the one who sent Ashfall home on foot. Good. I like working with people who finish things.'),
       marrow('I flew siege for Hadron for nine years. I left with the gun. They list it as stolen and me as dead, and I\'d like to keep it that way.'),
       brenn('Pilot. Hadron pays well for word of a missing siege frame. Think about who keeps the lights on in this city.'),
     ],
@@ -100,7 +100,7 @@ export const TALKS: Scene[] = [
     choice: {
       id: 'dispatch', options: [
         { id: 'forgive', label: 'We\'re square. Stay on the radio.', reply: dispatch('...Copy. Staying on. Whatever you decide about them, I\'m on your channel.') },
-        { id: 'cut', label: 'Find me another desk.', reply: dispatch('Understood. I\'ll hand you over clean. For what it\'s worth, you were the best thing on my board.') },
+        { id: 'cut', label: 'We\'re not square. Contracts only.', reply: dispatch('Understood. Contracts only, then. For what it\'s worth, you were the best thing on my board.') },
       ],
     },
   },
@@ -117,8 +117,8 @@ const REMEMBERED: Record<string, Record<string, string>> = {
     keep: 'Below the waterline they still say your mech keeps its mouth shut.',
   },
   rival: {
-    pull: 'Ashfall tells the story of the hatch differently every time. In all of them, you pulled.',
-    leave: 'Ashfall walks with a limp now, and has never once said whose fault it was.',
+    pull: 'For as long as Ashfall flew, the story of the hatch changed with every telling. In all of them, you pulled.',
+    leave: 'Ashfall never once said whose fault the limp was.',
   },
   marrow: {
     cover: 'Hadron still lists one siege frame as missing. It is very well maintained.',
@@ -129,8 +129,8 @@ const REMEMBERED: Record<string, Record<string, string>> = {
     file: 'The board corrected a record eleven years late. Some families got a letter.',
   },
   dispatch: {
-    forgive: 'Dispatch is still on the night shift. Yours is the channel she never mutes.',
-    cut: 'Your new desk is efficient. It has never once asked whether you ate.',
+    forgive: 'Dispatch is still on the night shift. Yours is the one channel that is never muted.',
+    cut: 'Dispatch still routes your contracts. Neither of you says a word that is not on the form.',
   },
 };
 

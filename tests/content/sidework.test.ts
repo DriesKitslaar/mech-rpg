@@ -1,8 +1,10 @@
 import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
-import { availableMissions, campaignComplete, completeMission, sideMissions, startNewCycle } from '../../src/core/campaign';
+import { availableMissions, campaignComplete, completeMission, forCycle, sideMissions, startNewCycle } from '../../src/core/campaign';
 import type { GameState } from '../../src/core/game';
 import { playMission } from '../../src/core/mission';
-import { ALL_ENEMIES } from '../../src/content/arena';
+import { ALL_ENEMIES, ARENA } from '../../src/content/arena';
+import { generateBoard } from '../../src/core/board';
+import { BOARD_TEXT } from '../../src/content/board';
 import { ENEMIES } from '../../src/content/enemies';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG } from '../../src/content/parts';
@@ -27,11 +29,18 @@ describe('the bounty board', () => {
   test('has six notices, each one fight for a named pilot who is met nowhere else, and each pays more than the last', () => {
     expect(BOUNTIES.map((m) => m.id)).toEqual(['bounty-1', 'bounty-2', 'bounty-3', 'bounty-4', 'bounty-5', 'bounty-6']);
     const targets = BOUNTIES.map((m) => m.battles[0].enemies[0]);
-    expect(targets).toEqual(['magpie', 'dredge', 'vesper', 'hollow', 'paragon', 'notary']);
+    expect(targets).toEqual(['magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary']);
+    // Nobody on the board shares a name with anybody in the arena, and the open contracts never field them.
+    expect(ARENA.map((a) => a.name).filter((name) => targets.some((t) => ENEMIES[t].name === name))).toEqual([]);
+    for (let wins = 0; wins < 300; wins += 7) {
+      for (const open of generateBoard(wins, wins % 3, BOARD_TEXT)) expect(open.battles.flatMap((b) => b.enemies).filter((id) => targets.includes(id))).toEqual([]);
+    }
+    // Later in a later cycle they pay and hit as everything else does then.
+    expect(forCycle(BOUNTIES[5], 1).reward).toBeGreaterThan(BOUNTIES[5].reward);
     for (const [i, m] of BOUNTIES.entries()) {
       expect(m.battles).toHaveLength(1);
       expect(m.battles[0].objective).toEqual({ type: 'leader', target: 0 });
-      expect(m.title).toBe(`Wanted: ${ENEMIES[targets[i]].name.replace(/^The /, 'The ')}`);
+      expect(m.title).toBe(`Wanted: ${ENEMIES[targets[i]].name}`);
       if (i > 0) expect(m.reward).toBeGreaterThan(BOUNTIES[i - 1].reward);
       const elsewhere = MISSIONS.filter((other) => other !== m).flatMap((other) => other.battles.flatMap((b) => b.enemies));
       expect(elsewhere).not.toContain(targets[i]);
@@ -98,7 +107,7 @@ describe('how hard the side work is', () => {
   // Each with the build a pilot can afford when it is posted; measured over sixty seeds, checked here over twelve.
   test.each([
     ['bounty-1', 'tier2'], ['bounty-2', 'tier2'], ['bounty-3', 'tier3'], ['bounty-4', 'tier4'], ['bounty-5', 'tier4'], ['bounty-6', 'tier5'],
-    ['favour-kite', 'tier2'], ['favour-undertow', 'tier2'], ['favour-lumen', 'tier2'], ['favour-ashfall', 'tier2'], ['favour-marrow', 'tier2'],
+    ['favour-kite', 'tier1'], ['favour-undertow', 'tier2'], ['favour-lumen', 'tier2'], ['favour-ashfall', 'tier2'], ['favour-marrow', 'tier2'],
     ['favour-sixty', 'tier4'], ['favour-dispatch', 'tier4'],
   ])('%s can be won with %s more often than not', (missionId, build) => {
     expect(wins(missionId, build)).toBeGreaterThanOrEqual(0.5);

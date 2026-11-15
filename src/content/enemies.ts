@@ -47,8 +47,8 @@ const WANTED: Record<string, EnemyDef> = {
     build: { ...BULWARK, legs: 'legs-crawler', generator: 'gen-furnace', rightHand: 'wpn-enemy-shotgun', shoulder: 'wpn-enemy-mortar' },
   },
   // Charges a rail behind a tower shield.
-  vesper: {
-    id: 'vesper', name: 'Vesper', ai: 'gunner', sprite: 'enemy-rival', composed: true, paint: 'rose',
+  lark: {
+    id: 'lark', name: 'Lark', ai: 'gunner', sprite: 'enemy-rival', composed: true, paint: 'rose',
     build: { ...HALO, generator: 'gen-prism', rightHand: 'wpn-enemy-longbow', leftHand: 'shd-tower' },
   },
   // A hot blade, a leap, and needles for when the blade arm is gone.

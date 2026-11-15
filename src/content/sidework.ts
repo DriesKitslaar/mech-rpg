@@ -25,15 +25,15 @@ export const BOUNTIES: Mission[] = [
   ], 'The mine road is open. Dredge\'s tracks are being sold by the metre.', [
     battle(['dredge', 'gun-turret'], 'bg-mine', { objective: { type: 'leader', target: 0 } }),
   ]),
-  bounty(3, 'choice', 'vesper', 'Wanted: Vesper', 3800, 1.7, [
-    'WANTED: callsign Vesper. Contract killer. Takes one shot a job from behind a tower shield and has not needed two.',
-    'The rail charges for a turn before it fires. A shield drone keeps Vesper covered: decide what to shoot first.',
-  ], 'Vesper\'s rail is in an evidence locker. The board notes that the shield was the expensive part.', [
-    battle(['vesper', 'shield-drone'], 'bg-plaza', { objective: { type: 'leader', target: 0 } }),
+  bounty(3, 'choice', 'lark', 'Wanted: Lark', 3800, 1.7, [
+    'WANTED: callsign Lark. Contract killer. Takes one shot a job from behind a tower shield and has not needed two.',
+    'The rail charges for a turn before it fires. A shield drone keeps Lark covered: decide what to shoot first.',
+  ], 'Lark\'s rail is in an evidence locker. The board notes that the shield was the expensive part.', [
+    battle(['lark', 'shield-drone'], 'bg-plaza', { objective: { type: 'leader', target: 0 } }),
   ]),
   bounty(4, 'choice', 'hollow', 'Wanted: Hollow', 4300, 0.6, [
     'WANTED: callsign Hollow. Cuts frames open for the Night Market and leaves the pilots where they fall.',
-    'A Mantis with a cutting torch. It has to reach you to hurt you, and it brought something to patch it up when you hurt it back.',
+    'A Mantis with a cutting torch and needles for the walk in. It wants to be close, and it brought something to patch it up when you hurt it back.',
   ], 'Hollow is in custody and the Night Market is short one supplier. Prices went up by lunchtime.', [
     battle(['hollow', 'repair-drone'], 'bg-undercity', { objective: { type: 'leader', target: 0 } }),
   ]),
@@ -57,7 +57,7 @@ export const BOUNTIES: Mission[] = [
  */
 export const FAVOURS: Mission[] = [
   {
-    id: 'favour-kite', phase: 'side', when: 'chose:kite=vouch', title: 'Second Week', client: 'Kite', portrait: 'portrait-kite', reward: 1400, scale: 1,
+    id: 'favour-kite', phase: 'side', when: 'chose:kite=vouch', busy: ['kite'], title: 'Second Week', client: 'Kite', portrait: 'portrait-kite', reward: 1400, scale: 0.8,
     briefing: [
       'It\'s Kite. I took a job on my own. Escort, easy money. My left leg seized in the freight lane and the easy money is circling.',
       'I vouched for myself on this one, so. If you could keep them off my frame until recovery gets here, I\'d owe you twice.',
@@ -66,7 +66,7 @@ export const FAVOURS: Mission[] = [
     battles: [battle(['recon-drone', 'gunship', 'recon-drone'], 'bg-neon-district', { objective: { type: 'protect', name: 'Kite\'s Frame', hp: 10 } })],
   },
   {
-    id: 'favour-undertow', phase: 'side', when: 'chose:logs=keep', title: 'What Gets Around', client: 'Tamsin, The Undertow', portrait: 'portrait-undertow', reward: 1900, scale: 2.4,
+    id: 'favour-undertow', phase: 'side', when: 'chose:logs=keep', title: 'What Gets Around', client: 'Tamsin, The Undertow', portrait: 'portrait-undertow', reward: 1500, scale: 2.4,
     briefing: [
       'Somebody sold Lumen a map of the east gate anyway. Not you. We know who doesn\'t talk.',
       'Their machines are at the gate now. Hold it until the pumps are sealed. Six rounds. Nobody has to win, they just have to not get in.',
@@ -93,7 +93,7 @@ export const FAVOURS: Mission[] = [
     battles: [battle(['stalker', 'recon-drone'], 'bg-rooftop')],
   },
   {
-    id: 'favour-marrow', phase: 'side', when: 'chose:marrow=cover', title: 'Paid in Ordnance', client: 'Marrow', portrait: 'portrait-marrow', reward: 3000, scale: 1,
+    id: 'favour-marrow', phase: 'side', when: 'chose:marrow=cover', busy: ['marrow'], title: 'Paid in Ordnance', client: 'Marrow', portrait: 'portrait-marrow', reward: 3000, scale: 1,
     briefing: [
       'Hadron sent a recovery crew for my gun. A Bulldozer and a tank. I\'d handle it, but then they\'d know I\'m not dead.',
       'I want the Bulldozer\'s frame afterwards: take its legs and arms and leave the core standing. The fee is real. The gun stays missing.',
@@ -102,7 +102,7 @@ export const FAVOURS: Mission[] = [
     battles: [battle(['bulldozer', 'tank'], 'bg-mine', { objective: { type: 'disable', target: 0 } })],
   },
   {
-    id: 'favour-sixty', phase: 'side', when: 'chose:sixty=keep', title: 'The Sixty-First', client: 'Old Sixty', portrait: 'portrait-sixty', reward: 3400, scale: 1.1,
+    id: 'favour-sixty', phase: 'side', when: 'chose:sixty=keep', busy: ['sixty'], title: 'The Sixty-First', client: 'Old Sixty', portrait: 'portrait-sixty', reward: 3400, scale: 1.1,
     briefing: [
       'There is a convoy going through the sluice tonight. Same road. Same sort of people in the trucks. I asked for the contract and then found I could not sit in the seat.',
       'Fly it for me. Every machine left standing takes from the convoy each round. Get them all through, and I can stop counting.',
@@ -119,7 +119,7 @@ export const FAVOURS: Mission[] = [
       'Meridian keeps the paper on your debt in a branch vault. Paper. They are that kind of firm. I know which night the guard changes.',
       'This one isn\'t on my board and you were never there. A Bailiff and its drones. Leave nothing that can file a report.',
     ],
-    debrief: 'There is no paper any more. Dispatch logs the night as "quiet" and, for once, sounds like she slept.',
+    debrief: 'There is no paper any more. Dispatch logs the night as "quiet" and, for once, sounds rested.',
     battles: [battle(['bailiff', 'lien-drone', 'lien-drone'], 'bg-vault')],
   },
 ];

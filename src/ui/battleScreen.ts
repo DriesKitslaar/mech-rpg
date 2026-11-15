@@ -112,6 +112,8 @@ export class BattleScreen {
        * in which case the sound effect for the outcome is left out: one fanfare is enough.
        */
       jingle?: (won: boolean) => boolean;
+      /** A new pilot: say over the field which button does what at each step of a turn. */
+      coach?: boolean;
     },
   ) {
     this.particles = new Particles(7, !opts.fast);
@@ -308,12 +310,23 @@ export class BattleScreen {
 
     this.drawMessage(ctx);
     this.drawObjective(ctx);
+    if (this.opts.coach && this.intro <= 0) this.drawCoach(ctx);
     // While someone talks, their words have the panel: there is nothing to choose until they are done.
     const talking = this.flow.phase === 'talk' && this.intro <= 0;
     if (!talking) this.drawBottom(ctx);
     if (this.intro > 0) return this.drawIntro(ctx);
     if (talking) this.drawTalk(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
+  }
+
+  /** For a new pilot: one small line at the foot of the field saying which button does what right now. */
+  private drawCoach(ctx: CanvasRenderingContext2D): void {
+    const line = (STRINGS.coach as Record<string, string>)[this.flow.phase];
+    if (!line) return;
+    const width = line.length * 4 + 8;
+    ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
+    ctx.fillRect(Math.round(LOGICAL_W / 2 - width / 2), PANEL_Y - 13, width, 11);
+    drawText(ctx, line, LOGICAL_W / 2, PANEL_Y - 12, { align: 'center', size: 10, color: COLORS.heat });
   }
 
   /** The banner that opens a battle: the contract and what it asks for, or a warning with the name of a boss. */
