@@ -38,6 +38,8 @@ export const STRINGS = {
     fuse: (n: number) => `FUSE ${n}`, aegis: 'AEGIS', jammer: 'JAMMER', mender: 'MENDER', carrier: 'CARRIER',
     covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`,
   },
+  // What an enemy is about to do, read from how it moves: shown with its tags while it is aimed at.
+  intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', cool: 'COOLING', windUp: 'WINDS UP' },
   objectives: {
     survive: (round: number, rounds: number) => `HOLD OUT ${round}/${rounds}`,
     protect: (name: string, hp: number, max: number) => `${name.toUpperCase()} ${hp}/${max}`,
@@ -202,6 +204,11 @@ export const STRINGS = {
     verdict: 'VERDICT: your answer ends the story. The other offer is withdrawn.',
     replay: 'ARCHIVE: pays less. Nothing in the story changes.',
     lent: 'LENT MECH: yours cannot deploy. The bill is still yours.',
+    // A second pilot for the contract: the row in the briefing's menu, and what they cost.
+    wingman: 'Wingman', alone: 'None', wingmanShare: (percent: number) => `-${percent}% fee`,
+    wingmanHint: 'LEFT/RIGHT: choose a wingman',
+    aloneText: 'Fly it alone and keep the whole fee.',
+    wingmanTerms: (damage: number, percent: number) => `Up to ${damage} a round from round 2. Takes ${percent}% of fee and XP.`,
     lentNote: 'Your own mech cannot deploy as it stands, so Dispatch lends you a stock frame for this one. Put yours right in the Garage; until then this is the work there is.',
     support: (name: string) => `Fire support: ${name}`,
   },

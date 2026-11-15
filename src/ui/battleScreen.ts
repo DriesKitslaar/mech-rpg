@@ -17,7 +17,8 @@ import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
 import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
-import { fitTags, labelFits, markPosition, tagWidth, type Tag } from './tags';
+import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
+import { intentOf } from '../core/intent';
 import { Typewriter } from './typewriter';
 import { drawWeather, weatherFor } from './weather';
 import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
@@ -599,6 +600,7 @@ export class BattleScreen {
     const T = STRINGS.tags;
     const state = this.flow.state;
     const jammed = unit.side === 'player' ? jamOn(state, unit) : 0;
+    const intent = intentText(intentOf(state, unit, this.catalog));
     return [
       ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger, rank: 9 }] : []),
       ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy, rank: 2 }] : []),
@@ -613,6 +615,9 @@ export class BattleScreen {
       ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy, rank: 7 }] : []),
       ...(unit.painted > 0 ? [{ text: T.painted, color: COLORS.danger, rank: 3 }] : []),
       ...(unit.chaff > 0 ? [{ text: T.chaff, color: COLORS.dim, rank: 3 }] : []),
+      // What an enemy is lining up to do comes last in the row, and is the first to make way: everything
+      // else in the row is said nowhere else.
+      ...(intent ? [{ text: intent, color: COLORS.danger, rank: 1 }] : []),
     ];
   }
 

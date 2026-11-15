@@ -667,8 +667,10 @@ export class Music {
     // Going badly: a tick on every off step, on the song's own kit, where it has one.
     const kit = this.tense ? playing.channels.findIndex((channel) => 'drums' in channel.instrument) : -1;
     if (kit >= 0) {
-      const every = compiled.song.stepsPerBeat % 2 === 0 ? 2 : 1;
-      for (let step = from; step < to; step++) if (step % every === every - 1) notes.push({ voice: kit, step, length: 1, drum: 'tick' });
+      // In fours that is every second step; in threes, the two steps after the beat. Never the beat itself.
+      const beat = compiled.song.stepsPerBeat;
+      const off = (step: number): boolean => (beat % 2 === 0 ? step % 2 === 1 : step % beat !== 0);
+      for (let step = from; step < to; step++) if (off(step)) notes.push({ voice: kit, step, length: 1, drum: 'tick' });
     }
     // Moved on before anything is built: if building a note fails, it is lost rather than played twice.
     playing.next = to;

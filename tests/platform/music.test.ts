@@ -773,6 +773,15 @@ describe('a battle going badly', () => {
     return audio.sources.length;
   };
 
+  test('the ticks fall on the steps between the beats: half the steps of a song in fours, two in three of a song in threes', () => {
+    for (const [track, share] of [['battle', 1 / 2], ['battle2', 2 / 3]] as const) {
+      const steps = 4 / compileSong(SONGS[track]).stepSeconds;
+      const ticks = queued(true, track) - queued(false, track);
+      expect(ticks / steps, track).toBeGreaterThan(share - 0.08);
+      expect(ticks / steps, track).toBeLessThan(share + 0.08);
+    }
+  });
+
   test('adds a fast ticking to the song that is playing, and takes it away again', () => {
     expect(queued(true)).toBeGreaterThan(queued(false) + 10);
     const audio = fakeAudio();
