@@ -14,6 +14,8 @@ const TEXT_X = 72;
 export const TALK_SCENE_CHARS = charsFor(LOGICAL_W - TEXT_X - 10);
 /** Lines of one thing said that fit under the speaker's name. */
 export const TALK_SCENE_LINES = 5;
+/** How long a question is on screen before an answer is taken. */
+export const QUESTION_HOLD_MS = 1500;
 /** Characters of an answer that fit on its row of the list. */
 export const ANSWER_CHARS = charsFor(LOGICAL_W - TEXT_X - 22);
 
@@ -85,9 +87,10 @@ export class TalkScreen implements Screen {
       return;
     }
     if (choice && !this.answered) {
-      // The talking is done: the question is on the table, and a mashed button does not answer it.
+      // The talking is done: the question is on the table. What is answered stands, so a button being
+      // mashed through the talk gets nowhere for a good while.
       this.answers = new MenuList(choice.options.map((o) => ({ id: o.id, label: o.label, enabled: true })));
-      this.hold = this.app.deps.fast ? 0 : SCENE_HOLD_MS;
+      this.hold = this.app.deps.fast ? 0 : QUESTION_HOLD_MS;
       return;
     }
     this.app.finishScene(this.scene);
@@ -129,6 +132,7 @@ export class TalkScreen implements Screen {
     if (this.asking) {
       drawText(ctx, STRINGS.scene.yourCall, TEXT_X, PANEL_Y + 6, { color: COLORS.heat });
       drawList(ctx, this.answers!, TEXT_X, PANEL_Y + 24, LOGICAL_W - TEXT_X - 12, 4);
+      if (this.hold <= 0) drawText(ctx, STRINGS.scene.answer, TEXT_X, LOGICAL_H - 18, { color: COLORS.dim });
       return;
     }
     drawText(ctx, (line?.who ?? '').toUpperCase(), TEXT_X, PANEL_Y + 6, { color: COLORS.accent });

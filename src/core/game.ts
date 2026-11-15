@@ -116,7 +116,7 @@ export function newGame(catalog: Catalog, starter: Build, callsign: string = DEF
     inventory[id] = (inventory[id] ?? 0) + 1;
   }
   return {
-    version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false,
+    version: SAVE_VERSION, credits: STARTING_CREDITS, inventory, build: { ...starter }, battlesWon: 0, completed: [], read: [], endingSeen: false, choices: {},
     xp: 0, perks: {}, arenaRank: 0, cycle: 0, settings: { ...DEFAULT_SETTINGS },
     paint: FACTORY_PAINT, loadouts: Array.from({ length: LOADOUT_SLOTS }, () => null), ranks: {}, scenes: [],
     callsign, stats: { ...NO_STATS }, medals: [], met: [], drills: [], codex: [],

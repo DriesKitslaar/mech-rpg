@@ -45,6 +45,8 @@ export interface Mission {
   after?: string;
   /** A side contract is on offer once this has happened; see `Condition`. */
   when?: Condition;
+  /** Wingmen who cannot be hired for this contract, by id: it is their own trouble the pilot is flying into. */
+  busy?: string[];
   /** Side contracts of one series are offered one at a time, in list order. */
   series?: string;
   /** Which ending a verdict contract leads to. */
@@ -131,6 +133,17 @@ export interface Scene {
 
 /** What the pilot decided when asked, by the id of the question; undefined if never asked. */
 export const chose = (state: GameState, choice: string): string | undefined => state.choices?.[choice];
+
+/**
+ * A game from before there were conversations: the ones whose moment had already come are counted
+ * as had, so a pilot deep in the story is not told all at once about things long past. Nothing was
+ * decided in them, and nothing comes of them.
+ */
+export function settleOldStory(state: GameState, scenes: Scene[], missions: Mission[]): GameState {
+  if (state.choices !== undefined) return state;
+  const past = scenes.filter((s) => s.talk && reached(state, s.after, missions) && !state.scenes.includes(s.id)).map((s) => s.id);
+  return { ...state, choices: {}, scenes: [...state.scenes, ...past] };
+}
 
 /** Records a decision. The first answer stands: a question is asked once. */
 export function decide(state: GameState, choice: string, option: string, pay = 0): GameState {
@@ -289,7 +302,7 @@ export function reached(state: GameState, condition: Condition, missions: Missio
   // "chose:question=answer": the pilot gave that answer.
   if (condition.startsWith('chose:')) {
     const [question, answer] = condition.slice(6).split('=');
-    return chose(state, question) === answer;
+    return answer !== undefined && chose(state, question) === answer;
   }
   // "arena:N": the arena rank is at least N.
   if (condition.startsWith('arena:')) return state.arenaRank >= Number(condition.slice(6));

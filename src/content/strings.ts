@@ -225,7 +225,7 @@ export const STRINGS = {
   },
   messagesScreen: { heading: 'MESSAGES', isNew: 'NEW', from: 'FROM', empty: 'No messages', back: 'B: back' },
   ending: { continue: 'Press A to return to headquarters' },
-  scene: { continue: 'Press A to continue', yourCall: 'YOUR CALL' },
+  scene: { continue: 'Press A to continue', yourCall: 'YOUR CALL', answer: 'UP/DOWN: choose   A: answer. It stands.' },
   settlement: {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,

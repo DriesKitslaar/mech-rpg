@@ -281,8 +281,8 @@ describe('campaign content', () => {
   test('enemies that are drawn from their parts have a sprite for every part they show, in every phase', () => {
     const composed = Object.values(ENEMIES).filter((e) => e.composed);
     expect(composed.map((e) => e.id).sort()).toEqual([
-      'ashfall-unbound', 'assessor', 'bailiff', 'bulldozer', 'dredge', 'heavy-mech', 'hollow', 'juggernaut', 'krell', 'light-mech', 'magpie', 'marksman',
-      'notary', 'paragon', 'ripper', 'rival', 'rival-2', 'rook', 'sable', 'stalker', 'vesper',
+      'ashfall-unbound', 'assessor', 'bailiff', 'bulldozer', 'dredge', 'heavy-mech', 'hollow', 'juggernaut', 'krell', 'lark', 'light-mech', 'magpie', 'marksman',
+      'notary', 'paragon', 'ripper', 'rival', 'rival-2', 'rook', 'sable', 'stalker',
     ]);
     for (const enemy of composed) {
       const { head, core, arms, legs } = enemy.build;

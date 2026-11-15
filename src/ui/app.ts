@@ -3,7 +3,7 @@ import { MIRROR_ID, arenaMission, checkChallenge, mirrorEnemy, mirrorMission, mi
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
-  archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, forCycle, introductionsDone, lentPatrol, markRead,
+  archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, markRead,
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
@@ -433,7 +433,7 @@ export class App {
     // Saved at once: a game from an older version is brought up to date where it is kept, and what it
     // had already done is recognised now (medals, entries of the database, the enemies its finished
     // contracts put in front of it) rather than at its next save.
-    this.commit({ ...saved, met: metByRecord(saved, MISSIONS, ARENA), settings: { ...this.settings } });
+    this.commit({ ...settleOldStory(saved, SCENES, MISSIONS), met: metByRecord(saved, MISSIONS, ARENA), settings: { ...this.settings } });
     this.go('hub');
   }
 
@@ -599,16 +599,16 @@ export class App {
     const offered = this.offered(missionId, replay);
     if (!offered || (offered.loaner === undefined && this.buildErrors().length > 0)) return;
     // A second pilot comes along when one was hired who takes calls: their fire, and their share of the fee.
-    const wingman = this.wingmen().find((w) => w.id === wingmanId);
+    const wingman = this.wingmen(offered).find((w) => w.id === wingmanId);
     const mission = wingman ? withWingman(offered, wingman) : offered;
     this.seed = (this.seed + 101) % 2147483647;
     this.show('battle', new MissionHost(this, mission, this.seed));
   }
 
   /** The pilots for hire who take this pilot's calls. */
-  wingmen(): Wingman[] {
+  wingmen(mission?: Mission): Wingman[] {
     const game = this.game;
-    return game ? WINGMEN.flatMap((w) => wingmanFor(game, w, MISSIONS) ?? []) : [];
+    return game ? WINGMEN.flatMap((w) => (mission?.busy?.includes(w.id) ? [] : wingmanFor(game, w, MISSIONS) ?? [])) : [];
   }
 
   go(name: ScreenName): void {

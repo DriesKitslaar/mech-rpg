@@ -58,7 +58,7 @@ export class BriefingScreen implements Screen {
   constructor(private app: App, private mission: Mission) {
     this.rows = mission.briefing.map((paragraph) => wrap(paragraph, BRIEFING_CHARS));
     this.writer = new Typewriter(this.rows.flat(), 150, app.deps.fast);
-    this.hires = takesWingman(mission) ? app.wingmen() : [];
+    this.hires = takesWingman(mission) ? app.wingmen(mission) : [];
     this.list = new MenuList([
       { id: 'accept', label: B.accept, enabled: true },
       ...(this.hires.length > 0 ? [{ id: 'wingman', label: B.wingman, enabled: true }] : []),

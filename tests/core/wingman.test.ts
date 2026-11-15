@@ -29,11 +29,12 @@ describe('pilots for hire', () => {
     }
   });
 
-  test('take calls as the story goes on, and all of them once it has started over', () => {
+  test('take calls as the story goes on, and come back into it the same way when it starts over', () => {
     expect(WINGMEN.map((w) => wingmanOpen(fresh(), w, MISSIONS))).toEqual([false, false, false]);
     expect(WINGMEN.map((w) => wingmanOpen(did('intro-1', 'intro-2'), w, MISSIONS))).toEqual([true, false, false]);
     expect(WINGMEN.map((w) => wingmanOpen(did('intro-1', 'intro-2', 'rival-1', 'choice-lumen'), w, MISSIONS))).toEqual([true, true, true]);
-    expect(WINGMEN.map((w) => wingmanOpen({ ...fresh(), cycle: 1 }, w, MISSIONS))).toEqual([true, true, true]);
+    expect(WINGMEN.map((w) => wingmanOpen({ ...fresh(), cycle: 1 }, w, MISSIONS))).toEqual([false, false, false]);
+    expect(WINGMEN.map((w) => wingmanOpen({ ...did('intro-1', 'intro-2'), cycle: 1 }, w, MISSIONS))).toEqual([true, false, false]);
   });
 });
 
