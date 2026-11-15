@@ -1,4 +1,4 @@
-import { reached, type Condition, type Mission } from './campaign';
+import { chose, reached, type Condition, type Mission } from './campaign';
 import type { GameState } from './game';
 
 /**
@@ -17,6 +17,30 @@ export interface Wingman {
   share: number;
   /** What has to have happened before they take calls. */
   after: Condition;
+  /** A question of the story that decides how they stand with the pilot. */
+  bond?: { choice: string; ally: string; enemy?: string };
+}
+
+/** What a friend takes off their share. */
+export const ALLY_DISCOUNT = 0.05;
+export type Standing = 'ally' | 'enemy' | 'neutral';
+
+/** How a wingman stands with the pilot, from what the pilot decided about them. */
+export function standing(game: GameState, wingman: Wingman): Standing {
+  const answer = wingman.bond ? chose(game, wingman.bond.choice) : undefined;
+  if (answer === undefined || !wingman.bond) return 'neutral';
+  return answer === wingman.bond.ally ? 'ally' : answer === wingman.bond.enemy ? 'enemy' : 'neutral';
+}
+
+/**
+ * The wingman as this pilot can hire them: a friend flies for less, and someone the pilot crossed
+ * does not take the call at all. Bonds are made in the story, so they hold in whatever cycle they were made.
+ */
+export function wingmanFor(game: GameState, wingman: Wingman, missions: Mission[]): Wingman | null {
+  if (!wingmanOpen(game, wingman, missions)) return null;
+  const how = standing(game, wingman);
+  if (how === 'enemy') return null;
+  return how === 'ally' ? { ...wingman, share: Math.round((wingman.share - ALLY_DISCOUNT) * 100) / 100 } : wingman;
 }
 
 /** Whether this wingman is for hire yet. Once the story has started over, everyone is. */

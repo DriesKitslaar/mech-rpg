@@ -337,7 +337,7 @@ describe('campaign content', () => {
       expect(sceneRows(scene), scene.id).toBeLessThanOrEqual(SCENE_LINES);
       expect(scene.title.length, scene.id).toBeLessThanOrEqual(14);
     }
-    expect(SCENES.filter((s) => !s.ending && !s.faction).map((s) => s.id)).toEqual(['act-1', 'act-2', 'act-3']);
+    expect(SCENES.filter((s) => !s.ending && !s.faction && !s.talk && !s.linesFor).map((s) => s.id)).toEqual(['act-1', 'act-2', 'act-3']);
     const endings = SCENES.filter((s) => s.ending);
     expect(endings.map((s) => `${s.after}|${s.faction}`).sort()).toEqual(
       ['enforce', 'default'].flatMap((v) => FACTIONS.map((f) => `verdict-${v}|${f}`)).sort());

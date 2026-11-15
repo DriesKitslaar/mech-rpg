@@ -206,6 +206,8 @@ test('the third act: Meridian, the two verdicts, the last machine and an epilogu
     }
   }
   expect(won).toBe(true);
+  // What became of the people this pilot decided about comes before the epilogue.
+  for (let i = 0; i < 200 && (await snap(page)).screen === 'scene'; i++) await press(page, 'Enter');
   await waitForScreen(page, 'ending');
   expect(await snap(page)).toMatchObject({ scene: 'ending-default-undertow', ending: 'undertow' });
   await page.screenshot({ path: shot('scene-ending') });

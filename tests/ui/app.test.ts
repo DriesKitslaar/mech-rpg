@@ -8,7 +8,7 @@ import { SAVE_KEY, SETTINGS_KEY, SaveFile, type KeyValueStore } from '../../src/
 import type { InputAction } from '../../src/platform/input';
 import { App } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
-import { medalPay } from '../helpers/app';
+import { medalPay, skipTalks } from '../helpers/app';
 
 const sprites: SpriteStore = { get: (_id, fallback) => ({ image: {} as CanvasImageSource, w: fallback.w, h: fallback.h }) };
 
@@ -89,7 +89,7 @@ function inHub(saved?: GameState, seed?: number) {
 }
 /** Accepts the callsign on offer and reads past the pages of story that come up between contracts. */
 function skipScenes(app: App): void {
-  for (let i = 0; i < 8 && ['callsign', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
+  for (let i = 0; i < 120 && ['callsign', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
 }
 /** From the hub into a contract's first battle. */
 function accept(app: App, missionId: string): void {
@@ -500,10 +500,12 @@ describe('the campaign', () => {
       if (!won) expect(snap(app).screen).toBe('hub');
     }
     expect(won).toBe(true);
+    skipTalks(app);
     expect(snap(app)).toMatchObject({ screen: 'scene', scene: `war-won-${faction}` });
     press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'act-3' });
     press(app, 'confirm');
+    skipTalks(app);
     expect(snap(app).screen).toBe('hub');
     expect(ids(app)).not.toContain('cycle');
     select(app, 'contracts');
@@ -532,6 +534,7 @@ describe('the campaign', () => {
     press(made.app, 'confirm');
     expect(snap(made.app)).toMatchObject({ screen: 'scene', scene: 'act-2' });
     press(made.app, 'confirm');
+    skipTalks(made.app);
     select(made.app, 'contracts');
     expect(story(made.app)).toEqual(['patrol', 'choice-hadron', 'choice-lumen', 'choice-undertow']);
   });
@@ -545,6 +548,10 @@ describe('the campaign', () => {
     // The fight itself is for the balance tests: here the win is booked directly.
     app.bookSettlement({ won: true, reward: 8000, ammoCost: 0, repairCost: 0, net: 8000, lines: [] }, MISSIONS.find((m) => m.id === 'verdict-default')!);
     app.go('hub');
+    // What became of the people the pilot decided about comes first.
+    // This pilot only ever met Old Sixty and heard Dispatch out, so only the second page has anything to say.
+    expect(snap(app).scene).toBe('left-2');
+    skipTalks(app);
     expect(snap(app)).toMatchObject({ screen: 'ending', ending: 'lumen', scene: 'ending-default-lumen' });
     expect(JSON.parse(store.data[SAVE_KEY]).endingSeen).toBe(false);
     // The epilogue is followed by the end roll, and that by the hub.
@@ -552,7 +559,7 @@ describe('the campaign', () => {
     expect(snap(app).screen).toBe('credits');
     press(app, 'confirm');
     expect(snap(app).screen).toBe('hub');
-    expect(JSON.parse(store.data[SAVE_KEY])).toMatchObject({ endingSeen: true, scenes: ['war-won-lumen', 'act-3', 'ending-default-lumen'] });
+    expect(JSON.parse(store.data[SAVE_KEY])).toMatchObject({ endingSeen: true, scenes: ['war-won-lumen', 'act-3', 'talk-sixty', 'talk-dispatch', 'left-2', 'ending-default-lumen'] });
     expect(ids(app)).toContain('cycle');
     select(app, 'contracts');
     expect(story(app)).toEqual(['patrol']);
@@ -935,6 +942,7 @@ describe('options', () => {
     const store = memoryStore({ [SAVE_KEY]: JSON.stringify({ ...done(...toVerdict('lumen')), scenes: ['war-won-lumen', 'act-3'] }) });
     const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 5, music });
     press(app, 'confirm');
+    skipTalks(app);
     select(app, 'contracts');
     select(app, 'verdict-enforce');
     select(app, 'accept');

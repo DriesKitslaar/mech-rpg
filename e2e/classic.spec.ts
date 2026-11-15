@@ -11,7 +11,8 @@ const shot = (name: string) => `docs/screenshots/${name}.png`;
 function licensed(): GameState {
   let g = newGame(CATALOG, STARTER_BUILD);
   for (const id of ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1']) g = completeMission(g, id, MISSIONS);
-  return { ...g, credits: 5000, scenes: ['act-1', 'act-2'] };
+  // Kite was sent away and the logs kept; the wreck and the deserter are still to come.
+  return { ...g, credits: 5000, scenes: ['act-1', 'act-2', 'talk-kite', 'talk-logs'], choices: { kite: 'pass', logs: 'keep' } };
 }
 
 test('a wingman is hired from the briefing, fires in the battle, and the enemy aimed at shows what it is about to do', async ({ page }) => {
@@ -22,17 +23,30 @@ test('a wingman is hired from the briefing, fires in the battle, and the enemy a
   }, JSON.stringify(licensed()));
   await open(page);
   await choose(page, 'continue');
-  for (let i = 0; i < 40 && (await snap(page)).screen !== 'hub'; i++) await press(page, 'Enter');
+  // Two conversations are due: the wreck (the hatch is torn off) and the deserter (she is covered for).
+  await waitForScreen(page, 'scene');
+  const talk = async () => (await snap(page) as unknown as { scene: string; talk: { who: string; asking: boolean } });
+  expect((await talk()).scene).toBe('talk-rival');
+  for (let i = 0; i < 40 && !(await talk()).talk.asking; i++) await press(page, 'Enter');
+  await page.screenshot({ path: shot('talk-question') });
+  for (let i = 0; i < 40 && (await talk()).talk?.asking; i++) await press(page, 'Enter');
+  for (let i = 0; i < 40 && (await talk()).scene === 'talk-rival'; i++) await press(page, 'Enter');
+  expect((await talk()).scene).toBe('talk-marrow');
+  for (let i = 0; i < 20 && (await talk()).talk.who !== 'Marrow'; i++) await press(page, 'Enter');
+  for (let i = 0; i < 20 && (await snap(page) as unknown as { typing: boolean }).typing; i++) await press(page, 'Enter');
+  await page.screenshot({ path: shot('talk-marrow') });
+  for (let i = 0; i < 80 && (await snap(page)).screen !== 'hub'; i++) await press(page, 'Enter');
   await waitForScreen(page, 'hub');
   await choose(page, 'contracts');
   await choose(page, 'patrol');
   await waitForScreen(page, 'briefing');
   const briefing = async () => (await snap(page) as unknown as { briefing: { reward: number; wingman: { id: string | null; open: number } } }).briefing;
+  // Kite at his full rate, and Marrow as a friend.
   expect((await briefing()).wingman).toMatchObject({ id: null, open: 2 });
   await press(page, 'ArrowDown');
   await press(page, 'ArrowRight');
   await press(page, 'ArrowRight');
-  expect(await briefing()).toMatchObject({ reward: 300, wingman: { id: 'marrow' } });
+  expect(await briefing()).toMatchObject({ reward: 320, wingman: { id: 'marrow', share: 20 } });
   await page.screenshot({ path: shot('briefing-wingman') });
   await press(page, 'ArrowUp');
   await press(page, 'Enter');

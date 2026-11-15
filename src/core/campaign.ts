@@ -85,6 +85,22 @@ export interface Message {
 export type Condition = 'start' | 'choice' | 'finale' | 'verdict' | string;
 
 /** A page of story between contracts: the opening of an act, or an ending. */
+/** One thing said in a conversation. */
+export interface Talk {
+  /** Who says it, as it is written over the line. */
+  who: string;
+  /** Sprite id of their portrait; none for a voice on the radio. */
+  portrait?: string;
+  text: string;
+}
+
+/** A decision at the end of a conversation. It is remembered until the story starts over. */
+export interface Choice {
+  id: string;
+  /** `pay` is what an answer puts in the pilot's account there and then. */
+  options: { id: string; label: string; reply: Talk; pay?: number }[];
+}
+
 export interface Scene {
   id: string;
   /** A small line over the title, such as the act. */
@@ -101,6 +117,21 @@ export interface Scene {
   faction?: Faction;
   /** An ending of the story: seeing it is what `endingSeen` records. */
   ending?: boolean;
+  /** A conversation: people talking in turn, shown instead of `lines`. */
+  talk?: Talk[];
+  /** What the pilot is asked when the talking is done. */
+  choice?: Choice;
+  /** Lines written from what the pilot decided, added after `lines`. */
+  linesFor?: (choices: Record<string, string>) => string[];
+}
+
+/** What the pilot decided when asked, by the id of the question; undefined if never asked. */
+export const chose = (state: GameState, choice: string): string | undefined => state.choices?.[choice];
+
+/** Records a decision. The first answer stands: a question is asked once. */
+export function decide(state: GameState, choice: string, option: string, pay = 0): GameState {
+  if (chose(state, choice) !== undefined) return state;
+  return { ...state, credits: state.credits + pay, choices: { ...(state.choices ?? {}), [choice]: option } };
 }
 
 const done = (state: GameState, missions: Mission[], phase: MissionPhase): Mission[] =>
@@ -220,7 +251,7 @@ export function forCycle(mission: Mission, cycle: number): Mission {
 /** Starts the story again. Credits, parts, pilot level, perks, arena rank and the best ranks all stay. */
 export function startNewCycle(state: GameState, missions: Mission[]): GameState {
   if (!campaignComplete(state, missions)) throw new Error('the campaign is not complete');
-  return { ...state, completed: [], read: [], scenes: [], endingSeen: false, cycle: state.cycle + 1 };
+  return { ...state, completed: [], read: [], scenes: [], choices: {}, endingSeen: false, cycle: state.cycle + 1 };
 }
 
 /** The story ends with a verdict. A story that has none (a short one) ends with its finale. */
@@ -234,6 +265,11 @@ export function reached(state: GameState, condition: Condition, missions: Missio
   if (condition === 'start') return true;
   if (condition === 'choice') return chosenFaction(state, missions) !== null;
   if (condition === 'finale' || condition === 'verdict') return done(state, missions, condition).length > 0;
+  // "chose:question=answer": the pilot gave that answer.
+  if (condition.startsWith('chose:')) {
+    const [question, answer] = condition.slice(6).split('=');
+    return chose(state, question) === answer;
+  }
   // "arena:N": the arena rank is at least N.
   if (condition.startsWith('arena:')) return state.arenaRank >= Number(condition.slice(6));
   return state.completed.includes(condition);
@@ -269,6 +305,8 @@ export function dueScenes(state: GameState, scenes: Scene[], missions: Mission[]
     // A game that says the ending was seen is believed, whatever its list of scenes holds.
     && !(scene.ending && state.endingSeen)
     && reached(state, scene.after, missions)
+    // A page written from what the pilot decided is not shown blank to one who decided nothing.
+    && !(scene.linesFor !== undefined && scene.lines.length + scene.linesFor(state.choices ?? {}).length === 0)
     && !(scene.before !== undefined && reached(state, scene.before, missions))
     && (!scene.faction || scene.faction === chosen));
 }

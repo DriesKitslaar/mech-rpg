@@ -67,7 +67,8 @@ export async function waitForPhase(page: Page, phase: string): Promise<void> {
  */
 export async function enterHub(page: Page): Promise<void> {
   // Pages of story hold a press off for a moment, so this keeps pressing for a while.
-  for (let i = 0; i < 120; i++) {
+  // A conversation takes a press for each thing said and gives the first answer on offer; out of fast mode each waits half a second.
+  for (let i = 0; i < 2500; i++) {
     const s = await snap(page);
     if (s.screen === 'hub') return;
     const waiting = ['callsign', 'scene', 'ending', 'credits'].includes(s.screen) || (s.screen === 'title' && s.mode !== undefined && s.mode !== 'main');

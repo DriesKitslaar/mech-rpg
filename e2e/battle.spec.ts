@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { acceptContract, choose, finishBattle, medalPay, open, press, snap, startBattle, waitForPhase, waitForScreen } from './helpers';
+import { acceptContract, choose, enterHub, finishBattle, medalPay, open, press, snap, startBattle, waitForPhase, waitForScreen } from './helpers';
 
 test('a battle can be played to its end with the keyboard alone', async ({ page }, testInfo) => {
   const errors: string[] = [];
@@ -63,7 +63,7 @@ test('a contract with two battles moves on to the second after a win', async ({ 
   })));
   await open(page);
   await choose(page, 'continue');
-  await waitForScreen(page, 'hub');
+  await enterHub(page);
   await acceptContract(page, 'undertow-1');
   await page.screenshot({ path: testInfo.outputPath('mission-battle-1.png') });
   expect((await snap(page)).battle).toMatchObject({ mission: 'undertow-1', index: 0, of: 2 });

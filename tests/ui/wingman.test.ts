@@ -7,6 +7,9 @@ const toRow = (app: Parameters<typeof snap>[0], id: string): void => {
   for (let i = 0; i < 6 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');
 };
 
+/** Past the introductions, having met Kite and sent him to ask someone else: he flies at his full rate. */
+const met = () => ({ ...strong(done('intro-1', 'intro-2')), scenes: ['act-1', 'talk-kite'], choices: { kite: 'pass' } });
+
 describe('hiring a wingman from the briefing', () => {
   test('nobody is for hire before the introductions are done', () => {
     const { app } = inHub(strong(done('intro-1')));
@@ -17,7 +20,7 @@ describe('hiring a wingman from the briefing', () => {
   });
 
   test('after them the briefing has a row for it, and left and right walk through who takes calls', () => {
-    const { app } = inHub(strong(done('intro-1', 'intro-2')));
+    const { app } = inHub(met());
     select(app, 'contracts');
     select(app, 'patrol');
     expect(ids(app)).toEqual(['accept', 'wingman', 'back']);
@@ -36,7 +39,7 @@ describe('hiring a wingman from the briefing', () => {
   });
 
   test('the contract is flown with them: they fire, and the fee that is booked is the fee less their share', () => {
-    const { app } = inHub(strong(done('intro-1', 'intro-2')));
+    const { app } = inHub(met());
     const before = snap(app).credits;
     select(app, 'contracts');
     select(app, 'patrol');
@@ -52,7 +55,7 @@ describe('hiring a wingman from the briefing', () => {
   });
 
   test('flown alone the fee is whole and nobody fires for the pilot', () => {
-    const { app } = inHub(strong(done('intro-1', 'intro-2')));
+    const { app } = inHub(met());
     select(app, 'contracts');
     select(app, 'patrol');
     select(app, 'accept');
@@ -81,7 +84,7 @@ describe('hiring a wingman from the briefing', () => {
   });
 
   test('the arena and the simulator have no such row', () => {
-    const { app } = inHub(strong(done('intro-1', 'intro-2')));
+    const { app } = inHub(met());
     select(app, 'arena');
     press(app, 'confirm');
     if (snap(app).screen === 'briefing') expect(ids(app)).toEqual(['accept', 'back']);
@@ -91,7 +94,7 @@ describe('hiring a wingman from the briefing', () => {
   });
 
   test('while an enemy is aimed at, the battle says what it is about to do', () => {
-    const { app } = inHub(strong(done('intro-1', 'intro-2')));
+    const { app } = inHub(met());
     select(app, 'contracts');
     select(app, 'patrol');
     select(app, 'accept');

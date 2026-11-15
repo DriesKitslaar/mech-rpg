@@ -1437,5 +1437,65 @@
    },
    "total_tokens": 289
   }
+ },
+ {
+  "id": "portrait-kite",
+  "at": "2026-11-14T23:24:12.284Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 97,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 97
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 293
+  }
+ },
+ {
+  "id": "portrait-marrow",
+  "at": "2026-11-14T23:24:23.317Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 99,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 99
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 295
+  }
+ },
+ {
+  "id": "portrait-sixty",
+  "at": "2026-11-14T23:24:34.595Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 96,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 96
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 292
+  }
  }
 ]

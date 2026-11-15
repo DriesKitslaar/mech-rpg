@@ -1514,6 +1514,21 @@
     "w": 56,
     "h": 56
   },
+  "portrait-kite": {
+    "file": "sprites/portrait-kite.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-marrow": {
+    "file": "sprites/portrait-marrow.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-sixty": {
+    "file": "sprites/portrait-sixty.png",
+    "w": 56,
+    "h": 56
+  },
   "portrait-rook": {
     "file": "sprites/portrait-rook.png",
     "w": 56,
