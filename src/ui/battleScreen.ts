@@ -15,6 +15,7 @@ import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
+import { disc, drawGlows, drawShadow, type Glow, type Pt } from './light';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
 import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
@@ -103,6 +104,8 @@ export class BattleScreen {
   private radioOpened = false;
   /** The ring that runs out from a mech as its Overdrive goes off: where it started, and how long ago. */
   private surge: { x: number; y: number; ms: number } | null = null;
+  /** Where machines went up, and when: what is left of them smokes for the rest of the battle. */
+  private wrecks: { at: Pt; since: number }[] = [];
   private fx = new BattleFx(this.scene());
   /** What moves each unit's layers: one puppet a unit, made when it is first drawn. */
   private puppets = new Map<string, Puppet>();
@@ -363,6 +366,7 @@ export class BattleScreen {
     // little larger, so that no edge shows: stretched, a pixel picture loses its grid.
     if (dx === 0 && dy === 0) ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
     else ctx.drawImage(bg.image, -6, -6, LOGICAL_W + 12, LOGICAL_H + 12);
+    this.drawShadows(ctx);
     this.drawPlayer(ctx);
     this.drawEnemies(ctx);
     this.drawSmoke(ctx);
@@ -375,6 +379,9 @@ export class BattleScreen {
     this.particles.draw(ctx);
     this.fx.draw(ctx);
     this.drawSurge(ctx);
+    // The light of everything that burns, fires or glows is added over the field: at half strength, and
+    // never over the whole of it, in a calm picture.
+    if (!this.opts.fast) drawGlows(ctx, this.lights(), this.opts.calm === true);
     if (this.hitStop.flash > 0 && !this.opts.calm) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
       ctx.fillRect(0, 14, LOGICAL_W, PANEL_Y - 14);
@@ -512,9 +519,41 @@ export class BattleScreen {
   }
 
   /** Smoke rising from every destroyed part of a machine that still stands. */
+  /** The ground under every unit is darker: it is what makes them stand on it. */
+  private drawShadows(ctx: CanvasRenderingContext2D): void {
+    const player = this.flow.state.units[0];
+    if (!this.hidden(player)) drawShadow(ctx, this.playerX() + 76, PANEL_Y - 7, 108, 13, 0.5);
+    for (const enemy of this.flow.state.units.slice(1)) {
+      if (this.hidden(enemy)) continue;
+      const r = this.enemyRect(enemy);
+      drawShadow(ctx, r.x + r.w / 2, Math.min(PANEL_Y - 5, r.y + r.h - 1), r.w * 0.9, Math.max(5, r.w * 0.16), 0.45);
+    }
+  }
+
+  /** Every light of this moment: what the effects throw, what glows in the air, and the fires in the wrecks. */
+  private lights(): Glow[] {
+    const embers = this.wrecks.map(({ at, since }) => {
+      const age = this.clock - since;
+      // A wreck burns bright at first and smoulders after; its light breathes a little.
+      const burn = Math.max(0.12, 0.55 - age / 6000);
+      return { x: at.x, y: at.y + 6, r: 26, color: '#ff7a30', alpha: burn * (0.8 + 0.2 * Math.sin(this.clock / 170 + at.x)) };
+    });
+    return [...this.fx.lights(), ...this.particles.lights(), ...embers];
+  }
+
   private drawSmoke(ctx: CanvasRenderingContext2D): void {
     if (this.opts.fast) return;
     const scene = this.scene();
+    // What is left of a machine smokes where it went up: wider and darker than a wound, and for as long as the battle lasts.
+    for (const { at, since } of this.wrecks) {
+      for (let i = 0; i < 5; i++) {
+        const age = ((this.clock - since) / 2100 + i / 5) % 1;
+        if (this.clock - since < age * 2100) continue;
+        ctx.globalAlpha = 0.5 * (1 - age);
+        disc(ctx, at.x + Math.sin(age * 5 + i * 1.7) * 5, at.y + 4 - age * 46, 2 + age * 7, i % 2 ? '#3a3644' : '#4a4654');
+      }
+      ctx.globalAlpha = 1;
+    }
     for (const unit of this.flow.state.units) {
       if (unit.destroyed || this.hidden(unit)) continue;
       for (const slot of FRAME_SLOTS) {
@@ -562,7 +601,10 @@ export class BattleScreen {
       if (event.hit) {
         const at = scene.hitPoint(event.target, event.appliedTo);
         this.particles.emit('sparks', at, scene.facing(event.unit), flight, undefined, { kinetic: '#ffe9a8', energy: '#7fe9ff', explosive: '#ffb46b' }[dtype]);
-        if (dtype === 'explosive') this.particles.emit('smoke', at, 1, flight + 60);
+        if (dtype === 'explosive') {
+          this.particles.emit('fire', at, 1, flight);
+          this.particles.emit('smoke', at, 1, flight + 60);
+        }
       }
     }
     if (event.type === 'boost') {
@@ -572,6 +614,7 @@ export class BattleScreen {
     if (event.type === 'partDestroyed') {
       const at = scene.hitPoint(event.unit, event.part);
       this.particles.emit('debris', at, 1, 0, ground);
+      this.particles.emit('fire', at, 1);
       this.particles.emit('smoke', at, 1, 80);
     }
     if (event.type === 'overdrive') {
@@ -590,14 +633,22 @@ export class BattleScreen {
       const c = scene.centre(event.unit);
       this.particles.emit('debris', c, 1, 60, ground);
       this.particles.emit('debris', c, 1, 180, ground);
+      this.particles.emit('fire', c, 1);
       this.particles.emit('embers', c, 1, 60);
       this.particles.emit('smoke', c, 1, 120);
-      this.particles.emit('smoke', c, 1, 320);
+      // The last blast throws the most, and what is left smokes from then on.
+      this.particles.emit('debris', c, 1, 300, ground);
+      this.particles.emit('fire', c, 1, 300);
+      this.particles.emit('embers', c, 1, 320);
+      this.particles.emit('smoke', c, 1, 380);
+      if (event.unit !== 'player') this.wrecks.push({ at: { x: c.x, y: Math.min(ground - 8, c.y + 10) }, since: this.clock + 500 });
     }
     if (event.type === 'blast') {
       // A bomb's flash and bursts come a beat after its message, and so does everything it throws up.
       const c = scene.centre(event.target);
+      this.particles.emit('fire', c, 1, MELEE_MS);
       this.particles.emit('embers', c, 1, MELEE_MS);
+      this.particles.emit('debris', c, 1, MELEE_MS + 40, ground);
       this.particles.emit('smoke', c, 1, MELEE_MS + 100);
     }
     if (event.type === 'shot') {
@@ -628,9 +679,17 @@ export class BattleScreen {
   /** Applies an effect transform around a draw call. */
   private withTransform(ctx: CanvasRenderingContext2D, unit: UnitState, idleDy: number, draw: (dx: number, dy: number) => void): void {
     const t = this.fx.transform(unit.id);
+    // A unit that lunges leaves two after-images behind it, the further the fainter.
+    if (t.trail !== 0 && !this.opts.fast) {
+      for (const k of [2, 1]) {
+        ctx.globalAlpha = t.alpha * (k === 1 ? 0.3 : 0.14);
+        draw(t.dx - t.trail * k, t.dy + (unit.destroyed ? 0 : idleDy));
+      }
+    }
     ctx.globalAlpha = t.alpha;
     // A unit that is hit lights up: hard as a rule, gently in a calm picture.
-    ctx.filter = t.flash ? (this.opts.calm ? 'brightness(1.4)' : 'brightness(2.6)') : 'none';
+    // One that fires is lit by its own gun for a moment, though not in a calm picture.
+    ctx.filter = t.flash ? (this.opts.calm ? 'brightness(1.4)' : 'brightness(2.6)') : t.glare && !this.opts.calm ? 'brightness(1.35)' : 'none';
     draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy));
     ctx.filter = 'none';
     ctx.globalAlpha = 1;

@@ -1,9 +1,11 @@
+import { disc, fireColor, type Glow } from './light';
+
 /**
- * Small things in the air: shell casings, sparks, chunks of a destroyed machine, smoke, dust.
- * Each is a square of a few pixels with a speed, a weight and a lifetime. Nothing here knows about
- * the battle; it is told where to throw what, and when.
+ * Small things in the air: shell casings, sparks, chunks of a destroyed machine, flames, smoke,
+ * dust. Each is a few pixels with a speed, a weight and a lifetime: a square, or a round puff for
+ * what billows. Nothing here knows about the battle; it is told where to throw what, and when.
  */
-export type ParticleKind = 'casing' | 'sparks' | 'embers' | 'debris' | 'smoke' | 'dust';
+export type ParticleKind = 'casing' | 'sparks' | 'embers' | 'debris' | 'smoke' | 'dust' | 'fire';
 export interface Particle {
   x: number; y: number; vx: number; vy: number;
   /** Milliseconds lived and to live. */
@@ -14,11 +16,19 @@ export interface Particle {
   color: string;
   /** Where the ground is for this one, if it lands. */
   floor?: number;
+  /** Throws a little light of its own. */
+  glow?: boolean;
+  /** Billows: drawn round once it is a few pixels across. */
+  round?: boolean;
+  /** Burns out through fire's colours as it ages, whatever colour it was given. */
+  burns?: boolean;
 }
 export type Pt = { x: number; y: number };
 
 /** More than this at once is never kept: the oldest make way. */
-export const MAX_PARTICLES = 220;
+export const MAX_PARTICLES = 320;
+/** Of everything in the air that glows, at most this many throw light at once. */
+export const PARTICLE_LIGHTS = 8;
 
 const COLORS = {
   casing: ['#e8c466', '#b8923c'], sparks: ['#fff2b0', '#ffd15a', '#ffffff'], embers: ['#ff8a3c', '#ffd15a', '#ff5a36'],
@@ -65,11 +75,11 @@ export class Particles {
         for (let i = 0, n = 6 + Math.floor(this.random() * 5); i < n; i++) {
           const angle = this.between(0, Math.PI * 2);
           const speed = this.between(40, 150);
-          add({ x: from.x, y: from.y, vx: Math.cos(angle) * speed - dir * 30, vy: Math.sin(angle) * speed - 30, life: this.between(140, 320), size: 1, grow: 0, gravity: 260, color: color && this.random() < 0.6 ? color : pick(COLORS.sparks) });
+          add({ x: from.x, y: from.y, vx: Math.cos(angle) * speed - dir * 30, vy: Math.sin(angle) * speed - 30, life: this.between(140, 320), size: 1, grow: 0, gravity: 260, color: color && this.random() < 0.6 ? color : pick(COLORS.sparks), glow: true });
         }
         break;
       case 'embers':
-        for (let i = 0; i < 8; i++) add({ x: from.x + this.between(-8, 8), y: from.y + this.between(-6, 6), vx: this.between(-25, 25), vy: -this.between(20, 70), life: this.between(400, 900), size: 1, grow: 0, gravity: -20, color: pick(COLORS.embers) });
+        for (let i = 0; i < 8; i++) add({ x: from.x + this.between(-8, 8), y: from.y + this.between(-6, 6), vx: this.between(-25, 25), vy: -this.between(20, 70), life: this.between(400, 900), size: 1, grow: 0, gravity: -20, color: pick(COLORS.embers), glow: true });
         break;
       case 'debris':
         for (let i = 0, n = 10 + Math.floor(this.random() * 6); i < n; i++) {
@@ -79,10 +89,14 @@ export class Particles {
         }
         break;
       case 'smoke':
-        for (let i = 0; i < 5; i++) add({ x: from.x + this.between(-6, 6), y: from.y + this.between(-4, 4), vx: this.between(-10, 10), vy: -this.between(14, 34), life: this.between(700, 1300), size: 3, grow: 7, gravity: -8, color: pick(COLORS.smoke) });
+        for (let i = 0; i < 5; i++) add({ x: from.x + this.between(-6, 6), y: from.y + this.between(-4, 4), vx: this.between(-10, 10), vy: -this.between(14, 34), life: this.between(700, 1300), size: 3, grow: 7, gravity: -8, color: pick(COLORS.smoke), round: true });
         break;
       case 'dust':
-        for (let i = 0; i < 6; i++) add({ x: from.x + this.between(-10, 10), y: from.y, vx: -dir * this.between(20, 80), vy: -this.between(4, 22), life: this.between(300, 600), size: 2, grow: 4, gravity: 30, color: pick(COLORS.dust) });
+        for (let i = 0; i < 6; i++) add({ x: from.x + this.between(-10, 10), y: from.y, vx: -dir * this.between(20, 80), vy: -this.between(4, 22), life: this.between(300, 600), size: 2, grow: 4, gravity: 30, color: pick(COLORS.dust), round: true });
+        break;
+      case 'fire':
+        // Licks of flame: they rise, shrink and burn out through fire's colours.
+        for (let i = 0; i < 7; i++) add({ x: from.x + this.between(-5, 5), y: from.y + this.between(-3, 3), vx: this.between(-14, 14), vy: -this.between(26, 64), life: this.between(260, 620), size: this.between(2, 4), grow: -3, gravity: -30, color: '#ffd45e', glow: true, round: true, burns: true });
         break;
     }
     if (this.live.length > MAX_PARTICLES) this.live.splice(0, this.live.length - MAX_PARTICLES);
@@ -123,10 +137,24 @@ export class Particles {
     for (const p of this.live) {
       const left = 1 - p.age / p.life;
       const size = Math.max(1, Math.round(p.size));
+      const color = p.burns ? fireColor((p.age / p.life) * 0.86) : p.color;
       ctx.globalAlpha = p.grow > 0 ? Math.max(0, left * 0.6) : left < 0.3 ? left / 0.3 : 1;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(Math.round(p.x - size / 2), Math.round(p.y - size / 2), size, size);
+      // What billows is round once there is enough of it to be round; everything else is a square.
+      if (p.round && size >= 3) disc(ctx, p.x, p.y, size / 2, color);
+      else {
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.round(p.x - size / 2), Math.round(p.y - size / 2), size, size);
+      }
     }
     ctx.globalAlpha = 1;
+  }
+
+  /** The light of what glows in the air: a few small lights, spread over everything that glows. */
+  lights(): Glow[] {
+    const glowing = this.live.filter((p) => p.glow);
+    const every = Math.max(1, Math.ceil(glowing.length / PARTICLE_LIGHTS));
+    return glowing.filter((_, i) => i % every === 0).slice(0, PARTICLE_LIGHTS).map((p) => ({
+      x: p.x, y: p.y, r: 7 + Math.max(1, p.size), color: p.burns ? fireColor((p.age / p.life) * 0.86) : p.color, alpha: 0.5 * (1 - p.age / p.life),
+    }));
   }
 }
