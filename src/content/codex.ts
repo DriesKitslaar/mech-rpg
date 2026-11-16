@@ -258,7 +258,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'elites', title: 'ELITES AND RELICS',
-    text: 'Behind one of two doors there is sometimes an elite. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. Beat it and one more thing is on offer. A warden beaten patches you up and leaves one of two relics: each bends a rule for the rest of the run.',
+    text: 'An elite is a machine with a mark. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. The Gauntlet hides one behind some doors: beat it for one more thing on offer. Some open contracts have one, and pay more. A warden beaten leaves one of two relics.',
   },
   {
     id: 'cups', title: 'ARENA CUPS',
@@ -299,6 +299,8 @@ export interface Person {
   role: string;
   /** When their page opens: once the story has got that far, or once they have been met in battle. */
   when: { after: string } | { met: string };
+  /** For somebody with a price on them: the contract that brings them in. Once it is done their page says so. */
+  bounty?: string;
   text: string;
 }
 
@@ -330,16 +332,16 @@ export const PEOPLE: Person[] = [
     text: 'Chief of security at Hadron. Was here before the company and expects to be here after it.' },
   { id: 'actuary', name: 'The Actuary', portrait: 'portrait-actuary', role: 'Meridian Mutual', when: { after: 'finale' },
     text: 'The adjuster Meridian sends when a war is over. Polite, immaculate, and already knows what you are worth to the decimal.' },
-  { id: 'magpie', name: 'Magpie', portrait: 'portrait-magpie', role: 'Wanted', when: { met: 'magpie' },
+  { id: 'magpie', name: 'Magpie', portrait: 'portrait-magpie', role: 'Wanted', when: { met: 'magpie' }, bounty: 'bounty-1',
     text: 'Stripped the cockpits of downed frames with the pilots still in them. Proud of the helmet collection.' },
-  { id: 'dredge', name: 'Dredge', portrait: 'portrait-dredge', role: 'Wanted', when: { met: 'dredge' },
+  { id: 'dredge', name: 'Dredge', portrait: 'portrait-dredge', role: 'Wanted', when: { met: 'dredge' }, bounty: 'bounty-2',
     text: 'Ran a toll on the old mine road and collected it with a mortar.' },
-  { id: 'lark', name: 'Lark', portrait: 'portrait-lark', role: 'Wanted', when: { met: 'lark' },
+  { id: 'lark', name: 'Lark', portrait: 'portrait-lark', role: 'Wanted', when: { met: 'lark' }, bounty: 'bounty-3',
     text: 'Contract killer. One shot a job from behind a tower shield, until the job was you.' },
-  { id: 'hollow', name: 'Hollow', portrait: 'portrait-hollow', role: 'Wanted', when: { met: 'hollow' },
+  { id: 'hollow', name: 'Hollow', portrait: 'portrait-hollow', role: 'Wanted', when: { met: 'hollow' }, bounty: 'bounty-4',
     text: 'Cut frames open for the Night Market and left the pilots where they fell.' },
-  { id: 'paragon', name: 'Paragon', portrait: 'portrait-paragon', role: 'Wanted', when: { met: 'paragon' },
+  { id: 'paragon', name: 'Paragon', portrait: 'portrait-paragon', role: 'Wanted', when: { met: 'paragon' }, bounty: 'bounty-5',
     text: 'Decorated in the war by whichever side was paying. Kept the mech, the medals and the habit.' },
-  { id: 'notary', name: 'The Notary', portrait: 'portrait-notary', role: 'Wanted', when: { met: 'notary' },
+  { id: 'notary', name: 'The Notary', portrait: 'portrait-notary', role: 'Wanted', when: { met: 'notary' }, bounty: 'bounty-6',
     text: 'Left Meridian with a frame, a seal and a client list, and went on foreclosing in private.' },
 ];

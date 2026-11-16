@@ -474,4 +474,9 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Tidy work.`]: `Net werk.`,
   [`Mind your core, youngster.`]: `Let op je kern, jongeling.`,
   [`One more. I stopped counting.`]: `Nog een. Ik tel niet meer.`,
+  // An open contract with an elite in it: what sets the elite apart.
+  [`Among them: an armoured elite, far thicker. Pays extra.`]: `Daartussen: een gepantserde elite, veel dikker. Extra loon.`,
+  [`Among them: an overclocked elite, hitting hard. Pays extra.`]: `Daartussen: een opgevoerde elite, slaat harder. Extra loon.`,
+  [`Among them: a swift elite, much harder to hit. Pays extra.`]: `Daartussen: een snelle elite, lastig te raken. Extra loon.`,
+  [`Among them: an elite behind a renewing barrier. Pays extra.`]: `Daartussen: een elite met een verse barriere. Extra loon.`,
 };

@@ -112,7 +112,9 @@ export class DatabaseScreen implements Screen {
     if (this.page === 'people') {
       const person = PEOPLE.find((p) => p.id === selected.id);
       if (!selected.enabled || !person) return { title: D.unknown, lines: [D.notMet] };
-      return { title: person.name.toUpperCase(), portrait: person.portrait, role: person.role, lines: wrap(person.text, PAGE_CHARS) };
+      // Somebody with a price on them is wanted until the notice has been collected on.
+      const caught = !!person.bounty && this.app.game!.completed.includes(person.bounty);
+      return { title: person.name.toUpperCase(), portrait: person.portrait, role: caught ? D.broughtIn : person.role, lines: wrap(person.text, PAGE_CHARS) };
     }
     if (this.page === 'music') {
       const song = JUKEBOX.find((s) => s.id === selected.id);

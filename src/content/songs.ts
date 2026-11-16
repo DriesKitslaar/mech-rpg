@@ -1050,7 +1050,7 @@ const gauntlet: Song = {
   order: ['down1', 'down2', 'deep', 'down2'],
 };
 
-// The Gauntlet's floors. D minor, 148 bpm, 16 bars: floor by floor. The room's own falling bass, driven:
+// The Gauntlet's floors. D minor, 148 bpm, 32 bars: floor by floor. The room's own falling bass, driven:
 // eighths that jump the octave, an arpeggio in sixteenths on top, and a riff that climbs a little each
 // bar only to be pulled down again by the A at the end of the line. The middle four bars start a
 // fourth higher (G minor) and fall the same way. It is meant to be heard many times in a row.
@@ -1098,8 +1098,29 @@ const descent: Song = {
         drums: bars(DESCENT_BEAT, DESCENT_BEAT, DESCENT_BEAT, DESCENT_FILL), hats: bars(HATS_8, HATS_8_OPEN, HATS_16, HATS_16),
       },
     },
+    // The riff turned into broken chords: the same descent, climbing through each chord instead of leaning on it.
+    climb: {
+      steps: 64,
+      lines: {
+        ...pads(16, 'D3 C3 Bb2 A2', 'A3 G3 F3 E3'), bass: chart(DESCENT_BASS, 'Dm C Bb A'), arp: chart(DESCENT_ARP, 'Dm C Bb A'),
+        lead: bars(
+          'A4 - D5 - - F5 - - A5 - - F5 - D5 - -', 'G4 - C5 - - E5 - - G5 - - E5 - C5 - -',
+          'F4 - Bb4 - - D5 - - F5 - - D5 - Bb4 - -', 'E5 - - C#5 - - A4 - E5 - - C#5 - - A4 -',
+        ),
+        drums: bars(DESCENT_BEAT, DESCENT_BEAT, DESCENT_BEAT, DESCENT_FILL), hats: times(4, HATS_8),
+      },
+    },
+    // A breath: the tune drops out and the floor is left to the bass, the arpeggio and a kick that only marks the bar.
+    hold: {
+      steps: 64,
+      lines: {
+        ...pads(16, 'D3 C3 Bb2 A2', 'A3 G3 F3 E3'), bass: chart(DESCENT_BASS, 'Dm C Bb A'), arp: chart(DESCENT_ARP, 'Dm C Bb A'),
+        drums: bars('k . . . . . . . k . . . . . . .', 'k . . . . . . . k . . . . . . .', 'k . . . . . . . k . . . . . . .', DESCENT_FILL),
+        hats: bars(HATS_16, HATS_16, HATS_16, HATS_8_OPEN),
+      },
+    },
   },
-  order: ['riff', 'riff', 'lift', 'riff'],
+  order: ['riff', 'climb', 'lift', 'riff', 'hold', 'climb', 'lift', 'riff'],
 };
 
 export const SONGS: Record<SongName, Song> = {

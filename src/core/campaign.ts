@@ -69,6 +69,8 @@ export interface Mission {
   battles: Battle[];
   /** Multiplies enemy armour and damage; 1 when absent. */
   scale?: number;
+  /** Set on an open contract with an elite in it: the mark the elite carries. */
+  elite?: EnemyMark;
   /** Set on an arena fight: the rank of the opponent. */
   arenaRank?: number;
   /** Set on a training drill: the mech that is lent for it. See training.ts. */

@@ -1,5 +1,10 @@
+import { MARKS } from '../../src/core/battle';
+import { startMissionBattle } from '../../src/core/mission';
+import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
+import { BRIEFING_CHARS, briefingRows } from '../../src/ui/briefingScreen';
+import { wrap } from '../../src/ui/widgets';
 import {
-  ENEMY_COST, MECH_ENEMIES, PAY_PER_BATTLE, PAY_PER_POINT, boardTier, budgetFor, contractTier, generateBoard as generate, scaleFor,
+  ELITE_PAY, ELITE_TIER, ENEMY_COST, MECH_ENEMIES, PAY_PER_BATTLE, PAY_PER_POINT, boardTier, budgetFor, contractTier, generateBoard as generate, scaleFor,
 } from '../../src/core/board';
 import { BOARD_TEXT } from '../../src/content/board';
 import { ENEMIES } from '../../src/content/enemies';
@@ -53,7 +58,8 @@ test.each([[0, 0], [4, 0], [12, 0], [30, 0], [9, 1], [40, 3], [500, 9]])('a boar
       expect(battle.background in SPRITES).toBe(true);
     }
     const spent = mission.battles.reduce((sum, b) => sum + cost(b.enemies), 0);
-    expect(mission.reward).toBe(PAY_PER_POINT * spent + PAY_PER_BATTLE * mission.battles.length);
+    // An elite in the contract is paid for on top.
+    expect(mission.reward).toBe(PAY_PER_POINT * spent + PAY_PER_BATTLE * mission.battles.length + (mission.elite ? ELITE_PAY : 0));
     expect(mission.scale).toBeCloseTo(scaleFor(tier));
     if (mission.portrait) expect(mission.portrait in SPRITES).toBe(true);
   }
@@ -73,4 +79,75 @@ test('boards offer variety', () => {
   const titles = new Set<string>();
   for (let w = 0; w < 40; w++) for (const m of generateBoard(w, 0)) titles.add(m.title);
   expect(titles.size).toBeGreaterThan(40);
+});
+
+describe('an elite on the board', () => {
+  const boards = (cycle = 0) => Array.from({ length: 120 }, (_, wins) => ({ wins, board: generateBoard(wins, cycle) }));
+
+  test('only the heaviest contract can be one, and only once the board has reached tier three', () => {
+    expect(ELITE_TIER).toBe(3);
+    for (const { wins, board } of boards()) {
+      expect(board[0].elite).toBeUndefined();
+      expect(board[1].elite).toBeUndefined();
+      if (boardTier(wins, 0) < ELITE_TIER) expect(board[2].elite, `after ${wins} wins`).toBeUndefined();
+    }
+  });
+
+  test('about one board in two has one, and every mark turns up', () => {
+    const late = boards().filter(({ wins }) => boardTier(wins, 0) >= ELITE_TIER);
+    const elite = late.filter(({ board }) => board[2].elite);
+    expect(elite.length / late.length).toBeGreaterThan(0.35);
+    expect(elite.length / late.length).toBeLessThan(0.65);
+    expect([...new Set(elite.map(({ board }) => board[2].elite))].sort()).toEqual([...MARKS].sort());
+  });
+
+  test('the mark is on the dearest machine of the last battle, the briefing says what it is, and the pay allows for it', () => {
+    let seen = 0;
+    for (const { board } of [...boards(), ...boards(2)]) {
+      const mission = board[2];
+      const marked = mission.battles.flatMap((b, i) => Object.entries(b.marks ?? {}).map(([at, mark]) => ({ battle: i, at: Number(at), mark })));
+      if (!mission.elite) {
+        expect(marked).toEqual([]);
+        expect(mission.briefing).toHaveLength(3);
+        continue;
+      }
+      seen += 1;
+      const last = mission.battles.length - 1;
+      expect(marked).toHaveLength(1);
+      expect(marked[0]).toMatchObject({ battle: last, mark: mission.elite });
+      const costs = mission.battles[last].enemies.map((id) => ENEMY_COST[id]);
+      expect(costs[marked[0].at]).toBe(Math.max(...costs));
+      expect(costs.indexOf(Math.max(...costs))).toBe(marked[0].at);
+      expect(mission.briefing).toHaveLength(4);
+      expect(mission.briefing[3]).toBe(BOARD_TEXT.elite[mission.elite]);
+      const spent = mission.battles.reduce((sum, b) => sum + cost(b.enemies), 0);
+      expect(mission.reward).toBe(PAY_PER_POINT * spent + PAY_PER_BATTLE * mission.battles.length + ELITE_PAY);
+    }
+    expect(seen).toBeGreaterThan(40);
+  });
+
+  test('the battle fields the elite with its mark, and nobody else marked', () => {
+    const { board } = boards().find(({ board: b }) => b[2].elite)!;
+    const mission = board[2];
+    const last = mission.battles.length - 1;
+    const state = startMissionBattle(DEMO_BUILD, mission, last, ENEMIES, CATALOG, 3);
+    const at = Number(Object.keys(mission.battles[last].marks!)[0]);
+    expect(state.units.filter((u) => u.mark).map((u) => [u.id, u.mark])).toEqual([[`enemy-${at}`, mission.elite]]);
+    for (let i = 0; i < last; i++) expect(startMissionBattle(DEMO_BUILD, mission, i, ENEMIES, CATALOG, 3).units.some((u) => u.mark)).toBe(false);
+  });
+
+  test('every briefing still fits its panel, the elite ones too', () => {
+    for (const { board } of [...boards(), ...boards(1), ...boards(3)]) {
+      for (const mission of board) {
+        let y = 0;
+        for (const paragraph of mission.briefing) {
+          for (const _line of wrap(paragraph, BRIEFING_CHARS)) {
+            expect(y, `briefing of ${mission.id} is too long`).toBeLessThanOrEqual((briefingRows(mission) - 1) * 11);
+            y += 11;
+          }
+          y += 4;
+        }
+      }
+    }
+  });
 });

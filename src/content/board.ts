@@ -52,4 +52,10 @@ export const BOARD_TEXT: BoardText = {
   ],
   // Read where it is used, so that it is in whatever language is set then.
   battles: (count) => STRINGS.board.battles(count),
+  elite: {
+    armoured: 'Among them: an armoured elite, far thicker. Pays extra.',
+    overclocked: 'Among them: an overclocked elite, hitting hard. Pays extra.',
+    swift: 'Among them: a swift elite, much harder to hit. Pays extra.',
+    shielded: 'Among them: an elite behind a renewing barrier. Pays extra.',
+  },
 };
