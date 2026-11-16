@@ -520,7 +520,8 @@ export interface Carry {
   heat: number;
   ammo: Partial<Record<WeaponSlot, number | null>>;
   restocked: Partial<Record<WeaponSlot, number>>;
-  repairsLeft: number;
+  /** Field repairs left; absent when the mech arrives with its full count. */
+  repairsLeft?: number;
   destroyed: boolean;
 }
 
@@ -545,7 +546,7 @@ function applyCarry(unit: UnitState, carry: Carry): void {
   unit.heat = Math.max(0, carry.heat);
   for (const slot of WEAPON_SLOTS) if (slot in unit.ammo && slot in carry.ammo) unit.ammo[slot] = carry.ammo[slot];
   unit.restocked = { ...carry.restocked };
-  unit.repairsLeft = carry.repairsLeft;
+  if (typeof carry.repairsLeft === 'number') unit.repairsLeft = carry.repairsLeft;
 }
 
 /** Refuses an objective the battle could not be won or lost by. */

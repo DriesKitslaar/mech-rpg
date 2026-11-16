@@ -140,9 +140,11 @@ export const STRINGS = {
     draftHeading: 'TAKE ONE', service: 'Full service', serviceNote: 'all armour restored',
     slot: (slot: string) => `fits: ${slot}`, replaces: 'replaces:', empty: 'an empty mount',
     boons: {
-      capacitor: { name: 'Capacitor', note: '+15 energy a turn' }, heatsinks: { name: 'Heat sinks', note: '+6 cooling a turn' },
-      plating: { name: 'Plating', note: '+8% armour' }, optics: { name: 'Optics', note: '+4 aim' }, patchkit: { name: 'Patch kit', note: '+1 repair a floor' },
+      capacitor: { name: 'Capacitor', short: 'CAP', note: '+15 energy a turn' }, heatsinks: { name: 'Heat sinks', short: 'SINK', note: '+6 cooling a turn' },
+      plating: { name: 'Plating', short: 'PLATE', note: '+8% armour' }, optics: { name: 'Optics', short: 'OPTIC', note: '+4 aim' },
+      patchkit: { name: 'Patch kit', short: 'PATCH', note: '+1 repair a floor' },
     },
+    fell: 'Closed on a floor: the run fell there.',
     over: 'RUN OVER', cleared: (n: number) => (n === 1 ? '1 floor cleared' : `${n} floors cleared`), paid: (n: number) => `Paid ${n}`, record: 'A new best.',
     hint: 'A: choose   B: back', expected: 'EXPECTED',
   },

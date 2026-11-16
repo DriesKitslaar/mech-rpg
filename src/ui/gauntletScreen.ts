@@ -7,7 +7,7 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { idlePose } from './pose';
 import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
-import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
+import { COLORS, LINE, drawList, drawPanel, drawText, wrap } from './widgets';
 
 const G = STRINGS.gauntlet;
 const SLOT_NAMES: Record<string, string> = {
@@ -95,14 +95,13 @@ export class GauntletScreen implements Screen {
 
   view(): ScreenView {
     const run = this.app.run;
-    const floor = this.app.gauntletFloor();
+    const floor = this.app.gauntletAhead();
     return {
       menu: { items: this.list.items, cursor: this.list.cursor },
       gauntlet: {
         best: this.app.game?.gauntletBest ?? 0, floor: run?.floor ?? null, drafting: !!run?.drafting, asking: this.asking,
-        offers: this.offers, boons: run?.boons ?? {}, build: run?.build ?? null, enemies: floor?.battles[0].enemies ?? [],
+        offers: this.offers, boons: run?.boons ?? {}, build: run?.build ?? null, enemies: floor?.battles[0].enemies ?? [], warden: !!run && isWardenFloor(run.floor), ground: groundFor(floor?.battles[0].background ?? '')?.id ?? null,
         wear: run ? Math.round(wear(run, this.app.deps.catalog) * 100) : 0, last: this.app.lastRun,
-        ground: groundFor(floor?.battles[0].background ?? '')?.id ?? null,
       },
     };
   }
@@ -143,41 +142,44 @@ export class GauntletScreen implements Screen {
       return;
     }
     const cleared = floorsCleared(run);
+    const ahead = this.app.gauntletAhead();
     drawText(ctx, G.floorLabel(run.floor), x + 6, y, { size: 16, color: COLORS.accent });
-    if (isWardenFloor(run.floor) && !run.drafting) drawText(ctx, G.wardenLabel, x + w - 6, y + 4, { align: 'right', color: COLORS.danger });
+    if (isWardenFloor(run.floor)) drawText(ctx, G.wardenLabel, x + w - 6, y + 4, { align: 'right', color: COLORS.danger });
     y += 20;
     drawText(ctx, G.armour(100 - Math.round(wear(run, catalog) * 100)), x + 6, y, { color: COLORS.armor });
     y += LINE;
-    // The boons taken so far, one a line.
-    for (const [id, count] of Object.entries(run.boons)) {
-      if (!count) continue;
-      drawText(ctx, `${G.boons[id as BoonId].name}${count > 1 ? ` x${count}` : ''}`, x + 6, y, { color: COLORS.dim });
-      y += LINE - 1;
+    // The boons taken so far, in short, on as few lines as they need: the list below them must not be pushed off the panel.
+    const boons = Object.entries(run.boons).filter(([, count]) => count > 0).map(([id, count]) => `${G.boons[id as BoonId].short}${count > 1 ? ` x${count}` : ''}`);
+    for (const line of wrap(boons.join('  '), 36).slice(0, 2)) {
+      if (line) { drawText(ctx, line, x + 6, y, { color: COLORS.dim, size: 10 }); y += LINE - 2; }
     }
-    y += 6;
+    y += 4;
     if (this.asking) {
       drawText(ctx, G.abandonAsk(payout(cleared)), x + 6, y, { color: COLORS.heat });
       drawList(ctx, this.list, x + 6, y + LINE + 4, w - 16, 2);
       return;
     }
+    // Who is on the floor ahead and what its ground does: said while choosing too, since that is what the choice is for.
+    drawText(ctx, G.expected, x + 6, y, { color: COLORS.dim });
+    const ground = groundFor(ahead?.battles[0].background ?? '');
+    if (ground) drawText(ctx, STRINGS.ground[ground.id].name, x + w - 6, y, { align: 'right', color: COLORS.energy, size: 10 });
+    const names = (ahead?.battles[0].enemies ?? []).map((id) => this.app.enemies()[id]?.name ?? id);
+    names.forEach((name, i) => drawText(ctx, name, x + 6, y + (i + 1) * LINE));
+    y += 4 * LINE + 4;
     if (run.drafting) {
       drawText(ctx, G.draftHeading, x + 6, y, { color: COLORS.heat });
-      drawList(ctx, this.list, x + 6, y + LINE + 4, w - 16, 3);
+      drawList(ctx, this.list, x + 6, y + LINE + 2, w - 16, 3);
       const offer = this.offers[this.list.cursor];
-      if (offer) this.offerNotes(offer).forEach((line, i) => drawText(ctx, line, x + 6, y + 5 * LINE + 8 + i * LINE, { color: COLORS.dim }));
+      if (offer) this.offerNotes(offer).forEach((line, i) => drawText(ctx, line, x + 6, y + 4 * LINE + 8 + i * (LINE - 1), { color: COLORS.dim }));
     } else {
-      const floor = this.app.gauntletFloor();
-      drawText(ctx, G.expected, x + 6, y, { color: COLORS.dim });
-      const names = (floor?.battles[0].enemies ?? []).map((id) => this.app.enemies()[id]?.name ?? id);
-      names.forEach((name, i) => drawText(ctx, name, x + 6, y + (i + 1) * LINE));
-      // What the floor's ground does, under who is on it.
-      const ground = groundFor(floor?.battles[0].background ?? '');
-      if (ground) drawText(ctx, STRINGS.ground[ground.id].name, x + w - 6, y, { align: 'right', color: COLORS.energy, size: 10 });
-      drawList(ctx, this.list, x + 6, y + 5 * LINE, w - 16, 3);
+      drawList(ctx, this.list, x + 6, y, w - 16, 3);
+      // What the frame carries, under the list, as far as there is room above the hint.
+      const carried = (['rightHand', 'leftHand', 'shoulder', 'module'] as const).flatMap((slot) => (run.build[slot] ? [this.partName(run.build[slot])] : []));
+      carried.forEach((name, i) => {
+        const at = y + 3 * LINE + 6 + i * (LINE - 1);
+        if (at <= LOGICAL_H - 32) drawText(ctx, name, x + 6, at, { color: COLORS.dim, size: 10 });
+      });
     }
-    // What the frame carries, at the foot of the panel: the run is flown blind otherwise.
-    const carried = (['rightHand', 'leftHand', 'shoulder', 'module'] as const).flatMap((slot) => (run.build[slot] ? [this.partName(run.build[slot])] : []));
-    carried.forEach((name, i) => drawText(ctx, name, x + 6, LOGICAL_H - 34 - (carried.length - i) * (LINE - 1), { color: COLORS.dim, size: 10 }));
     drawText(ctx, G.hint, x + 6, LOGICAL_H - 20, { color: COLORS.dim });
   }
 }

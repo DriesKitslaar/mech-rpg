@@ -105,10 +105,13 @@ export class SaveFile {
     try {
       const raw = this.store.getItem(this.key);
       if (!raw) return null;
-      const value = upgrade(JSON.parse(raw));
+      const upgraded = upgrade(JSON.parse(raw));
+      // Whatever sits where a run should be and is not one is dropped before the game is judged: the game around it is kept.
+      const value = typeof upgraded === 'object' && upgraded !== null && 'gauntlet' in upgraded && !isValidRun((upgraded as { gauntlet: unknown }).gauntlet, this.catalog)
+        ? { ...upgraded, gauntlet: null } : upgraded;
       if (!isValidState(value, this.catalog)) return null;
       // A run of the Gauntlet that cannot be flown on is dropped; the game around it is kept.
-      return value.gauntlet && !isValidRun(value.gauntlet, this.catalog) ? { ...value, gauntlet: null } : value;
+      return value;
     } catch {
       return null;
     }
