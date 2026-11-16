@@ -27,6 +27,8 @@ const ROOM: Record<string, { width?: number; max?: number }> = {
   'medal.name': { max: 20 }, 'medal.text': { width: charsFor(LOGICAL_W - 60) },
   'arena.style': { width: charsFor(LOGICAL_W - 28) }, 'arena.taunt': { width: BRIEFING_CHARS - 2 },
   'board.word': { max: 9 }, 'part.name': { max: 5 },
+  // A wingman's line on the radio: how much room it really has depends on their name; see tests/ui/radio.test.ts.
+  radio: { max: 30 },
 };
 /** Kinds that are names: they may stay as they are. Everything else has to be translated. */
 const MAY_STAY = new Set(['who', 'client', 'asset', 'part.name', 'board.word', 'scene.heading', 'scene.title', 'mission.title', 'medal.name', 'perk.name', 'page.title']);

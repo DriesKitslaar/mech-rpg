@@ -7,7 +7,7 @@ export type SoundName =
   | 'shotKinetic' | 'shotEnergy' | 'shotExplosive' | 'hit' | 'miss'
   | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat'
   | 'guard' | 'stagger' | 'charge' | 'module'
-  | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive';
+  | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive' | 'radio';
 
 /** One synthesised note or burst. Times are in seconds, frequencies in hertz. */
 export interface Tone {
@@ -66,6 +66,8 @@ export const SOUNDS: Record<SoundName, Tone[]> = {
   warning: [t('sawtooth', 311, 0, 0.22, 0.3), t('sawtooth', 311, 0.3, 0.22, 0.3), t('sawtooth', 311, 0.6, 0.3, 0.3), t('square', 155, 0, 0.9, 0.15)],
   // An Overdrive going off: everything winds up at once and rings.
   overdrive: [t('sawtooth', 220, 0, 0.32, 0.3, 880), t('square', 440, 0.04, 0.28, 0.2, 1320), t('noise', 0, 0, 0.14, 0.25), t('triangle', 1320, 0.3, 0.3, 0.3)],
+  // The wingman keying the radio: a click of static and two short tones.
+  radio: [t('noise', 0, 0, 0.03, 0.12), t('square', 1175, 0.03, 0.04, 0.1), t('square', 1568, 0.08, 0.05, 0.1)],
   // A medal: three bright notes going up and a held fourth.
   medal: [t('triangle', 784, 0, 0.07, 0.3), t('triangle', 988, 0.08, 0.07, 0.3), t('triangle', 1175, 0.16, 0.07, 0.3), t('square', 1568, 0.24, 0.22, 0.18)],
   // The database growing: two quiet notes, like a terminal acknowledging.

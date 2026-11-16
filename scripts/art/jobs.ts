@@ -438,6 +438,15 @@ export const JOBS: ArtJob[] = [
   portrait('portrait-krell', 'a scarred veteran security chief with a square jaw and a grey buzz cut, wearing a heavy charcoal uniform with yellow and black hazard-striped shoulder boards'),
   portrait('portrait-actuary', 'a thin, immaculate insurance adjuster with slicked dark hair, round gold-rimmed glasses and a faint polite smile, wearing a black high-collared suit with a small gold pin shaped like a balance scale'),
 
+  // The six with a price on them, each in the colours of the frame they fly, and the Guild's broker.
+  portrait('portrait-magpie', 'a wiry, sharp-eyed young scavenger pilot with a crooked grin and a shock of hair dyed half black and half white, wearing a patched royal blue flight jacket hung with small stolen trinkets and a cracked visor pushed up on the forehead'),
+  portrait('portrait-dredge', 'a huge heavy-browed toll-road enforcer with a thick neck and a short braided beard full of grit, wearing a sand-coloured quilted armour vest with dust goggles hanging around the neck'),
+  portrait('portrait-lark', 'a slender, composed contract killer with a calm half-smile and hair pinned up in a neat bun, a small brass marksman eyepiece over the right eye, wearing a tailored dusty rose coat with a high collar'),
+  portrait('portrait-hollow', 'a gaunt hollow-cheeked salvage cutter with sunken eyes and a shaved head, a breathing mask hanging loose at the throat, wearing an oil-stained leather apron over a sickly yellow-green coverall'),
+  portrait('portrait-paragon', 'a proud weathered former officer in his fifties with a square greying moustache and a black eye patch, wearing a sun-yellow and orange dress uniform jacket crowded with mismatched medals'),
+  portrait('portrait-notary', 'a severe pale bureaucrat with slicked silver hair and thin lips, a round brass seal lens over one eye like a monocle, wearing a glossy black high-collared robe with a heavy brass seal on a chain'),
+  portrait('portrait-guild', 'a sly night-market broker of uncertain age in a hooded patchwork cloak, half of the face hidden behind a lacquered dark red trader mask, fingers heavy with mismatched rings, lit by warm lantern light'),
+
   { id: 'app-icon', kind: 'icon',
     prompt: '16-bit pixel art app icon, crisp pixels, no anti-aliasing, no text, no lettering: the head of an original Japanese anime-style mecha seen from the front, a helmet in dark charcoal armour with one curved crest and a single horizontal visor glowing hot pink, lit from the sides by pink and cyan neon, bold simple shapes, centred, filling most of the square, on a plain very dark navy background.' },
 

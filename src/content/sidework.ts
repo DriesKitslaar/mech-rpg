@@ -1,54 +1,68 @@
-import type { Battle, Mission } from '../core/campaign';
+import type { Battle, Mission, TalkLine } from '../core/campaign';
 
 const battle = (enemies: string[], background: string, extra: Partial<Battle> = {}): Battle => ({ enemies, background, ...extra });
 const BOARD = { client: 'The Bounty Board' } as const;
+/** Who says a line, with their face. */
+const says = (who: string, portrait: string) => (at: TalkLine['at'], text: string): TalkLine => ({ at, who, text, portrait });
 
-/** What the board says about each of the wanted, in the order they are posted. */
-const bounty = (n: number, when: string, _target: string, title: string, reward: number, scale: number, briefing: string[], debrief: string, battles: Battle[]): Mission => ({
-  id: `bounty-${n}`, phase: 'side', series: 'bounty', when, title, ...BOARD, reward, scale, briefing, debrief, battles,
-});
+/**
+ * What the board says about each of the wanted, in the order they are posted. The notice carries
+ * the face of whoever it is for, and they have a word to say when the fight opens and when it is lost.
+ */
+const bounty = (
+  n: number, when: string, target: string, name: string, title: string, reward: number, scale: number,
+  briefing: string[], debrief: string, battles: Battle[], opening: string, yielding: string,
+): Mission => {
+  const speaks = says(name, `portrait-${target}`);
+  return {
+    id: `bounty-${n}`, phase: 'side', series: 'bounty', when, title, ...BOARD, portrait: `portrait-${target}`, reward, scale, briefing, debrief,
+    battles: battles.map((b, i) => ({
+      ...b, talk: [...(b.talk ?? []), ...(i === 0 ? [speaks('start', opening)] : []), ...(i === battles.length - 1 ? [speaks('win', yielding)] : [])],
+    })),
+  };
+};
 
 /**
  * Six pilots with a price on them, posted two an act and hunted one at a time. Each is one fight:
  * the name on the notice and whoever they brought. Bring the name down and the rest go home.
  */
 export const BOUNTIES: Mission[] = [
-  bounty(1, 'rival-1', 'magpie', 'Wanted: Magpie', 2400, 1, [
+  bounty(1, 'rival-1', 'magpie', 'Magpie', 'Wanted: Magpie', 2400, 1, [
     'WANTED: callsign Magpie. Strips the cockpits of downed frames while the pilots are still in them.',
     'Fast, and goes for the head. Flies with two drones that are not the point. Bring Magpie down and the notice pays.',
   ], 'Magpie is grounded and the board has stamped the notice. Three pilots have asked for their helmets back.', [
     battle(['magpie', 'recon-drone', 'recon-drone'], 'bg-rooftop', { objective: { type: 'leader', target: 0 } }),
-  ]),
-  bounty(2, 'rival-1', 'dredge', 'Wanted: Dredge', 2900, 1.3, [
+  ], 'Nice helmet. I will have it when you are done with it.', 'All right, all right! Keep the helmet. Mine was nicer anyway.'),
+  bounty(2, 'rival-1', 'dredge', 'Dredge', 'Wanted: Dredge', 2900, 1.3, [
     'WANTED: callsign Dredge. Runs a toll on the old mine road and collects it with a mortar.',
     'A Bulwark on tracks. Tracks cannot boost, so it is easy to hit, and it will find whichever of your parts is already hurt.',
   ], 'The mine road is open. Dredge\'s tracks are being sold by the metre.', [
     battle(['dredge', 'gun-turret'], 'bg-mine', { objective: { type: 'leader', target: 0 } }),
-  ]),
-  bounty(3, 'choice', 'lark', 'Wanted: Lark', 3800, 1.7, [
+  ], 'The toll is one mech. Pay now, or I collect.', 'The road is yours. It was a bad road anyway.'),
+  bounty(3, 'choice', 'lark', 'Lark', 'Wanted: Lark', 3800, 1.7, [
     'WANTED: callsign Lark. Contract killer. Takes one shot a job from behind a tower shield and has not needed two.',
     'The rail charges for a turn before it fires. A shield drone keeps Lark covered: decide what to shoot first.',
   ], 'Lark\'s rail is in an evidence locker. The board notes that the shield was the expensive part.', [
     battle(['lark', 'shield-drone'], 'bg-plaza', { objective: { type: 'leader', target: 0 } }),
-  ]),
-  bounty(4, 'choice', 'hollow', 'Wanted: Hollow', 4300, 0.6, [
+  ], 'One shot a job. Hold still and this takes no time at all.', 'That was going to take two. I have never needed two. Take me in.'),
+  bounty(4, 'choice', 'hollow', 'Hollow', 'Wanted: Hollow', 4300, 0.6, [
     'WANTED: callsign Hollow. Cuts frames open for the Night Market and leaves the pilots where they fall.',
     'A Mantis with a cutting torch and needles for the walk in. It wants to be close, and it brought something to patch it up when you hurt it back.',
   ], 'Hollow is in custody and the Night Market is short one supplier. Prices went up by lunchtime.', [
     battle(['hollow', 'repair-drone'], 'bg-undercity', { objective: { type: 'leader', target: 0 } }),
-  ]),
-  bounty(5, 'finale', 'paragon', 'Wanted: Paragon', 5600, 1.1, [
+  ], 'Good frame. Clean welds. It will come apart nicely.', 'You cut deeper than I do. The Market will want your number.'),
+  bounty(5, 'finale', 'paragon', 'Paragon', 'Wanted: Paragon', 5600, 1.1, [
     'WANTED: callsign Paragon. Decorated in the war by whichever side was paying, then kept the mech and the habit.',
     'Thermal weapons: every hit heats you. A jammer mast spoils your aim while it stands. Vent early.',
   ], 'Paragon surrendered the frame and three sets of medals. The board kept the medals as a deposit.', [
     battle(['paragon', 'jammer'], 'bg-foundry', { objective: { type: 'leader', target: 0 } }),
-  ]),
-  bounty(6, 'finale', 'notary', 'Wanted: The Notary', 7000, 1, [
+  ], 'Four armies decorated me for this. You may pay for the fifth.', 'I yield. Mind the medals. Some of them were earned.'),
+  bounty(6, 'finale', 'notary', 'The Notary', 'Wanted: The Notary', 7000, 1, [
     'WANTED: The Notary. Left Meridian with a frame, a seal and a client list, and has been foreclosing on people privately.',
     'An Auditor frame behind a barrier, with lien drones that drain your energy. The last notice on the board, and the largest.',
   ], 'The seal is broken and the client list is public. Several people in Varn slept well for the first time in years.', [
     battle(['notary', 'lien-drone', 'lien-drone'], 'bg-vault', { objective: { type: 'leader', target: 0 } }),
-  ]),
+  ], 'You are in default, pilot. This frame is the notice.', 'This is irregular. My clients will hear of... no. I suppose they will not.'),
 ];
 
 /**
@@ -124,7 +138,9 @@ export const FAVOURS: Mission[] = [
   },
 ];
 
-const GUILD = { client: 'Night Market Guild' } as const;
+const GUILD = { client: 'Night Market Guild', portrait: 'portrait-guild' } as const;
+/** The Guild's voice: a broker who is never met, only heard, and who thinks of everything as stock. */
+const broker = says('Guild Broker', 'portrait-guild');
 
 /**
  * Four jobs for the Night Market Guild, one at a time, each about machines the story never fields:
@@ -138,7 +154,7 @@ export const GUILD_JOBS: Mission[] = [
       'The mortar misses often and hurts when it does not. The walker spreads its fire all over you. Evict both.',
     ],
     debrief: 'The quarry is ours again. The Guild pays in full and asks whether the mortar tube survived. It did not.',
-    battles: [battle(['mortar-nest', 'flak-walker'], 'bg-mine')],
+    battles: [battle(['mortar-nest', 'flak-walker'], 'bg-mine', { talk: [broker('start', 'Mind the quarry face while you are at it. We sell that stone.')] })],
   },
   {
     id: 'guild-2', phase: 'side', series: 'guild', when: 'rival-1', title: 'Live Wires', ...GUILD, reward: 2400, scale: 1.25,
@@ -147,7 +163,10 @@ export const GUILD_JOBS: Mission[] = [
       'The Railhawk charges for a turn before it fires through your armour. A hunter drone runs errands for them. Clear the lane.',
     ],
     debrief: 'The lane is dark again, which is how the Night Market likes it.',
-    battles: [battle(['arc-pylon', 'longshot', 'hunter-drone'], 'bg-neon-district'), battle(['arc-pylon', 'breacher'], 'bg-neon-district')],
+    battles: [
+      battle(['arc-pylon', 'longshot', 'hunter-drone'], 'bg-neon-district', { talk: [broker('start', 'Leave the lane dark when you go. Dark is good for business.')] }),
+      battle(['arc-pylon', 'breacher'], 'bg-neon-district'),
+    ],
   },
   {
     id: 'guild-3', phase: 'side', series: 'guild', when: 'choice', title: 'The Scrap King', ...GUILD, reward: 5200, scale: 1,
@@ -156,7 +175,7 @@ export const GUILD_JOBS: Mission[] = [
       'It closes in with a pincer that will knock you off balance and sprays flak on the way. It gets angrier twice. Bring it down.',
     ],
     debrief: 'The King is scrap again. The Guild is already arguing over who gets the shell.',
-    battles: [battle(['scrap-king'], 'bg-undercity')],
+    battles: [battle(['scrap-king'], 'bg-undercity', { talk: [broker('start', 'It was a good pet once. Do not tell the stallholders I said so.')] })],
   },
   {
     id: 'guild-4', phase: 'side', series: 'guild', when: 'finale', title: 'The Night Train', ...GUILD, reward: 6800, scale: 1,
@@ -165,7 +184,7 @@ export const GUILD_JOBS: Mission[] = [
       'The roof cannon charges for a turn and shoots through armour: guard or boost when it is loaded. The gun ports never wait. It cannot dodge.',
     ],
     debrief: 'The Night Train is stopped at last. The Guild has bought the wreck, the line, and by the sound of it the foundry.',
-    battles: [battle(['night-train'], 'bg-foundry')],
+    battles: [battle(['night-train'], 'bg-foundry', { talk: [broker('start', 'Nobody will insure that line. Stop the train and we will make an offer on it.')] })],
   },
 ];
 

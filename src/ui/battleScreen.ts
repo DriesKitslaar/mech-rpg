@@ -4,6 +4,8 @@ import {
 import { weaponIn } from '../core/build';
 import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
+import type { RadioCue } from '../core/wingman';
+import { Radio } from './radio';
 import type { InputAction } from '../platform/input';
 import { BattleFlow, partName } from './battleFlow';
 import { LOGICAL_H, LOGICAL_W } from './display';
@@ -66,6 +68,9 @@ const MENU_W = 154;
 const PLAYER_HIT: Record<FrameSlot, { x: number; y: number }> = {
   head: { x: 76, y: 20 }, core: { x: 78, y: 50 }, arms: { x: 108, y: 44 }, legs: { x: 76, y: 108 },
 };
+/** Where the strip the wingman's line is written on starts. */
+const RADIO_X = 8;
+
 /** How long the ring of an Overdrive takes to run out. */
 const SURGE_MS = 420;
 
@@ -89,6 +94,9 @@ function drawRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius:
 export class BattleScreen {
   private timer = 0;
   private clock = 0;
+  /** The hired wingman's voice, when one flies along and has things to say. */
+  private radio: Radio | null = null;
+  private radioOpened = false;
   /** The ring that runs out from a mech as its Overdrive goes off: where it started, and how long ago. */
   private surge: { x: number; y: number; ms: number } | null = null;
   private fx = new BattleFx(this.scene());
@@ -137,8 +145,11 @@ export class BattleScreen {
       jingle?: (won: boolean) => boolean;
       /** A new pilot: say over the field which button does what at each step of a turn. */
       coach?: boolean;
+      /** The hired wingman and what they say on the radio. */
+      radio?: { who: string; lines: Record<RadioCue, string> };
     },
   ) {
+    if (opts.radio) this.radio = new Radio(opts.radio.who, opts.radio.lines);
     this.particles = new Particles(7, !opts.fast);
     this.hitStop = new HitStop(!opts.fast);
     this.introTotal = opts.fast ? 0 : opts.boss ? WARNING_MS : INTRO_MS;
@@ -180,6 +191,15 @@ export class BattleScreen {
       return;
     }
     this.spawnEffects();
+    if (this.radio) {
+      // The wingman reports in as the banner goes; after that they speak when something happens.
+      if (!this.radioOpened) { this.radioOpened = true; this.radio.open(); }
+      // While somebody is talking the radio waits its turn: the line comes up, and is heard, when they are done.
+      if (this.flow.phase !== 'talk') {
+        this.radio.update(realMs);
+        if (this.radio.takeFresh() > 0) this.opts.sfx?.play('radio');
+      }
+    }
     // A killing blow holds everything that moves for a few frames.
     // The hold is counted in real time, so it is as long with fast battles on as without.
     const moved = this.hitStop.pass(realMs) * (this.opts.speed ?? 1);
@@ -248,6 +268,7 @@ export class BattleScreen {
         this.shownAp.adopt(this.flow.state.units);
         this.arrived.add(event.spawned);
       }
+      this.radio?.hear(event, this.flow.state);
       if (this.opts.fast) continue;
       this.stances.onEvent(event);
       this.fx.onEvent(event);
@@ -262,6 +283,11 @@ export class BattleScreen {
   }
 
   /** What is moving on the field right now, for tests: nobody can watch a test run. */
+  /** What the wingman is saying right now, if anything. */
+  get radioLine(): string | null {
+    return this.radio?.line ?? null;
+  }
+
   get motion(): { particles: number; flash: number; surge: boolean; stance: (id: string) => Stance; breaking: (id: string) => number | null } {
     return {
       particles: this.particles.count, flash: this.hitStop.flash, surge: this.surge !== null, stance: (id) => ({ ...this.stances.of(id) }),
@@ -337,6 +363,7 @@ export class BattleScreen {
     this.drawObjective(ctx);
     this.drawGround(ctx);
     this.drawDrive(ctx);
+    this.drawRadio(ctx);
     if (this.opts.coach && this.intro <= 0) this.drawCoach(ctx);
     // While someone talks, their words have the panel: there is nothing to choose until they are done.
     const talking = this.flow.phase === 'talk' && this.intro <= 0;
@@ -344,6 +371,31 @@ export class BattleScreen {
     if (this.intro > 0) return this.drawIntro(ctx);
     if (talking) this.drawTalk(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
+  }
+
+  /**
+   * What the wingman is saying: one small line at the foot of the field, from its left edge, where
+   * the longest line still ends short of the bars of the enemy standing lowest. While the
+   * Overdrive's label has that row, the line stands a row above it. Not over the banner, not while
+   * somebody is talking, and not where a new pilot is being told the buttons.
+   */
+  private drawRadio(ctx: CanvasRenderingContext2D): void {
+    const line = this.radio?.line;
+    if (!line || this.intro > 0 || this.opts.coach || this.flow.phase === 'talk') return;
+    const width = line.length * 4 + 8;
+    const y = PANEL_Y - 13 - (this.driveReady ? 12 : 0);
+    ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
+    ctx.fillRect(RADIO_X, y, width, 11);
+    // The name in the colour of a friendly voice, what is said in plain white.
+    const at = line.indexOf(':') + 1;
+    drawText(ctx, line.slice(0, at), RADIO_X + 4, y + 1, { size: 10, color: COLORS.energy });
+    drawText(ctx, line.slice(at), RADIO_X + 4 + at * 4, y + 1, { size: 10 });
+  }
+
+  /** True while the field names the button that sets off the Overdrive: the meter is full and the battle is on. */
+  private get driveReady(): boolean {
+    const player = this.flow.state.units[0];
+    return !!player.overdrive && !player.destroyed && this.intro <= 0 && player.drive >= DRIVE_MAX && this.flow.phase !== 'result';
   }
 
   /** Two rings running out from the mech whose Overdrive has just gone off, fading as they go. */
@@ -372,7 +424,7 @@ export class BattleScreen {
     ctx.fillRect(2, top, 3, height);
     ctx.fillStyle = full ? (lit ? '#ffffff' : COLORS.accent) : COLORS.accent;
     ctx.fillRect(2, top + height - filled, 3, filled);
-    if (!full || this.flow.phase === 'result') return;
+    if (!this.driveReady) return;
     const label = STRINGS.overdrive.ready;
     const width = label.length * 4 + 6;
     // A new pilot's line about the buttons has the foot of the field: the label stands a row above it.

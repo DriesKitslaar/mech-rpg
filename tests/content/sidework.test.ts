@@ -11,7 +11,10 @@ import { MISSIONS } from '../../src/content/missions';
 import { CATALOG } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 import { BOUNTIES, FAVOURS, GUILD_JOBS, SIDE_WORK } from '../../src/content/sidework';
+import SPRITES from '../../src/content/sprites.json';
 import { TALKS } from '../../src/content/talks';
+import { TALK_CHARS, TALK_LINES } from '../../src/ui/battleScreen';
+import { wrap } from '../../src/ui/widgets';
 import { done, fresh, ids, inHub, select, snap, strong } from '../helpers/app';
 
 const ACT_ONE = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1'];
@@ -166,5 +169,48 @@ describe('how hard the side work is', () => {
   test('a bounty is not for a new pilot: the starter mech loses the first notice more often than it wins it', () => {
     expect(wins('bounty-1', 'starter')).toBeLessThan(0.5);
     expect(SIDE_WORK).toHaveLength(17);
+  });
+});
+
+describe('the faces of the wanted and of the Guild', () => {
+  const WANTED = ['magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary'];
+
+  test('every notice carries the face of whoever it is for, and that face is drawn', () => {
+    expect(BOUNTIES.map((b) => b.portrait)).toEqual(WANTED.map((id) => `portrait-${id}`));
+    for (const bounty of BOUNTIES) expect(bounty.portrait! in SPRITES, bounty.portrait).toBe(true);
+    expect(new Set(BOUNTIES.map((b) => b.portrait)).size).toBe(6);
+    // The same face speaks in the battle, and is the machine's own for whatever it says as it changes.
+    WANTED.forEach((id, i) => {
+      expect(ALL_ENEMIES[id].portrait).toBe(`portrait-${id}`);
+      expect(BOUNTIES[i].battles[0].enemies[0]).toBe(id);
+    });
+  });
+
+  test('each of the wanted has a word when the fight opens and another when it is lost, in their own name and face, and both fit', () => {
+    WANTED.forEach((id, i) => {
+      const talk = BOUNTIES[i].battles.flatMap((b) => b.talk ?? []);
+      expect(talk.map((line) => line.at)).toEqual(['start', 'win']);
+      for (const line of talk) {
+        expect(line.who).toBe(ALL_ENEMIES[id].name);
+        expect(line.portrait).toBe(`portrait-${id}`);
+        expect(line.text.length).toBeGreaterThan(10);
+        expect(wrap(line.text, TALK_CHARS).length, line.text).toBeLessThanOrEqual(TALK_LINES);
+      }
+    });
+    const all = BOUNTIES.flatMap((b) => b.battles.flatMap((battle) => (battle.talk ?? []).map((line) => line.text)));
+    expect(new Set(all).size).toBe(12);
+  });
+
+  test('the Guild has a broker with a face, who has one thing to say as each job opens', () => {
+    expect('portrait-guild' in SPRITES).toBe(true);
+    for (const job of GUILD_JOBS) {
+      expect(job.portrait).toBe('portrait-guild');
+      const talk = job.battles.flatMap((b) => b.talk ?? []);
+      expect(talk).toHaveLength(1);
+      expect(job.battles[0].talk).toEqual(talk);
+      expect(talk[0]).toMatchObject({ at: 'start', who: 'Guild Broker', portrait: 'portrait-guild' });
+      expect(wrap(talk[0].text, TALK_CHARS).length, talk[0].text).toBeLessThanOrEqual(TALK_LINES);
+    }
+    expect(new Set(GUILD_JOBS.map((job) => job.battles[0].talk![0].text)).size).toBe(4);
   });
 });

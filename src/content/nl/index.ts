@@ -46,6 +46,7 @@ function contentTexts(): TextSlot[] {
     ...textsOf('missions', [BOARD_TEXT], { adjectives: 'board.word', nouns: 'board.word', clients: 'client', places: 'briefing', debriefs: 'debrief' }),
     ...textsOf('missions', [BOARD_TEXT.threats], Object.fromEntries(Object.keys(BOARD_TEXT.threats).map((id) => [id, 'briefing']))),
     ...textsOf('missions', WINGMEN, { text: 'briefing' }),
+    ...textsOf('missions', WINGMEN.map((w) => w.radio), { start: 'radio', kill: 'radio', cheer: 'radio', warn: 'radio', win: 'radio' }),
     ...textsOf('story', Object.values(ENEMIES).flatMap((e) => e.phases ?? []), { line: 'battle.talk' }),
     ...textsOf('reference', Object.values(ENEMIES).flatMap((e) => (e.partNames ? [e.partNames] : [])), { core: 'part.name', legs: 'part.name', arms: 'part.name', head: 'part.name' }),
   ];
