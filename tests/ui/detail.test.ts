@@ -5,7 +5,7 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
 import { PACE_KEY, SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
-import { AMBIENCE, drawAmbience } from '../../src/ui/ambience';
+import { AMBIENCE, drawAmbience, placeLights } from '../../src/ui/ambience';
 import { App, TRY_AGAIN, startingLight } from '../../src/ui/app';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
@@ -14,6 +14,7 @@ import {
   MAX_LIGHTS, chosenLights, detail, discRows, drawBeam, drawCone, drawGlow, drawGlows, drawLights, drawShadow, lightRoom, setDetail, soft, wide, type Glow,
 } from '../../src/ui/light';
 import { WARM_UP, WINDOW } from '../../src/ui/pace';
+import { drawRoom, drawRoomSpill } from '../../src/ui/room';
 import { LIGHTNING_MS, drawWeatherExtras, lightning, struck } from '../../src/ui/weather';
 import { COLORS, drawPanel, drawRowLight } from '../../src/ui/widgets';
 import { done, inHub, memoryStore, press, select, snap } from '../helpers/app';
@@ -70,6 +71,15 @@ describe('the three levels', () => {
     expect(place.glows.filter((g) => g.blend === 'source-over')).toEqual([]);
     expect(place.glows.filter((g) => g.blend === 'lighter')).toHaveLength(Math.ceil(AMBIENCE['bg-foundry'].lights.length / 2));
     expect(record((ctx) => drawAmbience(ctx, 'bg-foundry', 1000, 'front', FIELD)).glows).toEqual([]);
+    // What a room's lights spill onto the mech standing in it: half of them too, and the same half.
+    const lights = placeLights('bg-garage', 1000);
+    expect(lights.length).toBeGreaterThan(2);
+    const spill = record((ctx) => drawRoomSpill(ctx, 'bg-garage', 1000)).glows;
+    expect(spill).toHaveLength(Math.ceil(lights.length / 2));
+    const behind = record((ctx) => drawRoom(ctx, 'bg-garage', 1000, false, true)).glows.filter((g) => g.blend === 'lighter');
+    expect(spill.map((g) => [g.x, g.y])).toEqual(behind.map((g) => [g.x, g.y]));
+    setDetail(2);
+    expect(record((ctx) => drawRoomSpill(ctx, 'bg-garage', 1000)).glows.filter((g) => g.blend === 'lighter')).toHaveLength(lights.length);
   });
 
   test('less: a box keeps its plate and loses its shadow; the row under the cursor is still lit', () => {
@@ -396,6 +406,29 @@ describe('the game keeping pace', () => {
     press(app, 'cancel');
     select(app, 'options');
     expect(note(app)).toBe(STRINGS.options.detailAuto.lean);
+  });
+
+  test('what the game had come down to is kept while the player chooses, and forgotten when it is handed back', () => {
+    const { app, store } = open();
+    warm(app);
+    slowFor(app, 3);
+    expect(app.lightNow()).toBe('lean');
+    select(app, 'options');
+    for (let i = 0; i < 20 && (snap(app).menu.items as { id: string }[])[snap(app).menu.cursor as number].id !== 'detail'; i++) press(app, 'down');
+    expect(note(app)).toBe(STRINGS.options.detailAuto.lean);
+    // Full, Reduced, Off: the player's word, and what was found about the handheld is left where it is.
+    for (const [choice, level] of [['Full', 2], ['Reduced', 1], ['Off', 0]] as [string, number][]) {
+      press(app, 'right');
+      expect(note(app)).toBe(choice);
+      expect(detail()).toBe(level);
+      expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+    }
+    // Back to Auto: all of the light again, not the less it had come down to, and nothing kept.
+    press(app, 'right');
+    expect(note(app)).toBe('Auto');
+    expect(app.lightNow()).toBe('full');
+    expect(detail()).toBe(2);
+    expect(store.data[PACE_KEY]).toBeUndefined();
   });
 
   test('the line of help under the list says what Auto does, in the box', () => {

@@ -86,6 +86,10 @@ describe('keeping pace', () => {
     const over = warm();
     run(over, WINDOW * 3, 25.1);
     expect(over.level).toBe(1);
+    // And one of exactly 25 is late.
+    const exactly = warm();
+    run(exactly, WINDOW * 3, LATE_MS);
+    expect(exactly.level).toBe(1);
   });
 
   test('the slow windows have to follow each other: a good one in between and the count starts again', () => {
@@ -174,6 +178,13 @@ describe('keeping pace', () => {
     expect(pace.level).toBe(2);
     run(pace, WINDOW * 3, 34);
     expect(pace.level).toBe(1);
+    // Mixed in with real frames they change nothing: they fill no window, and they are not counted in the frames a second.
+    const mixed = warm();
+    for (let i = 0; i < WINDOW * 1.5; i++) { mixed.frame(34); mixed.frame(0); mixed.frame(Number.NaN); mixed.frame(-5); }
+    expect(mixed.level).toBe(2);
+    expect(mixed.fps).toBe(29);
+    for (let i = 0; i < WINDOW * 1.5; i++) { mixed.frame(34); mixed.frame(0); }
+    expect(mixed.level).toBe(1);
   });
 
   test('how many frames a second it is seeing, for whoever looks', () => {
