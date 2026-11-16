@@ -121,6 +121,20 @@ export const FINISH_ZOOM = 2;
 /** How tall the black bars are that close in over the top and the bottom of the field. */
 export const LETTERBOX = 12;
 
+/**
+ * Whether the machine destroyed by the event at `index` is the one the battle ends with: the last
+ * to fall of the side that lost. Not while the battle is still on, not a machine of the side that
+ * won, and not one that another follows.
+ */
+export function endsBattle(
+  events: readonly { type: string; unit?: string }[], outcome: 'ongoing' | 'victory' | 'defeat', index: number,
+): boolean {
+  const event = events[index];
+  if (!event || event.type !== 'unitDestroyed' || outcome === 'ongoing') return false;
+  if ((outcome === 'defeat') !== (event.unit === 'player')) return false;
+  return !events.slice(index + 1).some((later) => later.type === 'unitDestroyed');
+}
+
 /** How far in the black bars are, from 0 to 1, this long into the close look. */
 export function letterbox(ms: number): number {
   if (ms < 0 || ms >= FINISH_MS) return 0;

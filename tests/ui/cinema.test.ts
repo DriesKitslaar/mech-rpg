@@ -6,7 +6,7 @@ import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
 import {
   CUT_IN_H, CUT_IN_MS, CUT_IN_SCALE, FINISH_HOLD_MS, FINISH_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
-  cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, focusOn, letterbox, lookClose,
+  cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox, lookClose,
 } from '../../src/ui/cinema';
 import type { Settlement } from '../../src/core/economy';
 import { MISSIONS } from '../../src/content/missions';
@@ -173,6 +173,38 @@ describe('the band an Overdrive goes off behind', () => {
     // Calm changes nothing else about it.
     expect(band(400, true).rects).toEqual(band(400).rects);
     expect(() => drawCutIn(standIn(), 400, FIELD, WORDS, () => undefined)).not.toThrow();
+  });
+});
+
+describe('the machine a battle ends with', () => {
+  const gone = (unit: string) => ({ type: 'unitDestroyed', unit });
+  const shot = { type: 'shot', unit: 'player' };
+
+  test('is the last to fall of the side that lost', () => {
+    const won = [shot, gone('enemy-0'), shot, gone('enemy-1'), { type: 'outcome' }];
+    expect(endsBattle(won, 'victory', 3)).toBe(true);
+    // Not the one before it, and not what is no destruction at all.
+    expect(endsBattle(won, 'victory', 1)).toBe(false);
+    expect(endsBattle(won, 'victory', 0)).toBe(false);
+    expect(endsBattle(won, 'victory', 4)).toBe(false);
+    expect(endsBattle(won, 'victory', 99)).toBe(false);
+    const lost = [shot, gone('enemy-0'), shot, gone('player'), { type: 'outcome' }];
+    expect(endsBattle(lost, 'defeat', 3)).toBe(true);
+    // A machine of the side that won is never it, even when it is the last to go.
+    expect(endsBattle(lost, 'defeat', 1)).toBe(false);
+    expect(endsBattle([gone('player'), gone('enemy-0')], 'defeat', 1)).toBe(false);
+    expect(endsBattle([gone('enemy-0'), gone('player')], 'victory', 1)).toBe(false);
+  });
+
+  test('while the battle is still on nothing is, and of two that go up in one blow only the second', () => {
+    expect(endsBattle([shot, gone('enemy-0')], 'ongoing', 1)).toBe(false);
+    const both = [shot, gone('enemy-0'), gone('enemy-1'), { type: 'outcome' }];
+    expect(endsBattle(both, 'victory', 1)).toBe(false);
+    expect(endsBattle(both, 'victory', 2)).toBe(true);
+    // A pilot who goes up and takes the last machine along: nobody's fall is the end of that battle.
+    const together = [gone('player'), gone('enemy-0')];
+    expect(endsBattle(together, 'defeat', 0)).toBe(false);
+    expect(endsBattle(together, 'defeat', 1)).toBe(false);
   });
 });
 
@@ -401,11 +433,13 @@ describe('the staged moments in a battle', () => {
     const fire = (): void => { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); };
     /** Fires until the machine in this place is gone, a frame at a time, and stops on the frame its destruction is shown. */
     const kill = (index: number): void => {
-      for (let i = 0; i < 4000 && !screen.motion.finish && !(flow.state.units[index + 1].destroyed && flow.phase !== 'animating'); i++) {
+      const id = flow.state.units[index + 1].id;
+      for (let i = 0; i < 4000 && screen.motion.breaking(id) === null; i++) {
         if (flow.phase === 'action') fire();
         screen.update(16);
         if (flow.phase === 'result') break;
       }
+      expect(screen.motion.breaking(id)).not.toBeNull();
     };
     return { flow, screen, page, fire, kill, played };
   }
@@ -508,12 +542,12 @@ describe('the staged moments in a battle', () => {
     expect(flow.state.units[1].destroyed).toBe(true);
     expect(flow.state.outcome).toBe('ongoing');
     expect(screen.motion.finish).toBeNull();
-    for (let i = 0; i < 4000 && screen.motion.finish === null && flow.phase !== 'result'; i++) {
-      if (flow.phase === 'action') { if (flow.menu.items[0].enabled) { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); } else { flow.onInput('down'); break; } }
-      screen.update(16);
-    }
-    // Whichever way the second one went, the close look came with the battle's end and not before.
-    if (screen.motion.finish) expect(flow.state.outcome).toBe('victory');
+    // It goes up the way any machine does, and the battle goes on at its usual pace.
+    for (let i = 0; i < 200 && flow.phase === 'animating'; i++) { screen.update(16); expect(screen.motion.finish).toBeNull(); }
+    // The second one is the last: the battle is over with it, and it gets the close look.
+    kill(1);
+    expect(flow.state.outcome).toBe('victory');
+    expect(screen.motion.finish).not.toBeNull();
   });
 
   test('time runs at half speed while it lasts, and its last blast is heard when it is seen', () => {
@@ -525,15 +559,20 @@ describe('the staged moments in a battle', () => {
     const last = screenOf(fight(['gun-turret'], [0]));
     last.kill(0);
     expect(last.screen.motion.finish).not.toBeNull();
-    // Past the beat the field is held for, which is longer for the last one.
+    // Both are at the frame their destruction is shown. Past the beat the field is held for, which is
+    // longer for the last one, each is given the same time to come apart in.
+    expect(first.screen.motion.breaking('enemy-0')).toBe(0);
+    expect(last.screen.motion.breaking('enemy-0')).toBe(0);
     const step = (s: ReturnType<typeof screenOf>, ms: number): void => { for (let t = 0; t < ms; t += 16) s.screen.update(16); };
-    step(first, 96 + 208);
-    step(last, FINISH_HOLD_MS + 16 + 208);
+    step(first, 96 + 160);
+    step(last, FINISH_HOLD_MS + 16 + 160);
     const quick = first.screen.motion.breaking('enemy-0')!;
     const slow = last.screen.motion.breaking('enemy-0')!;
-    expect(quick).toBeGreaterThan(0);
-    expect(slow).toBeGreaterThan(0);
-    expect(slow).toBeLessThan(quick * 0.75);
+    expect(quick).toBeGreaterThan(0.1);
+    expect(quick).toBeLessThan(1);
+    // Half the speed, half as far along.
+    expect(slow).toBeGreaterThan(quick * 0.4);
+    expect(slow).toBeLessThan(quick * 0.6);
     // A machine going up is heard once; the last one a second time, when its great blast goes off.
     const booms = (s: ReturnType<typeof screenOf>) => s.played.filter((p) => p.name === 'unitDestroyed').map((p) => p.delay).sort((a, b) => a - b);
     expect(booms(first)).toEqual([0]);

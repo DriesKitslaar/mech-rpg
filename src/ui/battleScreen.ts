@@ -18,7 +18,7 @@ import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
 import { disc, drawGlow, drawGlows, drawShadow, type Glow, type Pt } from './light';
 import {
-  CUT_IN_MS, FINISH_HOLD_MS, FINISH_MS, FINISH_SLOW, drawCutIn, drawDefeat, drawLetterbox, drawVictory, focusOn, letterbox, lookClose,
+  CUT_IN_MS, FINISH_HOLD_MS, FINISH_MS, FINISH_SLOW, drawCutIn, drawDefeat, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
 } from './cinema';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
@@ -311,7 +311,7 @@ export class BattleScreen {
       if (this.opts.fast) continue;
       this.stances.onEvent(event);
       this.fx.onEvent(event);
-      this.move(event, melee, flight, event.type === 'unitDestroyed' && this.endsIt(i));
+      this.move(event, melee, flight, endsBattle(events, this.flow.state.outcome, i));
       // The end of a battle is marked once: by the music's fanfare where there is music, by the effect where there is not.
       if (event.type === 'outcome' && this.opts.jingle?.(event.outcome === 'victory')) continue;
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
@@ -322,15 +322,6 @@ export class BattleScreen {
       this.stances.sync(this.flow.state.units);
       this.shownDrive = this.flow.state.units[0].drive;
     }
-  }
-
-  /** Whether the machine destroyed by this event is the one the battle ends with: the last of the side that lost. */
-  private endsIt(index: number): boolean {
-    const { events, outcome } = this.flow.state;
-    const event = events[index];
-    if (event.type !== 'unitDestroyed' || outcome === 'ongoing') return false;
-    if ((outcome === 'defeat') !== (event.unit === 'player')) return false;
-    return !events.slice(index + 1).some((later) => later.type === 'unitDestroyed');
   }
 
   /** What the wingman is saying right now, if anything. */
@@ -666,7 +657,10 @@ export class BattleScreen {
     return this.puppet(unit).pose(this.stances.of(unit.id), this.clock);
   }
 
-  /** Sets the units an event is about in motion: the one that fires kicks, the one that is hit flinches. */
+  /**
+   * Sets the units an event is about in motion: the one that fires kicks, the one that is hit
+   * flinches. Only a game that is not hurried comes here: a hurried one has no effects at all.
+   */
   private move(event: BattleEvent, melee: boolean, flight: number, last = false): void {
     const unit = (id: string): UnitState | undefined => this.flow.state.units.find((u) => u.id === id);
     const scene = this.scene();
@@ -700,10 +694,8 @@ export class BattleScreen {
       const c = scene.centre(event.unit);
       this.particles.emit('embers', c, 1);
       this.particles.emit('sparks', c, 1, 60, undefined, '#ff5db1');
-      if (!this.opts.fast) {
-        this.surge = { x: c.x, y: c.y, ms: 0 };
-        this.cutIn = { name: STRINGS.overdrive.names[event.kind].toUpperCase(), ms: 0 };
-      }
+      this.surge = { x: c.x, y: c.y, ms: 0 };
+      this.cutIn = { name: STRINGS.overdrive.names[event.kind].toUpperCase(), ms: 0 };
       this.opts.rumble?.(120);
       const who = unit(event.unit);
       if (who) this.puppet(who).play('boost');
@@ -711,7 +703,7 @@ export class BattleScreen {
     if (event.type === 'unitDestroyed') {
       this.hitStop.strike(last ? FINISH_HOLD_MS : event.unit === 'player' ? 160 : 90);
       const c = scene.centre(event.unit);
-      if (last && !this.opts.fast) {
+      if (last) {
         // The one the battle ends with: the field is held, then looked at from close by while it goes
         // up slowly. Its last blast is heard when it is seen, which at half speed is later than usual.
         this.finish = { at: focusOn(c, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W }), ms: 0 };
