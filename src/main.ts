@@ -46,6 +46,8 @@ async function start(): Promise<void> {
   const seedParam = Number(params.get('seed'));
   const seed = Number.isInteger(seedParam) && params.has('seed') ? seedParam : Date.now() % 2147483647;
   const fast = params.get('fast') === '1';
+  // With ?step=1 nothing moves by itself: whoever is looking moves the clock, and can photograph any moment.
+  const stepped = params.get('step') === '1';
 
   const [sprites] = await Promise.all([
     loadSprites(manifest),
@@ -66,7 +68,8 @@ async function start(): Promise<void> {
   const input = attachInput(window, mapper);
   // The Android shell reports every controller key here, mapped or not, so unknown buttons can be identified.
   (window as any).__nativeKey = (keyCode: number, mappedTo: string): void => debug.record(keyCode, mappedTo);
-  (window as any).__game = { snapshot: () => app.snapshot() };
+  const game: { snapshot: () => unknown; advance?: (ms: number) => void } = { snapshot: () => app.snapshot() };
+  (window as any).__game = game;
 
   const handle = (action: InputAction): void => {
     if (!fast) sfx.unlock(); // browsers only allow sound after an input; test runs stay silent
@@ -104,7 +107,14 @@ async function start(): Promise<void> {
     step(now);
     requestAnimationFrame(frame);
   };
-  requestAnimationFrame(frame);
+  if (stepped) {
+    // A frame at a time, sixteen milliseconds each, for as long as was asked.
+    let clock = last;
+    game.advance = (ms: number): void => {
+      for (let left = ms; left > 0; left -= 16) { clock += Math.min(16, left); step(clock); }
+    };
+    game.advance(16);
+  } else requestAnimationFrame(frame);
 }
 
 void start();

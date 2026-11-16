@@ -1,9 +1,11 @@
 import type { BattleEvent } from '../core/battle';
 import type { DamageType, FrameSlot, WeaponSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
-import { COLORS, drawText } from './widgets';
+import { TYPE_COLOR, lightsOf, paintFx } from './fxPaint';
+import type { Glow, Pt } from './light';
+import { COLORS } from './widgets';
 
-export type Pt = { x: number; y: number };
+export type { Pt } from './light';
 
 /** Where things are on screen. The battle screen supplies this; the effects know no layout. */
 export interface Scene {
@@ -17,7 +19,16 @@ export interface Scene {
   isMelee(unitId: string, weapon: WeaponSlot): boolean;
 }
 
-export interface UnitTransform { dx: number; dy: number; flash: boolean; alpha: number }
+export interface UnitTransform {
+  dx: number;
+  dy: number;
+  flash: boolean;
+  alpha: number;
+  /** Lit by its own gun. */
+  glare: boolean;
+  /** How far behind it each of its after-images stands, with its sign: nothing while it is not lunging. */
+  trail: number;
+}
 
 export const PROJECTILE_MS = 160;
 export const SHELL_MS = 260;
@@ -40,16 +51,28 @@ const MODULE_COLOR: Record<string, string> = {
   shock: '#ffe9a8', chaff: COLORS.dim, limiter: COLORS.accent,
 };
 
+/** How long a barrel's flash lasts. */
+const MUZZLE_MS = 90;
+/** The last and largest blast of a machine going up: when it comes, and how long it burns. */
+const WRECK_AT = 300;
+const WRECK_MS = 480;
+
+/**
+ * What a burst looks like: something struck (a flash, a ring, streaks), something went up (a
+ * fireball, a shock ring, smoke), or something pulsed (a ring of its colour).
+ */
+export type BurstStyle = 'impact' | 'fire' | 'ring';
+
 type Timed = { start: number; dur: number };
-type Fx = Timed & (
+export type Fx = Timed & (
   | { kind: 'projectile'; from: Pt; to: Pt; dtype: DamageType }
-  | { kind: 'muzzle'; at: Pt; dtype: DamageType }
+  | { kind: 'muzzle'; at: Pt; dtype: DamageType; dir: number }
   | { kind: 'recoil'; unit: string; dir: number }
   | { kind: 'hit'; unit: string }
   | { kind: 'pulse'; unit: string }
   | { kind: 'lunge'; unit: string; dir: number; from: Pt }
   | { kind: 'death'; unit: string; at: Pt }
-  | { kind: 'burst'; at: Pt; size: number; color: string }
+  | { kind: 'burst'; at: Pt; size: number; color: string; style: BurstStyle }
   | { kind: 'sparks'; at: Pt; color: string }
   | { kind: 'steam'; at: Pt }
   | { kind: 'text'; at: Pt; text: string; color: string }
@@ -58,8 +81,6 @@ type Fx = Timed & (
   | { kind: 'gather'; at: Pt; color: string }
 );
 
-const TYPE_COLOR: Record<DamageType, string> = { kinetic: '#ffe9a8', energy: '#7fe9ff', explosive: '#ffb46b' };
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 /** Rounds without ever producing negative zero. */
 const px = (n: number): number => Math.round(n) || 0;
 
@@ -128,7 +149,7 @@ export class BattleFx {
         } else {
           // A miss flies on past the target.
           const to = event.hit ? target : { x: target.x + dir * 34, y: target.y - 16 };
-          this.add(0, 70, { kind: 'muzzle', at: from, dtype });
+          this.add(0, MUZZLE_MS, { kind: 'muzzle', at: from, dtype, dir });
           this.add(0, RECOIL_MS, { kind: 'recoil', unit: event.unit, dir });
           this.add(0, flight, { kind: 'projectile', from, to, dtype });
         }
@@ -136,7 +157,9 @@ export class BattleFx {
           // A hit that takes a real bite is felt by the whole field.
           if (event.damage >= 60) this.jolt(flight, 2, 170);
           this.add(flight, HIT_MS, { kind: 'hit', unit: event.target });
-          this.add(flight, HIT_MS, { kind: 'burst', at: target, size: dtype === 'explosive' ? 14 : 7, color: TYPE_COLOR[dtype] });
+          // A shell goes up where it lands; anything else strikes.
+          if (dtype === 'explosive') this.add(flight, HIT_MS + 120, { kind: 'burst', at: target, size: 14, color: TYPE_COLOR[dtype], style: 'fire' });
+          else this.add(flight, HIT_MS, { kind: 'burst', at: target, size: 8, color: TYPE_COLOR[dtype], style: 'impact' });
           if (event.absorbed) this.say(flight, { x: target.x, y: target.y - 12 }, STRINGS.fx.block(event.absorbed), COLORS.energy);
           if (event.damage > 0 || !event.absorbed) this.say(flight, target, `-${event.damage}`, '#ffffff');
         } else {
@@ -144,17 +167,23 @@ export class BattleFx {
         }
         break;
       }
-      case 'partDestroyed':
-        this.add(0, SPARK_MS, { kind: 'sparks', at: s.hitPoint(event.unit, event.part), color: '#ffd27f' });
+      case 'partDestroyed': {
+        const at = s.hitPoint(event.unit, event.part);
+        this.add(0, SPARK_MS, { kind: 'sparks', at, color: '#ffd27f' });
+        this.add(0, 280, { kind: 'burst', at, size: 9, color: '#ff8a3c', style: 'fire' });
         this.jolt(0, 2, 180);
         break;
+      }
       case 'unitDestroyed': {
         const at = s.centre(event.unit);
         this.jolt(0, 3, 320);
         this.add(0, DEATH_MS, { kind: 'death', unit: event.unit, at });
+        // It goes up in pieces first, and then all at once: that last blast outlasts the wreck.
         for (const [i, off] of [[0, 0], [-10, 6], [9, -7]].entries()) {
-          this.add(i * 130, 300, { kind: 'burst', at: { x: at.x + off[0], y: at.y + off[1] }, size: 16, color: '#ff8a3c' });
+          this.add(i * 110, 280, { kind: 'burst', at: { x: at.x + off[0], y: at.y + off[1] }, size: 11 + i, color: '#ff8a3c', style: 'fire' });
         }
+        this.add(WRECK_AT, WRECK_MS, { kind: 'burst', at, size: 26, color: '#ff8a3c', style: 'fire' });
+        this.jolt(WRECK_AT, 4, 300);
         break;
       }
       case 'boost': {
@@ -195,7 +224,7 @@ export class BattleFx {
       case 'module': {
         const at = s.centre(event.unit);
         const color = MODULE_COLOR[event.effect] ?? COLORS.text;
-        this.add(0, 320, { kind: 'burst', at, size: 22, color });
+        this.add(0, 320, { kind: 'burst', at, size: 22, color, style: 'ring' });
         this.say(0, at, STRINGS.fx.modules[event.effect], color);
         break;
       }
@@ -216,7 +245,7 @@ export class BattleFx {
         const at = s.hitPoint(event.target, 'core');
         this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir: s.facing(event.unit), from });
         for (const [i, off] of [[0, 0], [-14, 8], [12, -10], [4, 14]].entries()) {
-          this.add(MELEE_MS + i * 90, 320, { kind: 'burst', at: { x: at.x + off[0], y: at.y + off[1] }, size: 22, color: '#ff8a3c' });
+          this.add(MELEE_MS + i * 90, 380, { kind: 'burst', at: { x: at.x + off[0], y: at.y + off[1] }, size: i === 0 ? 26 : 18, color: '#ff8a3c', style: 'fire' });
         }
         this.add(MELEE_MS, HIT_MS * 2, { kind: 'hit', unit: event.target });
         this.jolt(MELEE_MS, 5, 450);
@@ -226,16 +255,16 @@ export class BattleFx {
       case 'launch': {
         const from = s.centre(event.unit);
         const at = s.centre(event.spawned);
-        this.add(0, 260, { kind: 'burst', at: from, size: 12, color: COLORS.heat });
+        this.add(0, 260, { kind: 'burst', at: from, size: 12, color: COLORS.heat, style: 'ring' });
         this.add(0, 200, { kind: 'projectile', from, to: at, dtype: 'kinetic' });
-        this.add(200, 320, { kind: 'burst', at, size: 16, color: COLORS.heat });
+        this.add(200, 320, { kind: 'burst', at, size: 16, color: COLORS.heat, style: 'ring' });
         break;
       }
       case 'phase': {
         const at = s.centre(event.unit);
         this.jolt(0, 4, 500);
         this.add(0, 700, { kind: 'pulse', unit: event.unit });
-        for (const [i, size] of [18, 30, 44].entries()) this.add(i * 140, 380, { kind: 'burst', at, size, color: COLORS.accent });
+        for (const [i, size] of [18, 30, 44].entries()) this.add(i * 140, 380, { kind: 'burst', at, size, color: COLORS.accent, style: 'ring' });
         this.say(0, at, STRINGS.fx.phase(event.phase + 1), COLORS.accent);
         break;
       }
@@ -246,7 +275,7 @@ export class BattleFx {
         this.add(0, PROJECTILE_MS, { kind: 'projectile', from, to, dtype: 'energy' });
         this.add(PROJECTILE_MS, HIT_MS, { kind: 'hit', unit: event.target });
         this.jolt(PROJECTILE_MS, 2, 160);
-        this.add(PROJECTILE_MS, HIT_MS, { kind: 'burst', at: to, size: 12, color: TYPE_COLOR.energy });
+        this.add(PROJECTILE_MS, HIT_MS, { kind: 'burst', at: to, size: 12, color: TYPE_COLOR.energy, style: 'impact' });
         this.say(PROJECTILE_MS, to, `-${event.damage}`, '#ffffff');
         break;
       }
@@ -294,148 +323,33 @@ export class BattleFx {
     return this.active().flatMap(({ fx }) => (fx.kind === 'text' ? [fx.text] : []));
   }
 
+  /** What each burst that is playing looks like and how large it is, for tests: nobody can watch a test run. */
+  bursts(): { style: BurstStyle; size: number }[] {
+    return this.active().flatMap(({ fx }) => (fx.kind === 'burst' ? [{ style: fx.style, size: fx.size }] : []));
+  }
+
   /** How to displace and tint a unit's sprite right now. */
   transform(unitId: string): UnitTransform {
-    let dx = 0, dy = 0, alpha = 1, flash = false;
+    let dx = 0, dy = 0, alpha = 1, flash = false, glare = false, trail = 0;
     for (const { fx, p } of this.active()) {
       if (!('unit' in fx) || fx.unit !== unitId) continue;
-      if (fx.kind === 'recoil') dx -= fx.dir * 3 * (1 - p);
-      else if (fx.kind === 'lunge') dx += fx.dir * 9 * Math.sin(Math.PI * p);
+      if (fx.kind === 'recoil') { dx -= fx.dir * 3 * (1 - p); glare ||= p < 0.6; }
+      else if (fx.kind === 'lunge') { dx += fx.dir * 9 * Math.sin(Math.PI * p); trail = fx.dir * 7 * Math.sin(Math.PI * p); }
       else if (fx.kind === 'hit') { flash ||= p < 0.5; dx += Math.floor(p * 6) % 2 === 0 ? 2 : -2; }
       else if (fx.kind === 'pulse') flash ||= Math.floor(p * 4) % 2 === 0;
       // A wreck is seen coming apart before it fades: whole for the first half, gone at the end.
       else if (fx.kind === 'death') { alpha = Math.min(alpha, Math.min(1, 2 * (1 - p))); dy += 8 * p; flash ||= p < 0.25; }
     }
-    return { dx: px(dx), dy: px(dy), flash, alpha };
+    return { dx: px(dx), dy: px(dy), flash, alpha, glare, trail: px(trail) };
   }
 
+  /** Draws what is solid of every effect that is playing: flame, tracers, fire, rings, sparks, smoke, figures. */
   draw(ctx: CanvasRenderingContext2D): void {
-    for (const { fx, p } of this.active()) {
-      switch (fx.kind) {
-        case 'muzzle': this.dot(ctx, fx.at, 5 - 2 * p, '#ffffff'); this.dot(ctx, fx.at, 3, TYPE_COLOR[fx.dtype]); break;
-        case 'projectile': this.projectile(ctx, fx, p); break;
-        case 'burst': this.ring(ctx, fx.at, 2 + fx.size * p, fx.color, 1 - p); if (p < 0.4) this.dot(ctx, fx.at, fx.size * 0.4, '#ffffff'); break;
-        case 'sparks': this.sparks(ctx, fx.at, p, fx.color); break;
-        case 'steam': this.steam(ctx, fx.at, p); break;
-        case 'lunge': this.streaks(ctx, fx.from, fx.dir, p); break;
-        case 'slash': this.slash(ctx, fx.at, fx.dir, p, fx.color); break;
-        case 'shield': this.shield(ctx, fx.at, fx.dir, p); break;
-        case 'gather': this.gather(ctx, fx.at, p, fx.color); break;
-        case 'text':
-          ctx.globalAlpha = 1 - p * p;
-          drawText(ctx, fx.text, px(fx.at.x) + 1, px(fx.at.y - 16 * p) + 1, { size: 16, align: 'center', color: '#000000' });
-          drawText(ctx, fx.text, px(fx.at.x), px(fx.at.y - 16 * p), { size: 16, align: 'center', color: fx.color });
-          ctx.globalAlpha = 1;
-          break;
-        default: break; // unit effects are applied through transform()
-      }
-    }
+    for (const { fx, p } of this.active()) paintFx(ctx, fx, p);
   }
 
-  private dot(ctx: CanvasRenderingContext2D, at: Pt, size: number, color: string): void {
-    const s = Math.max(1, px(size));
-    ctx.fillStyle = color;
-    ctx.fillRect(px(at.x - s / 2), px(at.y - s / 2), s, s);
-  }
-
-  private ring(ctx: CanvasRenderingContext2D, at: Pt, radius: number, color: string, alpha: number): void {
-    ctx.globalAlpha = Math.max(0, alpha);
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2;
-      this.dot(ctx, { x: at.x + Math.cos(a) * radius, y: at.y + Math.sin(a) * radius }, 2, color);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  private sparks(ctx: CanvasRenderingContext2D, at: Pt, p: number, color: string): void {
-    ctx.globalAlpha = 1 - p;
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2 + 0.4;
-      const d = (8 + (i % 3) * 5) * p;
-      this.dot(ctx, { x: at.x + Math.cos(a) * d, y: at.y + Math.sin(a) * d + 6 * p * p }, 2, i % 2 ? color : '#ffffff');
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  private steam(ctx: CanvasRenderingContext2D, at: Pt, p: number): void {
-    ctx.globalAlpha = 0.7 * (1 - p);
-    for (let i = 0; i < 5; i++) {
-      this.dot(ctx, { x: at.x - 16 + i * 8 + Math.sin(p * 6 + i) * 2, y: at.y - 20 - (18 + i * 3) * p }, 3 + 3 * p, '#dfe6f5');
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  /** A blade's arc: a diagonal sweep of bright dots across the point of impact. */
-  private slash(ctx: CanvasRenderingContext2D, at: Pt, dir: number, p: number, color: string): void {
-    ctx.globalAlpha = 1 - p * p;
-    for (let i = 0; i < 9; i++) {
-      const t = i / 8 - 0.5;
-      const reach = Math.min(1, p * 2.5);
-      if (Math.abs(t) > reach / 2 + 0.05) continue;
-      this.dot(ctx, { x: at.x + dir * t * 30, y: at.y + t * 34 }, i % 2 ? 3 : 2, i % 3 === 0 ? '#ffffff' : color);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  /** A guard: a curved wall of dots between the unit and whoever it faces. */
-  private shield(ctx: CanvasRenderingContext2D, at: Pt, dir: number, p: number): void {
-    ctx.globalAlpha = Math.sin(Math.PI * Math.min(1, p * 1.2)) * 0.9;
-    for (let i = 0; i < 9; i++) {
-      const a = (i / 8 - 0.5) * 1.6;
-      this.dot(ctx, { x: at.x + dir * (26 + Math.cos(a) * 10), y: at.y + Math.sin(a) * 36 }, 2, i % 2 ? COLORS.armor : '#ffffff');
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  /** A charge: motes drawn in towards the weapon. */
-  private gather(ctx: CanvasRenderingContext2D, at: Pt, p: number, color: string): void {
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2 + p * 2;
-      const d = 22 * (1 - p);
-      this.dot(ctx, { x: at.x + Math.cos(a) * d, y: at.y + Math.sin(a) * d }, 2, i % 2 ? color : '#ffffff');
-    }
-    if (p > 0.6) this.dot(ctx, at, 4, '#ffffff');
-  }
-
-  private streaks(ctx: CanvasRenderingContext2D, from: Pt, dir: number, p: number): void {
-    ctx.globalAlpha = 0.8 * (1 - p);
-    ctx.fillStyle = COLORS.energy;
-    for (let i = 0; i < 4; i++) {
-      const len = 14 + i * 4;
-      ctx.fillRect(px(from.x - dir * (20 + len * p) - (dir > 0 ? len : 0)), px(from.y - 24 + i * 16), len, 1);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  private projectile(ctx: CanvasRenderingContext2D, fx: Extract<Fx, { kind: 'projectile' }>, p: number): void {
-    const color = TYPE_COLOR[fx.dtype];
-    const at = (t: number): Pt => ({ x: lerp(fx.from.x, fx.to.x, t), y: lerp(fx.from.y, fx.to.y, t) });
-    if (fx.dtype === 'energy') {
-      // A beam: reaches the target quickly, then flickers.
-      const end = at(Math.min(1, p * 2.5));
-      ctx.strokeStyle = color;
-      ctx.lineWidth = Math.floor(p * 10) % 2 ? 3 : 2;
-      ctx.beginPath(); ctx.moveTo(fx.from.x, fx.from.y); ctx.lineTo(end.x, end.y); ctx.stroke();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(fx.from.x, fx.from.y); ctx.lineTo(end.x, end.y); ctx.stroke();
-    } else if (fx.dtype === 'explosive') {
-      // A shell on a shallow arc with a short trail.
-      for (let i = 0; i < 4; i++) {
-        const t = Math.max(0, p - i * 0.06);
-        const pos = at(t);
-        this.dot(ctx, { x: pos.x, y: pos.y - Math.sin(Math.PI * t) * 14 }, i === 0 ? 4 : 2, i === 0 ? '#ffffff' : color);
-      }
-    } else {
-      // Three tracers in quick succession.
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 3; i++) {
-        const t = p - i * 0.18;
-        if (t <= 0) continue;
-        const a = at(Math.min(1, t)), b = at(Math.max(0, Math.min(1, t) - 0.2));
-        ctx.beginPath(); ctx.moveTo(b.x, b.y + i - 1); ctx.lineTo(a.x, a.y + i - 1); ctx.stroke();
-      }
-    }
+  /** The light that everything playing throws at this moment, for the screen to add over the field. */
+  lights(): Glow[] {
+    return this.active().flatMap(({ fx, p }) => lightsOf(fx, p));
   }
 }
