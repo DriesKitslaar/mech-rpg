@@ -61,7 +61,7 @@ import {
 } from '../core/gauntlet';
 import { GAUNTLET_BUILD, GAUNTLET_TEXT } from '../content/gauntlet';
 import { ENEMIES } from '../content/enemies';
-import type { BattleState, OverdriveId } from '../core/battle';
+import { OVERDRIVES, type BattleState, type OverdriveId } from '../core/battle';
 import { fittedOverdrive, overdriveOpen } from '../core/pilot';
 import { SettlementScreen } from './settlementScreen';
 import { battleTrack, briefingTrack, trackFor } from './soundtrack';
@@ -531,7 +531,13 @@ export class App {
     // nothing opens, so what that page is about to reveal is not announced before it.
     const waiting = dueScenes(awarded, SCENES, MISSIONS).length > 0;
     const { game, opened } = waiting ? { game: awarded, opened: [] } : openEntries(awarded, WORLD, MISSIONS);
-    this.toasts.push(...medalToasts(earned), ...entryToasts(opened));
+    // An Overdrive that the pilot's level has just opened is said once, so the page it is fitted on gets looked at.
+    const before = this.game;
+    const drives = before ? OVERDRIVES.filter((id) => overdriveOpen(game, id) && !overdriveOpen(before, id)) : [];
+    // Several at once (a pilot who jumps levels) are one announcement, like several medals are.
+    const driveToasts: Toast[] = drives.length === 0 ? []
+      : [{ id: `overdrive:${drives.join('+')}`, heading: STRINGS.overdrive.opened, title: drives.map((id) => STRINGS.overdrive.names[id]).join(', '), sound: 'entry' }];
+    this.toasts.push(...medalToasts(earned), ...entryToasts(opened), ...driveToasts);
     this.game = game;
     this.saveFailed = !this.file.save(game);
     // Options that could not be stored when they were changed go with the next thing that can be.

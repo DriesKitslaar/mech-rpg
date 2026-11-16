@@ -227,8 +227,10 @@ export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Ac
   // first shot of a turn, Second Wind once the turn has been fired empty.
   const core = me.parts.core!;
   if (me.overdrive === 'iron-skin') return core.ap < core.maxAp * 0.6 ? overdrive : choice;
-  if (me.overdrive === 'deadeye') return choice.type === 'fire' && me.fired.length === 0 ? overdrive : choice;
-  const spent = me.fired.length > 0 && !['fire', 'charge', 'module', 'cool'].includes(choice.type);
+  // A weapon that was only charged this turn has not been fired: it is in `fired` so that it waits a turn.
+  const shot = me.fired.some((slot) => !me.charged.includes(slot));
+  if (me.overdrive === 'deadeye') return choice.type === 'fire' && !shot ? overdrive : choice;
+  const spent = shot && !['fire', 'charge', 'module', 'cool'].includes(choice.type);
   return spent ? overdrive : choice;
 }
 

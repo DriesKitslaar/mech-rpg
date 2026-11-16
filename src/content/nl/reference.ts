@@ -234,8 +234,8 @@ export const REFERENCE_NL: Record<string, string> = {
   'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.':
     'Een beker is drie van de ranglijst achter elkaar, met alleen veldonderhoud ertussen. Hij opent zodra je zijn drie hebt verslagen. De pot is voor alle drie of voor geen: eerst volledig, daarna een kwart.',
   CONTROLS: 'BESTURING',
-  'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets.':
-    'D-pad: bewegen. A: bevestigen. B: terug. L1 en R1: bladeren, van tab wisselen en in gevecht van doelwit.',
+  'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive.':
+    'D-pad: bewegen. A: bevestigen. B: terug. L1 en R1: bladeren, tabs en in gevecht doelwitten. R1 in je eigen beurt zet een volle Overdrive in.',
 
   // --- Perks ---
   Marksman: 'Scherpschutter',
@@ -376,9 +376,10 @@ export const REFERENCE_NL: Record<string, string> = {
   // The Overdrive: its medals and its page of the manual.
   'Set off an Overdrive.': 'Zet een Overdrive in.',
   'Set off 50 Overdrives.': 'Zet 50 Overdrives in.',
-  'Past the Stop': 'Voorbij de aanslag',
+  'Redline': 'In het rood',
+  'Past the Stop': 'Voorbij de begrenzer',
   'From pilot level 3 a meter at the left edge of the field fills as you fight: 8 for a volley that lands, 10 for one you take, 15 for a machine destroyed. Full, R1 on your turn sets off your Overdrive. Second Wind starts your turn over; Iron Skin (level 6) halves damage until your next turn; Deadeye (level 9) cannot miss.':
-    'Vanaf pilootlevel 3 vult een meter links op het veld zich in gevecht: 8 voor een salvo dat raakt, 10 voor een dat je krijgt, 15 voor een gesloopte machine. Vol zet R1 in je beurt je Overdrive in. Tweede Adem begint je beurt opnieuw; IJzerhuid (level 6) halveert schade tot je volgende beurt; Scherpoog (level 9) mist niet.',
+    'Vanaf pilotenlevel 3 vult zich in gevecht een meter links op het veld: 8 voor een vuurstoot die raakt, 10 voor een die je krijgt, 15 voor een gesloopte machine. Is hij vol, dan zet R1 in je beurt je Overdrive in. Tweede Adem begint je beurt opnieuw; IJzerhuid (level 6) halveert schade tot je volgende beurt; Scherpoog (level 9) mist niet.',
   // The jukebox: what each song is heard with. The songs keep their names.
   'The title. Where every contract begins.': 'De titel. Waar elk contract begint.',
   'Between contracts: the garage, the shop and the board.': 'Tussen contracten: de garage, de winkel en het bord.',

@@ -303,7 +303,7 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (value.cups !== undefined && !(isTextList(value.cups) && value.cups.length <= 16)) return false;
   if (value.heard !== undefined && !(isTextList(value.heard) && value.heard.length <= 64)) return false;
   if (value.overdrive !== undefined && !OVERDRIVES.includes(value.overdrive as OverdriveId)) return false;
-  if (value.overdrives !== undefined && !isWholeNonNegative(value.overdrives)) return false;
+  if (value.overdrives !== undefined && !(isWholeNonNegative(value.overdrives) && value.overdrives <= 1_000_000)) return false;
   const { gauntlet, gauntletBest } = value;
   // What the run holds is checked where a game is loaded; here it only has to be a thing or nothing.
   if (gauntlet !== undefined && gauntlet !== null && !isRecord(gauntlet)) return false;

@@ -434,9 +434,9 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Second Wind`]: `Tweede Adem`,
   [`Overdrive`]: `Overdrive`,
   [`Fighting fills the meter at the left edge of the field: hits you land, hits you take, machines you destroy. Full, it buys your Overdrive: press R1 on your turn.`]:
-    `Vechten vult de meter links op het veld: rake schoten, treffers die je krijgt, machines die je sloopt. Vol koopt hij je Overdrive: druk R1 in je beurt.`,
+    `Vechten vult de meter links op het veld: rake schoten, treffers die je krijgt, machines die je sloopt. Is hij vol, dan is je Overdrive klaar: druk in je beurt op R1.`,
   [`This one is Second Wind: your turn starts over. Fire everything, press R1, fire everything again. Your own opens at pilot level 3.`]:
-    `Dit is Tweede Adem: je beurt begint opnieuw. Vuur alles af, druk R1, vuur alles nog eens af. De jouwe opent op pilootlevel 3.`,
+    `Dit is Tweede Adem: je beurt begint opnieuw. Vuur alles af, druk op R1, vuur alles nog eens af. De jouwe opent op pilotenlevel 3.`,
   [`Two turns in one. It is worth most when the first one is spent.`]: `Twee beurten in een. Het meest waard als de eerste op is.`,
   [`The meter is full already. Spend your energy first, then R1.`]: `De meter is al vol. Verbruik eerst je energie, dan R1.`,
   // What the wanted say when the fight opens and when it is lost.

@@ -104,8 +104,11 @@ describe('setting it off', () => {
     expect(me(s).energy).toBeLessThan(energy);
     expect(checkAction(s, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' }, CATALOG)).toBe('alreadyFired');
     s = applyAction(s, od, CATALOG);
-    expect(me(s)).toMatchObject({ energy, fired: [], usedBoost: false, usedGuard: false, usedCool: false, heat });
+    // The boost is still on: it stays the one stance of the turn, and is not paid for again.
+    expect(me(s)).toMatchObject({ energy, fired: [], boosted: true, usedBoost: true, usedGuard: false, usedCool: false, heat });
     expect(checkAction(s, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' }, CATALOG)).toBeNull();
+    expect(checkAction(s, { type: 'boost' }, CATALOG)).toBe('alreadyUsed');
+    expect(checkAction(s, { type: 'guard' }, CATALOG)).toBe('alreadyUsed');
   });
 
   test('Iron Skin halves what the pilot takes, from guns and from bombs, and keeps the pilot on their feet, until their next turn', () => {

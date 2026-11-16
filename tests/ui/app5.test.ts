@@ -315,6 +315,7 @@ describe('the database', () => {
     app.commit({ ...app.game!, arenaRank: 10, xp: xpForLevel(10), stats: { ...NO_STATS, contracts: 30, kills: 60 } });
     expect(app.game!.medals.length).toBeGreaterThan(3);
     app.update(16);
-    expect(snap(app)).toMatchObject({ toast: `medals:${app.game!.medals.length}`, toasts: [] });
+    // The medals are one announcement; the Overdrives that ten levels opened at once are one more, after it.
+    expect(snap(app)).toMatchObject({ toast: `medals:${app.game!.medals.length}`, toasts: ['overdrive:second-wind+iron-skin+deadeye'] });
   });
 });

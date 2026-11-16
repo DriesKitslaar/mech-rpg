@@ -269,10 +269,18 @@ describe('what a warden leaves', () => {
     select(app, 'door-0');
     const drive = () => (snap(app).battle as unknown as { drive: { kind: string; value: number } | null }).drive;
     expect(drive()).toEqual({ kind: 'second-wind', value: 100 });
-    for (let i = 0; i < 4000 && snap(app).battle?.phase !== 'action'; i++) {
-      if (snap(app).battle?.phase === 'animating') app.update(16);
-      else press(app, 'confirm');
-    }
+    const toAction = (): void => {
+      for (let i = 0; i < 4000 && snap(app).battle?.phase !== 'action'; i++) {
+        if (snap(app).battle?.phase === 'animating') app.update(16);
+        else press(app, 'confirm');
+      }
+    };
+    toAction();
+    // A Second Wind gives a turn back: something of this one is spent first.
+    press(app, 'next');
+    expect(drive()!.value).toBe(100);
+    press(app, 'confirm', 'confirm', 'confirm');
+    toAction();
     press(app, 'next');
     expect(drive()!.value).toBe(0);
     finishBattle(app);
