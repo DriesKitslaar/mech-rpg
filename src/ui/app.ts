@@ -52,6 +52,8 @@ import { OptionsScreen } from './optionsScreen';
 import { PilotScreen } from './pilotScreen';
 import { SceneScreen } from './sceneScreen';
 import { TalkScreen } from './talkScreen';
+import { setLanguage } from '../content/language';
+import '../content/nl';
 import { GauntletScreen } from './gauntletScreen';
 import { descend, floorMission, floorsCleared, isGauntlet, payout, runMods, startRun, take, type Offer, type Run } from '../core/gauntlet';
 import { GAUNTLET_BUILD, GAUNTLET_TEXT } from '../content/gauntlet';
@@ -385,6 +387,7 @@ export class App {
   private applySettings(): void {
     if (this.deps.sfx) this.deps.sfx.muted = !this.settings.sfx;
     if (this.deps.music) this.deps.music.enabled = this.settings.music;
+    setLanguage(this.settings.language ?? 'en');
   }
 
   /** Changes the options, applies them at once and stores them, with the game when there is one. */

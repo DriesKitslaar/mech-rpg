@@ -10,10 +10,6 @@ import { drawMech, mechSprites } from './mechView';
 import { COLORS, LINE, drawList, drawPanel, drawText, wrap } from './widgets';
 
 const G = STRINGS.gauntlet;
-const SLOT_NAMES: Record<string, string> = {
-  head: 'head', core: 'core', arms: 'arms', legs: 'legs', generator: 'generator', booster: 'booster', fcs: 'fire control', module: 'module',
-  rightHand: 'right hand', leftHand: 'left hand', shoulder: 'shoulder',
-};
 
 /**
  * The Gauntlet's own room: where a run is started, where what is on offer after a floor is taken,
@@ -59,7 +55,7 @@ export class GauntletScreen implements Screen {
   private offerNotes(offer: Offer): string[] {
     if (offer.kind === 'service') return [G.serviceNote];
     if (offer.kind === 'boon') return [G.boons[offer.boon].note];
-    return [G.slot(SLOT_NAMES[offer.slot]), G.replaces, this.partName(this.app.run?.build[offer.slot])];
+    return [G.slot(G.slots[offer.slot]), G.replaces, this.partName(this.app.run?.build[offer.slot])];
   }
 
   update(dtMs: number): void {

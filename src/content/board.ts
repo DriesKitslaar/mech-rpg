@@ -1,4 +1,5 @@
 import type { BoardText } from '../core/board';
+import { STRINGS } from './strings';
 
 export const BOARD_TEXT: BoardText = {
   adjectives: [
@@ -49,7 +50,6 @@ export const BOARD_TEXT: BoardText = {
     'Confirmed. The wreckage will be someone else\'s invoice.',
     'Contract closed. Dispatch has logged it under routine maintenance.',
   ],
-  battles: (count) => (count === 1
-    ? 'One engagement. In and out.'
-    : `${count} engagements back to back. Field service between them, nothing more.`),
+  // Read where it is used, so that it is in whatever language is set then.
+  battles: (count) => STRINGS.board.battles(count),
 };
