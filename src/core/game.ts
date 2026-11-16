@@ -56,6 +56,10 @@ export interface GameState {
   gauntlet?: Run | null;
   /** The most floors of the Gauntlet cleared in one run. */
   gauntletBest?: number;
+  /** Elites beaten in the Gauntlet, over every run. */
+  elites?: number;
+  /** The most relics held at once in a run of the Gauntlet. */
+  relicsHeld?: number;
   /** What the pilot decided when the story asked, by question, in this cycle. Absent in a game from before there were questions. */
   choices?: Record<string, string>;
   /** What the pilot is called. */
@@ -308,6 +312,8 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   // What the run holds is checked where a game is loaded; here it only has to be a thing or nothing.
   if (gauntlet !== undefined && gauntlet !== null && !isRecord(gauntlet)) return false;
   if (gauntletBest !== undefined && !(isWholeNonNegative(gauntletBest) && gauntletBest <= 9999)) return false;
+  if (value.elites !== undefined && !(isWholeNonNegative(value.elites) && value.elites <= 1_000_000)) return false;
+  if (value.relicsHeld !== undefined && !(isWholeNonNegative(value.relicsHeld) && value.relicsHeld <= 6)) return false;
   const { choices } = value;
   if (choices !== undefined && (!isRecord(choices) || Object.keys(choices).length > 64
     || !Object.entries(choices).every(([k, v]) => /^[a-z-]{1,24}$/.test(k) && typeof v === 'string' && /^[a-z-]{1,24}$/.test(v)))) return false;

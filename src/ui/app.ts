@@ -682,7 +682,8 @@ export class App {
     const game = this.game;
     const run = this.run;
     if (!game || !run || !run.relicOwed) return;
-    this.commit({ ...game, gauntlet: takeRelic(run, relic) });
+    const held = takeRelic(run, relic);
+    this.commit({ ...game, gauntlet: held, relicsHeld: Math.max(game.relicsHeld ?? 0, held.relics?.length ?? 0) });
     // What a warden leaves is worth a sound of its own.
     this.deps.sfx?.play('relic');
   }
@@ -709,7 +710,9 @@ export class App {
     const used = end.events.filter((event) => event.type === 'overdrive').length;
     const counted = { ...game, met, ...(used > 0 ? { overdrives: (game.overdrives ?? 0) + used } : {}) };
     if (end.outcome === 'victory') {
-      return this.commit({ ...counted, gauntlet: descend(run, end), gauntletBest: Math.max(game.gauntletBest ?? 0, run.floor) });
+      // An elite beaten is counted for the pilot, like the floor itself.
+      const elites = run.elite ? { elites: (game.elites ?? 0) + 1 } : {};
+      return this.commit({ ...counted, ...elites, gauntlet: descend(run, end), gauntletBest: Math.max(game.gauntletBest ?? 0, run.floor) });
     }
     this.commit(counted);
     this.loseFloor();

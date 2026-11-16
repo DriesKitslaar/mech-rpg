@@ -377,3 +377,44 @@ describe('the Gauntlet\'s music', () => {
     expect(tracks.at(-1)).toBe('hub');
   });
 });
+
+describe('the Gauntlet\'s medals for elites and relics', () => {
+  const elite = () => find((found) => found.length === 2 && !!found[0].elite);
+
+  test('an elite beaten is counted and earns its medal; the plain door beside it counts for nothing', () => {
+    const { seed, floor } = elite();
+    const { app, store } = room({ seed, floor, boons: MIGHTY });
+    clear(app, 'door-0');
+    expect(savedGame(store).elites).toBe(1);
+    expect(savedGame(store).medals).toContain('elite');
+    expect(savedGame(store).medals).not.toContain('elite-10');
+    const plain = room({ seed, floor, boons: MIGHTY });
+    clear(plain.app, 'door-1');
+    expect(savedGame(plain.store).elites ?? 0).toBe(0);
+    expect(savedGame(plain.store).medals).not.toContain('elite');
+  });
+
+  test('ten of them earn the second', () => {
+    const { seed, floor } = elite();
+    const made = room({ seed, floor, boons: MIGHTY });
+    made.app.commit({ ...made.app.game!, elites: 9 });
+    clear(made.app, 'door-0');
+    expect(savedGame(made.store).elites).toBe(10);
+    expect(savedGame(made.store).medals).toEqual(expect.arrayContaining(['elite', 'elite-10']));
+  });
+
+  test('the most relics held at once in a run is remembered, and three of them earn a medal', () => {
+    const { app, store } = room({ floor: 5, boons: MIGHTY, relics: ['rig', 'ledger'] });
+    clear(app, 'descend');
+    expect(g(app).relicOwed).toBe(true);
+    press(app, 'confirm');
+    expect(savedGame(store).relicsHeld).toBe(3);
+    expect(savedGame(store).medals).toContain('relics-3');
+    // A later run with fewer does not take it back.
+    app.commit({ ...app.game!, gauntlet: { ...startRun(9, GAUNTLET_BUILD), floor: 5, boons: MIGHTY } });
+    app.go('gauntlet');
+    clear(app, 'descend');
+    press(app, 'confirm');
+    expect(savedGame(store).relicsHeld).toBe(3);
+  });
+});
