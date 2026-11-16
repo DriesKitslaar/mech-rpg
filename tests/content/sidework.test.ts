@@ -13,6 +13,7 @@ import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 import { BOUNTIES, FAVOURS, GUILD_JOBS, SIDE_WORK } from '../../src/content/sidework';
 import SPRITES from '../../src/content/sprites.json';
 import { TALKS } from '../../src/content/talks';
+import { BattleFlow } from '../../src/ui/battleFlow';
 import { TALK_CHARS, TALK_LINES } from '../../src/ui/battleScreen';
 import { wrap } from '../../src/ui/widgets';
 import { done, fresh, ids, inHub, select, snap, strong } from '../helpers/app';
@@ -212,5 +213,32 @@ describe('the faces of the wanted and of the Guild', () => {
       expect(wrap(talk[0].text, TALK_CHARS).length, talk[0].text).toBeLessThanOrEqual(TALK_LINES);
     }
     expect(new Set(GUILD_JOBS.map((job) => job.battles[0].talk![0].text)).size).toBe(4);
+  });
+});
+
+describe('the wanted are heard in their battles', () => {
+  test.each(BOUNTIES.map((b) => [b.id, b] as const))('%s: the pilot on the notice speaks when the fight opens and again when it is lost, and nobody else does', (_id, bounty) => {
+    const state = createBattle(REFERENCE_BUILDS.tier6, bounty.battles[0].enemies.map((id) => ALL_ENEMIES[id]), CATALOG, 7, { objective: bounty.battles[0].objective, enemyScale: 0.3 });
+    const flow = new BattleFlow(state, CATALOG, { talk: bounty.battles[0].talk });
+    const said: { who: string; text: string; portrait?: string }[] = [];
+    for (let i = 0; i < 20000 && flow.phase !== 'result'; i++) {
+      if (flow.phase === 'talk') {
+        if (said[said.length - 1]?.text !== flow.spoken!.text) said.push({ ...flow.spoken! });
+        flow.onInput('confirm');
+      } else if (flow.phase === 'animating') flow.advance();
+      else if (flow.phase === 'action') {
+        // Auto Turn, by the menu: the automatic pilot plays the turn out.
+        for (let j = 0; j < 12 && flow.menu.items[flow.menu.cursor]?.id !== 'auto'; j++) flow.onInput('down');
+        flow.onInput('confirm');
+      } else flow.onInput('confirm');
+    }
+    expect(flow.state.outcome).toBe('victory');
+    const name = ALL_ENEMIES[bounty.battles[0].enemies[0]].name;
+    const own = said.filter((line) => line.who === name);
+    // What the machine says as it changes (the Notary has such a line) is in the same voice and comes between the two.
+    expect(own[0].text).toBe(bounty.battles[0].talk![0].text);
+    expect(own[own.length - 1].text).toBe(bounty.battles[0].talk![1].text);
+    expect(said.every((line) => line.who === name)).toBe(true);
+    for (const line of own) expect(line.portrait).toBe(bounty.portrait);
   });
 });

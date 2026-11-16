@@ -230,7 +230,7 @@ export const STRINGS_NL = {
     heading: 'DATABASE', pages: { units: 'EENHEID', world: 'WERELD', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
     heard: (n: number, of: number) => `GEHOORD ${n}/${of}`, notHeard: 'Nog niet gehoord.', play: 'A: speel', stop: 'A: stop', playing: 'SPEELT NU',
     length: (time: string) => `LENGTE ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Muziek staat uit. Zet haar aan in Opties.',
-    unknown: '? ? ?', notMet: 'Nog onbekend.', met: (n: number, of: number) => `GEHAD ${n}/${of}`,
+    unknown: '? ? ?', notMet: 'Nog onbekend.', met: (n: number, of: number) => `GEZIEN ${n}/${of}`,
     entries: (n: number, of: number) => `ITEMS ${n}/${of}`, topics: (n: number) => `${n} THEMA'S`,
     armour: 'PANTSER', weak: 'ZWAK VOOR', strong: 'TAAI VOOR', none: '-',
     weapon: (name: string, type: string) => `${name} (${type})`,

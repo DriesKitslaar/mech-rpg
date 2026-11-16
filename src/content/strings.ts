@@ -248,7 +248,7 @@ export const STRINGS = {
     // The jukebox: the songs heard so far, to be played again.
     heard: (n: number, of: number) => `HEARD ${n}/${of}`, notHeard: 'Not heard so far.', play: 'A: play', stop: 'A: stop', playing: 'NOW PLAYING',
     length: (time: string) => `LENGTH ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Music is off. Turn it on in Options to hear this.',
-    unknown: '? ? ?', notMet: 'Not met yet.', met: (n: number, of: number) => `MET ${n}/${of}`,
+    unknown: '? ? ?', notMet: 'Not met yet.', met: (n: number, of: number) => `SEEN ${n}/${of}`,
     entries: (n: number, of: number) => `ENTRIES ${n}/${of}`, topics: (n: number) => `${n} TOPICS`,
     armour: 'ARMOUR', weak: 'WEAK TO', strong: 'TOUGH VS', none: '-',
     weapon: (name: string, type: string) => `${name} (${type})`,

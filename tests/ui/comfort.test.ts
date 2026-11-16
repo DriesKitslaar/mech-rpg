@@ -301,6 +301,11 @@ describe('the jukebox', () => {
     jukebox(app);
     point(app, 'title');
     expect(db(app).detail!.lines.join(' ')).toContain('Music is off.');
+    // There is nothing to play, so nothing claims to be playing.
+    expect(db(app).detail!.lines).not.toContain('A: play');
+    press(app, 'confirm');
+    expect(db(app).playing).toBeNull();
+    expect(db(app).detail!.lines).not.toContain('NOW PLAYING');
   });
 
   test('a save cannot hand in a list of songs that is not a list', () => {
