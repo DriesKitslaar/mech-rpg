@@ -207,7 +207,7 @@ describe('the jukebox', () => {
   });
 
   test('is the database\'s fourth page: the songs heard so far by name, the others kept back', () => {
-    const { app } = withMusic();
+    const { app, tracks } = withMusic();
     jukebox(app);
     expect(snap(app).menu.items).toHaveLength(JUKEBOX.length);
     const heard = snap(app).menu.items.filter((i) => i.enabled).map((i) => i.id);
@@ -220,9 +220,10 @@ describe('the jukebox', () => {
     expect(kept).toMatchObject({ label: '? ? ?', enabled: false });
     point(app, 'boss');
     expect(db(app).detail).toEqual({ title: '? ? ?', lines: ['Not heard so far.'] });
-    // One that was not heard cannot be played.
+    // One that was not heard cannot be played: the hub's song, which the page opened with, goes on.
     press(app, 'confirm');
-    expect(db(app).playing).toBeNull();
+    expect(db(app).playing).toBe('hub');
+    expect(tracks.at(-1)).toBe('hub');
   });
 
   test('a song heard can be played and stopped, and leaving brings the hub\'s own song back', () => {

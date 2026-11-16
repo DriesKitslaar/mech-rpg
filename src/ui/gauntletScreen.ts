@@ -78,7 +78,8 @@ export class GauntletScreen implements Screen {
   /** Looks at the other door, where there is one. */
   private look(): void {
     const doors = this.app.gauntletDoors().length;
-    if (doors < 2 || this.asking) return;
+    // Not while a relic is being chosen: no door is in view then, and the one looked at should not change unseen.
+    if (doors < 2 || this.asking || this.app.run?.relicOwed) return;
     this.shown = (this.shown + 1) % doors;
     // While the doors are the list, the cursor goes with the eye.
     if (this.list.selected?.id.startsWith('door-')) this.list.cursor = this.shown;

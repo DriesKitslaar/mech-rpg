@@ -31,6 +31,13 @@ export const STORY_ENEMIES = [
  * up. An open contract fields at most one in a battle, and never as the first enemy picked.
  */
 export const SUPPORT_ENEMIES = ['shield-drone', 'repair-drone', 'jammer', 'bomb-crawler'];
+/** Machines that stand where they were put: nothing makes them any harder to hit. */
+export const ROOTED = ['gun-turret', 'lance-tower', 'mortar-nest', 'arc-pylon', 'jammer'];
+/** Machines that do no harm of their own, with neither a weapon nor a charge: nothing makes them hit harder. */
+export const HARMLESS = ['jammer'];
+/** The marks that change something about a machine. An elite is never given one that would do nothing. */
+export const marksFor = (id: string): EnemyMark[] =>
+  MARKS.filter((mark) => !(mark === 'swift' && ROOTED.includes(id)) && !(mark === 'overclocked' && HARMLESS.includes(id)));
 /** Enemies that open contracts may field. */
 const POOL = Object.keys(ENEMY_COST).filter((id) => !STORY_ENEMIES.includes(id));
 
@@ -148,7 +155,7 @@ export function generateBoard(battlesWon: number, cycle: number, text: BoardText
     // The mark goes to the dearest machine of the last battle, the first of them when two cost the same.
     let at = 0;
     battle.enemies.forEach((id, i) => { if (ENEMY_COST[id] > ENEMY_COST[battle.enemies[at]]) at = i; });
-    const mark = fate.pick(MARKS);
+    const mark = fate.pick(marksFor(battle.enemies[at]));
     battle.marks = { [at]: mark };
     heaviest.elite = mark;
     heaviest.reward += ELITE_PAY;

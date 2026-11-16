@@ -1,3 +1,4 @@
+import { JUKEBOX, MANUAL } from '../../src/content/codex';
 import { dictionaryOf, registeredTexts, setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
 import { STRINGS_NL } from '../../src/content/nl/strings';
@@ -77,6 +78,24 @@ describe('Dutch: the content', () => {
       // What is quoted or numbered in the English is in the Dutch: figures are rules, not prose.
       const figures = (s: string) => (s.match(/\d+/g) ?? []).sort().join(',');
       expect(figures(dutch), `${english} -> ${dutch}`).toBe(figures(english));
+    }
+  });
+});
+
+describe('Dutch: titles in the database', () => {
+  test('every chapter of the manual has a Dutch title, but for the three words that are the same in both', () => {
+    // A page may keep its name, which is why the kind is let off above; a chapter of the manual is not a name.
+    const same = ['MODULES', 'OVERDRIVE', 'WINGMEN'];
+    expect(MANUAL.filter((topic) => !Object.hasOwn(nl, topic.title)).map((topic) => topic.title).sort()).toEqual(same);
+  });
+
+  test('the songs keep their names: none is called after something another page translates', () => {
+    expect(JUKEBOX.filter((song) => Object.hasOwn(nl, song.title)).map((song) => song.title)).toEqual([]);
+    setLanguage('nl');
+    try {
+      expect(JUKEBOX.map((song) => song.title)).toEqual(expect.arrayContaining(['COMPANY TIME', 'CLEAN ROOM', 'LOW WATER', 'THE WAY DOWN']));
+    } finally {
+      setLanguage('en');
     }
   });
 });

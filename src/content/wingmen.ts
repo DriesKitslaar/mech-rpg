@@ -15,6 +15,6 @@ export const WINGMEN: Wingman[] = [
   {
     id: 'sixty', name: 'Old Sixty', damage: 40, share: 0.35, after: 'choice', bond: { choice: 'sixty', ally: 'keep', enemy: 'file' },
     text: 'Sixty contracts without a loss, or so the callsign says. Expensive, and worth most of it.',
-    radio: { start: 'Take your time. I have.', kill: 'One fewer. Carry on.', cheer: 'Tidy work.', warn: 'Mind your core, youngster.', win: 'One more. I stopped counting.' },
+    radio: { start: 'Take your time. I have.', kill: 'One fewer. Carry on.', cheer: 'Tidy work.', warn: 'Mind your core, youngster.', win: 'Another. I stopped counting.' },
   },
 ];

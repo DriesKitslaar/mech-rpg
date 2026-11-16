@@ -45,6 +45,9 @@ export class TalkScreen implements Screen {
     this.rows = wrap(this.said[this.at]?.text ?? '', TALK_SCENE_CHARS);
     const typing = this.app.typing();
     this.writer = new Typewriter(this.rows, 70 * typing.factor, typing.instant);
+    // A line that is all there at once is held for a moment like one that was just written out:
+    // a button held down skips nothing unread.
+    if (this.writer.done && !this.app.deps.fast) this.hold = Math.max(this.hold, SCENE_HOLD_MS / 2);
   }
 
   private get asking(): boolean { return this.answers !== null && !this.answered; }

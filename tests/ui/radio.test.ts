@@ -254,3 +254,124 @@ describe('a hired wingman in a contract', () => {
     expect(radio(alone)).toBeNull();
   });
 });
+
+describe('whose kill it is', () => {
+  const blast = (unit: string, target = 'player', damage = 30): BattleEvent => ({ type: 'blast', unit, target, damage });
+  const pulse = (unit: string): BattleEvent => ({ type: 'module', unit, effect: 'shock', amount: 0, damage: 40 });
+
+  test('a bomb going off is nobody\'s kill: the wingman has no word for it, and it does not count as one of the pilot\'s', () => {
+    const radio = new Radio('Kite', LINES);
+    const s = battle();
+    radio.hear(blast('enemy-0'), s);
+    radio.hear(dead('enemy-0'), s);
+    expect(radio.line).toBeNull();
+    // The pilot's next is still the pilot's first.
+    radio.hear(shot('enemy-1'), s);
+    radio.hear(dead('enemy-1'), s);
+    expect(radio.line).toBe('KITE: yours');
+  });
+
+  test('the warning a blast raised stays up when the bomb is gone', () => {
+    const radio = new Radio('Kite', LINES);
+    const s = battle();
+    const core = s.units[0].parts.core!;
+    core.ap = Math.ceil(core.maxAp * RADIO_WARN) - 1;
+    radio.hear(blast('enemy-0'), s);
+    radio.hear(dead('enemy-0'), s);
+    expect(radio.line).toBe('KITE: careful');
+  });
+
+  test('a machine that goes down after an enemy fired is not the pilot\'s either', () => {
+    const radio = new Radio('Kite', LINES);
+    const s = battle();
+    radio.hear(shot('player'), s);
+    radio.hear(dead('enemy-1'), s);
+    expect(radio.line).toBeNull();
+  });
+
+  test('the wingman\'s claim ends with whatever lands next: a shot, a blast or a module', () => {
+    const s = battle();
+    const after = (next: BattleEvent): string | null => {
+      const radio = new Radio('Kite', LINES);
+      radio.hear(support('enemy-0'), s);
+      radio.hear(next, s);
+      radio.hear(dead('enemy-0'), s);
+      return radio.line;
+    };
+    expect(after(shot('enemy-0'))).toBe('KITE: yours');
+    expect(after(pulse('player'))).toBe('KITE: yours');
+    expect(after(blast('enemy-0'))).toBeNull();
+    expect(after(pulse('enemy-1'))).toBeNull();
+    expect(after(shot('player'))).toBeNull();
+    // Something that is no fire at all leaves the claim where it was.
+    expect(after({ type: 'guard', unit: 'player' })).toBe('KITE: mine');
+  });
+
+  test('a hit that finishes the pilot is past warning about', () => {
+    const radio = new Radio('Kite', LINES);
+    const s = battle();
+    s.units[0].parts.core!.ap = 0;
+    radio.hear(shot('player'), s);
+    radio.hear(blast('enemy-0'), s);
+    expect(radio.line).toBeNull();
+  });
+
+  test('the core is thin below thirty-five in a hundred, and the strip is no wider than the field in front of the lowest enemy', () => {
+    expect(RADIO_WARN).toBe(0.35);
+    // The strip starts 8 from the left and a letter is 4 wide: with its margins it must end by 172, where the bars of a mech standing third begin.
+    expect(RADIO_CHARS).toBe(39);
+    expect(8 + 8 + RADIO_CHARS * 4).toBeLessThanOrEqual(172);
+  });
+});
+
+describe('where the strip is written', () => {
+  const sprites: SpriteStore = { get: (id, fallback) => ({ image: { id } as unknown as CanvasImageSource, w: fallback.w, h: fallback.h }) };
+  /** Every rectangle filled and every text written while the screen is drawn, with where. */
+  function drawn(screen: BattleScreen): { rects: number[][]; texts: { text: string; x: number; y: number }[] } {
+    const rects: number[][] = [];
+    const texts: { text: string; x: number; y: number }[] = [];
+    const target: Record<string, unknown> = {};
+    const ctx = new Proxy(target, {
+      get: (t, name: string) => (name in t ? t[name] : name === 'measureText' ? () => ({ width: 10 })
+        : (...args: unknown[]) => {
+          if (name === 'fillText') texts.push({ text: String(args[0]), x: Number(args[1]), y: Number(args[2]) });
+          if (name === 'fillRect') rects.push(args.map(Number));
+        }),
+      set: (t, name: string, value) => { t[name] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    screen.draw(ctx);
+    return { rects, texts };
+  }
+
+  test('from the left edge of the field, just above the panel, on a strip as wide as the line', () => {
+    const state = createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 7, { support: { name: 'Kite', damage: 500, orders: true } });
+    const screen = new BattleScreen(new BattleFlow(state, CATALOG, { quiet: true }), sprites, CATALOG, { fast: true, radio: { who: 'Kite', lines: LINES } });
+    screen.update(16);
+    const { rects, texts } = drawn(screen);
+    const name = texts.find((t) => t.text === 'KITE:')!;
+    const words = texts.find((t) => t.text === ' here')!;
+    expect(name.x).toBe(12);
+    // What is said follows the name on the same row.
+    expect(words.x).toBe(12 + 'KITE:'.length * 4);
+    expect(words.y).toBe(name.y);
+    // The strip behind them: from 8, as wide as the line and its margins, and it ends above the panel.
+    const strip = rects.find(([x, y]) => x === 8 && y === name.y - 1)!;
+    expect(strip).toEqual([8, name.y - 1, 'KITE: here'.length * 4 + 8, 11]);
+    expect(strip[1] + strip[3]).toBeLessThan(180);
+    expect(strip[1]).toBeGreaterThan(150);
+  });
+});
+
+describe('an ally the story sends', () => {
+  test('fires from off the field and keeps off the radio: only a wingman who was hired speaks', () => {
+    const { app } = inHub(strong(done('intro-1', 'intro-2', 'rival-1', 'choice-lumen', 'finale-lumen', 'audit-1', 'audit-2')));
+    select(app, 'contracts');
+    select(app, 'audit-3');
+    select(app, 'accept');
+    expect(snap(app).screen).toBe('battle');
+    for (let i = 0; i < 20; i++) app.update(16);
+    const view = snap(app).battle as unknown as { radio: string | null; support: string | null };
+    expect(view.support).toBe('Ashfall');
+    expect(view.radio).toBeNull();
+  });
+});
