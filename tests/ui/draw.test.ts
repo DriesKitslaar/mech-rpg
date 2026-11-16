@@ -500,8 +500,8 @@ describe('the screens the three-act story added', () => {
     screen.update(16);
     screen.draw(ctx);
     expect(texts(calls)).not.toContain('PATROL');
-    // Rain would be dozens of one-pixel streaks.
-    expect(calls.filter((c) => c.name === 'fillRect' && c.args[2] === 1 && c.args[3] === 4)).toHaveLength(0);
+    // Rain would be dozens of one-pixel streaks, the near ones five pixels long.
+    expect(calls.filter((c) => c.name === 'fillRect' && c.args[2] === 1 && c.args[3] === 5)).toHaveLength(0);
   });
 
   test('rain falls over a battle in the neon district, and smoke rises from a part that is gone', () => {
@@ -513,7 +513,9 @@ describe('the screens the three-act story added', () => {
     screen.onInput('confirm');
     for (let i = 0; i < 40; i++) screen.update(16);
     screen.draw(ctx);
-    expect(calls.filter((c) => c.name === 'fillRect' && c.args[2] === 1 && c.args[3] === 4).length).toBeGreaterThan(20);
+    // Rain at two depths: short streaks far off, long ones close by.
+    expect(calls.filter((c) => c.name === 'fillRect' && c.args[2] === 1 && c.args[3] === 5).length).toBeGreaterThan(15);
+    expect(calls.filter((c) => c.name === 'fillRect' && c.args[2] === 1 && c.args[3] === 2).length).toBeGreaterThan(15);
     const styles: string[] = [];
     const spy = new Proxy({}, { get: (_t, name: string) => (name === 'measureText' ? () => ({ width: 10 }) : () => {}), set: (_t, name: string, value) => { if (name === 'fillStyle') styles.push(String(value)); return true; } }) as unknown as CanvasRenderingContext2D;
     screen.draw(spy);

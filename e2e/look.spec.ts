@@ -124,3 +124,18 @@ test('the look of a battle: a gun, a beam and a shell, each photographed as it l
   console.log(log.join('\n'));
   expect(errors).toEqual([]);
 });
+
+test('the look of a place: its own lights, its haze and its weather, on three kinds of ground', async ({ page }) => {
+  test.setTimeout(290000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  for (const [mission, name] of [['patrol', 'look-place-rain'], ['lumen-1', 'look-place-mine'], ['undertow-1', 'look-place-plaza']]) {
+    await intoBattle(page, mission);
+    await adv(page, 1200);
+    await page.screenshot({ path: shot(name) });
+    // The rain is watched for long enough to see lightning strike.
+    if (FRAMES && mission === 'patrol') await film(page, 'place-rain', 12000, 40);
+    if (FRAMES && mission === 'lumen-1') await film(page, 'place-mine', 2000, 200);
+  }
+  expect(errors).toEqual([]);
+});

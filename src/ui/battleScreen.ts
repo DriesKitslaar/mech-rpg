@@ -11,11 +11,12 @@ import { BattleFlow, partName } from './battleFlow';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import type { Sfx } from '../platform/audio';
 import { soundsForEvent } from '../platform/audio';
+import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
-import { disc, drawGlows, drawShadow, type Glow, type Pt } from './light';
+import { disc, drawGlow, drawGlows, drawShadow, type Glow, type Pt } from './light';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
 import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
@@ -23,7 +24,7 @@ import type { Sprite, SpriteStore } from './sprites';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { intentOf } from '../core/intent';
 import { PLAIN_TYPING, TYPING_SPEED, Typewriter, type Typing } from './typewriter';
-import { drawWeather, weatherFor } from './weather';
+import { drawWeather, drawWeatherExtras, weatherFor } from './weather';
 import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
 
 export { BattleFlow } from './battleFlow';
@@ -46,6 +47,8 @@ export const INTRO_MS = 1100;
 export const WARNING_MS = 1700;
 /** Top of the field: the message bar ends here. */
 const FIELD_Y = 14;
+/** The share of the heat limit from which a machine is seen to be hot. */
+const HOT = 0.75;
 const DEFAULT_BACKGROUND = 'bg-neon-district';
 const MECH_ORIGIN = { x: -8, y: 16 };
 /** Where each enemy stands (the bottom centre of its sprite), by how many there are. */
@@ -366,14 +369,23 @@ export class BattleScreen {
     // little larger, so that no edge shows: stretched, a pixel picture loses its grid.
     if (dx === 0 && dy === 0) ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
     else ctx.drawImage(bg.image, -6, -6, LOGICAL_W + 12, LOGICAL_H + 12);
+    // What the place adds to its picture: darker edges, its own lights, a haze over the ground. A hurried
+    // screen has it standing still, as it is at the first moment.
+    const calm = this.opts.calm === true;
+    const field = { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W };
+    const placeClock = this.opts.fast ? 0 : this.clock;
+    drawAmbience(ctx, background, placeClock, 'behind', field, calm);
     this.drawShadows(ctx);
     this.drawPlayer(ctx);
     this.drawEnemies(ctx);
+    this.drawHeat(ctx);
     this.drawSmoke(ctx);
+    drawAmbience(ctx, background, placeClock, 'front', field, calm);
     if (!this.opts.fast) {
       ctx.save();
       ctx.translate(0, FIELD_Y);
       drawWeather(ctx, weatherFor(background), this.clock, LOGICAL_W, PANEL_Y - FIELD_Y);
+      drawWeatherExtras(ctx, weatherFor(background), this.clock, LOGICAL_W, PANEL_Y - FIELD_Y, calm);
       ctx.restore();
     }
     this.particles.draw(ctx);
@@ -527,6 +539,26 @@ export class BattleScreen {
       if (this.hidden(enemy)) continue;
       const r = this.enemyRect(enemy);
       drawShadow(ctx, r.x + r.w / 2, Math.min(PANEL_Y - 5, r.y + r.h - 1), r.w * 0.9, Math.max(5, r.w * 0.16), 0.45);
+    }
+  }
+
+  /** A machine close to its heat limit glows from inside, and the air over it wavers. */
+  private drawHeat(ctx: CanvasRenderingContext2D): void {
+    if (this.opts.fast) return;
+    const scene = this.scene();
+    for (const unit of this.flow.state.units) {
+      if (unit.destroyed || this.hidden(unit) || unit.heat < HEAT_LIMIT * HOT) continue;
+      const at = scene.hitPoint(unit.id, 'core');
+      const over = Math.min(1, (unit.heat / HEAT_LIMIT - HOT) / (1 - HOT));
+      drawGlow(ctx, { x: at.x, y: at.y, r: 30, color: '#ff5a20', alpha: (0.16 + 0.16 * over) * (0.8 + 0.2 * Math.sin(this.clock / 140)) }, this.opts.calm ? 0.5 : 1);
+      // Wisps of hot air rising off it.
+      for (let i = 0; i < 4; i++) {
+        const age = (this.clock / 1300 + i / 4) % 1;
+        ctx.globalAlpha = 0.28 * (1 - age);
+        ctx.fillStyle = i % 2 ? '#ffb070' : '#ffe0b0';
+        ctx.fillRect(Math.round(at.x - 14 + i * 9 + Math.sin(age * 9 + i) * 2), Math.round(at.y - 22 - age * 26), 1, 3);
+      }
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -740,6 +772,10 @@ export class BattleScreen {
       // Flying units bob; anything that stands on the ground stays put.
       const flies = FLYERS.has(enemy.sprite ?? '');
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
+      // What flies burns underneath to stay up.
+      if (flies && !this.opts.fast && !this.duel()) {
+        drawGlow(ctx, { x: r.x + r.w / 2, y: r.y + r.h - 4 + hover, r: 9 + r.w * 0.22, color: '#ff7ab8', alpha: 0.3 + 0.1 * Math.sin(this.clock / 90 + i) }, this.opts.calm ? 0.5 : 1);
+      }
       if (this.duel()) {
         const parts = mechSprites(this.sprites, enemy.build, enemy.paint);
         const pose = this.poseOf(enemy);
