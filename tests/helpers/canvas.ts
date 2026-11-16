@@ -10,7 +10,9 @@ export interface Written {
   color: string;
 }
 export interface Filled { x: number; y: number; w: number; h: number; color: string }
-export interface Drawn { texts: Written[]; rects: Filled[] }
+/** A picture as it was drawn: what it was handed (a sprite store that names its pictures makes this tellable) and where. */
+export interface Pictured { image: unknown; x: number; y: number; w: number; h: number }
+export interface Drawn { texts: Written[]; rects: Filled[]; images: Pictured[] }
 
 /**
  * Draws on a canvas that paints nothing and remembers what it was asked to write and to fill, and
@@ -19,6 +21,7 @@ export interface Drawn { texts: Written[]; rects: Filled[] }
 export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
   const texts: Written[] = [];
   const rects: Filled[] = [];
+  const images: Pictured[] = [];
   const state: Record<string, unknown> = { font: '12px x', textAlign: 'left', fillStyle: '' };
   const size = (): number => Number(/(\d+(?:\.\d+)?)px/.exec(String(state.font))?.[1] ?? 12);
   const ctx = new Proxy(state, {
@@ -35,12 +38,13 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
           texts.push({ text, x, y: Number(args[2]), left, right: left + width, size: size(), align, color: String(t.fillStyle) });
         }
         if (name === 'fillRect') rects.push({ x: Number(args[0]), y: Number(args[1]), w: Number(args[2]), h: Number(args[3]), color: String(t.fillStyle) });
+        if (name === 'drawImage') images.push({ image: args[0], x: Number(args[1]), y: Number(args[2]), w: Number(args[3]), h: Number(args[4]) });
       };
     },
     set: (t, name: string, value) => { t[name] = value; return true; },
   }) as unknown as CanvasRenderingContext2D;
   draw(ctx);
-  return { texts, rects };
+  return { texts, rects, images };
 }
 
 /** Whether two pieces of text share a row and run into each other. */

@@ -1007,7 +1007,9 @@ const gauntlet: Song = {
   scale: ['D', 'E', 'F', 'G', 'A', 'Bb', 'C'], accidentals: ['C#'],
   echo: { steps: 3, feedback: 0.5 },
   instruments: {
-    drone: { ...PAD, gain: 0.13, attack: 1.4, release: 2.2, cutoff: 700 },
+    // The drone steps down with the bass, a semitone at the foot of each descent: it lets go quickly, so that
+    // two low notes a semitone apart are not left sounding together.
+    drone: { ...PAD, gain: 0.13, attack: 1.4, release: 0.7, cutoff: 700 },
     pad: { ...PAD, gain: 0.07, cutoff: 1300 },
     bell: { ...BELL, gain: 0.13, echo: 0.5 },
     pluck: { ...PLUCK, gain: 0.07, decay: 0.5, cutoff: 1400, echo: 0.5 },
@@ -1039,7 +1041,8 @@ const gauntlet: Song = {
     deep: {
       steps: 64,
       lines: {
-        ...pads(16, 'G2 D3 Bb2 A2', 'Bb2 F3 D3 C#3', 'D3 A3 F3 E3'), drone: whole('G1 D2 Bb1 A1'), drums: WAY_PULSE, pluck: chart(WAY_PLUCK, 'Gm Dm Bb A'),
+        // The G minor that opens the section is spread wide (G, D, B flat): a third that low and that close would be mud.
+        ...pads(16, 'G2 D3 Bb2 A2', 'D3 F3 D3 C#3', 'Bb3 A3 F3 E3'), drone: whole('G1 D2 Bb1 A1'), drums: WAY_PULSE, pluck: chart(WAY_PLUCK, 'Gm Dm Bb A'),
         bell: bars(
           'D5 - - - - - Bb4 - - - - - G4 - - -', 'A4 - - - - - - - F4 - - - D4 - - -',
           'F4 - - - - - - - D4 - - - Bb3 - - -', 'C#4 - - - - - - - E4 - - - A4 - - -',

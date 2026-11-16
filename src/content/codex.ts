@@ -330,7 +330,7 @@ export const PEOPLE: Person[] = [
     text: 'Flies a scrapyard Mantis for the Undertow and laughs on an open channel. Hits harder than the laugh suggests.' },
   { id: 'krell', name: 'Krell', portrait: 'portrait-krell', role: 'Hadron Mining', when: { met: 'krell' },
     text: 'Chief of security at Hadron. Was here before the company and expects to be here after it.' },
-  { id: 'actuary', name: 'The Actuary', portrait: 'portrait-actuary', role: 'Meridian Mutual', when: { after: 'finale' },
+  { id: 'actuary', name: 'The Actuary', portrait: 'portrait-actuary', role: 'Meridian Mutual', when: { after: 'audit-1' },
     text: 'The adjuster Meridian sends when a war is over. Polite, immaculate, and already knows what you are worth to the decimal.' },
   { id: 'magpie', name: 'Magpie', portrait: 'portrait-magpie', role: 'Wanted', when: { met: 'magpie' }, bounty: 'bounty-1',
     text: 'Stripped the cockpits of downed frames with the pilots still in them. Proud of the helmet collection.' },

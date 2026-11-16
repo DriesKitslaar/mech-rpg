@@ -88,12 +88,12 @@ export const STRINGS_NL = {
     heading: 'OVERDRIVE', ready: 'R1: OVERDRIVE', used: (name: string) => `OVERDRIVE: ${name.toUpperCase()}`,
     names: { 'second-wind': 'Tweede Adem', 'iron-skin': 'IJzerhuid', deadeye: 'Scherpoog' } as Record<string, string>,
     notes: {
-      'second-wind': 'Verbruik eerst je beurt, dan begint die opnieuw: energie terug, elk wapen en elke actie klaar. De hitte blijft.',
+      'second-wind': 'Gebruik eerst je beurt, dan begint die opnieuw: energie terug; wapens, Koelen en Module weer klaar. Boost of Dekking die nog staat, blijft. Hitte ook.',
       'iron-skin': 'Tot je volgende beurt krijg je halve schade en wankel je niet.',
       deadeye: 'Tot je beurt eindigt: elk schot raak, een kwart meer schade.',
     } as Record<string, string>,
     how: 'De meter aan de rand van het veld vult zich als je raakt, geraakt wordt en machines sloopt. Is hij vol, druk dan in je beurt op R1.',
-    spendFirst: 'Tweede Adem: verbruik eerst je beurt.', opened: 'OVERDRIVE VRIJ',
+    spendFirst: 'Tweede Adem: gebruik eerst je beurt.', opened: 'OVERDRIVE OPEN',
     level: (n: number) => `LV ${n}`, fitted: 'GEKOZEN', hint: 'A: kies   L1/R1: blad   B: terug',
   },
   orders: {
@@ -250,7 +250,7 @@ export const STRINGS_NL = {
     won: 'GESLAAGD', lost: 'GEZAKT',
   },
   credits: {
-    flownBy: 'PILOOT', level: (n: number) => `PILOOTLEVEL ${n}`, record: 'HET DOSSIER', stat: (label: string, value: string) => `${label}  ${value}`,
+    flownBy: 'PILOOT', level: (n: number) => `PILOTENLEVEL ${n}`, record: 'HET DOSSIER', stat: (label: string, value: string) => `${label}  ${value}`,
     cast: 'IN VARN', unknown: '? ? ?', notMet: 'op een andere weg',
     names: {
       dispatch: 'Dispatch', brenn: 'Directeur Brenn', varga: 'Analist Varga', tamsin: 'Tamsin', ashfall: 'Ashfall', sable: 'Sable',

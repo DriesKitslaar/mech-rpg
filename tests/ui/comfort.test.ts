@@ -206,7 +206,7 @@ describe('the jukebox', () => {
     }
   });
 
-  test('is the database\'s fourth page: the songs heard so far by name, the others kept back', () => {
+  test('is the database\'s last page: the songs heard so far by name, the others kept back', () => {
     const { app, tracks } = withMusic();
     jukebox(app);
     expect(snap(app).menu.items).toHaveLength(JUKEBOX.length);

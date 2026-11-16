@@ -313,7 +313,8 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (gauntlet !== undefined && gauntlet !== null && !isRecord(gauntlet)) return false;
   if (gauntletBest !== undefined && !(isWholeNonNegative(gauntletBest) && gauntletBest <= 9999)) return false;
   if (value.elites !== undefined && !(isWholeNonNegative(value.elites) && value.elites <= 1_000_000)) return false;
-  if (value.relicsHeld !== undefined && !(isWholeNonNegative(value.relicsHeld) && value.relicsHeld <= 6)) return false;
+  // More than there are relics today, so that a relic added later does not make an old best unreadable.
+  if (value.relicsHeld !== undefined && !(isWholeNonNegative(value.relicsHeld) && value.relicsHeld <= 99)) return false;
   const { choices } = value;
   if (choices !== undefined && (!isRecord(choices) || Object.keys(choices).length > 64
     || !Object.entries(choices).every(([k, v]) => /^[a-z-]{1,24}$/.test(k) && typeof v === 'string' && /^[a-z-]{1,24}$/.test(v)))) return false;

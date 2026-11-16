@@ -1,4 +1,4 @@
-import { JUKEBOX, MANUAL } from '../../src/content/codex';
+import { JUKEBOX, MANUAL, PEOPLE } from '../../src/content/codex';
 import { dictionaryOf, registeredTexts, setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
 import { STRINGS_NL } from '../../src/content/nl/strings';
@@ -87,6 +87,30 @@ describe('Dutch: titles in the database', () => {
     // A page may keep its name, which is why the kind is let off above; a chapter of the manual is not a name.
     const same = ['MODULES', 'OVERDRIVE', 'WINGMEN'];
     expect(MANUAL.filter((topic) => !Object.hasOwn(nl, topic.title)).map((topic) => topic.title).sort()).toEqual(same);
+  });
+
+  test('a name that is also a word somewhere else is not translated as that word', () => {
+    // The dictionary goes by the English alone, so a pilot called after an ordinary word would get that word's Dutch.
+    const kinds = new Map<string, Set<string>>();
+    for (const t of texts) kinds.set(t.english, (kinds.get(t.english) ?? new Set<string>()).add(t.kind));
+    const clash = [...kinds].filter(([english, found]) => found.has('who') && found.size > 1 && Object.hasOwn(nl, english) && nl[english] !== english);
+    expect(clash.map(([english]) => english)).toEqual([]);
+    setLanguage('nl');
+    try {
+      // The wanted pilot the board once shared a word with.
+      expect(PEOPLE.find((person) => person.id === 'hollow')!.name).toBe('Hollow');
+      expect(PEOPLE.map((person) => person.name)).not.toContain('Hol');
+    } finally {
+      setLanguage('en');
+    }
+  });
+
+  test('whom somebody works for is said in Dutch, but for the names of the four that are names', () => {
+    // A role may stay, which is why the kind is let off above: a company's name is a name. Anything else is a word.
+    const roles = [...new Set(PEOPLE.map((person) => person.role))];
+    expect(roles.filter((role) => !Object.hasOwn(nl, role)).sort()).toEqual(['Dispatch', 'Hadron Mining', 'Lumen Systems', 'Meridian Mutual']);
+    expect(nl['The Undertow']).toBe('De Undertow');
+    expect(nl.Wanted).toBe('Gezocht');
   });
 
   test('the songs keep their names: none is called after something another page translates', () => {

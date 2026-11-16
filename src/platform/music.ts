@@ -287,8 +287,9 @@ const LEAD_IN = 0.05;
 /**
  * Songs that go on from where they were left instead of starting over. The hub song is left and come
  * back to with every briefing; started from the top each time, nobody would hear past its first bars.
+ * The Gauntlet's room is the same: it is stood in for a moment between floors, a whole run long.
  */
-const RESUMES: SongName[] = ['hub'];
+export const RESUMES: SongName[] = ['hub', 'gauntlet'];
 /** A stopped song is faded out over this long, to cut it short without a click. */
 const FADE = 0.06;
 /** Vibrato waits this long and takes as long again to reach its depth. */

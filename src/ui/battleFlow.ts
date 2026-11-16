@@ -444,6 +444,8 @@ export class BattleFlow {
       if (input === 'confirm') this.nextLine();
       return;
     }
+    // What was said about a Second Wind that could not be taken is an answer to that press, and goes with the next one.
+    if (this.phase === 'action' && input !== 'next' && this.message === STRINGS.overdrive.spendFirst) this.message = STRINGS.yourTurn(this.state.round);
     if (input === 'up' || input === 'down') {
       this.moveCursor(input === 'up' ? -1 : 1);
       if (this.phase === 'target') this.syncTarget();
@@ -457,7 +459,10 @@ export class BattleFlow {
         if (input === 'next') {
           const refusal = checkAction(this.state, { type: 'overdrive' }, this.catalog);
           if (refusal === null) {
-            this.keepCursor = this.menu.cursor;
+            // Iron Skin and Deadeye change nothing about what can be chosen, so the cursor stays where it was.
+            // A Second Wind starts the turn over: the cursor goes back to the top with it, and not on
+            // the row that ends the turn, where a turn fired empty had left it.
+            if (this.state.units[0].overdrive !== 'second-wind') this.keepCursor = this.menu.cursor;
             return this.act({ type: 'overdrive' });
           }
           // A Second Wind with nothing to give back is not thrown away: the pilot is told why nothing happened.

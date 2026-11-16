@@ -177,8 +177,13 @@ describe('Second Wind gives back the turn that was had', () => {
     s = applyAction(s, { type: 'module' }, CATALOG);
     const boosted = me(s).energy;
     expect(boosted).toBeGreaterThan(began);
+    // The Overclock's one use is gone, so it is nothing to give back; a guard taken with it is.
+    s = applyAction(s, { type: 'guard' }, CATALOG);
+    const left = me(s).energy;
+    expect(left).toBeGreaterThan(began);
+    expect(left).toBeLessThan(boosted);
     s = applyAction(s, od, CATALOG);
-    expect(me(s).energy).toBe(boosted);
+    expect(me(s).energy).toBe(left);
   });
 
   test('heat that has tripped the limit stays tripped: the next turn is still lost', () => {

@@ -5,11 +5,14 @@ import {
   BOON_CAP, BOON_IDS, ELITE_CHANCE, ELITE_FROM, RELIC_IDS, descend, doors, draft, draftSize, enter, fall, floorBudget, floorMission, isValidRun, isWardenFloor,
   runMods, runOverdrive, startRun, take, type Offer, type Run,
 } from '../../src/core/gauntlet';
+import { isValidState, newGame } from '../../src/core/game';
+import { awardMedals, medalProgress } from '../../src/core/medals';
 import { startMissionBattle } from '../../src/core/mission';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { BOARD_TEXT } from '../../src/content/board';
 import { ENEMIES } from '../../src/content/enemies';
 import { GAUNTLET_TEXT } from '../../src/content/gauntlet';
+import { MEDALS } from '../../src/content/medals';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 
 const BG = GAUNTLET_TEXT.backgrounds;
@@ -237,5 +240,52 @@ describe('a run kept in a save', () => {
     const entered = enter(open, 1, BG);
     expect(valid(entered)).toBe(true);
     expect(valid(descend(entered, win(entered)))).toBe(true);
+  });
+});
+
+describe('the Gauntlet\'s medals for elites and relics', () => {
+  const game = newGame(CATALOG, STARTER_BUILD);
+  const held = (extra: object): string[] => awardMedals({ ...game, ...extra }, MEDALS).game.medals.filter((id) => id.startsWith('elite') || id.startsWith('relics'));
+  const medal = (id: string) => MEDALS.find((m) => m.id === id)!;
+
+  test('one elite earns the first, ten the second, and nine do not', () => {
+    expect(held({})).toEqual([]);
+    expect(held({ elites: 1 })).toEqual(['elite']);
+    expect(held({ elites: 9 })).toEqual(['elite']);
+    expect(held({ elites: 10 })).toEqual(['elite', 'elite-10']);
+    expect(medalProgress(medal('elite-10'), { ...game, elites: 9 })).toEqual({ have: 9, need: 10, earned: false });
+  });
+
+  test('three relics held in one run earn theirs, and two do not', () => {
+    expect(held({ relicsHeld: 2 })).toEqual([]);
+    expect(held({ relicsHeld: 3 })).toEqual(['relics-3']);
+    expect(medalProgress(medal('relics-3'), { ...game, relicsHeld: 2 })).toEqual({ have: 2, need: 3, earned: false });
+  });
+
+  test('a run under way that already holds three counts, though the save never wrote the most down', () => {
+    const run = (relics: string[]) => ({ ...fresh(5, 7), relics });
+    expect(held({ gauntlet: run(['rig', 'key']) })).toEqual([]);
+    expect(held({ gauntlet: run(['rig', 'key', 'ledger']) })).toEqual(['relics-3']);
+    // The most there ever was stands, whatever the run holds now.
+    expect(medalProgress(medal('relics-3'), { ...game, relicsHeld: 2, gauntlet: run(['rig']) as never }).have).toBe(2);
+    expect(medalProgress(medal('relics-3'), { ...game, relicsHeld: 1, gauntlet: run(['rig', 'key']) as never }).have).toBe(2);
+  });
+});
+
+describe('the Gauntlet\'s counters, kept in a save', () => {
+  const game = newGame(CATALOG, STARTER_BUILD);
+
+  test('are whole numbers that play could reach, or the save is not taken at its word', () => {
+    expect(isValidState({ ...game, elites: 0, relicsHeld: 0 }, CATALOG)).toBe(true);
+    expect(isValidState({ ...game, elites: 250, relicsHeld: 6 }, CATALOG)).toBe(true);
+    for (const bad of [-1, 1.5, '4', null, 1_000_001]) {
+      expect(isValidState({ ...game, elites: bad }, CATALOG), `elites ${String(bad)}`).toBe(false);
+    }
+    for (const bad of [-1, 2.5, '3', null, 100]) {
+      expect(isValidState({ ...game, relicsHeld: bad }, CATALOG), `relicsHeld ${String(bad)}`).toBe(false);
+    }
+    // A save from before there were elites or relics has neither, and is sound.
+    expect(isValidState(game, CATALOG)).toBe(true);
+    expect('elites' in game || 'relicsHeld' in game).toBe(false);
   });
 });

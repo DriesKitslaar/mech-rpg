@@ -17,9 +17,14 @@ const D = STRINGS.database;
 export type DatabasePage = 'units' | 'people' | 'world' | 'manual' | 'music';
 const PAGES: DatabasePage[] = ['units', 'people', 'world', 'manual', 'music'];
 
-/** Whether somebody's page has opened: the story has got as far as them, or they have been met in battle. */
+/**
+ * Whether somebody's page has opened: the story has got as far as them, or they have been met in
+ * battle. A story that starts over does not close the pages it opened: whoever it brings in is on
+ * the way to its end, so a pilot in a later cycle has had to do with all of them.
+ */
 export function personKnown(game: GameState, person: Person): boolean {
-  return 'met' in person.when ? game.met.includes(person.when.met) : reached(game, person.when.after, MISSIONS);
+  if ('met' in person.when) return game.met.includes(person.when.met);
+  return game.cycle > 0 || reached(game, person.when.after, MISSIONS);
 }
 /** The list on the left and the page on the right. */
 const LIST = { x: 4, y: 18, w: 106, h: 234 };
