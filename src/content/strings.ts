@@ -85,6 +85,13 @@ export const STRINGS = {
   blast: (unit: string, target: string, damage: number) => `${unit} DETONATES on ${obj(target)} -${damage}`,
   launch: (unit: string, spawned: string) => `${unit} launches ${spawned}`,
   phase: (unit: string) => `${unit} changes tactics`,
+  // What a hired wingman can be told, on the pilot's turn, for nothing.
+  orders: {
+    item: (order: 'strongest' | 'target' | 'cover') => ({ strongest: 'Wing: strongest', target: 'Wing: my target', cover: 'Wing: cover me' })[order],
+    told: (name: string, order: 'strongest' | 'target' | 'cover') => ({
+      strongest: `${name}: firing on the strongest.`, target: `${name}: firing where you fire.`, cover: `${name}: holding fire, drawing theirs.`,
+    })[order],
+  },
   support: (ally: string, target: string, damage: number) => `${ally} fires on ${obj(target)} -${damage}`,
   asset: (asset: string, hp: number, lost: number) => `${asset} takes fire -${lost} (${hp} left)`,
   cool: (unit: string, amount: number) => does(unit, `vents heat -${amount}`, `vent heat -${amount}`),

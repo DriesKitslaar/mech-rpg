@@ -1,7 +1,7 @@
 import { chooseAutoPlayerAction, chooseEnemyAction } from '../core/ai';
 import {
   activeUnit, applyAction, checkAction, objectiveTarget, previewShot, HEAT_LIMIT, ROUND_LIMIT,
-  type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState,
+  type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState, ORDERS,
 } from '../core/battle';
 import { moduleOf, weaponIn } from '../core/build';
 import type { TalkLine } from '../core/campaign';
@@ -37,7 +37,7 @@ export const partName = (unit: UnitState, slot: FrameSlot): string => unit.partN
 export interface MenuItem { id: string; label: string; enabled: boolean; note?: string }
 export interface MenuView { items: MenuItem[]; cursor: number }
 
-type ActionId = 'fire' | 'boost' | 'guard' | 'cool' | 'module' | 'repair' | 'auto' | 'endTurn' | 'retreat';
+type ActionId = 'fire' | 'boost' | 'guard' | 'cool' | 'module' | 'repair' | 'order' | 'auto' | 'endTurn' | 'retreat';
 const W = STRINGS.weaponMenu;
 
 /**
@@ -245,6 +245,7 @@ export class BattleFlow {
       case 'launch': return STRINGS.launch(name(event.unit), name(event.spawned));
       case 'phase': return STRINGS.phase(name(event.unit));
       case 'support': return STRINGS.support(event.name, name(event.target), event.damage);
+      case 'order': return STRINGS.orders.told(event.name, event.order);
       case 'asset': return STRINGS.asset(this.state.asset?.name ?? '', event.hp, event.lost);
       case 'turnStart':
       case 'outcome':
@@ -313,6 +314,8 @@ export class BattleFlow {
       ['cool', STRINGS.actions.cool, this.can({ type: 'cool' })],
       ...(module ? [['module', `${module.name} x${this.player.moduleUses}`, moduleReady] as [ActionId, string, boolean]] : []),
       ['repair', STRINGS.actions.repair, this.repairableParts().length > 0],
+      // A hired wingman takes orders: the row says what they are doing now, and choosing it tells them the next thing.
+      ...(this.state.support?.orders ? [['order', STRINGS.orders.item(this.state.support.order ?? 'strongest'), true] as [ActionId, string, boolean]] : []),
       ['endTurn', STRINGS.actions.endTurn, true],
       ['auto', STRINGS.actions.auto, true],
       ['retreat', STRINGS.actions.retreat, true],
@@ -439,6 +442,17 @@ export class BattleFlow {
           case 'module':
             if (moduleOf(this.player.build, this.catalog)?.effect === 'painter') return this.openModuleTargets();
             return this.act({ type: 'module' });
+          case 'order': {
+            // Free, and the turn goes on: the menu comes back with the cursor where it was.
+            const now = this.state.support?.order ?? 'strongest';
+            this.state = applyAction(this.state, { type: 'order', order: ORDERS[(ORDERS.indexOf(now) + 1) % ORDERS.length] }, this.catalog);
+            this.shown = this.state.events.length;
+            const at = this.menu.cursor;
+            this.openActionMenu();
+            this.menu.cursor = at;
+            this.message = STRINGS.orders.told(this.state.support!.name, this.state.support!.order!);
+            return;
+          }
           case 'auto':
             this.autoTurn = true;
             return this.resume();

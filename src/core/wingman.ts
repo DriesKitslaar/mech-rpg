@@ -70,6 +70,6 @@ export function withWingman(mission: Mission, wingman: Wingman): Mission {
   return {
     ...mission,
     reward: feeAfter(mission.reward, wingman),
-    battles: mission.battles.map((battle) => (battle.support ? battle : { ...battle, support: { name: wingman.name, damage: wingman.damage } })),
+    battles: mission.battles.map((battle) => (battle.support ? battle : { ...battle, support: { name: wingman.name, damage: wingman.damage, orders: true } })),
   };
 }

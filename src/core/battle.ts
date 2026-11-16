@@ -47,7 +47,17 @@ export interface BattleOptions {
 }
 
 /** An ally who is not on the field: at every new round they hit the strongest enemy for `damage`. */
-export interface Support { name: string; damage: number }
+/** What a wingman can be told to do. */
+export type Order = 'strongest' | 'target' | 'cover';
+export const ORDERS: Order[] = ['strongest', 'target', 'cover'];
+/**
+ * An ally who is not on the field. By default they fire once a round at the strongest enemy. One
+ * who takes orders (a hired wingman; an ally of the story does as the story says) can be told to
+ * fire at whatever the pilot fired at last, or to hold their fire and draw the enemy's instead.
+ */
+export interface Support { name: string; damage: number; orders?: boolean; order?: Order }
+/** The share of every shot at the pilot that a wingman on cover takes on themselves. */
+export const coverShare = (support: Support): number => Math.min(0.3, support.damage / 150);
 
 /** Something the player has to keep from being worn down; see the `protect` objective. */
 export interface Asset { name: string; hp: number; maxHp: number }
@@ -158,6 +168,7 @@ export type BattleEvent =
   | { type: 'phase'; unit: string; phase: number }
   /** The ally off the field fired; `damage` is the armour the target lost. */
   | { type: 'support'; name: string; target: string; damage: number }
+  | { type: 'order'; name: string; order: Order }
   /** The protected asset lost `lost` and stands at `hp`. */
   | { type: 'asset'; hp: number; lost: number }
   | { type: 'outcome'; outcome: 'victory' | 'defeat' };
@@ -178,6 +189,8 @@ export interface BattleState {
   support?: Support;
   /** What the place does to the fighting; see ground.ts. */
   ground?: Ground;
+  /** The enemy the pilot fired at last, for a wingman told to follow the pilot's fire. */
+  focus?: string;
   /** Multiplies the armour and damage of every enemy, those that join later included. */
   enemyScale: number;
   /** Set when the battle ended because the pilot walked away from it. */
@@ -198,12 +211,14 @@ export type Action =
   | { type: 'repair'; part: FrameSlot }
   | { type: 'endTurn' }
   /** The player gives the battle up: a defeat, without waiting to be destroyed. */
-  | { type: 'retreat' };
+  | { type: 'retreat' }
+  /** Tells the wingman what to do from now on. Costs nothing and does not end the turn. */
+  | { type: 'order'; order: Order };
 
 export type Refusal =
   | 'noEnergy' | 'noAmmo' | 'alreadyFired' | 'weaponDisabled' | 'noWeapon' | 'invalidTarget'
   | 'alreadyUsed' | 'legsDisabled' | 'noRepairs' | 'partDestroyed' | 'partFull' | 'battleOver'
-  | 'staggered' | 'cannotBoost' | 'notCharged' | 'needsBoost' | 'noModule' | 'noUses' | 'noAbility';
+  | 'staggered' | 'cannotBoost' | 'notCharged' | 'needsBoost' | 'noModule' | 'noUses' | 'noAbility' | 'noWingman';
 
 /** What a boost gives a unit that fits no booster. Kept for callers that predate boosters. */
 export const BOOST_EVASION = DEFAULT_BOOST.thrust;
@@ -397,9 +412,12 @@ function beginRound(state: BattleState, catalog: Catalog): boolean {
   if (state.support) {
     // A machine the client wants in one piece is not for the ally to shoot at.
     const spared = state.objective.type === 'disable' ? objectiveTarget(state) : undefined;
-    const foes = standing(state, 'enemy').filter((u) => u !== spared);
+    // On cover they hold their fire: what they do for the pilot then is in every shot the enemy takes.
+    const foes = state.support.order === 'cover' ? [] : standing(state, 'enemy').filter((u) => u !== spared);
     if (foes.length > 0) {
-      const target = foes.reduce((a, b) => (b.parts.core!.ap > a.parts.core!.ap ? b : a));
+      const strongest = foes.reduce((a, b) => (b.parts.core!.ap > a.parts.core!.ap ? b : a));
+      // Told to follow the pilot, they fire at whatever the pilot fired at last, while it stands.
+      const target = (state.support.order === 'target' && foes.find((u) => u.id === state.focus)) || strongest;
       const event: Extract<BattleEvent, { type: 'support' }> = { type: 'support', name: state.support.name, target: target.id, damage: 0 };
       state.events.push(event);
       event.damage = strike(state, target, state.support.damage, state.support.damage, catalog);
@@ -635,6 +653,7 @@ export function previewShot(
   const resist = targetPart.resist[weapon.damageType] * (weapon.trait === 'pierce' ? 0.5 : 1);
   let amount = weapon.damage * (1 - resist) * attacker.mods.damage * attacker.damageBoost * aegisFactor(state, target)
     * (state.ground?.damage?.[weapon.damageType] ?? 1);
+  if (target.side === 'player' && state.support?.order === 'cover') amount *= 1 - coverShare(state.support);
   if (target.staggered > 0) amount *= STAGGER_DAMAGE;
   if (target.guarding) amount *= guardFactor(target, catalog);
   const full = Math.max(1, Math.round(amount));
@@ -680,6 +699,9 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
       if (unit.ammo[action.weapon] === 0) return 'noAmmo';
       return unit.energy < weapon.energy ? 'noEnergy' : null;
     }
+    case 'order':
+      if (unit.side !== 'player' || !state.support?.orders) return 'noWingman';
+      return (state.support.order ?? 'strongest') === action.order ? 'alreadyUsed' : null;
     case 'boost':
       if (unit.usedBoost || unit.usedGuard) return 'alreadyUsed';
       if (!isAlive(unit.parts.legs)) return 'legsDisabled';
@@ -918,7 +940,13 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
   const unit = activeUnit(state);
   switch (action.type) {
     case 'fire':
+      // The wingman who follows the pilot's fire is told where it went.
+      if (unit.side === 'player') state.focus = action.target;
       resolveFire(state, action, catalog, roll);
+      break;
+    case 'order':
+      state.support!.order = action.order;
+      state.events.push({ type: 'order', name: state.support!.name, order: action.order });
       break;
     case 'charge':
       unit.energy -= weaponIn(unit.build, action.weapon, catalog)!.energy;

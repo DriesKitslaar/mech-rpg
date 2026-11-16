@@ -11,13 +11,12 @@ not that one. Game text is English until phase M6.
 
 Update as work lands. After a context reset, start here.
 
-- [ ] M1: The Gauntlet (branch `feat/moon-gauntlet`, PR 18). Built and tested (rules in `src/core/gauntlet.ts`, screen in
-      `src/ui/gauntletScreen.ts`). Its review is running (snapshot `scratchpad/reviewM1`). Pending: fixes, APK.
+- [x] M1: The Gauntlet (branch `feat/moon-gauntlet`, PR 18). Built, reviewed, fixed. APK sent with M2 and M3.
 - [ ] M2: Ground and weather (branch `feat/moon-ground`, PR 19, on top of M1). Built and tested: seven places have a rule
-      (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Pending: review, APK.
+      (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Review of M2 and M3 together is running (snapshot `scratchpad/reviewM23`); APK sent.
 - [ ] M3: New machines (branch `feat/moon-machines`, PR 20, on top of M2). Built and tested: six machines for the open
-      contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Pending: review, APK.
-- [ ] M4: Orders for the wingman
+      contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Review of M2 and M3 together is running (snapshot `scratchpad/reviewM23`); APK sent.
+- [ ] M4: Orders for the wingman (branch `feat/moon-orders`, PR 21, on top of M3). Built and tested. Pending: review, APK.
 - [ ] M5: Cups
 - [ ] M6: Dutch
 - [ ] M7: Last review, APK, summary
@@ -99,3 +98,20 @@ M3:
 - The six smaller machines join the open contracts' pool; the two great ones are wardens of the
   Gauntlet (floors 10 and 20) and the last two of four jobs for the Night Market Guild, a second
   series of side work beside the bounties.
+
+M1, after its review:
+
+- A run starts with an arc pistol in the other hand, which needs no ammunition; field repairs are
+  restocked every floor; a game closed on a floor finds the run fallen there (`Run.fighting`);
+  parts stay on offer at any depth and a hand weapon goes to the empty hand; wear counts plating;
+  the best and its medals count as floors are cleared; what is fought down there is met; the floor
+  ahead is shown while choosing. The Gauntlet's own machines are its first two wardens, so nobody
+  from the story is met before floor 15.
+- Left as it is: boons add up without limit, so a very good run has no hard wall.
+
+M4:
+
+- Three orders (`Support.order`): strongest (as before), my target (the enemy the pilot fired at
+  last, `BattleState.focus`), cover (no shot; every shot at the pilot does less by a share that
+  grows with the wingman's damage, at most three in ten). Only a hired wingman takes them. The row
+  in the battle menu says what they are doing; choosing it gives the next order, for nothing.

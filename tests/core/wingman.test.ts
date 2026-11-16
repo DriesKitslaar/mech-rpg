@@ -48,7 +48,7 @@ describe('a contract flown with a wingman', () => {
 
   test('has their fire in every battle, and the battles are otherwise the same', () => {
     const flown = withWingman(mission('undertow-1'), marrow);
-    expect(flown.battles.map((b) => b.support)).toEqual([{ name: 'Marrow', damage: 28 }, { name: 'Marrow', damage: 28 }]);
+    expect(flown.battles.map((b) => b.support)).toEqual([{ name: 'Marrow', damage: 28, orders: true }, { name: 'Marrow', damage: 28, orders: true }]);
     expect(flown.battles.map((b) => b.enemies)).toEqual(mission('undertow-1').battles.map((b) => b.enemies));
     expect(flown.id).toBe('undertow-1');
   });
@@ -61,7 +61,7 @@ describe('a contract flown with a wingman', () => {
 
   test('the wingman fires at the start of every round after the first, at the strongest enemy', () => {
     let s = startMissionBattle(DEMO_BUILD, withWingman(mission('patrol'), sixty), 0, ALL_ENEMIES, CATALOG, 3);
-    expect(s.support).toEqual({ name: 'Old Sixty', damage: 40 });
+    expect(s.support).toEqual({ name: 'Old Sixty', damage: 40, orders: true });
     const seen: unknown[] = [];
     for (let i = 0; i < 12 && s.round === 1 && s.outcome === 'ongoing'; i++) {
       s = applyAction(s, { type: 'endTurn' }, CATALOG);

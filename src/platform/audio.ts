@@ -99,6 +99,7 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
     case 'launch': return now('launch');
     case 'phase': return now('alarm');
     case 'support': return [{ name: 'support', delayMs: 0 }, { name: 'hit', delayMs: flightMs }];
+    case 'order': return [];
     case 'asset': return event.lost > 0 ? now('asset') : [];
     case 'overheat': return now('overheat');
     case 'outcome': return now(event.outcome === 'victory' ? 'victory' : 'defeat');
