@@ -185,7 +185,7 @@ describe('the training list in a later cycle', () => {
     const { app } = inHub(quiet(again));
     select(app, 'training');
     expect(snap(app).menu.items.every((item) => item.enabled)).toBe(true);
-    expect(snap(app).menu.items).toHaveLength(10);
+    expect(snap(app).menu.items).toHaveLength(11);
   });
 });
 

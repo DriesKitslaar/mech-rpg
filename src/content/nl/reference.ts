@@ -371,4 +371,10 @@ export const REFERENCE_NL: Record<string, string> = {
   Seal: 'Zegel',
   Base: 'Voet',
   Scale: 'Waag',
+  // The Overdrive: its medals and its page of the manual.
+  'Set off an Overdrive.': 'Zet een Overdrive in.',
+  'Set off 50 Overdrives.': 'Zet 50 Overdrives in.',
+  'Past the Stop': 'Voorbij de aanslag',
+  'From pilot level 3 a meter at the left edge of the field fills as you fight: 8 for a volley that lands, 10 for one you take, 15 for a machine destroyed. Full, R1 on your turn sets off your Overdrive. Second Wind starts your turn over; Iron Skin (level 6) halves damage until your next turn; Deadeye (level 9) cannot miss.':
+    'Vanaf pilootlevel 3 vult een meter links op het veld zich in gevecht: 8 voor een salvo dat raakt, 10 voor een dat je krijgt, 15 voor een gesloopte machine. Vol zet R1 in je beurt je Overdrive in. Tweede Adem begint je beurt opnieuw; IJzerhuid (level 6) halveert schade tot je volgende beurt; Scherpoog (level 9) mist niet.',
 };

@@ -1,3 +1,4 @@
+import type { OverdriveId } from './battle';
 import type { Support } from './battle';
 import type { GameState } from './game';
 import type { Build, Objective, Part } from './types';
@@ -70,6 +71,8 @@ export interface Mission {
   arenaRank?: number;
   /** Set on a training drill: the mech that is lent for it. See training.ts. */
   loaner?: Build;
+  /** Set on a drill that teaches the Overdrive: the one it is flown with, and what its meter starts at. */
+  overdrive?: { kind: OverdriveId; drive: number };
 }
 
 export interface Message {

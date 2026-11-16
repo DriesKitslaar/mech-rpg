@@ -1,5 +1,6 @@
 import { MEDAL_PAY, medalProgress, type Medal } from '../core/medals';
-import { MAX_LEVEL, checkBuyPerk, levelFor, perkPoints, xpForLevel } from '../core/pilot';
+import { OVERDRIVES, type OverdriveId } from '../core/battle';
+import { MAX_LEVEL, OVERDRIVE_LEVEL, checkBuyPerk, fittedOverdrive, levelFor, overdriveOpen, perkPoints, xpForLevel } from '../core/pilot';
 import { MEDALS } from '../content/medals';
 import { PERKS } from '../content/perks';
 import { STRINGS } from '../content/strings';
@@ -8,12 +9,13 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { RECORD_ROWS, rankTally, recordLines } from './record';
-import { COLORS, LINE, MEDAL_COLORS, charsFor, drawList, drawMedal, drawMeter, drawPanel, drawTabs, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, LINE, MEDAL_COLORS, charsFor, drawList, drawMedal, drawMeter, drawPanel, drawTabs, drawText, wrap } from './widgets';
 
 const P = STRINGS.pilot;
 const M = STRINGS.medals;
-export type PilotPage = 'perks' | 'medals' | 'record';
-const PAGES: PilotPage[] = ['perks', 'medals', 'record'];
+export type PilotPage = 'perks' | 'drive' | 'medals' | 'record';
+const PAGES: PilotPage[] = ['perks', 'medals', 'record', 'drive'];
+const O = STRINGS.overdrive;
 /** Medals listed at a time. */
 const MEDAL_ROWS = 13;
 
@@ -22,6 +24,7 @@ export class PilotScreen implements Screen {
   private page: PilotPage = 'perks';
   private perks = new MenuList();
   private medals = new MenuList();
+  private drives = new MenuList();
 
   constructor(private app: App) {
     this.refresh();
@@ -32,6 +35,12 @@ export class PilotScreen implements Screen {
     this.perks.setItems(PERKS.map((perk) => ({
       id: perk.id, label: perk.name, enabled: checkBuyPerk(game, perk.id, PERKS) === null,
       note: `${game.perks[perk.id] ?? 0}/${perk.maxRank}`,
+    })));
+    // The Overdrives: the one flown with is marked; one that is not open yet says at which level it is.
+    const fitted = fittedOverdrive(game);
+    this.drives.setItems(OVERDRIVES.map((id) => ({
+      id, label: O.names[id], enabled: overdriveOpen(game, id),
+      note: fitted === id ? O.fitted : overdriveOpen(game, id) ? undefined : O.level(OVERDRIVE_LEVEL[id]),
     })));
     this.medals.setItems(MEDALS.map((medal) => {
       const { have, need, earned } = medalProgress(medal, game);
@@ -65,7 +74,7 @@ export class PilotScreen implements Screen {
   }
 
   private get list(): MenuList | null {
-    return this.page === 'perks' ? this.perks : this.page === 'medals' ? this.medals : null;
+    return this.page === 'perks' ? this.perks : this.page === 'medals' ? this.medals : this.page === 'drive' ? this.drives : null;
   }
 
   private turn(by: number): void {
@@ -83,6 +92,11 @@ export class PilotScreen implements Screen {
     else if (action === 'confirm' && this.page === 'perks' && this.perks.selected?.enabled) {
       this.app.buyPerk(this.perks.selected.id);
       this.refresh();
+    } else if (action === 'confirm' && this.page === 'drive' && this.drives.selected?.enabled) {
+      const at = this.drives.cursor;
+      this.app.fitOverdrive(this.drives.selected.id as OverdriveId);
+      this.refresh();
+      this.drives.cursor = at;
     }
   }
 
@@ -94,6 +108,7 @@ export class PilotScreen implements Screen {
       pilot: { level: levelFor(game.xp), points: perkPoints(game, PERKS) },
       medalCount: { earned: MEDALS.filter((m) => game.medals.includes(m.id)).length, of: MEDALS.length },
       ...(this.page === 'medals' ? { detail: this.detail() } : {}),
+      ...(this.page === 'drive' ? { overdrive: fittedOverdrive(game) ?? null } : {}),
       ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length) } : {}),
     };
   }
@@ -109,13 +124,30 @@ export class PilotScreen implements Screen {
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, P.heading, 5, 1, { color: COLORS.accent });
-    drawText(ctx, game.callsign, 36, 1);
+    // The callsign stands a little after the heading, however long the heading is in the language set.
+    drawText(ctx, game.callsign, 5 + Math.round(P.heading.length * CHAR_W) + 6, 1);
     drawTabs(ctx, LOGICAL_W - 5, 1, PAGES.map((page) => P.pages[page]), PAGES.indexOf(this.page));
 
     if (this.page === 'perks') this.drawPerks(ctx);
+    else if (this.page === 'drive') this.drawDrive(ctx);
     else if (this.page === 'medals') this.drawMedals(ctx);
     else this.drawRecord(ctx);
-    drawText(ctx, this.page === 'perks' ? P.hint : P.pageHint, LOGICAL_W / 2, 255, { align: 'center', color: COLORS.dim });
+    drawText(ctx, this.page === 'perks' ? P.hint : this.page === 'drive' ? O.hint : P.pageHint, LOGICAL_W / 2, 255, { align: 'center', color: COLORS.dim });
+  }
+
+  /** The Overdrives: which there are, which is flown with, what the one under the cursor does, and how the meter fills. */
+  private drawDrive(ctx: CanvasRenderingContext2D): void {
+    drawPanel(ctx, 4, 18, LOGICAL_W - 8, 52);
+    drawText(ctx, O.heading, 12, 22, { color: COLORS.dim, size: 10 });
+    drawList(ctx, this.drives, 12, 33, LOGICAL_W - 36, OVERDRIVES.length);
+    drawPanel(ctx, 4, 74, LOGICAL_W - 8, 78);
+    const id = this.drives.selected?.id;
+    if (id) {
+      drawText(ctx, O.names[id].toUpperCase(), 12, 80, { size: 16, color: COLORS.accent });
+      wrap(O.notes[id], charsFor(LOGICAL_W - 28)).slice(0, 4).forEach((text, i) => drawText(ctx, text, 12, 100 + i * LINE));
+    }
+    drawPanel(ctx, 4, 156, LOGICAL_W - 8, 96);
+    wrap(O.how, charsFor(LOGICAL_W - 28)).slice(0, 6).forEach((text, i) => drawText(ctx, text, 12, 162 + i * LINE, { color: COLORS.dim }));
   }
 
   private drawPerks(ctx: CanvasRenderingContext2D): void {

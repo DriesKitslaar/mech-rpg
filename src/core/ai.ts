@@ -220,6 +220,21 @@ function autoTarget(state: BattleState, enemies: UnitState[]): { target: UnitSta
  */
 export function chooseAutoPlayerAction(state: BattleState, catalog: Catalog): Action {
   const me = activeUnit(state);
+  const choice = autoChoice(state, catalog);
+  const overdrive: Action = { type: 'overdrive' };
+  if (!can(state, overdrive, catalog) || state.units.every((u) => u.side !== 'enemy' || u.destroyed)) return choice;
+  // A full meter is spent where it does most: Iron Skin when the core is going, Deadeye before the
+  // first shot of a turn, Second Wind once the turn has been fired empty.
+  const core = me.parts.core!;
+  if (me.overdrive === 'iron-skin') return core.ap < core.maxAp * 0.6 ? overdrive : choice;
+  if (me.overdrive === 'deadeye') return choice.type === 'fire' && me.fired.length === 0 ? overdrive : choice;
+  const spent = me.fired.length > 0 && !['fire', 'charge', 'module', 'cool'].includes(choice.type);
+  return spent ? overdrive : choice;
+}
+
+/** What the automatic player would do with no Overdrive to think about. */
+function autoChoice(state: BattleState, catalog: Catalog): Action {
+  const me = activeUnit(state);
   const enemies = state.units.filter((u) => u.side === 'enemy' && !u.destroyed);
   if (enemies.length === 0) return { type: 'endTurn' };
 

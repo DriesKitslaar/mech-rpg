@@ -19,11 +19,11 @@ const openDrill = (app: Parameters<typeof select>[0], id: string) => {
 };
 
 describe('training', () => {
-  test('is on the hub menu and lists the ten drills: three open from the start, the rest once the introductions are done', () => {
+  test('is on the hub menu and lists the eleven drills: three open from the start, the rest once the introductions are done', () => {
     const { app } = inHub(quiet());
     expect(ids(app)).toEqual(['contracts', 'arena', 'training', 'gauntlet', 'garage', 'shop', 'pilot', 'messages', 'database', 'options']);
     select(app, 'training');
-    expect(snap(app)).toMatchObject({ screen: 'training', count: 'PASSED 0/10' });
+    expect(snap(app)).toMatchObject({ screen: 'training', count: 'PASSED 0/11' });
     const items = snap(app).menu.items;
     expect(items.map((i) => i.id)).toEqual(DRILLS.map((d) => d.id));
     expect(items.slice(0, 3).every((i) => i.enabled && i.note === '150')).toBe(true);
@@ -78,7 +78,7 @@ describe('training', () => {
     expect(saved.stats).toEqual(NO_STATS);
     // Back to the list, where it is marked; passing it again pays nothing more.
     press(app, 'confirm');
-    expect(snap(app)).toMatchObject({ screen: 'training', count: 'PASSED 1/10' });
+    expect(snap(app)).toMatchObject({ screen: 'training', count: 'PASSED 1/11' });
     expect(snap(app).menu.items[0]).toMatchObject({ id: 'drill-aim', note: 'PASSED' });
     expect(snap(app).menu.cursor).toBe(0);
     press(app, 'confirm');

@@ -430,4 +430,13 @@ export const MISSIONS_NL: Record<string, string> = {
   [`New licence, old frame, steady hands. One shot a round at whatever looks strongest.`]: `Nieuwe licentie, oud frame, vaste hand. Een schot per ronde op wat er het sterkst uitziet.`,
   [`Ex-Hadron. Fires a siege gun from somewhere you will not see, and invoices promptly.`]: `Ex-Hadron. Vuurt een belegeringskanon af vanaf een plek die jij niet ziet, en factureert stipt.`,
   [`Sixty contracts without a loss, or so the callsign says. Expensive, and worth most of it.`]: `Zestig contracten zonder verlies, zegt de roepnaam tenminste. Duur, en het meeste ervan waard.`,
+  // The drill that teaches the Overdrive.
+  [`Second Wind`]: `Tweede Adem`,
+  [`Overdrive`]: `Overdrive`,
+  [`Fighting fills the meter at the left edge of the field: hits you land, hits you take, machines you destroy. Full, it buys your Overdrive: press R1 on your turn.`]:
+    `Vechten vult de meter links op het veld: rake schoten, treffers die je krijgt, machines die je sloopt. Vol koopt hij je Overdrive: druk R1 in je beurt.`,
+  [`This one is Second Wind: your turn starts over. Fire everything, press R1, fire everything again. Your own opens at pilot level 3.`]:
+    `Dit is Tweede Adem: je beurt begint opnieuw. Vuur alles af, druk R1, vuur alles nog eens af. De jouwe opent op pilootlevel 3.`,
+  [`Two turns in one. It is worth most when the first one is spent.`]: `Twee beurten in een. Het meest waard als de eerste op is.`,
+  [`The meter is full already. Spend your energy first, then R1.`]: `De meter is al vol. Verbruik eerst je energie, dan R1.`,
 };

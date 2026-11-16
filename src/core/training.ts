@@ -20,6 +20,8 @@ export interface Drill {
   scale?: number;
   /** What opens it: a contract done, `choice`, `start`, and so on. */
   after: Condition;
+  /** The Overdrive the lent mech has, and what its meter starts at: only the drill that teaches it. */
+  overdrive?: Mission['overdrive'];
 }
 
 /** What a drill pays, once: the first time it is passed. */
@@ -40,6 +42,7 @@ export function drillMission(game: GameState, drill: Drill, client: string): Mis
   return {
     id: drill.id, phase: 'patrol', title: drill.title, client, briefing: drill.briefing, debrief: drill.debrief,
     reward: drillPassed(game, drill.id) ? 0 : DRILL_PAY, battles: [drill.battle], scale: drill.scale ?? 1, loaner: drill.build,
+    ...(drill.overdrive ? { overdrive: drill.overdrive } : {}),
   };
 }
 

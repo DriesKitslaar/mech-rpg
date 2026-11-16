@@ -1,6 +1,19 @@
+import { OVERDRIVES, type OverdriveId } from './battle';
 import type { GameState } from './game';
 
 export const MAX_LEVEL = 20;
+
+/** The level at which each Overdrive opens to a pilot. */
+export const OVERDRIVE_LEVEL: Record<OverdriveId, number> = { 'second-wind': 3, 'iron-skin': 6, deadeye: 9 };
+export const overdriveOpen = (game: GameState, id: OverdriveId): boolean => levelFor(game.xp) >= OVERDRIVE_LEVEL[id];
+/**
+ * The Overdrive the pilot flies with: the one they chose, while it is open to them; failing that the
+ * first that is open, so that a pilot who never looks at the list still has one from the third level.
+ */
+export function fittedOverdrive(game: GameState): OverdriveId | undefined {
+  if (game.overdrive && OVERDRIVES.includes(game.overdrive) && overdriveOpen(game, game.overdrive)) return game.overdrive;
+  return OVERDRIVES.find((id) => overdriveOpen(game, id));
+}
 
 /** Total experience needed to be level `n`. */
 export const xpForLevel = (n: number): number => 50 * (n - 1) * (n + 2);

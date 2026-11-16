@@ -1,3 +1,4 @@
+import { OVERDRIVES, type OverdriveId } from './battle';
 import type { Run } from './gauntlet';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
@@ -45,6 +46,10 @@ export interface GameState {
   ranks: Record<string, Rank>;
   /** Ids of the scenes shown in this cycle. */
   scenes: string[];
+  /** The Overdrive the pilot chose to fly with; see pilot.ts for what is flown when none was chosen. */
+  overdrive?: OverdriveId;
+  /** How many times the pilot has set off an Overdrive. */
+  overdrives?: number;
   /** Ids of the arena cups won. */
   cups?: string[];
   /** The run of the Gauntlet under way, if there is one. */
@@ -284,6 +289,8 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
   if (value.cups !== undefined && !(isTextList(value.cups) && value.cups.length <= 16)) return false;
+  if (value.overdrive !== undefined && !OVERDRIVES.includes(value.overdrive as OverdriveId)) return false;
+  if (value.overdrives !== undefined && !isWholeNonNegative(value.overdrives)) return false;
   const { gauntlet, gauntletBest } = value;
   // What the run holds is checked where a game is loaded; here it only has to be a thing or nothing.
   if (gauntlet !== undefined && gauntlet !== null && !isRecord(gauntlet)) return false;

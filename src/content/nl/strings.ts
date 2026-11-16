@@ -35,7 +35,7 @@ export const STRINGS_NL = {
     boost: 'BOOST', guard: 'DEKKING', stagger: 'WANKELT', charged: 'GELADEN', charging: 'LAADT OP', painted: 'GEMERKT',
     barrier: (n: number) => `BARRIERE ${n}`, chaff: 'CHAFF', stability: 'STAB',
     fuse: (n: number) => `LONT ${n}`, aegis: 'AEGIS', jammer: 'STOORDER', mender: 'HERSTEL', carrier: 'DRAGER',
-    covered: 'GEDEKT', jammed: (n: number) => `GESTOORD -${n}`,
+    covered: 'GEDEKT', jammed: (n: number) => `GESTOORD -${n}`, ironSkin: 'IJZERHUID', deadeye: 'SCHERPOOG',
   },
   intent: { aim: (part: string) => `MIKT ${AIMED[part] ?? part.toUpperCase()}`, dart: 'ONTWIJKT', mend: 'HERSTELT', cool: 'KOELT', windUp: 'LAADT OP' },
   objectives: {
@@ -83,6 +83,17 @@ export const STRINGS_NL = {
   blast: (unit: string, target: string, damage: number) => `${unit} ONTPLOFT bij ${obj(target)} -${damage}`,
   launch: (unit: string, spawned: string) => `${unit} lanceert ${spawned}`,
   phase: (unit: string) => `${unit} wijzigt tactiek`,
+  overdrive: {
+    heading: 'OVERDRIVE', ready: 'R1: OVERDRIVE', used: (name: string) => `OVERDRIVE: ${name.toUpperCase()}`,
+    names: { 'second-wind': 'Tweede Adem', 'iron-skin': 'IJzerhuid', deadeye: 'Scherpoog' } as Record<string, string>,
+    notes: {
+      'second-wind': 'Je beurt begint opnieuw: energie terug, elk wapen en elke actie klaar. De hitte blijft.',
+      'iron-skin': 'Tot je volgende beurt krijg je halve schade en wankel je niet.',
+      deadeye: 'Tot je beurt eindigt is elk schot raak, met een kwart meer.',
+    } as Record<string, string>,
+    how: 'De meter aan de rand van het veld vult zich als je raakt, geraakt wordt en machines sloopt. Is hij vol, druk dan R1 in je beurt.',
+    level: (n: number) => `LV ${n}`, fitted: 'GEKOZEN', hint: 'A: kies   L1/R1: blad   B: terug',
+  },
   orders: {
     item: (order: 'strongest' | 'target' | 'cover') => ({ strongest: 'Wing: sterkste', target: 'Wing: mijn doel', cover: 'Wing: dek mij' })[order],
     told: (name: string, order: 'strongest' | 'target' | 'cover') => ({
@@ -190,7 +201,7 @@ export const STRINGS_NL = {
     heading: 'PILOOT', level: 'LEVEL', xp: 'XP', next: 'VOLGEND LVL', maxLevel: 'MAX LEVEL', points: 'PERKPUNTEN',
     hint: 'A: besteed punt   L1/R1: blad   B: terug', pageHint: 'L1/R1: blad   B: terug',
     noPoints: 'Geen perkpunten. Win contracten voor levels.', maxed: 'Deze perk zit op de hoogste rang.',
-    pages: { perks: 'PERKS', medals: 'MEDAILLE', record: 'DOSSIER' },
+    pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDAILLE', record: 'DOSSIER' },
   },
   medals: {
     heading: 'MEDAILLE', earned: 'MEDAILLE ERBIJ', earnedMany: 'MEDAILLES ERBIJ', count: (n: number) => `${n} stuks`, pay: (credits: number) => `+${credits} c`, held: 'BEHAALD', pays: (credits: number) => `Loon ${credits} c`,
