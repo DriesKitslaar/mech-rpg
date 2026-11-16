@@ -1,5 +1,5 @@
-import { DRIVE_MAX, MARKS, carryFrom, type BattleState, type Carry, type EnemyMark, type OverdriveId, type UnitMods } from './battle';
-import { Dice, ENEMY_COST, MAX_BUDGET, rollEnemies } from './board';
+import { DRIVE_MAX, carryFrom, type BattleState, type Carry, type EnemyMark, type OverdriveId, type UnitMods } from './battle';
+import { Dice, ENEMY_COST, MAX_BUDGET, marksFor, rollEnemies } from './board';
 import { validatePlayerBuild } from './build';
 import type { Mission } from './campaign';
 import { BUILD_SLOTS, fits, type BuildSlot } from './game';
@@ -154,7 +154,8 @@ export function doors(run: Run, backgrounds: string[]): Door[] {
     // The mark goes to the dearest machine behind the door, the first of them when two cost the same.
     let at = 0;
     door.enemies.forEach((id, i) => { if ((ENEMY_COST[id] ?? 0) > (ENEMY_COST[door.enemies[at]] ?? 0)) at = i; });
-    door.elite = { at, mark: dice.pick(MARKS) };
+    // One that changes something about it: a turret is never swift.
+    door.elite = { at, mark: dice.pick(marksFor(door.enemies[at])) };
   }
   return found;
 }
@@ -238,27 +239,33 @@ export const draftSize = (run: Run): number => 3 + (run.elite ? 1 : 0) + (hasRel
 /**
  * What is on offer after the floor just won, always different things. Two parts when there are
  * parts to offer, and a full service once the mech is worn; boons that can still be taken fill the
- * rest, and more parts after them when the boons run out.
+ * rest, and more parts after them when the boons run out. A frame near its limits has few mounts
+ * that anything still fits: then a second thing for a mount is offered rather than nothing, and
+ * after that a service the mech hardly needs. So there is always something to take.
  */
 export function draft(run: Run, catalog: Catalog): Offer[] {
   const dice = diceFor(run, 2);
   const size = draftSize(run);
   const offers: Offer[] = [];
   const parts = partOffers(run, catalog);
-  const part = (): void => {
-    const [picked] = parts.splice(dice.roll(parts.length), 1);
+  // What is set aside because its mount already has something on offer.
+  const second: typeof parts = [];
+  const part = (from: typeof parts): void => {
+    const [picked] = from.splice(dice.roll(from.length), 1);
     // Not two things for the same slot: the choice should be between kinds of help.
-    for (let j = parts.length - 1; j >= 0; j--) if (parts[j].slot === picked.slot) parts.splice(j, 1);
+    if (from === parts) for (let j = parts.length - 1; j >= 0; j--) if (parts[j].slot === picked.slot) second.unshift(...parts.splice(j, 1));
     offers.push({ kind: 'part', ...picked });
   };
-  for (let i = 0; i < 2 && parts.length > 0; i++) part();
+  for (let i = 0; i < 2 && parts.length > 0; i++) part(parts);
   if (wear(run, catalog) >= 0.25) offers.push({ kind: 'service' });
   const boons = BOON_IDS.filter((id) => (run.boons[id] ?? 0) < BOON_CAP);
   while (offers.length < size && boons.length > 0) {
     const [boon] = boons.splice(dice.roll(boons.length), 1);
     offers.push({ kind: 'boon', boon });
   }
-  while (offers.length < size && parts.length > 0) part();
+  while (offers.length < size && parts.length > 0) part(parts);
+  while (offers.length < size && second.length > 0) part(second);
+  if (offers.length < size && !offers.some((offer) => offer.kind === 'service')) offers.push({ kind: 'service' });
   return offers.slice(0, size);
 }
 
@@ -278,13 +285,20 @@ export function takeRelic(run: Run, relic: RelicId): Run {
   return { ...run, relicOwed: false, relics: [...(run.relics ?? []), relic] };
 }
 
+/**
+ * The mech after a full service: whole, cool and loaded, so there is nothing to carry. Only the
+ * meter of an Overdrive is kept: it is the pilot's, not the mech's.
+ */
+const serviced = (carry: Carry | null): Carry | null =>
+  (carry?.drive ? { ap: {}, heat: 0, ammo: {}, restocked: {}, destroyed: false, drive: carry.drive } : null);
+
 /** Takes one of the things on offer. A part goes on at once and is whole; a service makes everything whole. */
 export function take(run: Run, offer: Offer, catalog: Catalog): Run {
   if (!run.drafting) throw new Error('nothing is on offer');
   if (run.relicOwed) throw new Error('a relic is owed first');
   if (!draft(run, catalog).some((o) => JSON.stringify(o) === JSON.stringify(offer))) throw new Error('that is not on offer');
   const next: Run = { ...run, drafting: false, elite: false };
-  if (offer.kind === 'service') return { ...next, carry: null };
+  if (offer.kind === 'service') return { ...next, carry: serviced(run.carry) };
   if (offer.kind === 'boon') return { ...next, boons: { ...run.boons, [offer.boon]: (run.boons[offer.boon] ?? 0) + 1 } };
   const build = { ...run.build, [offer.slot]: offer.part };
   if (!run.carry) return { ...next, build };
@@ -323,19 +337,19 @@ export function descend(run: Run, end: BattleState): Run {
   const next: Run = { ...run, floor: run.floor + 1, drafting: true, fighting: false, elite: !!run.elite, revived: false };
   delete next.door;
   // Beating a warden earns a full service on the house: the mech goes on whole, and with what the warden left.
-  // Only the meter of an Overdrive survives the service: it is the pilot's, not the mech's.
-  next.carry = !warden ? carry : carry.drive ? { ap: {}, heat: 0, ammo: {}, restocked: {}, destroyed: false, drive: carry.drive } : null;
+  next.carry = warden ? serviced(carry) : carry;
   next.relicOwed = warden && relicOffers(next).length > 0;
   return next;
 }
 
 /**
  * What becomes of a run whose floor was lost or left: with a Spare Core it stands before the same
- * floor again in a whole mech, and the core is spent; without one there is nothing, and the run is over.
+ * floor again in a whole mech, with the meter it came to the floor with, and the core is spent;
+ * without one there is nothing, and the run is over.
  */
 export function fall(run: Run): Run | null {
   if (!hasRelic(run, 'spare')) return null;
-  const next: Run = { ...run, relics: (run.relics ?? []).filter((id) => id !== 'spare'), carry: null, fighting: false, elite: false, revived: true };
+  const next: Run = { ...run, relics: (run.relics ?? []).filter((id) => id !== 'spare'), carry: serviced(run.carry), fighting: false, elite: false, revived: true };
   delete next.door;
   return next;
 }
@@ -366,8 +380,14 @@ export function isValidRun(value: unknown, catalog: Catalog): value is Run {
     const { relics } = value;
     if (!Array.isArray(relics) || !relics.every((id) => (RELIC_IDS as unknown[]).includes(id)) || new Set(relics).size !== relics.length) return false;
   }
-  // A relic is owed only with a draft, and a door is held only while a floor is fought.
-  if (value.relicOwed && !value.drafting) return false;
+  // A relic is owed only with a draft, on the floor after a warden's, and while there is one left to take:
+  // anything else would be a relic for nothing, or a room with nothing in it to choose.
+  if (value.relicOwed) {
+    if (!value.drafting || value.floor < 2 || !isWardenFloor(value.floor - 1)) return false;
+    if (Array.isArray(value.relics) && value.relics.length >= RELIC_IDS.length) return false;
+  }
+  // A door is held only while its floor is fought.
+  if (value.door !== undefined && value.fighting !== true) return false;
   const { build, boons, carry } = value;
   if (!isRecord(build) || !Object.entries(build).every(([slot, id]) => BUILD_SLOTS.includes(slot as BuildSlot) && typeof id === 'string')) return false;
   if (validatePlayerBuild(build as unknown as Build, catalog).length > 0) return false;

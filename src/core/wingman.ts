@@ -1,15 +1,15 @@
 import { chose, reached, type Condition, type Mission } from './campaign';
 import type { GameState } from './game';
 
+/** The moments a wingman has a word to say on the radio: the battle opening, their own kill, the pilot's, the pilot's core getting thin, the battle won. */
+export type RadioCue = 'start' | 'kill' | 'cheer' | 'warn' | 'win';
+export const RADIO_CUES: RadioCue[] = ['start', 'kill', 'cheer', 'warn', 'win'];
+
 /**
  * A second pilot for hire. They do not stand on the field: at the start of every round they fire
  * once at the strongest enemy, the way an ally in the story does. They are paid a share of the fee,
  * win or lose nothing: a contract that is lost pays nobody.
  */
-/** The moments a wingman has a word to say on the radio: the battle opening, their own kill, the pilot's, the pilot's core getting thin, the battle won. */
-export type RadioCue = 'start' | 'kill' | 'cheer' | 'warn' | 'win';
-export const RADIO_CUES: RadioCue[] = ['start', 'kill', 'cheer', 'warn', 'win'];
-
 export interface Wingman {
   id: string;
   name: string;

@@ -42,11 +42,16 @@ export class SceneScreen implements Screen {
     this.hold = app.deps.fast ? 0 : SCENE_HOLD_MS;
   }
 
+  /** Whether the words have come up: the picture has the screen to itself for a moment first, whatever the speed of text. */
+  private get wordsUp(): boolean {
+    return !!this.app.deps.fast || this.clock >= PICTURE_MS;
+  }
+
   update(dtMs: number): void {
     this.clock += dtMs;
     this.hold = Math.max(0, this.hold - dtMs);
     // The picture has the screen to itself for a moment; then the words come.
-    if (this.clock < PICTURE_MS && !this.app.deps.fast) return;
+    if (!this.wordsUp) return;
     this.typeTick -= dtMs;
     if (this.writer.update(dtMs) > 0 && this.typeTick <= 0) {
       this.app.deps.sfx?.play('type');
@@ -58,7 +63,7 @@ export class SceneScreen implements Screen {
     if (action !== 'confirm' || this.hold > 0) return;
     // The first press writes the page out; the next one leaves it. Each is held off for a moment
     // after what came before it, so a mashed button skips nothing unread.
-    if (!this.writer.done) {
+    if (!this.wordsUp || !this.writer.done) {
       this.clock = Math.max(this.clock, PICTURE_MS);
       this.writer.finish();
       this.hold = this.app.deps.fast ? 0 : SCENE_HOLD_MS;
@@ -68,7 +73,7 @@ export class SceneScreen implements Screen {
   view(): ScreenView {
     const { id, ending, faction } = this.scene;
     return {
-      menu: { items: [], cursor: 0 }, scene: id, typing: !this.writer.done, busy: this.hold > 0,
+      menu: { items: [], cursor: 0 }, scene: id, typing: !this.wordsUp || !this.writer.done, busy: this.hold > 0,
       ...(ending && faction ? { ending: faction } : {}),
     };
   }
@@ -89,6 +94,8 @@ export class SceneScreen implements Screen {
     if (scene.heading) drawText(ctx, scene.heading, LOGICAL_W / 2, 18, { align: 'center', color: COLORS.dim });
     drawText(ctx, scene.title, LOGICAL_W / 2 + 1, 31, { size: 32, align: 'center', color: '#3b1d5a' });
     drawText(ctx, scene.title, LOGICAL_W / 2, 30, { size: 32, align: 'center', color: COLORS.accent });
+    // Not a word before the shade is up: text that is all there at once would otherwise sit on the bare picture.
+    if (!this.wordsUp) return;
     const written = this.writer.visible();
     let at = 0;
     let y = 84;

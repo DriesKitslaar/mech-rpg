@@ -226,10 +226,11 @@ export const REFERENCE_NL: Record<string, string> = {
   'A wingman is hired in the briefing for a share of fee and experience, and fires once a round from round 2. In battle the Wing row gives orders for nothing: strike the strongest, strike what you fired at last, or cover you, which takes a share off every shot at you while they hold fire.':
     'Een wingman huur je in de briefing in voor een deel van loon en ervaring; die vuurt een keer per ronde vanaf ronde 2. In het gevecht geeft de rij Wing gratis orders: de sterkste aanvallen, aanvallen waar jij het laatst op vuurde, of jou dekken, wat van elk schot op jou een deel afhaalt zolang de wingman niet vuurt.',
   'THE GAUNTLET': 'DE GAUNTLET',
+  'ELITES AND RELICS': 'ELITES EN RELIKWIEEN',
   'A run of floors in a stock frame, with none of your own parts or perks. Most floors have two doors: pick your fight. After each floor take one thing on offer: a part, a full service, or a boon for the run. Every fifth floor has a warden. Falling, retreating or closing the game on a floor ends the run. It pays by floors cleared.':
-    'Een reeks etages in een standaardframe, zonder je eigen onderdelen of perks. De meeste etages hebben twee deuren: kies je gevecht. Kies na elke etage een aangeboden ding: onderdeel, groot onderhoud of reeksbonus. Elke vijfde etage heeft een bewaker. Vallen, Aftocht of afsluiten op een etage eindigt de reeks. Loon per gehaalde etage.',
+    'Een reeks etages in een standaardframe, zonder je eigen onderdelen of perks. De meeste etages hebben twee deuren: kies je gevecht. Kies na elke etage iets uit het aanbod: onderdeel, groot onderhoud of reeksbonus. Elke vijfde etage heeft een bewaker. Vallen, Aftocht of afsluiten op een etage eindigt de reeks. Loon per gehaalde etage.',
   'An elite is a machine with a mark. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. The Gauntlet hides one behind some doors: beat it for one more thing on offer. Some open contracts have one, and pay more. A warden beaten leaves one of two relics.':
-    'Een elite is een machine met een merk. GEPANTSERD: twee vijfde meer pantser. OPGEVOERD: een kwart meer schade. SNEL: lastiger te raken. BESCHERMD: een barriere, elke beurt nieuw. In de Gauntlet zit er soms een achter een deur: versla hem voor een extra aanbod. Soms heeft een open contract er een, voor meer loon. Een verslagen bewaker geeft een relikwie.',
+    'Een elite is een machine met een merk. GEPANTSERD: twee vijfde meer pantser. OVERKLOKT: een kwart meer schade. SNEL: lastiger te raken. SCHILD: een barriere, elke beurt nieuw. In de Gauntlet zit er soms een achter een deur: versla hem voor een extra aanbod. Soms heeft een open contract er een, voor meer loon. Een verslagen bewaker geeft een relikwie.',
   'ARENA CUPS': 'ARENABEKERS',
   'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.':
     'Een beker is drie van de ranglijst achter elkaar, met alleen veldonderhoud ertussen. Hij opent zodra je zijn drie hebt verslagen. De pot is voor alle drie of voor geen: eerst volledig, daarna een kwart.',
@@ -396,7 +397,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'The briefings of Director Brenn.': 'De briefings van directeur Brenn.',
   'The briefings of Analyst Varga.': 'De briefings van analist Varga.',
   'The briefings of Tamsin.': 'De briefings van Tamsin.',
-  'The arena, its cups and its back room.': 'De arena, haar bekers en haar achterkamer.',
+  'The arena, its cups and its back room.': 'De arena, de bekers en de achterkamer.',
   'The duels with the pilot who keeps turning up.': 'De duels met de piloot die steeds opduikt.',
   'Great machines, and pilots with a name.': 'Grote machines, en piloten met een naam.',
   'The war, the audit and the verdicts.': 'De oorlog, de audit en de vonnissen.',

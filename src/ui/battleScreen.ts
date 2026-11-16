@@ -70,6 +70,8 @@ const PLAYER_HIT: Record<FrameSlot, { x: number; y: number }> = {
 };
 /** Where the strip the wingman's line is written on starts. */
 const RADIO_X = 8;
+/** How long an elite under cover says each of the two over its head before it says the other. */
+export const MARK_TURN_MS = 1600;
 
 /** How long the ring of an Overdrive takes to run out. */
 const SURGE_MS = 420;
@@ -178,6 +180,15 @@ export class BattleScreen {
   get typing(): boolean {
     this.syncTalk();
     return !!this.talkWriter && !this.talkWriter.done;
+  }
+
+  /** Whether the picture is kept calm, and how written text is written: as the player set them. */
+  get calm(): boolean {
+    return this.opts.calm === true;
+  }
+
+  get pace(): Typing {
+    return this.opts.typing ?? PLAIN_TYPING;
   }
 
   /** True while a press on a line of talk would be ignored. */
@@ -293,12 +304,12 @@ export class BattleScreen {
     }
   }
 
-  /** What is moving on the field right now, for tests: nobody can watch a test run. */
   /** What the wingman is saying right now, if anything. */
   get radioLine(): string | null {
     return this.radio?.line ?? null;
   }
 
+  /** What is moving on the field right now, for tests: nobody can watch a test run. */
   get motion(): { particles: number; flash: number; surge: boolean; stance: (id: string) => Stance; breaking: (id: string) => number | null } {
     return {
       particles: this.particles.count, flash: this.hitStop.flash, surge: this.surge !== null, stance: (id) => ({ ...this.stances.of(id) }),
@@ -736,8 +747,11 @@ export class BattleScreen {
     if (unit.staggered > 0) return { text: T.stagger, color: blink ? COLORS.heat : COLORS.text };
     if (unit.guarding) return { text: T.guard, color: COLORS.armor };
     if (unit.boosted) return { text: T.boost, color: COLORS.energy };
-    if (aegisFactor(this.flow.state, unit) < 1) return { text: T.covered, color: COLORS.energy };
-    // An elite is known by its mark whenever there is nothing more pressing to say about it.
+    // An elite is known by its mark whenever there is nothing more pressing to say about it. Cover
+    // lasts as long as the drone that gives it, so an elite under cover says both in turn: neither
+    // hides the other for the whole battle.
+    const marked = !!unit.mark && Math.floor(this.clock / MARK_TURN_MS) % 2 === 0;
+    if (aegisFactor(this.flow.state, unit) < 1 && !marked) return { text: T.covered, color: COLORS.energy };
     if (unit.mark) return { text: T.marks[unit.mark], color: COLORS.accent };
     return null;
   }

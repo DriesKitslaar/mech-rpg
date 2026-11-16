@@ -184,7 +184,6 @@ export const STRINGS = {
       plating: { name: 'Plating', short: 'PLATE', note: '+8% armour' }, optics: { name: 'Optics', short: 'OPTIC', note: '+4 aim' },
       patchkit: { name: 'Patch kit', short: 'PATCH', note: '+1 repair a floor' },
     },
-    fell: 'Closed on a floor: the run fell there.',
     over: 'RUN OVER', cleared: (n: number) => (n === 1 ? '1 floor cleared' : `${n} floors cleared`), paid: (n: number) => `Paid ${n}`, record: 'A new best.',
     hint: 'A: choose   B: back', expected: 'EXPECTED',
     slots: {

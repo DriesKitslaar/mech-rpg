@@ -32,6 +32,7 @@ import { MESSAGES, MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
 import { SCENES } from '../content/scenes';
 import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
+import { SONGS } from '../content/songs';
 import { STRINGS } from '../content/strings';
 import type { Sfx, SoundName } from '../platform/audio';
 import type { TrackName } from '../platform/music';
@@ -325,12 +326,16 @@ class MissionHost implements Screen {
       menu: flow.menu,
       player: {
         maxAp: Object.values(player.parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0), repairsLeft: player.repairsLeft,
+        // How hard the mech hits, against the plain figure: 1 unless something about the run or the contract changes it.
+        damage: player.mods.damage,
       },
       message: flow.message,
       // A line of talk holds its place for a moment: a press then is passed over, not refused.
       busy: this.screen.holding,
       battle: {
         banner: this.screen.banner, typing: this.screen.typing,
+        // The options the battle is fought with, as they reached the field.
+        calm: this.screen.calm, pace: this.screen.pace,
         phase: flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
@@ -522,9 +527,11 @@ export class App {
   commit(next: GameState): void {
     const seconds = Math.floor(this.played / 1000);
     this.played -= seconds * 1000;
-    // What has been heard since the last save is written down with it.
-    const fresh = [...this.heardNow].filter((song) => !(next.heard ?? []).includes(song));
-    const heard = fresh.length > 0 ? { ...next, heard: [...(next.heard ?? []), ...fresh] } : next;
+    // What has been heard since the last save is written down with it. Only what is a song is kept,
+    // and once: a list that names anything else is not passed on, so it cannot outgrow what a save may hold.
+    const listed = next.heard ?? [];
+    const songs = [...new Set([...listed, ...this.heardNow])].filter((song) => Object.hasOwn(SONGS, song));
+    const heard = songs.length !== listed.length || songs.some((song, i) => song !== listed[i]) ? { ...next, heard: songs } : next;
     const timed = seconds > 0 ? { ...heard, stats: { ...heard.stats, seconds: heard.stats.seconds + seconds } } : heard;
     const { game: awarded, earned } = awardMedals(timed, MEDALS);
     // The database does not run ahead of the story: while a page of story is waiting to be shown,
@@ -686,14 +693,6 @@ export class App {
     this.commit({ ...game, gauntlet: held, relicsHeld: Math.max(game.relicsHeld ?? 0, held.relics?.length ?? 0) });
     // What a warden leaves is worth a sound of its own.
     this.deps.sfx?.play('relic');
-  }
-
-  /** The floor ahead, whether or not a draft is still owed: what the pilot is choosing for. */
-  gauntletAhead(): Mission | undefined {
-    const run = this.run;
-    if (!run) return undefined;
-    const names = Object.fromEntries(Object.values(this.enemies()).map((e) => [e.id, e.name]));
-    return floorMission({ ...run, drafting: false }, GAUNTLET_TEXT, names);
   }
 
   /**

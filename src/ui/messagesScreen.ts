@@ -58,7 +58,7 @@ export class MessagesScreen implements Screen {
   }
 
   view(): ScreenView {
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, reading: this.reading?.id ?? null };
+    return { menu: { items: this.list.items, cursor: this.list.cursor }, reading: this.reading?.id ?? null, typing: !!this.reading && !!this.writer && !this.writer.done };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

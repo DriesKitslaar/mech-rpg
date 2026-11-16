@@ -3,8 +3,12 @@ import type { RadioCue } from '../core/wingman';
 
 /** How long a line stays up. */
 export const RADIO_MS = 2600;
-/** The widest a line may be with its speaker's name: from the left edge of the field it must end short of the bars of the enemy standing lowest. */
-export const RADIO_CHARS = 41;
+/**
+ * The widest a line may be with its speaker's name. The strip starts 8 from the left edge of the
+ * field and a letter is 4 wide: with its margins it must end by 172, where the bars of a mech
+ * standing lowest begin.
+ */
+export const RADIO_CHARS = 39;
 /** The pilot's core below this share of its armour is worth a warning. */
 export const RADIO_WARN = 0.35;
 /** Which of the pilot's kills the wingman remarks on: the first, and every third after it. */
@@ -25,8 +29,8 @@ export class Radio {
   private left = 0;
   private kills = 0;
   private warned = false;
-  /** Whether the last fire that landed anywhere was the wingman's. */
-  private supportFired = false;
+  /** Whose fire landed last: the wingman's, the pilot's, or anybody else's (an enemy's shot, a bomb going off). */
+  private last: 'wing' | 'pilot' | 'other' = 'other';
   private fresh = 0;
 
   constructor(private who: string, private lines: Record<RadioCue, string>) {}
@@ -44,15 +48,18 @@ export class Radio {
 
   /** An event of the battle as it is shown; `state` is the battle as it stands after the action the event belongs to. */
   hear(event: BattleEvent, state: BattleState): void {
-    if (event.type === 'support') this.supportFired = true;
-    else if (event.type === 'shot' || event.type === 'blast' || event.type === 'module') this.supportFired = false;
+    if (event.type === 'support') this.last = 'wing';
+    else if (event.type === 'shot' || event.type === 'module') this.last = event.unit === state.units[0].id ? 'pilot' : 'other';
+    else if (event.type === 'blast') this.last = 'other';
     if (event.type === 'outcome') {
       if (event.outcome === 'victory') this.say('win');
       return;
     }
     if (event.type === 'unitDestroyed') {
       if (state.units.find((u) => u.id === event.unit)?.side !== 'enemy') return;
-      if (this.supportFired) return this.say('kill');
+      if (this.last === 'wing') return this.say('kill');
+      // A bomb that went off, or anything else the pilot did not do, is nobody's kill.
+      if (this.last !== 'pilot') return;
       this.kills += 1;
       if (cheered(this.kills)) this.say('cheer');
       return;

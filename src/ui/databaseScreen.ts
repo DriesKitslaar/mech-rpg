@@ -2,7 +2,7 @@ import { reached } from '../core/campaign';
 import type { GameState } from '../core/game';
 import { JUKEBOX, MANUAL, PEOPLE, UNITS, WORLD, type Person } from '../content/codex';
 import { MISSIONS } from '../content/missions';
-import { SONGS } from '../content/songs';
+import { SONGS, type SongName } from '../content/songs';
 import { songSeconds, type TrackName } from '../platform/music';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -51,11 +51,14 @@ interface Detail {
 export class DatabaseScreen implements Screen {
   private page: DatabasePage = 'units';
   private lists: Record<DatabasePage, MenuList>;
-  /** The song the jukebox is playing, if it is playing one. */
-  private playing: string | null = null;
+  /** The song that is playing, if one is: the hub's own when the database is opened, until the jukebox plays another. */
+  private playing: string | null;
+  /** What is left, in milliseconds, of a song that plays once and is then over. One that goes round has no end. */
+  private left = Infinity;
 
   constructor(private app: App) {
     const game = app.game!;
+    this.playing = app.settings.music ? 'hub' : null;
     const met = (id: string): boolean => game.met.includes(id);
     this.lists = {
       // Every kind has its row from the start, so the pilot can see how many there are still to meet.
@@ -139,7 +142,14 @@ export class DatabaseScreen implements Screen {
     this.page = PAGES[(PAGES.indexOf(this.page) + by + PAGES.length) % PAGES.length];
   }
 
-  update(): void {}
+  update(dtMs: number): void {
+    // A song that plays once is over when it is over: the page stops saying it plays, and the
+    // player is told to be quiet, so that the same song starts afresh when it is asked for again.
+    if (this.playing && (this.left -= dtMs) <= 0) {
+      this.playing = null;
+      this.app.stopMusic();
+    }
+  }
 
   onInput(action: InputAction): void {
     if (action === 'up') this.list.move(-1);
@@ -158,6 +168,7 @@ export class DatabaseScreen implements Screen {
       this.app.stopMusic();
     } else {
       this.playing = id;
+      this.left = SONGS[id as SongName]?.loop === false ? songSeconds(SONGS[id as SongName]) * 1000 : Infinity;
       this.app.playTrack(id as TrackName);
     }
   }

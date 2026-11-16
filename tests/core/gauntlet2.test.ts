@@ -348,7 +348,7 @@ describe('a run with doors and relics, kept in a save', () => {
 
   test('is flown on when it is sound', () => {
     const sound: Run[] = [
-      run, { ...run, door: 1, fighting: true, elite: true }, { ...run, drafting: true, relicOwed: true }, { ...run, revived: true }, { ...run, relics: [] },
+      run, { ...run, door: 1, fighting: true, elite: true }, { ...run, floor: 6, drafting: true, relicOwed: true }, { ...run, revived: true }, { ...run, relics: [] },
       { ...run, carry: { ...run.carry!, drive: DRIVE_MAX } },
     ];
     for (const value of sound) expect(isValidRun(JSON.parse(JSON.stringify(value)), CATALOG), JSON.stringify(value).slice(0, 120)).toBe(true);
