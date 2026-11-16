@@ -80,6 +80,25 @@ describe('the people of Varn', () => {
     expect(db(app).detail).toEqual({ title: '? ? ?', lines: ['Not met yet.'] });
   });
 
+  test('somebody with a price on them is wanted until their notice has been collected on', () => {
+    const wanted = PEOPLE.filter((p) => p.bounty);
+    expect(wanted.map((p) => p.bounty)).toEqual(['bounty-1', 'bounty-2', 'bounty-3', 'bounty-4', 'bounty-5', 'bounty-6']);
+    // Each notice is the contract that fields that pilot.
+    for (const person of wanted) {
+      const notice = MISSIONS.find((m) => m.id === person.bounty)!;
+      expect(notice.battles[0].enemies[0], person.id).toBe(person.id);
+      expect(notice.portrait).toBe(person.portrait);
+    }
+    const loose = inHub({ ...done('intro-1', 'intro-2'), met: ['magpie'] }).app;
+    people(loose);
+    point(loose, 'magpie');
+    expect(db(loose).detail!.role).toBe('Wanted');
+    const caught = inHub({ ...done('intro-1', 'intro-2', 'bounty-1'), met: ['magpie'] }).app;
+    people(caught);
+    point(caught, 'magpie');
+    expect(db(caught).detail!.role).toBe('Brought in');
+  });
+
   test('the page draws the face, the name, whom they work for and the line about them', () => {
     const { app } = inHub(done('intro-1', 'intro-2'));
     people(app);

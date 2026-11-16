@@ -246,7 +246,7 @@ export const STRINGS = {
   database: {
     heading: 'DATABASE', pages: { units: 'UNITS', people: 'PEOPLE', world: 'WORLD', manual: 'MANUAL', music: 'MUSIC' }, hint: 'L1/R1: page   B: back',
     // The people of Varn the pilot has come across.
-    known: (n: number, of: number) => `KNOWN ${n}/${of}`,
+    known: (n: number, of: number) => `KNOWN ${n}/${of}`, broughtIn: 'Brought in',
     // The jukebox: the songs heard so far, to be played again.
     heard: (n: number, of: number) => `HEARD ${n}/${of}`, notHeard: 'Not heard so far.', play: 'A: play', stop: 'A: stop', playing: 'NOW PLAYING',
     length: (time: string) => `LENGTH ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Music is off. Turn it on in Options to hear this.',
