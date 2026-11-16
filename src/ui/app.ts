@@ -72,6 +72,7 @@ import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
 import { TrainingScreen } from './trainingScreen';
 import { COLORS, drawMedal, drawPage, drawPanel, drawText } from './widgets';
+import { drawBlind, drawDoors } from './wipe';
 
 /** What a screen reports about itself, for tests and for telling whether an input did anything. */
 export interface ScreenView {
@@ -96,8 +97,8 @@ export interface SlotView { slot: number; game: GameState | null; unusable: bool
 
 /** How much quicker a battle plays with the fast-battles option on. */
 export const FAST_BATTLE_SPEED = 2.5;
-/** How long a new screen takes to come up out of black, and the shutter over a battle to open. */
-export const FADE_MS = 170;
+/** How long the blind over a new screen takes to be drawn off it, and the doors over a battle to open. */
+export const FADE_MS = 200;
 export const SHUTTER_MS = 320;
 /** How long a medal's announcement stays up, and how much of that it spends sliding in and out. */
 export const TOAST_MS = 2600;
@@ -1013,17 +1014,9 @@ export class App {
     this.current.draw(ctx);
     const { left, total, shutter } = this.entering;
     if (left <= 0) return;
-    const p = left / total;
-    if (shutter) {
-      // Two black leaves that draw back to the top and the bottom.
-      const h = Math.ceil((LOGICAL_H / 2) * p);
-      ctx.fillStyle = '#04040c';
-      ctx.fillRect(0, 0, LOGICAL_W, h);
-      ctx.fillRect(0, LOGICAL_H - h, LOGICAL_W, h);
-    } else {
-      ctx.fillStyle = `rgba(4, 4, 12, ${p.toFixed(3)})`;
-      ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    }
+    // A battle opens between two doors; any other screen comes out from behind a blind.
+    if (shutter) drawDoors(ctx, left / total);
+    else drawBlind(ctx, left / total);
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

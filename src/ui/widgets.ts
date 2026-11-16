@@ -53,6 +53,12 @@ export function drawText(ctx: CanvasRenderingContext2D, text: string, x: number,
   }
 }
 
+/** Text over a picture: the same words in the dark colour one pixel off in every direction, and then the words themselves. */
+export function drawOutlined(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, opts: TextOptions = {}, edge = '#07061a'): void {
+  for (const [dx, dy] of [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]) drawText(ctx, text, x + dx, y + dy, { ...opts, color: edge });
+  drawText(ctx, text, x, y, opts);
+}
+
 /** A '#rrggbb' colour mixed towards white (`t` above 0) or towards black (`t` below 0), as far as `t` says. */
 export function shade(hex: string, t: number): string {
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);

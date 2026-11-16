@@ -6,6 +6,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
+import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawText, wrap } from './widgets';
 
 const T = STRINGS.training;
@@ -60,11 +61,17 @@ export class TrainingScreen implements Screen {
 
     // The mech the selected drill lends, facing left towards the list.
     const drill = this.drill;
+    const { fast } = this.app.deps;
+    const calm = this.app.settings.calm === true;
+    const clock = fast ? 0 : this.clock;
+    drawRoom(ctx, 'bg-simulator', clock, calm, fast);
     ctx.save();
     ctx.translate(LOGICAL_W + 6, 18);
     ctx.scale(-1, 1);
+    drawMechShadow(ctx, 0, 0);
     drawMech(ctx, mechSprites(sprites, drill.build), 0, 0, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
     ctx.restore();
+    drawRoomSpill(ctx, 'bg-simulator', clock, calm);
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, T.heading, 5, 1, { color: COLORS.accent });

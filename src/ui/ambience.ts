@@ -112,7 +112,7 @@ export function placeLights(background: string, clockMs: number, calm = false): 
 const BANKS = 3;
 
 /** A low haze: wide, flat banks of the place's colour that drift across the ground and come round again. */
-function drawHaze(ctx: CanvasRenderingContext2D, haze: NonNullable<Ambience['haze']>, clockMs: number, w: number, share: number): void {
+export function drawHaze(ctx: CanvasRenderingContext2D, haze: NonNullable<Ambience['haze']>, clockMs: number, w: number, share: number): void {
   const [r, g, b] = [1, 3, 5].map((at) => parseInt(haze.color.slice(at, at + 2), 16));
   const t = clockMs / 1000;
   for (let i = 0; i < BANKS; i++) {
@@ -135,7 +135,7 @@ function drawHaze(ctx: CanvasRenderingContext2D, haze: NonNullable<Ambience['haz
 }
 
 /** The edges of the field are darker than its middle: the eye is kept where the machines are. */
-function drawVignette(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+export function drawVignette(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
   const reach = Math.hypot(w, h) / 2;
   const gradient = ctx.createRadialGradient?.(x + w / 2, y + h / 2, reach * 0.55, x + w / 2, y + h / 2, reach) as CanvasGradient | undefined;
   if (!gradient || typeof gradient.addColorStop !== 'function') return;

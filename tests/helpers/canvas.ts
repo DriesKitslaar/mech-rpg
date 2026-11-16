@@ -18,7 +18,9 @@ export interface Glowed { x: number; y: number; r: number; ry: number; stops: [n
 export interface Washed { x: number; y: number; w: number; h: number; stops: [number, string][]; blend: string }
 /** A line that was stroked: its points, how wide, in what colour and how it was laid on. */
 export interface Stroked { points: { x: number; y: number }[]; width: number; color: string; blend: string }
-export interface Drawn { texts: Written[]; rects: Filled[]; images: Pictured[]; glows: Glowed[]; strokes: Stroked[]; washes: Washed[] }
+/** A shape that was filled: its corners, what it was filled with (a colour, or a gradient's colours) and how it was laid on. */
+export interface Shaped { points: { x: number; y: number }[]; color: string; stops: [number, string][]; blend: string }
+export interface Drawn { texts: Written[]; rects: Filled[]; images: Pictured[]; glows: Glowed[]; strokes: Stroked[]; washes: Washed[]; shapes: Shaped[] }
 
 interface Gradient { x: number; y: number; r: number; linear?: boolean; stops: [number, string][]; addColorStop(offset: number, color: string): void }
 const isGradient = (style: unknown): style is Gradient => typeof style === 'object' && style !== null && Array.isArray((style as Gradient).stops);
@@ -36,6 +38,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
   const glows: Glowed[] = [];
   const strokes: Stroked[] = [];
   const washes: Washed[] = [];
+  const shapes: Shaped[] = [];
   const state: Record<string, unknown> = {
     font: '12px x', textAlign: 'left', fillStyle: '', strokeStyle: '', lineWidth: 1, globalCompositeOperation: 'source-over', globalAlpha: 1, filter: 'none',
   };
@@ -93,13 +96,17 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
     moveTo: (x, y) => { path.push({ x: X(Number(x)), y: Y(Number(y)) }); },
     lineTo: (x, y) => { path.push({ x: X(Number(x)), y: Y(Number(y)) }); },
     stroke: () => { strokes.push({ points: [...path], width: Number(state.lineWidth), color: String(state.strokeStyle), blend: String(state.globalCompositeOperation) }); },
+    fill: () => {
+      const style = state.fillStyle;
+      shapes.push({ points: [...path], color: isGradient(style) ? '' : String(style), stops: isGradient(style) ? style.stops : [], blend: String(state.globalCompositeOperation) });
+    },
   };
   const ctx = new Proxy(state, {
     get: (t, name: string) => (name in t ? t[name] : methods[name] ?? (() => undefined)),
     set: (t, name: string, value) => { t[name] = value; return true; },
   }) as unknown as CanvasRenderingContext2D;
   draw(ctx);
-  return { texts, rects, images, glows, strokes, washes };
+  return { texts, rects, images, glows, strokes, washes, shapes };
 }
 
 /** Whether two pieces of text share a row and run into each other. */
