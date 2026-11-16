@@ -107,4 +107,39 @@ describe('hiring a wingman from the briefing', () => {
     expect(battle().phase).toBe('target');
     expect(battle().intent).toMatch(/^(AIMS (CORE|HEAD|LEGS|ARMS)|DARTING|MENDING)$/);
   });
+
+  test('a hired wingman can be given orders from the battle menu: it costs nothing, and the row says what they are doing', () => {
+    const { app } = inHub(met());
+    select(app, 'contracts');
+    select(app, 'patrol');
+    toRow(app, 'wingman');
+    press(app, 'right');
+    select(app, 'accept');
+    const battle = () => snap(app).battle as unknown as { phase: string; message: string };
+    for (let i = 0; i < 4000 && battle().phase !== 'action'; i++) { if (battle().phase === 'animating') app.update(16); else press(app, 'confirm'); }
+    const row = () => snap(app).menu.items.find((i) => i.id === 'order');
+    expect(row()).toMatchObject({ label: 'Wing: strongest', enabled: true });
+    const energy = (snap(app).player as unknown as { energy?: number }).energy;
+    toRow(app, 'order');
+    press(app, 'confirm');
+    expect(battle().phase).toBe('action');
+    expect(row()!.label).toBe('Wing: my target');
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('order');
+    expect(battle().message).toBe('Kite: firing where you fire.');
+    press(app, 'confirm');
+    expect(row()!.label).toBe('Wing: cover me');
+    press(app, 'confirm');
+    expect(row()!.label).toBe('Wing: strongest');
+    expect((snap(app).player as unknown as { energy?: number }).energy).toBe(energy);
+  });
+
+  test('flown alone, or with an ally the story sent, there is no such row', () => {
+    const { app } = inHub(met());
+    select(app, 'contracts');
+    select(app, 'patrol');
+    select(app, 'accept');
+    const battle = () => snap(app).battle as unknown as { phase: string };
+    for (let i = 0; i < 4000 && battle().phase !== 'action'; i++) { if (battle().phase === 'animating') app.update(16); else press(app, 'confirm'); }
+    expect(snap(app).menu.items.map((i) => i.id)).not.toContain('order');
+  });
 });
