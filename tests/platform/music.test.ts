@@ -179,9 +179,9 @@ const linesOf = (s: Song): { pattern: string; steps: number; voice: string; toke
   Object.entries(s.patterns).flatMap(([pattern, { steps, lines }]) =>
     Object.entries(lines).map(([voice, text]) => ({ pattern, steps, voice, tokens: lineTokens(text) })));
 
-test('the game has its fourteen songs', () => {
+test('the game has its sixteen songs', () => {
   expect(Object.keys(SONGS).sort()).toEqual([
-    'arena', 'battle', 'battle2', 'boss', 'briefing', 'defeat', 'ending', 'hadron', 'hub', 'lumen', 'rival', 'title', 'undertow', 'victory',
+    'arena', 'battle', 'battle2', 'boss', 'briefing', 'defeat', 'descent', 'ending', 'gauntlet', 'hadron', 'hub', 'lumen', 'rival', 'title', 'undertow', 'victory',
   ]);
 });
 
@@ -294,10 +294,28 @@ test.each(LOOPS)('something sounds in every bar of %s', (_name, s) => {
   expect(sounding.size).toBe(compiled.steps / bar);
 });
 
-test('the looping songs are the twelve the game moves between', () => {
+test('the looping songs are the fourteen the game moves between', () => {
   expect(LOOPS.map(([name]) => name).sort()).toEqual([
-    'arena', 'battle', 'battle2', 'boss', 'briefing', 'ending', 'hadron', 'hub', 'lumen', 'rival', 'title', 'undertow',
+    'arena', 'battle', 'battle2', 'boss', 'briefing', 'descent', 'ending', 'gauntlet', 'hadron', 'hub', 'lumen', 'rival', 'title', 'undertow',
   ]);
+});
+
+test('the Gauntlet\'s two songs are one descent: the same key and the same falling bass, slow in its room and driven on its floors', () => {
+  const { gauntlet, descent, battle, hub } = SONGS;
+  expect(new Set(descent.scale.map(pitchClass))).toEqual(new Set(gauntlet.scale.map(pitchClass)));
+  expect(gauntlet.bpm).toBeLessThan(hub.bpm);
+  expect(descent.bpm).toBeGreaterThan(battle.bpm);
+  // The lowest voice of each steps down a bar at a time: D, C, B flat, A.
+  const roots = (s: Song, pattern: string, voice: string): (number | null)[] => {
+    const tokens = lineTokens(s.patterns[pattern].lines[voice]);
+    return [0, 16, 32, 48].map((at) => { const midi = noteNumber(tokens[at]); return midi === null ? null : midi % 12; });
+  };
+  const falling = ['D', 'C', 'Bb', 'A'].map(pitchClass);
+  expect(roots(gauntlet, 'down1', 'drone')).toEqual(falling);
+  expect(roots(descent, 'riff', 'bass')).toEqual(falling);
+  // On the floors the bass never rests for long: a note on at least half of the sixteenths.
+  const bass = lineTokens(descent.patterns.riff.lines.bass);
+  expect(bass.filter((token) => noteNumber(token) !== null).length).toBeGreaterThanOrEqual(bass.length / 2);
 });
 
 test.each(['victory', 'defeat'] as const)('%s plays once and lasts between two and four seconds', (name) => {

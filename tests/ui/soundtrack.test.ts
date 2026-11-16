@@ -1,3 +1,6 @@
+import { floorMission, startRun } from '../../src/core/gauntlet';
+import { GAUNTLET_TEXT } from '../../src/content/gauntlet';
+import { STARTER_BUILD } from '../../src/content/parts';
 import type { Mission } from '../../src/core/campaign';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { MISSIONS } from '../../src/content/missions';
@@ -46,6 +49,15 @@ describe('in battle', () => {
 
   test('the arena has its own, whoever is in it', () => {
     expect(battleTrack({ ...mission('patrol'), arenaRank: 3 }, 0, ALL_ENEMIES)).toBe('arena');
+  });
+
+  test('the Gauntlet has its own for its room and for its open floors; a warden\'s floor is a boss battle like any other', () => {
+    expect(trackFor('gauntlet')).toBe('gauntlet');
+    const floor = (n: number): Mission => floorMission({ ...startRun(5, STARTER_BUILD), floor: n }, GAUNTLET_TEXT, {});
+    expect(battleTrack(floor(1), 0, ALL_ENEMIES)).toBe('descent');
+    expect(battleTrack(floor(7), 0, ALL_ENEMIES)).toBe('descent');
+    expect(battleTrack(floor(5), 0, ALL_ENEMIES)).toBe('boss');
+    expect(Object.keys(SONGS)).toEqual(expect.arrayContaining(['gauntlet', 'descent']));
   });
 
   test('an unknown enemy or a battle that does not exist is no reason to fall silent', () => {

@@ -683,6 +683,8 @@ export class App {
     const run = this.run;
     if (!game || !run || !run.relicOwed) return;
     this.commit({ ...game, gauntlet: takeRelic(run, relic) });
+    // What a warden leaves is worth a sound of its own.
+    this.deps.sfx?.play('relic');
   }
 
   /** The floor ahead, whether or not a draft is still owed: what the pilot is choosing for. */
