@@ -1,3 +1,4 @@
+import { groundFor } from './ground';
 import { carryFrom, createBattle, type BattleOptions, type BattleState } from './battle';
 import { weaponIn } from './build';
 import type { Mission } from './campaign';
@@ -50,6 +51,8 @@ export function startMissionBattle(
     ...opts, carry: previous ? carryFrom(previous) : opts.carry,
     ...(battle.objective ? { objective: battle.objective } : {}),
     ...(battle.support ? { support: battle.support } : {}),
+    // The place has its say, the same for both sides.
+    ...(groundFor(battle.background) ? { ground: groundFor(battle.background) } : {}),
   });
   if (previous) fieldService(state, catalog);
   return state;

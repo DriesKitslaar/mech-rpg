@@ -310,6 +310,7 @@ export class BattleScreen {
 
     this.drawMessage(ctx);
     this.drawObjective(ctx);
+    this.drawGround(ctx);
     if (this.opts.coach && this.intro <= 0) this.drawCoach(ctx);
     // While someone talks, their words have the panel: there is nothing to choose until they are done.
     const talking = this.flow.phase === 'talk' && this.intro <= 0;
@@ -317,6 +318,17 @@ export class BattleScreen {
     if (this.intro > 0) return this.drawIntro(ctx);
     if (talking) this.drawTalk(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
+  }
+
+  /** The ground's rule, small, in the top right corner of the field: its name, so the briefing's line is not forgotten. */
+  private drawGround(ctx: CanvasRenderingContext2D): void {
+    const ground = this.flow.state.ground;
+    if (!ground || this.intro > 0) return;
+    const name = STRINGS.ground[ground.id].name;
+    const width = name.length * 4 + 6;
+    ctx.fillStyle = 'rgba(8, 8, 20, 0.7)';
+    ctx.fillRect(LOGICAL_W - width, 14, width, 10);
+    drawText(ctx, name, LOGICAL_W - 3, 14, { align: 'right', size: 10, color: COLORS.energy });
   }
 
   /** For a new pilot: one small line at the foot of the field saying which button does what right now. */

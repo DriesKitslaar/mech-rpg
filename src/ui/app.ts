@@ -311,6 +311,7 @@ class MissionHost implements Screen {
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
         support: flow.state.support?.name ?? null,
         coach: this.coach,
+        ground: flow.state.ground?.id ?? null,
         // What the enemy being aimed at is about to do.
         intent: intentText(intentOf(flow.state, flow.state.units.find((u) => u.id === flow.targetId) ?? flow.state.units[0], this.app.deps.catalog)),
         enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),

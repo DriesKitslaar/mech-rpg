@@ -1,4 +1,5 @@
 import { draft, floorsCleared, isWardenFloor, payout, wear, type BoonId, type Offer } from '../core/gauntlet';
+import { groundFor } from '../core/ground';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -99,7 +100,7 @@ export class GauntletScreen implements Screen {
       menu: { items: this.list.items, cursor: this.list.cursor },
       gauntlet: {
         best: this.app.game?.gauntletBest ?? 0, floor: run?.floor ?? null, drafting: !!run?.drafting, asking: this.asking,
-        offers: this.offers, boons: run?.boons ?? {}, build: run?.build ?? null, enemies: floor?.battles[0].enemies ?? [], warden: !!run && isWardenFloor(run.floor),
+        offers: this.offers, boons: run?.boons ?? {}, build: run?.build ?? null, enemies: floor?.battles[0].enemies ?? [], warden: !!run && isWardenFloor(run.floor), ground: groundFor(floor?.battles[0].background ?? '')?.id ?? null,
         wear: run ? Math.round(wear(run, this.app.deps.catalog) * 100) : 0, last: this.app.lastRun,
       },
     };
@@ -158,8 +159,10 @@ export class GauntletScreen implements Screen {
       drawList(ctx, this.list, x + 6, y + LINE + 4, w - 16, 2);
       return;
     }
-    // Who is on the floor ahead: said while choosing too, since that is what the choice is for.
+    // Who is on the floor ahead and what its ground does: said while choosing too, since that is what the choice is for.
     drawText(ctx, G.expected, x + 6, y, { color: COLORS.dim });
+    const ground = groundFor(ahead?.battles[0].background ?? '');
+    if (ground) drawText(ctx, STRINGS.ground[ground.id].name, x + w - 6, y, { align: 'right', color: COLORS.energy, size: 10 });
     const names = (ahead?.battles[0].enemies ?? []).map((id) => this.app.enemies()[id]?.name ?? id);
     names.forEach((name, i) => drawText(ctx, name, x + 6, y + (i + 1) * LINE));
     y += 4 * LINE + 4;

@@ -1,3 +1,4 @@
+import type { Ground } from './ground';
 import {
   DEFAULT_BOOST, LEG_TYPES, boostProfile, computeBuildStats, fcsOf, framePart, generatorOf, impactOf, legTypeOf, mobilityFor,
   moduleOf, shieldOf, weaponIn,
@@ -41,6 +42,8 @@ export interface BattleOptions {
   objective?: Objective;
   /** An ally off the field, who fires into it. */
   support?: Support;
+  /** What the place does to the fighting; see ground.ts. */
+  ground?: Ground;
 }
 
 /** An ally who is not on the field: at every new round they hit the strongest enemy for `damage`. */
@@ -173,6 +176,8 @@ export interface BattleState {
   /** Present in a `protect` battle. */
   asset?: Asset;
   support?: Support;
+  /** What the place does to the fighting; see ground.ts. */
+  ground?: Ground;
   /** Multiplies the armour and damage of every enemy, those that join later included. */
   enemyScale: number;
   /** Set when the battle ended because the pilot walked away from it. */
@@ -315,6 +320,18 @@ export function evasion(unit: UnitState, catalog: Catalog): number {
   if (!isAlive(unit.parts.legs) || unit.staggered > 0) return 0;
   return currentMobility(unit, catalog) + unit.mods.evasion + (unit.boosted ? boostProfile(unit.build, catalog).thrust : 0);
 }
+
+/** How hard a unit is to hit on this ground: where the footing is bad, a boost carries it less far. */
+function evasionOn(state: BattleState, unit: UnitState, catalog: Catalog): number {
+  const plain = evasion(unit, catalog);
+  if (!unit.boosted || plain === 0 || !state.ground?.thrust) return plain;
+  const thrust = boostProfile(unit.build, catalog).thrust;
+  return plain - thrust + Math.max(0, thrust + state.ground.thrust);
+}
+
+/** Heat a unit sheds on this ground at the end of its turn, and with the cool action. */
+export const coolingOn = (state: BattleState, unit: UnitState, catalog: Catalog): number =>
+  Math.max(0, coolingOf(unit, catalog) + (state.ground?.cooling ?? 0));
 
 export const turnEnergyOf = (unit: UnitState, catalog: Catalog): number =>
   computeBuildStats(unit.build, catalog).turnEnergy + unit.mods.energy;
@@ -480,7 +497,7 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
 
 function finishTurn(state: BattleState, catalog: Catalog): void {
   const unit = activeUnit(state);
-  unit.heat = Math.max(0, unit.heat - coolingOf(unit, catalog));
+  unit.heat = Math.max(0, unit.heat - coolingOn(state, unit, catalog));
   unit.damageBoost = 1;
   state.turn += 1;
   beginTurns(state, catalog);
@@ -560,6 +577,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
     units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing', objective, enemyScale,
     ...(objective.type === 'protect' ? { asset: { name: objective.name, hp: objective.hp, maxHp: objective.hp } } : {}),
     ...(opts.support ? { support: { ...opts.support } } : {}),
+    ...(opts.ground ? { ground: opts.ground } : {}),
   };
   state.order = roundOrder(state, catalog);
   beginTurns(state, catalog);
@@ -609,12 +627,14 @@ export function previewShot(
   }
   if (target.painted > 0) aim += target.paintBonus;
   aim -= jamOn(state, attacker);
+  aim += (state.ground?.aim?.all ?? 0) + (state.ground?.aim?.[weapon.damageType] ?? 0);
 
   const limb = Math.round(PART_MODIFIER[part] * (1 - (fcs?.focus ?? 0)));
-  const raw = weapon.accuracy + aim - evasion(target, catalog) - target.chaff + limb - headPenalty;
+  const raw = weapon.accuracy + aim - evasionOn(state, target, catalog) - target.chaff + limb - headPenalty;
 
   const resist = targetPart.resist[weapon.damageType] * (weapon.trait === 'pierce' ? 0.5 : 1);
-  let amount = weapon.damage * (1 - resist) * attacker.mods.damage * attacker.damageBoost * aegisFactor(state, target);
+  let amount = weapon.damage * (1 - resist) * attacker.mods.damage * attacker.damageBoost * aegisFactor(state, target)
+    * (state.ground?.damage?.[weapon.damageType] ?? 1);
   if (target.staggered > 0) amount *= STAGGER_DAMAGE;
   if (target.guarding) amount *= guardFactor(target, catalog);
   const full = Math.max(1, Math.round(amount));
@@ -919,7 +939,7 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
       state.events.push({ type: 'guard', unit: unit.id });
       break;
     case 'cool': {
-      const amount = Math.min(unit.heat, coolingOf(unit, catalog));
+      const amount = Math.min(unit.heat, coolingOn(state, unit, catalog));
       unit.energy -= coolCost(unit, catalog);
       unit.usedCool = true;
       unit.heat -= amount;
