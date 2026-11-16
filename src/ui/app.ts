@@ -337,6 +337,8 @@ class MissionHost implements Screen {
         banner: this.screen.banner, typing: this.screen.typing,
         // The options the battle is fought with, as they reached the field.
         calm: this.screen.calm, pace: this.screen.pace,
+        // What is being staged: the Overdrive's band while it is up, and the close look at the last machine to fall.
+        cutIn: this.screen.motion.cutIn, finish: this.screen.motion.finish !== null,
         phase: flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,

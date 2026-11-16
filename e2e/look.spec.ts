@@ -171,3 +171,93 @@ test('the look of the title and the hangar: the sign comes on, the picture is al
   await watch(page, 'garage', 1200, 200, { 1200: 'look-garage' });
   expect(errors).toEqual([]);
 });
+
+test('the look of the cinema: the Overdrive\'s band, the last machine going down from close by, and a field won and lost', async ({ page }) => {
+  test.setTimeout(290000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.addInitScript((save) => {
+    if (!window.localStorage.getItem('ironwage-save')) window.localStorage.setItem('ironwage-save', save);
+  }, JSON.stringify(gunner()));
+  await page.goto('/?seed=7&step=1');
+  await page.waitForFunction(() => (window as any).__game?.snapshot().screen === 'title');
+  await adv(page, 600);
+  await pick(page, 'continue');
+  await until(page, (s) => s.screen === 'hub');
+  await adv(page, 400);
+  // The drill that lends a full meter.
+  await pick(page, 'training');
+  await adv(page, 400);
+  await pick(page, 'drill-overdrive');
+  await until(page, (s) => s.screen === 'briefing');
+  await adv(page, 400);
+  await pick(page, 'accept');
+  const staged = (s: Snap) => s.battle as unknown as { cutIn: string | null; finish: boolean; phase: string; outcome: string };
+  /** Steps on until the pilot can act or the battle is over, reading past what is said; films the close look when it comes. */
+  let filmed = false;
+  const settle = async (): Promise<Snap> => {
+    for (let t = 0; t < 60000; t += 20) {
+      const s = await snap(page);
+      if (staged(s).finish && !filmed) {
+        filmed = true;
+        await watch(page, 'finish', 1500, 20, { 400: 'look-finish', 900: 'look-finish-blast' });
+        continue;
+      }
+      if (s.battle?.phase === 'action' || s.battle?.phase === 'result') return s;
+      if (s.battle?.phase === 'talk') await tap(page, 'Enter');
+      else await adv(page, 20);
+    }
+    throw new Error('the battle never came back to the pilot');
+  };
+  const fire = async (weapon: string): Promise<boolean> => {
+    const s = await settle();
+    if (s.battle?.phase !== 'action' || !s.menu.items.find((item) => item.id === 'fire')?.enabled) return false;
+    await pick(page, 'fire');
+    if (!(await snap(page)).menu.items.find((item) => item.id === weapon)?.enabled) { await tap(page, 'Escape'); return false; }
+    await pick(page, weapon);
+    await page.keyboard.press('Enter');
+    await adv(page, 20);
+    return true;
+  };
+  await settle();
+  // Something of the turn is spent, and then the Overdrive is set off.
+  await fire('rightHand');
+  await settle();
+  await page.keyboard.press('KeyE');
+  await adv(page, 20);
+  expect(staged(await snap(page)).cutIn).toBe('SECOND WIND');
+  await watch(page, 'cutin', 1000, 20, { 60: 'look-cutin-opening', 400: 'look-cutin' });
+  expect(staged(await snap(page)).cutIn).toBeNull();
+  // Then the drill is fought to its end.
+  for (let turn = 0; turn < 14; turn++) {
+    for (const weapon of ['rightHand', 'leftHand']) await fire(weapon);
+    const s = await settle();
+    if (s.battle?.phase === 'result') break;
+    await pick(page, 'endTurn');
+  }
+  const over = await settle();
+  expect(over.battle?.phase).toBe('result');
+  expect(staged(over).outcome).toBe('victory');
+  expect(filmed).toBe(true);
+  await watch(page, 'victory', 1200, 100, { 1200: 'look-victory' });
+  // And a battle that is walked away from: the field as it looks when it was lost.
+  await tap(page, 'Enter');
+  await until(page, (s) => s.screen === 'settlement');
+  await adv(page, 1200);
+  await tap(page, 'Enter');
+  await until(page, (s) => s.screen === 'hub' || s.screen === 'training');
+  await adv(page, 400);
+  if ((await snap(page)).screen === 'training') { await tap(page, 'Escape'); await until(page, (s) => s.screen === 'hub'); await adv(page, 400); }
+  await pick(page, 'contracts');
+  await adv(page, 400);
+  await pick(page, 'patrol');
+  await until(page, (s) => s.screen === 'briefing');
+  await adv(page, 400);
+  await pick(page, 'accept');
+  await settle();
+  await pick(page, 'retreat');
+  await pick(page, 'yes');
+  await until(page, (s) => s.battle?.phase === 'result');
+  await watch(page, 'defeat', 1200, 100, { 1200: 'look-defeat' });
+  expect(errors).toEqual([]);
+});
