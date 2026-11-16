@@ -1,0 +1,11 @@
+{
+  "id": "boss-night-train",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Three-quarter side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw a huge war machine from a retro video game: a colossal armoured war locomotive in the same dark charcoal and deep red armour with magenta lights: a long heavy engine on many small wheels with a pointed plough front, one enormous rail cannon mounted along its roof, side gun ports and a glowing magenta furnace grille. Massive, fast and menacing. Show only this single machine, whole, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

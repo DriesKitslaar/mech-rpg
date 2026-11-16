@@ -50,3 +50,30 @@ test('the Gauntlet: a run is started, a floor is won, one of three things is tak
   expect(await g()).toMatchObject({ floor: 2, drafting: false });
   expect(errors).toEqual([]);
 });
+
+test('the new great machines stand on the field: the Scrap King and the Night Train', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  let g = pilot();
+  for (const id of ['hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1', 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'guild-1', 'guild-2']) {
+    g = completeMission(g, id, MISSIONS);
+  }
+  await page.addInitScript((save) => {
+    if (!window.localStorage.getItem('ironwage-save')) window.localStorage.setItem('ironwage-save', save);
+  }, JSON.stringify({ ...g, choices: {} }));
+  await open(page);
+  await choose(page, 'continue');
+  await enterHub(page);
+  await choose(page, 'contracts');
+  await choose(page, 'guild-3');
+  await waitForScreen(page, 'briefing');
+  await page.screenshot({ path: shot('briefing-guild') });
+  await choose(page, 'accept');
+  await waitForPhase(page, 'action');
+  expect((await snap(page)).battle?.enemies).toEqual(['scrap-king']);
+  await choose(page, 'fire');
+  await press(page, 'Enter');
+  expect((await snap(page)).menu.items.map((i) => i.label)).toEqual(['Shell', 'Legs', 'Claws', 'Lamps']);
+  await page.screenshot({ path: shot('boss-scrap-king') });
+  expect(errors).toEqual([]);
+});

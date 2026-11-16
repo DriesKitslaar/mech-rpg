@@ -124,4 +124,49 @@ export const FAVOURS: Mission[] = [
   },
 ];
 
-export const SIDE_WORK: Mission[] = [...BOUNTIES, ...FAVOURS];
+const GUILD = { client: 'Night Market Guild' } as const;
+
+/**
+ * Four jobs for the Night Market Guild, one at a time, each about machines the story never fields:
+ * the last two are machines that are a battle on their own.
+ */
+export const GUILD_JOBS: Mission[] = [
+  {
+    id: 'guild-1', phase: 'side', series: 'guild', when: 'intro-2', title: 'Quarry Guns', ...GUILD, reward: 1300, scale: 1.3,
+    briefing: [
+      'Somebody has dug a mortar into our quarry and put a flak walker beside it. We did not rent them the space.',
+      'The mortar misses often and hurts when it does not. The walker spreads its fire all over you. Evict both.',
+    ],
+    debrief: 'The quarry is ours again. The Guild pays in full and asks whether the mortar tube survived. It did not.',
+    battles: [battle(['mortar-nest', 'flak-walker'], 'bg-mine')],
+  },
+  {
+    id: 'guild-2', phase: 'side', series: 'guild', when: 'rival-1', title: 'Live Wires', ...GUILD, reward: 2400, scale: 1.25,
+    briefing: [
+      'Lumen has planted arc pylons along our lane and hung a Longshot over them. Every hit from a pylon heats you up.',
+      'The Longshot charges for a turn before it fires through your armour. A hunter drone runs errands for them. Clear the lane.',
+    ],
+    debrief: 'The lane is dark again, which is how the Night Market likes it.',
+    battles: [battle(['arc-pylon', 'longshot', 'hunter-drone'], 'bg-neon-district'), battle(['arc-pylon', 'breacher'], 'bg-neon-district')],
+  },
+  {
+    id: 'guild-3', phase: 'side', series: 'guild', when: 'choice', title: 'The Scrap King', ...GUILD, reward: 5200, scale: 1,
+    briefing: [
+      'There is a thing under the market that eats wrecks and wears them. It was useful. Now it has started on our stalls.',
+      'It closes in with a pincer that will knock you off balance and sprays flak on the way. It gets angrier twice. Bring it down.',
+    ],
+    debrief: 'The King is scrap again. The Guild is already arguing over who gets the shell.',
+    battles: [battle(['scrap-king'], 'bg-undercity')],
+  },
+  {
+    id: 'guild-4', phase: 'side', series: 'guild', when: 'finale', title: 'The Night Train', ...GUILD, reward: 6800, scale: 1.15,
+    briefing: [
+      'A war train with no side left to fight for is still running the foundry loop, shelling whatever moves. Nobody will insure the line.',
+      'The roof cannon charges for a turn and shoots through armour: guard or boost when it is loaded. The gun ports never wait. It cannot dodge.',
+    ],
+    debrief: 'The Night Train is stopped at last. The Guild has bought the wreck, the line, and by the sound of it the foundry.',
+    battles: [battle(['night-train'], 'bg-foundry')],
+  },
+];
+
+export const SIDE_WORK: Mission[] = [...BOUNTIES, ...FAVOURS, ...GUILD_JOBS];

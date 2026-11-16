@@ -270,7 +270,7 @@ describe('campaign content', () => {
       for (const id of Object.values(enemy.build)) expect(CATALOG[id], `${enemy.id}: ${id}`).toBeDefined();
       if (enemy.portrait) expect(enemy.portrait in SPRITES, enemy.portrait).toBe(true);
     }
-    expect(Object.keys(ENEMIES)).toHaveLength(36);
+    expect(Object.keys(ENEMIES)).toHaveLength(44);
   });
 
   test('every enemy appears in the story', () => {

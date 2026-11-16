@@ -1296,6 +1296,128 @@
       "hi": 0.601
     }
   },
+  "enemy-mortar-nest": {
+    "file": "sprites/enemy-mortar-nest.png",
+    "w": 64,
+    "h": 47,
+    "paint": {
+      "accent": [
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.216,
+      "hi": 0.601
+    }
+  },
+  "enemy-hunter-drone": {
+    "file": "sprites/enemy-hunter-drone.png",
+    "w": 64,
+    "h": 41,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.098,
+      "hi": 0.261
+    }
+  },
+  "enemy-flak-walker": {
+    "file": "sprites/enemy-flak-walker.png",
+    "w": 56,
+    "h": 64,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.059,
+      "mid": 0.216,
+      "hi": 0.412
+    }
+  },
+  "enemy-breacher": {
+    "file": "sprites/enemy-breacher.png",
+    "w": 64,
+    "h": 40,
+    "paint": {
+      "accent": [
+        0,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.664
+    }
+  },
+  "enemy-arc-pylon": {
+    "file": "sprites/enemy-arc-pylon.png",
+    "w": 25,
+    "h": 64,
+    "paint": {
+      "accent": [
+        5,
+        8
+      ],
+      "lo": 0.124,
+      "mid": 0.708,
+      "hi": 0.983
+    }
+  },
+  "enemy-longshot": {
+    "file": "sprites/enemy-longshot.png",
+    "w": 64,
+    "h": 21,
+    "paint": {
+      "accent": [
+        1,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.158,
+      "hi": 0.412
+    }
+  },
+  "boss-scrap-king": {
+    "file": "sprites/boss-scrap-king.png",
+    "w": 136,
+    "h": 115,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.412
+    }
+  },
+  "boss-night-train": {
+    "file": "sprites/boss-night-train.png",
+    "w": 136,
+    "h": 100,
+    "paint": {
+      "accent": [
+        0,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.031,
+      "mid": 0.137,
+      "hi": 0.292
+    }
+  },
   "boss-strip-miner": {
     "file": "sprites/boss-strip-miner.png",
     "w": 136,

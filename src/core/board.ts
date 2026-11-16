@@ -7,6 +7,7 @@ export const ENEMY_COST: Record<string, number> = {
   rival: 5, juggernaut: 6,
   'shield-drone': 2, 'repair-drone': 2, jammer: 2, 'bomb-crawler': 2, carrier: 4, marksman: 4, ripper: 4, bulldozer: 5,
   'lien-drone': 2, bailiff: 6,
+  'mortar-nest': 3, 'hunter-drone': 2, 'flak-walker': 3, breacher: 4, 'arc-pylon': 3, longshot: 3, 'scrap-king': 9, 'night-train': 9,
   magpie: 5, dredge: 6, lark: 6, hollow: 6, paragon: 7, notary: 9,
   sable: 7, rook: 7, krell: 8, 'rival-2': 7, assessor: 9, 'strip-miner': 9, overseer: 9, leviathan: 9, 'ashfall-unbound': 10, adjuster: 12,
 };
@@ -20,6 +21,7 @@ export const MECH_ENEMIES = [
 export const STORY_ENEMIES = [
   'rival', 'rival-2', 'ashfall-unbound', 'sable', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan',
   'lien-drone', 'bailiff', 'assessor', 'adjuster',
+  'scrap-king', 'night-train',
   // The wanted are met on their own notices.
   'magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary',
 ];

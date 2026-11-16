@@ -1,0 +1,11 @@
+{
+  "id": "boss-scrap-king",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-salvage.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Three-quarter side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw a huge war machine from a retro video game: a huge six-legged crab-like scavenger walker in the same patched teal and rust plating: a wide low armoured shell on six thick jointed legs, two enormous mismatched claw arms in front, one a crushing pincer and one a spinning saw, a crown of welded scrap spikes on its back and three amber lamps. Ugly, heavy and patched together. Show only this single machine, whole, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

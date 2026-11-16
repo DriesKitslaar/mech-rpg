@@ -41,7 +41,7 @@ export type Offer =
   | { kind: 'boon'; boon: BoonId };
 
 /** Every fifth floor is somebody with a name, or something very large. They come round again, harder. */
-export const WARDENS = ['rival', 'sable', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan', 'ashfall-unbound'];
+export const WARDENS = ['rival', 'scrap-king', 'sable', 'night-train', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan', 'ashfall-unbound'];
 export const WARDEN_EVERY = 5;
 /** Share of the missing armour of every part that is patched between floors. */
 export const GAUNTLET_PATCH = 0.3;

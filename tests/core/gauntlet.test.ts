@@ -65,7 +65,7 @@ describe('a run of the Gauntlet', () => {
 
   test('every fifth floor has a warden, each in turn, and they come round again harder', () => {
     const at = (floor: number) => mission({ ...fresh(), floor });
-    expect([5, 10, 15, 20].map((f) => at(f).battles[0].enemies)).toEqual([['rival'], ['sable'], ['rook'], ['krell']]);
+    expect([5, 10, 15, 20].map((f) => at(f).battles[0].enemies)).toEqual([['rival'], ['scrap-king'], ['sable'], ['night-train']]);
     expect(at(5).briefing.join(' ')).toContain('Ashfall');
     expect(isWardenFloor(4)).toBe(false);
     const again = 5 * (WARDENS.length + 1);

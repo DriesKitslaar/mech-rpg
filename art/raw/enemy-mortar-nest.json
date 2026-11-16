@@ -1,0 +1,11 @@
+{
+  "id": "enemy-mortar-nest",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-bulwark.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a dug-in mortar emplacement in the same safety yellow with black hazard stripes and dark steel: a low ring of armoured plates and sandbags around one short fat mortar tube pointing up and to the right, with a small ammunition rack and one white work light. The whole emplacement, nothing else, no mecha. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}
