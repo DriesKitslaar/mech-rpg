@@ -227,7 +227,8 @@ export const STRINGS_NL = {
     earned: 'CREDITS VERDIEND', medals: 'MEDAILLE', cycle: 'CYCLUS', time: 'SPEELTIJD', none: '-', ranksHeld: 'RANGEN',
   },
   database: {
-    heading: 'DATABASE', pages: { units: 'EENHEID', world: 'WERELD', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
+    heading: 'DATABASE', pages: { units: 'EENHEID', people: 'MENSEN', world: 'WERELD', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
+    known: (n: number, of: number) => `BEKEND ${n}/${of}`,
     heard: (n: number, of: number) => `GEHOORD ${n}/${of}`, notHeard: 'Nog niet gehoord.', play: 'A: speel', stop: 'A: stop', playing: 'SPEELT NU',
     length: (time: string) => `LENGTE ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Muziek staat uit. Zet haar aan in Opties.',
     unknown: '? ? ?', notMet: 'Nog onbekend.', met: (n: number, of: number) => `GEZIEN ${n}/${of}`,

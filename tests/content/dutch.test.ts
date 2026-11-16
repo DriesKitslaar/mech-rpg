@@ -29,9 +29,11 @@ const ROOM: Record<string, { width?: number; max?: number }> = {
   'board.word': { max: 9 }, 'part.name': { max: 5 },
   // A wingman's line on the radio: how much room it really has depends on their name; see tests/ui/radio.test.ts.
   radio: { max: 30 },
+  // Whom somebody works for, on their page of the database.
+  'person.role': { max: 20 },
 };
 /** Kinds that are names: they may stay as they are. Everything else has to be translated. */
-const MAY_STAY = new Set(['who', 'client', 'asset', 'part.name', 'board.word', 'scene.heading', 'scene.title', 'mission.title', 'medal.name', 'perk.name', 'page.title']);
+const MAY_STAY = new Set(['who', 'client', 'asset', 'part.name', 'board.word', 'scene.heading', 'scene.title', 'mission.title', 'medal.name', 'perk.name', 'page.title', 'person.role']);
 
 const texts = registeredTexts();
 const nl = dictionaryOf('nl');
