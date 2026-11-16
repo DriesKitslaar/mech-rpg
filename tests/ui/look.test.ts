@@ -17,14 +17,16 @@ const isLight = (g: Glowed): boolean => g.blend === 'lighter';
 const strength = (g: Glowed): number => Number(/, ([\d.]+)\)$/.exec(g.stops[0][1])![1]);
 
 function battle(seed = 7, wound = false): BattleState {
-  const state = createBattle(DEMO_BUILD, [ENEMIES['recon-drone'], ENEMIES['gun-turret']], CATALOG, seed);
+  // Two machines that stand on the ground: what flies burns underneath, and that is a light of its own.
+  const state = createBattle(DEMO_BUILD, [ENEMIES.tank, ENEMIES['gun-turret']], CATALOG, seed);
   // A machine with one point of armour left goes up at the first thing that lands.
   if (wound) for (const part of Object.values(state.units[1].parts)) if (part) part.ap = 1;
   return state;
 }
 function screenOf(opts: { fast?: boolean; calm?: boolean; state?: BattleState } = {}) {
   const flow = new BattleFlow(opts.state ?? battle(), CATALOG, { quiet: true });
-  const screen = new BattleScreen(flow, sprites, CATALOG, { fast: opts.fast ?? false, ...(opts.calm ? { calm: true } : {}) });
+  // On ground that has no lamps or signs of its own, so that every light seen is the battle's.
+  const screen = new BattleScreen(flow, sprites, CATALOG, { fast: opts.fast ?? false, background: 'bg-nowhere', ...(opts.calm ? { calm: true } : {}) });
   // Past the banner that opens the battle, to the pilot's own menu.
   for (let i = 0; i < 400 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
   expect(flow.phase).toBe('action');

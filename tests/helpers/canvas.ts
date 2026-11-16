@@ -14,11 +14,13 @@ export interface Filled { x: number; y: number; w: number; h: number; color: str
 export interface Pictured { image: unknown; x: number; y: number; w: number; h: number; blend: string; alpha: number; filter: string }
 /** A soft light or shadow: a round gradient, where its middle is, how far it reaches, its colours and how it was laid on. */
 export interface Glowed { x: number; y: number; r: number; ry: number; stops: [number, string][]; blend: string }
+/** A gradient that runs in a line, laid over a rectangle: where the rectangle is, the gradient's colours, and how it was laid on. */
+export interface Washed { x: number; y: number; w: number; h: number; stops: [number, string][]; blend: string }
 /** A line that was stroked: its points, how wide, in what colour and how it was laid on. */
 export interface Stroked { points: { x: number; y: number }[]; width: number; color: string; blend: string }
-export interface Drawn { texts: Written[]; rects: Filled[]; images: Pictured[]; glows: Glowed[]; strokes: Stroked[] }
+export interface Drawn { texts: Written[]; rects: Filled[]; images: Pictured[]; glows: Glowed[]; strokes: Stroked[]; washes: Washed[] }
 
-interface Gradient { x: number; y: number; r: number; stops: [number, string][]; addColorStop(offset: number, color: string): void }
+interface Gradient { x: number; y: number; r: number; linear?: boolean; stops: [number, string][]; addColorStop(offset: number, color: string): void }
 const isGradient = (style: unknown): style is Gradient => typeof style === 'object' && style !== null && Array.isArray((style as Gradient).stops);
 
 /**
@@ -33,6 +35,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
   const images: Pictured[] = [];
   const glows: Glowed[] = [];
   const strokes: Stroked[] = [];
+  const washes: Washed[] = [];
   const state: Record<string, unknown> = {
     font: '12px x', textAlign: 'left', fillStyle: '', strokeStyle: '', lineWidth: 1, globalCompositeOperation: 'source-over', globalAlpha: 1, filter: 'none',
   };
@@ -59,6 +62,10 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
       const gradient: Gradient = { x: Number(x1), y: Number(y1), r: Number(r1), stops: [], addColorStop(offset, color) { this.stops.push([offset, color]); } };
       return gradient;
     },
+    createLinearGradient: () => {
+      const gradient: Gradient = { x: 0, y: 0, r: 0, linear: true, stops: [], addColorStop(offset, color) { this.stops.push([offset, color]); } };
+      return gradient;
+    },
     fillText: (text, x, y) => {
       const said = String(text);
       const width = said.length * size() * 0.4 * at.sx;
@@ -69,6 +76,10 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
     },
     fillRect: (x, y, w, h) => {
       const style = state.fillStyle;
+      if (isGradient(style) && style.linear) {
+        washes.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, stops: style.stops, blend: String(state.globalCompositeOperation) });
+        return;
+      }
       if (isGradient(style)) {
         glows.push({ x: X(style.x), y: Y(style.y), r: style.r * at.sx, ry: style.r * at.sy, stops: style.stops, blend: String(state.globalCompositeOperation) });
         return;
@@ -88,7 +99,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
     set: (t, name: string, value) => { t[name] = value; return true; },
   }) as unknown as CanvasRenderingContext2D;
   draw(ctx);
-  return { texts, rects, images, glows, strokes };
+  return { texts, rects, images, glows, strokes, washes };
 }
 
 /** Whether two pieces of text share a row and run into each other. */
