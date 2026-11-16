@@ -7,7 +7,7 @@ export type SoundName =
   | 'shotKinetic' | 'shotEnergy' | 'shotExplosive' | 'hit' | 'miss'
   | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat'
   | 'guard' | 'stagger' | 'charge' | 'module'
-  | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive' | 'radio';
+  | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive' | 'radio' | 'relic';
 
 /** One synthesised note or burst. Times are in seconds, frequencies in hertz. */
 export interface Tone {
@@ -68,6 +68,8 @@ export const SOUNDS: Record<SoundName, Tone[]> = {
   overdrive: [t('sawtooth', 220, 0, 0.32, 0.3, 880), t('square', 440, 0.04, 0.28, 0.2, 1320), t('noise', 0, 0, 0.14, 0.25), t('triangle', 1320, 0.3, 0.3, 0.3)],
   // The wingman keying the radio: a click of static and two short tones.
   radio: [t('noise', 0, 0, 0.03, 0.12), t('square', 1175, 0.03, 0.04, 0.1), t('square', 1568, 0.08, 0.05, 0.1)],
+  // A relic taken in the Gauntlet: a low bell, and a fifth and an octave opening over it.
+  relic: [t('triangle', 147, 0, 0.6, 0.3), t('triangle', 220, 0.06, 0.5, 0.22), t('triangle', 294, 0.14, 0.55, 0.22), t('square', 587, 0.28, 0.3, 0.1)],
   // A medal: three bright notes going up and a held fourth.
   medal: [t('triangle', 784, 0, 0.07, 0.3), t('triangle', 988, 0.08, 0.07, 0.3), t('triangle', 1175, 0.16, 0.07, 0.3), t('square', 1568, 0.24, 0.22, 0.18)],
   // The database growing: two quiet notes, like a terminal acknowledging.

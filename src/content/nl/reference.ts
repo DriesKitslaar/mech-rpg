@@ -395,4 +395,6 @@ export const REFERENCE_NL: Record<string, string> = {
   'Great machines, and pilots with a name.': 'Grote machines, en piloten met een naam.',
   'The war, the audit and the verdicts.': 'De oorlog, de audit en de vonnissen.',
   'The endings and the end roll.': 'De eindes en de aftiteling.',
+  'The room of the Gauntlet, between floors.': 'De kamer van de Gauntlet, tussen de etages.',
+  'The floors of the Gauntlet.': 'De etages van de Gauntlet.',
 };

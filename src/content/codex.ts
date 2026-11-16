@@ -285,5 +285,7 @@ export const JUKEBOX: { id: SongName; title: string; text: string }[] = [
   { id: 'rival', title: 'ASHFALL', text: 'The duels with the pilot who keeps turning up.' },
   { id: 'boss', title: 'SOMETHING LARGE', text: 'Great machines, and pilots with a name.' },
   { id: 'battle2', title: 'THE WAR FOR VARN', text: 'The war, the audit and the verdicts.' },
+  { id: 'gauntlet', title: 'THE WAY DOWN', text: 'The room of the Gauntlet, between floors.' },
+  { id: 'descent', title: 'FLOOR BY FLOOR', text: 'The floors of the Gauntlet.' },
   { id: 'ending', title: 'WHAT IT COST', text: 'The endings and the end roll.' },
 ];

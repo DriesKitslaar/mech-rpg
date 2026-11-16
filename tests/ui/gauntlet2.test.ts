@@ -24,8 +24,8 @@ const ready = () => inHub(strong(done('intro-1', 'intro-2')));
 /** A frame that does not lose: for tests about what happens around a floor, not on it. */
 const MIGHTY = { plating: 30, capacitor: 20, optics: 30, heatsinks: 10 };
 /** Puts the app in the Gauntlet's room with the run as given. */
-function room(run: Partial<Run> & { seed?: number }) {
-  const made = ready();
+function room(run: Partial<Run> & { seed?: number }, deps: Parameters<typeof inHub>[2] = {}) {
+  const made = inHub(strong(done('intro-1', 'intro-2')), undefined, deps);
   const base = startRun(run.seed ?? 77, GAUNTLET_BUILD);
   made.app.commit({ ...made.app.game!, gauntlet: { ...base, ...run } });
   made.app.go('gauntlet');
@@ -230,10 +230,12 @@ describe('an elite behind a door', () => {
 });
 
 describe('what a warden leaves', () => {
-  /** A run that has just beaten the first warden. */
+  /** A run that has just beaten the first warden. `played` collects the sounds the app asks for from then on. */
+  const played: string[] = [];
   function beaten(relics: RelicId[] = []) {
-    const made = room({ floor: 5, boons: MIGHTY, relics });
+    const made = room({ floor: 5, boons: MIGHTY, relics }, { sfx: { muted: false, play: (name: string) => { played.push(name); }, unlock: () => {} } as never });
     clear(made.app, 'descend');
+    played.length = 0;
     return made;
   }
 
@@ -251,6 +253,8 @@ describe('what a warden leaves', () => {
     select(app, 'gauntlet');
     expect(g(app).relicOffers).toEqual(offers);
     press(app, 'down', 'confirm');
+    // Whatever else was announced in passing meanwhile, the relic has its own sound, once.
+    expect(played.filter((name) => name === 'relic')).toEqual(['relic']);
     expect(g(app)).toMatchObject({ relicOwed: false, relics: [offers[1]], drafting: true });
     expect(savedGame(store).gauntlet).toMatchObject({ relicOwed: false, relics: [offers[1]] });
     // Then the ordinary three.
@@ -340,5 +344,36 @@ describe('what a warden leaves', () => {
     select(thin.app, 'door-0');
     expect(armour(thin.app)).toBeLessThan(armour(plain.app) * 0.87);
     expect(armour(thin.app)).toBeGreaterThan(armour(plain.app) * 0.83);
+  });
+});
+
+describe('the Gauntlet\'s music', () => {
+  test('its room has a song of its own, its open floors another, a warden\'s floor the boss\'s, and all three are heard for the jukebox', () => {
+    const tracks: (string | null)[] = [];
+    const music = { enabled: true, tense: false, play: (t: string | null) => { tracks.push(t); } };
+    const { app } = inHub(strong(done('intro-1', 'intro-2')), 5, { music });
+    expect(tracks.at(-1)).toBe('hub');
+    select(app, 'gauntlet');
+    expect(tracks.at(-1)).toBe('gauntlet');
+    select(app, 'start');
+    select(app, 'door-0');
+    expect(tracks.at(-1)).toBe('descent');
+    // Back in the room after the floor, the room's song again.
+    finishBattle(app);
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('gauntlet');
+    expect(tracks.at(-1)).toBe('gauntlet');
+    // The warden's floor.
+    app.commit({ ...app.game!, gauntlet: { ...startRun(77, GAUNTLET_BUILD), floor: 5, boons: MIGHTY } });
+    app.go('gauntlet');
+    select(app, 'descend');
+    expect(tracks.at(-1)).toBe('boss');
+    expect(app.heard()).toEqual(expect.arrayContaining(['gauntlet', 'descent', 'boss']));
+    // Leaving the room for the hub brings the hub's song back.
+    finishBattle(app);
+    press(app, 'confirm');
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+    expect(tracks.at(-1)).toBe('hub');
   });
 });

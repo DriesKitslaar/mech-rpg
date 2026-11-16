@@ -3,7 +3,9 @@ import type { Kit, Song, Tone } from '../platform/music';
 export type SongName =
   | 'title' | 'hub' | 'briefing' | 'battle' | 'battle2' | 'boss' | 'arena' | 'ending' | 'victory' | 'defeat'
   // A theme for each client, heard in their briefings, and one for the rival, heard in the duels.
-  | 'hadron' | 'lumen' | 'undertow' | 'rival';
+  | 'hadron' | 'lumen' | 'undertow' | 'rival'
+  // The Gauntlet: its room between floors, and the floors themselves.
+  | 'gauntlet' | 'descent';
 
 // Songs are written the way a tracker shows them: one token per step, "." for a rest, "-" to hold the note
 // before it, "|" between bars for the reader, and for the drums k, s, h, o, c and t (kick, snare, closed and
@@ -991,6 +993,115 @@ const rival: Song = {
   order: ['call', 'call', 'answer', 'call'],
 };
 
+// The Gauntlet's room. D minor, 66 bpm, 16 bars: the way down. A lament bass that only ever steps
+// downward (D, C, B flat, A), a low drone under it, and a bell that says a few notes and leaves the
+// echo to finish them. The A major at the foot of each descent borrows C sharp, so the fall always
+// leans back to the top. Nothing in it hurries: this is the room where the next floor is chosen.
+const WAY_PADS = pads(16, 'D3 C3 Bb2 A2', 'F3 E3 D3 C#3', 'A3 G3 F3 E3');
+const WAY_PLUCK = figures('1 . 2 . 3 . 2 . 1 . 2 . 3 . 2 .', {
+  Dm: 'D3 A3 D4', C: 'C3 G3 C4', Bb: 'Bb2 F3 Bb3', A: 'A2 E3 A3', Gm: 'G2 D3 G3',
+});
+const WAY_PULSE = times(4, 'k . . . . . . . . . . . . . t .');
+const gauntlet: Song = {
+  bpm: 66, stepsPerBeat: 4, loop: true,
+  scale: ['D', 'E', 'F', 'G', 'A', 'Bb', 'C'], accidentals: ['C#'],
+  echo: { steps: 3, feedback: 0.5 },
+  instruments: {
+    drone: { ...PAD, gain: 0.13, attack: 1.4, release: 2.2, cutoff: 700 },
+    pad: { ...PAD, gain: 0.07, cutoff: 1300 },
+    bell: { ...BELL, gain: 0.13, echo: 0.5 },
+    pluck: { ...PLUCK, gain: 0.07, decay: 0.5, cutoff: 1400, echo: 0.5 },
+    kit: { ...KIT, gain: 0.28 },
+  },
+  voices: { drone: 'drone', pad1: 'pad', pad2: 'pad', pad3: 'pad', bell: 'bell', pluck: 'pluck', drums: 'kit' },
+  pan: { pad1: -0.6, pad3: 0.6, bell: 0.25, pluck: -0.3 },
+  patterns: {
+    down1: {
+      steps: 64,
+      lines: {
+        ...WAY_PADS, drone: whole('D2 C2 Bb1 A1'), drums: WAY_PULSE,
+        bell: bars(
+          'A4 - - - - - - - F4 - - - D4 - - -', 'E4 - - - - - - - - - - - . . . .',
+          'D4 - - - - - - - F4 - - - Bb4 - - -', 'A4 - - - - - - - - - - - . . . .',
+        ),
+      },
+    },
+    down2: {
+      steps: 64,
+      lines: {
+        ...WAY_PADS, drone: whole('D2 C2 Bb1 A1'), drums: WAY_PULSE, pluck: chart(WAY_PLUCK, 'Dm C Bb A'),
+        bell: bars(
+          'D5 - - - - - - - A4 - - - F4 - - -', 'G4 - - - - - - - E4 - - - . . . .',
+          'F4 - - - - - - - D4 - - - Bb3 - - -', 'C#4 - - - - - - - E4 - - - . . . .',
+        ),
+      },
+    },
+    deep: {
+      steps: 64,
+      lines: {
+        ...pads(16, 'G2 D3 Bb2 A2', 'Bb2 F3 D3 C#3', 'D3 A3 F3 E3'), drone: whole('G1 D2 Bb1 A1'), drums: WAY_PULSE, pluck: chart(WAY_PLUCK, 'Gm Dm Bb A'),
+        bell: bars(
+          'D5 - - - - - Bb4 - - - - - G4 - - -', 'A4 - - - - - - - F4 - - - D4 - - -',
+          'F4 - - - - - - - D4 - - - Bb3 - - -', 'C#4 - - - - - - - E4 - - - A4 - - -',
+        ),
+      },
+    },
+  },
+  order: ['down1', 'down2', 'deep', 'down2'],
+};
+
+// The Gauntlet's floors. D minor, 148 bpm, 16 bars: floor by floor. The room's own falling bass, driven:
+// eighths that jump the octave, an arpeggio in sixteenths on top, and a riff that climbs a little each
+// bar only to be pulled down again by the A at the end of the line. The middle four bars start a
+// fourth higher (G minor) and fall the same way. It is meant to be heard many times in a row.
+const DESCENT_BASS = figures('1 . 1 1 . 1 2 . 1 . 1 1 . 1 2 1', {
+  Dm: 'D2 D3', C: 'C2 C3', Bb: 'Bb1 Bb2', A: 'A1 A2', Gm: 'G1 G2',
+});
+const DESCENT_ARP = figures('1 2 3 2 1 2 3 2 1 2 3 2 1 2 3 2', {
+  Dm: 'D4 F4 A4', C: 'C4 E4 G4', Bb: 'Bb3 D4 F4', A: 'A3 C#4 E4', Gm: 'G3 Bb3 D4',
+});
+const DESCENT_BEAT = 'k . . . s . . k . k . . s . . .';
+const DESCENT_FILL = 'k . . . s . . k . k . . s s s s';
+const descent: Song = {
+  bpm: 148, stepsPerBeat: 4, loop: true,
+  scale: ['D', 'E', 'F', 'G', 'A', 'Bb', 'C'], accidentals: ['C#'],
+  echo: { steps: 3, feedback: 0.3 },
+  instruments: {
+    bass: { ...BASS, gain: 0.26, cutoff: 520 },
+    pad: { ...PAD, gain: 0.06, attack: 0.2 },
+    lead: { ...LEAD, wave: 'sawtooth', gain: 0.09, cutoff: 3000, vibrato: 8 },
+    arp: { ...PLUCK, gain: 0.06 },
+    kit: { ...KIT, gain: 0.5 },
+  },
+  voices: { bass: 'bass', pad1: 'pad', pad2: 'pad', lead: 'lead', arp: 'arp', drums: 'kit', hats: 'kit' },
+  pan: { pad1: -0.6, pad2: 0.6, arp: 0.35, hats: -0.25 },
+  patterns: {
+    riff: {
+      steps: 64,
+      lines: {
+        ...pads(16, 'D3 C3 Bb2 A2', 'A3 G3 F3 E3'), bass: chart(DESCENT_BASS, 'Dm C Bb A'), arp: chart(DESCENT_ARP, 'Dm C Bb A'),
+        lead: bars(
+          'D5 - - A4 - - D5 - F5 - - E5 - - D5 -', 'E5 - - C5 - - E5 - G5 - - E5 - - C5 -',
+          'F5 - - D5 - - F5 - Bb5 - - A5 - - F5 -', 'E5 - - - - - C#5 - - - - - A4 - - -',
+        ),
+        drums: bars(DESCENT_BEAT, DESCENT_BEAT, DESCENT_BEAT, DESCENT_FILL), hats: times(4, HATS_8),
+      },
+    },
+    lift: {
+      steps: 64,
+      lines: {
+        ...pads(16, 'G3 D3 Bb2 A2', 'Bb3 A3 F3 E3'), bass: chart(DESCENT_BASS, 'Gm Dm Bb A'), arp: chart(DESCENT_ARP, 'Gm Dm Bb A'),
+        lead: bars(
+          'G5 - - - - - F5 - - - - - D5 - - -', 'F5 - - - - - E5 - D5 - - - A4 - - -',
+          'Bb4 - - D5 - - F5 - - Bb5 - - A5 - - -', 'A5 - - - - - E5 - - - C#5 - - - E5 -',
+        ),
+        drums: bars(DESCENT_BEAT, DESCENT_BEAT, DESCENT_BEAT, DESCENT_FILL), hats: bars(HATS_8, HATS_8_OPEN, HATS_16, HATS_16),
+      },
+    },
+  },
+  order: ['riff', 'riff', 'lift', 'riff'],
+};
+
 export const SONGS: Record<SongName, Song> = {
-  title, hub, briefing, battle, battle2, boss, arena, ending, victory, defeat, hadron, lumen, undertow, rival,
+  title, hub, briefing, battle, battle2, boss, arena, ending, victory, defeat, hadron, lumen, undertow, rival, gauntlet, descent,
 };

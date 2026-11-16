@@ -64,7 +64,7 @@ test('every song and every sound effect makes sound, none of it too loud, and a 
     return out;
   });
 
-  expect(Object.keys(heard.songs)).toHaveLength(14);
+  expect(Object.keys(heard.songs)).toHaveLength(16);
   for (const [name, song] of Object.entries(heard.songs)) {
     expect(song.peak, `${name} is audible`).toBeGreaterThan(0.05);
     expect(song.peak, `${name} leaves room for the effects`).toBeLessThan(0.4);
