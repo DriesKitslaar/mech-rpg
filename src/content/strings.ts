@@ -240,7 +240,10 @@ export const STRINGS = {
     earned: 'CREDITS EARNED', medals: 'MEDALS', cycle: 'CYCLE', time: 'TIME PLAYED', none: '-', ranksHeld: 'RANKS HELD',
   },
   database: {
-    heading: 'DATABASE', pages: { units: 'UNITS', world: 'WORLD', manual: 'MANUAL' }, hint: 'L1/R1: page   B: back',
+    heading: 'DATABASE', pages: { units: 'UNITS', world: 'WORLD', manual: 'MANUAL', music: 'MUSIC' }, hint: 'L1/R1: page   B: back',
+    // The jukebox: the songs heard so far, to be played again.
+    heard: (n: number, of: number) => `HEARD ${n}/${of}`, notHeard: 'Not heard so far.', play: 'A: play', stop: 'A: stop', playing: 'NOW PLAYING',
+    length: (time: string) => `LENGTH ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Music is off. Turn it on in Options to hear this.',
     unknown: '? ? ?', notMet: 'Not met yet.', met: (n: number, of: number) => `MET ${n}/${of}`,
     entries: (n: number, of: number) => `ENTRIES ${n}/${of}`, topics: (n: number) => `${n} TOPICS`,
     armour: 'ARMOUR', weak: 'WEAK TO', strong: 'TOUGH VS', none: '-',
@@ -278,6 +281,8 @@ export const STRINGS = {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
     credits: 'End Roll', watch: 'Watch', title: 'Quit to Title',
     language: 'Language', languages: { en: 'English', nl: 'Nederlands' },
+    textSpeed: 'Text Speed', textSpeeds: { slow: 'Slow', normal: 'Normal', fast: 'Fast', instant: 'Instant' },
+    calm: 'Screen Effects', full: 'Full', calmed: 'Calm', calmHelp: 'Calm: no shaking and no flashes in battle.',
     swapAB: 'A/B Buttons', normal: 'Normal', swapped: 'Swapped', swapHelp: 'Swap them if B confirms on your handheld.',
     unsaved: 'Not saved', unsavedHelp: 'The last change could not be saved. A again: quit.',
     on: 'On', off: 'Off',

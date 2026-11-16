@@ -153,3 +153,45 @@ test('faces and voices: a wanted notice with a face, the wanted pilot\'s word as
   await page.screenshot({ path: shot('battle-radio') });
   expect(errors).toEqual([]);
 });
+
+test('comfort: the speed of text and a calm picture are options, and the database plays the songs heard so far', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.addInitScript((save) => {
+    if (!window.localStorage.getItem('ironwage-save')) window.localStorage.setItem('ironwage-save', save);
+  }, JSON.stringify({ ...pilot(6), heard: ['title', 'hub', 'briefing', 'battle', 'victory', 'boss'] }));
+  await open(page);
+  await choose(page, 'continue');
+  await enterHub(page);
+  await choose(page, 'options');
+  await waitForScreen(page, 'options');
+  const noteOf = async (id: string) => (await snap(page)).menu.items.find((i) => i.id === id)?.note;
+  expect(await noteOf('textSpeed')).toBe('Normal');
+  expect(await noteOf('calm')).toBe('Full');
+  // Down to the speed of text, one step on; then the calm picture, on.
+  for (let i = 0; i < 12 && (await snap(page)).menu.items[(await snap(page)).menu.cursor]?.id !== 'textSpeed'; i++) await press(page, 'ArrowDown');
+  await press(page, 'ArrowRight');
+  expect(await noteOf('textSpeed')).toBe('Fast');
+  await press(page, 'ArrowDown');
+  await press(page, 'Enter');
+  expect(await noteOf('calm')).toBe('Calm');
+  await page.screenshot({ path: shot('options-comfort') });
+  // They are kept: the stored settings say so.
+  const stored = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-settings') ?? '{}'));
+  expect(stored).toMatchObject({ textSpeed: 'fast', calm: true });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  await choose(page, 'database');
+  await waitForScreen(page, 'database');
+  await press(page, 'KeyQ');
+  expect(await snap(page)).toMatchObject({ page: 'music' });
+  const heard = (await snap(page)).menu.items.filter((i) => i.enabled).map((i) => i.id);
+  expect(heard).toEqual(expect.arrayContaining(['title', 'hub', 'boss']));
+  for (let i = 0; i < 20 && (await snap(page)).menu.items[(await snap(page)).menu.cursor]?.id !== 'boss'; i++) await press(page, 'ArrowDown');
+  await press(page, 'Enter');
+  expect(await snap(page) as unknown as { playing: string | null }).toMatchObject({ playing: 'boss' });
+  await page.screenshot({ path: shot('database-music') });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  expect(errors).toEqual([]);
+});

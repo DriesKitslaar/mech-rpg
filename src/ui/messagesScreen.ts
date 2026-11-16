@@ -51,7 +51,8 @@ export class MessagesScreen implements Screen {
       if (this.reading) {
         this.app.readMessage(this.reading.id);
         this.rows = this.reading.body.map((paragraph) => wrap(paragraph, charsFor(LOGICAL_W - 24)));
-        this.writer = new Typewriter(this.rows.flat(), 150, this.app.deps.fast);
+        const typing = this.app.typing();
+        this.writer = new Typewriter(this.rows.flat(), 150 * typing.factor, typing.instant);
       }
     }
   }

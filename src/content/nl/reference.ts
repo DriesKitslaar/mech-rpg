@@ -379,4 +379,19 @@ export const REFERENCE_NL: Record<string, string> = {
   'Past the Stop': 'Voorbij de aanslag',
   'From pilot level 3 a meter at the left edge of the field fills as you fight: 8 for a volley that lands, 10 for one you take, 15 for a machine destroyed. Full, R1 on your turn sets off your Overdrive. Second Wind starts your turn over; Iron Skin (level 6) halves damage until your next turn; Deadeye (level 9) cannot miss.':
     'Vanaf pilootlevel 3 vult een meter links op het veld zich in gevecht: 8 voor een salvo dat raakt, 10 voor een dat je krijgt, 15 voor een gesloopte machine. Vol zet R1 in je beurt je Overdrive in. Tweede Adem begint je beurt opnieuw; IJzerhuid (level 6) halveert schade tot je volgende beurt; Scherpoog (level 9) mist niet.',
+  // The jukebox: what each song is heard with. The songs keep their names.
+  'The title. Where every contract begins.': 'De titel. Waar elk contract begint.',
+  'Between contracts: the garage, the shop and the board.': 'Tussen contracten: de garage, de winkel en het bord.',
+  'Briefings, and the story between them.': 'Briefings, en het verhaal ertussen.',
+  'The first act and the odd jobs.': 'De eerste akte en de losse klussen.',
+  'A contract won.': 'Een contract gewonnen.',
+  'A contract lost.': 'Een contract verloren.',
+  'The briefings of Director Brenn.': 'De briefings van directeur Brenn.',
+  'The briefings of Analyst Varga.': 'De briefings van analist Varga.',
+  'The briefings of Tamsin.': 'De briefings van Tamsin.',
+  'The arena, its cups and its back room.': 'De arena, haar bekers en haar achterkamer.',
+  'The duels with the pilot who keeps turning up.': 'De duels met de piloot die steeds opduikt.',
+  'Great machines, and pilots with a name.': 'Grote machines, en piloten met een naam.',
+  'The war, the audit and the verdicts.': 'De oorlog, de audit en de vonnissen.',
+  'The endings and the end roll.': 'De eindes en de aftiteling.',
 };

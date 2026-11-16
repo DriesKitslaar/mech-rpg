@@ -1,7 +1,7 @@
 import { isValidRun } from '../core/gauntlet';
 import {
-  DEFAULT_CALLSIGN, DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LOADOUT_SLOTS, SAVE_VERSION, isValidState,
-  type Difficulty, type GameState, type Settings,
+  DEFAULT_CALLSIGN, DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LOADOUT_SLOTS, SAVE_VERSION, TEXT_SPEEDS, isValidState,
+  type Difficulty, type GameState, type Settings, type TextSpeed,
 } from '../core/game';
 import { NO_STATS } from '../core/stats';
 import type { Catalog } from '../core/types';
@@ -143,7 +143,7 @@ export class SaveFile {
       if (!raw) return null;
       const value: unknown = JSON.parse(raw);
       if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-      const { sfx, music, fastBattles, difficulty, rumble, swapAB, language } = value as Record<string, unknown>;
+      const { sfx, music, fastBattles, difficulty, rumble, swapAB, language, textSpeed, calm } = value as Record<string, unknown>;
       if (typeof sfx !== 'boolean' || typeof music !== 'boolean' || typeof fastBattles !== 'boolean') return null;
       // Options added later than the first three fall back to their default when absent or unknown.
       const known = DIFFICULTIES.includes(difficulty as Difficulty);
@@ -154,6 +154,9 @@ export class SaveFile {
         ...(swapAB === true ? { swapAB: true } : {}),
         // The language is stored only when it is not English.
         ...(language === 'nl' ? { language: 'nl' as const } : {}),
+        // The speed of text is stored only when it is not the ordinary one, and a calm picture only while it is on.
+        ...(TEXT_SPEEDS.includes(textSpeed as TextSpeed) && textSpeed !== 'normal' ? { textSpeed: textSpeed as TextSpeed } : {}),
+        ...(calm === true ? { calm: true } : {}),
       };
     } catch {
       return null;

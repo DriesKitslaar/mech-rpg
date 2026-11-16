@@ -226,7 +226,9 @@ export const STRINGS_NL = {
     earned: 'CREDITS VERDIEND', medals: 'MEDAILLE', cycle: 'CYCLUS', time: 'SPEELTIJD', none: '-', ranksHeld: 'RANGEN',
   },
   database: {
-    heading: 'DATABASE', pages: { units: 'EENHEID', world: 'WERELD', manual: 'HANDBOEK' }, hint: 'L1/R1: blad   B: terug',
+    heading: 'DATABASE', pages: { units: 'EENHEID', world: 'WERELD', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
+    heard: (n: number, of: number) => `GEHOORD ${n}/${of}`, notHeard: 'Nog niet gehoord.', play: 'A: speel', stop: 'A: stop', playing: 'SPEELT NU',
+    length: (time: string) => `LENGTE ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Muziek staat uit. Zet haar aan in Opties.',
     unknown: '? ? ?', notMet: 'Nog onbekend.', met: (n: number, of: number) => `GEHAD ${n}/${of}`,
     entries: (n: number, of: number) => `ITEMS ${n}/${of}`, topics: (n: number) => `${n} THEMA'S`,
     armour: 'PANTSER', weak: 'ZWAK VOOR', strong: 'TAAI VOOR', none: '-',
@@ -263,6 +265,8 @@ export const STRINGS_NL = {
   options: {
     heading: 'OPTIES', sfx: 'Geluidseffecten', music: 'Muziek', rumble: 'Trillen', fastBattles: 'Snel vechten', difficulty: 'Moeilijkheid',
     credits: 'Aftiteling', watch: 'Kijk', title: 'Naar titel',
+    textSpeed: 'Teksttempo', textSpeeds: { slow: 'Traag', normal: 'Normaal', fast: 'Snel', instant: 'Direct' },
+    calm: 'Schermeffecten', full: 'Vol', calmed: 'Rustig', calmHelp: 'Rustig: geen schudden of flitsen in gevecht.',
     language: 'Taal',
     swapAB: 'A/B-knoppen', normal: 'Normaal', swapped: 'Gewisseld', swapHelp: 'Wissel ze als B bevestigt op je handheld.',
     unsaved: 'Onbewaard', unsavedHelp: 'Laatste wijziging niet opgeslagen. Weer A: stoppen.',

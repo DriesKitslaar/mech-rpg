@@ -1,3 +1,4 @@
+import type { SongName } from './songs';
 import type { Entry } from '../core/codex';
 
 /** One page of the database's list of units: which kind of enemy, what to call it there, and how to fight it. */
@@ -267,4 +268,22 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     id: 'controls', title: 'CONTROLS',
     text: 'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets.',
   },
+];
+
+/** The songs of the game as the database's jukebox lists them, roughly in the order a pilot comes across them. */
+export const JUKEBOX: { id: SongName; title: string; text: string }[] = [
+  { id: 'title', title: 'IRONWAGE', text: 'The title. Where every contract begins.' },
+  { id: 'hub', title: 'HEADQUARTERS', text: 'Between contracts: the garage, the shop and the board.' },
+  { id: 'briefing', title: 'THE SMALL PRINT', text: 'Briefings, and the story between them.' },
+  { id: 'battle', title: 'CONTRACT WORK', text: 'The first act and the odd jobs.' },
+  { id: 'victory', title: 'PAID IN FULL', text: 'A contract won.' },
+  { id: 'defeat', title: 'WRITTEN OFF', text: 'A contract lost.' },
+  { id: 'hadron', title: 'HADRON EXTRACTION', text: 'The briefings of Director Brenn.' },
+  { id: 'lumen', title: 'LUMEN SYSTEMS', text: 'The briefings of Analyst Varga.' },
+  { id: 'undertow', title: 'THE UNDERTOW', text: 'The briefings of Tamsin.' },
+  { id: 'arena', title: 'THE PITS', text: 'The arena, its cups and its back room.' },
+  { id: 'rival', title: 'ASHFALL', text: 'The duels with the pilot who keeps turning up.' },
+  { id: 'boss', title: 'SOMETHING LARGE', text: 'Great machines, and pilots with a name.' },
+  { id: 'battle2', title: 'THE WAR FOR VARN', text: 'The war, the audit and the verdicts.' },
+  { id: 'ending', title: 'WHAT IT COST', text: 'The endings and the end roll.' },
 ];

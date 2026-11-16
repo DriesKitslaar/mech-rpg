@@ -12,7 +12,7 @@ import {
 import { metByRecord, openEntries, type Entry } from '../core/codex';
 import { applySettlement, debtRelief, settle, type Settlement } from '../core/economy';
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
-import { DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
+import { TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
@@ -65,6 +65,7 @@ import type { BattleState, OverdriveId } from '../core/battle';
 import { fittedOverdrive, overdriveOpen } from '../core/pilot';
 import { SettlementScreen } from './settlementScreen';
 import { battleTrack, briefingTrack, trackFor } from './soundtrack';
+import type { Typing } from './typewriter';
 import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
@@ -215,6 +216,7 @@ class MissionHost implements Screen {
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
       ...(boss ? { boss: boss.name } : {}),
       coach: this.coach,
+      typing: this.app.typing(), calm: this.app.settings.calm === true,
       ...(this.radio() ? { radio: this.radio()! } : {}),
       background: this.mission.battles[this.index].background,
       label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
@@ -400,8 +402,29 @@ export class App {
     if (this.settings.rumble !== false && !this.deps.fast) this.deps.vibrate?.(ms);
   }
 
+  /** How written text is to be written: at the speed the player asked for, or all of it at once. */
+  typing(): Typing {
+    const speed = this.settings.textSpeed ?? 'normal';
+    return { factor: TEXT_FACTOR[speed], instant: !!this.deps.fast || speed === 'instant' };
+  }
+
   playTrack(track: TrackName): void {
     this.deps.music?.play(track);
+    // What the pilot has heard is theirs to play again from the database. With the music off nothing is heard.
+    if (this.settings.music) this.heardNow.add(track === 'menu' ? 'hub' : track);
+  }
+
+  /** Silence, until the next screen asks for its song. */
+  stopMusic(): void {
+    this.deps.music?.play(null);
+  }
+
+  /** The songs heard since the game on now was opened: they go into the save with the next thing that does. */
+  private heardNow = new Set<string>();
+
+  /** Every song the pilot has heard, in this sitting or an earlier one. */
+  heard(): string[] {
+    return [...new Set([...(this.game?.heard ?? []), ...this.heardNow])];
   }
 
   /** Starts the fanfare for a battle won or lost, if there is music to play it. Says whether it did. */
@@ -499,7 +522,10 @@ export class App {
   commit(next: GameState): void {
     const seconds = Math.floor(this.played / 1000);
     this.played -= seconds * 1000;
-    const timed = seconds > 0 ? { ...next, stats: { ...next.stats, seconds: next.stats.seconds + seconds } } : next;
+    // What has been heard since the last save is written down with it.
+    const fresh = [...this.heardNow].filter((song) => !(next.heard ?? []).includes(song));
+    const heard = fresh.length > 0 ? { ...next, heard: [...(next.heard ?? []), ...fresh] } : next;
+    const timed = seconds > 0 ? { ...heard, stats: { ...heard.stats, seconds: heard.stats.seconds + seconds } } : heard;
     const { game: awarded, earned } = awardMedals(timed, MEDALS);
     // The database does not run ahead of the story: while a page of story is waiting to be shown,
     // nothing opens, so what that page is about to reveal is not announced before it.
@@ -899,7 +925,10 @@ export class App {
 
   /** Stores the game as it is if the last attempt failed; true when what is kept is the game being played. */
   saveNow(): boolean {
-    if (this.game && this.saveFailed) this.saveFailed = !this.file.save(this.game);
+    // A song heard since the last save goes in with this one: it is all there may be to write down.
+    const unheard = this.game ? [...this.heardNow].some((song) => !(this.game!.heard ?? []).includes(song)) : false;
+    if (this.game && unheard) this.commit(this.game);
+    else if (this.game && this.saveFailed) this.saveFailed = !this.file.save(this.game);
     return !this.saveFailed;
   }
 
@@ -915,6 +944,8 @@ export class App {
     this.toasts = [];
     this.toast = null;
     this.played = 0;
+    // What this game heard stays with it: the next one starts with the title's song and nothing else.
+    this.heardNow = new Set();
     this.go('title');
   }
 
