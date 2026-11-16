@@ -233,6 +233,43 @@ const ENEMY_PARTS: Part[] = [
   weapon('wpn-enemy-cutter', 'Scrap Cutter', 'hand', 'energy', 40, 88, 100, 16, null, 0, 70, 0, undefined, 'thermal', 14, { melee: true, impact: 60 }),
   weapon('wpn-enemy-flak', 'Yard Flak', 'hand', 'explosive', 16, 66, 85, 22, null, 0, 115, 0, undefined, 'burst', 2),
   weapon('wpn-enemy-siege', 'Foreman Cannon', 'shoulder', 'explosive', 66, 60, 130, 38, null, 0, 260, 0),
+  // Machines of the open contracts and the Gauntlet.
+  // Mortar nest: dug in, slow to aim, and what lands, lands hard.
+  frame('core-nest', 'Nest Ring', 'core', 230, r(0.35, 0.15, 0.35), 400, 0, 0, undefined),
+  weapon('wpn-nest-mortar', 'Pit Mortar', 'shoulder', 'explosive', 58, 58, 120, 30, null, 0, 200, 0),
+  // Hunter drone: very hard to hit, and after the head.
+  frame('core-hunter', 'Hunter Fuselage', 'core', 70, r(0.1, 0.1, 0.1), 70, 0, 0, undefined),
+  frame('legs-hunter', 'Swept Wings', 'legs', 35, r(0.1, 0.1, 0.1), 40, 0, 0, undefined, { capacity: 300, mobility: 55 }),
+  weapon('wpn-hunter-needles', 'Hunter Needles', 'shoulder', 'kinetic', 14, 80, 60, 12, null, 0, 30, 0, undefined, 'twin'),
+  // Flak walker: three small blasts a volley, spread over the whole mech.
+  frame('core-flak', 'Flak Housing', 'core', 150, r(0.3, 0.2, 0.1), 300, 0, 0, undefined),
+  frame('legs-flak', 'Flak Stilts', 'legs', 90, r(0.3, 0.2, 0.1), 200, 0, 0, undefined, { capacity: 1500, mobility: 22 }),
+  weapon('wpn-flak-cluster', 'Flak Cluster', 'shoulder', 'explosive', 14, 68, 100, 24, null, 0, 120, 0, undefined, 'burst', 3),
+  // Breacher: drives in and hits with the plate. It staggers what it hits.
+  frame('core-breacher', 'Ram Hull', 'core', 240, r(0.45, 0.2, 0.2), 500, 0, 0, undefined),
+  frame('legs-breacher', 'Studded Wheels', 'legs', 110, r(0.4, 0.2, 0.2), 300, 0, 0, undefined, { capacity: 2500, mobility: 20 }),
+  weapon('wpn-breacher-ram', 'Ram Plate', 'hand', 'kinetic', 46, 84, 90, 10, null, 0, 200, 0, undefined, undefined, undefined, { melee: true, impact: 110 }),
+  // Arc pylon: cannot move, and every hit heats what it hits.
+  frame('core-pylon', 'Pylon Column', 'core', 170, r(0.2, 0.45, 0.15), 300, 0, 0, undefined),
+  weapon('wpn-pylon-arc', 'Arc Discharge', 'shoulder', 'energy', 26, 84, 110, 20, null, 0, 150, 0, undefined, 'thermal', 16),
+  // Longshot: a rail on rotors. It charges for a turn, then shoots through armour.
+  frame('core-longshot', 'Longshot Spine', 'core', 85, r(0.15, 0.15, 0.15), 80, 0, 0, undefined),
+  weapon('wpn-longshot-rail', 'Longshot Rail', 'shoulder', 'kinetic', 70, 90, 90, 20, null, 0, 60, 0, undefined, 'pierce', undefined, { charge: true }),
+  // The Scrap King: a crab of welded wrecks. It closes in with the pincer and sprays flak on the way.
+  frame('core-king', 'King Shell', 'core', 420, r(0.35, 0.25, 0.3), 1000, 0, 0, undefined),
+  frame('legs-king', 'Six Legs', 'legs', 240, r(0.3, 0.2, 0.25), 600, 0, 0, undefined, { capacity: 6000, mobility: 14, legType: 'quad' }),
+  frame('arms-king', 'Claw Arms', 'arms', 200, r(0.3, 0.2, 0.2), 500, 0, 0, undefined),
+  frame('head-king', 'Lamp Cluster', 'head', 90, r(0.15, 0.1, 0.1), 100, 0, 0, undefined, { aim: 6 }),
+  generator('gen-king', 'King Boiler', 340, 30, 400, 0),
+  weapon('wpn-king-pincer', 'Crushing Pincer', 'hand', 'kinetic', 50, 86, 100, 12, null, 0, 300, 0, undefined, undefined, undefined, { melee: true, impact: 120 }),
+  weapon('wpn-king-flak', 'Scrap Flak', 'hand', 'explosive', 15, 68, 90, 20, null, 0, 200, 0, undefined, 'burst', 3),
+  // The Night Train: a rail cannon on wheels. The cannon charges; the gun ports do not wait for it.
+  frame('core-train', 'Engine Block', 'core', 460, r(0.4, 0.3, 0.2), 1200, 0, 0, undefined),
+  frame('legs-train', 'Drive Wheels', 'legs', 230, r(0.4, 0.25, 0.2), 600, 0, 0, undefined, { capacity: 8000, mobility: 0, legType: 'tank' }),
+  frame('head-train', 'Furnace Grille', 'head', 100, r(0.2, 0.3, 0.1), 100, 0, 0, undefined, { aim: 10 }),
+  generator('gen-train', 'Train Furnace', 360, 32, 400, 0),
+  weapon('wpn-train-rail', 'Roof Rail', 'shoulder', 'kinetic', 88, 86, 170, 40, null, 0, 400, 0, undefined, 'pierce', undefined, { charge: true }),
+  weapon('wpn-train-ports', 'Gun Ports', 'hand', 'kinetic', 18, 74, 90, 18, null, 0, 200, 0, undefined, 'burst', 3),
   // Meridian Mutual.
   frame('core-lien-drone', 'Lien Shell', 'core', 95, r(0.2, 0.2, 0.2), 80, 0, 0, undefined),
   frame('legs-lien-drone', 'Ducted Fans', 'legs', 55, r(0.1, 0.1, 0.1), 50, 0, 0, undefined, { capacity: 400, mobility: 40 }),

@@ -9,12 +9,14 @@ import { ENEMIES } from '../../src/content/enemies';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
-import { BOUNTIES, FAVOURS, SIDE_WORK } from '../../src/content/sidework';
+import { BOUNTIES, FAVOURS, GUILD_JOBS, SIDE_WORK } from '../../src/content/sidework';
 import { TALKS } from '../../src/content/talks';
 import { done, fresh, ids, inHub, select, snap, strong } from '../helpers/app';
 
 const ACT_ONE = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1'];
-const side = (g: GameState) => sideMissions(g, MISSIONS).map((m) => m.id);
+/** The bounties and favours on offer; the Guild's jobs have their own tests. */
+const side = (g: GameState) => sideMissions(g, MISSIONS).map((m) => m.id).filter((id) => !id.startsWith('guild-'));
+const guild = (g: GameState) => sideMissions(g, MISSIONS).map((m) => m.id).filter((id) => id.startsWith('guild-'));
 const wins = (missionId: string, build: string, seeds = 12): number => {
   const mission = MISSIONS.find((m) => m.id === missionId)!;
   let won = 0;
@@ -96,10 +98,29 @@ describe('side work in the list of contracts', () => {
     const { app } = inHub({ ...strong(done(...ACT_ONE)), scenes: ['act-1', 'act-2', ...TALKS.map((t) => t.id)], choices: { kite: 'vouch' } });
     select(app, 'contracts');
     const listed = ids(app).filter((id) => !id.startsWith('open-') && id !== 'archive');
-    expect(listed).toEqual(['patrol', 'choice-hadron', 'choice-lumen', 'choice-undertow', 'bounty-1', 'favour-kite']);
+    expect(listed).toEqual(['patrol', 'choice-hadron', 'choice-lumen', 'choice-undertow', 'bounty-1', 'favour-kite', 'guild-1']);
     expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('choice-hadron');
     select(app, 'bounty-1');
     expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'bounty-1', reward: 2400 } });
+  });
+});
+
+describe('the Night Market Guild', () => {
+  test('has four jobs, one at a time, about machines the story never fields; the last two are a battle on their own', () => {
+    expect(GUILD_JOBS.map((m) => m.id)).toEqual(['guild-1', 'guild-2', 'guild-3', 'guild-4']);
+    expect(guild(fresh())).toEqual([]);
+    expect(guild(done('intro-1', 'intro-2'))).toEqual(['guild-1']);
+    expect(guild(completeMission(done('intro-1', 'intro-2'), 'guild-1', MISSIONS))).toEqual([]);
+    expect(guild(completeMission(done(...ACT_ONE), 'guild-1', MISSIONS))).toEqual(['guild-2']);
+    const story = MISSIONS.filter((m) => m.phase !== 'side').flatMap((m) => m.battles.flatMap((b) => b.enemies));
+    const fielded = [...new Set(GUILD_JOBS.flatMap((m) => m.battles.flatMap((b) => b.enemies)))].sort();
+    expect(fielded).toEqual(['arc-pylon', 'breacher', 'flak-walker', 'hunter-drone', 'longshot', 'mortar-nest', 'night-train', 'scrap-king']);
+    for (const id of fielded) expect(story, id).not.toContain(id);
+    expect(GUILD_JOBS.slice(2).map((m) => m.battles.map((b) => b.enemies))).toEqual([[['scrap-king']], [['night-train']]]);
+  });
+
+  test.each([['guild-1', 'tier1'], ['guild-2', 'tier2'], ['guild-3', 'tier3'], ['guild-4', 'tier4']])('%s can be won with %s more often than not', (missionId, build) => {
+    expect(wins(missionId, build)).toBeGreaterThanOrEqual(0.5);
   });
 });
 
@@ -115,6 +136,6 @@ describe('how hard the side work is', () => {
 
   test('a bounty is not for a new pilot: the starter mech loses the first notice more often than it wins it', () => {
     expect(wins('bounty-1', 'starter')).toBeLessThan(0.5);
-    expect(SIDE_WORK).toHaveLength(13);
+    expect(SIDE_WORK).toHaveLength(17);
   });
 });

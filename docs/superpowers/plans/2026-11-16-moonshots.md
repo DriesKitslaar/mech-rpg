@@ -15,7 +15,8 @@ Update as work lands. After a context reset, start here.
       `src/ui/gauntletScreen.ts`). Its review is running (snapshot `scratchpad/reviewM1`). Pending: fixes, APK.
 - [ ] M2: Ground and weather (branch `feat/moon-ground`, PR 19, on top of M1). Built and tested: seven places have a rule
       (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Pending: review, APK.
-- [ ] M3: New machines
+- [ ] M3: New machines (branch `feat/moon-machines`, PR 20, on top of M2). Built and tested: six machines for the open
+      contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Pending: review, APK.
 - [ ] M4: Orders for the wingman
 - [ ] M5: Cups
 - [ ] M6: Dutch
@@ -90,3 +91,11 @@ M2:
   the Auto Turn count on when they decide to fire stays true.
 - The measured limits of the career tests and the difficulty of every contract held with the
   rules in; one briefing (Line Noise) lost a few words to make room for its ground line.
+
+M3:
+
+- Eight pictures at low quality: ledger at $3.93 of $14.
+- No new places: there were ten already, and seven now have a rule of their own.
+- The six smaller machines join the open contracts' pool; the two great ones are wardens of the
+  Gauntlet (floors 10 and 20) and the last two of four jobs for the Night Market Guild, a second
+  series of side work beside the bounties.

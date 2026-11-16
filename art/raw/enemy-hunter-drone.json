@@ -1,0 +1,11 @@
+{
+  "id": "enemy-hunter-drone",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-wraith.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a slim fast hunter drone in the same colours and lights as the reference: a narrow dart-shaped body with swept-back wings, one bright sensor eye at the nose and two thin needle barrels underneath, a small glowing thruster at the back. The whole drone, nothing else, no mecha. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

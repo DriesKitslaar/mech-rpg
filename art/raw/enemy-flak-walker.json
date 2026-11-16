@@ -1,0 +1,11 @@
+{
+  "id": "enemy-flak-walker",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-salvage.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a small two-legged walking gun platform in the same patched teal and rust plating: a boxy body on two bent bird-like legs, carrying a cluster of four short flak barrels on top and one amber lamp. No arms, no head. The whole walker, nothing else. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

@@ -69,8 +69,65 @@ const WANTED: Record<string, EnemyDef> = {
   },
 };
 
+/** Machines that turn up on open contracts and in the Gauntlet. */
+const FIELD: Record<string, EnemyDef> = {
+  // Dug in and slow to aim; what lands, lands hard.
+  'mortar-nest': {
+    id: 'mortar-nest', name: 'Mortar Nest', ai: 'gunner', sprite: 'enemy-mortar-nest',
+    build: { core: 'core-nest', generator: 'gen-turret', shoulder: 'wpn-nest-mortar' },
+  },
+  // Very hard to hit, and it goes for the head.
+  'hunter-drone': {
+    id: 'hunter-drone', name: 'Hunter Drone', ai: 'skirmisher', sprite: 'enemy-hunter-drone',
+    build: { core: 'core-hunter', legs: 'legs-hunter', generator: 'gen-drone', shoulder: 'wpn-hunter-needles' },
+  },
+  // Three small blasts a volley, over the whole mech.
+  'flak-walker': {
+    id: 'flak-walker', name: 'Flak Walker', ai: 'sprayer', sprite: 'enemy-flak-walker',
+    build: { core: 'core-flak', legs: 'legs-flak', generator: 'gen-tank', shoulder: 'wpn-flak-cluster' },
+  },
+  // Drives in and hits with the plate: it staggers what it hits.
+  breacher: {
+    id: 'breacher', name: 'Breacher', ai: 'bruiser', sprite: 'enemy-breacher',
+    build: { core: 'core-breacher', legs: 'legs-breacher', generator: 'gen-tank', rightHand: 'wpn-breacher-ram' },
+  },
+  // Cannot move. Every hit heats what it hits.
+  'arc-pylon': {
+    id: 'arc-pylon', name: 'Arc Pylon', ai: 'gunner', sprite: 'enemy-arc-pylon',
+    build: { core: 'core-pylon', generator: 'gen-tower', shoulder: 'wpn-pylon-arc' },
+  },
+  // A rail on rotors: it charges for a turn, then shoots through armour.
+  longshot: {
+    id: 'longshot', name: 'Longshot', ai: 'gunner', sprite: 'enemy-longshot',
+    build: { core: 'core-longshot', legs: 'legs-lien-drone', generator: 'gen-lien-drone', shoulder: 'wpn-longshot-rail' },
+  },
+  // Two more machines that are a battle on their own.
+  'scrap-king': {
+    id: 'scrap-king', name: 'Scrap King', ai: 'bruiser', sprite: 'boss-scrap-king',
+    partNames: { core: 'Shell', legs: 'Legs', arms: 'Claws', head: 'Lamps' },
+    build: {
+      head: 'head-king', core: 'core-king', arms: 'arms-king', legs: 'legs-king', generator: 'gen-king',
+      rightHand: 'wpn-king-pincer', leftHand: 'wpn-king-flak',
+    },
+    phases: [
+      { at: 0.6, damage: 1.2, line: 'MINE. ALL OF IT. MINE.' },
+      { at: 0.3, damage: 1.2, energy: 60, evasion: 6, line: 'YOU WILL LOOK GOOD ON THE PILE.' },
+    ],
+  },
+  'night-train': {
+    id: 'night-train', name: 'Night Train', ai: 'gunner', sprite: 'boss-night-train',
+    partNames: { core: 'Motor', legs: 'Wheel', head: 'Grate' },
+    build: {
+      head: 'head-train', core: 'core-train', legs: 'legs-train', generator: 'gen-train',
+      rightHand: 'wpn-train-ports', shoulder: 'wpn-train-rail',
+    },
+    phases: [{ at: 0.5, damage: 1.2, energy: 60, line: 'NO STOPS. NO SIGNALS. FULL STEAM.' }],
+  },
+};
+
 export const ENEMIES: Record<string, EnemyDef> = {
   ...WANTED,
+  ...FIELD,
   'recon-drone': RECON_DRONE,
   'gun-turret': {
     id: 'gun-turret', name: 'Gun Turret', ai: 'gunner', sprite: 'enemy-gun-turret',

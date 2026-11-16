@@ -387,7 +387,25 @@ export const JOBS: ArtJob[] = [
   item('enemy-lien-drone', 'enemy', 'auditor',
     'a hovering enforcement drone in the same glossy black armour with fine gold trim: a sleek wedge-shaped body with two ducted fans, a single white lens, and a small clamp arm underneath holding a glowing gold tag. The whole drone, nothing else, no mecha.', true),
 
+  // More machines for the open contracts and the Gauntlet.
+  item('enemy-mortar-nest', 'enemy', 'bulwark',
+    'a dug-in mortar emplacement in the same safety yellow with black hazard stripes and dark steel: a low ring of armoured plates and sandbags around one short fat mortar tube pointing up and to the right, with a small ammunition rack and one white work light. The whole emplacement, nothing else, no mecha.', true),
+  item('enemy-hunter-drone', 'enemy', 'wraith',
+    'a slim fast hunter drone in the same colours and lights as the reference: a narrow dart-shaped body with swept-back wings, one bright sensor eye at the nose and two thin needle barrels underneath, a small glowing thruster at the back. The whole drone, nothing else, no mecha.', true),
+  item('enemy-flak-walker', 'enemy', 'salvage',
+    'a small two-legged walking gun platform in the same patched teal and rust plating: a boxy body on two bent bird-like legs, carrying a cluster of four short flak barrels on top and one amber lamp. No arms, no head. The whole walker, nothing else.', true),
+  item('enemy-breacher', 'enemy', 'bulwark',
+    'a heavy armoured ram vehicle in the same safety yellow with black hazard stripes: a wedge-shaped hull on four big studded wheels with a massive flat steel ram plate on the front, exhaust stacks at the back and one white work light. The whole vehicle, nothing else, no mecha.', true),
+  item('enemy-arc-pylon', 'enemy', 'halo',
+    'a field energy pylon in the same white and navy armour with cyan lights: a slim armoured column on a round base with three curved prongs at the top holding a crackling ball of cyan lightning between them. The whole pylon, nothing else, no mecha.', true),
+  item('enemy-longshot', 'enemy', 'auditor',
+    'a hovering sniper drone in the same glossy black armour with fine gold trim: a long thin body with two ducted fans at the back, one very long slender rail barrel pointing right, and a single white scope lens on top. The whole drone, nothing else, no mecha.', true),
+
   // Machines that are a battle on their own.
+  boss('boss-scrap-king', 'salvage',
+    'a huge six-legged crab-like scavenger walker in the same patched teal and rust plating: a wide low armoured shell on six thick jointed legs, two enormous mismatched claw arms in front, one a crushing pincer and one a spinning saw, a crown of welded scrap spikes on its back and three amber lamps. Ugly, heavy and patched together.'),
+  boss('boss-night-train', 'ronin',
+    'a colossal armoured war locomotive in the same dark charcoal and deep red armour with magenta lights: a long heavy engine on many small wheels with a pointed plough front, one enormous rail cannon mounted along its roof, side gun ports and a glowing magenta furnace grille. Massive, fast and menacing.'),
   boss('boss-strip-miner', 'bulwark',
     'a colossal mining machine in the same safety yellow with black hazard stripes and dark steel: a huge armoured cab on two enormous caterpillar tracks, with a giant bucket-wheel excavator arm reaching forward and a row of white work lights. Massive and industrial.'),
   boss('boss-overseer', 'halo',

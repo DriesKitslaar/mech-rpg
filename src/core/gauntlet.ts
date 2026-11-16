@@ -44,8 +44,11 @@ export type Offer =
   | { kind: 'service' }
   | { kind: 'boon'; boon: BoonId };
 
-/** Every fifth floor is somebody with a name, or something very large. They come round again, harder. */
-export const WARDENS = ['rival', 'sable', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan', 'ashfall-unbound'];
+/**
+ * Every fifth floor is somebody with a name, or something very large. They come round again, harder.
+ * The first two are the Gauntlet's own machines: nobody from the story is met down here before floor 15.
+ */
+export const WARDENS = ['scrap-king', 'night-train', 'rival', 'sable', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan', 'ashfall-unbound'];
 export const WARDEN_EVERY = 5;
 /** Share of the missing armour of every part that is patched between floors. */
 export const GAUNTLET_PATCH = 0.3;
@@ -86,7 +89,7 @@ export function floorMission(run: Run, text: GauntletText, names: Record<string,
     const warden = WARDENS[round % WARDENS.length];
     enemies = [warden];
     briefing = [text.floor(run.floor), text.warden(names[warden] ?? warden)];
-    scale = Math.round((0.55 + 0.12 * round) * 100) / 100;
+    scale = Math.round((0.42 + 0.12 * round) * 100) / 100;
   } else {
     enemies = rollEnemies(dice, floorBudget(run.floor));
     briefing = [text.floor(run.floor)];

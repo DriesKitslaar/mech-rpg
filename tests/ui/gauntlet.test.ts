@@ -212,7 +212,7 @@ describe('the Gauntlet', () => {
     expect(savedGame(store).gauntletBest).toBe(5);
     expect(savedGame(store).medals).toContain('gauntlet-5');
     expect(MEDALS.find((m) => m.id === 'gauntlet-5')).toBeDefined();
-    expect(savedGame(store).met).toContain('rival');
+    expect(savedGame(store).met).toContain('scrap-king');
     // While choosing, the floor ahead is in view.
     expect(g(app)).toMatchObject({ drafting: true, floor: 6 });
     expect(g(app).enemies.length).toBeGreaterThan(0);

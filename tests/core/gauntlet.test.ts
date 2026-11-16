@@ -65,11 +65,11 @@ describe('a run of the Gauntlet', () => {
 
   test('every fifth floor has a warden, each in turn, and they come round again harder', () => {
     const at = (floor: number) => mission({ ...fresh(), floor });
-    expect([5, 10, 15, 20].map((f) => at(f).battles[0].enemies)).toEqual([['rival'], ['sable'], ['rook'], ['krell']]);
-    expect(at(5).briefing.join(' ')).toContain('Ashfall');
+    expect([5, 10, 15, 20].map((f) => at(f).battles[0].enemies)).toEqual([['scrap-king'], ['night-train'], ['rival'], ['sable']]);
+    expect(at(5).briefing.join(' ')).toContain('Scrap King');
     expect(isWardenFloor(4)).toBe(false);
     const again = 5 * (WARDENS.length + 1);
-    expect(at(again).battles[0].enemies).toEqual(['rival']);
+    expect(at(again).battles[0].enemies).toEqual(['scrap-king']);
     expect(at(again).scale!).toBeGreaterThan(at(5).scale!);
     // The open floors never field a warden or anything else that belongs to the story.
     for (let floor = 1; floor <= 60; floor++) {
