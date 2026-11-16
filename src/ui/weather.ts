@@ -3,8 +3,9 @@ export type Weather = 'rain' | 'dust' | 'embers' | 'motes' | 'none';
 
 /** The weather of each background. */
 export const WEATHER: Record<string, Weather> = {
-  'bg-neon-district': 'rain', 'bg-sluice': 'rain', 'bg-undercity': 'rain',
-  'bg-mine': 'dust', 'bg-rooftop': 'dust',
+  // What is seen falling agrees with what the ground's rule is called: rain where the rule is rain, dust where it is dust.
+  'bg-neon-district': 'rain', 'bg-sluice': 'motes', 'bg-undercity': 'motes',
+  'bg-mine': 'dust', 'bg-rooftop': 'motes',
   'bg-foundry': 'embers',
   'bg-vault': 'motes', 'bg-clearing': 'motes', 'bg-plaza': 'motes',
   'bg-arena': 'none', 'bg-garage': 'none', 'bg-simulator': 'none',

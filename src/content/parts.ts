@@ -262,14 +262,14 @@ const ENEMY_PARTS: Part[] = [
   frame('head-king', 'Lamp Cluster', 'head', 90, r(0.15, 0.1, 0.1), 100, 0, 0, undefined, { aim: 6 }),
   generator('gen-king', 'King Boiler', 340, 30, 400, 0),
   weapon('wpn-king-pincer', 'Crushing Pincer', 'hand', 'kinetic', 50, 86, 100, 12, null, 0, 300, 0, undefined, undefined, undefined, { melee: true, impact: 120 }),
-  weapon('wpn-king-flak', 'Scrap Flak', 'hand', 'explosive', 15, 68, 90, 20, null, 0, 200, 0, undefined, 'burst', 3),
+  weapon('wpn-king-flak', 'Scrap Flak', 'shoulder', 'explosive', 15, 68, 90, 20, null, 0, 200, 0, undefined, 'burst', 3),
   // The Night Train: a rail cannon on wheels. The cannon charges; the gun ports do not wait for it.
-  frame('core-train', 'Engine Block', 'core', 460, r(0.4, 0.3, 0.2), 1200, 0, 0, undefined),
+  frame('core-train', 'Engine Block', 'core', 560, r(0.4, 0.3, 0.2), 1200, 0, 0, undefined),
   frame('legs-train', 'Drive Wheels', 'legs', 230, r(0.4, 0.25, 0.2), 600, 0, 0, undefined, { capacity: 8000, mobility: 0, legType: 'tank' }),
   frame('head-train', 'Furnace Grille', 'head', 100, r(0.2, 0.3, 0.1), 100, 0, 0, undefined, { aim: 10 }),
   generator('gen-train', 'Train Furnace', 360, 32, 400, 0),
-  weapon('wpn-train-rail', 'Roof Rail', 'shoulder', 'kinetic', 88, 86, 170, 40, null, 0, 400, 0, undefined, 'pierce', undefined, { charge: true }),
-  weapon('wpn-train-ports', 'Gun Ports', 'hand', 'kinetic', 18, 74, 90, 18, null, 0, 200, 0, undefined, 'burst', 3),
+  weapon('wpn-train-rail', 'Roof Rail', 'shoulder', 'kinetic', 104, 86, 170, 40, null, 0, 400, 0, undefined, 'pierce', undefined, { charge: true }),
+  weapon('wpn-train-ports', 'Gun Ports', 'hand', 'kinetic', 24, 76, 90, 18, null, 0, 200, 0, undefined, 'burst', 3),
   // Meridian Mutual.
   frame('core-lien-drone', 'Lien Shell', 'core', 95, r(0.2, 0.2, 0.2), 80, 0, 0, undefined),
   frame('legs-lien-drone', 'Ducted Fans', 'legs', 55, r(0.1, 0.1, 0.1), 50, 0, 0, undefined, { capacity: 400, mobility: 40 }),

@@ -79,7 +79,10 @@ export interface GauntletText {
 /** The floor the run is on, in the shape of a contract, so it is briefed and fought like one. It pays nothing by itself. */
 export function floorMission(run: Run, text: GauntletText, names: Record<string, string>): Mission {
   const dice = diceFor(run, 1);
-  const background = text.backgrounds[(run.floor - 1) % text.backgrounds.length];
+  // Open floors go round the places in order; wardens go round them on their own count, so that
+  // every fifth floor is not always the same ground.
+  const turn = isWardenFloor(run.floor) ? run.floor / WARDEN_EVERY : run.floor - 1;
+  const background = text.backgrounds[turn % text.backgrounds.length];
   let enemies: string[];
   let briefing: string[];
   // Wardens are met a little weaker than the story fields them: the frame is whatever the run has made of it.

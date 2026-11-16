@@ -161,7 +161,9 @@ export class GauntletScreen implements Screen {
     if (ground) drawText(ctx, STRINGS.ground[ground.id].name, x + w - 6, y, { align: 'right', color: COLORS.energy, size: 10 });
     const names = (ahead?.battles[0].enemies ?? []).map((id) => this.app.enemies()[id]?.name ?? id);
     names.forEach((name, i) => drawText(ctx, name, x + 6, y + (i + 1) * LINE));
-    y += 4 * LINE + 4;
+    // What that ground does, in full: a floor has no briefing to say it.
+    if (ground) wrap(STRINGS.ground[ground.id].note, 36).slice(0, 2).forEach((line, i) => drawText(ctx, line, x + 6, y + 4 * LINE - 2 + i * (LINE - 2), { color: COLORS.energy, size: 10 }));
+    y += 6 * LINE;
     if (run.drafting) {
       drawText(ctx, G.draftHeading, x + 6, y, { color: COLORS.heat });
       drawList(ctx, this.list, x + 6, y + LINE + 2, w - 16, 3);

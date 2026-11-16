@@ -129,8 +129,8 @@ export const STRINGS = {
     furnace: { name: 'FURNACE HEAT', note: 'all shed 4 less heat a turn' },
     dust: { name: 'DUST', note: 'every shot is 5 less likely to hit' },
     flood: { name: 'FLOOD WATER', note: 'a boost dodges 6 less' },
-    sealed: { name: 'SEALED VAULT', note: 'blasts do 15% less damage' },
-    wind: { name: 'CROSSWIND', note: 'bullets are 6 less likely to hit' },
+    sealed: { name: 'SEALED VAULT', note: 'explosions do 15% less damage' },
+    wind: { name: 'CROSSWIND', note: 'kinetic hits are 6 less likely' },
     clear: { name: 'CLEAR AIR', note: 'beams are 4 more likely to hit' },
   } as Record<string, { name: string; note: string }>,
   // The last line of an open contract's briefing: how many battles it is.

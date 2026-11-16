@@ -292,7 +292,7 @@ describe('the options, pressed the wrong way', () => {
     press(app, 'left', 'right');
     expect(snap(app)).toMatchObject({ screen: 'options', callsign: 'PILOT' });
     // A setting still answers to them.
-    press(app, 'up', 'up', 'up');
+    for (let i = 0; i < 9 && snap(app).menu.items[snap(app).menu.cursor].id !== 'difficulty'; i++) press(app, 'up');
     const at = snap(app).menu.items[snap(app).menu.cursor];
     expect(at.id).toBe('difficulty');
     press(app, 'right');

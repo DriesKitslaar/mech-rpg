@@ -6,6 +6,8 @@ import { ALL_ENEMIES } from '../../src/content/arena';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { GAUNTLET_TEXT } from '../../src/content/gauntlet';
+import { floorMission, startRun } from '../../src/core/gauntlet';
+import { WEATHER } from '../../src/ui/weather';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
@@ -100,5 +102,47 @@ describe('where each rule holds', () => {
     expect(groundLines(MISSIONS.find((m) => m.id === 'patrol')!)).toEqual(['RAIN: all shed 4 more heat a turn']);
     // The Gauntlet's floors go through ruled places too.
     expect(GAUNTLET_TEXT.backgrounds.filter((id) => groundFor(id)).length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('what the review of the ground found', () => {
+  test('the heat shed at the end of a turn is the ground\'s, not the generator\'s alone', () => {
+    for (const [ground, by] of [[GROUNDS.rain, 4], [GROUNDS.furnace, -4], [undefined, 0]] as const) {
+      let s = on(ground);
+      for (let i = 0; i < 6 && activeUnit(s).side !== 'player'; i++) s = applyAction(s, { type: 'endTurn' }, CATALOG);
+      const me = activeUnit(s);
+      me.heat = 70;
+      const after = applyAction(s, { type: 'endTurn' }, CATALOG);
+      expect(70 - after.units[0].heat, ground?.id ?? 'level').toBe(coolingOf(me, CATALOG) + by);
+    }
+  });
+
+  test('a bomb is a blast: the sealed vault takes its fifteen in a hundred off it too', () => {
+    const blast = (ground?: Ground): number => {
+      let s = createBattle(DEMO_BUILD, [ENEMIES['bomb-crawler']], CATALOG, 3, ground ? { ground } : {});
+      for (let i = 0; i < 40 && s.outcome === 'ongoing'; i++) {
+        s = applyAction(s, { type: 'endTurn' }, CATALOG);
+        const event = s.events.find((e) => e.type === 'blast');
+        if (event && event.type === 'blast') return event.damage;
+      }
+      return -1;
+    };
+    expect(blast()).toBeGreaterThan(0);
+    expect(blast(GROUNDS.sealed)).toBe(Math.round(blast() * 0.85));
+  });
+
+  test('the wardens of the Gauntlet are not all met on the same ground', () => {
+    const names = Object.fromEntries(Object.values(ALL_ENEMIES).map((e) => [e.id, e.name]));
+    const run = startRun(1, DEMO_BUILD);
+    const grounds = [5, 10, 15, 20, 25].map((floor) => floorMission({ ...run, floor }, GAUNTLET_TEXT, names).battles[0].background);
+    expect(new Set(grounds).size).toBe(5);
+  });
+
+  test('what is seen falling agrees with the rule: rain only where the rule is rain, dust only where it is dust', () => {
+    for (const [place, weather] of Object.entries(WEATHER)) {
+      const rule = groundFor(place)?.id;
+      if (weather === 'rain') expect(rule, place).toBe('rain');
+      if (weather === 'dust') expect(rule, place).toBe('dust');
+    }
   });
 });

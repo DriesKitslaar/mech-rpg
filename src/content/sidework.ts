@@ -159,7 +159,7 @@ export const GUILD_JOBS: Mission[] = [
     battles: [battle(['scrap-king'], 'bg-undercity')],
   },
   {
-    id: 'guild-4', phase: 'side', series: 'guild', when: 'finale', title: 'The Night Train', ...GUILD, reward: 6800, scale: 1.15,
+    id: 'guild-4', phase: 'side', series: 'guild', when: 'finale', title: 'The Night Train', ...GUILD, reward: 6800, scale: 1,
     briefing: [
       'A war train with no side left to fight for is still running the foundry loop, shelling whatever moves. Nobody will insure the line.',
       'The roof cannon charges for a turn and shoots through armour: guard or boost when it is loaded. The gun ports never wait. It cannot dodge.',
