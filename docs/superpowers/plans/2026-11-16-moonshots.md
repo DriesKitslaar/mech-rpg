@@ -12,13 +12,16 @@ not that one. Game text is English until phase M6.
 Update as work lands. After a context reset, start here.
 
 - [x] M1: The Gauntlet (branch `feat/moon-gauntlet`, PR 18). Built, reviewed, fixed. APK sent with M2 and M3.
-- [ ] M2: Ground and weather (branch `feat/moon-ground`, PR 19, on top of M1). Built and tested: seven places have a rule
-      (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Review of M2 and M3 together is running (snapshot `scratchpad/reviewM23`); APK sent.
-- [ ] M3: New machines (branch `feat/moon-machines`, PR 20, on top of M2). Built and tested: six machines for the open
-      contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Review of M2 and M3 together is running (snapshot `scratchpad/reviewM23`); APK sent.
+- [x] M2: Ground and weather (branch `feat/moon-ground`, PR 19, on top of M1). Built and tested: seven places have a rule
+      (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Reviewed with its neighbour; the fixes are on `feat/moon-dutch`. APK sent.
+- [x] M3: New machines (branch `feat/moon-machines`, PR 20, on top of M2). Built and tested: six machines for the open
+      contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Reviewed with its neighbour; the fixes are on `feat/moon-dutch`. APK sent.
 - [ ] M4: Orders for the wingman (branch `feat/moon-orders`, PR 21, on top of M3). Built and tested. Pending: review, APK.
 - [ ] M5: Cups (branch `feat/moon-cups`, PR 22, on top of M4). Built and tested. Pending: review, APK.
-- [ ] M6: Dutch
+- [ ] M6: Dutch (branch `feat/moon-dutch`, on top of M5). The machinery, the option and the tests are in. Four translators
+      are filling `src/content/nl/{strings,missions,story,reference}.ts` in the snapshot `scratchpad/nl/repo`; when each
+      reports, copy its file into the tree, run `tests/content/dutch.test.ts`, then the whole suite in both languages.
+      Pending after that: PR 23, a review of M4 to M6 together, APK.
 - [ ] M7: Last review, APK, summary
 
 ## M1: The Gauntlet
@@ -125,3 +128,25 @@ M5:
   in a row with only field service between is far harder than three apart.
 - The new enemy first called Longshot shares that name with an arena pilot and is now the Railhawk;
   a test holds every enemy's name apart from the ladder's.
+
+M2 and M3, after their review:
+
+- The Auto Turn counts the flood when it weighs a boost against a guard; a bomb's blast is damped
+  in the sealed vault like any other; what is seen falling agrees with the rule's name; wardens go
+  round the places on their own count; the Gauntlet's screen says the rule of the floor ahead, and
+  the manual has pages on ground, wingmen, the Gauntlet and the cups.
+- The Scrap King's flak sits on its back, so it still fights with its claws gone. The Night Train
+  is heavier and hits harder; its job was re-measured. The Hunter Drone has the energy to dart.
+  Phase boosts to energy that did nothing are gone.
+- Left as it is: the Night Train's wind-up turn reads as AIMS CORE because its gun ports fire then;
+  wind applies to kinetic melee too, and the note now says "kinetic hits".
+
+M6:
+
+- A language is laid over the content in place (`src/content/language.ts`): the interface table is
+  overlaid by one of the same shape, and every text of the content is looked up by its English in
+  a dictionary. Nothing that reads a text had to change. Names are not translated.
+- The room for a translation is held by tests: a text that is wrapped may take no more lines than
+  its English at the width it is shown at; a one-line text may be no longer than its English or a
+  stated maximum; interface texts may be two letters longer at most. ASCII only.
+- The language is an option, kept with the settings, English when absent.
