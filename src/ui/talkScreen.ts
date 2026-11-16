@@ -43,7 +43,8 @@ export class TalkScreen implements Screen {
 
   private open(): void {
     this.rows = wrap(this.said[this.at]?.text ?? '', TALK_SCENE_CHARS);
-    this.writer = new Typewriter(this.rows, 70, this.app.deps.fast);
+    const typing = this.app.typing();
+    this.writer = new Typewriter(this.rows, 70 * typing.factor, typing.instant);
   }
 
   private get asking(): boolean { return this.answers !== null && !this.answered; }

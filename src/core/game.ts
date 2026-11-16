@@ -70,6 +70,8 @@ export interface GameState {
   drills: string[];
   /** Ids of the database's entries about the world that have opened. They stay open through later cycles. */
   codex: string[];
+  /** The songs the pilot has heard: the database's jukebox plays them again. */
+  heard?: string[];
 }
 
 export const FACTORY_PAINT = 'factory';
@@ -90,7 +92,15 @@ export interface Settings {
   sfx: boolean; music: boolean; fastBattles: boolean; difficulty: Difficulty; rumble?: boolean; swapAB?: boolean;
   /** The language of the game's text; English when absent. */
   language?: 'en' | 'nl';
+  /** How fast written text writes itself out; the ordinary speed when absent. */
+  textSpeed?: TextSpeed;
+  /** A calm picture: no shaking field, no flash across it, nothing large that blinks. Off when absent. */
+  calm?: boolean;
 }
+export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
+export const TEXT_SPEEDS: TextSpeed[] = ['slow', 'normal', 'fast', 'instant'];
+/** How many times the ordinary speed each setting writes at. Instant is not a speed: everything is there at once. */
+export const TEXT_FACTOR: Record<TextSpeed, number> = { slow: 0.6, normal: 1, fast: 2.5, instant: 1 };
 /** No perk has more ranks than this; a save claiming more is not a real save. */
 export const MAX_PERK_RANK = 3;
 export const DEFAULT_SETTINGS: Settings = { sfx: true, music: true, fastBattles: false, difficulty: 'standard', rumble: true };
@@ -285,10 +295,13 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (settings.rumble !== undefined && typeof settings.rumble !== 'boolean') return false;
   if (settings.swapAB !== undefined && typeof settings.swapAB !== 'boolean') return false;
   if (settings.language !== undefined && settings.language !== 'en' && settings.language !== 'nl') return false;
+  if (settings.textSpeed !== undefined && !TEXT_SPEEDS.includes(settings.textSpeed as TextSpeed)) return false;
+  if (settings.calm !== undefined && typeof settings.calm !== 'boolean') return false;
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
   if (value.cups !== undefined && !(isTextList(value.cups) && value.cups.length <= 16)) return false;
+  if (value.heard !== undefined && !(isTextList(value.heard) && value.heard.length <= 64)) return false;
   if (value.overdrive !== undefined && !OVERDRIVES.includes(value.overdrive as OverdriveId)) return false;
   if (value.overdrives !== undefined && !isWholeNonNegative(value.overdrives)) return false;
   const { gauntlet, gauntletBest } = value;

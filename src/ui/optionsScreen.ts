@@ -1,4 +1,4 @@
-import { DIFFICULTIES, type Settings } from '../core/game';
+import { DIFFICULTIES, TEXT_SPEEDS, type Settings } from '../core/game';
 import { LANGUAGES } from '../content/language';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -9,7 +9,7 @@ import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const O = STRINGS.options;
 type Toggle = 'sfx' | 'music' | 'fastBattles' | 'rumble';
-const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'difficulty', 'swapAB', 'language'];
+const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'textSpeed', 'calm', 'difficulty', 'swapAB', 'language'];
 /** The entries that are not settings: the end roll once more, and the way back to the title. */
 const CREDITS = 'credits';
 const TITLE = 'title';
@@ -30,7 +30,9 @@ export class OptionsScreen implements Screen {
       key === 'difficulty' ? O.difficulties[settings.difficulty]
         : key === 'swapAB' ? (settings.swapAB ? O.swapped : O.normal)
           : key === 'language' ? O.languages[settings.language ?? 'en']
-          : this.isOn(key as Toggle) ? O.on : O.off;
+            : key === 'textSpeed' ? O.textSpeeds[settings.textSpeed ?? 'normal']
+              : key === 'calm' ? (settings.calm ? O.calmed : O.full)
+                : this.isOn(key as Toggle) ? O.on : O.off;
     this.list.setItems([
       ...KEYS.map((key) => ({ id: key as string, label: O[key], enabled: true, note: value(key) })),
       // Once an ending has been seen, the end roll can be watched again from here.
@@ -83,6 +85,15 @@ export class OptionsScreen implements Screen {
       // Kept only while it is on, so settings without it stay as they always were.
       const { swapAB, ...rest } = settings;
       this.app.setSettings(swapAB ? rest : { ...rest, swapAB: true });
+    } else if (key === 'calm') {
+      const { calm, ...rest } = settings;
+      this.app.setSettings(calm ? rest : { ...rest, calm: true });
+    } else if (key === 'textSpeed') {
+      // Kept only when it is not the ordinary speed.
+      const n = TEXT_SPEEDS.length;
+      const { textSpeed, ...rest } = settings;
+      const next = TEXT_SPEEDS[(TEXT_SPEEDS.indexOf(textSpeed ?? 'normal') + step + n) % n];
+      this.app.setSettings(next === 'normal' ? rest : { ...rest, textSpeed: next });
     } else this.app.setSettings({ ...settings, [key]: !this.isOn(key as Toggle) });
     this.refresh();
   }
@@ -113,14 +124,17 @@ export class OptionsScreen implements Screen {
     const w = 230;
     const x = (LOGICAL_W - w) / 2;
     // The panel grows with the list: the line of help and the hint sit under however many rows there are.
+    // With every entry there, the list is eleven rows: it starts high enough that they all fit above the help and the hint.
     const rows = this.list.items.length;
-    const help = 96 + rows * LINE + 6;
-    drawPanel(ctx, x, 64, w, help + 31 - 64);
-    drawText(ctx, O.heading, LOGICAL_W / 2, 70, { size: 16, align: 'center', color: COLORS.accent });
-    drawList(ctx, this.list, x + 14, 96, w - 34, rows);
+    const top = 30;
+    const first = top + 30;
+    const help = first + rows * LINE + 6;
+    drawPanel(ctx, x, top, w, help + 31 - top);
+    drawText(ctx, O.heading, LOGICAL_W / 2, top + 6, { size: 16, align: 'center', color: COLORS.accent });
+    drawList(ctx, this.list, x + 14, first, w - 34, rows);
     const selected = this.list.selected?.id;
     const words = selected === 'difficulty' ? O.difficultyHelp[this.app.settings.difficulty]
-      : selected === 'swapAB' ? O.swapHelp : selected === TITLE && this.warned ? O.unsavedHelp : null;
+      : selected === 'swapAB' ? O.swapHelp : selected === 'calm' ? O.calmHelp : selected === TITLE && this.warned ? O.unsavedHelp : null;
     if (words) drawText(ctx, words, LOGICAL_W / 2, help, { align: 'center', color: COLORS.text, size: 10 });
     drawText(ctx, O.hint, LOGICAL_W / 2, help + 14, { align: 'center', color: COLORS.dim });
   }

@@ -64,7 +64,8 @@ export class BriefingScreen implements Screen {
 
   constructor(private app: App, private mission: Mission) {
     this.rows = mission.briefing.map((paragraph) => wrap(paragraph, BRIEFING_CHARS));
-    this.writer = new Typewriter(this.rows.flat(), 150, app.deps.fast);
+    const typing = app.typing();
+    this.writer = new Typewriter(this.rows.flat(), 150 * typing.factor, typing.instant);
     this.hires = takesWingman(mission) ? app.wingmen(mission) : [];
     this.list = new MenuList([
       { id: 'accept', label: B.accept, enabled: true },
@@ -102,6 +103,8 @@ export class BriefingScreen implements Screen {
   view(): ScreenView {
     return {
       menu: { items: this.list.items, cursor: this.list.cursor },
+      // True while the briefing is still writing itself out.
+      typing: !this.writer.done,
       briefing: {
         mission: this.mission.id, replay: !!this.mission.replay, reward: this.fee, objectives: objectiveLines(this.mission), ground: groundLines(this.mission),
         wingman: this.hires.length === 0 ? null

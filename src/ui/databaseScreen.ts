@@ -1,4 +1,6 @@
-import { MANUAL, UNITS, WORLD } from '../content/codex';
+import { JUKEBOX, MANUAL, UNITS, WORLD } from '../content/codex';
+import { SONGS } from '../content/songs';
+import { songSeconds, type TrackName } from '../platform/music';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { ALL_ENEMIES } from '../content/arena';
@@ -9,8 +11,8 @@ import { unitPage } from './unitPage';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
 
 const D = STRINGS.database;
-export type DatabasePage = 'units' | 'world' | 'manual';
-const PAGES: DatabasePage[] = ['units', 'world', 'manual'];
+export type DatabasePage = 'units' | 'world' | 'manual' | 'music';
+const PAGES: DatabasePage[] = ['units', 'world', 'manual', 'music'];
 /** The list on the left and the page on the right. */
 const LIST = { x: 4, y: 18, w: 106, h: 234 };
 const PAGE = { x: 114, y: 18, w: LOGICAL_W - 118, h: 234 };
@@ -30,11 +32,14 @@ interface Detail {
 
 /**
  * The database: every kind of enemy met, with what it is weak to and how to fight it; what has come
- * to light about Varn so far; and how the game works. Nothing here changes anything: it is for reading.
+ * to light about Varn so far; how the game works; and the songs heard so far, to be played again.
+ * Nothing here changes anything: it is for reading, and for listening.
  */
 export class DatabaseScreen implements Screen {
   private page: DatabasePage = 'units';
   private lists: Record<DatabasePage, MenuList>;
+  /** The song the jukebox is playing, if it is playing one. */
+  private playing: string | null = null;
 
   constructor(private app: App) {
     const game = app.game!;
@@ -45,6 +50,11 @@ export class DatabaseScreen implements Screen {
       // What has not come to light is not listed at all: a title would give it away.
       world: new MenuList(WORLD.filter((entry) => game.codex.includes(entry.id)).map((entry) => ({ id: entry.id, label: titleCase(entry.title), enabled: true }))),
       manual: new MenuList(MANUAL.map((topic) => ({ id: topic.id, label: titleCase(topic.title), enabled: true }))),
+      // Every song has its row, like every unit: one not heard yet keeps its name to itself.
+      music: new MenuList(JUKEBOX.map((song) => {
+        const heard = app.heard().includes(song.id);
+        return { id: song.id, label: heard ? titleCase(song.title) : D.unknown, enabled: heard };
+      })),
     };
     // Open on the first unit there is something to read about.
     const first = this.lists.units.items.findIndex((item) => item.enabled);
@@ -63,6 +73,7 @@ export class DatabaseScreen implements Screen {
   private count(): string {
     if (this.page === 'units') return D.met(this.lists.units.items.filter((item) => item.enabled).length, UNITS.length);
     if (this.page === 'world') return D.entries(this.lists.world.items.length, WORLD.length);
+    if (this.page === 'music') return D.heard(this.lists.music.items.filter((item) => item.enabled).length, JUKEBOX.length);
     return D.topics(MANUAL.length);
   }
 
@@ -77,6 +88,21 @@ export class DatabaseScreen implements Screen {
       return {
         title: this.unitTitle(selected.id).toUpperCase(), sprite: def.sprite, stats: text.stats,
         lines: [...text.weapons, ...text.abilities, '', ...wrap(note, PAGE_CHARS)],
+      };
+    }
+    if (this.page === 'music') {
+      const song = JUKEBOX.find((s) => s.id === selected.id);
+      if (!selected.enabled || !song) return { title: D.unknown, lines: [D.notHeard] };
+      const seconds = Math.round(songSeconds(SONGS[song.id]));
+      const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+      const on = this.playing === song.id;
+      return {
+        title: song.title,
+        lines: [
+          ...wrap(song.text, PAGE_CHARS), '', D.length(time), D.tempo(SONGS[song.id].bpm), '', ...(on ? [D.playing, D.stop] : [D.play]),
+          // With the music off there is nothing to hear: said, rather than leaving a button that seems dead.
+          ...(this.app.settings.music ? [] : ['', ...wrap(D.musicOff, PAGE_CHARS)]),
+        ],
       };
     }
     const entry = this.page === 'world' ? WORLD.find((e) => e.id === selected.id) : MANUAL.find((t) => t.id === selected.id);
@@ -95,10 +121,22 @@ export class DatabaseScreen implements Screen {
     else if (action === 'next' || action === 'right') this.turn(1);
     else if (action === 'prev' || action === 'left') this.turn(-1);
     else if (action === 'cancel') this.app.go('hub');
+    else if (action === 'confirm' && this.page === 'music' && this.list.selected?.enabled) this.toggle(this.list.selected.id);
+  }
+
+  /** Plays a song, or stops the one that is playing. Leaving the database brings the hub's own song back. */
+  private toggle(id: string): void {
+    if (this.playing === id) {
+      this.playing = null;
+      this.app.stopMusic();
+    } else {
+      this.playing = id;
+      this.app.playTrack(id as TrackName);
+    }
   }
 
   view(): ScreenView {
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, page: this.page, count: this.count(), detail: this.detail() };
+    return { menu: { items: this.list.items, cursor: this.list.cursor }, page: this.page, count: this.count(), detail: this.detail(), playing: this.playing };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

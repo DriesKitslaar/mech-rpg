@@ -1,6 +1,10 @@
 /** How fast text writes itself out when nothing says otherwise, in characters a second. */
 export const TYPING_SPEED = 90;
 
+/** How the player wants text written: so many times the speed a screen asks for, or all of it at once. */
+export interface Typing { factor: number; instant: boolean }
+export const PLAIN_TYPING: Typing = { factor: 1, instant: false };
+
 /**
  * Text that writes itself out, a line at a time. It only keeps count: the screen draws what
  * `visible()` returns. `instant` writes everything at once, for tests and impatient modes.

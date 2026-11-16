@@ -21,7 +21,7 @@ import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { intentOf } from '../core/intent';
-import { Typewriter } from './typewriter';
+import { PLAIN_TYPING, TYPING_SPEED, Typewriter, type Typing } from './typewriter';
 import { drawWeather, weatherFor } from './weather';
 import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
 
@@ -147,6 +147,10 @@ export class BattleScreen {
       coach?: boolean;
       /** The hired wingman and what they say on the radio. */
       radio?: { who: string; lines: Record<RadioCue, string> };
+      /** How fast what is said writes itself out. */
+      typing?: Typing;
+      /** A calm picture: the field does not shake or flash, and the warning does not blink. */
+      calm?: boolean;
     },
   ) {
     if (opts.radio) this.radio = new Radio(opts.radio.who, opts.radio.lines);
@@ -231,7 +235,8 @@ export class BattleScreen {
     const line = this.flow.phase === 'talk' ? this.flow.spoken : null;
     if (line === this.talkLine) return;
     this.talkLine = line;
-    this.talkWriter = line ? new Typewriter(wrap(line.text, TALK_CHARS).slice(0, TALK_LINES), undefined, this.opts.fast) : null;
+    const typing = this.opts.typing ?? PLAIN_TYPING;
+    this.talkWriter = line ? new Typewriter(wrap(line.text, TALK_CHARS).slice(0, TALK_LINES), TYPING_SPEED * typing.factor, this.opts.fast || typing.instant) : null;
     this.talkHold = line && !this.opts.fast ? TALK_HOLD_MS : 0;
   }
 
@@ -333,7 +338,7 @@ export class BattleScreen {
 
     // The field, which a heavy blow shakes as a whole; the picture behind it is drawn a little
     // larger so that no edge shows when it moves.
-    const { dx, dy } = this.fx.shake();
+    const { dx, dy } = this.opts.calm ? { dx: 0, dy: 0 } : this.fx.shake();
     this.syncTalk();
     ctx.save();
     ctx.translate(dx, dy);
@@ -353,7 +358,7 @@ export class BattleScreen {
     this.particles.draw(ctx);
     this.fx.draw(ctx);
     this.drawSurge(ctx);
-    if (this.hitStop.flash > 0) {
+    if (this.hitStop.flash > 0 && !this.opts.calm) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
       ctx.fillRect(0, 14, LOGICAL_W, PANEL_Y - 14);
     }
@@ -474,7 +479,7 @@ export class BattleScreen {
         ctx.fillRect(x + sx + shift, y, 8, 3);
         ctx.fillRect(x + sx + 16 - shift, y + h - 3, 8, 3);
       }
-      const blink = Math.floor(this.clock / 180) % 2 === 0;
+      const blink = this.opts.calm || Math.floor(this.clock / 180) % 2 === 0;
       drawText(ctx, STRINGS.battleIntro.warning, x + LOGICAL_W / 2, y + 5, { size: 32, align: 'center', color: blink ? COLORS.danger : COLORS.heat });
       drawText(ctx, boss.toUpperCase(), x + LOGICAL_W / 2, y + 30, { align: 'center' });
       return;
@@ -620,7 +625,8 @@ export class BattleScreen {
   private withTransform(ctx: CanvasRenderingContext2D, unit: UnitState, idleDy: number, draw: (dx: number, dy: number) => void): void {
     const t = this.fx.transform(unit.id);
     ctx.globalAlpha = t.alpha;
-    ctx.filter = t.flash ? 'brightness(2.6)' : 'none';
+    // A unit that is hit lights up: hard as a rule, gently in a calm picture.
+    ctx.filter = t.flash ? (this.opts.calm ? 'brightness(1.4)' : 'brightness(2.6)') : 'none';
     draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy));
     ctx.filter = 'none';
     ctx.globalAlpha = 1;

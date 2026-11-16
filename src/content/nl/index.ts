@@ -1,7 +1,7 @@
 import { dictionary, overlay, textsOf, translatable, type TextSlot } from '../language';
 import { ARENA } from '../arena';
 import { BOARD_TEXT } from '../board';
-import { MANUAL, UNITS, WORLD } from '../codex';
+import { JUKEBOX, MANUAL, UNITS, WORLD } from '../codex';
 import { DRILLS } from '../drills';
 import { ENEMIES } from '../enemies';
 import { MEDALS } from '../medals';
@@ -39,6 +39,7 @@ function contentTexts(): TextSlot[] {
     ...textsOf('reference', UNITS, { title: 'page.title', note: 'page.text' }),
     ...textsOf('reference', WORLD, { title: 'page.title', text: 'page.text' }),
     ...textsOf('reference', MANUAL, { title: 'page.title', text: 'page.text' }),
+    ...textsOf('reference', JUKEBOX, { title: 'page.title', text: 'page.text' }),
     ...textsOf('missions', DRILLS, { title: 'mission.title', lesson: 'drill.lesson', briefing: 'briefing', debrief: 'debrief' }),
     ...textsOf('reference', PERKS, { name: 'perk.name', description: 'perk.text' }),
     ...textsOf('reference', MEDALS, { name: 'medal.name', text: 'medal.text' }),

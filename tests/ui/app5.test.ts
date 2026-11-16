@@ -233,7 +233,7 @@ describe('the database', () => {
     expect(snap(app).detail).toEqual({ title: '? ? ?', lines: ['Not met yet.'] });
   });
 
-  test('the shoulder buttons turn the page: units, world, manual and round again', () => {
+  test('the shoulder buttons turn the page: units, world, manual, music and round again', () => {
     const { app } = inHub(scout());
     select(app, 'database');
     press(app, 'next');
@@ -241,8 +241,10 @@ describe('the database', () => {
     press(app, 'next');
     expect(snap(app)).toMatchObject({ page: 'manual', count: `${MANUAL.length} TOPICS` });
     press(app, 'next');
+    expect(snap(app).page).toBe('music');
+    press(app, 'next');
     expect(snap(app).page).toBe('units');
-    press(app, 'prev');
+    press(app, 'prev', 'prev');
     expect(snap(app).page).toBe('manual');
     press(app, 'left', 'left');
     expect(snap(app).page).toBe('units');
@@ -261,7 +263,7 @@ describe('the database', () => {
   test('the manual lists every topic, and each reads as it was written', () => {
     const { app } = inHub(scout());
     select(app, 'database');
-    press(app, 'prev');
+    press(app, 'prev', 'prev');
     expect(ids(app)).toEqual(MANUAL.map((topic) => topic.id));
     press(app, 'down', 'down');
     expect(snap(app).detail).toMatchObject({ title: 'AIMING' });
