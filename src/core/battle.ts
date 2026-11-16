@@ -439,7 +439,8 @@ function beginRound(state: BattleState, catalog: Catalog): boolean {
 /** A bomb goes off: the player takes the blast and the bomb is gone. */
 function detonate(state: BattleState, unit: UnitState, catalog: Catalog): void {
   const player = findUnit(state, 'player')!;
-  const amount = unit.abilities.bomb!.damage * unit.mods.damage;
+  // A bomb is a blast like any other: where the ground dampens blasts, it dampens this one.
+  const amount = unit.abilities.bomb!.damage * unit.mods.damage * (state.ground?.damage?.explosive ?? 1);
   const event: Extract<BattleEvent, { type: 'blast' }> = { type: 'blast', unit: unit.id, target: player.id, damage: 0 };
   state.events.push(event);
   event.damage = strike(state, player, amount, amount, catalog);

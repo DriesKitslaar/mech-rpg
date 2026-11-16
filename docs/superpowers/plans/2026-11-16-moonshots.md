@@ -12,14 +12,14 @@ not that one. Game text is English until phase M6.
 Update as work lands. After a context reset, start here.
 
 - [x] M1: The Gauntlet (branch `feat/moon-gauntlet`, PR 18). Built, reviewed, fixed. APK sent with M2 and M3.
-- [ ] M2: Ground and weather (branch `feat/moon-ground`, PR 19, on top of M1). Built and tested: seven places have a rule
-      (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Review of M2 and M3 together is running (snapshot `scratchpad/reviewM23`); APK sent.
-- [ ] M3: New machines (branch `feat/moon-machines`, PR 20, on top of M2). Built and tested: six machines for the open
-      contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Review of M2 and M3 together is running (snapshot `scratchpad/reviewM23`); APK sent.
-- [ ] M4: Orders for the wingman (branch `feat/moon-orders`, PR 21, on top of M3). Built and tested. Pending: review, APK.
-- [ ] M5: Cups (branch `feat/moon-cups`, PR 22, on top of M4). Built and tested. Pending: review, APK.
-- [ ] M6: Dutch
-- [ ] M7: Last review, APK, summary
+- [x] M2: Ground and weather (branch `feat/moon-ground`, PR 19, on top of M1). Built and tested: seven places have a rule
+      (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Reviewed with its neighbour; the fixes are on `feat/moon-dutch`. APK sent.
+- [x] M3: New machines (branch `feat/moon-machines`, PR 20, on top of M2). Built and tested: six machines for the open
+      contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Reviewed with its neighbour; the fixes are on `feat/moon-dutch`. APK sent.
+- [x] M4: Orders for the wingman (branch `feat/moon-orders`, PR 21, on top of M3). Built, reviewed with M6; fixes on `feat/moon-dutch`.
+- [x] M5: Cups (branch `feat/moon-cups`, PR 22, on top of M4). Built, reviewed with M6; fixes on `feat/moon-dutch`.
+- [x] M6: Dutch (branch `feat/moon-dutch`, PR 23, on top of M5). Translated, tested in both languages, reviewed, fixed.
+- [x] M7: The last APK was sent from `feat/moon-dutch` with the summary. Nothing is merged: PRs 18 to 23 wait for the owner's word.
 
 ## M1: The Gauntlet
 
@@ -125,3 +125,39 @@ M5:
   in a row with only field service between is far harder than three apart.
 - The new enemy first called Longshot shares that name with an arena pilot and is now the Railhawk;
   a test holds every enemy's name apart from the ladder's.
+
+M2 and M3, after their review:
+
+- The Auto Turn counts the flood when it weighs a boost against a guard; a bomb's blast is damped
+  in the sealed vault like any other; what is seen falling agrees with the rule's name; wardens go
+  round the places on their own count; the Gauntlet's screen says the rule of the floor ahead, and
+  the manual has pages on ground, wingmen, the Gauntlet and the cups.
+- The Scrap King's flak sits on its back, so it still fights with its claws gone. The Night Train
+  is heavier and hits harder; its job was re-measured. The Hunter Drone has the energy to dart.
+  Phase boosts to energy that did nothing are gone.
+- Left as it is: the Night Train's wind-up turn reads as AIMS CORE because its gun ports fire then;
+  wind applies to kinetic melee too, and the note now says "kinetic hits".
+
+M6:
+
+- A language is laid over the content in place (`src/content/language.ts`): the interface table is
+  overlaid by one of the same shape, and every text of the content is looked up by its English in
+  a dictionary. Nothing that reads a text had to change. Names are not translated.
+- The room for a translation is held by tests: a text that is wrapped may take no more lines than
+  its English at the width it is shown at; a one-line text may be no longer than its English or a
+  stated maximum; interface texts may be two letters longer at most. ASCII only.
+- The language is an option, kept with the settings, English when absent.
+- Four translators worked side by side on a snapshot, one file each, held to the same tests; their
+  word choices were then brought into line (the tags a drill quotes, the clearing house, callsign).
+- Names stay English: people, companies, places, machines, parts and weapons.
+
+M4 to M6, after their review:
+
+- The end roll read its names and roles when the game started, so it stayed English: it now reads
+  them when it is made. A shop line about thermal weapons ran off the screen in Dutch and was
+  reworded. A wingman's order is kept through the battles of one contract.
+- The Dutch was brought into line where the four files disagreed (pits, purse, mirror match,
+  carrier, jammer) and where it read wrongly (the wingman's reports, a few sentences).
+- Left as it is: some machines are still called by Dutch common nouns in a few contract texts
+  (schilddrone, reparatiedrone, kruiper); cover does not reduce a bomb's blast; the database's
+  count says GEHAD, since GEZIEN is a letter too long for its place.

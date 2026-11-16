@@ -1,4 +1,5 @@
 import { DIFFICULTIES, type Settings } from '../core/game';
+import { LANGUAGES } from '../content/language';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -8,7 +9,7 @@ import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const O = STRINGS.options;
 type Toggle = 'sfx' | 'music' | 'fastBattles' | 'rumble';
-const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'difficulty', 'swapAB'];
+const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'difficulty', 'swapAB', 'language'];
 /** The entries that are not settings: the end roll once more, and the way back to the title. */
 const CREDITS = 'credits';
 const TITLE = 'title';
@@ -28,6 +29,7 @@ export class OptionsScreen implements Screen {
     const value = (key: keyof Settings): string =>
       key === 'difficulty' ? O.difficulties[settings.difficulty]
         : key === 'swapAB' ? (settings.swapAB ? O.swapped : O.normal)
+          : key === 'language' ? O.languages[settings.language ?? 'en']
           : this.isOn(key as Toggle) ? O.on : O.off;
     this.list.setItems([
       ...KEYS.map((key) => ({ id: key as string, label: O[key], enabled: true, note: value(key) })),
@@ -73,6 +75,10 @@ export class OptionsScreen implements Screen {
       const n = DIFFICULTIES.length;
       const difficulty = DIFFICULTIES[(DIFFICULTIES.indexOf(settings.difficulty) + step + n) % n];
       this.app.setSettings({ ...settings, difficulty });
+    } else if (key === 'language') {
+      // The words on this very screen change with it: the list is made again below.
+      const n = LANGUAGES.length;
+      this.app.setSettings({ ...settings, language: LANGUAGES[(LANGUAGES.indexOf(settings.language ?? 'en') + step + n) % n] });
     } else if (key === 'swapAB') {
       // Kept only while it is on, so settings without it stay as they always were.
       const { swapAB, ...rest } = settings;

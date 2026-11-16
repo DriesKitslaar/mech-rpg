@@ -1,5 +1,7 @@
 import { ORDERS, activeUnit, applyAction, checkAction, coverShare, createBattle, previewShot, type BattleState, type Order, type Support } from '../../src/core/battle';
+import { startMissionBattle } from '../../src/core/mission';
 import { withWingman } from '../../src/core/wingman';
+import { ALL_ENEMIES } from '../../src/content/arena';
 import { ENEMIES } from '../../src/content/enemies';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
@@ -86,5 +88,33 @@ describe('orders for a wingman', () => {
       expect(STRINGS.orders.item(o).length).toBeLessThanOrEqual(16);
       expect(STRINGS.orders.told('Old Sixty', o).length).toBeLessThanOrEqual(60);
     }
+  });
+
+  test('an order is the pilot\'s to give on the pilot\'s turn only', () => {
+    let s = createBattle(DEMO_BUILD, [ENEMIES.tank, ENEMIES['recon-drone']], CATALOG, 4, { support: hired });
+    for (let i = 0; i < 12 && activeUnit(s).side === 'player'; i++) s = applyAction(s, { type: 'endTurn' }, CATALOG);
+    expect(activeUnit(s).side).toBe('enemy');
+    expect(checkAction(s, { type: 'order', order: 'cover' }, CATALOG)).toBe('noWingman');
+  });
+
+  test('told to follow the pilot, they still spare the machine the client wants in one piece', () => {
+    let s = createBattle(DEMO_BUILD, [ENEMIES['light-mech'], ENEMIES['recon-drone']], CATALOG, 4, { support: hired, objective: { type: 'disable', target: 0 } });
+    for (let i = 0; i < 6 && activeUnit(s).side !== 'player'; i++) s = applyAction(s, { type: 'endTurn' }, CATALOG);
+    s = applyAction(order(s, 'target'), { type: 'fire', weapon: 'leftHand', target: 'enemy-0', part: 'legs' }, CATALOG, () => 0.99);
+    expect(s.focus).toBe('enemy-0');
+    expect(nextSupport(s)).toEqual({ target: 'enemy-1' });
+  });
+
+  test('the order holds through the battles of one contract', () => {
+    const flown = withWingman(MISSIONS.find((m) => m.id === 'undertow-1')!, WINGMEN[0]);
+    let first = startMissionBattle(DEMO_BUILD, flown, 0, ALL_ENEMIES, CATALOG, 3);
+    for (let i = 0; i < 6 && activeUnit(first).side !== 'player'; i++) first = applyAction(first, { type: 'endTurn' }, CATALOG);
+    first = order(first, 'cover');
+    const won = { ...first, outcome: 'victory' as const };
+    expect(startMissionBattle(DEMO_BUILD, flown, 1, ALL_ENEMIES, CATALOG, 3, won).support).toMatchObject({ name: 'Kite', order: 'cover', orders: true });
+    // An ally of the story takes no orders, so none is carried for them.
+    const allied = MISSIONS.find((m) => m.battles.length > 1 && m.battles.every((b) => b.support))!;
+    const before = startMissionBattle(DEMO_BUILD, allied, 0, ALL_ENEMIES, CATALOG, 3);
+    expect(startMissionBattle(DEMO_BUILD, allied, 1, ALL_ENEMIES, CATALOG, 3, { ...before, outcome: 'victory' as const }).support?.order).toBeUndefined();
   });
 });

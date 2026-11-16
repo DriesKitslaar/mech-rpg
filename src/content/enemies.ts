@@ -79,7 +79,7 @@ const FIELD: Record<string, EnemyDef> = {
   // Very hard to hit, and it goes for the head.
   'hunter-drone': {
     id: 'hunter-drone', name: 'Hunter Drone', ai: 'skirmisher', sprite: 'enemy-hunter-drone',
-    build: { core: 'core-hunter', legs: 'legs-hunter', generator: 'gen-drone', shoulder: 'wpn-hunter-needles' },
+    build: { core: 'core-hunter', legs: 'legs-hunter', generator: 'gen-lien-drone', shoulder: 'wpn-hunter-needles' },
   },
   // Three small blasts a volley, over the whole mech.
   'flak-walker': {
@@ -107,11 +107,11 @@ const FIELD: Record<string, EnemyDef> = {
     partNames: { core: 'Shell', legs: 'Legs', arms: 'Claws', head: 'Lamps' },
     build: {
       head: 'head-king', core: 'core-king', arms: 'arms-king', legs: 'legs-king', generator: 'gen-king',
-      rightHand: 'wpn-king-pincer', leftHand: 'wpn-king-flak',
+      rightHand: 'wpn-king-pincer', shoulder: 'wpn-king-flak',
     },
     phases: [
       { at: 0.6, damage: 1.2, line: 'MINE. ALL OF IT. MINE.' },
-      { at: 0.3, damage: 1.2, energy: 60, evasion: 6, line: 'YOU WILL LOOK GOOD ON THE PILE.' },
+      { at: 0.3, damage: 1.25, evasion: 8, line: 'YOU WILL LOOK GOOD ON THE PILE.' },
     ],
   },
   'night-train': {
@@ -121,7 +121,7 @@ const FIELD: Record<string, EnemyDef> = {
       head: 'head-train', core: 'core-train', legs: 'legs-train', generator: 'gen-train',
       rightHand: 'wpn-train-ports', shoulder: 'wpn-train-rail',
     },
-    phases: [{ at: 0.5, damage: 1.2, energy: 60, line: 'NO STOPS. NO SIGNALS. FULL STEAM.' }],
+    phases: [{ at: 0.5, damage: 1.3, line: 'NO STOPS. NO SIGNALS. FULL STEAM.' }],
   },
 };
 

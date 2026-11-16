@@ -59,6 +59,7 @@ const DUEL_SHIFT = 6;
 /** Sprites of units that fly: these bob up and down, everything else stands still. */
 const FLYERS = new Set([
   'enemy-recon-drone', 'enemy-gunship', 'enemy-shield-drone', 'enemy-repair-drone', 'enemy-lien-drone', 'boss-overseer',
+  'enemy-hunter-drone', 'enemy-longshot',
 ]);
 const MENU_W = 154;
 /** Where a hit on each part of the player's mech lands, inside the pose box. */

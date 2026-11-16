@@ -654,7 +654,7 @@ describe('the screens the pilot\'s record added', () => {
     press(app, 'next');
     expect(page().said).toEqual(expect.arrayContaining(['VARN', 'Varn', 'The Licence', 'Hadron Mining']));
     press(app, 'next');
-    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Leg Types', `${22} TOPICS`]));
+    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Leg Types', `${26} TOPICS`]));
   });
 
   test('the database growing is announced with its own mark, and medals after it one by one', () => {

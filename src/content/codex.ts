@@ -44,10 +44,10 @@ export const UNITS: UnitPage[] = [
   { id: 'mortar-nest', note: 'A mortar in a ring of plate. It cannot move and often misses, but what lands takes a quarter of a core. Beams go through the ring.' },
   { id: 'hunter-drone', note: 'A dart with twin needles, aimed at your head. Very hard to hit. Anything that lands on it is nearly enough.' },
   { id: 'flak-walker', note: 'A gun on two legs. Each volley is three small blasts over the whole mech. Its legs are easier to break than its housing.' },
-  { id: 'breacher', note: 'A ram on wheels. It drives in and hits with the plate, and what it hits is thrown off balance. Blasts get under it.' },
-  { id: 'arc-pylon', note: 'A pylon that throws lightning. It cannot move. Every hit heats you by 16. Beams slide off it; bullets do not.' },
+  { id: 'breacher', note: 'A ram on wheels. It drives in and hits with the plate, and what it hits is thrown off balance. Its wheels are softer than its hull.' },
+  { id: 'arc-pylon', note: 'A pylon that throws lightning. It cannot move. Every hit heats you by 16. Beams slide off it.' },
   { id: 'longshot', note: 'A rail on rotors. It charges for a turn, then shoots through half your armour. Frail: kill it while it charges.' },
-  { id: 'scrap-king', title: 'The Scrap King', note: 'A crab of welded wrecks from under the Night Market. A pincer that staggers, flak on the way in, and it gets worse twice.' },
+  { id: 'scrap-king', title: 'The Scrap King', note: 'A crab of welded wrecks from under the Night Market. A pincer that staggers, flak from its back, and it gets worse twice.' },
   { id: 'night-train', title: 'The Night Train', note: 'A rail cannon on wheels. The cannon charges for a turn and pierces; the gun ports never wait. It cannot dodge.' },
   { id: 'magpie', note: 'Wanted. A Halo in violet with a carbine and a needle, both aimed at your head. Shoot the legs and it stops dancing.' },
   { id: 'dredge', note: 'Wanted. A Bulwark on tracks with a shotgun and a mortar. Tracks cannot boost, so it is easy to hit. Beams cut through it.' },
@@ -238,6 +238,22 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   {
     id: 'difficulty', title: 'DIFFICULTY',
     text: 'Story takes a fifth off enemy armour and firepower; Veteran adds a fifth. Change it in the options whenever you like. Fast battles play everything at two and a half times the speed.',
+  },
+  {
+    id: 'ground', title: 'GROUND',
+    text: 'Seven places have a rule for both sides. Rain: all shed 4 more heat a turn. Furnace heat: 4 less. Dust: every shot 5 less likely to hit. Flood water: a boost dodges 6 less. Sealed vault: explosions do 15% less. Crosswind: kinetic hits 6 less likely. Clear air: beams 4 more likely. The briefing and the field name it.',
+  },
+  {
+    id: 'wingmen', title: 'WINGMEN',
+    text: 'A wingman is hired in the briefing for a share of fee and experience, and fires once a round from round 2. In battle the Wing row gives orders for nothing: strike the strongest, strike what you fired at last, or cover you, which takes a share off every shot at you while they hold fire.',
+  },
+  {
+    id: 'gauntlet', title: 'THE GAUNTLET',
+    text: 'A run of floors in a stock frame, with none of your own parts or perks. After each floor take one of three: a part, a full service, or a boon for the run. Every fifth floor has a warden; beat it and you are patched up free. Falling, retreating or closing the game on a floor ends the run. It pays by floors cleared.',
+  },
+  {
+    id: 'cups', title: 'ARENA CUPS',
+    text: 'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.',
   },
   {
     id: 'controls', title: 'CONTROLS',

@@ -143,7 +143,7 @@ export class SaveFile {
       if (!raw) return null;
       const value: unknown = JSON.parse(raw);
       if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-      const { sfx, music, fastBattles, difficulty, rumble, swapAB } = value as Record<string, unknown>;
+      const { sfx, music, fastBattles, difficulty, rumble, swapAB, language } = value as Record<string, unknown>;
       if (typeof sfx !== 'boolean' || typeof music !== 'boolean' || typeof fastBattles !== 'boolean') return null;
       // Options added later than the first three fall back to their default when absent or unknown.
       const known = DIFFICULTIES.includes(difficulty as Difficulty);
@@ -152,6 +152,8 @@ export class SaveFile {
         rumble: typeof rumble === 'boolean' ? rumble : true,
         // Swapped buttons are only ever stored as on.
         ...(swapAB === true ? { swapAB: true } : {}),
+        // The language is stored only when it is not English.
+        ...(language === 'nl' ? { language: 'nl' as const } : {}),
       };
     } catch {
       return null;

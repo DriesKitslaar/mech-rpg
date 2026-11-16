@@ -178,7 +178,9 @@ function stance(state: BattleState, me: UnitState, enemies: UnitState[], catalog
   if (guard) {
     if (me.stagger >= me.staggerMax / 2) return { type: 'guard' };
     const threat = averageThreat(state, me, enemies, catalog);
-    const dodged = threat > 0 ? Math.max(10, threat - boostProfile(me.build, catalog).thrust) / threat : 1;
+    // What a boost is worth here: on bad footing it carries less far, as the rules have it.
+    const thrust = Math.max(0, boostProfile(me.build, catalog).thrust + (state.ground?.thrust ?? 0));
+    const dodged = threat > 0 ? Math.max(10, threat - thrust) / threat : 1;
     if (guardFactor(me, catalog) < dodged) return { type: 'guard' };
   }
   return { type: 'boost' };

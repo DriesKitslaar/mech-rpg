@@ -1,4 +1,5 @@
-import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
+import { chooseAutoPlayerAction, chooseEnemyAction, runBattle } from '../../src/core/ai';
+import { activeUnit, applyAction, createBattle, type BattleState } from '../../src/core/battle';
 import { availableMissions, campaignComplete, completeMission, forCycle, sideMissions, startNewCycle } from '../../src/core/campaign';
 import type { GameState } from '../../src/core/game';
 import { playMission } from '../../src/core/mission';
@@ -121,6 +122,34 @@ describe('the Night Market Guild', () => {
 
   test.each([['guild-1', 'tier1'], ['guild-2', 'tier2'], ['guild-3', 'tier3'], ['guild-4', 'tier4']])('%s can be won with %s more often than not', (missionId, build) => {
     expect(wins(missionId, build)).toBeGreaterThanOrEqual(0.5);
+  });
+
+  test('the two great machines are a fight: the build a pilot has a stage earlier does not win as a matter of course', () => {
+    expect(wins('guild-3', 'tier2', 20)).toBeLessThan(0.8);
+    expect(wins('guild-4', 'tier2', 20)).toBeLessThan(0.5);
+  });
+
+  test('the Scrap King still fights with its claws gone, and the Hunter Drone really does dart', () => {
+    const acts = (id: string, prepare: (s: BattleState) => void): string[] => {
+      let s = createBattle(REFERENCE_BUILDS.tier3, [ALL_ENEMIES[id]], CATALOG, 5);
+      prepare(s);
+      const seen: string[] = [];
+      for (let i = 0; i < 60 && s.outcome === 'ongoing'; i++) {
+        const mine = activeUnit(s).side === 'player';
+        const action = mine ? { type: 'endTurn' as const } : chooseEnemyAction(s, CATALOG);
+        if (!mine) seen.push(action.type);
+        s = applyAction(s, action, CATALOG);
+      }
+      return seen;
+    };
+    expect(acts('scrap-king', (s) => { s.units[1].parts.arms!.ap = 0; })).toContain('fire');
+    expect(acts('hunter-drone', () => undefined)).toContain('boost');
+  });
+
+  test('every open contract is briefed in full: each machine it can field has its line', () => {
+    for (let won = 0; won < 400; won += 3) {
+      for (const open of generateBoard(won, won % 4, BOARD_TEXT)) for (const line of open.briefing) expect(typeof line, open.id).toBe('string');
+    }
   });
 });
 

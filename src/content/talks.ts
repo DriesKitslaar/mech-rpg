@@ -107,7 +107,7 @@ export const TALKS: Scene[] = [
 ];
 
 /** One line for each thing the pilot decided, for the pages before the epilogue. */
-const REMEMBERED: Record<string, Record<string, string>> = {
+export const REMEMBERED: Record<string, Record<string, string>> = {
   kite: {
     vouch: 'Kite made his second week, and his fiftieth. He still undercharges.',
     pass: 'Kite found someone else to vouch for him. He never says who.',

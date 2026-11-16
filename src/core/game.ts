@@ -81,7 +81,11 @@ export const DIFFICULTY_SCALE: Record<Difficulty, number> = { story: 0.8, standa
  * it is on: the pad's A and B buttons then change places, for a handheld that reports them the other way
  * round. The swap is made where the buttons are read (`InputMapper.swapFace`), to those two buttons only.
  */
-export interface Settings { sfx: boolean; music: boolean; fastBattles: boolean; difficulty: Difficulty; rumble?: boolean; swapAB?: boolean }
+export interface Settings {
+  sfx: boolean; music: boolean; fastBattles: boolean; difficulty: Difficulty; rumble?: boolean; swapAB?: boolean;
+  /** The language of the game's text; English when absent. */
+  language?: 'en' | 'nl';
+}
 /** No perk has more ranks than this; a save claiming more is not a real save. */
 export const MAX_PERK_RANK = 3;
 export const DEFAULT_SETTINGS: Settings = { sfx: true, music: true, fastBattles: false, difficulty: 'standard', rumble: true };
@@ -275,6 +279,7 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!DIFFICULTIES.includes(settings.difficulty as Difficulty)) return false;
   if (settings.rumble !== undefined && typeof settings.rumble !== 'boolean') return false;
   if (settings.swapAB !== undefined && typeof settings.swapAB !== 'boolean') return false;
+  if (settings.language !== undefined && settings.language !== 'en' && settings.language !== 'nl') return false;
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;

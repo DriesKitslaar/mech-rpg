@@ -129,10 +129,14 @@ export const STRINGS = {
     furnace: { name: 'FURNACE HEAT', note: 'all shed 4 less heat a turn' },
     dust: { name: 'DUST', note: 'every shot is 5 less likely to hit' },
     flood: { name: 'FLOOD WATER', note: 'a boost dodges 6 less' },
-    sealed: { name: 'SEALED VAULT', note: 'blasts do 15% less damage' },
-    wind: { name: 'CROSSWIND', note: 'bullets are 6 less likely to hit' },
+    sealed: { name: 'SEALED VAULT', note: 'explosions do 15% less damage' },
+    wind: { name: 'CROSSWIND', note: 'kinetic hits are 6 less likely' },
     clear: { name: 'CLEAR AIR', note: 'beams are 4 more likely to hit' },
   } as Record<string, { name: string; note: string }>,
+  // The last line of an open contract's briefing: how many battles it is.
+  board: {
+    battles: (count: number) => (count === 1 ? 'One engagement. In and out.' : `${count} engagements back to back. Field service between them, nothing more.`),
+  },
   // The Gauntlet: a run of battles in a stock frame that goes on until the pilot falls.
   gauntlet: {
     item: 'The Gauntlet', heading: 'THE GAUNTLET', client: 'The Gauntlet',
@@ -154,6 +158,10 @@ export const STRINGS = {
     fell: 'Closed on a floor: the run fell there.',
     over: 'RUN OVER', cleared: (n: number) => (n === 1 ? '1 floor cleared' : `${n} floors cleared`), paid: (n: number) => `Paid ${n}`, record: 'A new best.',
     hint: 'A: choose   B: back', expected: 'EXPECTED',
+    slots: {
+      head: 'head', core: 'core', arms: 'arms', legs: 'legs', generator: 'generator', booster: 'booster', fcs: 'fire control', module: 'module',
+      rightHand: 'right hand', leftHand: 'left hand', shoulder: 'shoulder',
+    } as Record<string, string>,
   },
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
@@ -230,6 +238,10 @@ export const STRINGS = {
   credits: {
     flownBy: 'FLOWN BY', level: (n: number) => `PILOT LEVEL ${n}`, record: 'THE RECORD', stat: (label: string, value: string) => `${label}  ${value}`,
     cast: 'IN VARN', unknown: '? ? ?', notMet: 'on a road not taken',
+    names: {
+      dispatch: 'Dispatch', brenn: 'Director Brenn', varga: 'Analyst Varga', tamsin: 'Tamsin', ashfall: 'Ashfall', sable: 'Sable',
+      rook: 'Rook', krell: 'Krell', actuary: 'The Actuary',
+    },
     roles: {
       dispatch: 'who found you the work', brenn: 'Hadron Mining', varga: 'Lumen Systems', tamsin: 'The Undertow',
       ashfall: 'a licensed pilot', sable: 'Lumen\'s best', rook: 'the Undertow\'s champion', krell: 'Hadron\'s strike-breaker',
@@ -240,6 +252,7 @@ export const STRINGS = {
   options: {
     heading: 'OPTIONS', sfx: 'Sound Effects', music: 'Music', rumble: 'Rumble', fastBattles: 'Fast Battles', difficulty: 'Difficulty',
     credits: 'End Roll', watch: 'Watch', title: 'Quit to Title',
+    language: 'Language', languages: { en: 'English', nl: 'Nederlands' },
     swapAB: 'A/B Buttons', normal: 'Normal', swapped: 'Swapped', swapHelp: 'Swap them if B confirms on your handheld.',
     unsaved: 'Not saved', unsavedHelp: 'The last change could not be saved. A again: quit.',
     on: 'On', off: 'Off',
