@@ -27,7 +27,7 @@ describe('the speed of written text', () => {
   test('is an option with four settings, kept in the settings only when it is not the ordinary one', () => {
     const { app, store } = inHub(fresh());
     select(app, 'options');
-    expect(ids(app)).toEqual(['sfx', 'music', 'rumble', 'fastBattles', 'textSpeed', 'calm', 'difficulty', 'swapAB', 'language', 'title']);
+    expect(ids(app)).toEqual(['sfx', 'music', 'rumble', 'fastBattles', 'textSpeed', 'calm', 'detail', 'difficulty', 'swapAB', 'language', 'title']);
     expect(note(app, 'textSpeed')).toBe('Normal');
     point(app, 'textSpeed');
     const seen: (string | undefined)[] = [];
@@ -319,12 +319,12 @@ describe('the jukebox', () => {
 });
 
 describe('the options screen with everything on it', () => {
-  test('all eleven rows, the line of help and the hint are on the screen', () => {
+  test('all twelve rows, the line of help and the hint are on the screen', () => {
     const { app } = makeApp({ ...strong(done('intro-1')), endingSeen: true });
     press(app, 'confirm');
     skipScenes(app);
     select(app, 'options');
-    expect(ids(app)).toHaveLength(11);
+    expect(ids(app)).toHaveLength(12);
     const rows: { text: string; y: number }[] = [];
     const target: Record<string, unknown> = {};
     const ctx = new Proxy(target, {
@@ -334,11 +334,13 @@ describe('the options screen with everything on it', () => {
     }) as unknown as CanvasRenderingContext2D;
     point(app, 'calm');
     app.draw(ctx);
-    for (const label of ['Sound Effects', 'Text Speed', 'Screen Effects', 'Quit to Title', STRINGS.options.calmHelp, STRINGS.options.hint]) {
+    for (const label of ['Sound Effects', 'Text Speed', 'Screen Effects', 'Light Effects', 'Quit to Title', STRINGS.options.calmHelp, STRINGS.options.hint]) {
       const row = rows.find((r) => r.text === label);
       expect(row, label).toBeDefined();
       expect(row!.y, label).toBeLessThanOrEqual(258);
       expect(row!.y, label).toBeGreaterThanOrEqual(30);
     }
+    // The way out is written above the strip along the bottom where a medal or an entry is announced.
+    expect(rows.find((r) => r.text === STRINGS.options.hint)!.y + 12).toBeLessThanOrEqual(240);
   });
 });

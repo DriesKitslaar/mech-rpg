@@ -5,7 +5,7 @@ import type { App, Screen, ScreenView, SlotView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList, type ListItem } from './menuList';
 import { playTime } from './record';
-import { drawGlow } from './light';
+import { drawLights } from './light';
 import { LOGO, drawLogo, logoGleam, logoLevel, logoLights } from './logo';
 import { drawSearchlights, drawTitleScene } from './titleScene';
 import { drawWeather, drawWeatherExtras } from './weather';
@@ -164,7 +164,7 @@ export class TitleScreen implements Screen {
 
     // The sign: it comes on with a flicker, throws its own light, and a gleam crosses it now and then.
     const level = fast ? 1 : logoLevel(this.clock, calm);
-    for (const glow of logoLights(SIGN.x, SIGN.y, level)) drawGlow(ctx, glow, calm ? 0.5 : 1);
+    drawLights(ctx, logoLights(SIGN.x, SIGN.y, level), calm ? 0.5 : 1);
     drawLogo(ctx, SIGN.x, SIGN.y, { level, gleam: fast ? null : logoGleam(this.clock) });
     ctx.save();
     ctx.translate(0, drift);

@@ -1,7 +1,7 @@
 import { isValidRun } from '../core/gauntlet';
 import {
-  DEFAULT_CALLSIGN, DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LOADOUT_SLOTS, SAVE_VERSION, TEXT_SPEEDS, isValidState,
-  type Difficulty, type GameState, type Settings, type TextSpeed,
+  DEFAULT_CALLSIGN, DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LIGHT_DETAILS, LOADOUT_SLOTS, SAVE_VERSION, TEXT_SPEEDS, isValidState,
+  type Difficulty, type GameState, type LightDetail, type Settings, type TextSpeed,
 } from '../core/game';
 import { NO_STATS } from '../core/stats';
 import type { Catalog } from '../core/types';
@@ -14,6 +14,14 @@ export const SLOT_KEY = 'ironwage-slot';
 export const slotKey = (slot: number): string => (slot === 0 ? SAVE_KEY : `${SAVE_KEY}-${slot + 1}`);
 /** Options are kept apart from the game, so they exist before a game does and survive starting over. */
 export const SETTINGS_KEY = 'ironwage-settings';
+/** Where what the handheld last managed is kept: it is a fact about the handheld, not about a game or a choice. */
+export const PACE_KEY = 'ironwage-pace';
+/**
+ * What was last found out about the handheld: how much light (2 all, 1 less, 0 none) it is to start with, how
+ * many sessions ago that was found, and whether it is to be `held` there without being judged: that is so where
+ * giving light up was found to gain nothing. A handheld that has all of its light and is judged has no hint.
+ */
+export interface PaceHint { level: 0 | 1 | 2; runs: number; held?: true }
 
 /** The part of `localStorage` the game needs; injected so saving can be tested without a browser. */
 export interface KeyValueStore {
@@ -143,7 +151,7 @@ export class SaveFile {
       if (!raw) return null;
       const value: unknown = JSON.parse(raw);
       if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-      const { sfx, music, fastBattles, difficulty, rumble, swapAB, language, textSpeed, calm } = value as Record<string, unknown>;
+      const { sfx, music, fastBattles, difficulty, rumble, swapAB, language, textSpeed, calm, detail } = value as Record<string, unknown>;
       if (typeof sfx !== 'boolean' || typeof music !== 'boolean' || typeof fastBattles !== 'boolean') return null;
       // Options added later than the first three fall back to their default when absent or unknown.
       const known = DIFFICULTIES.includes(difficulty as Difficulty);
@@ -157,9 +165,38 @@ export class SaveFile {
         // The speed of text is stored only when it is not the ordinary one, and a calm picture only while it is on.
         ...(TEXT_SPEEDS.includes(textSpeed as TextSpeed) && textSpeed !== 'normal' ? { textSpeed: textSpeed as TextSpeed } : {}),
         ...(calm === true ? { calm: true } : {}),
+        // How much light is stored only when the player chose it: otherwise the game decides.
+        ...(LIGHT_DETAILS.includes(detail as LightDetail) ? { detail: detail as LightDetail } : {}),
       };
     } catch {
       return null;
+    }
+  }
+
+  /** What the handheld last managed, or null when it managed everything, was never judged, or what is kept cannot be read. */
+  loadPace(): PaceHint | null {
+    try {
+      const raw = this.store.getItem(PACE_KEY);
+      if (!raw) return null;
+      const value: unknown = JSON.parse(raw);
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+      const { level, runs, held } = value as Record<string, unknown>;
+      if ((level !== 0 && level !== 1 && level !== 2) || typeof runs !== 'number' || !Number.isInteger(runs) || runs < 0 || runs > 9999) return null;
+      if ((held !== undefined && held !== true) || (level === 2 && held !== true)) return null;
+      return { level, runs, ...(held ? { held } : {}) };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Keeps what the handheld managed, or forgets it. False when it could not be kept. */
+  savePace(hint: PaceHint | null): boolean {
+    try {
+      if (hint) this.store.setItem(PACE_KEY, JSON.stringify(hint));
+      else this.store.removeItem(PACE_KEY);
+      return true;
+    } catch {
+      return false;
     }
   }
 

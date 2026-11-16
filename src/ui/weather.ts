@@ -1,4 +1,4 @@
-import { drawGlow } from './light';
+import { drawGlow, soft, wide } from './light';
 
 /** What drifts across a battlefield. */
 export type Weather = 'rain' | 'dust' | 'embers' | 'motes' | 'none';
@@ -57,6 +57,12 @@ export function lightning(clockMs: number): number {
 }
 
 /**
+ * How bright the lightning is that is actually drawn at this moment: none in a calm picture, and
+ * none where no soft light is drawn at all.
+ */
+export const struck = (clockMs: number, calm = false): number => (calm || !soft() ? 0 : lightning(clockMs));
+
+/**
  * What the weather does besides fall: rain lands, and now and then lightning lights the whole
  * field; embers throw a little light. A calm picture has no lightning and its embers glow at half
  * strength.
@@ -76,7 +82,7 @@ export function drawWeatherExtras(ctx: CanvasRenderingContext2D, kind: Weather, 
       ctx.fillRect(x - 1, y, 3, 1);
       if (phase < 0.15) { ctx.fillRect(x - 2, y - 1, 1, 1); ctx.fillRect(x + 2, y - 1, 1, 1); }
     }
-    const flash = calm ? 0 : lightning(clockMs);
+    const flash = struck(clockMs, calm);
     if (flash > 0) {
       const before = ctx.globalCompositeOperation;
       // The whole field is lit, in a way that leaves dark things dark: what is bright gets brighter, and nothing goes milky.
@@ -84,7 +90,7 @@ export function drawWeatherExtras(ctx: CanvasRenderingContext2D, kind: Weather, 
       ctx.fillStyle = `rgba(200, 220, 255, ${(LIGHTNING_ALPHA * flash).toFixed(3)})`;
       ctx.fillRect(0, 0, w, h);
       // And the sky itself goes white-blue, most at the top.
-      const sky = ctx.createLinearGradient?.(0, 0, 0, h * 0.7) as CanvasGradient | undefined;
+      const sky = wide() ? ctx.createLinearGradient?.(0, 0, 0, h * 0.7) as CanvasGradient | undefined : undefined;
       if (sky && typeof sky.addColorStop === 'function') {
         sky.addColorStop(0, `rgba(170, 200, 255, ${(SKY_ALPHA * flash).toFixed(3)})`);
         sky.addColorStop(1, 'rgba(170, 200, 255, 0)');

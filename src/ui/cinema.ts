@@ -1,4 +1,4 @@
-import { drawCone, drawGlow, ringOf, type Pt } from './light';
+import { drawCone, drawGlow, ringOf, soft, wide, type Pt } from './light';
 import { COLORS, drawOutlined, drawText } from './widgets';
 
 /**
@@ -57,7 +57,7 @@ export function drawCutIn(
   ctx.fillStyle = 'rgba(8, 6, 22, 0.94)';
   ctx.fillRect(0, top, field.width, h);
   // The game's colour washes in from the left: soft light, where the canvas can make it.
-  const wash = ctx.createLinearGradient?.(0, 0, field.width, 0) as CanvasGradient | undefined;
+  const wash = soft() ? ctx.createLinearGradient?.(0, 0, field.width, 0) as CanvasGradient | undefined : undefined;
   if (wash && typeof wash.addColorStop === 'function') {
     // Soft light: a calm picture has it at half strength.
     wash.addColorStop(0, `rgba(255, 93, 177, ${calm ? 0.17 : 0.34})`);
@@ -200,7 +200,7 @@ export const MOTES = 12;
 export function drawVictory(ctx: CanvasRenderingContext2D, ms: number, field: Field, calm = false, still = false): void {
   const share = still ? 1 : Math.min(1, Math.max(0, ms) / RESULT_IN_MS);
   if (share <= 0) return;
-  const light = calm ? undefined : ctx.createLinearGradient?.(0, field.top, 0, field.top + field.height * 0.7) as CanvasGradient | undefined;
+  const light = calm || !wide() ? undefined : ctx.createLinearGradient?.(0, field.top, 0, field.top + field.height * 0.7) as CanvasGradient | undefined;
   if (light && typeof light.addColorStop === 'function') {
     light.addColorStop(0, `rgba(255, 214, 150, ${(0.24 * share).toFixed(3)})`);
     light.addColorStop(1, 'rgba(255, 214, 150, 0)');
@@ -234,17 +234,21 @@ export function drawVictory(ctx: CanvasRenderingContext2D, ms: number, field: Fi
 export function drawDefeat(ctx: CanvasRenderingContext2D, ms: number, field: Field, still = false): void {
   const share = still ? 1 : Math.min(1, Math.max(0, ms) / RESULT_IN_MS);
   if (share <= 0) return;
-  const blend = ctx.globalCompositeOperation;
-  const alpha = ctx.globalAlpha;
-  // Grey laid on so that only the colour is taken out: what was light stays light and what was dark, dark.
-  ctx.globalCompositeOperation = 'saturation';
-  ctx.globalAlpha = 0.85 * share;
-  ctx.fillStyle = '#808080';
+  if (wide()) {
+    const blend = ctx.globalCompositeOperation;
+    const alpha = ctx.globalAlpha;
+    // Grey laid on so that only the colour is taken out: what was light stays light and what was dark, dark.
+    ctx.globalCompositeOperation = 'saturation';
+    ctx.globalAlpha = 0.85 * share;
+    ctx.fillStyle = '#808080';
+    ctx.fillRect(0, field.top, field.width, field.height);
+    ctx.globalCompositeOperation = blend;
+    ctx.globalAlpha = alpha;
+  }
+  // Where the colour cannot be taken out (it is the costliest thing a result draws) the field is simply darker.
+  ctx.fillStyle = `rgba(6, 4, 10, ${((wide() ? 0.3 : 0.55) * share).toFixed(3)})`;
   ctx.fillRect(0, field.top, field.width, field.height);
-  ctx.globalCompositeOperation = blend;
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = `rgba(6, 4, 10, ${(0.3 * share).toFixed(3)})`;
-  ctx.fillRect(0, field.top, field.width, field.height);
+  if (!soft()) return;
   const cx = field.width / 2;
   const cy = field.top + field.height / 2;
   const reach = Math.hypot(field.width, field.height) / 2;

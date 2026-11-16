@@ -5,7 +5,27 @@
  * else. A canvas that cannot make a gradient, as the tests' stand-ins cannot, is left alone by the
  * soft kind: nothing is drawn and nothing fails.
  */
+import type { Detail } from './pace';
+
 export type Pt = { x: number; y: number };
+
+/**
+ * How much of the soft light is drawn. All of it unless the handheld cannot keep up or the player
+ * asked for less: then half the lights and nothing that lies over a whole field or screen (lean),
+ * or no soft light at all (bare), which leaves the game as it is drawn on a canvas that makes no
+ * gradients. What is solid is never touched by this.
+ */
+let level: Detail = 2;
+export function setDetail(next: Detail): void {
+  level = next;
+}
+export const detail = (): Detail => level;
+/** Whether any soft light is drawn. */
+export const soft = (): boolean => level > 0;
+/** Whether the soft light that lies over a whole field or screen is drawn: edges, haze, washes, cones. */
+export const wide = (): boolean => level > 1;
+/** How many of so many lights there is room for: all of them, half of them (rounded up), or none. */
+export const lightRoom = (n: number): number => (level === 2 ? n : level === 1 ? Math.ceil(n / 2) : 0);
 
 /** A round light: brightest at its centre, gone at its edge. */
 export interface Glow { x: number; y: number; r: number; color: string; alpha: number }
@@ -30,7 +50,7 @@ export const brightness = (glow: Glow): number => Math.max(0, glow.alpha) * glow
 /** Adds one soft light to what is there. `strength` scales it: a calm picture asks for half. */
 export function drawGlow(ctx: CanvasRenderingContext2D, glow: Glow, strength = 1): void {
   const alpha = Math.max(0, Math.min(1, glow.alpha * strength));
-  if (alpha < 0.01 || glow.r <= 0) return;
+  if (alpha < 0.01 || glow.r <= 0 || !soft()) return;
   const gradient = ctx.createRadialGradient?.(glow.x, glow.y, 0, glow.x, glow.y, glow.r) as CanvasGradient | undefined;
   if (!gradient || typeof gradient.addColorStop !== 'function') return;
   const [r, g, b] = rgb(glow.color);
@@ -52,7 +72,18 @@ export function chosenLights(glows: readonly Glow[], calm = false, most = MAX_LI
   return glows
     .filter((glow) => glow.alpha > 0.01 && glow.r > 0 && !(calm && glow.r > FIELD_LIGHT))
     .sort((a, b) => brightness(b) - brightness(a))
-    .slice(0, Math.max(0, Math.min(MAX_LIGHTS, most)));
+    .slice(0, lightRoom(Math.max(0, Math.min(MAX_LIGHTS, most))));
+}
+
+/**
+ * Adds lights that belong to a place or a thing, as a set: all of them, each at `strength`. Where
+ * there is to be less light the brightest half of the set is drawn, in the order they were given.
+ */
+export function drawLights(ctx: CanvasRenderingContext2D, glows: readonly Glow[], strength = 1): void {
+  const room = lightRoom(glows.length);
+  if (room <= 0) return;
+  const kept = room >= glows.length ? null : new Set([...glows].sort((a, b) => brightness(b) - brightness(a)).slice(0, room));
+  for (const glow of glows) if (!kept || kept.has(glow)) drawGlow(ctx, glow, strength);
 }
 
 /** Adds the lights of a moment. A calm picture has them at half strength and none that covers the field. */
@@ -62,7 +93,7 @@ export function drawGlows(ctx: CanvasRenderingContext2D, glows: readonly Glow[],
 
 /** A soft shadow on the ground: an ellipse `w` wide and `h` high around its middle, darkest there. */
 export function drawShadow(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, alpha: number): void {
-  if (w <= 0 || h <= 0 || alpha <= 0) return;
+  if (w <= 0 || h <= 0 || alpha <= 0 || !soft()) return;
   const gradient = ctx.createRadialGradient?.(0, 0, 0, 0, 0, w / 2) as CanvasGradient | undefined;
   if (!gradient || typeof gradient.addColorStop !== 'function') return;
   gradient.addColorStop(0, `rgba(0, 0, 8, ${Math.min(1, alpha).toFixed(3)})`);
@@ -78,7 +109,7 @@ export function drawShadow(ctx: CanvasRenderingContext2D, x: number, y: number, 
 
 /** A beam of light from one point to another: a white core in a halo of its colour, added to what is there. */
 export function drawBeam(ctx: CanvasRenderingContext2D, from: Pt, to: Pt, width: number, color: string, alpha: number): void {
-  if (alpha <= 0.01 || width <= 0) return;
+  if (alpha <= 0.01 || width <= 0 || !soft()) return;
   const before = ctx.globalCompositeOperation;
   ctx.globalCompositeOperation = 'lighter';
   ctx.lineCap = 'round';
@@ -104,7 +135,7 @@ export function drawBeam(ctx: CanvasRenderingContext2D, from: Pt, to: Pt, width:
  * away along its length. Added to what is there, in two layers so that its sides are soft.
  */
 export function drawCone(ctx: CanvasRenderingContext2D, from: Pt, to: Pt, width: number, color: string, alpha: number): void {
-  if (alpha <= 0.01 || width <= 0) return;
+  if (alpha <= 0.01 || width <= 0 || !wide()) return;
   const length = Math.hypot(to.x - from.x, to.y - from.y);
   if (length <= 0) return;
   const fade = ctx.createLinearGradient?.(from.x, from.y, to.x, to.y) as CanvasGradient | undefined;
@@ -132,12 +163,18 @@ export function drawCone(ctx: CanvasRenderingContext2D, from: Pt, to: Pt, width:
 }
 
 /** The rows of a filled circle on the pixel grid: for each row its distance from the middle and half its width. */
-export function discRows(r: number): { dy: number; half: number }[] {
+export function discRows(r: number): readonly { dy: number; half: number }[] {
   const radius = Math.max(0, Math.round(r));
-  const rows: { dy: number; half: number }[] = [];
-  for (let dy = -radius; dy <= radius; dy++) rows.push({ dy, half: Math.floor(Math.sqrt(radius * radius - dy * dy + radius * 0.8)) });
+  // Worked out once for each size: a blast draws hundreds of circles a frame, all of a few sizes.
+  let rows = ROWS.get(radius);
+  if (!rows) {
+    rows = [];
+    for (let dy = -radius; dy <= radius; dy++) rows.push({ dy, half: Math.floor(Math.sqrt(radius * radius - dy * dy + radius * 0.8)) });
+    ROWS.set(radius, rows);
+  }
   return rows;
 }
+const ROWS = new Map<number, { dy: number; half: number }[]>();
 
 /** A filled circle on the pixel grid. */
 export function disc(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string): void {

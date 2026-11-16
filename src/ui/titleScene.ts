@@ -1,6 +1,6 @@
 import { LIGHT_ALPHA, drawHaze, drawVignette, lightLevel } from './ambience';
 import { LOGICAL_H, LOGICAL_W } from './display';
-import { drawCone, drawGlow, type Glow } from './light';
+import { drawCone, drawLights, type Glow } from './light';
 
 /**
  * What makes the title's picture a place: Varn at night, in the rain. The lamps of the mine
@@ -97,7 +97,7 @@ export const TITLE_HAZE = { color: '#5a8494', y: 128, alpha: 0.13 };
  */
 export function drawTitleScene(ctx: CanvasRenderingContext2D, clockMs: number, calm = false): void {
   drawVignette(ctx, 0, 0, LOGICAL_W, LOGICAL_H);
-  for (const glow of titleLights(clockMs, calm)) drawGlow(ctx, glow, calm ? 0.5 : 1);
+  drawLights(ctx, titleLights(clockMs, calm), calm ? 0.5 : 1);
   drawHaze(ctx, TITLE_HAZE, clockMs, LOGICAL_W, 1);
 }
 

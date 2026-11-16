@@ -1,6 +1,6 @@
 import { drawAmbience, placeLights } from './ambience';
 import { LOGICAL_H, LOGICAL_W } from './display';
-import { drawGlow, drawShadow } from './light';
+import { drawGlow, drawLights, drawShadow } from './light';
 
 /**
  * A room of the game with a mech standing in it, outside battle: the hangar behind the hub and the
@@ -85,6 +85,6 @@ export function drawMechShadow(ctx: CanvasRenderingContext2D, x: number, y: numb
 
 /** What goes over the mech: a share of the room's light, and the last of its haze. */
 export function drawRoomSpill(ctx: CanvasRenderingContext2D, background: string, clockMs: number, calm = false): void {
-  for (const light of placeLights(background, clockMs, calm)) drawGlow(ctx, light, (calm ? 0.5 : 1) * SPILL);
+  drawLights(ctx, placeLights(background, clockMs, calm), (calm ? 0.5 : 1) * SPILL);
   drawAmbience(ctx, background, clockMs, 'front', ROOM, calm);
 }

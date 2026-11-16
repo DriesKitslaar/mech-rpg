@@ -1,0 +1,423 @@
+import { createBattle } from '../../src/core/battle';
+import { isValidState } from '../../src/core/game';
+import { ENEMIES } from '../../src/content/enemies';
+import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
+import { SCENES } from '../../src/content/scenes';
+import { STRINGS } from '../../src/content/strings';
+import { PACE_KEY, SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
+import { AMBIENCE, drawAmbience } from '../../src/ui/ambience';
+import { App, TRY_AGAIN, startingLight } from '../../src/ui/app';
+import { BattleFlow } from '../../src/ui/battleFlow';
+import { BattleScreen } from '../../src/ui/battleScreen';
+import { drawCutIn, drawDefeat, drawVictory } from '../../src/ui/cinema';
+import {
+  MAX_LIGHTS, chosenLights, detail, discRows, drawBeam, drawCone, drawGlow, drawGlows, drawLights, drawShadow, lightRoom, setDetail, soft, wide, type Glow,
+} from '../../src/ui/light';
+import { WARM_UP, WINDOW } from '../../src/ui/pace';
+import { LIGHTNING_MS, drawWeatherExtras, lightning, struck } from '../../src/ui/weather';
+import { COLORS, drawPanel, drawRowLight } from '../../src/ui/widgets';
+import { done, inHub, memoryStore, press, select, snap } from '../helpers/app';
+import { record, type Drawn } from '../helpers/canvas';
+
+/**
+ * How much of the soft light is drawn: all of it, less, or none. Less and none are for a handheld
+ * that cannot keep up, or a player who asks for it; what is solid is the same at every level.
+ */
+
+afterEach(() => setDetail(2));
+
+const FIELD = { top: 14, height: 164, width: 310 };
+const glow = (over: Partial<Glow> = {}): Glow => ({ x: 100, y: 80, r: 30, color: '#ff8040', alpha: 0.8, ...over });
+const many = (n: number): Glow[] => Array.from({ length: n }, (_, i) => glow({ x: i, alpha: 0.1 + (i % 10) * 0.05, r: 10 + i }));
+/** Everything soft in a drawing: round lights and shadows, washes, cones, and strokes that add light. */
+const softThings = (page: Drawn): number => page.glows.length + page.washes.length + page.shapes.length + page.strokes.filter((s) => s.blend === 'lighter').length;
+/** A moment at which lightning is at its brightest. */
+const STRIKE = (() => { for (let t = 0; t < LIGHTNING_MS * 3; t += 10) if (lightning(t) === 1) return t; throw new Error('no stroke'); })();
+
+describe('the three levels', () => {
+  test('all of the light unless something says otherwise', () => {
+    expect(detail()).toBe(2);
+    expect(soft()).toBe(true);
+    expect(wide()).toBe(true);
+    expect([0, 1, 7, 16, 17].map(lightRoom)).toEqual([0, 1, 7, 16, 17]);
+    setDetail(1);
+    expect([soft(), wide()]).toEqual([true, false]);
+    expect([0, 1, 7, 16, 17].map(lightRoom)).toEqual([0, 1, 4, 8, 9]);
+    setDetail(0);
+    expect([soft(), wide()]).toEqual([false, false]);
+    expect([0, 1, 7, 16, 17].map(lightRoom)).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  test('less: half the lights, the brightest, and nothing that lies over a whole field or screen', () => {
+    setDetail(1);
+    expect(chosenLights(many(40))).toHaveLength(MAX_LIGHTS / 2);
+    expect(record((ctx) => drawGlows(ctx, many(40))).glows).toHaveLength(8);
+    // Where some of the room is taken already, half of what is left.
+    expect(chosenLights(many(40), false, 10)).toHaveLength(5);
+    // A place's or a thing's own set of lights: the brightest half of it, in the order it was given.
+    const set = many(17);
+    const drawn = record((ctx) => drawLights(ctx, set)).glows;
+    expect(drawn).toHaveLength(9);
+    const kept = [...set].sort((a, b) => b.alpha * b.r * b.r - a.alpha * a.r * a.r).slice(0, 9).map((g) => g.x).sort((a, b) => a - b);
+    expect(drawn.map((g) => g.x)).toEqual(kept);
+    // Single lights, shadows under machines and beams are small: they stay.
+    expect(record((ctx) => drawGlow(ctx, glow())).glows).toHaveLength(1);
+    expect(record((ctx) => drawShadow(ctx, 50, 200, 60, 10, 0.4)).glows).toHaveLength(1);
+    expect(record((ctx) => drawBeam(ctx, { x: 0, y: 0 }, { x: 50, y: 20 }, 3, '#7fe9ff', 1)).strokes).toHaveLength(4);
+    // A cone of light, the darker edges of a place and its haze do not.
+    expect(record((ctx) => drawCone(ctx, { x: 100, y: 200 }, { x: 100, y: 50 }, 30, '#80c0ff', 0.2)).shapes).toEqual([]);
+    const place = record((ctx) => drawAmbience(ctx, 'bg-foundry', 1000, 'behind', FIELD));
+    expect(place.glows.filter((g) => g.blend === 'source-over')).toEqual([]);
+    expect(place.glows.filter((g) => g.blend === 'lighter')).toHaveLength(Math.ceil(AMBIENCE['bg-foundry'].lights.length / 2));
+    expect(record((ctx) => drawAmbience(ctx, 'bg-foundry', 1000, 'front', FIELD)).glows).toEqual([]);
+  });
+
+  test('less: a box keeps its plate and loses its shadow; the row under the cursor is still lit', () => {
+    setDetail(1);
+    const box = record((ctx) => drawPanel(ctx, 7, 20, 100, 60));
+    expect(box.washes.length).toBeGreaterThan(1);
+    expect(box.washes.every((w) => w.y + w.h <= 80)).toBe(true);
+    expect(record((ctx) => drawRowLight(ctx, 20, 50, 90)).washes).toHaveLength(1);
+  });
+
+  test('less: what a battle stages keeps what is solid and gives up what lies over the field', () => {
+    setDetail(1);
+    // The band keeps its wash of colour: it is as large as the band, not as the field.
+    expect(record((ctx) => drawCutIn(ctx, 400, FIELD, { heading: 'OVERDRIVE', name: 'DEADEYE' }, () => undefined)).washes).toHaveLength(1);
+    // A field that was won: the motes rise, and that is all.
+    const won = record((ctx) => drawVictory(ctx, 2000, FIELD));
+    expect([won.washes, won.shapes]).toEqual([[], []]);
+    expect(won.rects.length).toBeGreaterThan(5);
+    // A field that was lost: the colour is not taken out (that is the costliest thing a result draws); it is darker instead, with its red edges.
+    const lost = record((ctx) => drawDefeat(ctx, 2000, FIELD));
+    expect(lost.rects.some((r) => r.blend === 'saturation')).toBe(false);
+    expect(lost.rects.map((r) => r.color)).toEqual(['rgba(6, 4, 10, 0.550)']);
+    expect(lost.glows).toHaveLength(1);
+    // Lightning lights the field and leaves the sky alone.
+    const stroke = record((ctx) => drawWeatherExtras(ctx, 'rain', STRIKE, 310, 164));
+    expect(stroke.rects.filter((r) => r.blend === 'overlay')).toHaveLength(1);
+    expect(stroke.washes).toEqual([]);
+  });
+
+  test('none: nothing soft is drawn by anything, and nothing fails', () => {
+    setDetail(0);
+    const page = record((ctx) => {
+      drawGlow(ctx, glow());
+      drawGlows(ctx, many(40));
+      drawLights(ctx, many(17));
+      drawShadow(ctx, 50, 200, 60, 10, 0.4);
+      drawBeam(ctx, { x: 0, y: 0 }, { x: 50, y: 20 }, 3, '#7fe9ff', 1);
+      drawCone(ctx, { x: 100, y: 200 }, { x: 100, y: 50 }, 30, '#80c0ff', 0.2);
+      drawAmbience(ctx, 'bg-foundry', 1000, 'behind', FIELD);
+      drawAmbience(ctx, 'bg-foundry', 1000, 'front', FIELD);
+      drawRowLight(ctx, 20, 50, 90);
+      drawVictory(ctx, 2000, FIELD);
+      drawWeatherExtras(ctx, 'rain', STRIKE, 310, 164);
+      drawWeatherExtras(ctx, 'embers', 1000, 310, 164);
+    });
+    expect(softThings(page)).toBe(0);
+    expect(struck(STRIKE)).toBe(0);
+    expect(page.rects.some((r) => r.blend === 'overlay')).toBe(false);
+    expect(chosenLights(many(40))).toEqual([]);
+  });
+
+  test('none: a box is its plain dark plate, framed; a lost field is only darker; a band is only its plate', () => {
+    setDetail(0);
+    const box = record((ctx) => drawPanel(ctx, 7, 20, 100, 60));
+    expect(softThings(box)).toBe(0);
+    const plate = box.rects.filter((r) => r.color === COLORS.panel);
+    expect(plate.reduce((sum, r) => sum + r.w * r.h, 0)).toBe(100 * 60 - 12);
+    expect(box.rects.some((r) => r.color === COLORS.border)).toBe(true);
+    for (const r of box.rects) expect(r.y + r.h).toBeLessThanOrEqual(80);
+    const lost = record((ctx) => drawDefeat(ctx, 2000, FIELD));
+    expect(softThings(lost)).toBe(0);
+    expect(lost.rects.map((r) => [r.color, r.blend])).toEqual([['rgba(6, 4, 10, 0.550)', 'source-over']]);
+    const band = record((ctx) => drawCutIn(ctx, 400, FIELD, { heading: 'OVERDRIVE', name: 'DEADEYE' }, () => undefined));
+    expect(softThings(band)).toBe(0);
+    expect(band.rects.some((r) => r.color === 'rgba(8, 6, 22, 0.94)')).toBe(true);
+    expect(band.texts.map((t) => t.text)).toContain('DEADEYE');
+  });
+
+  test('the rows of a circle are worked out once for each size', () => {
+    expect(discRows(6)).toBe(discRows(6));
+    expect(discRows(6.4)).toBe(discRows(6));
+    expect(discRows(7)).not.toBe(discRows(6));
+    expect(discRows(6)).toHaveLength(13);
+    expect(discRows(0).map((row) => row.half)).toEqual([0]);
+  });
+});
+
+describe('whole screens with less light, and with none', () => {
+  const named = { sprites: { get: (id: string, fallback: { w: number; h: number }) => ({ image: { id } as unknown as CanvasImageSource, w: fallback.w, h: fallback.h }) } };
+  const settled = () => ({ ...done('intro-1', 'intro-2'), scenes: SCENES.map((scene) => scene.id) });
+  /** A battle on real ground, a few frames into a volley of its heaviest gun. */
+  function volley(): Drawn {
+    const state = createBattle(DEMO_BUILD, [ENEMIES['recon-drone'], ENEMIES.tank], CATALOG, 7);
+    const flow = new BattleFlow(state, CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, named.sprites, CATALOG, { fast: false, background: 'bg-foundry' });
+    for (let i = 0; i < 4000 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    for (let i = 0; i < 12; i++) screen.update(16);
+    return record((ctx) => screen.draw(ctx));
+  }
+
+  test('with none: a battle in the thick of it, the title, the hub and its rooms draw nothing soft at all', () => {
+    setDetail(0);
+    expect(softThings(volley())).toBe(0);
+    const title = new App({ catalog: CATALOG, save: new SaveFile(memoryStore(), CATALOG), sprites: named.sprites, fast: false, seed: 3 });
+    title.update(3000);
+    setDetail(0);
+    expect(softThings(record((ctx) => title.draw(ctx)))).toBe(0);
+    const { app } = inHub(settled(), undefined, { ...named, fast: false });
+    app.update(2500);
+    setDetail(0);
+    expect(softThings(record((ctx) => app.draw(ctx)))).toBe(0);
+    for (const room of ['garage', 'arena', 'training', 'gauntlet', 'shop', 'options']) {
+      select(app, room);
+      app.update(300);
+      setDetail(0);
+      expect(softThings(record((ctx) => app.draw(ctx))), room).toBe(0);
+      press(app, 'cancel');
+    }
+  });
+
+  test('with less: a battle has at most eight lights of its own beside the place\'s, and no haze or darker edges', () => {
+    setDetail(1);
+    const page = volley();
+    const lights = page.glows.filter((g) => g.blend === 'lighter');
+    const place = Math.ceil(AMBIENCE['bg-foundry'].lights.length / 2);
+    expect(lights.length).toBeGreaterThan(place);
+    // The place's half, the embers in its air, and the battle's eight.
+    expect(lights.length).toBeLessThanOrEqual(place + 6 + 8);
+    // The only soft thing that is not a light is a shadow under each of the three that stand there.
+    expect(page.glows.filter((g) => g.blend === 'source-over')).toHaveLength(3);
+    expect(page.shapes).toEqual([]);
+  });
+});
+
+describe('what the handheld managed, from one session to the next', () => {
+  const file = (data: Record<string, string> = {}) => { const store = memoryStore(data); return { store, save: new SaveFile(store, CATALOG) }; };
+
+  test('a handheld never found wanting starts with all of the light, judged, and nothing is kept about it', () => {
+    const { store, save } = file();
+    expect(startingLight(save)).toEqual({ level: 2, judge: true });
+    expect(store.data[PACE_KEY]).toBeUndefined();
+  });
+
+  test('one that was starts where it ended, and the sessions since are counted', () => {
+    const { store, save } = file({ [PACE_KEY]: JSON.stringify({ level: 1, runs: 0 }) });
+    for (let run = 1; run <= TRY_AGAIN; run++) {
+      expect(startingLight(save)).toEqual({ level: 1, judge: true });
+      expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: run });
+    }
+    // After five such sessions it is given one more chance at all of the light, and nothing is held against it.
+    expect(TRY_AGAIN).toBe(5);
+    expect(startingLight(save)).toEqual({ level: 2, judge: true });
+    expect(store.data[PACE_KEY]).toBeUndefined();
+    // From no light at all the chance is one step, not two, and the count starts over.
+    const dark = file({ [PACE_KEY]: JSON.stringify({ level: 0, runs: TRY_AGAIN }) });
+    expect(startingLight(dark.save)).toEqual({ level: 1, judge: true });
+    expect(JSON.parse(dark.store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+  });
+
+  test('one whose light was found not to be what it is slow at is left alone for as many sessions, then judged again', () => {
+    const { store, save } = file({ [PACE_KEY]: JSON.stringify({ level: 2, runs: 0, held: true }) });
+    for (let run = 1; run <= TRY_AGAIN; run++) {
+      expect(startingLight(save)).toEqual({ level: 2, judge: false });
+      expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 2, runs: run, held: true });
+    }
+    expect(startingLight(save)).toEqual({ level: 2, judge: true });
+    expect(store.data[PACE_KEY]).toBeUndefined();
+    // Left alone at less than all of it: the chance it gets is a step up, and that is judged.
+    const lean = file({ [PACE_KEY]: JSON.stringify({ level: 1, runs: TRY_AGAIN, held: true }) });
+    expect(startingLight(lean.save)).toEqual({ level: 2, judge: true });
+    expect(lean.store.data[PACE_KEY]).toBeUndefined();
+  });
+
+  test('what is kept but cannot be read counts as nothing kept', () => {
+    const unreadable = [
+      '{not json', '[]', '7', 'null',
+      // All of the light and judged is what a handheld has that nothing is kept about: kept, it says nothing.
+      { level: 2, runs: 0 }, { level: 3, runs: 0, held: true }, { level: -1, runs: 0 },
+      { level: 1, runs: -1 }, { level: 1, runs: 1.5 }, { level: 1, runs: 10000 }, { level: '1', runs: 0 }, { level: 1 }, { runs: 1 },
+      { level: 1, runs: 0, held: 'yes' }, { level: 1, runs: 0, held: false }, { level: 2, runs: 0, held: 1 },
+    ].map((raw) => (typeof raw === 'string' ? raw : JSON.stringify(raw)));
+    for (const raw of unreadable) {
+      const { save } = file({ [PACE_KEY]: raw });
+      expect(save.loadPace(), raw).toBeNull();
+      expect(startingLight(save), raw).toEqual({ level: 2, judge: true });
+    }
+    const { save } = file();
+    expect(save.savePace({ level: 0, runs: 3 })).toBe(true);
+    expect(save.loadPace()).toEqual({ level: 0, runs: 3 });
+    expect(save.savePace({ level: 2, runs: 9999, held: true })).toBe(true);
+    expect(save.loadPace()).toEqual({ level: 2, runs: 9999, held: true });
+    expect(save.savePace(null)).toBe(true);
+    expect(save.loadPace()).toBeNull();
+    // A store that cannot be written to: it says so, and nothing fails.
+    const full = new SaveFile({ getItem: () => null, setItem: () => { throw new Error('full'); }, removeItem: () => { throw new Error('full'); } }, CATALOG);
+    expect(full.savePace({ level: 1, runs: 0 })).toBe(false);
+    expect(full.savePace(null)).toBe(false);
+    expect(startingLight(full)).toEqual({ level: 2, judge: true });
+  });
+});
+
+describe('the game keeping pace', () => {
+  const sprites = { get: (id: string, fallback: { w: number; h: number }) => ({ image: { id } as unknown as CanvasImageSource, w: fallback.w, h: fallback.h }) };
+  const open = (data: Record<string, string> = {}, fast = false) => {
+    const store = memoryStore(data);
+    return { store, app: new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast, seed: 3 }) };
+  };
+  const slowFor = (app: App, windows: number): void => { for (let i = 0; i < WINDOW * windows; i++) app.frame(34); };
+  const warm = (app: App): void => { for (let i = 0; i < WARM_UP; i++) app.frame(16.7); };
+  const note = (app: App): string | undefined => (snap(app).menu.items as { id: string; note?: string }[]).find((item) => item.id === 'detail')?.note;
+
+  test('a handheld that keeps up has all of the light, and one that does not has it turned down and remembered', () => {
+    const { app, store } = open();
+    expect(app.lightNow()).toBe('full');
+    expect(detail()).toBe(2);
+    warm(app);
+    for (let i = 0; i < 6000; i++) app.frame(16.7);
+    expect(app.lightNow()).toBe('full');
+    expect(store.data[PACE_KEY]).toBeUndefined();
+    slowFor(app, 3);
+    expect(app.lightNow()).toBe('lean');
+    expect(detail()).toBe(1);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+    slowFor(app, 3);
+    expect(app.lightNow()).toBe('bare');
+    expect(detail()).toBe(0);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 0, runs: 0 });
+    // The next session starts there, and says so in the options.
+    const next = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 3 });
+    expect(next.lightNow()).toBe('bare');
+    expect(detail()).toBe(0);
+    select(next, 'options');
+    expect(note(next)).toBe(STRINGS.options.detailAuto.bare);
+    expect(snap(next).light).toBe('bare');
+  });
+
+  test('one that is slow whatever is drawn gets its light back, and the sessions after leave it alone', () => {
+    const { app, store } = open();
+    warm(app);
+    slowFor(app, 6);
+    expect(app.lightNow()).toBe('bare');
+    // Without any light the frames are what they were: the light was not what it is slow at.
+    slowFor(app, 3);
+    expect(app.lightNow()).toBe('full');
+    expect(detail()).toBe(2);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 2, runs: 0, held: true });
+    slowFor(app, 30);
+    expect(app.lightNow()).toBe('full');
+    const next = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 3 });
+    warm(next);
+    slowFor(next, 30);
+    expect(next.lightNow()).toBe('full');
+    expect(detail()).toBe(2);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 2, runs: 1, held: true });
+    select(next, 'options');
+    expect(note(next)).toBe('Auto');
+  });
+
+  test('while the player has chosen, nothing is found out about the handheld and what is kept about it is not touched', () => {
+    const hint = JSON.stringify({ level: 1, runs: 2 });
+    const chosen = JSON.stringify({ sfx: true, music: true, fastBattles: false, difficulty: 'standard', detail: 'full' });
+    const { app, store } = open({ [PACE_KEY]: hint, [SETTINGS_KEY]: chosen });
+    expect(app.lightNow()).toBe('full');
+    expect(detail()).toBe(2);
+    warm(app);
+    slowFor(app, 12);
+    expect(app.lightNow()).toBe('full');
+    expect(store.data[PACE_KEY]).toBe(hint);
+    // Its frames are still counted, for whoever looks.
+    expect(app.fps).toBe(29);
+  });
+
+  test('the frames a second it is showing can be asked for', () => {
+    const { app } = open();
+    for (let i = 0; i < 100; i++) app.frame(16.7);
+    expect(app.fps).toBe(60);
+  });
+
+  test('a hurried game is not judged: it has all of the light whatever its frames take', () => {
+    const { app, store } = open({ [PACE_KEY]: JSON.stringify({ level: 0, runs: 0 }) }, true);
+    expect(app.lightNow()).toBe('full');
+    for (let i = 0; i < 2000; i++) app.frame(90);
+    expect(app.lightNow()).toBe('full');
+    expect(detail()).toBe(2);
+    // What was kept about the handheld is not touched by a session that was not judged.
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 0, runs: 0 });
+  });
+
+  test('the option: Auto, Full, Reduced, Off; a choice holds whatever the handheld does, and is kept only when it is a choice', () => {
+    const { app, store } = open();
+    select(app, 'options');
+    const point = (): void => { for (let i = 0; i < 20 && (snap(app).menu.items as { id: string }[])[snap(app).menu.cursor as number].id !== 'detail'; i++) press(app, 'down'); };
+    point();
+    expect(note(app)).toBe('Auto');
+    const seen: (string | undefined)[] = [];
+    const kept: unknown[] = [];
+    for (let i = 0; i < 4; i++) {
+      press(app, 'right');
+      seen.push(note(app));
+      kept.push(JSON.parse(store.data[SETTINGS_KEY]).detail);
+    }
+    expect(seen).toEqual(['Full', 'Reduced', 'Off', 'Auto']);
+    expect(kept).toEqual(['full', 'lean', 'bare', undefined]);
+    // And backwards.
+    press(app, 'left');
+    expect(note(app)).toBe('Off');
+    expect(detail()).toBe(0);
+    press(app, 'left');
+    expect(detail()).toBe(1);
+    press(app, 'left');
+    expect(note(app)).toBe('Full');
+    expect(detail()).toBe(2);
+    // Full is full, however badly the handheld is doing.
+    warm(app);
+    slowFor(app, 9);
+    expect(app.lightNow()).toBe('full');
+    expect(detail()).toBe(2);
+    // Nothing was found out meanwhile. Handed back to the game, it starts from all of the light and judges afresh.
+    expect(store.data[PACE_KEY]).toBeUndefined();
+    store.data[PACE_KEY] = JSON.stringify({ level: 0, runs: 1 });
+    press(app, 'left');
+    expect(note(app)).toBe('Auto');
+    expect(app.lightNow()).toBe('full');
+    expect(store.data[PACE_KEY]).toBeUndefined();
+    warm(app);
+    slowFor(app, 3);
+    expect(note(app)).toBe('Auto');
+    press(app, 'up', 'down');
+    expect(app.lightNow()).toBe('lean');
+    // The row says what Auto has come to once the list is made again.
+    press(app, 'cancel');
+    select(app, 'options');
+    expect(note(app)).toBe(STRINGS.options.detailAuto.lean);
+  });
+
+  test('the line of help under the list says what Auto does, in the box', () => {
+    const { app } = open();
+    select(app, 'options');
+    for (let i = 0; i < 20 && (snap(app).menu.items as { id: string }[])[snap(app).menu.cursor as number].id !== 'detail'; i++) press(app, 'down');
+    const page = record((ctx) => app.draw(ctx));
+    const help = page.texts.find((t) => t.text === STRINGS.options.detailHelp)!;
+    expect(help).toBeDefined();
+    expect(help.left).toBeGreaterThan(40);
+    expect(help.right).toBeLessThan(270);
+  });
+
+  test('a saved game with a choice of light that is none of the three is no saved game; a settings file with one is read without it', () => {
+    const game = done('intro-1');
+    for (const choice of ['full', 'lean', 'bare']) expect(isValidState({ ...game, settings: { ...game.settings, detail: choice } }, CATALOG)).toBe(true);
+    expect(isValidState({ ...game, settings: { ...game.settings, detail: 'auto' } }, CATALOG)).toBe(false);
+    expect(isValidState({ ...game, settings: { ...game.settings, detail: 2 } }, CATALOG)).toBe(false);
+    const read = (detailValue: unknown) => new SaveFile(memoryStore({ [SETTINGS_KEY]: JSON.stringify({ sfx: true, music: true, fastBattles: false, difficulty: 'standard', detail: detailValue }) }), CATALOG).loadSettings();
+    expect(read('lean')).toMatchObject({ detail: 'lean' });
+    expect(read('auto')).not.toHaveProperty('detail');
+    expect(read(1)).not.toHaveProperty('detail');
+    expect(read(undefined)).not.toHaveProperty('detail');
+  });
+});
