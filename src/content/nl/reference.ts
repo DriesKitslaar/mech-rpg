@@ -230,13 +230,13 @@ export const REFERENCE_NL: Record<string, string> = {
   'A run of floors in a stock frame, with none of your own parts or perks. Most floors have two doors: pick your fight. After each floor take one thing on offer: a part, a full service, or a boon for the run. Every fifth floor has a warden. Falling, retreating or closing the game on a floor ends the run. It pays by floors cleared.':
     'Een reeks etages in een standaardframe, zonder je eigen onderdelen of perks. De meeste etages hebben twee deuren: kies je gevecht. Kies na elke etage iets uit het aanbod: onderdeel, groot onderhoud of reeksbonus. Elke vijfde etage heeft een bewaker. Vallen, Aftocht of afsluiten op een etage eindigt de reeks. Loon per gehaalde etage.',
   'An elite is a machine with a mark. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. The Gauntlet hides one behind some doors: beat it for one more thing on offer. Some open contracts have one, and pay more. A warden beaten leaves one of two relics.':
-    'Een elite is een machine met een merk. GEPANTSERD: twee vijfde meer pantser. OVERKLOKT: een kwart meer schade. SNEL: lastiger te raken. SCHILD: een barriere, elke beurt nieuw. In de Gauntlet zit er soms een achter een deur: versla hem voor een extra aanbod. Soms heeft een open contract er een, voor meer loon. Een verslagen bewaker geeft een relikwie.',
+    'Een elite is een machine met een merkteken. GEPANTSERD: twee vijfde meer pantser. OVERKLOKT: een kwart meer schade. SNEL: lastiger te raken. SCHILD: een barriere, elke beurt nieuw. In de Gauntlet zit er soms een achter een deur: versla hem voor extra aanbod. Soms ook in een open contract: meer loon. Na een bewaker kies je een van twee relikwieen.',
   'ARENA CUPS': 'ARENABEKERS',
   'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.':
     'Een beker is drie van de ranglijst achter elkaar, met alleen veldonderhoud ertussen. Hij opent zodra je zijn drie hebt verslagen. De pot is voor alle drie of voor geen: eerst volledig, daarna een kwart.',
   CONTROLS: 'BESTURING',
   'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive.':
-    'D-pad: bewegen. A: bevestigen. B: terug. L1 en R1: bladeren, tabs en in gevecht doelwitten. R1 in je eigen beurt zet een volle Overdrive in.',
+    'D-pad: bewegen. A: kiezen. B: terug. L1/R1: bladeren, van tab en in gevecht van doelwit wisselen. R1 in je beurt zet een volle Overdrive in.',
 
   // --- Perks ---
   Marksman: 'Scherpschutter',
@@ -339,7 +339,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'Clear 20 floors of the Gauntlet in one run.': 'Haal 20 etages van de Gauntlet in een reeks.',
   'Marked Down': 'Afgeprijsd',
   'Beat an elite in the Gauntlet.': 'Versla een elite in de Gauntlet.',
-  'Ten Marks': 'Tien merken',
+  'Ten Marks': 'Tien merktekens',
   'Beat 10 elites in the Gauntlet.': 'Versla 10 elites in de Gauntlet.',
   Reliquary: 'Reliekschrijn',
   'Hold three relics in one run of the Gauntlet.': 'Heb drie relikwieen in een reeks van de Gauntlet.',
@@ -386,7 +386,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'Redline': 'In het rood',
   'Past the Stop': 'Voorbij de begrenzer',
   'From pilot level 3 a meter at the left edge of the field fills as you fight: 8 for a volley that lands, 10 for one you take, 15 for a machine destroyed. Full, R1 on your turn sets off your Overdrive. Second Wind starts your turn over; Iron Skin (level 6) halves damage until your next turn; Deadeye (level 9) cannot miss.':
-    'Vanaf pilotenlevel 3 vult zich in gevecht een meter links op het veld: 8 voor een vuurstoot die raakt, 10 voor een die je krijgt, 15 voor een gesloopte machine. Is hij vol, dan zet R1 in je beurt je Overdrive in. Tweede Adem begint je beurt opnieuw; IJzerhuid (level 6) halveert schade tot je volgende beurt; Scherpoog (level 9) mist niet.',
+    'Vanaf pilotenlevel 3 vult zich in gevecht een meter links op het veld: 8 voor een salvo dat raakt, 10 voor een dat je krijgt, 15 voor een gesloopte machine. Is hij vol, dan zet R1 in je beurt je Overdrive in. Tweede Adem begint je beurt opnieuw; IJzerhuid (level 6) halveert schade tot je volgende beurt; Scherpoog (level 9) mist niet.',
   // The jukebox: what each song is heard with. The songs keep their names.
   'The title. Where every contract begins.': 'De titel. Waar elk contract begint.',
   'Between contracts: the garage, the shop and the board.': 'Tussen contracten: de garage, de winkel en het bord.',
@@ -405,19 +405,19 @@ export const REFERENCE_NL: Record<string, string> = {
   'The room of the Gauntlet, between floors.': 'De kamer van de Gauntlet, tussen de etages.',
   'The floors of the Gauntlet.': 'De etages van de Gauntlet.',
   // The people of Varn: a line about each. Their names stay as they are.
-  'The voice on the night shift that hands out the work and reads out the bill. Never gave a name. Sounds tired in a way sleep does not fix.': 'De stem van de nachtdienst die werk uitdeelt en de rekening voorleest. Gaf nooit een naam. Klinkt moe zoals slaap niet verhelpt.',
+  'The voice on the night shift that hands out the work and reads out the bill. Never gave a name. Sounds tired in a way sleep does not fix.': 'De stem van de nachtdienst die werk uitdeelt en de rekening voorleest. Gaf nooit een naam. Klinkt moe op een manier die slaap niet verhelpt.',
   'Runs the pits of Hadron Mining and counts everything in them, pilots included. Pays promptly. Remembers who cost him money.': 'Leidt de mijnen van Hadron Mining en telt alles wat erin zit, piloten incluis. Betaalt stipt. Onthoudt wie hem geld kostte.',
   'Files people the way Lumen files data: neatly, and for later. Being called reliable by her is a pay grade.': 'Bergt mensen op zoals Lumen data opbergt: netjes, en voor later. Als zij je betrouwbaar noemt, is dat een loonschaal.',
   'Organises the Undertow from wherever the pumps still run. Pays in small notes and long memories.': 'Organiseert de Undertow vanaf waar de pompen nog draaien. Betaalt in kleine biljetten en een lang geheugen.',
   'The voice of the Night Market Guild. Half a face, many rings, and a price for everything, the lights included.': 'De stem van het Night Market-gilde. Een half gezicht, veel ringen, en een prijs voor alles, ook het licht.',
   'The newest licence in Varn, in a frame older than its pilot. Flies wing for a small share and thanks everyone on the radio.': 'De nieuwste licentie van Varn, in een frame dat ouder is dan de piloot. Vliegt mee voor een klein deel en bedankt iedereen via de radio.',
-  'Keeps turning up on the other side of the contract. Insists it is only ever business. Keeps count anyway.': 'Duikt steeds op aan de andere kant van het contract. Zegt dat het zakelijk is. Telt toch mee.',
+  'Keeps turning up on the other side of the contract. Insists it is only ever business. Keeps count anyway.': 'Duikt steeds op aan de andere kant van het contract. Zegt dat het zakelijk is. Houdt toch de stand bij.',
   'A siege gunner who left Hadron and is officially dead. Fires from somewhere you will not see and invoices promptly.': 'Belegeringsschutter die Hadron verliet en officieel dood is. Vuurt vanaf een plek die jij niet ziet en factureert stipt.',
   'Sixty contracts without a loss, the callsign says. Expensive, careful, and still counting something that is not contracts.': 'Zestig contracten zonder verlies, zegt de roepnaam. Duur, voorzichtig, en telt nog altijd iets wat geen contracten zijn.',
   'The ace of Lumen Systems. Cold, exact, and writes up every fight afterwards. You are in the notes.': 'De aas van Lumen Systems. Koel, precies, en schrijft elk gevecht uit. Jij staat erin.',
   'Flies a scrapyard Mantis for the Undertow and laughs on an open channel. Hits harder than the laugh suggests.': 'Vliegt een Mantis van de schroothoop voor de Undertow en lacht op een open kanaal. Slaat harder dan die lach doet denken.',
   'Chief of security at Hadron. Was here before the company and expects to be here after it.': 'Hoofd beveiliging bij Hadron. Was hier al voor het bedrijf er was en denkt er na het bedrijf nog te zijn.',
-  'The adjuster Meridian sends when a war is over. Polite, immaculate, and already knows what you are worth to the decimal.': 'De schade-expert die Meridian stuurt als een oorlog om is. Beleefd, smetteloos, en weet al tot op de komma wat jij waard bent.',
+  'The adjuster Meridian sends when a war is over. Polite, immaculate, and already knows what you are worth to the decimal.': 'De adjuster die Meridian stuurt als een oorlog om is. Beleefd, smetteloos, en weet al tot op de komma wat jij waard bent.',
   'Stripped the cockpits of downed frames with the pilots still in them. Proud of the helmet collection.': 'Haalde cockpits van gevallen frames leeg met de piloot er nog in. Trots op de helmenverzameling.',
   'Ran a toll on the old mine road and collected it with a mortar.': 'Hief tol op de oude mijnweg en inde die met een mortier.',
   'Contract killer. One shot a job from behind a tower shield, until the job was you.': 'Huurmoordenaar. Een schot per klus van achter een torenschild, tot jij de klus was.',
@@ -427,4 +427,5 @@ export const REFERENCE_NL: Record<string, string> = {
   Wingman: 'Wingman',
   'Licensed pilot': 'Piloot met licentie',
   Wanted: 'Gezocht',
+  'The Undertow': 'De Undertow',
 };

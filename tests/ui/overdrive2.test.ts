@@ -116,7 +116,7 @@ describe('R1 and the Overdrive', () => {
       expect(flow.message).toBe('OVERDRIVE: SCHERPOOG');
       const wind = flowOf(battle([turret], { overdrive: 'second-wind', drive: 100 }));
       wind.onInput('next');
-      expect(wind.message).toBe('Tweede Adem: verbruik eerst je beurt.');
+      expect(wind.message).toBe('Tweede Adem: gebruik eerst je beurt.');
     } finally {
       setLanguage('en');
     }

@@ -299,3 +299,26 @@ describe('an elite under a Shield Drone\'s cover', () => {
     for (const frame of overHeads({})) expect(frame).toEqual(['COVERED']);
   });
 });
+
+describe('an elite, and the count of them', () => {
+  test('a floor lost to an elite does not count as one beaten', () => {
+    const { seed, floor } = find((found) => found.length === 2 && !!found[0].elite);
+    // A frame with next to no armour left: the elite's floor is lost.
+    const carry = { ap: { core: 1, legs: 1, arms: 1, head: 1 }, heat: 0, ammo: {}, restocked: {}, destroyed: false };
+    const { app, store } = room({ seed, floor, carry });
+    select(app, 'door-0');
+    expect(savedGame(store).gauntlet).toMatchObject({ elite: true, fighting: true });
+    finishBattle(app);
+    expect(snap(app).battle).toMatchObject({ outcome: 'defeat' });
+    press(app, 'confirm');
+    expect(savedGame(store).elites ?? 0).toBe(0);
+    expect(savedGame(store).medals).not.toContain('elite');
+  });
+
+  test('a run already holding three relics when the game is opened earns the medal there and then', () => {
+    const saved = { ...strong(done('intro-1', 'intro-2')), gauntlet: { ...startRun(77, GAUNTLET_BUILD), floor: 12, relics: ['rig', 'key', 'ledger'] as RelicId[] } };
+    expect(saved.medals).not.toContain('relics-3');
+    const { store } = inHub(saved);
+    expect(savedGame(store).medals).toContain('relics-3');
+  });
+});

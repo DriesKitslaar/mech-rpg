@@ -369,7 +369,7 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Silent`]: `Stil`,
   [`Broken`]: `Gebroken`,
   [`Burning`]: `Brandend`,
-  [`Hollow`]: `Hol`,
+  [`Empty`]: `Leeg`,
   [`Rusted`]: `Verroest`,
   [`Late`]: `Laat`,
   [`Buried`]: `Begraven`,
@@ -478,5 +478,5 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Among them: an armoured elite, far thicker. Pays extra.`]: `Daartussen: een gepantserde elite, veel dikker. Extra loon.`,
   [`Among them: an overclocked elite, hitting hard. Pays extra.`]: `Daartussen: een overklokte elite, slaat harder. Extra loon.`,
   [`Among them: a swift elite, much harder to hit. Pays extra.`]: `Daartussen: een snelle elite, lastig te raken. Extra loon.`,
-  [`Among them: an elite behind a renewing barrier. Pays extra.`]: `Daartussen: een elite met een verse barriere. Extra loon.`,
+  [`Among them: an elite behind a renewing barrier. Pays extra.`]: `Daartussen: een elite, barriere komt terug. Extra loon.`,
 };

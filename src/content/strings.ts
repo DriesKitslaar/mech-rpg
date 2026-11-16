@@ -92,7 +92,7 @@ export const STRINGS = {
     heading: 'OVERDRIVE', ready: 'R1: OVERDRIVE', used: (name: string) => `OVERDRIVE: ${name.toUpperCase()}`,
     names: { 'second-wind': 'Second Wind', 'iron-skin': 'Iron Skin', deadeye: 'Deadeye' } as Record<string, string>,
     notes: {
-      'second-wind': 'Spend your turn first, then it starts over: energy back, every weapon and action ready again. The heat stays.',
+      'second-wind': 'Spend your turn first, then it starts over: energy back; weapons, Vent and Module ready again. A Boost or Guard still up stays up. So does the heat.',
       'iron-skin': 'Until your next turn you take half damage and cannot be staggered.',
       deadeye: 'Until your turn ends every shot hits and does a quarter more.',
     } as Record<string, string>,

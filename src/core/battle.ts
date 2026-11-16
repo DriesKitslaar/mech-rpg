@@ -935,9 +935,13 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   checkOutcome(state);
 }
 
-/** True once the unit has done anything this turn that can only be done once: fired or charged a weapon, taken a stance, vented, used its module. */
+/**
+ * True once the unit has done something this turn that a turn started over would give back: fired
+ * or charged a weapon, taken a stance, vented, or used a module that has a use left to take again.
+ * A module costs no energy, so one whose last use is gone is nothing to give back.
+ */
 export const turnSpent = (unit: UnitState): boolean =>
-  unit.fired.length > 0 || unit.usedBoost || unit.usedGuard || unit.usedCool || unit.usedModule;
+  unit.fired.length > 0 || unit.usedBoost || unit.usedGuard || unit.usedCool || (unit.usedModule && unit.moduleUses > 0);
 
 /** Fills a unit's Overdrive meter, if it has an Overdrive at all. */
 function addDrive(unit: UnitState, amount: number): void {

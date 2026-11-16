@@ -126,3 +126,17 @@ test('the events the three-act story added each have a sound of their own', () =
   expect(one({ type: 'asset', hp: 4, lost: 2 })).toEqual(['asset']);
   expect(one({ type: 'asset', hp: 4, lost: 0 })).toEqual([]);
 });
+
+test('a relic has a sound of its own: a low bell that opens upward, nothing like a medal\'s three bright notes', () => {
+  const relic = SOUNDS.relic;
+  const medal = SOUNDS.medal;
+  // The bell: the lowest tone first, a fifth and an octave over it, and something brighter to finish.
+  expect(relic.map((tone) => tone.from)).toEqual([147, 220, 294, 587]);
+  expect(relic[0]).toMatchObject({ wave: 'triangle', start: 0 });
+  expect(relic[0].dur).toBeGreaterThanOrEqual(0.5);
+  expect(relic.map((tone) => tone.start)).toEqual([...relic.map((tone) => tone.start)].sort((a, b) => a - b));
+  // The medal starts two octaves and more above it, and is over in a third of the time.
+  expect(medal[0].from).toBeGreaterThan(relic[0].from * 4);
+  expect(relic.map((tone) => tone.from)).not.toEqual(medal.map((tone) => tone.from));
+  expect(Math.max(...relic.map((tone) => tone.start + tone.dur))).toBeGreaterThan(Math.max(...medal.map((tone) => tone.start + tone.dur)));
+});

@@ -3,7 +3,7 @@ import { STRINGS } from './strings';
 
 export const BOARD_TEXT: BoardText = {
   adjectives: [
-    'Cold', 'Silent', 'Broken', 'Burning', 'Hollow', 'Rusted', 'Neon', 'Blind', 'Late', 'Buried', 'Crooked', 'Paper',
+    'Cold', 'Silent', 'Broken', 'Burning', 'Empty', 'Rusted', 'Neon', 'Blind', 'Late', 'Buried', 'Crooked', 'Paper',
     'Black', 'Second', 'Quiet', 'Glass',
   ],
   nouns: [

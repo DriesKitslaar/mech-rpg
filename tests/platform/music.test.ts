@@ -1,6 +1,6 @@
 import { SONGS, type SongName } from '../../src/content/songs';
 import {
-  MASTER_GAIN, MAX_FEEDBACK, MAX_NOTE_GAIN, Music, compileSong, envelopePoints, lineTokens, noteFrequency, noteNumber,
+  MASTER_GAIN, MAX_FEEDBACK, MAX_NOTE_GAIN, Music, RESUMES, compileSong, envelopePoints, lineTokens, noteFrequency, noteNumber,
   notesBetween, parseLine, parseToken, pitchClass, songSeconds, songSteps, stepTime,
   type Song, type Tone, type TrackName,
 } from '../../src/platform/music';
@@ -814,4 +814,53 @@ describe('a battle going badly', () => {
     // The same two seconds without the ticking hold fewer notes.
     expect(after).toBeLessThan(during);
   });
+});
+
+test('the Gauntlet\'s room goes on from where it was left too: it is stood in for a moment between floors, a whole run long', () => {
+  expect(RESUMES).toEqual(['hub', 'gauntlet']);
+  const audio = fakeAudio();
+  const music = new Music(audio.context, { gauntlet: SCALE, descent: DRONE });
+  begin(audio, music, 'gauntlet');
+  // Left for a floor in the middle of its fourth note.
+  run(audio, music, 0.05 + 3 * STEP + 0.02);
+  music.play('descent');
+  run(audio, music, 2);
+  const before = audio.sources.length;
+  music.play('gauntlet');
+  music.update();
+  const now = audio.ctx.currentTime;
+  const back = audio.sources.slice(before);
+  // Back in the room it picks up at the note it was on, not at the first.
+  expect(back.length).toBeGreaterThanOrEqual(1);
+  expect(back.length).toBeLessThanOrEqual(4);
+  expect(Math.abs(back[0].frequency - SCALE_HERTZ[0])).toBeGreaterThan(1);
+  expect(SCALE_HERTZ.slice(3, 6).some((hertz) => Math.abs(hertz - back[0].frequency) < 1e-6)).toBe(true);
+  for (const s of back) expect(s.startsAt).toBeGreaterThanOrEqual(now - 1e-9);
+  // The floors' song starts from the top every time, as a battle's does.
+  const floors = audio.sources.length;
+  music.play('descent');
+  music.update();
+  expect(audio.sources.slice(floors)[0].frequency).toBeCloseTo(noteFrequency('C3')!, 6);
+  expect(audio.problems).toEqual([]);
+});
+
+test('the room\'s song as it is written: 66 to the minute, a drone that steps down in every section and lets go quickly, and a wide G minor a fourth up', () => {
+  const { gauntlet } = SONGS;
+  expect(gauntlet.bpm).toBe(66);
+  const roots = (pattern: string): (number | null)[] => {
+    const tokens = lineTokens(gauntlet.patterns[pattern].lines.drone);
+    return [0, 16, 32, 48].map((at) => { const midi = noteNumber(tokens[at]); return midi === null ? null : midi % 12; });
+  };
+  expect(roots('down1')).toEqual(['D', 'C', 'Bb', 'A'].map(pitchClass));
+  expect(roots('down2')).toEqual(['D', 'C', 'Bb', 'A'].map(pitchClass));
+  expect(roots('deep')).toEqual(['G', 'D', 'Bb', 'A'].map(pitchClass));
+  // Two drone notes a semitone apart follow each other at the foot of each descent: the first is gone
+  // well before the second has swelled, or they would beat against each other for a second and more.
+  const drone = gauntlet.instruments.drone as Tone;
+  expect(drone.release).toBeLessThanOrEqual(0.8);
+  expect(drone.release).toBeLessThan(drone.attack);
+  // The section a fourth up opens on G, D, B flat from the bottom: no third down among the lowest notes.
+  const first = (voice: string): string => lineTokens(gauntlet.patterns.deep.lines[voice])[0];
+  expect([first('pad1'), first('pad2'), first('pad3')]).toEqual(['G2', 'D3', 'Bb3']);
+  expect(noteNumber(first('pad2'))! - noteNumber(first('pad1'))!).toBe(7);
 });

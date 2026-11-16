@@ -69,7 +69,7 @@ const EARNED: Medal[] = [
   { id: 'gauntlet-20', name: 'No Floor', text: 'Clear 20 floors of the Gauntlet in one run.', tier: 3, progress: count(20, (g) => g.gauntletBest ?? 0) },
   { id: 'elite', name: 'Marked Down', text: 'Beat an elite in the Gauntlet.', tier: 1, progress: count(1, (g) => g.elites ?? 0) },
   { id: 'elite-10', name: 'Ten Marks', text: 'Beat 10 elites in the Gauntlet.', tier: 2, progress: count(10, (g) => g.elites ?? 0) },
-  { id: 'relics-3', name: 'Reliquary', text: 'Hold three relics in one run of the Gauntlet.', tier: 2, progress: count(3, (g) => g.relicsHeld ?? 0) },
+  { id: 'relics-3', name: 'Reliquary', text: 'Hold three relics in one run of the Gauntlet.', tier: 2, progress: count(3, (g) => Math.max(g.relicsHeld ?? 0, g.gauntlet?.relics?.length ?? 0)) },
   // The pilot.
   { id: 'level-5', name: 'Licensed', text: 'Reach pilot level 5.', tier: 1, progress: count(5, (g) => levelFor(g.xp)) },
   { id: 'level-10', name: 'Veteran', text: 'Reach pilot level 10.', tier: 2, progress: count(10, (g) => levelFor(g.xp)) },
