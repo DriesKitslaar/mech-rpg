@@ -6,6 +6,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { GarageFlow } from './garageFlow';
 import { drawMech, mechSprites } from './mechView';
+import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { idlePose } from './pose';
 import { partLines } from './partInfo';
 import { COLORS, LINE, drawList, drawPanel, drawRowLight, drawText } from './widgets';
@@ -55,7 +56,13 @@ export class GarageScreen implements Screen {
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
 
     // The mech shows the highlighted part already fitted, so a choice can be judged before confirming.
-    drawMech(ctx, mechSprites(sprites, flow.previewBuild, flow.game.paint), 0, 30, { dx: 0, dy: 0 }, 0, this.app.deps.fast ? {} : idlePose(this.clock));
+    const { fast } = this.app.deps;
+    const calm = this.app.settings.calm === true;
+    const clock = fast ? 0 : this.clock;
+    drawRoom(ctx, 'bg-garage', clock, calm, fast);
+    drawMechShadow(ctx, 0, 30);
+    drawMech(ctx, mechSprites(sprites, flow.previewBuild, flow.game.paint), 0, 30, { dx: 0, dy: 0 }, 0, fast ? {} : idlePose(this.clock));
+    drawRoomSpill(ctx, 'bg-garage', clock, calm);
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, G.heading, 5, 1, { color: COLORS.accent });

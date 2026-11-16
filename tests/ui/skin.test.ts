@@ -1,6 +1,6 @@
 import { MenuList } from '../../src/ui/menuList';
 import {
-  BAR_H, CHAR_W, COLORS, LINE, PANEL_SHADOW, drawList, drawMenu, drawMeter, drawPanel, drawRowLight, drawScrollMenu, drawTabs, shade,
+  BAR_H, CHAR_W, COLORS, LINE, PANEL_SHADOW, drawList, drawMenu, drawMeter, drawOutlined, drawPanel, drawRowLight, drawScrollMenu, drawTabs, shade,
 } from '../../src/ui/widgets';
 import { accept, inHub, press, select, snap } from '../helpers/app';
 import { record, type Drawn, type Filled, type Washed } from '../helpers/canvas';
@@ -452,5 +452,20 @@ describe('what is written at the right of a row', () => {
       expect(note.text).toBe('after Hot Barrel');
       expect(note.left - name.right, label).toBeGreaterThan(CHAR_W);
     }
+  });
+});
+
+describe('words over a picture', () => {
+  test('are written once in a dark colour a pixel off in each of eight directions, and then themselves on top', () => {
+    const page = record((ctx) => drawOutlined(ctx, 'Hold fast', 100, 40, { align: 'center', color: '#e4e2f0', size: 12 }));
+    expect(page.texts).toHaveLength(9);
+    expect(page.texts.at(-1)).toMatchObject({ text: 'Hold fast', x: 100, y: 40, color: '#e4e2f0', align: 'center', size: 12 });
+    const round = page.texts.slice(0, 8);
+    expect(round.map((t) => [t.x - 100, t.y - 40])).toEqual([[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]);
+    for (const t of round) expect(t).toMatchObject({ text: 'Hold fast', color: '#07061a', align: 'center', size: 12 });
+    // The edge can be given another colour, and the words keep whatever else was asked.
+    const other = record((ctx) => drawOutlined(ctx, 'x', 5, 5, { size: 16 }, '#102030'));
+    expect(other.texts[0]).toMatchObject({ color: '#102030', size: 16 });
+    expect(other.texts.at(-1)).toMatchObject({ color: COLORS.text, size: 16 });
   });
 });

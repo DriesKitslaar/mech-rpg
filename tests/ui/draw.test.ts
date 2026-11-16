@@ -14,6 +14,7 @@ import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/stora
 import type { InputAction } from '../../src/platform/input';
 import { App, SHUTTER_MS } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
+import { record } from '../helpers/canvas';
 
 /** A canvas context that accepts anything and remembers what was called. */
 function recorder() {
@@ -522,27 +523,36 @@ describe('the screens the three-act story added', () => {
     expect(styles.some((style) => style.startsWith('rgba(70, 68, 84'))).toBe(true);
   });
 
-  test('a new screen comes up out of black, and a battle from behind a shutter', () => {
-    const { ctx, calls } = recorder();
+  test('a new screen comes out from behind a blind, and a battle from between two doors', () => {
     const app = new App({ catalog: CATALOG, save: new SaveFile(store(done('intro-1')), CATALOG), sprites, fast: false, seed: 3 });
     press(app, 'confirm');
-    const veil = () => { calls.length = 0; app.draw(ctx); return calls.filter((c) => c.name === 'fillRect').at(-1)!.args; };
-    // The last thing drawn is the veil over the whole screen.
-    expect(veil()).toEqual([0, 0, 310, 270]);
+    /** The dark of a blind or of the doors, as it is drawn over the screen. */
+    const dark = () => record((ctx) => app.draw(ctx)).rects.filter((r) => r.color === '#04040c');
+    const covered = (): number => dark().reduce((sum, r) => sum + r.w * r.h, 0);
+    // The blind is over the whole of the new screen, then over some of it, and then it is gone.
+    expect(covered()).toBe(310 * 270);
+    app.update(100);
+    const half = covered();
+    expect(half).toBeGreaterThan(310 * 270 * 0.3);
+    expect(half).toBeLessThan(310 * 270 * 0.7);
     app.update(400);
-    expect(veil()).not.toEqual([0, 0, 310, 270]);
+    expect(covered()).toBe(0);
     select(app, 'contracts');
     select(app, 'patrol');
     app.update(6000);
     select(app, 'accept');
-    // Two leaves, top and bottom, drawing back.
-    calls.length = 0;
+    // Two doors, top and bottom, drawing back.
     app.update(16);
-    app.draw(ctx);
-    const leaves = calls.filter((c) => c.name === 'fillRect').slice(-2).map((c) => c.args);
-    expect(leaves[0][1]).toBe(0);
-    expect(leaves[1][1]).toBe(270 - (leaves[1][3] as number));
-    expect(leaves[0][3]).toBeGreaterThan(100);
+    const doors = dark();
+    expect(doors).toHaveLength(2);
+    expect(doors[0]).toMatchObject({ x: 0, y: 0, w: 310 });
+    expect(doors[1]).toMatchObject({ x: 0, y: 270 - doors[1].h, w: 310 });
+    expect(doors[0].h).toBeGreaterThan(100);
+    // What is dark is the last thing laid over the screen: nothing of the battle is drawn over the doors but their own edges.
+    const page = record((ctx) => app.draw(ctx));
+    const after = page.rects.slice(page.rects.indexOf(page.rects.filter((r) => r.color === '#04040c').at(-1)!) + 1);
+    expect(after.length).toBeLessThanOrEqual(4);
+    for (const line of after) expect(line.h).toBe(1);
   });
 
   test('nothing is pressed on a battle the shutter still hides: the banner is there when it has opened', () => {

@@ -6,6 +6,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
+import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { idlePose } from './pose';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawText, wrap } from './widgets';
 
@@ -86,11 +87,17 @@ export class ArenaScreen implements Screen {
     const cup = this.cup;
     // For a cup, the last of its three: the one the purse has to be taken from.
     const shown = o ? ARENA_ENEMIES[o.enemy] : cup ? ARENA_ENEMIES[ARENA[cup.ranks[2] - 1].enemy] : mirrorEnemy(game, A.mirror.name);
+    const { fast } = this.app.deps;
+    const calm = this.app.settings.calm === true;
+    const clock = fast ? 0 : this.clock;
+    drawRoom(ctx, 'bg-arena', clock, calm, fast);
     ctx.save();
     ctx.translate(LOGICAL_W + 6, 18);
     ctx.scale(-1, 1);
-    drawMech(ctx, mechSprites(sprites, shown.build, shown.paint), 0, 0, { dx: 0, dy: 0 }, 0, this.app.deps.fast ? {} : idlePose(this.clock));
+    drawMechShadow(ctx, 0, 0);
+    drawMech(ctx, mechSprites(sprites, shown.build, shown.paint), 0, 0, { dx: 0, dy: 0 }, 0, fast ? {} : idlePose(this.clock));
     ctx.restore();
+    drawRoomSpill(ctx, 'bg-arena', clock, calm);
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, A.heading, 5, 1, { color: COLORS.accent });

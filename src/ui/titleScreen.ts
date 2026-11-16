@@ -5,12 +5,20 @@ import type { App, Screen, ScreenView, SlotView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList, type ListItem } from './menuList';
 import { playTime } from './record';
-import { drawWeather } from './weather';
-import { COLORS, drawList, drawPanel, drawText } from './widgets';
+import { drawGlow } from './light';
+import { LOGO, drawLogo, logoGleam, logoLevel, logoLights } from './logo';
+import { drawSearchlights, drawTitleScene } from './titleScene';
+import { drawWeather, drawWeatherExtras } from './weather';
+import { COLORS, drawList, drawOutlined, drawPanel, drawText } from './widgets';
 
 const T = STRINGS.titleScreen;
 type Mode = 'main' | 'new' | 'load' | 'ask';
 const slotId = (slot: number): string => `slot-${slot + 1}`;
+/** Where the sign hangs: in the middle of the sky. */
+export const SIGN = { x: Math.round((LOGICAL_W - LOGO.w) / 2), y: 16 };
+/** Where the menu's box starts, and where it ends at the bottom whatever it holds. */
+export const MENU_X = 10;
+export const MENU_BOTTOM = 262;
 
 /**
  * Continue, a new game, another of the kept games, or the options. Three games are kept; a new
@@ -129,6 +137,9 @@ export class TitleScreen implements Screen {
 
   draw(ctx: CanvasRenderingContext2D): void {
     const fast = this.app.deps.fast;
+    const calm = this.app.settings.calm === true;
+    // A hurried game has the picture standing still: its lights where they are at the start, no rain, the sign on.
+    const clock = fast ? 0 : this.clock;
     // Varn in the rain, drifting very slightly, as if seen from a hovering frame.
     const bg = this.app.deps.sprites.get('still-varn', { w: LOGICAL_W, h: LOGICAL_H, label: '' });
     const drift = fast ? 0 : Math.round(Math.sin(this.clock / 2600) * 3);
@@ -137,34 +148,37 @@ export class TitleScreen implements Screen {
     // Pixel for pixel: once as it is, and once more a few pixels up or down, so the drift never shows an edge.
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
     if (drift !== 0) ctx.drawImage(bg.image, 0, drift, LOGICAL_W, LOGICAL_H);
-    ctx.fillStyle = 'rgba(8, 8, 20, 0.4)';
-    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    if (!fast) drawWeather(ctx, 'rain', this.clock, LOGICAL_W, LOGICAL_H);
-
-    drawText(ctx, STRINGS.title, LOGICAL_W / 2 + 2, 62, { size: 64, align: 'center', color: '#3b1d5a' });
-    drawText(ctx, STRINGS.title, LOGICAL_W / 2, 60, { size: 64, align: 'center', color: COLORS.accent });
+    // The picture's lights, its searchlights and its mist belong to it, and drift with it.
+    ctx.save();
+    ctx.translate(0, drift);
+    drawTitleScene(ctx, clock, calm);
+    ctx.restore();
     if (!fast) {
-      // A glint crosses the title every few seconds: the same letters, lighter, seen through a narrow moving slit.
-      const sweep = (this.clock % 4200) / 900;
-      if (sweep < 1) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(Math.round(40 + sweep * 240), 56, 12, 62);
-        ctx.clip();
-        drawText(ctx, STRINGS.title, LOGICAL_W / 2, 60, { size: 64, align: 'center', color: '#ffe3f2' });
-        ctx.restore();
-      }
+      drawWeather(ctx, 'rain', this.clock, LOGICAL_W, LOGICAL_H);
+      drawWeatherExtras(ctx, 'rain', this.clock, LOGICAL_W, LOGICAL_H, calm);
     }
-    drawText(ctx, T.tagline, LOGICAL_W / 2, 122, { align: 'center', color: COLORS.text });
 
+    // The sign: it comes on with a flicker, throws its own light, and a gleam crosses it now and then.
+    const level = fast ? 1 : logoLevel(this.clock, calm);
+    for (const glow of logoLights(SIGN.x, SIGN.y, level)) drawGlow(ctx, glow, calm ? 0.5 : 1);
+    drawLogo(ctx, SIGN.x, SIGN.y, { level, gleam: fast ? null : logoGleam(this.clock) });
+    ctx.save();
+    ctx.translate(0, drift);
+    drawSearchlights(ctx, clock, calm);
+    ctx.restore();
+    drawOutlined(ctx, T.tagline, LOGICAL_W / 2, SIGN.y + LOGO.h + 5, { align: 'center', color: COLORS.text });
+
+    // The menu stands at the lower left, clear of the machine on the roof that the picture is about.
     const picking = this.mode === 'new' || this.mode === 'load';
     const w = picking ? 230 : 190;
-    const x = (LOGICAL_W - w) / 2;
+    const x = MENU_X;
     const notice = this.notice();
-    drawPanel(ctx, x, 156, w, notice ? 70 : 56);
-    let y = 162;
+    const h = notice ? 70 : 56;
+    const top = MENU_BOTTOM - h;
+    drawPanel(ctx, x, top, w, h);
+    let y = top + 6;
     if (notice) {
-      drawText(ctx, notice, LOGICAL_W / 2, y, { align: 'center', color: this.mode === 'ask' || this.mode === 'main' ? COLORS.danger : COLORS.dim });
+      drawText(ctx, notice, x + w / 2, y, { align: 'center', color: this.mode === 'ask' || this.mode === 'main' ? COLORS.danger : COLORS.dim });
       y += 14;
     }
     if (picking) drawList(ctx, this.list, x + 10, y, w - 26, 3);

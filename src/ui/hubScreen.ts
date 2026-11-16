@@ -8,6 +8,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
+import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { idlePose } from './pose';
 import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
@@ -134,7 +135,14 @@ export class HubScreen implements Screen {
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
 
-    drawMech(ctx, mechSprites(sprites, game.build, game.paint), -8, 78, { dx: 0, dy: 0 }, 0, this.app.deps.fast ? {} : idlePose(this.clock));
+    // The hangar is lit and somebody is at work in it; the mech stands in that light, on its own shadow.
+    const { fast } = this.app.deps;
+    const calm = this.app.settings.calm === true;
+    const clock = fast ? 0 : this.clock;
+    drawRoom(ctx, 'bg-garage', clock, calm, fast);
+    drawMechShadow(ctx, -8, 78);
+    drawMech(ctx, mechSprites(sprites, game.build, game.paint), -8, 78, { dx: 0, dy: 0 }, 0, fast ? {} : idlePose(this.clock));
+    drawRoomSpill(ctx, 'bg-garage', clock, calm);
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, H.heading, 5, 1, { color: COLORS.accent });

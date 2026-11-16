@@ -1,5 +1,5 @@
 import {
-  FIELD_LIGHT, FIRE, MAX_LIGHTS, brightness, chosenLights, disc, discRows, drawBeam, drawGlow, drawGlows, drawShadow, fireColor, pixelLine, rgb, ringOf, type Glow,
+  FIELD_LIGHT, FIRE, MAX_LIGHTS, brightness, chosenLights, disc, discRows, drawBeam, drawCone, drawGlow, drawGlows, drawShadow, fireColor, pixelLine, rgb, ringOf, type Glow,
 } from '../../src/ui/light';
 import { record } from '../helpers/canvas';
 
@@ -161,5 +161,48 @@ describe('solid light, on the pixel grid', () => {
     const light = (hex: string): number => rgb(hex).reduce((sum, c) => sum + c, 0);
     for (let i = 1; i < FIRE.length; i++) expect(light(FIRE[i]), FIRE[i]).toBeLessThan(light(FIRE[i - 1]));
     expect([0, 0.2, 0.4, 0.6, 0.8, 0.99].map(fireColor)).toEqual([FIRE[0], FIRE[1], FIRE[2], FIRE[4], FIRE[5], FIRE[6]]);
+  });
+});
+
+describe('a cone of light', () => {
+  const from = { x: 100, y: 200 };
+  const to = { x: 100, y: 50 };
+
+  test('is a point at its lamp and as wide as asked at its end, in two layers, the inner under half as wide', () => {
+    const page = record((ctx) => {
+      ctx.globalCompositeOperation = 'source-over';
+      drawCone(ctx, from, to, 30, '#80c0ff', 0.2);
+      expect(ctx.globalCompositeOperation).toBe('source-over');
+    });
+    expect(page.shapes).toHaveLength(2);
+    const [outer, inner] = page.shapes;
+    // Straight up: the far corners are fifteen either side of the middle, the near ones half a pixel.
+    expect(outer.points.map((p) => [Math.round(p.x * 10) / 10, p.y])).toEqual([[99.5, 200], [85, 50], [115, 50], [100.5, 200]]);
+    expect(inner.points.map((p) => [Math.round(p.x * 100) / 100, p.y])).toEqual([[99.5, 200], [93.25, 50], [106.75, 50], [100.5, 200]]);
+    for (const shape of page.shapes) {
+      expect(shape.blend).toBe('lighter');
+      expect(shape.stops).toEqual([[0, 'rgba(128, 192, 255, 0.200)'], [1, 'rgba(128, 192, 255, 0)']]);
+    }
+    expect(page.rects).toEqual([]);
+    expect(page.glows).toEqual([]);
+  });
+
+  test('is never brighter than full, and nothing at all when it has no light, no width or no length', () => {
+    expect(record((ctx) => drawCone(ctx, from, to, 30, '#80c0ff', 4)).shapes[0].stops[0][1]).toBe('rgba(128, 192, 255, 1.000)');
+    expect(record((ctx) => drawCone(ctx, from, to, 30, '#80c0ff', 0)).shapes).toEqual([]);
+    expect(record((ctx) => drawCone(ctx, from, to, 30, '#80c0ff', 0.005)).shapes).toEqual([]);
+    expect(record((ctx) => drawCone(ctx, from, to, 0, '#80c0ff', 0.2)).shapes).toEqual([]);
+    expect(record((ctx) => drawCone(ctx, from, from, 30, '#80c0ff', 0.2)).shapes).toEqual([]);
+    expect(() => drawCone(standIn(), from, to, 30, '#80c0ff', 0.2)).not.toThrow();
+  });
+
+  test('leans with the way it points: its end is always square across it', () => {
+    const page = record((ctx) => drawCone(ctx, { x: 0, y: 0 }, { x: 30, y: 40 }, 20, '#ffffff', 0.5));
+    const [, b, c] = page.shapes[0].points;
+    // Fifty long; across it is the direction (-4, 3) / 5.
+    expect(Math.hypot(b.x - c.x, b.y - c.y)).toBeCloseTo(20, 6);
+    expect((b.x - c.x) * 30 + (b.y - c.y) * 40).toBeCloseTo(0, 6);
+    expect((b.x + c.x) / 2).toBeCloseTo(30, 6);
+    expect((b.y + c.y) / 2).toBeCloseTo(40, 6);
   });
 });

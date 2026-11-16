@@ -96,6 +96,38 @@ export function drawBeam(ctx: CanvasRenderingContext2D, from: Pt, to: Pt, width:
   ctx.globalCompositeOperation = before;
 }
 
+/**
+ * A cone of light from a lamp: a point where it starts, `width` wide where it ends, and fading
+ * away along its length. Added to what is there, in two layers so that its sides are soft.
+ */
+export function drawCone(ctx: CanvasRenderingContext2D, from: Pt, to: Pt, width: number, color: string, alpha: number): void {
+  if (alpha <= 0.01 || width <= 0) return;
+  const length = Math.hypot(to.x - from.x, to.y - from.y);
+  if (length <= 0) return;
+  const fade = ctx.createLinearGradient?.(from.x, from.y, to.x, to.y) as CanvasGradient | undefined;
+  if (!fade || typeof fade.addColorStop !== 'function') return;
+  const [r, g, b] = rgb(color);
+  fade.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${Math.min(1, alpha).toFixed(3)})`);
+  fade.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+  // Across the cone, at right angles to the way it points.
+  const nx = -(to.y - from.y) / length;
+  const ny = (to.x - from.x) / length;
+  const before = ctx.globalCompositeOperation;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = fade;
+  for (const share of [1, 0.45]) {
+    const half = (width * share) / 2;
+    ctx.beginPath();
+    ctx.moveTo(from.x - nx * 0.5, from.y - ny * 0.5);
+    ctx.lineTo(to.x - nx * half, to.y - ny * half);
+    ctx.lineTo(to.x + nx * half, to.y + ny * half);
+    ctx.lineTo(from.x + nx * 0.5, from.y + ny * 0.5);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = before;
+}
+
 /** The rows of a filled circle on the pixel grid: for each row its distance from the middle and half its width. */
 export function discRows(r: number): { dy: number; half: number }[] {
   const radius = Math.max(0, Math.round(r));

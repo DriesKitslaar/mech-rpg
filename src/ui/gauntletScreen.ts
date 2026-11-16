@@ -7,6 +7,7 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { idlePose } from './pose';
 import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
+import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { COLORS, LINE, drawList, drawPanel, drawText, wrap } from './widgets';
 
 const G = STRINGS.gauntlet;
@@ -153,8 +154,16 @@ export class GauntletScreen implements Screen {
     drawText(ctx, G.heading, 5, 2, { color: COLORS.accent });
     drawText(ctx, G.best(this.app.game?.gauntletBest ?? 0), LOGICAL_W - 5, 2, { align: 'right', color: COLORS.dim });
 
-    // The frame the run is flown in, on the left.
-    if (run) drawMech(ctx, mechSprites(sprites, run.build), 0, 30, { dx: 0, dy: 0 }, 0, this.app.deps.fast ? {} : idlePose(this.clock));
+    // The vault's own lights, and the frame the run is flown in standing in them, on the left.
+    const { fast } = this.app.deps;
+    const calm = this.app.settings.calm === true;
+    const clock = fast ? 0 : this.clock;
+    drawRoom(ctx, 'bg-vault', clock, calm, fast);
+    if (run) {
+      drawMechShadow(ctx, 0, 30);
+      drawMech(ctx, mechSprites(sprites, run.build), 0, 30, { dx: 0, dy: 0 }, 0, fast ? {} : idlePose(this.clock));
+    }
+    drawRoomSpill(ctx, 'bg-vault', clock, calm);
 
     const x = 150;
     const w = LOGICAL_W - x - 4;

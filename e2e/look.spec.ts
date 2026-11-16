@@ -139,3 +139,35 @@ test('the look of a place: its own lights, its haze and its weather, on three ki
   }
   expect(errors).toEqual([]);
 });
+
+/** Photographs the whole screen, a frame every `step` milliseconds for `ms`: those asked for are kept, all of them with LOOK_FRAMES. */
+async function watch(page: Page, tag: string, ms: number, step: number, keep: Record<number, string> = {}): Promise<void> {
+  for (let t = step; t <= ms; t += step) {
+    await adv(page, step);
+    if (FRAMES) await page.screenshot({ path: `${FRAMES}/${tag}-${String(t).padStart(4, '0')}.png` });
+    if (keep[t]) await page.screenshot({ path: shot(keep[t]) });
+  }
+}
+
+test('the look of the title and the hangar: the sign comes on, the picture is alive, and the hangar is lit', async ({ page }) => {
+  test.setTimeout(290000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.addInitScript((save) => {
+    if (!window.localStorage.getItem('ironwage-save')) window.localStorage.setItem('ironwage-save', save);
+  }, JSON.stringify(gunner()));
+  await page.goto('/?seed=7&step=1');
+  await page.waitForFunction(() => (window as any).__game?.snapshot().screen === 'title');
+  // The sign coming on: dark, a first strike, dark again, and then lit for good.
+  await watch(page, 'title-on', 1400, 20, { 320: 'look-title-strike', 440: 'look-title-dark' });
+  await watch(page, 'title', 3000, 200, { 1800: 'look-title' });
+  // Long enough for a gleam, the searchlights' swing and a stroke of lightning.
+  if (FRAMES) await watch(page, 'title-long', 16000, 100);
+  await pick(page, 'continue');
+  await until(page, (s) => s.screen === 'hub');
+  await watch(page, 'hub', 2400, 200, { 1200: 'look-hub' });
+  await pick(page, 'garage');
+  await until(page, (s) => s.screen === 'garage');
+  await watch(page, 'garage', 1200, 200, { 1200: 'look-garage' });
+  expect(errors).toEqual([]);
+});
