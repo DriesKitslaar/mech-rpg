@@ -9,7 +9,7 @@ import { drawGlow } from './light';
 import { LOGO, drawLogo, logoGleam, logoLevel, logoLights } from './logo';
 import { drawSearchlights, drawTitleScene } from './titleScene';
 import { drawWeather, drawWeatherExtras } from './weather';
-import { COLORS, drawList, drawOutlined, drawPanel, drawText } from './widgets';
+import { COLORS, LINE, drawList, drawOutlined, drawPanel, drawRowLight, drawText } from './widgets';
 
 const T = STRINGS.titleScreen;
 type Mode = 'main' | 'new' | 'load' | 'ask';
@@ -19,6 +19,10 @@ export const SIGN = { x: Math.round((LOGICAL_W - LOGO.w) / 2), y: 16 };
 /** Where the menu's box starts, and where it ends at the bottom whatever it holds. */
 export const MENU_X = 10;
 export const MENU_BOTTOM = 262;
+/** How wide the menu's box is: it ends left of the machine on the roof, which stands from 205 across. */
+export const MENU_W = 190;
+/** How tall a slot is in the list of the three kept games. */
+const SLOT_H = 2 * LINE;
 
 /**
  * Continue, a new game, another of the kept games, or the options. Three games are kept; a new
@@ -168,12 +172,13 @@ export class TitleScreen implements Screen {
     ctx.restore();
     drawOutlined(ctx, T.tagline, LOGICAL_W / 2, SIGN.y + LOGO.h + 5, { align: 'center', color: COLORS.text });
 
-    // The menu stands at the lower left, clear of the machine on the roof that the picture is about.
+    // The menu stands at the lower left, clear of the machine on the roof that the picture is about:
+    // the same width whatever it holds, and taller when it holds the three slots.
     const picking = this.mode === 'new' || this.mode === 'load';
-    const w = picking ? 230 : 190;
+    const w = MENU_W;
     const x = MENU_X;
     const notice = this.notice();
-    const h = notice ? 70 : 56;
+    const h = picking ? 26 + this.list.items.length * SLOT_H : notice ? 70 : 56;
     const top = MENU_BOTTOM - h;
     drawPanel(ctx, x, top, w, h);
     let y = top + 6;
@@ -181,8 +186,22 @@ export class TitleScreen implements Screen {
       drawText(ctx, notice, x + w / 2, y, { align: 'center', color: this.mode === 'ask' || this.mode === 'main' ? COLORS.danger : COLORS.dim });
       y += 14;
     }
-    if (picking) drawList(ctx, this.list, x + 10, y, w - 26, 3);
+    if (picking) this.drawSlots(ctx, x, y, w);
     // Wide enough for the longest callsign to stand clear of Continue.
     else drawList(ctx, this.list, x + 40, y, 110, 4);
+  }
+
+  /** The three slots: each takes two lines, who is kept there on the first and how far along they are under it. */
+  private drawSlots(ctx: CanvasRenderingContext2D, x: number, y: number, w: number): void {
+    this.list.items.forEach((item, i) => {
+      const top = y + i * SLOT_H;
+      const selected = i === this.list.cursor;
+      if (selected) {
+        drawRowLight(ctx, x + 7, top + 1, w - 14, SLOT_H - 1);
+        drawText(ctx, '>', x + 10, top, { color: COLORS.accent });
+      }
+      drawText(ctx, item.label, x + 18, top, { color: !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text });
+      if (item.note) drawText(ctx, item.note, x + 24, top + LINE - 1, { color: COLORS.dim, size: 10 });
+    });
   }
 }

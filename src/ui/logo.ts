@@ -192,8 +192,27 @@ export function faceColor(row: number, steel: boolean, lit: boolean): string {
   return lit ? color : mix(color, UNLIT, 0.78);
 }
 
+/** The colours of the sign, row by row: its faces, the light on their upper edges, the shade on their lower ones, and its depth. */
+interface Tones { face: string[]; top: string[]; bottom: string[] }
+interface Palette { steel: Tones; neon: Tones; depth: string[] }
+function palette(lit: boolean): Palette {
+  const tones = (steel: boolean): Tones => {
+    const face = Array.from({ length: LOGO.h }, (_, row) => faceColor(row, steel, lit));
+    return {
+      face,
+      // Light catches every upper edge, and every lower edge is in shade.
+      top: face.map((color) => mix(color, lit ? '#ffffff' : '#5a5890', lit ? 0.6 : 0.3)),
+      bottom: face.map((color) => mix(color, '#0a0820', 0.4)),
+    };
+  };
+  return { steel: tones(true), neon: tones(false), depth: DEPTHS.map((color) => (lit ? color : mix(color, UNLIT, 0.6))) };
+}
+/** Worked out once, unlit and lit: painting the sign is then nothing but filling its runs. */
+const PALETTES: [Palette, Palette] = [palette(false), palette(true)];
+
 /** Paints the sign with its top left corner at `x`, `y`: the line, the depth, the faces and the light on their edges. */
 function paint(ctx: CanvasRenderingContext2D, x: number, y: number, lit: boolean): void {
+  const colors = PALETTES[lit ? 1 : 0];
   const fill = (rows: Run[][], color: (row: number, run: Run) => string): void => {
     rows.forEach((runs, row) => {
       for (const run of runs) {
@@ -202,33 +221,40 @@ function paint(ctx: CanvasRenderingContext2D, x: number, y: number, lit: boolean
       }
     });
   };
+  const side = (run: Run): Tones => (run.x < LOGO.split ? colors.steel : colors.neon);
   fill(LOGO.edge, () => LINE);
-  LOGO.depth.forEach((layer, k) => fill(layer, () => (lit ? DEPTHS[k] : mix(DEPTHS[k], UNLIT, 0.6))));
-  const steel = (run: Run): boolean => run.x < LOGO.split;
-  fill(LOGO.face, (row, run) => faceColor(row, steel(run), lit));
-  // Light catches every upper edge, and every lower edge is in shade.
-  fill(LOGO.top, (row, run) => mix(faceColor(row, steel(run), lit), lit ? '#ffffff' : '#5a5890', lit ? 0.6 : 0.3));
-  fill(LOGO.bottom, (row, run) => mix(faceColor(row, steel(run), lit), '#0a0820', 0.4));
+  LOGO.depth.forEach((layer, k) => fill(layer, () => colors.depth[k]));
+  fill(LOGO.face, (row, run) => side(run).face[row]);
+  fill(LOGO.top, (row, run) => side(run).top[row]);
+  fill(LOGO.bottom, (row, run) => side(run).bottom[row]);
 }
 
-/** The sign painted once, lit and unlit, where the platform has a canvas to keep it on. */
-const kept: (CanvasImageSource | null | undefined)[] = [undefined, undefined];
+/** How often a canvas to keep the sign on is asked for before the sign is painted afresh every frame for good. */
+export const KEEP_TRIES = 3;
+/** The sign painted once, lit and unlit, where the platform has a canvas to keep it on; and how often that was tried in vain. */
+const kept: (CanvasImageSource | null)[] = [null, null];
+const tried = [0, 0];
 function keptSign(lit: boolean): CanvasImageSource | null {
   const i = lit ? 1 : 0;
-  if (kept[i] !== undefined) return kept[i]!;
-  kept[i] = null;
+  if (kept[i] || tried[i] >= KEEP_TRIES) return kept[i];
+  tried[i]++;
   const doc = (globalThis as { document?: Document }).document;
   const canvas = doc?.createElement?.('canvas');
-  if (canvas) {
-    canvas.width = LOGO.w;
-    canvas.height = LOGO.h;
-    const own = canvas.getContext?.('2d');
-    if (own) {
-      paint(own, 0, 0, lit);
-      kept[i] = canvas;
-    }
-  }
-  return kept[i]!;
+  if (!canvas) return null;
+  canvas.width = LOGO.w;
+  canvas.height = LOGO.h;
+  // A canvas that gives no context this time may give one the next: it is asked for again, a few times.
+  const own = canvas.getContext?.('2d');
+  if (!own) return null;
+  paint(own, 0, 0, lit);
+  kept[i] = canvas;
+  return canvas;
+}
+
+/** Forgets the kept sign, so that the next drawing asks for a canvas again. For tests. */
+export function forgetSign(): void {
+  kept[0] = kept[1] = null;
+  tried[0] = tried[1] = 0;
 }
 
 /** How long the sign takes to come on, and how often and for how long a gleam crosses it once it is. */

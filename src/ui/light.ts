@@ -44,17 +44,20 @@ export function drawGlow(ctx: CanvasRenderingContext2D, glow: Glow, strength = 1
   ctx.globalCompositeOperation = before;
 }
 
-/** The lights that are drawn of those there are: the brightest, and in a calm picture none that covers the field. */
-export function chosenLights(glows: readonly Glow[], calm = false): Glow[] {
+/**
+ * The lights that are drawn of those there are: the brightest, and in a calm picture none that
+ * covers the field. `most` is how many there is room for, where some of the room is taken already.
+ */
+export function chosenLights(glows: readonly Glow[], calm = false, most = MAX_LIGHTS): Glow[] {
   return glows
     .filter((glow) => glow.alpha > 0.01 && glow.r > 0 && !(calm && glow.r > FIELD_LIGHT))
     .sort((a, b) => brightness(b) - brightness(a))
-    .slice(0, MAX_LIGHTS);
+    .slice(0, Math.max(0, Math.min(MAX_LIGHTS, most)));
 }
 
 /** Adds the lights of a moment. A calm picture has them at half strength and none that covers the field. */
-export function drawGlows(ctx: CanvasRenderingContext2D, glows: readonly Glow[], calm = false): void {
-  for (const glow of chosenLights(glows, calm)) drawGlow(ctx, glow, calm ? 0.5 : 1);
+export function drawGlows(ctx: CanvasRenderingContext2D, glows: readonly Glow[], calm = false, most = MAX_LIGHTS): void {
+  for (const glow of chosenLights(glows, calm, most)) drawGlow(ctx, glow, calm ? 0.5 : 1);
 }
 
 /** A soft shadow on the ground: an ellipse `w` wide and `h` high around its middle, darkest there. */

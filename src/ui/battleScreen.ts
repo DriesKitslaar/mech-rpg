@@ -16,9 +16,9 @@ import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
-import { disc, drawGlow, drawGlows, drawShadow, type Glow, type Pt } from './light';
+import { MAX_LIGHTS, disc, drawGlow, drawGlows, drawShadow, type Glow, type Pt } from './light';
 import {
-  CUT_IN_MS, FINISH_HOLD_MS, FINISH_MS, FINISH_SLOW, drawCutIn, drawDefeat, drawLetterbox, drawVictory, focusOn, letterbox, lookClose,
+  CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, drawCutIn, drawDefeat, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
 } from './cinema';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
@@ -82,6 +82,10 @@ export const MARK_TURN_MS = 1600;
 
 /** How long the ring of an Overdrive takes to run out. */
 const SURGE_MS = 420;
+/** With battles played faster the Overdrive's band is up for less, but no less than this many times less. */
+const CUT_IN_HURRY = 1.5;
+/** How near to one another two wrecks count as lying in the same place. */
+const WRECK_ROOM = 20;
 
 /** A circle one pixel thick, drawn pixel by pixel so that it keeps to the grid like everything else on the field. */
 function drawRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, color: string): void {
@@ -112,11 +116,17 @@ export class BattleScreen {
   private surge: { x: number; y: number; ms: number } | null = null;
   /** The band an Overdrive goes off behind: which one, and how long it has been up. */
   private cutIn: { name: string; ms: number } | null = null;
-  /** The last machine of the battle going down, slowly and from close by: what the picture is drawn round, and for how long it has been. */
-  private finish: { at: Pt; ms: number } | null = null;
+  /**
+   * The last machine of the battle going down, slowly and from close by: what the picture is drawn
+   * round, how long it has been by the player's clock and by the field's own, and whether its last
+   * blast has been heard.
+   */
+  private finish: { at: Pt; real: number; field: number; heard: boolean } | null = null;
   /** How long the battle has been over. */
   private resultMs = 0;
-  /** Where machines went up, and when: what is left of them smokes for the rest of the battle. */
+  /** How many lights this frame has given to what stands on the field (what flies burns, what is hot glows): the effects get what room is left. */
+  private standing = 0;
+  /** Where machines went up, and when: what is left of them smokes for the rest of the battle. One to a place. */
   private wrecks: { at: Pt; since: number }[] = [];
   private fx = new BattleFx(this.scene());
   /** What moves each unit's layers: one puppet a unit, made when it is first drawn. */
@@ -237,9 +247,26 @@ export class BattleScreen {
     // The hold is counted in real time, so it is as long with fast battles on as without.
     // While the last machine goes down everything on the field moves at half its speed.
     const moved = this.hitStop.pass(realMs) * (this.opts.speed ?? 1) * (this.finish ? FINISH_SLOW : 1);
-    if (this.cutIn && (this.cutIn.ms += dtMs) >= CUT_IN_MS) this.cutIn = null;
-    if (this.finish && (this.finish.ms += dtMs) >= FINISH_MS) this.finish = null;
-    if (this.flow.phase === 'result') this.resultMs += realMs;
+    // The band is there to be read: with battles played faster it is up for less, but never for a blink.
+    if (this.cutIn && (this.cutIn.ms += realMs * Math.min(this.opts.speed ?? 1, CUT_IN_HURRY)) >= CUT_IN_MS) this.cutIn = null;
+    if (this.finish) {
+      // The close look is counted on the field's own clock, so that whatever the pace, the machine's
+      // last blast is in it; and that blast is heard at the moment it is seen.
+      const before = this.finish.field;
+      this.finish.real += realMs;
+      this.finish.field += moved;
+      if (!this.finish.heard && before < WRECK_AT && this.finish.field >= WRECK_AT) {
+        this.finish.heard = true;
+        this.opts.sfx?.play('unitDestroyed');
+      }
+      if (this.finish.field >= FINISH_FIELD_MS) this.finish = null;
+    }
+    // A battle that is over is not staged any more: whatever was up comes down with the result.
+    if (this.flow.phase === 'result') {
+      this.resultMs += realMs;
+      this.finish = null;
+      this.cutIn = null;
+    }
     this.fx.update(moved);
     for (const puppet of this.puppets.values()) puppet.update(moved);
     this.particles.update(moved);
@@ -306,12 +333,14 @@ export class BattleScreen {
       if (event.type === 'launch') {
         this.shownAp.adopt(this.flow.state.units);
         this.arrived.add(event.spawned);
+        // Whatever was left of the machine that stood there before is gone: something else stands there now.
+        this.clearWreck(this.wreckSpot(event.spawned));
       }
       this.radio?.hear(event, this.flow.state);
       if (this.opts.fast) continue;
       this.stances.onEvent(event);
       this.fx.onEvent(event);
-      this.move(event, melee, flight, event.type === 'unitDestroyed' && this.endsIt(i));
+      this.move(event, melee, flight, endsBattle(events, this.flow.state.outcome, i));
       // The end of a battle is marked once: by the music's fanfare where there is music, by the effect where there is not.
       if (event.type === 'outcome' && this.opts.jingle?.(event.outcome === 'victory')) continue;
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
@@ -324,15 +353,6 @@ export class BattleScreen {
     }
   }
 
-  /** Whether the machine destroyed by this event is the one the battle ends with: the last of the side that lost. */
-  private endsIt(index: number): boolean {
-    const { events, outcome } = this.flow.state;
-    const event = events[index];
-    if (event.type !== 'unitDestroyed' || outcome === 'ongoing') return false;
-    if ((outcome === 'defeat') !== (event.unit === 'player')) return false;
-    return !events.slice(index + 1).some((later) => later.type === 'unitDestroyed');
-  }
-
   /** What the wingman is saying right now, if anything. */
   get radioLine(): string | null {
     return this.radio?.line ?? null;
@@ -343,11 +363,14 @@ export class BattleScreen {
     particles: number; flash: number; surge: boolean; stance: (id: string) => Stance; breaking: (id: string) => number | null;
     /** The Overdrive's band, while it is up: what it says. The close look at the last machine, while it lasts: what it is drawn round. */
     cutIn: string | null; finish: Pt | null;
+    /** How large each blast is that is going off right now, and where what is left of machines lies. */
+    blasts: number[]; wrecks: Pt[];
   } {
     return {
       particles: this.particles.count, flash: this.hitStop.flash, surge: this.surge !== null, stance: (id) => ({ ...this.stances.of(id) }),
       breaking: (id) => this.puppets.get(id)?.breaking ?? null,
       cutIn: this.cutIn?.name ?? null, finish: this.finish ? { ...this.finish.at } : null,
+      blasts: this.fx.bursts().filter((burst) => burst.style === 'fire').map((burst) => burst.size), wrecks: this.wrecks.map((wreck) => ({ ...wreck.at })),
     };
   }
 
@@ -393,9 +416,14 @@ export class BattleScreen {
     const { dx, dy } = this.opts.calm ? { dx: 0, dy: 0 } : this.fx.shake();
     this.syncTalk();
     const field = { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W };
+    this.standing = 0;
+    // A battle that is over is not staged any more, from the very frame its result is up.
+    const over = this.flow.phase === 'result';
+    const finish = over ? null : this.finish;
+    const cutIn = over ? null : this.cutIn;
     ctx.save();
     // The last machine to fall is looked at from twice as close. A calm picture stays where it is.
-    if (this.finish && !this.opts.calm) lookClose(ctx, this.finish.at, field);
+    if (finish && !this.opts.calm) lookClose(ctx, finish.at, field);
     ctx.translate(dx, dy);
     // Pixel for pixel while the field is still. Only while a blow moves it is the picture drawn a
     // little larger, so that no edge shows: stretched, a pixel picture loses its grid.
@@ -420,11 +448,13 @@ export class BattleScreen {
       ctx.restore();
     }
     this.particles.draw(ctx);
-    this.fx.draw(ctx);
+    this.fx.draw(ctx, calm);
     this.drawSurge(ctx);
     // The light of everything that burns, fires or glows is added over the field: at half strength, and
-    // never over the whole of it, in a calm picture.
-    if (!this.opts.fast) drawGlows(ctx, this.lights(), this.opts.calm === true);
+    // never over the whole of it, in a calm picture. Sixteen lights are the battle's in all, with those
+    // of what stands on the field counted first.
+    // From close by every light is four times the size: half as many are drawn.
+    if (!this.opts.fast) drawGlows(ctx, this.lights(), calm, (finish && !calm ? MAX_LIGHTS / 2 : MAX_LIGHTS) - this.standing);
     if (this.hitStop.flash > 0 && !this.opts.calm) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
       ctx.fillRect(0, 14, LOGICAL_W, PANEL_Y - 14);
@@ -437,9 +467,9 @@ export class BattleScreen {
       else drawDefeat(ctx, this.resultMs, field, this.opts.fast);
     }
     this.drawMessage(ctx);
-    if (this.finish) {
+    if (finish) {
       // While the last machine goes down there is nothing over the field but two black bars.
-      drawLetterbox(ctx, letterbox(this.finish.ms), field);
+      drawLetterbox(ctx, letterbox(finish.real, finish.field), field);
     } else {
       this.drawObjective(ctx);
       this.drawGround(ctx);
@@ -447,8 +477,8 @@ export class BattleScreen {
       this.drawRadio(ctx);
       if (this.opts.coach && this.intro <= 0) this.drawCoach(ctx);
     }
-    if (this.cutIn) {
-      drawCutIn(ctx, this.cutIn.ms, field, { heading: STRINGS.overdrive.heading, name: this.cutIn.name },
+    if (cutIn) {
+      drawCutIn(ctx, cutIn.ms, field, { heading: STRINGS.overdrive.heading, name: cutIn.name },
         (c) => drawMech(c, this.playerSprites(), 0, 0), calm);
     }
     // While someone talks, their words have the panel: there is nothing to choose until they are done.
@@ -595,6 +625,7 @@ export class BattleScreen {
       if (unit.destroyed || this.hidden(unit) || unit.heat < HEAT_LIMIT * HOT) continue;
       const at = scene.hitPoint(unit.id, 'core');
       const over = Math.min(1, (unit.heat / HEAT_LIMIT - HOT) / (1 - HOT));
+      this.standing++;
       drawGlow(ctx, { x: at.x, y: at.y, r: 30, color: '#ff5a20', alpha: (0.16 + 0.16 * over) * (0.8 + 0.2 * Math.sin(this.clock / 140)) }, this.opts.calm ? 0.5 : 1);
       // Wisps of hot air rising off it.
       for (let i = 0; i < 4; i++) {
@@ -605,6 +636,27 @@ export class BattleScreen {
       }
       ctx.globalAlpha = 1;
     }
+  }
+
+  /** Where what is left of this unit lies, or would lie: a little under its middle, and on the ground. */
+  private wreckSpot(unit: string): Pt {
+    const c = this.scene().centre(unit);
+    return { x: c.x, y: Math.min(PANEL_Y - 14, c.y + 10) };
+  }
+
+  /**
+   * What is left of a machine stays where it went up. A place holds one wreck: a machine that falls
+   * where another fell before takes its place. The field has only so many places, so there are
+   * never more wrecks than that.
+   */
+  private leaveWreck(at: Pt): void {
+    this.clearWreck(at);
+    this.wrecks.push({ at, since: this.clock + 500 });
+  }
+
+  /** Takes away what is left of a machine at this spot: something else is standing there now. */
+  private clearWreck(at: Pt): void {
+    this.wrecks = this.wrecks.filter((wreck) => Math.hypot(wreck.at.x - at.x, wreck.at.y - at.y) > WRECK_ROOM);
   }
 
   /** Every light of this moment: what the effects throw, what glows in the air, and the fires in the wrecks. */
@@ -666,7 +718,10 @@ export class BattleScreen {
     return this.puppet(unit).pose(this.stances.of(unit.id), this.clock);
   }
 
-  /** Sets the units an event is about in motion: the one that fires kicks, the one that is hit flinches. */
+  /**
+   * Sets the units an event is about in motion: the one that fires kicks, the one that is hit
+   * flinches. Only a game that is not hurried comes here: a hurried one has no effects at all.
+   */
   private move(event: BattleEvent, melee: boolean, flight: number, last = false): void {
     const unit = (id: string): UnitState | undefined => this.flow.state.units.find((u) => u.id === id);
     const scene = this.scene();
@@ -700,22 +755,20 @@ export class BattleScreen {
       const c = scene.centre(event.unit);
       this.particles.emit('embers', c, 1);
       this.particles.emit('sparks', c, 1, 60, undefined, '#ff5db1');
-      if (!this.opts.fast) {
-        this.surge = { x: c.x, y: c.y, ms: 0 };
-        this.cutIn = { name: STRINGS.overdrive.names[event.kind].toUpperCase(), ms: 0 };
-      }
+      this.surge = { x: c.x, y: c.y, ms: 0 };
+      this.cutIn = { name: STRINGS.overdrive.names[event.kind].toUpperCase(), ms: 0 };
       this.opts.rumble?.(120);
       const who = unit(event.unit);
       if (who) this.puppet(who).play('boost');
     }
     if (event.type === 'unitDestroyed') {
-      this.hitStop.strike(last ? FINISH_HOLD_MS : event.unit === 'player' ? 160 : 90);
+      // The one the battle ends with is staged, unless a press has already gone on to the result.
+      const staged = last && this.flow.phase === 'animating';
+      this.hitStop.strike(staged ? FINISH_HOLD_MS : event.unit === 'player' ? 160 : 90);
       const c = scene.centre(event.unit);
-      if (last && !this.opts.fast) {
-        // The one the battle ends with: the field is held, then looked at from close by while it goes
-        // up slowly. Its last blast is heard when it is seen, which at half speed is later than usual.
-        this.finish = { at: focusOn(c, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W }), ms: 0 };
-        this.opts.sfx?.play('unitDestroyed', (FINISH_HOLD_MS + WRECK_AT / FINISH_SLOW) / (this.opts.speed ?? 1));
+      if (staged) {
+        // The field is held, then looked at from close by while the machine goes up slowly.
+        this.finish = { at: focusOn(c, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W }), real: 0, field: 0, heard: false };
       }
       this.particles.emit('debris', c, 1, 60, ground);
       this.particles.emit('debris', c, 1, 180, ground);
@@ -727,7 +780,7 @@ export class BattleScreen {
       this.particles.emit('fire', c, 1, 300);
       this.particles.emit('embers', c, 1, 320);
       this.particles.emit('smoke', c, 1, 380);
-      if (event.unit !== 'player') this.wrecks.push({ at: { x: c.x, y: Math.min(ground - 8, c.y + 10) }, since: this.clock + 500 });
+      if (event.unit !== 'player') this.leaveWreck(this.wreckSpot(event.unit));
     }
     if (event.type === 'blast') {
       // A bomb's flash and bursts come a beat after its message, and so does everything it throws up.
@@ -828,6 +881,7 @@ export class BattleScreen {
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
       // What flies burns underneath to stay up.
       if (flies && !this.opts.fast && !this.duel()) {
+        this.standing++;
         drawGlow(ctx, { x: r.x + r.w / 2, y: r.y + r.h - 4 + hover, r: 9 + r.w * 0.22, color: '#ff7ab8', alpha: 0.3 + 0.1 * Math.sin(this.clock / 90 + i) }, this.opts.calm ? 0.5 : 1);
       }
       if (this.duel()) {

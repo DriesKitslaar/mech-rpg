@@ -47,14 +47,15 @@ function muzzle(ctx: CanvasRenderingContext2D, at: Pt, dir: number, color: strin
   ctx.globalAlpha = 1;
 }
 
-function projectile(ctx: CanvasRenderingContext2D, fx: Extract<Fx, { kind: 'projectile' }>, p: number): void {
+function projectile(ctx: CanvasRenderingContext2D, fx: Extract<Fx, { kind: 'projectile' }>, p: number, calm: boolean): void {
   const color = TYPE_COLOR[fx.dtype];
   if (fx.dtype === 'energy') {
-    // A beam: it reaches the target at once, burns there, flickers and dies away.
+    // A beam: it reaches the target at once, burns there, flickers and dies away. Its halo is soft
+    // light: a calm picture has it at half strength and holding steady.
     const end = along(fx.from, fx.to, beamReach(p));
     const fade = beamFade(p);
-    const flicker = Math.floor(p * 14) % 2 ? 1 : 0.75;
-    drawBeam(ctx, fx.from, end, 2.2, color, fade * flicker);
+    const flicker = calm || Math.floor(p * 14) % 2 ? 1 : 0.75;
+    drawBeam(ctx, fx.from, end, 2.2, color, fade * flicker * (calm ? 0.5 : 1));
     ctx.globalAlpha = fade;
     pixelLine(ctx, fx.from, end, '#ffffff');
     // Where it burns, it spits.
@@ -268,10 +269,10 @@ function streaks(ctx: CanvasRenderingContext2D, from: Pt, dir: number, p: number
 }
 
 /** Draws one effect as it is `p` of the way through (0 at its start, 1 at its end). */
-export function paintFx(ctx: CanvasRenderingContext2D, fx: Fx, p: number): void {
+export function paintFx(ctx: CanvasRenderingContext2D, fx: Fx, p: number, calm = false): void {
   switch (fx.kind) {
     case 'muzzle': muzzle(ctx, fx.at, fx.dir, TYPE_COLOR[fx.dtype], p); break;
-    case 'projectile': projectile(ctx, fx, p); break;
+    case 'projectile': projectile(ctx, fx, p, calm); break;
     case 'burst':
       if (fx.style === 'fire') fireball(ctx, fx.at, fx.size, p);
       else if (fx.style === 'ring') pulse(ctx, fx.at, fx.size, fx.color, p);

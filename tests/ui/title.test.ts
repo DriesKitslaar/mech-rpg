@@ -1,3 +1,5 @@
+import { setLanguage } from '../../src/content/language';
+import { MISSIONS } from '../../src/content/missions';
 import { CATALOG } from '../../src/content/parts';
 import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
@@ -161,6 +163,9 @@ describe('the title\'s picture, as it is lit', () => {
     for (const bank of mist) {
       expect(Math.abs(bank.y - TITLE_HAZE.y)).toBeLessThan(10);
       expect(bank.ry).toBeLessThan(bank.r / 4);
+      // Over the water between the mine and the city: under the sign and the line beneath it, above the menu.
+      expect(bank.y).toBeGreaterThan(SIGN.y + LOGO.h + 40);
+      expect(bank.y).toBeLessThan(150);
     }
     expect(page.rects).toEqual([]);
     expect(page.shapes).toEqual([]);
@@ -262,26 +267,99 @@ describe('the title screen', () => {
     expect(notice.y).toBeGreaterThan(box.y);
   });
 
-  test('picking a slot, and the question before a game is started over, are in the same corner', () => {
-    const app = title([settled(), settled({ callsign: 'ABCDEFGH' })], true);
-    press(app, 'down', 'confirm');
-    expect(snap(app).mode).toBe('new');
-    for (const step of ['new', 'ask']) {
-      if (step === 'ask') { press(app, 'up', 'up', 'confirm'); expect(snap(app).mode).toBe('ask'); }
+  describe('in every mode and both languages, with the longest things a kept game can say', () => {
+    afterEach(() => setLanguage('en'));
+    /** A pilot far along: the longest callsign, the highest level, many contracts, many cycles, many hours. */
+    const veteran = (language: 'en' | 'nl'): GameState => {
+      const base = settled();
+      return {
+        ...base, callsign: 'ABCDEFGH', xp: 9999999, cycle: 10, completed: MISSIONS.slice(0, 48).map((m) => m.id),
+        stats: { ...base.stats, seconds: 999 * 3600 + 59 * 60 }, settings: { ...base.settings, language },
+      };
+    };
+    /** What the menu says: everything written after the line under the sign, which is written nine times over. */
+    const menuTexts = (page: Drawn) => {
+      const line = page.texts.findIndex((t, i) => page.texts.slice(i, i + 9).every((u) => u.text === t.text) && page.texts[i + 8] !== undefined);
+      expect(line).toBeGreaterThanOrEqual(0);
+      return page.texts.slice(line + 9);
+    };
+    const check = (app: App, what: string): { box: ReturnType<typeof menuBox>; said: ReturnType<typeof menuTexts> } => {
       const page = picture(app);
       const box = menuBox(page);
-      expect(box.x).toBe(MENU_X);
-      expect(box.bottom).toBe(MENU_BOTTOM);
-      expect(box.right).toBeLessThan(310);
-      const said = [snap(app).message as string, ...(snap(app).menu.items as { label: string; note?: string }[]).flatMap((i) => [i.label, i.note ?? ''])].filter(Boolean);
-      for (const text of said) {
-        const t = page.texts.find((x) => x.text === text)!;
-        expect(t, text).toBeDefined();
-        expect(t.left, text).toBeGreaterThan(box.x);
-        expect(t.right, text).toBeLessThan(box.right);
-        expect(t.y, text).toBeGreaterThan(box.y);
+      const said = menuTexts(page);
+      expect(said.length, what).toBeGreaterThan(1);
+      // The box is where it always is, and it ends left of the machine on the roof, which stands from 205 across.
+      expect(box.x, what).toBe(MENU_X);
+      expect(box.bottom, what).toBe(MENU_BOTTOM);
+      expect(box.right, what).toBeLessThanOrEqual(203);
+      expect(box.y, what).toBeGreaterThan(SIGN.y + LOGO.h + 20);
+      for (const t of said) {
+        expect(t.left, `${what}: ${t.text}`).toBeGreaterThan(box.x + 2);
+        expect(t.right, `${what}: ${t.text}`).toBeLessThan(box.right - 2);
+        expect(t.y, `${what}: ${t.text}`).toBeGreaterThan(box.y + 2);
+        expect(t.y + t.size, `${what}: ${t.text}`).toBeLessThanOrEqual(box.bottom - 2);
       }
-    }
+      // No two things it says run into each other, on one line or on lines that share pixels.
+      said.forEach((a, i) => said.slice(i + 1).forEach((b) => {
+        const rows = a.y < b.y + b.size - 2 && b.y < a.y + a.size - 2;
+        expect(rows && a.left < b.right && b.left < a.right, `${what}: ${a.text} | ${b.text}`).toBe(false);
+      }));
+      return { box, said };
+    };
+
+    test.each(['en', 'nl'] as const)('%s: the main menu, the slots to start in, the slots to load, and the question before one is started over', (language) => {
+      const app = title([veteran(language), veteran(language), veteran(language)], true);
+      expect(snap(app).mode).toBe('main');
+      // Three games kept: Continue (with the pilot's name), New Game, Load Game, Options.
+      expect((snap(app).menu.items as unknown[]).length).toBe(4);
+      const main = check(app, `${language} main`);
+      expect(main.said.some((t) => t.text === 'ABCDEFGH')).toBe(true);
+
+      // Load Game: three slots, each kept game on two lines.
+      press(app, 'down', 'down', 'confirm');
+      expect(snap(app).mode).toBe('load');
+      const load = check(app, `${language} load`);
+      const names = load.said.filter((t) => t.text.includes('ABCDEFGH'));
+      expect(names).toHaveLength(3);
+      for (const name of names) {
+        // Under each name, in smaller letters, how far along that game is.
+        const note = load.said.find((t) => t.y === name.y + 10 && t.size === 10)!;
+        expect(note, name.text).toBeDefined();
+        // So many contracts done, so many cycles, so many hours: the longest that line gets.
+        expect(note.text).toMatch(/^4\d \S+  C1\d  999:59$/);
+      }
+      expect(names[1].y - names[0].y).toBe(22);
+      // The slot the cursor is on is lit, both of its lines.
+      const lit = picture(app).washes.filter((w) => w.stops[0]?.[1] === 'rgba(255, 93, 177, 0.3)');
+      expect(lit).toHaveLength(1);
+      expect(lit[0]).toMatchObject({ y: names[0].y + 1, h: 21 });
+      expect(lit[0].x).toBeGreaterThan(load.box.x);
+      expect(lit[0].x + lit[0].w).toBeLessThan(load.box.right);
+      press(app, 'down');
+      expect(picture(app).washes.filter((w) => w.stops[0]?.[1] === 'rgba(255, 93, 177, 0.3)')[0].y).toBe(names[1].y + 1);
+
+      // New Game: the same three slots; and starting over one that holds a game asks first.
+      press(app, 'cancel', 'down', 'confirm');
+      expect(snap(app).mode).toBe('new');
+      const fresh = check(app, `${language} new`);
+      expect(fresh.box).toEqual(load.box);
+      press(app, 'confirm');
+      expect(snap(app).mode).toBe('ask');
+      const ask = check(app, `${language} ask`);
+      expect(ask.said.length).toBe(4);
+      expect(ask.box.y).toBeGreaterThan(load.box.y);
+    });
+
+    test.each(['en', 'nl'] as const)('%s: slots that are empty, and one that cannot be read', (language) => {
+      const store = memoryStore({ [SAVE_KEY]: JSON.stringify(veteran(language)), [`${SAVE_KEY}-2`]: '{not a game' });
+      const app = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites: named, fast: true, seed: 3 });
+      press(app, 'down', 'confirm');
+      expect(snap(app).mode).toBe('new');
+      const { said } = check(app, `${language} new with gaps`);
+      // One kept game on two lines, an unreadable slot and an empty one on a line each, and the line that says what to do.
+      expect(said.filter((t) => t.size === 10)).toHaveLength(1);
+      expect(said.length).toBe(1 + 2 + 1 + 1 + 1);
+    });
   });
 
   test('a hurried title stands still: the sign on, no rain, no gleam, and the picture not veiled', () => {
@@ -342,6 +420,28 @@ describe('the title screen', () => {
     // The gleam is no flash: a calm picture keeps it. The sign is on from the first frame.
     expect(calm.gleams).toBeGreaterThan(20);
     expect(calm.unlit).toBe(0);
+  });
+
+  test('a calm title has the sign\'s own light, the searchlights and the picture\'s lights at half strength', () => {
+    const lit = (calm: boolean) => {
+      const app = title([settled({ settings: { ...settled().settings, calm } })]);
+      app.update(3000);
+      const page = picture(app);
+      const sign = page.glows.filter((g) => isLight(g) && g.y === SIGN.y + Math.round(LOGO.h / 2) && g.r === 46).map(strength);
+      const lamp = strength(page.glows.find((g) => isLight(g) && g.x === 54 && g.r === 34)!);
+      return { sign, beams: page.shapes.map((shape) => shape.stops[0][1]), lamp };
+    };
+    const plain = lit(false);
+    const calm = lit(true);
+    expect(plain.sign).toHaveLength(6);
+    expect(calm.sign).toHaveLength(6);
+    calm.sign.forEach((level, i) => expect(level).toBeCloseTo(plain.sign[i] / 2, 2));
+    expect(plain.sign[0]).toBeCloseTo(0.2, 2);
+    expect(plain.beams).toHaveLength(4);
+    expect(calm.beams).toHaveLength(4);
+    for (const beam of plain.beams) expect(beam).toMatch(new RegExp(`, ${BEAM_ALPHA.toFixed(3)}\\)$`));
+    for (const beam of calm.beams) expect(beam).toMatch(new RegExp(`, ${(BEAM_ALPHA / 2).toFixed(3)}\\)$`));
+    expect(calm.lamp).toBeCloseTo(plain.lamp / 2, 2);
   });
 
   test('the picture\'s lights and the searchlights drift with the picture', () => {

@@ -5,8 +5,8 @@ import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
 import {
-  CUT_IN_H, CUT_IN_MS, CUT_IN_SCALE, FINISH_HOLD_MS, FINISH_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
-  cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, focusOn, letterbox, lookClose,
+  CUT_IN_H, CUT_IN_MS, CUT_IN_SCALE, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
+  cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox, lookClose,
 } from '../../src/ui/cinema';
 import type { Settlement } from '../../src/core/economy';
 import { MISSIONS } from '../../src/content/missions';
@@ -101,6 +101,15 @@ describe('the band an Overdrive goes off behind', () => {
     expect(new Set([1, 90, 180, 400, 800].map((ms) => at(ms).y)).size).toBe(1);
     // Whole pixels of the screen, every time.
     for (const ms of [1, 33, 90, 400]) { expect(Number.isInteger(at(ms).x)).toBe(true); expect(Number.isInteger(at(ms).y)).toBe(true); }
+    // At twice its size it is taller than the band: nothing of it is let out of the band, open or still opening.
+    expect(settled.h).toBeGreaterThan(p.h * 2);
+    expect(settled.clip).toEqual({ x: 0, y: p.y, w: 310, h: p.h });
+    const opening = band(40);
+    expect(opening.images[0].clip).toEqual({ x: 0, y: plate(opening).y, w: 310, h: plate(opening).h });
+    // And the canvas is free again afterwards.
+    const after = record((ctx) => { drawCutIn(ctx, 400, FIELD, WORDS, mech); ctx.drawImage(MECH, 0, 0, 10, 10); }).images.at(-1)!;
+    expect(after.clip).toBeNull();
+    expect(after).toMatchObject({ x: 0, y: 0, w: 10, h: 10 });
   });
 
   test('speed lines race through it from right to left, each a pixel high and inside the band', () => {
@@ -170,9 +179,50 @@ describe('the band an Overdrive goes off behind', () => {
     expect(flash(70)).toEqual([]);
     expect(flash(400)).toEqual([]);
     expect(flash(10, true)).toEqual([]);
-    // Calm changes nothing else about it.
+    // Its wash of colour is soft light: a calm picture has it at half strength. Nothing else about it changes.
+    expect(band(400).washes[0].stops[0][1]).toBe('rgba(255, 93, 177, 0.34)');
+    expect(band(400, true).washes[0].stops[0][1]).toBe('rgba(255, 93, 177, 0.17)');
+    expect(band(400, true).washes[0].stops[1][1]).toBe('rgba(255, 93, 177, 0.03)');
     expect(band(400, true).rects).toEqual(band(400).rects);
+    expect(band(400, true).texts).toEqual(band(400).texts);
     expect(() => drawCutIn(standIn(), 400, FIELD, WORDS, () => undefined)).not.toThrow();
+  });
+});
+
+describe('the machine a battle ends with', () => {
+  const gone = (unit: string) => ({ type: 'unitDestroyed', unit });
+  const shot = { type: 'shot', unit: 'player' };
+
+  test('is the last to fall of the side that lost', () => {
+    const won = [shot, gone('enemy-0'), shot, gone('enemy-1'), { type: 'outcome' }];
+    expect(endsBattle(won, 'victory', 3)).toBe(true);
+    // Not the one before it, and not what is no destruction at all.
+    expect(endsBattle(won, 'victory', 1)).toBe(false);
+    expect(endsBattle(won, 'victory', 0)).toBe(false);
+    expect(endsBattle(won, 'victory', 4)).toBe(false);
+    expect(endsBattle(won, 'victory', 99)).toBe(false);
+    const lost = [shot, gone('enemy-0'), shot, gone('player'), { type: 'outcome' }];
+    expect(endsBattle(lost, 'defeat', 3)).toBe(true);
+    // A machine of the side that won is never it, even when it is the last to go.
+    expect(endsBattle(lost, 'defeat', 1)).toBe(false);
+    expect(endsBattle([gone('player'), gone('enemy-0')], 'defeat', 1)).toBe(false);
+    expect(endsBattle([gone('enemy-0'), gone('player')], 'victory', 1)).toBe(false);
+  });
+
+  test('while the battle is still on nothing is, and of two that go up in one blow only the second', () => {
+    expect(endsBattle([shot, gone('enemy-0')], 'ongoing', 1)).toBe(false);
+    const both = [shot, gone('enemy-0'), gone('enemy-1'), { type: 'outcome' }];
+    expect(endsBattle(both, 'victory', 1)).toBe(false);
+    expect(endsBattle(both, 'victory', 2)).toBe(true);
+    // A bomb that takes the pilot with it goes up after the pilot does: the battle still ends with the pilot.
+    const together = [{ type: 'blast' }, gone('player'), gone('enemy-0'), { type: 'outcome' }];
+    expect(endsBattle(together, 'defeat', 1)).toBe(true);
+    expect(endsBattle(together, 'defeat', 2)).toBe(false);
+    // And the other way about: the last machine falls, and something of the pilot's side after it.
+    const after = [gone('enemy-0'), gone('enemy-1'), gone('player')];
+    expect(endsBattle(after, 'victory', 1)).toBe(true);
+    expect(endsBattle(after, 'victory', 0)).toBe(false);
+    expect(endsBattle(after, 'victory', 2)).toBe(false);
   });
 });
 
@@ -213,13 +263,20 @@ describe('looking at the last machine from close by', () => {
   });
 
   test('two black bars close in over the top and the bottom of the field, and open again', () => {
-    expect(letterbox(-1)).toBe(0);
-    expect(letterbox(0)).toBe(0);
-    expect(letterbox(60)).toBeCloseTo(0.5, 5);
-    expect(letterbox(120)).toBe(1);
-    expect(letterbox(FINISH_MS - 150)).toBe(1);
-    expect(letterbox(FINISH_MS - 75)).toBeCloseTo(0.5, 5);
-    expect(letterbox(FINISH_MS)).toBe(0);
+    // They close in over the first eighth of a second of the player's time...
+    expect(letterbox(-1, 0)).toBe(0);
+    expect(letterbox(0, 0)).toBe(0);
+    expect(letterbox(60, 0)).toBeCloseTo(0.5, 5);
+    expect(letterbox(120, 0)).toBe(1);
+    expect(letterbox(5000, 100)).toBe(1);
+    // ...and open over the last of the look, which is counted on the field's own clock.
+    expect(FINISH_FIELD_MS).toBe(500);
+    expect(letterbox(900, FINISH_FIELD_MS - 75)).toBe(1);
+    expect(letterbox(900, FINISH_FIELD_MS - 37.5)).toBeCloseTo(0.5, 5);
+    expect(letterbox(900, FINISH_FIELD_MS)).toBe(0);
+    expect(letterbox(900, FINISH_FIELD_MS + 40)).toBe(0);
+    // A look so short that they are still closing when it ends: whichever is less.
+    expect(letterbox(30, FINISH_FIELD_MS - 60)).toBeCloseTo(0.25, 5);
     const bars = (open: number) => record((ctx) => drawLetterbox(ctx, open, FIELD)).rects;
     expect(bars(0)).toEqual([]);
     expect(bars(-2)).toEqual([]);
@@ -287,15 +344,25 @@ describe('a field that was won', () => {
     expect(motes(a).filter((mote, i) => next[i].y < mote.y).length).toBeGreaterThan(MOTES / 2);
   });
 
-  test('a hurried game has all of it at once and standing still; a calm picture has it at half strength', () => {
+  test('a hurried game has all of it at once and standing still', () => {
     const still = won(0, false, true);
     expect(share(still)).toBeCloseTo(0.24, 3);
     expect(still.rects).toEqual([]);
     expect(still.shapes).toHaveLength(RAYS * 2);
     expect(won(4000, false, true).shapes).toEqual(still.shapes);
-    expect(share(won(RESULT_IN_MS, true))).toBeCloseTo(0.12, 3);
-    expect(won(RESULT_IN_MS, true).shapes[0].stops[0][1]).toBe('rgba(255, 217, 160, 0.060)');
     expect(won(RESULT_IN_MS).shapes[0].stops[0][1]).toBe('rgba(255, 217, 160, 0.120)');
+  });
+
+  test('a calm picture has no light lying over the whole field: the motes rise, and that is all', () => {
+    const calm = won(RESULT_IN_MS * 2, true);
+    expect(calm.washes).toEqual([]);
+    expect(calm.shapes).toEqual([]);
+    expect(calm.glows).toEqual([]);
+    expect(calm.rects.filter((r) => /^rgba\(255, 226, 170, /.test(r.color))).toHaveLength(MOTES);
+    expect(calm.rects).toHaveLength(MOTES);
+    // Calm and hurried at once: nothing at all.
+    const both = won(RESULT_IN_MS * 2, true, true);
+    expect([both.washes, both.shapes, both.rects, both.glows]).toEqual([[], [], [], []]);
     expect(() => drawVictory(standIn(), 800, FIELD)).not.toThrow();
   });
 });
@@ -401,11 +468,13 @@ describe('the staged moments in a battle', () => {
     const fire = (): void => { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); };
     /** Fires until the machine in this place is gone, a frame at a time, and stops on the frame its destruction is shown. */
     const kill = (index: number): void => {
-      for (let i = 0; i < 4000 && !screen.motion.finish && !(flow.state.units[index + 1].destroyed && flow.phase !== 'animating'); i++) {
+      const id = flow.state.units[index + 1].id;
+      for (let i = 0; i < 4000 && screen.motion.breaking(id) === null; i++) {
         if (flow.phase === 'action') fire();
         screen.update(16);
         if (flow.phase === 'result') break;
       }
+      expect(screen.motion.breaking(id)).not.toBeNull();
     };
     return { flow, screen, page, fire, kill, played };
   }
@@ -472,6 +541,8 @@ describe('the staged moments in a battle', () => {
       expect(bg.x).toBe(155 - focus.x * 2);
       expect(bg.y).toBe(14 + 82 - focus.y * 2);
     }
+    // Nothing of the field at twice its size is let out over the bar along the top or the panel underneath.
+    expect(bg.clip).toEqual({ x: 0, y: 14, w: 310, h: 164 });
     const bars = close.rects.filter((r) => r.color === BARS);
     expect(bars.map(({ x, y, w, h }) => ({ x, y, w, h }))).toEqual([{ x: 0, y: 14, w: 310, h: LETTERBOX }, { x: 0, y: 178 - LETTERBOX, w: 310, h: LETTERBOX }]);
     expect(meter(close)).toEqual([]);
@@ -479,6 +550,32 @@ describe('the staged moments in a battle', () => {
     const said = close.texts.find((t) => t.y === 1)!;
     expect(said).toBeDefined();
     expect(said.size).toBe(12);
+  });
+
+  test('from close by every light is four times the size, so half as many are drawn', () => {
+    /** The most lights any frame of a machine's going up holds. */
+    const most = (calm: boolean): { lights: number; close: boolean } => {
+      const { screen, page, kill } = screenOf(fight(['gun-turret'], [0]), calm ? { calm: true } : {});
+      kill(0);
+      let lights = 0;
+      let close = false;
+      for (let i = 0; i < 90 && screen.motion.finish; i++) {
+        screen.update(16);
+        const frame = page();
+        lights = Math.max(lights, frame.glows.filter((g) => g.blend === 'lighter').length);
+        close = close || background(frame).w >= 620;
+      }
+      return { lights, close };
+    };
+    const near = most(false);
+    expect(near.close).toBe(true);
+    expect(near.lights).toBeLessThanOrEqual(8);
+    expect(near.lights).toBeGreaterThanOrEqual(6);
+    // A calm picture keeps its distance, and so keeps its sixteen: the same going up shows more of them.
+    const far = most(true);
+    expect(far.close).toBe(false);
+    expect(far.lights).toBeGreaterThan(8);
+    expect(far.lights).toBeLessThanOrEqual(16);
   });
 
   test('it lasts a little over a second, nothing more is said while it does, and then the field is as it was', () => {
@@ -492,8 +589,9 @@ describe('the staged moments in a battle', () => {
       expect(flow.eventsShown).toBe(shown);
       screen.update(16);
     }
-    expect(ms).toBeGreaterThanOrEqual(FINISH_MS - 16);
-    expect(ms).toBeLessThanOrEqual(FINISH_MS + 32);
+    // The field is held for 160, and then its clock runs at half speed for the 500 the look lasts on it.
+    expect(ms).toBeGreaterThanOrEqual(FINISH_HOLD_MS + FINISH_FIELD_MS / FINISH_SLOW - 16);
+    expect(ms).toBeLessThanOrEqual(FINISH_HOLD_MS + FINISH_FIELD_MS / FINISH_SLOW + 48);
     expect(background(page()).w).toBeLessThanOrEqual(322);
     expect(page().rects.filter((r) => r.color === BARS)).toEqual([]);
     // Now what is next is said after the usual wait, and the battle is over.
@@ -508,12 +606,12 @@ describe('the staged moments in a battle', () => {
     expect(flow.state.units[1].destroyed).toBe(true);
     expect(flow.state.outcome).toBe('ongoing');
     expect(screen.motion.finish).toBeNull();
-    for (let i = 0; i < 4000 && screen.motion.finish === null && flow.phase !== 'result'; i++) {
-      if (flow.phase === 'action') { if (flow.menu.items[0].enabled) { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); } else { flow.onInput('down'); break; } }
-      screen.update(16);
-    }
-    // Whichever way the second one went, the close look came with the battle's end and not before.
-    if (screen.motion.finish) expect(flow.state.outcome).toBe('victory');
+    // It goes up the way any machine does, and the battle goes on at its usual pace.
+    for (let i = 0; i < 200 && flow.phase === 'animating'; i++) { screen.update(16); expect(screen.motion.finish).toBeNull(); }
+    // The second one is the last: the battle is over with it, and it gets the close look.
+    kill(1);
+    expect(flow.state.outcome).toBe('victory');
+    expect(screen.motion.finish).not.toBeNull();
   });
 
   test('time runs at half speed while it lasts, and its last blast is heard when it is seen', () => {
@@ -525,23 +623,168 @@ describe('the staged moments in a battle', () => {
     const last = screenOf(fight(['gun-turret'], [0]));
     last.kill(0);
     expect(last.screen.motion.finish).not.toBeNull();
-    // Past the beat the field is held for, which is longer for the last one.
+    // Both are at the frame their destruction is shown. Past the beat the field is held for, which is
+    // longer for the last one, each is given the same time to come apart in.
+    expect(first.screen.motion.breaking('enemy-0')).toBe(0);
+    expect(last.screen.motion.breaking('enemy-0')).toBe(0);
     const step = (s: ReturnType<typeof screenOf>, ms: number): void => { for (let t = 0; t < ms; t += 16) s.screen.update(16); };
-    step(first, 96 + 208);
-    step(last, FINISH_HOLD_MS + 16 + 208);
+    step(first, 96 + 160);
+    step(last, FINISH_HOLD_MS + 16 + 160);
     const quick = first.screen.motion.breaking('enemy-0')!;
     const slow = last.screen.motion.breaking('enemy-0')!;
-    expect(quick).toBeGreaterThan(0);
-    expect(slow).toBeGreaterThan(0);
-    expect(slow).toBeLessThan(quick * 0.75);
-    // A machine going up is heard once; the last one a second time, when its great blast goes off.
-    const booms = (s: ReturnType<typeof screenOf>) => s.played.filter((p) => p.name === 'unitDestroyed').map((p) => p.delay).sort((a, b) => a - b);
-    expect(booms(first)).toEqual([0]);
-    expect(booms(last)).toEqual([0, FINISH_HOLD_MS + 300 / FINISH_SLOW]);
-    // With battles played faster, sooner by as much.
-    const hurried = screenOf(fight(['gun-turret'], [0]), { speed: 2 });
-    hurried.kill(0);
-    expect(booms(hurried)).toEqual([0, (FINISH_HOLD_MS + 300 / FINISH_SLOW) / 2]);
+    expect(quick).toBeGreaterThan(0.1);
+    expect(quick).toBeLessThan(1);
+    // Half the speed, half as far along.
+    expect(slow).toBeGreaterThan(quick * 0.4);
+    expect(slow).toBeLessThan(quick * 0.6);
+  });
+
+  test('whatever the pace, its last blast is seen in the close look and heard at the moment it is seen', () => {
+    for (const speed of [1, 2.5, 4]) {
+      const { screen, kill, played } = screenOf(fight(['gun-turret'], [0]), speed === 1 ? {} : { speed });
+      kill(0);
+      const booms = (): number => played.filter((p) => p.name === 'unitDestroyed').length;
+      // The machine going up is heard at once, as any machine is, and with no delay asked for.
+      expect(booms()).toBe(1);
+      expect(played.filter((p) => p.name === 'unitDestroyed').every((p) => p.delay === 0)).toBe(true);
+      let seenAt = -1;
+      let heardAt = -1;
+      let endedAt = -1;
+      for (let ms = 16; ms <= 4000 && endedAt < 0; ms += 16) {
+        screen.update(16);
+        if (seenAt < 0 && screen.motion.blasts.includes(26)) seenAt = ms;
+        if (heardAt < 0 && booms() === 2) heardAt = ms;
+        if (!screen.motion.finish) endedAt = ms;
+      }
+      // Seen while the look is still up, heard in the same frame, and looked at for a while after.
+      expect(seenAt, `speed ${speed}`).toBeGreaterThan(0);
+      expect(heardAt, `speed ${speed}`).toBe(seenAt);
+      expect(endedAt, `speed ${speed}`).toBeGreaterThan(seenAt);
+      // Two fifths of the look are after the blast: 200 of the field's 500 milliseconds, at half speed.
+      expect(endedAt - seenAt, `speed ${speed}`).toBeGreaterThanOrEqual(Math.floor(200 / FINISH_SLOW / speed) - 16);
+      // And it is heard no more than that once more.
+      for (let i = 0; i < 120; i++) screen.update(16);
+      expect(booms()).toBe(2);
+    }
+    // A machine that is not the last is heard once.
+    const first = screenOf(fight(['gun-turret', 'tank'], [0]));
+    first.kill(0);
+    for (let i = 0; i < 120; i++) first.screen.update(16);
+    expect(first.played.filter((p) => p.name === 'unitDestroyed')).toEqual([{ name: 'unitDestroyed', delay: 0 }]);
+  });
+
+  test('a press that ends the close look takes its last blast\'s sound with it: nothing is heard over what comes after', () => {
+    const { flow, screen, kill, played } = screenOf(fight(['gun-turret'], [0]));
+    kill(0);
+    screen.update(96);
+    screen.onInput('confirm');
+    expect(screen.motion.finish).toBeNull();
+    for (let i = 0; i < 20 && flow.phase !== 'result'; i++) { screen.onInput('confirm'); screen.update(16); }
+    expect(flow.phase).toBe('result');
+    for (let i = 0; i < 200; i++) screen.update(16);
+    // Heard once, when it went up; no sound was put by for later.
+    expect(played.filter((p) => p.name === 'unitDestroyed')).toEqual([{ name: 'unitDestroyed', delay: 0 }]);
+    expect(played.every((p) => p.delay < 700)).toBe(true);
+  });
+
+  test('a press that goes on to the result before the machine is seen to go up: nothing is staged over the result', () => {
+    // The message that a machine is destroyed comes up at the end of one frame; what is seen and heard of
+    // it starts in the next. A press in between goes on to the result first.
+    const { flow, screen, page, played } = screenOf(fight(['gun-turret'], [0]));
+    const shown = (): boolean => flow.state.events.slice(0, flow.eventsShown).some((e) => e.type === 'unitDestroyed');
+    for (let i = 0; i < 4000 && !shown(); i++) {
+      if (flow.phase === 'action') { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); }
+      screen.update(16);
+    }
+    expect(shown()).toBe(true);
+    expect(screen.motion.breaking('enemy-0')).toBeNull();
+    for (let i = 0; i < 6 && flow.phase !== 'result'; i++) screen.onInput('confirm');
+    expect(flow.phase).toBe('result');
+    for (let i = 0; i < 90; i++) {
+      screen.update(16);
+      expect(screen.motion.finish).toBeNull();
+    }
+    const after = page();
+    expect(background(after).w).toBeLessThanOrEqual(322);
+    expect(after.rects.filter((r) => r.color === BARS)).toEqual([]);
+    expect(played.filter((p) => p.name === 'unitDestroyed')).toHaveLength(1);
+  });
+
+  test('the band comes down with the result: it is never up beside the word that the battle is over', () => {
+    const { flow, screen, page } = screenOf(fight(['gun-turret'], [0], { overdrive: 'deadeye', drive: 100 }));
+    screen.onInput('next');
+    screen.update(16);
+    expect(screen.motion.cutIn).toBe('DEADEYE');
+    // A pilot who taps through: the last machine is shot and every message pressed past.
+    const over = (): boolean => flow.phase === 'result';
+    for (let i = 0; i < 200 && !over(); i++) {
+      if (flow.phase === 'action') { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); }
+      else screen.onInput('confirm');
+      // The press that brings the result up is followed by a drawing, not by another moment of the battle.
+      if (!over()) screen.update(16);
+    }
+    expect(flow.phase).toBe('result');
+    // The band has had well under its nine tenths of a second, and is still counted as up.
+    expect(screen.motion.cutIn).toBe('DEADEYE');
+    // Drawn straight away, before another moment has passed, and after one.
+    expect(page().rects.some((r) => r.color === BAND)).toBe(false);
+    // (The small tag on the mech that says the Overdrive is still on is another matter: the band's name is the large one.)
+    expect(page().texts.filter((t) => t.text === 'DEADEYE' && t.size === 20)).toEqual([]);
+    screen.update(16);
+    expect(screen.motion.cutIn).toBeNull();
+    expect(page().rects.some((r) => r.color === BAND)).toBe(false);
+  });
+
+  test('with battles played faster the band is up for less, but long enough to read', () => {
+    const upFor = (speed: number): number => {
+      const { screen } = screenOf(fight(['gun-turret'], [], { overdrive: 'iron-skin', drive: 100 }), speed === 1 ? {} : { speed });
+      screen.onInput('next');
+      let ms = 0;
+      for (; ms < 3000; ms += 16) { screen.update(16); if (ms > 0 && !screen.motion.cutIn) break; }
+      return ms;
+    };
+    expect(Math.abs(upFor(1) - CUT_IN_MS)).toBeLessThanOrEqual(32);
+    expect(Math.abs(upFor(1.5) - CUT_IN_MS / 1.5)).toBeLessThanOrEqual(32);
+    // Faster than that makes no more difference: six tenths of a second is the least.
+    expect(Math.abs(upFor(2.5) - CUT_IN_MS / 1.5)).toBeLessThanOrEqual(32);
+    expect(Math.abs(upFor(4) - CUT_IN_MS / 1.5)).toBeLessThanOrEqual(32);
+  });
+
+  test('a whole battle at three times the speed with Auto Turn: the ceilings hold, and nothing staged is left over the result', () => {
+    for (const seed of [3, 7, 11]) {
+      const { flow, screen, page } = screenOf(fight(['gun-turret', 'recon-drone', 'tank'], [], { overdrive: 'deadeye', drive: 100 }, seed), { speed: 3 });
+      let most = 0;
+      let lights = 0;
+      let drove = false;
+      for (let i = 0; i < 40000 && flow.phase !== 'result'; i++) {
+        if (flow.phase === 'action') {
+          // The Overdrive goes off as soon as it can, and after that the turn is left to Auto Turn.
+          if (!drove && flow.overdrive === 'ready') { screen.onInput('next'); drove = true; }
+          const at = flow.menu.items.findIndex((item) => item.id === 'auto');
+          for (let n = flow.menu.cursor; n < at; n++) screen.onInput('down');
+          for (let n = flow.menu.cursor; n > at; n--) screen.onInput('up');
+          screen.onInput('confirm');
+        } else if (flow.phase !== 'animating') screen.onInput('confirm');
+        screen.update(16);
+        most = Math.max(most, screen.motion.particles);
+        if (i % 7 === 0) lights = Math.max(lights, page().glows.filter((g) => g.blend === 'lighter').length);
+      }
+      expect(flow.phase, `seed ${seed}`).toBe('result');
+      expect(drove).toBe(true);
+      expect(most).toBeLessThanOrEqual(320);
+      // Sixteen lights of the battle's own at most; this ground has none of its own.
+      expect(lights).toBeLessThanOrEqual(16);
+      expect(lights).toBeGreaterThan(0);
+      // The battle is over: no band, no close look, no bars, and the field at its own size.
+      for (let i = 0; i < 200; i++) screen.update(16);
+      expect(screen.motion.cutIn).toBeNull();
+      expect(screen.motion.finish).toBeNull();
+      const after = page();
+      expect(after.rects.filter((r) => r.color === BAND || r.color === BARS)).toEqual([]);
+      expect(background(after).w).toBeLessThanOrEqual(322);
+      // What was thrown up has come down: only what a wreck keeps smoking with is left.
+      expect(screen.motion.particles).toBeLessThan(40);
+    }
   });
 
   test('a press while it lasts goes on to what is next, and the close look is over', () => {
@@ -688,6 +931,25 @@ describe('the bill after a battle', () => {
     expect(fast.page().texts.find((t) => t.text === 'S' && t.size === 32)).toBeDefined();
     expect(ring(fast.page(), COLORS.accent)).toEqual([]);
     expect(fast.page().glows.filter((g) => isLight(g) && g.r === 34)).toEqual([]);
+  });
+
+  test('a calm picture has the flare of a rank that pays, and the hangar\'s lights, at half strength', () => {
+    const at = (calm: boolean) => {
+      const { screen, page } = bill('S', { calm });
+      screen.update(760);
+      const lights = page().glows.filter(isLight) as (Drawn['glows'][number])[];
+      const level = (g: Drawn['glows'][number]): number => Number(/, ([\d.]+)\)$/.exec(g.stops[0][1])![1]);
+      return { flare: level(lights.find((g) => g.r === 34)!), room: lights.filter((g) => g.r !== 34).map(level), sparks: page().rects.filter((r) => r.color === '#ffffff' && r.w === 1 && r.h === 1).length };
+    };
+    const plain = at(false);
+    const calm = at(true);
+    expect(calm.flare).toBeCloseTo(plain.flare / 2, 2);
+    expect(calm.room.length).toBe(plain.room.length);
+    expect(calm.room.length).toBeGreaterThanOrEqual(6);
+    calm.room.forEach((level, i) => expect(level).toBeCloseTo(plain.room[i] / 2, 2));
+    // The ring and the sparks are solid, and the same in both.
+    expect(calm.sparks).toBe(plain.sparks);
+    expect(calm.sparks).toBe(STAMP_SPARKS);
   });
 
   test('it is read in the hangar, and the hangar is lit behind it', () => {

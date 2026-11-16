@@ -214,7 +214,49 @@ describe('the rooms of the game', () => {
       expect(seen.lights, entry).toBe(lights);
       // The vault's frame is only there once a run is on: no mech, no shadow.
       expect(page.glows.filter(isShadow), entry).toHaveLength(entry === 'gauntlet' ? 0 : 1);
+      // The lights are the room's own, each drawn twice: behind the mech and, weaker, over it.
+      const own = AMBIENCE[room].lights.map((l) => `${l.x},${l.y}`);
+      const drawn = page.glows.filter(isLight).map((g) => `${g.x},${g.y}`);
+      expect(drawn, entry).toEqual([...own, ...own]);
+      // A hurried game stands still in every room: nothing about its light changes with time.
+      app.update(5000);
+      expect(record((ctx) => app.draw(ctx)).glows, entry).toEqual(page.glows);
       press(app, 'cancel');
     }
+  });
+
+  test('the mech the list is about stands on the right, facing left, on its own shadow', () => {
+    for (const entry of ['arena', 'training']) {
+      const { app } = inHub(past(), undefined, named);
+      select(app, entry);
+      const shadow = record((ctx) => app.draw(ctx)).glows.find(isShadow)!;
+      // The mech is drawn turned round from 316 across and 18 down: its feet are 76 in from there and 155 below.
+      expect(shadow, entry).toMatchObject({ x: 316 - MECH_FEET.x, y: 18 + MECH_FEET.y });
+      // Turned round, so its width counts backwards; it is as flat as any shadow.
+      expect(shadow.ry, entry).toBeLessThan(Math.abs(shadow.r) / 4);
+    }
+  });
+
+  test('a calm picture has every room\'s lights at half strength', () => {
+    for (const entry of ['garage', 'gauntlet', 'arena', 'training']) {
+      const lit = (calm: boolean): number[] => {
+        const { app } = inHub({ ...past(), settings: { ...past().settings, calm } }, undefined, named);
+        select(app, entry);
+        return record((ctx) => app.draw(ctx)).glows.filter(isLight).map(strength);
+      };
+      const plain = lit(false);
+      const calm = lit(true);
+      expect(calm.length, entry).toBe(plain.length);
+      expect(calm.length, entry).toBeGreaterThan(6);
+      calm.forEach((level, i) => expect(level, entry).toBeCloseTo(plain[i] / 2, 2));
+    }
+  });
+
+  test('the welder is up at the left edge of the hangar, the one corner the mech leaves free in the hub and in the garage', () => {
+    expect(WELD).toMatchObject({ x: 9, y: 41 });
+    // Left of where either mech begins, and above the garage's mech's shoulder.
+    expect(WELD.x).toBeLessThan(18);
+    expect(WELD.y).toBeGreaterThan(14);
+    expect(WELD.y).toBeLessThan(60);
   });
 });

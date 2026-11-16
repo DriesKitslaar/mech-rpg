@@ -150,11 +150,8 @@ export class GauntletScreen implements Screen {
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
     ctx.fillStyle = 'rgba(8, 8, 20, 0.55)';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    drawPanel(ctx, 0, 0, LOGICAL_W, 14);
-    drawText(ctx, G.heading, 5, 2, { color: COLORS.accent });
-    drawText(ctx, G.best(this.app.game?.gauntletBest ?? 0), LOGICAL_W - 5, 2, { align: 'right', color: COLORS.dim });
-
-    // The vault's own lights, and the frame the run is flown in standing in them, on the left.
+    // The vault's own lights, and the frame the run is flown in standing in them, on the left. All of
+    // it before anything is written: no light is laid over a word.
     const { fast } = this.app.deps;
     const calm = this.app.settings.calm === true;
     const clock = fast ? 0 : this.clock;
@@ -164,6 +161,10 @@ export class GauntletScreen implements Screen {
       drawMech(ctx, mechSprites(sprites, run.build), 0, 30, { dx: 0, dy: 0 }, 0, fast ? {} : idlePose(this.clock));
     }
     drawRoomSpill(ctx, 'bg-vault', clock, calm);
+
+    drawPanel(ctx, 0, 0, LOGICAL_W, 14);
+    drawText(ctx, G.heading, 5, 2, { color: COLORS.accent });
+    drawText(ctx, G.best(this.app.game?.gauntletBest ?? 0), LOGICAL_W - 5, 2, { align: 'right', color: COLORS.dim });
 
     const x = 150;
     const w = LOGICAL_W - x - 4;

@@ -1,8 +1,10 @@
 import { MenuList } from '../../src/ui/menuList';
 import {
-  BAR_H, CHAR_W, COLORS, LINE, PANEL_SHADOW, drawList, drawMenu, drawMeter, drawOutlined, drawPanel, drawRowLight, drawScrollMenu, drawTabs, shade,
+  BAR_H, CHAR_W, COLORS, LINE, PANEL_SHADOW, drawList, drawMenu, drawMeter, drawOutlined, drawPanel, drawRowLight, drawScrollMenu, drawTabs, drawText, shade,
 } from '../../src/ui/widgets';
-import { accept, inHub, press, select, snap } from '../helpers/app';
+import { setLanguage } from '../../src/content/language';
+import { SCENES } from '../../src/content/scenes';
+import { accept, done, inHub, press, select, snap, strong } from '../helpers/app';
 import { record, type Drawn, type Filled, type Washed } from '../helpers/canvas';
 
 /** What was filled on a canvas that makes no gradients: the kind most tests draw on. */
@@ -467,5 +469,108 @@ describe('words over a picture', () => {
     const other = record((ctx) => drawOutlined(ctx, 'x', 5, 5, { size: 16 }, '#102030'));
     expect(other.texts[0]).toMatchObject({ color: '#102030', size: 16 });
     expect(other.texts.at(-1)).toMatchObject({ color: COLORS.text, size: 16 });
+  });
+});
+
+describe('soft light and shadow, on every screen and in both languages', () => {
+  afterEach(() => setLanguage('en'));
+  const named = { sprites: { get: (id: string, fallback: { w: number; h: number }) => ({ image: { id } as unknown as CanvasImageSource, w: fallback.w, h: fallback.h }) } };
+  /**
+   * The words of a screen that something soft was laid over after they were written: a light, the
+   * shadow under a box, or the light behind a row. (One box drawn over another is another matter.)
+   */
+  function smudged(page: Drawn): string[] {
+    const found: string[] = [];
+    const soft = (step: Drawn['order'][number]): { x: number; y: number; w: number; h: number } | null => {
+      if (step.kind === 'glow') {
+        const g = page.glows[step.at];
+        // The darker edges of a room are laid over the whole of its picture, before anything is written.
+        return { x: g.x - Math.abs(g.r), y: g.y - Math.abs(g.ry), w: Math.abs(g.r) * 2, h: Math.abs(g.ry) * 2 };
+      }
+      if (step.kind === 'wash') {
+        const w = page.washes[step.at];
+        return [SHADOW_TOP, ROW_LIGHT].includes(w.stops[0]?.[1]) ? w : null;
+      }
+      return null;
+    };
+    page.order.forEach((step, i) => {
+      if (step.kind !== 'text') return;
+      const t = page.texts[step.at];
+      if (t.text.trim() === '') return;
+      const box = { x: t.left, y: t.y + 2, w: t.right - t.left, h: t.size - 4 };
+      for (const later of page.order.slice(i + 1)) {
+        const over = soft(later);
+        if (over && over.w > 0 && over.h > 0 && !apart(box, over)) { found.push(`${t.text} (${later.kind})`); break; }
+      }
+    });
+    return found;
+  }
+
+  test.each(['en', 'nl'] as const)('%s: nothing soft is laid over a word after it was written', (language) => {
+    const base = strong(done('intro-1', 'intro-2'));
+    const { app } = inHub({ ...base, scenes: SCENES.map((scene) => scene.id), settings: { ...base.settings, language } }, undefined, named);
+    const seen: string[] = [];
+    const look = (what: string): void => {
+      const page = record((ctx) => app.draw(ctx));
+      expect(page.texts.length, what).toBeGreaterThan(3);
+      expect(smudged(page), `${language} ${what}`).toEqual([]);
+      seen.push(what);
+    };
+    // Whatever was announced as the hub came up is waited out: an announcement is a box over the screen.
+    for (let i = 0; i < 400; i++) app.update(100);
+    look('hub');
+    select(app, 'contracts');
+    look('contracts');
+    press(app, 'confirm');
+    if (snap(app).screen === 'briefing') { look('briefing'); press(app, 'cancel'); }
+    press(app, 'cancel');
+    for (const room of ['arena', 'training', 'gauntlet', 'shop', 'messages', 'options']) {
+      select(app, room);
+      expect(snap(app).screen, room).toBe(room);
+      look(room);
+      press(app, 'cancel');
+      expect(snap(app).screen, room).toBe('hub');
+    }
+    select(app, 'garage');
+    look('garage slots');
+    press(app, 'confirm');
+    look('garage parts');
+    press(app, 'cancel', 'right');
+    look('garage builds');
+    press(app, 'confirm');
+    look('garage build menu');
+    press(app, 'cancel', 'cancel', 'cancel');
+    if (snap(app).screen !== 'hub') press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+    for (const paged of ['pilot', 'database']) {
+      select(app, paged);
+      for (let n = 0; n < 5; n++) { look(`${paged} page ${n}`); press(app, 'next'); }
+      press(app, 'cancel');
+      expect(snap(app).screen).toBe('hub');
+    }
+    expect(seen.length).toBeGreaterThanOrEqual(21);
+  });
+
+  test('the check itself: a light laid over a word after it was written is found, and one laid before it is not', () => {
+    const after = record((ctx) => {
+      drawText(ctx, 'Word', 20, 30);
+      drawRowLight(ctx, 10, 28, 80);
+    });
+    expect(smudged(after)).toEqual(['Word (wash)']);
+    const before = record((ctx) => {
+      drawRowLight(ctx, 10, 28, 80);
+      drawText(ctx, 'Word', 20, 30);
+    });
+    expect(smudged(before)).toEqual([]);
+    const shadow = record((ctx) => {
+      drawText(ctx, 'Hint', 20, 61);
+      drawPanel(ctx, 10, 20, 100, 40);
+    });
+    expect(smudged(shadow)).toEqual(['Hint (wash)']);
+    const clear = record((ctx) => {
+      drawText(ctx, 'Hint', 20, 66);
+      drawPanel(ctx, 10, 20, 100, 40);
+    });
+    expect(smudged(clear)).toEqual([]);
   });
 });

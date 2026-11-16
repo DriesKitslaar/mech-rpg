@@ -163,6 +163,11 @@ test('the look of the title and the hangar: the sign comes on, the picture is al
   await watch(page, 'title', 3000, 200, { 1800: 'look-title' });
   // Long enough for a gleam, the searchlights' swing and a stroke of lightning.
   if (FRAMES) await watch(page, 'title-long', 16000, 100);
+  // The slots to start a new game in: the box keeps clear of the machine on the roof.
+  await pick(page, 'new');
+  await adv(page, 200);
+  await page.screenshot({ path: shot('look-title-slots') });
+  await tap(page, 'Escape');
   await pick(page, 'continue');
   await until(page, (s) => s.screen === 'hub');
   await watch(page, 'hub', 2400, 200, { 1200: 'look-hub' });

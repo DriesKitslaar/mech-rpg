@@ -164,6 +164,20 @@ describe('solid light, on the pixel grid', () => {
   });
 });
 
+describe('room for lights', () => {
+  test('where some of the room is taken already, only what is left is filled, with the brightest', () => {
+    const many = Array.from({ length: 40 }, (_, i) => glow({ x: i, alpha: 0.1 + (i % 10) * 0.05, r: 10 + i }));
+    expect(chosenLights(many, false, 13)).toHaveLength(13);
+    expect(chosenLights(many, false, 13)).toEqual(chosenLights(many).slice(0, 13));
+    // Never more than there is room for in all, and never fewer than none.
+    expect(chosenLights(many, false, 99)).toHaveLength(MAX_LIGHTS);
+    expect(chosenLights(many, false, 0)).toEqual([]);
+    expect(chosenLights(many, false, -4)).toEqual([]);
+    expect(record((ctx) => drawGlows(ctx, many, false, 5)).glows).toHaveLength(5);
+    expect(record((ctx) => drawGlows(ctx, many)).glows).toHaveLength(MAX_LIGHTS);
+  });
+});
+
 describe('a cone of light', () => {
   const from = { x: 100, y: 200 };
   const to = { x: 100, y: 50 };
