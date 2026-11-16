@@ -37,6 +37,8 @@ export const STRINGS = {
     barrier: (n: number) => `BARRIER ${n}`, chaff: 'CHAFF', stability: 'STAB',
     fuse: (n: number) => `FUSE ${n}`, aegis: 'AEGIS', jammer: 'JAMMER', mender: 'MENDER', carrier: 'CARRIER',
     covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`, ironSkin: 'IRON SKIN', deadeye: 'DEADEYE',
+    // What sets an elite enemy apart.
+    marks: { armoured: 'ARMOURED', overclocked: 'OVERCLOCKED', swift: 'SWIFT', shielded: 'SHIELDED' } as Record<string, string>,
   },
   // What an enemy is about to do, read from how it moves: shown with its tags while it is aimed at.
   intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', cool: 'COOLING', windUp: 'WINDS UP' },
@@ -156,7 +158,18 @@ export const STRINGS = {
     floor: (floor: number) => `Floor ${floor}. Whatever is down here was put here to stop you.`,
     warden: (name: string) => `This floor has a warden: ${name}. Beat them and the house patches you up.`,
     debrief: 'Floor cleared.',
-    pitch: ['A stock frame, for one run.', 'Each floor is harder.', 'After each, take one of', 'three things on offer.', 'It ends when you fall,', 'and pays by how deep.'],
+    pitch: ['A stock frame, for one run.', 'Each floor is harder and', 'has two doors: pick your', 'fight. After each, take', 'one thing on offer.', 'Wardens leave relics.', 'It ends when you fall,', 'and pays by how deep.'],
+    // The two ways into an open floor, and what is said of the one that hides an elite.
+    doors: ['Left door', 'Right door'], elite: 'ELITE', otherDoor: 'L1/R1: other door',
+    relicHeading: 'THE WARDEN LEFT', revived: 'SPARE CORE SPENT',
+    relics: {
+      redline: { name: 'Redline Core', short: 'REDLINE', note: 'The frame gets an Overdrive: Second Wind. R1 when the meter is full.' },
+      rig: { name: 'Salvage Rig', short: 'RIG', note: 'Twice as much armour is patched between floors.' },
+      key: { name: 'Quartermaster Key', short: 'KEY', note: 'One more thing on offer after every floor.' },
+      spare: { name: 'Spare Core', short: 'SPARE', note: 'Once, a floor lost is fought again in a whole mech.' },
+      cannon: { name: 'Glass Cannon', short: 'CANNON', note: 'You deal 30% more damage. Your armour is 15% thinner.' },
+      ledger: { name: 'Hazard Pay', short: 'PAY', note: 'The run pays half as much again.' },
+    } as Record<string, { name: string; short: string; note: string }>,
     best: (n: number) => `BEST ${n}`, floorLabel: (n: number) => `FLOOR ${n}`, wardenLabel: 'WARDEN', armour: (pct: number) => `ARMOUR ${pct}%`,
     start: 'Start a run', descend: 'Descend', abandon: 'End the run', back: 'Back', yes: 'Yes, end it', no: 'No',
     abandonAsk: (pay: number) => `End it here for ${pay}?`,

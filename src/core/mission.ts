@@ -50,6 +50,7 @@ export function startMissionBattle(
     // What an earlier battle of this contract left is carried; failing that, what the caller says the mech arrives with.
     ...opts, carry: previous ? carryFrom(previous) : opts.carry,
     ...(battle.objective ? { objective: battle.objective } : {}),
+    ...(battle.marks ? { marks: battle.marks } : {}),
     // A wingman keeps the order they were given through the battles of one contract.
     ...(battle.support ? { support: battle.support.orders && previous?.support?.order ? { ...battle.support, order: previous.support.order } : battle.support } : {}),
     // The place has its say, the same for both sides.

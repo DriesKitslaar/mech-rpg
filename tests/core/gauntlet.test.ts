@@ -2,8 +2,8 @@ import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
 import { createBattle } from '../../src/core/battle';
 import { validatePlayerBuild } from '../../src/core/build';
 import {
-  BOONS, BOON_IDS, GAUNTLET_PATCH, WARDENS, descend, draft, floorBudget, floorMission, floorScale, floorsCleared, isGauntlet, isValidRun,
-  isWardenFloor, payout, runMods, startRun, take, wear, type Offer, type Run,
+  BOONS, BOON_IDS, GAUNTLET_PATCH, WARDENS, descend, draft, draftSize, floorBudget, floorMission, floorScale, floorsCleared, isGauntlet, isValidRun,
+  isWardenFloor, payout, relicOffers, runMods, startRun, take, takeRelic, wear, type Offer, type Run,
 } from '../../src/core/gauntlet';
 import { startMissionBattle } from '../../src/core/mission';
 import { ALL_ENEMIES } from '../../src/content/arena';
@@ -29,6 +29,8 @@ function play(seed: number, limit = 40): Run {
     const end = fight(run);
     if (end.outcome !== 'victory') break;
     run = descend(run, end);
+    // What a warden left is taken first: the first of the two.
+    if (run.relicOwed) run = takeRelic(run, relicOffers(run)[0]);
     run = take(run, choose(draft(run, CATALOG)), CATALOG);
   }
   return run;
@@ -156,7 +158,7 @@ describe('after a floor', () => {
     const run: Run = { ...fresh(), floor: 5 };
     const end = fight({ ...run, boons: { plating: 20, capacitor: 20, optics: 20 } });
     expect(end.outcome).toBe('victory');
-    expect(descend(run, end)).toMatchObject({ floor: 6, carry: null, drafting: true });
+    expect(descend(run, end)).toMatchObject({ floor: 6, carry: null, drafting: true, relicOwed: true });
   });
 });
 
@@ -213,7 +215,7 @@ describe('what the review of the Gauntlet found', () => {
     expect(wear(whole, CATALOG)).toBe(0);
   });
 
-  test('a run stays sound to floor sixty whatever is taken: three different offers, a build that can deploy, a run the save accepts', () => {
+  test('a run stays sound to floor sixty whatever is taken: different things on offer, as many as are due, a build that can deploy, a run the save accepts', () => {
     const policies: ((offers: Offer[], i: number) => Offer)[] = [
       (o) => o[0], (o) => o[2], (o, i) => o[i % 3], (o) => o.find((x) => x.kind === 'boon') ?? o[0], (o) => o.find((x) => x.kind === 'part') ?? o[1],
     ];
@@ -224,8 +226,10 @@ describe('what the review of the Gauntlet found', () => {
         const end = floor < 8 ? fight({ ...run, boons: { plating: 60, capacitor: 20, optics: 30, heatsinks: 10 } }) : null;
         if (end?.outcome === 'victory') run = descend(run, end);
         else run = { ...run, floor: run.floor + 1, drafting: true };
+        if (run.relicOwed) run = takeRelic(run, relicOffers(run)[p % 2]);
         const offers = draft(run, CATALOG);
-        expect(new Set(offers.map((o) => JSON.stringify(o))).size).toBe(3);
+        expect(offers).toHaveLength(draftSize(run));
+        expect(new Set(offers.map((o) => JSON.stringify(o))).size).toBe(offers.length);
         run = take(run, policy(offers, floor), CATALOG);
         expect(validatePlayerBuild(run.build, CATALOG)).toEqual([]);
         expect(isValidRun(JSON.parse(JSON.stringify(run)), CATALOG), `policy ${p} floor ${floor}`).toBe(true);

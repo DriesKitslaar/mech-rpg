@@ -686,6 +686,8 @@ export class BattleScreen {
     if (unit.guarding) return { text: T.guard, color: COLORS.armor };
     if (unit.boosted) return { text: T.boost, color: COLORS.energy };
     if (aegisFactor(this.flow.state, unit) < 1) return { text: T.covered, color: COLORS.energy };
+    // An elite is known by its mark whenever there is nothing more pressing to say about it.
+    if (unit.mark) return { text: T.marks[unit.mark], color: COLORS.accent };
     return null;
   }
 
@@ -705,6 +707,7 @@ export class BattleScreen {
       ...(unit.abilities.jam !== undefined ? [{ text: T.jammer, color: COLORS.heat, rank: 2 }] : []),
       ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor, rank: 2 }] : []),
       ...(unit.abilities.carrier ? [{ text: T.carrier, color: COLORS.heat, rank: 2 }] : []),
+      ...(unit.mark ? [{ text: T.marks[unit.mark], color: COLORS.accent, rank: 4 }] : []),
       ...(aegisFactor(state, unit) < 1 ? [{ text: T.covered, color: COLORS.energy, rank: 4 }] : []),
       ...(jammed > 0 ? [{ text: T.jammed(jammed), color: COLORS.heat, rank: 5 }] : []),
       ...(unit.boosted ? [{ text: T.boost, color: COLORS.energy, rank: 5 }] : []),

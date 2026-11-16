@@ -30,7 +30,7 @@ test('the Gauntlet: a run is started, a floor is won, one of three things is tak
   const g = async () => (await snap(page) as unknown as { gauntlet: { floor: number | null; drafting: boolean; offers: unknown[] } }).gauntlet;
   expect(await g()).toMatchObject({ floor: 1, drafting: false });
   await page.screenshot({ path: shot('gauntlet-floor') });
-  await choose(page, 'descend');
+  await choose(page, 'door-0');
   await waitForPhase(page, 'action');
   const end = await finishBattle(page);
   expect(end.battle?.outcome).toBe('victory');
