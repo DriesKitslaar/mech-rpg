@@ -38,7 +38,7 @@ function fieldService(state: BattleState, catalog: Catalog): void {
  */
 export function startMissionBattle(
   build: Build, mission: Mission, index: number, enemies: Record<string, EnemyDef>, catalog: Catalog,
-  seed: number, previous?: BattleState, opts: Pick<BattleOptions, 'mods' | 'enemyScale' | 'carry'> = {},
+  seed: number, previous?: BattleState, opts: Pick<BattleOptions, 'mods' | 'enemyScale' | 'carry' | 'overdrive' | 'drive'> = {},
 ): BattleState {
   const battle = mission.battles[index];
   if (!battle) throw new Error(`mission ${mission.id} has no battle ${index}`);

@@ -128,7 +128,7 @@ describe('the pilot screen', () => {
     expect(ids(app)).toContain('marksman');
   });
 
-  test('the shoulder buttons turn the page: perks, medals, record, and round again both ways', () => {
+  test('the shoulder buttons turn the page: perks, medals, record, drive, and round again both ways', () => {
     const { app } = inHub(veteran());
     select(app, 'pilot');
     const pages = () => snap(app).page;
@@ -137,13 +137,15 @@ describe('the pilot screen', () => {
     press(app, 'next');
     expect(pages()).toBe('record');
     press(app, 'next');
+    expect(pages()).toBe('drive');
+    press(app, 'next');
     expect(pages()).toBe('perks');
-    press(app, 'prev');
+    press(app, 'prev', 'prev');
     expect(pages()).toBe('record');
     // Left and right do the same, for a thumb that is already on the pad.
     press(app, 'left');
     expect(pages()).toBe('medals');
-    press(app, 'right', 'right');
+    press(app, 'right', 'right', 'right');
     expect(pages()).toBe('perks');
   });
 
@@ -177,7 +179,7 @@ describe('the pilot screen', () => {
   test('the record page shows what has been counted', () => {
     const { app } = inHub(veteran());
     select(app, 'pilot');
-    press(app, 'prev');
+    press(app, 'prev', 'prev');
     expect(snap(app).page).toBe('record');
     const read = Object.fromEntries(snap(app).record!.map((line) => [line.label, line.value]));
     expect(read).toMatchObject({ 'CONTRACTS WON': '7', 'ENEMIES DESTROYED': '12', ACCURACY: '75%', MEDALS: `2/${MEDALS.length}` });
@@ -186,7 +188,7 @@ describe('the pilot screen', () => {
   test('a perk is bought on the perks page only', () => {
     const { app } = inHub(veteran());
     select(app, 'pilot');
-    press(app, 'next', 'confirm', 'next', 'confirm');
+    press(app, 'next', 'confirm', 'next', 'confirm', 'next', 'confirm');
     expect(snap(app).pilot).toMatchObject({ points: 3 });
     press(app, 'next', 'confirm');
     expect(snap(app)).toMatchObject({ page: 'perks', pilot: { points: 2 } });

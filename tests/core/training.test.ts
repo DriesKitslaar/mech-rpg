@@ -62,9 +62,9 @@ describe('a drill', () => {
 });
 
 describe('the drills', () => {
-  test('are ten, each with an id of its own, and three are open from the start', () => {
-    expect(DRILLS).toHaveLength(10);
-    expect(new Set(DRILLS.map((d) => d.id)).size).toBe(10);
+  test('are eleven, each with an id of its own, and three are open from the start', () => {
+    expect(DRILLS).toHaveLength(11);
+    expect(new Set(DRILLS.map((d) => d.id)).size).toBe(11);
     for (const drill of DRILLS) expect(drill.id).toMatch(/^drill-[a-z]+$/);
     expect(DRILLS.filter((d) => d.after === 'start').map((d) => d.id)).toEqual(['drill-aim', 'drill-heat', 'drill-boost']);
     const known = new Set(['start', 'choice', 'finale', 'verdict', ...MISSIONS.map((m) => m.id)]);
@@ -106,14 +106,17 @@ describe('what the drills teach', () => {
     return { type: 'endTurn' };
   }
   const SEEDS = 40;
-  const rate = (drillId: string, policy: (s: BattleState, c: Catalog) => Action): number => {
+  /** The drill as the simulator sets it up: its own scale, its own objective, and the Overdrive it lends, if it lends one. */
+  const begin = (drillId: string, seed: number, lend = true): BattleState => {
     const drill = DRILLS.find((d) => d.id === drillId)!;
+    return createBattle(drill.build, drill.battle.enemies.map((id) => ALL_ENEMIES[id]), CATALOG, seed * 7919, {
+      enemyScale: drill.scale ?? 1, ...(drill.battle.objective ? { objective: drill.battle.objective } : {}),
+      ...(lend && drill.overdrive ? { overdrive: drill.overdrive.kind, drive: drill.overdrive.drive } : {}),
+    });
+  };
+  const rate = (drillId: string, policy: (s: BattleState, c: Catalog) => Action): number => {
     let wins = 0;
-    for (let seed = 1; seed <= SEEDS; seed++) {
-      const start = createBattle(drill.build, drill.battle.enemies.map((id) => ALL_ENEMIES[id]), CATALOG, seed * 7919,
-        { enemyScale: drill.scale ?? 1, ...(drill.battle.objective ? { objective: drill.battle.objective } : {}) });
-      if (runBattle(start, CATALOG, policy).outcome === 'victory') wins++;
-    }
+    for (let seed = 1; seed <= SEEDS; seed++) if (runBattle(begin(drillId, seed), CATALOG, policy).outcome === 'victory') wins++;
     return wins / SEEDS;
   };
 
@@ -139,6 +142,20 @@ describe('what the drills teach', () => {
     expect(tank.energy).toBeGreaterThan(tank.kinetic);
     expect(enforcer.energy).toBeGreaterThan(enforcer.explosive * 1.15);
     expect(enforcer.explosive).toBeGreaterThan(enforcer.kinetic);
+  });
+
+  test('the Overdrive drill lends Second Wind with the meter full, and is over sooner for a pilot who spends it', () => {
+    const drill = DRILLS.find((d) => d.id === 'drill-overdrive')!;
+    expect(drill.overdrive).toEqual({ kind: 'second-wind', drive: 100 });
+    expect(drillMission(fresh(), drill, 'x').overdrive).toEqual(drill.overdrive);
+    // No other drill lends one: the pilot's own stays outside the simulator.
+    expect(DRILLS.filter((d) => d.overdrive).map((d) => d.id)).toEqual(['drill-overdrive']);
+    const rounds = (lend: boolean): number => {
+      let sum = 0;
+      for (let seed = 1; seed <= SEEDS; seed++) sum += runBattle(begin('drill-overdrive', seed, lend), CATALOG, chooseAutoPlayerAction).round;
+      return sum / SEEDS;
+    };
+    expect(rounds(true)).toBeLessThan(rounds(false) - 1);
   });
 
   // The others teach something that helps without being the only way through.

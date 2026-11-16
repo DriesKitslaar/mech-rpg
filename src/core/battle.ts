@@ -44,6 +44,10 @@ export interface BattleOptions {
   support?: Support;
   /** What the place does to the fighting; see ground.ts. */
   ground?: Ground;
+  /** The pilot's Overdrive. Without one there is no meter. */
+  overdrive?: OverdriveId;
+  /** What the meter starts at, when nothing is carried: a drill hands the pilot a full one. */
+  drive?: number;
 }
 
 /** An ally who is not on the field: at every new round they hit the strongest enemy for `damage`. */
@@ -58,6 +62,20 @@ export const ORDERS: Order[] = ['strongest', 'target', 'cover'];
 export interface Support { name: string; damage: number; orders?: boolean; order?: Order }
 /** The share of every shot at the pilot that a wingman on cover takes on themselves. */
 export const coverShare = (support: Support): number => Math.min(0.3, support.damage / 150);
+
+/**
+ * The pilot's great moves. A meter fills as the pilot fights; full, it buys one of these, once.
+ * Second Wind: the turn starts over (energy back, every weapon and action ready again; heat stays).
+ * Iron Skin: until the pilot's next turn, half damage and no stagger.
+ * Deadeye: for the rest of the turn every shot hits and does a quarter more.
+ */
+export type OverdriveId = 'second-wind' | 'iron-skin' | 'deadeye';
+export const OVERDRIVES: OverdriveId[] = ['second-wind', 'iron-skin', 'deadeye'];
+export const DRIVE_MAX = 100;
+/** What fills the meter: a volley that lands, a volley taken, a bomb's blast taken, an enemy destroyed. */
+export const DRIVE_GAIN = { landed: 8, taken: 10, blast: 10, kill: 15 } as const;
+export const IRON_SKIN = 0.5;
+export const DEADEYE_DAMAGE = 1.25;
 
 /** Something the player has to keep from being worn down; see the `protect` objective. */
 export interface Asset { name: string; hp: number; maxHp: number }
@@ -117,6 +135,14 @@ export interface UnitState {
   chaff: number;
   /** Multiplies the unit's damage for the rest of its turn. */
   damageBoost: number;
+  /** The Overdrive this unit has, if any: only the pilot's own mech has one. */
+  overdrive?: OverdriveId;
+  /** How far the Overdrive's meter has filled, 0 to `DRIVE_MAX`. Stays 0 without an Overdrive. */
+  drive: number;
+  /** Iron Skin is up: half damage and no stagger until the unit's next turn. */
+  ironSkin: boolean;
+  /** Deadeye is on: until the turn ends every shot hits and does more. */
+  deadeye: boolean;
   /** The kind of enemy this is: its `EnemyDef.id`. */
   kind?: string;
   /** Where an enemy stands on the field, 0 to `MAX_ENEMIES - 1`. One that joins later takes a place left free. */
@@ -169,6 +195,7 @@ export type BattleEvent =
   /** The ally off the field fired; `damage` is the armour the target lost. */
   | { type: 'support'; name: string; target: string; damage: number }
   | { type: 'order'; name: string; order: Order }
+  | { type: 'overdrive'; unit: string; kind: OverdriveId }
   /** The protected asset lost `lost` and stands at `hp`. */
   | { type: 'asset'; hp: number; lost: number }
   | { type: 'outcome'; outcome: 'victory' | 'defeat' };
@@ -213,12 +240,14 @@ export type Action =
   /** The player gives the battle up: a defeat, without waiting to be destroyed. */
   | { type: 'retreat' }
   /** Tells the wingman what to do from now on. Costs nothing and does not end the turn. */
-  | { type: 'order'; order: Order };
+  | { type: 'order'; order: Order }
+  /** Spends a full meter on the pilot's Overdrive. Costs nothing else and does not end the turn. */
+  | { type: 'overdrive' };
 
 export type Refusal =
   | 'noEnergy' | 'noAmmo' | 'alreadyFired' | 'weaponDisabled' | 'noWeapon' | 'invalidTarget'
   | 'alreadyUsed' | 'legsDisabled' | 'noRepairs' | 'partDestroyed' | 'partFull' | 'battleOver'
-  | 'staggered' | 'cannotBoost' | 'notCharged' | 'needsBoost' | 'noModule' | 'noUses' | 'noAbility' | 'noWingman';
+  | 'staggered' | 'cannotBoost' | 'notCharged' | 'needsBoost' | 'noModule' | 'noUses' | 'noAbility' | 'noWingman' | 'noOverdrive';
 
 /** What a boost gives a unit that fits no booster. Kept for callers that predate boosters. */
 export const BOOST_EVASION = DEFAULT_BOOST.thrust;
@@ -275,7 +304,7 @@ function createUnit(
     usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
     stagger: 0, staggerMax: Math.max(1, Math.round(stats.stability * mods.toughness)), staggered: 0,
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
-    barrier: 0, painted: 0, paintBonus: 0, chaff: 0, damageBoost: 1,
+    barrier: 0, painted: 0, paintBonus: 0, chaff: 0, damageBoost: 1, drive: 0, ironSkin: false, deadeye: false,
   };
 }
 
@@ -444,6 +473,7 @@ function detonate(state: BattleState, unit: UnitState, catalog: Catalog): void {
   const event: Extract<BattleEvent, { type: 'blast' }> = { type: 'blast', unit: unit.id, target: player.id, damage: 0 };
   state.events.push(event);
   event.damage = strike(state, player, amount, amount, catalog);
+  addDrive(player, DRIVE_GAIN.blast);
   damagePart(state, unit, 'core', unit.parts.core!.ap);
   checkOutcome(state);
 }
@@ -471,6 +501,8 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     // What lasted "until the unit's next turn" ends here, whether or not the turn is then lost.
     unit.boosted = false;
     unit.guarding = false;
+    unit.ironSkin = false;
+    unit.deadeye = false;
     unit.barrier = 0;
     unit.chaff = 0;
     if (unit.painted > 0) unit.painted -= 1;
@@ -518,6 +550,7 @@ function finishTurn(state: BattleState, catalog: Catalog): void {
   const unit = activeUnit(state);
   unit.heat = Math.max(0, unit.heat - coolingOn(state, unit, catalog));
   unit.damageBoost = 1;
+  unit.deadeye = false;
   state.turn += 1;
   beginTurns(state, catalog);
 }
@@ -541,6 +574,8 @@ export interface Carry {
   restocked: Partial<Record<WeaponSlot, number>>;
   /** Field repairs left; absent when the mech arrives with its full count. */
   repairsLeft?: number;
+  /** How far the Overdrive's meter had filled; absent when it starts empty. */
+  drive?: number;
   destroyed: boolean;
 }
 
@@ -551,6 +586,7 @@ export function carryFrom(state: BattleState): Carry {
   for (const slot of FRAME_SLOTS) if (player.parts[slot]) ap[slot] = player.parts[slot]!.ap;
   return {
     ap, heat: player.heat, ammo: { ...player.ammo }, restocked: { ...player.restocked }, repairsLeft: player.repairsLeft,
+    ...(player.drive > 0 ? { drive: player.drive } : {}),
     destroyed: player.destroyed,
   };
 }
@@ -566,6 +602,8 @@ function applyCarry(unit: UnitState, carry: Carry): void {
   for (const slot of WEAPON_SLOTS) if (slot in unit.ammo && slot in carry.ammo) unit.ammo[slot] = carry.ammo[slot];
   unit.restocked = { ...carry.restocked };
   if (typeof carry.repairsLeft === 'number') unit.repairsLeft = carry.repairsLeft;
+  // The meter is only carried by a mech that has an Overdrive to spend it on.
+  if (unit.overdrive && typeof carry.drive === 'number') unit.drive = Math.max(0, Math.min(DRIVE_MAX, carry.drive));
 }
 
 /** Refuses an objective the battle could not be won or lost by. */
@@ -588,7 +626,8 @@ function checkObjective(objective: Objective, enemies: EnemyDef[], catalog: Cata
 export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalog, seed: number, opts: BattleOptions = {}): BattleState {
   const objective: Objective = opts.objective ?? { type: 'destroy' };
   checkObjective(objective, enemies, catalog);
-  const playerUnit = createUnit('player', 'You', 'player', player, catalog, {}, opts.mods);
+  const playerUnit = createUnit('player', 'You', 'player', player, catalog, opts.overdrive ? { overdrive: opts.overdrive } : {}, opts.mods);
+  if (playerUnit.overdrive && opts.drive !== undefined) playerUnit.drive = Math.max(0, Math.min(DRIVE_MAX, opts.drive));
   if (opts.carry) applyCarry(playerUnit, opts.carry);
   const enemyScale = opts.enemyScale ?? 1;
   const units = [playerUnit, ...enemies.map((e, i) => createEnemy(e, `enemy-${i}`, enemyName(enemies, i), i, enemyScale, catalog))];
@@ -655,13 +694,16 @@ export function previewShot(
   let amount = weapon.damage * (1 - resist) * attacker.mods.damage * attacker.damageBoost * aegisFactor(state, target)
     * (state.ground?.damage?.[weapon.damageType] ?? 1);
   if (target.side === 'player' && state.support?.order === 'cover') amount *= 1 - coverShare(state.support);
+  if (attacker.deadeye) amount *= DEADEYE_DAMAGE;
+  if (target.ironSkin) amount *= IRON_SKIN;
   if (target.staggered > 0) amount *= STAGGER_DAMAGE;
   if (target.guarding) amount *= guardFactor(target, catalog);
   const full = Math.max(1, Math.round(amount));
   // A part that is already destroyed passes half the damage on to the core.
   const passesOn = target.parts[part]!.ap <= 0;
   return {
-    hitChance: Math.min(95, Math.max(10, raw)),
+    // A shot under Deadeye does not miss; any other is never surer than 95 in 100 nor wilder than 10.
+    hitChance: attacker.deadeye ? 100 : Math.min(95, Math.max(10, raw)),
     damage: passesOn ? Math.max(1, Math.floor(full / 2)) : full,
     shots: shotsOf(weapon),
     salvo: weapon.trait === 'salvo',
@@ -700,6 +742,9 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
       if (unit.ammo[action.weapon] === 0) return 'noAmmo';
       return unit.energy < weapon.energy ? 'noEnergy' : null;
     }
+    case 'overdrive':
+      if (!unit.overdrive) return 'noOverdrive';
+      return unit.drive < DRIVE_MAX ? 'notCharged' : null;
     case 'order':
       if (unit.side !== 'player' || !state.support?.orders) return 'noWingman';
       return (state.support.order ?? 'strongest') === action.order ? 'alreadyUsed' : null;
@@ -793,7 +838,7 @@ function checkPhases(state: BattleState, unit: UnitState, catalog: Catalog): voi
 
 /** Pushes a unit off balance. A full bar staggers it, which also costs it every charge it holds. */
 function addImpact(state: BattleState, target: UnitState, amount: number): void {
-  if (target.destroyed || target.staggered > 0 || amount <= 0) return;
+  if (target.destroyed || target.staggered > 0 || amount <= 0 || target.ironSkin) return;
   target.stagger = Math.min(target.staggerMax, target.stagger + amount);
   if (target.stagger < target.staggerMax) return;
   target.staggered = 2;
@@ -816,6 +861,8 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   const others = weapon.trait === 'salvo'
     ? state.units.filter((u) => u.side !== unit.side && !u.destroyed && u.id !== primary.id)
     : [];
+  // What the volley does for the meters: once for landing at all, once for each unit it landed on, and for each kill.
+  const struck = new Set<UnitState>();
   for (const target of [primary, ...others]) {
     const aimed: FrameSlot = target === primary ? action.part : 'core';
     // Each shot is rolled and previewed on its own, because an earlier one may have destroyed
@@ -833,6 +880,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
         damage: hit ? damage - absorbed : 0, ...(absorbed > 0 ? { absorbed } : {}),
       });
       if (!hit) continue;
+      struck.add(target);
       target.barrier -= absorbed;
       if (damage > absorbed) damagePart(state, target, appliedTo, damage - absorbed);
       if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
@@ -846,10 +894,20 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
     if (state.outcome !== 'ongoing') break;
   }
 
+  if (struck.size > 0) addDrive(unit, DRIVE_GAIN.landed);
+  for (const target of struck) {
+    addDrive(target, DRIVE_GAIN.taken);
+    if (target.destroyed) addDrive(unit, DRIVE_GAIN.kill);
+  }
   // Closing in to strike is what the boost was spent on: the mech ends up in the enemy's face, not dodging.
   if (weapon.melee) unit.boosted = false;
   heatUp(state, unit, weapon.heat);
   checkOutcome(state);
+}
+
+/** Fills a unit's Overdrive meter, if it has an Overdrive at all. */
+function addDrive(unit: UnitState, amount: number): void {
+  if (unit.overdrive && !unit.destroyed) unit.drive = Math.min(DRIVE_MAX, unit.drive + amount);
 }
 
 /** Adds heat; passing the limit marks the unit overheated, which costs it its next turn. */
@@ -870,6 +928,7 @@ function strike(state: BattleState, target: UnitState, damage: number, impact: n
   let amount = damage * aegisFactor(state, target);
   if (target.staggered > 0) amount *= STAGGER_DAMAGE;
   if (target.guarding) amount *= guardFactor(target, catalog);
+  if (target.ironSkin) amount *= IRON_SKIN;
   const dealt = Math.max(1, Math.round(amount));
   const absorbed = Math.min(target.barrier, dealt);
   target.barrier -= absorbed;
@@ -945,6 +1004,25 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
       if (unit.side === 'player') state.focus = action.target;
       resolveFire(state, action, catalog, roll);
       break;
+    case 'overdrive': {
+      const kind = unit.overdrive!;
+      unit.drive = 0;
+      state.events.push({ type: 'overdrive', unit: unit.id, kind });
+      if (kind === 'iron-skin') unit.ironSkin = true;
+      else if (kind === 'deadeye') unit.deadeye = true;
+      else {
+        // The turn starts over: the energy of a turn (a staggered one, if that is what this is), and
+        // everything that can be done once a turn can be done again. The heat is still there.
+        const energy = turnEnergyOf(unit, catalog);
+        unit.energy = unit.staggered > 0 ? Math.floor(energy * STAGGER_ENERGY) : energy;
+        unit.fired = [];
+        unit.usedBoost = false;
+        unit.usedGuard = false;
+        unit.usedCool = false;
+        unit.usedModule = false;
+      }
+      break;
+    }
     case 'order':
       state.support!.order = action.order;
       state.events.push({ type: 'order', name: state.support!.name, order: action.order });

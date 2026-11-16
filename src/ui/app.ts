@@ -58,7 +58,8 @@ import { GauntletScreen } from './gauntletScreen';
 import { descend, floorMission, floorsCleared, isGauntlet, payout, runMods, startRun, take, type Offer, type Run } from '../core/gauntlet';
 import { GAUNTLET_BUILD, GAUNTLET_TEXT } from '../content/gauntlet';
 import { ENEMIES } from '../content/enemies';
-import type { BattleState } from '../core/battle';
+import type { BattleState, OverdriveId } from '../core/battle';
+import { fittedOverdrive, overdriveOpen } from '../core/pilot';
 import { SettlementScreen } from './settlementScreen';
 import { battleTrack, briefingTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
@@ -103,7 +104,7 @@ const TOASTS_AT_ONCE = 3;
 const NO_TOASTS: ScreenName[] = ['battle', 'scene', 'ending', 'credits', 'title', 'callsign'];
 
 /** What the battles of a contract added up to, for the record. */
-export interface Fought { tally: Stats; met: string[]; retreated: boolean }
+export interface Fought { tally: Stats; met: string[]; retreated: boolean; overdrives?: number }
 
 /** Something to tell the pilot in passing: a medal earned, the database grown. */
 interface Toast {
@@ -169,6 +170,8 @@ class MissionHost implements Screen {
   /** What the battles already over added to the record, and the kinds of enemy seen in them. */
   private tally: Stats = NO_STATS;
   private met = new Set<string>();
+  /** Overdrives set off in the battles already counted. */
+  private overdrives = 0;
   /** What there is to say about the battle the contract was lost in; null after a win or a retreat. */
   private tip: Advice | null = null;
 
@@ -184,10 +187,14 @@ class MissionHost implements Screen {
     const { aim, evasion, energy, cooling, repairs, armour } = this.app.perks();
     const run = isGauntlet(this.mission) ? this.app.run : null;
     const drill = isDrill(this.mission) || !!run;
+    const fitted = drill ? undefined : this.app.overdrive();
+    const overdrive = this.mission.overdrive ?? (fitted ? { kind: fitted, drive: 0 } : undefined);
     const state = startMissionBattle(
       this.mission.loaner ?? this.app.game!.build, this.mission, this.index, this.app.enemies(), catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
       {
         enemyScale: this.enemyScale(),
+        // The pilot's own Overdrive goes with the pilot's own mech; a drill that teaches it brings its own.
+        ...(overdrive ? { overdrive: overdrive.kind, ...(this.index === 0 && overdrive.drive > 0 ? { drive: overdrive.drive } : {}) } : {}),
         // A run of the Gauntlet has its own boons and arrives as the last floor left it; the pilot's perks stay outside.
         ...(run ? { mods: runMods(run), carry: run.carry ?? undefined } : drill ? {} : { mods: { aim, evasion, energy, cooling, repairs, armour } }),
       },
@@ -252,7 +259,7 @@ class MissionHost implements Screen {
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
     const settlement = rankSettlement(bill, performance);
     this.count();
-    const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state) });
+    const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state), overdrives: this.overdrives });
     // What the debt limit wrote off is shown with the bill.
     this.settlement = relief > 0 ? { ...settlement, relief } : settlement;
   }
@@ -262,6 +269,7 @@ class MissionHost implements Screen {
     this.tally = addStats(this.tally, tallyBattle(this.flow.state));
     // Whatever was on the field was met, what joined later included.
     for (const unit of this.flow.state.units) if (unit.side === 'enemy' && unit.kind) this.met.add(unit.kind);
+    this.overdrives += this.flow.state.events.filter((event) => event.type === 'overdrive').length;
   }
 
   update(dtMs: number): void {
@@ -316,6 +324,8 @@ class MissionHost implements Screen {
         support: flow.state.support?.name ?? null,
         coach: this.coach,
         ground: flow.state.ground?.id ?? null,
+        // The Overdrive's meter, for a mech that has one.
+        drive: flow.state.units[0].overdrive ? { kind: flow.state.units[0].overdrive, value: flow.state.units[0].drive } : null,
         // What the enemy being aimed at is about to do.
         intent: intentText(intentOf(flow.state, flow.state.units.find((u) => u.id === flow.targetId) ?? flow.state.units[0], this.app.deps.catalog)),
         enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),
@@ -727,6 +737,18 @@ export class App {
     this.show('battle', new MissionHost(this, mission, this.seed));
   }
 
+  /** The Overdrive the pilot flies with, once one is open to them. */
+  overdrive(): OverdriveId | undefined {
+    return this.game ? fittedOverdrive(this.game) : undefined;
+  }
+
+  /** Chooses the Overdrive to fly with, among those open to the pilot. */
+  fitOverdrive(id: OverdriveId): void {
+    const game = this.game;
+    if (!game || !overdriveOpen(game, id) || game.overdrive === id) return;
+    this.commit({ ...game, overdrive: id });
+  }
+
   /** The pilots for hire who take this pilot's calls. */
   wingmen(mission?: Mission): Wingman[] {
     const game = this.game;
@@ -779,6 +801,7 @@ export class App {
       ...next,
       stats: addStats(next.stats, contractStats(fought.tally, { won: settlement.won, retreated: fought.retreated, pay })),
       met: [...next.met, ...fought.met.filter((kind) => !next.met.includes(kind))],
+      ...(fought.overdrives ? { overdrives: (next.overdrives ?? 0) + fought.overdrives } : {}),
     };
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);

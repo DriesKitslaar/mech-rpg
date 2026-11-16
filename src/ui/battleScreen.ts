@@ -1,5 +1,5 @@
 import {
-  aegisFactor, coolCost, boostCost, guardCost, jamOn, objectiveTarget, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type BattleEvent, type UnitState,
+  aegisFactor, coolCost, boostCost, guardCost, jamOn, objectiveTarget, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type BattleEvent, type UnitState, DRIVE_MAX,
 } from '../core/battle';
 import { weaponIn } from '../core/build';
 import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
@@ -66,9 +66,31 @@ const MENU_W = 154;
 const PLAYER_HIT: Record<FrameSlot, { x: number; y: number }> = {
   head: { x: 76, y: 20 }, core: { x: 78, y: 50 }, arms: { x: 108, y: 44 }, legs: { x: 76, y: 108 },
 };
+/** How long the ring of an Overdrive takes to run out. */
+const SURGE_MS = 420;
+
+/** A circle one pixel thick, drawn pixel by pixel so that it keeps to the grid like everything else on the field. */
+function drawRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, color: string): void {
+  const r = Math.round(radius);
+  ctx.fillStyle = color;
+  let x = r;
+  let y = 0;
+  let err = 1 - r;
+  while (x >= y) {
+    for (const [dx, dy] of [[x, y], [y, x], [-x, y], [-y, x], [x, -y], [y, -x], [-x, -y], [-y, -x]]) {
+      ctx.fillRect(Math.round(cx) + dx, Math.round(cy) + dy, 1, 1);
+    }
+    y += 1;
+    if (err < 0) err += 2 * y + 1;
+    else { x -= 1; err += 2 * (y - x) + 1; }
+  }
+}
+
 export class BattleScreen {
   private timer = 0;
   private clock = 0;
+  /** The ring that runs out from a mech as its Overdrive goes off: where it started, and how long ago. */
+  private surge: { x: number; y: number; ms: number } | null = null;
   private fx = new BattleFx(this.scene());
   /** What moves each unit's layers: one puppet a unit, made when it is first drawn. */
   private puppets = new Map<string, Puppet>();
@@ -164,6 +186,7 @@ export class BattleScreen {
     this.fx.update(moved);
     for (const puppet of this.puppets.values()) puppet.update(moved);
     this.particles.update(moved);
+    if (this.surge && (this.surge.ms += moved) >= SURGE_MS) this.surge = null;
     this.shownAp.update(dtMs);
     this.updateTalk(realMs);
     const rumble = this.fx.takeRumble();
@@ -239,9 +262,9 @@ export class BattleScreen {
   }
 
   /** What is moving on the field right now, for tests: nobody can watch a test run. */
-  get motion(): { particles: number; flash: number; stance: (id: string) => Stance; breaking: (id: string) => number | null } {
+  get motion(): { particles: number; flash: number; surge: boolean; stance: (id: string) => Stance; breaking: (id: string) => number | null } {
     return {
-      particles: this.particles.count, flash: this.hitStop.flash, stance: (id) => ({ ...this.stances.of(id) }),
+      particles: this.particles.count, flash: this.hitStop.flash, surge: this.surge !== null, stance: (id) => ({ ...this.stances.of(id) }),
       breaking: (id) => this.puppets.get(id)?.breaking ?? null,
     };
   }
@@ -303,6 +326,7 @@ export class BattleScreen {
     }
     this.particles.draw(ctx);
     this.fx.draw(ctx);
+    this.drawSurge(ctx);
     if (this.hitStop.flash > 0) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
       ctx.fillRect(0, 14, LOGICAL_W, PANEL_Y - 14);
@@ -312,6 +336,7 @@ export class BattleScreen {
     this.drawMessage(ctx);
     this.drawObjective(ctx);
     this.drawGround(ctx);
+    this.drawDrive(ctx);
     if (this.opts.coach && this.intro <= 0) this.drawCoach(ctx);
     // While someone talks, their words have the panel: there is nothing to choose until they are done.
     const talking = this.flow.phase === 'talk' && this.intro <= 0;
@@ -319,6 +344,42 @@ export class BattleScreen {
     if (this.intro > 0) return this.drawIntro(ctx);
     if (talking) this.drawTalk(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
+  }
+
+  /** Two rings running out from the mech whose Overdrive has just gone off, fading as they go. */
+  private drawSurge(ctx: CanvasRenderingContext2D): void {
+    if (!this.surge) return;
+    const t = this.surge.ms / SURGE_MS;
+    drawRing(ctx, this.surge.x, this.surge.y, 8 + t * 54, `rgba(255, 93, 177, ${(1 - t).toFixed(2)})`);
+    drawRing(ctx, this.surge.x, this.surge.y, 4 + t * 34, `rgba(255, 255, 255, ${(0.8 * (1 - t)).toFixed(2)})`);
+  }
+
+  /**
+   * The Overdrive's meter: a thin column at the left edge of the field that fills from the bottom,
+   * and, once it is full, the button that sets it off, blinking beside it.
+   */
+  private drawDrive(ctx: CanvasRenderingContext2D): void {
+    const player = this.flow.state.units[0];
+    if (!player.overdrive || this.intro > 0 || player.destroyed) return;
+    const top = FIELD_Y + 18;
+    const height = PANEL_Y - 6 - top;
+    const filled = Math.round((height * Math.min(DRIVE_MAX, player.drive)) / DRIVE_MAX);
+    const full = player.drive >= DRIVE_MAX;
+    const lit = full && (this.opts.fast || Math.floor(this.clock / 260) % 2 === 0);
+    ctx.fillStyle = 'rgba(8, 8, 20, 0.7)';
+    ctx.fillRect(1, top - 1, 5, height + 2);
+    ctx.fillStyle = COLORS.empty;
+    ctx.fillRect(2, top, 3, height);
+    ctx.fillStyle = full ? (lit ? '#ffffff' : COLORS.accent) : COLORS.accent;
+    ctx.fillRect(2, top + height - filled, 3, filled);
+    if (!full || this.flow.phase === 'result') return;
+    const label = STRINGS.overdrive.ready;
+    const width = label.length * 4 + 6;
+    // A new pilot's line about the buttons has the foot of the field: the label stands a row above it.
+    const y = PANEL_Y - 13 - (this.opts.coach ? 12 : 0);
+    ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
+    ctx.fillRect(8, y, width, 11);
+    drawText(ctx, label, 11, y + 1, { size: 10, color: lit ? '#ffffff' : COLORS.accent });
   }
 
   /** The ground's rule, small, in the top right corner of the field: its name, so the briefing's line is not forgotten. */
@@ -451,6 +512,17 @@ export class BattleScreen {
       const at = scene.hitPoint(event.unit, event.part);
       this.particles.emit('debris', at, 1, 0, ground);
       this.particles.emit('smoke', at, 1, 80);
+    }
+    if (event.type === 'overdrive') {
+      // The field holds its breath, the mech surges, and sparks come off it.
+      this.hitStop.strike(140);
+      const c = scene.centre(event.unit);
+      this.particles.emit('embers', c, 1);
+      this.particles.emit('sparks', c, 1, 60, undefined, '#ff5db1');
+      if (!this.opts.fast) this.surge = { x: c.x, y: c.y, ms: 0 };
+      this.opts.rumble?.(120);
+      const who = unit(event.unit);
+      if (who) this.puppet(who).play('boost');
     }
     if (event.type === 'unitDestroyed') {
       this.hitStop.strike(event.unit === 'player' ? 160 : 90);
@@ -639,6 +711,9 @@ export class BattleScreen {
       ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor, rank: 6 }] : []),
       ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat, rank: 8 }] : []),
       ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy, rank: 7 }] : []),
+      // An Overdrive that lasts says so for as long as it does.
+      ...(unit.ironSkin ? [{ text: T.ironSkin, color: COLORS.accent, rank: 8 }] : []),
+      ...(unit.deadeye ? [{ text: T.deadeye, color: COLORS.accent, rank: 8 }] : []),
       ...(unit.painted > 0 ? [{ text: T.painted, color: COLORS.danger, rank: 3 }] : []),
       ...(unit.chaff > 0 ? [{ text: T.chaff, color: COLORS.dim, rank: 3 }] : []),
       // What an enemy is lining up to do comes last in the row, and is the first to make way: everything

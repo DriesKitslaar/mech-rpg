@@ -36,7 +36,7 @@ export const STRINGS = {
     boost: 'BOOST', guard: 'GUARD', stagger: 'STAGGER', charged: 'CHARGED', charging: 'CHARGING', painted: 'PAINTED',
     barrier: (n: number) => `BARRIER ${n}`, chaff: 'CHAFF', stability: 'STAB',
     fuse: (n: number) => `FUSE ${n}`, aegis: 'AEGIS', jammer: 'JAMMER', mender: 'MENDER', carrier: 'CARRIER',
-    covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`,
+    covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`, ironSkin: 'IRON SKIN', deadeye: 'DEADEYE',
   },
   // What an enemy is about to do, read from how it moves: shown with its tags while it is aimed at.
   intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', cool: 'COOLING', windUp: 'WINDS UP' },
@@ -85,6 +85,18 @@ export const STRINGS = {
   blast: (unit: string, target: string, damage: number) => `${unit} DETONATES on ${obj(target)} -${damage}`,
   launch: (unit: string, spawned: string) => `${unit} launches ${spawned}`,
   phase: (unit: string) => `${unit} changes tactics`,
+  // The pilot's Overdrive: a meter that fills in battle and buys one great move.
+  overdrive: {
+    heading: 'OVERDRIVE', ready: 'R1: OVERDRIVE', used: (name: string) => `OVERDRIVE: ${name.toUpperCase()}`,
+    names: { 'second-wind': 'Second Wind', 'iron-skin': 'Iron Skin', deadeye: 'Deadeye' } as Record<string, string>,
+    notes: {
+      'second-wind': 'Your turn starts over: energy back, every weapon and action ready again. The heat stays.',
+      'iron-skin': 'Until your next turn you take half damage and cannot be staggered.',
+      deadeye: 'Until your turn ends every shot hits and does a quarter more.',
+    } as Record<string, string>,
+    how: 'The meter at the edge of the field fills as you land hits, take them and destroy machines. When it is full, press R1 on your turn.',
+    level: (n: number) => `LV ${n}`, fitted: 'FITTED', hint: 'A: fit   L1/R1: page   B: back',
+  },
   // What a hired wingman can be told, on the pilot's turn, for nothing.
   orders: {
     item: (order: 'strongest' | 'target' | 'cover') => ({ strongest: 'Wing: strongest', target: 'Wing: my target', cover: 'Wing: cover me' })[order],
@@ -201,7 +213,7 @@ export const STRINGS = {
     heading: 'PILOT', level: 'LEVEL', xp: 'XP', next: 'NEXT LEVEL', maxLevel: 'MAX LEVEL', points: 'PERK POINTS',
     hint: 'A: spend a point   L1/R1: page   B: back', pageHint: 'L1/R1: page   B: back',
     noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
-    pages: { perks: 'PERKS', medals: 'MEDALS', record: 'RECORD' },
+    pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDALS', record: 'RECORD' },
   },
   medals: {
     heading: 'MEDALS', earned: 'MEDAL EARNED', earnedMany: 'MEDALS EARNED', count: (n: number) => `${n} medals`, pay: (credits: number) => `+${credits} c`, held: 'EARNED', pays: (credits: number) => `Pays ${credits} c`,

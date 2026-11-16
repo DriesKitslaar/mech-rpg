@@ -246,6 +246,7 @@ export class BattleFlow {
       case 'phase': return STRINGS.phase(name(event.unit));
       case 'support': return STRINGS.support(event.name, name(event.target), event.damage);
       case 'order': return STRINGS.orders.told(event.name, event.order);
+      case 'overdrive': return STRINGS.overdrive.used(STRINGS.overdrive.names[event.kind]);
       case 'asset': return STRINGS.asset(this.state.asset?.name ?? '', event.hp, event.lost);
       case 'turnStart':
       case 'outcome':
@@ -435,6 +436,8 @@ export class BattleFlow {
     const item = this.menu.items[this.menu.cursor];
     switch (this.phase) {
       case 'action':
+        // The Overdrive has a button of its own: R1, on the pilot's turn, once the meter is full.
+        if (input === 'next' && this.can({ type: 'overdrive' })) return this.act({ type: 'overdrive' });
         if (input !== 'confirm' || !item?.enabled) return;
         switch (item.id as ActionId) {
           case 'fire': return this.openWeaponMenu();

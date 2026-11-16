@@ -654,7 +654,7 @@ describe('the screens the pilot\'s record added', () => {
     press(app, 'next');
     expect(page().said).toEqual(expect.arrayContaining(['VARN', 'Varn', 'The Licence', 'Hadron Mining']));
     press(app, 'next');
-    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Leg Types', `${26} TOPICS`]));
+    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Leg Types', `${27} TOPICS`]));
   });
 
   test('the database growing is announced with its own mark, and medals after it one by one', () => {
@@ -676,7 +676,7 @@ describe('the screens the pilot\'s record added', () => {
     app.update(16);
     app.draw(ctx);
     expect(texts(calls)).toEqual(expect.arrayContaining([
-      'TRAINING', 'PASSED 1/10', 'Take It Apart', 'Heat Discipline', 'PASSED', 'LOCKED', '150', 'TAKE IT APART', 'Aim at parts', 'OPEN',
+      'TRAINING', 'PASSED 1/11', 'Take It Apart', 'Heat Discipline', 'PASSED', 'LOCKED', '150', 'TAKE IT APART', 'Aim at parts', 'OPEN',
     ]));
     // The lent mech is drawn from its parts: the Halo head of the first drill is among them.
     expect(calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'head-halo')).toBe(true);

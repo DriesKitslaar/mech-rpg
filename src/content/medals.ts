@@ -61,6 +61,8 @@ const EARNED: Medal[] = [
   { id: 'apex', name: 'Last One Standing', text: 'Beat everyone in the back room of the arena.', tier: 3, secret: true, progress: count(ARENA_RANKS, (g) => g.arenaRank) },
   { id: 'cup', name: 'Silverware', text: 'Win an arena cup.', tier: 2, progress: count(1, (g) => (g.cups ?? []).length) },
   { id: 'cups', name: 'Full Cabinet', text: 'Win all three arena cups.', tier: 3, progress: count(3, (g) => (g.cups ?? []).length) },
+  { id: 'overdrive', name: 'Redline', text: 'Set off an Overdrive.', tier: 1, progress: count(1, (g) => g.overdrives ?? 0) },
+  { id: 'overdrive-50', name: 'Past the Stop', text: 'Set off 50 Overdrives.', tier: 2, progress: count(50, (g) => g.overdrives ?? 0) },
   // The Gauntlet.
   { id: 'gauntlet-5', name: 'Past the Warden', text: 'Clear 5 floors of the Gauntlet in one run.', tier: 1, progress: count(5, (g) => g.gauntletBest ?? 0) },
   { id: 'gauntlet-10', name: 'Deep Water', text: 'Clear 10 floors of the Gauntlet in one run.', tier: 2, progress: count(10, (g) => g.gauntletBest ?? 0) },

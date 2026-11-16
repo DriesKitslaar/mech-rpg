@@ -63,6 +63,13 @@ test('in Dutch: the game is played from the title to a battle and through its sc
     await choose(page, screen);
     await waitForScreen(page, screen);
     await page.screenshot({ path: shot(screen) });
+    if (screen === 'pilot') {
+      // The page of the Overdrives, one step back from the first.
+      await press(page, 'KeyQ');
+      expect(await snap(page)).toMatchObject({ page: 'drive' });
+      expect(await labels()).not.toContain('Second Wind');
+      await page.screenshot({ path: shot('pilot-drive') });
+    }
     if (screen === 'options') {
       // Back to English and to Dutch again, on the spot.
       await choose(page, 'language');

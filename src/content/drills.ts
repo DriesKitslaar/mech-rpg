@@ -196,4 +196,18 @@ export const DRILLS: Drill[] = [
       ],
     },
   },
+  {
+    id: 'drill-overdrive', title: 'Second Wind', lesson: 'Overdrive', after: 'intro-2', scale: 0.9,
+    briefing: [
+      'Fighting fills the meter at the left edge of the field: hits you land, hits you take, machines you destroy. Full, it buys your Overdrive: press R1 on your turn.',
+      'This one is Second Wind: your turn starts over. Fire everything, press R1, fire everything again. Your own opens at pilot level 3.',
+    ],
+    debrief: 'Two turns in one. It is worth most when the first one is spent.',
+    build: { ...STARTER_FRAME, ...STOCK, generator: 'gen-kd1', rightHand: 'wpn-rivet-rifle', leftHand: 'wpn-arc-pistol' },
+    battle: {
+      enemies: ['gun-turret', 'recon-drone'], background: HALL,
+      talk: [sim('start', 'The meter is full already. Spend your energy first, then R1.')],
+    },
+    overdrive: { kind: 'second-wind', drive: 100 },
+  },
 ];
