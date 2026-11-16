@@ -54,7 +54,7 @@ const MODULE_COLOR: Record<string, string> = {
 /** How long a barrel's flash lasts. */
 const MUZZLE_MS = 90;
 /** The last and largest blast of a machine going up: when it comes, and how long it burns. */
-const WRECK_AT = 300;
+export const WRECK_AT = 300;
 const WRECK_MS = 480;
 
 /**

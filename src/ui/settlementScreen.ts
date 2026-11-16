@@ -5,7 +5,9 @@ import type { Settlement } from '../core/economy';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
+import { drawStamp } from './cinema';
 import { LOGICAL_H, LOGICAL_W } from './display';
+import { drawRoom } from './room';
 import { COLORS, LINE, charsFor, drawPanel, drawText, wrap } from './widgets';
 
 const S = STRINGS.settlement;
@@ -50,6 +52,9 @@ export class SettlementScreen implements Screen {
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
+    // The bill is read in the hangar, and the hangar is lit.
+    const calm = this.app.settings.calm === true;
+    drawRoom(ctx, 'bg-garage', this.app.deps.fast ? 0 : this.clock, calm, this.app.deps.fast);
 
     const x = 40;
     const w = LOGICAL_W - 80;
@@ -72,6 +77,8 @@ export class SettlementScreen implements Screen {
         ctx.scale(scale, scale);
         drawText(ctx, s.rank, 6, -16, { size: 32, align: 'right', color });
         ctx.restore();
+        // As it lands a ring runs out from it; the ranks that pay flare and throw sparks.
+        if (!fast) drawStamp(ctx, { x: right - 6, y: 36 }, this.clock - STAMP_AT - STAMP_MS, color, s.rank === 'S' || s.rank === 'A', calm);
       }
     }
 
