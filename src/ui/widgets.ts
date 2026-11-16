@@ -53,12 +53,92 @@ export function drawText(ctx: CanvasRenderingContext2D, text: string, x: number,
   }
 }
 
+/** A '#rrggbb' colour mixed towards white (`t` above 0) or towards black (`t` below 0), as far as `t` says. */
+export function shade(hex: string, t: number): string {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!m) return hex;
+  const to = t > 0 ? 255 : 0;
+  const k = Math.min(1, Math.abs(t));
+  return `#${[m[1], m[2], m[3]].map((c) => Math.round(parseInt(c, 16) + (to - parseInt(c, 16)) * k).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** A panel lower than this is a bar across the screen, not a box. */
+export const BAR_H = 16;
+/** How far a panel's corners are cut. */
+const CUT = 2;
+const FRAME_LIGHT = 'rgba(150, 140, 230, 0.22)';
+/** How far below a panel its shadow reaches. */
+export const PANEL_SHADOW = 4;
+
+/** What a panel is filled with: a little lighter at the top than at the bottom, or the plain panel colour where the canvas makes no gradients. */
+function panelFill(ctx: CanvasRenderingContext2D, y: number, h: number): string | CanvasGradient {
+  const body = ctx.createLinearGradient?.(0, y, 0, y + h) as CanvasGradient | undefined;
+  if (!body || typeof body.addColorStop !== 'function') return COLORS.panel;
+  body.addColorStop(0, 'rgba(27, 25, 52, 0.95)');
+  body.addColorStop(0.45, 'rgba(14, 14, 28, 0.94)');
+  body.addColorStop(1, 'rgba(8, 8, 18, 0.95)');
+  return body;
+}
+
+/**
+ * A panel stands a little off what is behind it: the picture under its bottom edge is darkened,
+ * most right under it. Soft, so a canvas that makes no gradients gets none.
+ */
+function panelShadow(ctx: CanvasRenderingContext2D, x: number, y: number, w: number): void {
+  const fall = ctx.createLinearGradient?.(0, y, 0, y + PANEL_SHADOW) as CanvasGradient | undefined;
+  if (!fall || typeof fall.addColorStop !== 'function') return;
+  fall.addColorStop(0, 'rgba(0, 0, 8, 0.5)');
+  fall.addColorStop(1, 'rgba(0, 0, 8, 0)');
+  ctx.fillStyle = fall;
+  ctx.fillRect(x, y, w, PANEL_SHADOW);
+}
+
+/**
+ * The box everything is written in: a dark plate with its corners cut, a frame, a line of light
+ * under its top edge, a mark in the game's colour at two of its corners, and a shadow under it.
+ * A low one is a bar across the screen: no cut corners and a line under it, and the one at the
+ * top of the screen has the mark at its left end.
+ */
 export function drawPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
-  ctx.fillStyle = COLORS.panel;
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = COLORS.border;
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  if (h <= BAR_H || w <= CUT * 4) {
+    panelShadow(ctx, x, y + h, w);
+    ctx.fillStyle = panelFill(ctx, y, h);
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = COLORS.border;
+    ctx.fillRect(x, y + h - 1, w, 1);
+    if (y === 0) {
+      ctx.fillStyle = COLORS.accent;
+      ctx.fillRect(x, y + h - 1, Math.min(w, 28), 1);
+    }
+    return;
+  }
+  panelShadow(ctx, x + CUT, y + h, w - CUT * 2);
+  ctx.fillStyle = panelFill(ctx, y, h);
+  // The plate, in pieces that do not overlap: it is not quite opaque, and two layers would show.
+  ctx.fillRect(x + CUT, y, w - CUT * 2, h);
+  ctx.fillRect(x, y + CUT, CUT, h - CUT * 2);
+  ctx.fillRect(x + w - CUT, y + CUT, CUT, h - CUT * 2);
+  ctx.fillRect(x + 1, y + 1, 1, 1);
+  ctx.fillRect(x + w - 2, y + 1, 1, 1);
+  ctx.fillRect(x + 1, y + h - 2, 1, 1);
+  ctx.fillRect(x + w - 2, y + h - 2, 1, 1);
+  // The frame, stepping round the cut corners.
+  ctx.fillStyle = COLORS.border;
+  ctx.fillRect(x + CUT, y, w - CUT * 2, 1);
+  ctx.fillRect(x + CUT, y + h - 1, w - CUT * 2, 1);
+  ctx.fillRect(x, y + CUT, 1, h - CUT * 2);
+  ctx.fillRect(x + w - 1, y + CUT, 1, h - CUT * 2);
+  ctx.fillRect(x + 1, y + 1, 1, 1);
+  ctx.fillRect(x + w - 2, y + 1, 1, 1);
+  ctx.fillRect(x + 1, y + h - 2, 1, 1);
+  ctx.fillRect(x + w - 2, y + h - 2, 1, 1);
+  // Light catches the inside of the top edge.
+  ctx.fillStyle = FRAME_LIGHT;
+  ctx.fillRect(x + CUT + 1, y + 1, w - CUT * 2 - 2, 1);
+  // The game's colour at the top left and the bottom right.
+  ctx.fillStyle = COLORS.accent;
+  ctx.fillRect(x + CUT, y, Math.min(8, w - CUT * 2), 1);
+  ctx.fillRect(x + w - CUT - Math.min(8, w - CUT * 2), y + h - 1, Math.min(8, w - CUT * 2), 1);
 }
 
 /** Where sprites come from, as far as a widget needs to know. */
@@ -83,8 +163,11 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, sprites: Sprites, id
 export function drawTabs(ctx: CanvasRenderingContext2D, right: number, y: number, labels: string[], current: number): void {
   let x = right;
   for (let i = labels.length - 1; i >= 0; i--) {
+    const width = Math.round(labels[i].length * CHAR_W);
     drawText(ctx, labels[i], x, y, { align: 'right', color: i === current ? COLORS.accent : COLORS.dim });
-    x -= Math.round(labels[i].length * CHAR_W) + 8;
+    // The page that is open is underlined.
+    if (i === current) { ctx.fillStyle = COLORS.accent; ctx.fillRect(x - width, y + 11, width, 1); }
+    x -= width + 8;
   }
 }
 
@@ -136,6 +219,34 @@ export function drawMeter(
   const fill = max > 0 ? Math.round(w * Math.max(0, Math.min(1, value / max))) : 0;
   ctx.fillStyle = color;
   ctx.fillRect(x, y, fill, h);
+  // A bar with any height to it is given some: light along its top, shade along its bottom, a bright
+  // end where it stops, and a mark at every tenth so that its length can be read.
+  if (h < 3) return;
+  if (fill > 0) {
+    ctx.fillStyle = shade(color, 0.4);
+    ctx.fillRect(x, y, fill, 1);
+    ctx.fillStyle = shade(color, -0.35);
+    ctx.fillRect(x, y + h - 1, fill, 1);
+    if (fill < w) { ctx.fillStyle = shade(color, 0.7); ctx.fillRect(x + fill - 1, y, 1, h); }
+  }
+  if (w >= 50) {
+    ctx.fillStyle = 'rgba(8, 8, 20, 0.45)';
+    for (let i = 1; i < 10; i++) ctx.fillRect(x + Math.round((w * i) / 10), y, 1, h);
+  }
+}
+
+/**
+ * The row the cursor is on is lit from the left in the game's colour, fading out to the right. Soft
+ * light: a canvas that makes no gradients is left as it is.
+ */
+export function drawRowLight(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height = LINE): void {
+  const band = ctx.createLinearGradient?.(x, 0, x + width, 0) as CanvasGradient | undefined;
+  if (!band || typeof band.addColorStop !== 'function') return;
+  band.addColorStop(0, 'rgba(255, 93, 177, 0.3)');
+  band.addColorStop(0.6, 'rgba(255, 93, 177, 0.1)');
+  band.addColorStop(1, 'rgba(255, 93, 177, 0)');
+  ctx.fillStyle = band;
+  ctx.fillRect(x, y, width, height);
 }
 
 /** Draws a scrolling list: cursor mark, label, and the item's note at the right edge. */
@@ -147,9 +258,16 @@ export function drawList(
   items.forEach((item, i) => {
     const selected = offset + i === list.cursor;
     const color = !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text;
-    if (selected) drawText(ctx, '>', x, y + i * LINE, { color: COLORS.accent });
+    if (selected) {
+      drawRowLight(ctx, x - 3, y + i * LINE + 1, width + 3);
+      drawText(ctx, '>', x, y + i * LINE, { color: COLORS.accent });
+    }
     drawText(ctx, item.label, x + 8, y + i * LINE, { color });
-    if (item.note) drawText(ctx, item.note, x + width, y + i * LINE, { color: item.enabled ? COLORS.dim : COLORS.danger, align: 'right' });
+    if (item.note) {
+      // A note that would run into the name beside it is written smaller, so that the two stand apart.
+      const tight = x + width - item.note.length * CHAR_W < x + 8 + (item.label.length + 1) * CHAR_W;
+      drawText(ctx, item.note, x + width, y + i * LINE + (tight ? 1 : 0), { color: item.enabled ? COLORS.dim : COLORS.danger, align: 'right', size: tight ? 10 : 12 });
+    }
   });
   // Small marks show that the list continues above or below.
   if (offset > 0) drawText(ctx, '^', x + width + 4, y, { color: COLORS.dim });
@@ -160,9 +278,14 @@ export function drawMenu(
   ctx: CanvasRenderingContext2D, x: number, y: number,
   items: { label: string; enabled: boolean }[], cursor: number,
 ): void {
+  // The light behind the row chosen is as wide as the widest row, and a little more.
+  const width = Math.round(Math.max(0, ...items.map((item) => item.label.length)) * CHAR_W) + 20;
   items.forEach((item, i) => {
     const selected = i === cursor;
-    if (selected) drawText(ctx, '>', x, y + i * LINE, { color: COLORS.accent });
+    if (selected) {
+      drawRowLight(ctx, x - 3, y + i * LINE + 1, width);
+      drawText(ctx, '>', x, y + i * LINE, { color: COLORS.accent });
+    }
     drawText(ctx, item.label, x + 8, y + i * LINE, {
       color: !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text,
     });

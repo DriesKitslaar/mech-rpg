@@ -25,7 +25,7 @@ import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from
 import { intentOf } from '../core/intent';
 import { PLAIN_TYPING, TYPING_SPEED, Typewriter, type Typing } from './typewriter';
 import { drawWeather, drawWeatherExtras, weatherFor } from './weather';
-import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawScrollMenu, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawRowLight, drawScrollMenu, drawText, wrap } from './widgets';
 
 export { BattleFlow } from './battleFlow';
 export type { BattlePhase, FlowOptions, MenuView } from './battleFlow';
@@ -1087,7 +1087,11 @@ export class BattleScreen {
     items.forEach((item, i) => {
       const selected = i === cursor;
       const top = y + i * (2 * LINE);
-      if (selected) drawText(ctx, '>', x, top, { color: COLORS.accent });
+      if (selected) {
+        // A weapon takes two lines, and the light is behind both.
+        drawRowLight(ctx, x - 3, top + 1, MENU_W - 8, 2 * LINE - 1);
+        drawText(ctx, '>', x, top, { color: COLORS.accent });
+      }
       drawText(ctx, item.label, x + 8, top, { color: !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text });
       if (item.note) drawText(ctx, item.note, x + 14, top + LINE - 1, { color: item.enabled ? COLORS.dim : COLORS.danger, size: 10 });
     });
