@@ -53,7 +53,7 @@ const select = (app: App, id: string) => {
   expect(snap(app).menu.items[snap(app).menu.cursor]?.id).toBe(id);
   press(app, 'confirm');
 };
-const HUB = ['contracts', 'arena', 'training', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'];
+const HUB = ['contracts', 'arena', 'training', 'gauntlet', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'];
 const fresh = (): GameState => newGame(CATALOG, STARTER_BUILD);
 const done = (...missionIds: string[]): GameState => missionIds.reduce((g, id) => completeMission(g, id, MISSIONS), fresh());
 /** The first act: the introductions, both contracts of every client, and the rival. */

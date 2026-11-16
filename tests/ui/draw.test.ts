@@ -763,7 +763,7 @@ describe('the screens the pilot\'s record added', () => {
     const drawn = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), y: Number(c.args[2]) }));
     const over = drawn.find((d) => d.text === 'The war is over. The work is not.')!;
     expect(over).toBeDefined();
-    for (const label of ['Contracts', 'Arena', 'Training', 'Garage', 'Shop', 'Pilot', 'Messages', 'Database', 'Options', 'New Cycle']) {
+    for (const label of ['Contracts', 'Arena', 'Training', 'The Gauntlet', 'Garage', 'Shop', 'Pilot', 'Messages', 'Database', 'Options', 'New Cycle']) {
       const row = drawn.find((d) => d.text === label)!;
       expect(row, label).toBeDefined();
       expect(Math.abs(over.y - row.y), label).toBeGreaterThanOrEqual(11);

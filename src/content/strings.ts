@@ -116,6 +116,26 @@ export const STRINGS = {
     heading: 'YOUR CALLSIGN', hint: 'A: pick   B: erase', del: 'DEL', ok: 'OK',
     rows: ['ABCDEFGHI', 'JKLMNOPQR', 'STUVWXYZ0', '123456789'],
   },
+  // The Gauntlet: a run of battles in a stock frame that goes on until the pilot falls.
+  gauntlet: {
+    item: 'The Gauntlet', heading: 'THE GAUNTLET', client: 'The Gauntlet',
+    title: (floor: number) => `Floor ${floor}`,
+    floor: (floor: number) => `Floor ${floor}. Whatever is down here was put here to stop you.`,
+    warden: (name: string) => `This floor has a warden: ${name}. Beat them and the house patches you up.`,
+    debrief: 'Floor cleared.',
+    pitch: ['A stock frame, for one run.', 'Each floor is harder.', 'After each, take one of', 'three things on offer.', 'It ends when you fall,', 'and pays by how deep.'],
+    best: (n: number) => `BEST ${n}`, floorLabel: (n: number) => `FLOOR ${n}`, wardenLabel: 'WARDEN', armour: (pct: number) => `ARMOUR ${pct}%`,
+    start: 'Start a run', descend: 'Descend', abandon: 'End the run', back: 'Back', yes: 'Yes, end it', no: 'No',
+    abandonAsk: (pay: number) => `End it here for ${pay}?`,
+    draftHeading: 'TAKE ONE', service: 'Full service', serviceNote: 'all armour restored',
+    slot: (slot: string) => `fits: ${slot}`, replaces: 'replaces:', empty: 'an empty mount',
+    boons: {
+      capacitor: { name: 'Capacitor', note: '+15 energy a turn' }, heatsinks: { name: 'Heat sinks', note: '+6 cooling a turn' },
+      plating: { name: 'Plating', note: '+8% armour' }, optics: { name: 'Optics', note: '+4 aim' }, patchkit: { name: 'Patch kit', note: '+1 repair a floor' },
+    },
+    over: 'RUN OVER', cleared: (n: number) => (n === 1 ? '1 floor cleared' : `${n} floors cleared`), paid: (n: number) => `Paid ${n}`, record: 'A new best.',
+    hint: 'A: choose   B: back', expected: 'EXPECTED',
+  },
   hub: {
     heading: 'HEADQUARTERS', contractsItem: 'Contracts', arena: 'Arena', garage: 'Garage', shop: 'Shop', pilot: 'Pilot',
     messages: 'Messages', database: 'Database', training: 'Training', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',

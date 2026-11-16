@@ -11,7 +11,8 @@ not that one. Game text is English until phase M6.
 
 Update as work lands. After a context reset, start here.
 
-- [ ] M1: The Gauntlet (branch `feat/moon-gauntlet`)
+- [ ] M1: The Gauntlet (branch `feat/moon-gauntlet`, PR 18). Built and tested (rules in `src/core/gauntlet.ts`, screen in
+      `src/ui/gauntletScreen.ts`). Its review is running (snapshot `scratchpad/reviewM1`). Pending: fixes, APK.
 - [ ] M2: Ground and weather
 - [ ] M3: New machines
 - [ ] M4: Orders for the wingman
@@ -67,3 +68,13 @@ content files are translated side by side with the English and every fit test ru
 A last independent review of the whole, an APK, a summary for the owner in Dutch.
 
 ## Changes made while building
+
+M1:
+
+- A floor has no briefing and no settlement of its own: the Gauntlet's room shows what is expected
+  and the way down, and a floor won leads straight back to it and to what is on offer.
+- The wingman boon was left out: a run's frame is lent, and nobody is hired into a lent mech.
+- Measured with a pilot that only presses Auto Turn and takes the dearest part: of sixty runs the
+  median clears 7 floors, the best 12, the worst 2. Beating a warden earns a full service, or the
+  floor after the first warden was a wall.
+- A game closed in the middle of a floor finds the run on that floor again: closing is not falling.

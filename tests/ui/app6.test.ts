@@ -21,7 +21,7 @@ const openDrill = (app: Parameters<typeof select>[0], id: string) => {
 describe('training', () => {
   test('is on the hub menu and lists the ten drills: three open from the start, the rest once the introductions are done', () => {
     const { app } = inHub(quiet());
-    expect(ids(app)).toEqual(['contracts', 'arena', 'training', 'garage', 'shop', 'pilot', 'messages', 'database', 'options']);
+    expect(ids(app)).toEqual(['contracts', 'arena', 'training', 'gauntlet', 'garage', 'shop', 'pilot', 'messages', 'database', 'options']);
     select(app, 'training');
     expect(snap(app)).toMatchObject({ screen: 'training', count: 'PASSED 0/10' });
     const items = snap(app).menu.items;

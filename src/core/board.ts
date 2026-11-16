@@ -65,7 +65,7 @@ export function contractTier(battlesWon: number, cycle: number, index: number): 
 export const budgetFor = (tier: number): number => Math.min(MAX_BUDGET, 2 + tier);
 export const scaleFor = (tier: number): number => 1 + 0.04 * Math.max(0, tier - 4);
 
-class Dice {
+export class Dice {
   constructor(private state: number) {}
   /** An integer from 0 up to, not including, `n`. */
   roll(n: number): number {
@@ -79,7 +79,7 @@ class Dice {
 }
 
 /** Spends as much of the budget as it can on at most three enemies, one mech at most. */
-function rollEnemies(dice: Dice, budget: number): string[] {
+export function rollEnemies(dice: Dice, budget: number): string[] {
   const enemies: string[] = [];
   let left = budget;
   for (let slotsLeft = 3; slotsLeft > 0 && left > 0; slotsLeft--) {

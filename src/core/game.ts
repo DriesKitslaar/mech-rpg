@@ -1,3 +1,4 @@
+import type { Run } from './gauntlet';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
 
@@ -44,6 +45,10 @@ export interface GameState {
   ranks: Record<string, Rank>;
   /** Ids of the scenes shown in this cycle. */
   scenes: string[];
+  /** The run of the Gauntlet under way, if there is one. */
+  gauntlet?: Run | null;
+  /** The most floors of the Gauntlet cleared in one run. */
+  gauntletBest?: number;
   /** What the pilot decided when the story asked, by question, in this cycle. Absent in a game from before there were questions. */
   choices?: Record<string, string>;
   /** What the pilot is called. */
@@ -271,6 +276,10 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
+  const { gauntlet, gauntletBest } = value;
+  // What the run holds is checked where a game is loaded; here it only has to be a thing or nothing.
+  if (gauntlet !== undefined && gauntlet !== null && !isRecord(gauntlet)) return false;
+  if (gauntletBest !== undefined && !(isWholeNonNegative(gauntletBest) && gauntletBest <= 9999)) return false;
   const { choices } = value;
   if (choices !== undefined && (!isRecord(choices) || Object.keys(choices).length > 64
     || !Object.entries(choices).every(([k, v]) => /^[a-z-]{1,24}$/.test(k) && typeof v === 'string' && /^[a-z-]{1,24}$/.test(v)))) return false;
