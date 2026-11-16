@@ -9,7 +9,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { RECORD_ROWS, rankTally, recordLines } from './record';
-import { CHAR_W, COLORS, LINE, MEDAL_COLORS, charsFor, drawList, drawMedal, drawMeter, drawPanel, drawTabs, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, LINE, MEDAL_COLORS, charsFor, drawList, drawMedal, drawMeter, drawPanel, drawRowLight, drawTabs, drawText, wrap } from './widgets';
 
 const P = STRINGS.pilot;
 const M = STRINGS.medals;
@@ -202,7 +202,10 @@ export class PilotScreen implements Screen {
       const y = 45 + i * LINE;
       const selected = offset + i === this.medals.cursor;
       const medal = MEDALS[offset + i];
-      if (selected) drawText(ctx, '>', 10, y, { color: COLORS.accent });
+      if (selected) {
+        drawRowLight(ctx, 7, y + 1, LOGICAL_W - 29);
+        drawText(ctx, '>', 10, y, { color: COLORS.accent });
+      }
       drawMedal(ctx, 18, y + 1, medal.tier, item.enabled);
       drawText(ctx, item.label, 32, y, { color: selected ? COLORS.accent : item.enabled ? COLORS.text : COLORS.dim });
       if (item.note) drawText(ctx, item.note, LOGICAL_W - 22, y, { align: 'right', color: item.enabled ? COLORS.armor : COLORS.dim });

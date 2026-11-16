@@ -8,7 +8,7 @@ import { GarageFlow } from './garageFlow';
 import { drawMech, mechSprites } from './mechView';
 import { idlePose } from './pose';
 import { partLines } from './partInfo';
-import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
+import { COLORS, LINE, drawList, drawPanel, drawRowLight, drawText } from './widgets';
 
 const G = STRINGS.garage;
 const LIST_X = 162;
@@ -67,7 +67,10 @@ export class GarageScreen implements Screen {
       flow.slots.items.forEach((item, i) => {
         const selected = i === flow.slots.cursor;
         const y = 24 + i * 15;
-        if (selected) drawText(ctx, '>', LIST_X + 3, y, { color: COLORS.accent });
+        if (selected) {
+          drawRowLight(ctx, LIST_X + 1, y + 1, LIST_W - 3);
+          drawText(ctx, '>', LIST_X + 3, y, { color: COLORS.accent });
+        }
         drawText(ctx, G.slotTags[item.id as BuildSlot], LIST_X + 10, y + 1, { color: COLORS.dim, size: 10 });
         drawText(ctx, item.note ?? '', LIST_X + 40, y, { color: selected ? COLORS.accent : item.note === G.empty ? COLORS.dim : COLORS.text });
       });
@@ -81,7 +84,10 @@ export class GarageScreen implements Screen {
         flow.loadoutMenu.items.forEach((item, i) => {
           const selected = i === flow.loadoutMenu.cursor;
           const y = 88 + i * 13;
-          if (selected) drawText(ctx, '>', LIST_X + 6, y, { color: COLORS.accent });
+          if (selected) {
+            drawRowLight(ctx, LIST_X + 3, y + 1, LIST_W - 15);
+            drawText(ctx, '>', LIST_X + 6, y, { color: COLORS.accent });
+          }
           drawText(ctx, item.label, LIST_X + 14, y, { color: !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text });
         });
         const missing = flow.loadoutMenu.items[0].note;
