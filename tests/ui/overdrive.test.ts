@@ -252,11 +252,11 @@ describe('whose Overdrive it is', () => {
     expect(drive(other)).toBeNull();
   });
 
-  test('the Gauntlet is fought without one', () => {
+  test('the Gauntlet is fought without one, until a warden leaves the run one', () => {
     const { app } = inHub(strong(level(9)));
     select(app, 'gauntlet');
     select(app, 'start');
-    select(app, 'descend');
+    select(app, 'door-0');
     expect(snap(app).screen).toBe('battle');
     expect(drive(app)).toBeNull();
   });

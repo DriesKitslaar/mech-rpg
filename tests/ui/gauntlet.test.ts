@@ -14,10 +14,14 @@ interface View {
 type AppOf = ReturnType<typeof inHub>['app'];
 const g = (app: AppOf): View => snap(app).gauntlet as View;
 const ready = () => inHub(strong(done('intro-1', 'intro-2')));
-/** Wins the floor the run is on and comes back to the Gauntlet's room. */
-function clear(app: AppOf): void {
-  select(app, 'descend');
+/** Into the floor the run is on: by the one way a warden's floor has, or by one of an open floor's two doors. */
+function go(app: AppOf, door = 0): void {
+  select(app, ids(app).includes('descend') ? 'descend' : `door-${door}`);
   expect(snap(app).screen).toBe('battle');
+}
+/** Wins the floor the run is on and comes back to the Gauntlet's room. */
+function clear(app: AppOf, door = 0): void {
+  go(app, door);
   finishBattle(app);
   expect(snap(app).battle?.outcome).toBe('victory');
   press(app, 'confirm');
@@ -45,7 +49,7 @@ describe('the Gauntlet', () => {
     // An arc pistol in the other hand: it needs no ammunition, so no floor is faced with nothing to fire.
     expect(GAUNTLET_BUILD).toEqual({ ...STARTER_BUILD, leftHand: 'wpn-arc-pistol' });
     expect(g(app).enemies.length).toBeGreaterThan(0);
-    expect(ids(app)).toEqual(['descend', 'abandon', 'back']);
+    expect(ids(app)).toEqual(['door-0', 'door-1', 'abandon', 'back']);
     expect(savedGame(store).gauntlet).toMatchObject({ floor: 1 });
     // The pilot's own mech and money are untouched.
     expect(savedGame(store).build).not.toEqual(GAUNTLET_BUILD);
@@ -68,7 +72,7 @@ describe('the Gauntlet', () => {
     expect(g(app).offers).toEqual(offers);
     press(app, 'down', 'confirm');
     expect(g(app)).toMatchObject({ floor: 2, drafting: false });
-    expect(ids(app)).toEqual(['descend', 'abandon', 'back']);
+    expect(ids(app)).toEqual(['door-0', 'door-1', 'abandon', 'back']);
     expect(savedGame(store).gauntlet).toMatchObject({ floor: 2, drafting: false });
     // No floor pays or bills anything by itself, and none of it is in the pilot's record.
     expect(snap(app).credits).toBe(credits);
@@ -82,7 +86,7 @@ describe('the Gauntlet', () => {
     select(app, 'start');
     clear(app);
     press(app, 'confirm');
-    select(app, 'descend');
+    go(app);
     // Walking away from a floor is falling on it.
     for (let i = 0; i < 4000 && snap(app).battle?.phase !== 'action'; i++) {
       if (snap(app).battle?.phase === 'animating') app.update(16);
@@ -155,7 +159,7 @@ describe('the Gauntlet', () => {
     look();
     select(app, 'yes');
     look();
-    expect(widths.map((w) => w.text)).toEqual(expect.arrayContaining(['THE GAUNTLET', 'FLOOR 1', 'FLOOR 2', 'TAKE ONE', 'RUN OVER', 'Descend']));
+    expect(widths.map((w) => w.text)).toEqual(expect.arrayContaining(['THE GAUNTLET', 'FLOOR 1', 'FLOOR 2', 'TAKE ONE', 'RUN OVER', 'Left door', 'Right door', 'LEFT DOOR']));
     // Everything in the right-hand panel starts inside it and ends before the screen does.
     for (const w of widths.filter((w) => w.x >= 150 && w.x < 300)) expect(w.x + w.text.length * 4.8, w.text).toBeLessThanOrEqual(310);
   });
@@ -166,7 +170,7 @@ describe('the Gauntlet', () => {
     select(app, 'start');
     clear(app);
     press(app, 'confirm');
-    select(app, 'descend');
+    go(app);
     expect(savedGame(store).gauntlet).toMatchObject({ floor: 2, fighting: true });
     const credits = savedGame(store).credits;
     // The game is closed there and opened again.
@@ -188,7 +192,7 @@ describe('the Gauntlet', () => {
     select(app, 'gauntlet');
     select(app, 'start');
     const armour = () => (snap(app).player as { maxAp: number }).maxAp;
-    select(app, 'descend');
+    go(app);
     const stock = armour();
     expect((snap(app).battle as { enemyScale: number }).enemyScale).toBe(0.7);
     finishBattle(app);
@@ -196,7 +200,7 @@ describe('the Gauntlet', () => {
     press(app, 'confirm');
     app.commit({ ...app.game!, gauntlet: { ...app.game!.gauntlet!, boons: { plating: 5 } } });
     app.go('gauntlet');
-    select(app, 'descend');
+    go(app);
     expect(armour()).toBeGreaterThan(stock * 1.3);
     expect((snap(app).battle as { enemyScale: number }).enemyScale).toBeCloseTo(0.74, 2);
   });
@@ -213,8 +217,10 @@ describe('the Gauntlet', () => {
     expect(savedGame(store).medals).toContain('gauntlet-5');
     expect(MEDALS.find((m) => m.id === 'gauntlet-5')).toBeDefined();
     expect(savedGame(store).met).toContain('scrap-king');
-    // While choosing, the floor ahead is in view.
-    expect(g(app)).toMatchObject({ drafting: true, floor: 6 });
+    // The warden left something, and that comes first; then, while choosing, the floor ahead is in view.
+    expect(g(app)).toMatchObject({ drafting: true, floor: 6, relicOwed: true });
+    press(app, 'confirm');
+    expect(g(app)).toMatchObject({ drafting: true, floor: 6, relicOwed: false });
     expect(g(app).enemies.length).toBeGreaterThan(0);
   });
 
@@ -243,16 +249,30 @@ describe('the Gauntlet', () => {
     }) as unknown as CanvasRenderingContext2D;
     const full = { ...GAUNTLET_BUILD, shoulder: 'wpn-mortar-pod', module: 'mod-barrier' };
     const boons = { capacitor: 12, heatsinks: 11, plating: 13, optics: 10, patchkit: 14 };
-    for (const drafting of [false, true]) {
+    // Every relic held, the Spare Core just spent, and as many on offer as there can be: after an elite, with the Quartermaster's Key.
+    const relics = ['redline', 'rig', 'key', 'spare', 'cannon', 'ledger'];
+    const stages = [
+      { drafting: false }, { drafting: true }, { drafting: true, elite: true }, { drafting: true, relicOwed: true, relics: ['rig'] },
+      { drafting: false, revived: true }, { drafting: false, floor: 25 },
+    ];
+    for (const stage of stages) {
       rows.length = 0;
-      app.commit({ ...app.game!, gauntlet: { ...app.game!.gauntlet!, floor: 23, build: full, boons, drafting } });
+      app.commit({ ...app.game!, gauntlet: { ...app.game!.gauntlet!, floor: 23, build: full, boons, relics, ...stage } as never });
       app.go('gauntlet');
-      for (let i = 0; i < 3; i++) { app.update(16); app.draw(ctx); press(app, 'down'); }
-      const panel = rows.filter((r) => r.x >= 150 && r.x < 300);
+      for (let i = 0; i < 6; i++) { app.update(16); app.draw(ctx); press(app, 'down'); }
+      press(app, 'next');
+      app.draw(ctx);
+      // The warden's label is the one thing set beside the large floor number, half way down it.
+      const panel = rows.filter((r) => r.x >= 150 && r.text !== 'WARDEN');
+      expect(panel.length).toBeGreaterThan(8);
       // Things on one line share a height; two lines must be a line apart.
       const ys = [...new Set(panel.map((r) => r.y))].sort((a, b) => a - b);
-      for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1], `drafting ${drafting}: rows at ${ys[i - 1]} and ${ys[i]}`).toBeGreaterThanOrEqual(8);
+      for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1], `${JSON.stringify(stage)}: rows at ${ys[i - 1]} and ${ys[i]}`).toBeGreaterThanOrEqual(8);
       for (const r of panel) expect(r.y, r.text).toBeLessThanOrEqual(258);
     }
+    // After an elite, with the key, five things are on offer and every one of them is on the panel.
+    app.commit({ ...app.game!, gauntlet: { ...app.game!.gauntlet!, floor: 23, build: full, boons: {}, relics, drafting: true, elite: true, relicOwed: false } as never });
+    app.go('gauntlet');
+    expect(g(app).offers).toHaveLength(5);
   });
 });

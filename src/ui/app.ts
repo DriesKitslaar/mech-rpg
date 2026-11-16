@@ -55,7 +55,10 @@ import { TalkScreen } from './talkScreen';
 import { setLanguage } from '../content/language';
 import '../content/nl';
 import { GauntletScreen } from './gauntletScreen';
-import { descend, floorMission, floorsCleared, isGauntlet, payout, runMods, startRun, take, type Offer, type Run } from '../core/gauntlet';
+import {
+  descend, doors, enter, fall, floorMission, floorsCleared, isGauntlet, runMods, runOverdrive, runPayout, startRun, take, takeRelic,
+  type Door, type Offer, type RelicId, type Run,
+} from '../core/gauntlet';
 import { GAUNTLET_BUILD, GAUNTLET_TEXT } from '../content/gauntlet';
 import { ENEMIES } from '../content/enemies';
 import type { BattleState, OverdriveId } from '../core/battle';
@@ -187,7 +190,8 @@ class MissionHost implements Screen {
     const { aim, evasion, energy, cooling, repairs, armour } = this.app.perks();
     const run = isGauntlet(this.mission) ? this.app.run : null;
     const drill = isDrill(this.mission) || !!run;
-    const fitted = drill ? undefined : this.app.overdrive();
+    // A run of the Gauntlet has an Overdrive only if a warden left it one; a drill only if it teaches it.
+    const fitted = run ? runOverdrive(run) : drill ? undefined : this.app.overdrive();
     const overdrive = this.mission.overdrive ?? (fitted ? { kind: fitted, drive: 0 } : undefined);
     const state = startMissionBattle(
       this.mission.loaner ?? this.app.game!.build, this.mission, this.index, this.app.enemies(), catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
@@ -324,6 +328,8 @@ class MissionHost implements Screen {
         support: flow.state.support?.name ?? null,
         coach: this.coach,
         ground: flow.state.ground?.id ?? null,
+        // The elites on the field, and what sets each apart.
+        elites: flow.state.units.flatMap((u) => (u.mark && !u.destroyed ? [{ id: u.id, mark: u.mark }] : [])),
         // The Overdrive's meter, for a mech that has one.
         drive: flow.state.units[0].overdrive ? { kind: flow.state.units[0].overdrive, value: flow.state.units[0].drive } : null,
         // What the enemy being aimed at is about to do.
@@ -470,7 +476,7 @@ export class App {
     this.lastRun = null;
     this.commit({ ...settleOldStory(saved, SCENES, MISSIONS), met: metByRecord(saved, MISSIONS, ARENA), settings: { ...this.settings } });
     // A run that was on a floor when the game was closed fell there.
-    if (this.run?.fighting) this.endGauntlet();
+    if (this.run?.fighting) this.loseFloor();
     this.go('hub');
   }
 
@@ -613,13 +619,27 @@ export class App {
     this.commit({ ...this.game, gauntlet: startRun(this.seed, GAUNTLET_BUILD, this.game.gauntletBest ?? 0) });
   }
 
-  /** Into the floor the run is on. */
-  descendGauntlet(): void {
-    const floor = this.gauntletFloor();
-    if (!floor || !this.game || !this.run) return;
+  /** Into the floor the run is on, by one of its doors. */
+  descendGauntlet(door = 0): void {
+    const run = this.run;
+    if (!this.game || !run || run.drafting || door < 0 || door >= this.gauntletDoors().length) return;
     // Written down before the first shot: a game closed on a floor finds the run fallen there.
-    this.commit({ ...this.game, gauntlet: { ...this.run, fighting: true } });
-    this.startMission(floor.id);
+    this.commit({ ...this.game, gauntlet: enter(run, door, GAUNTLET_TEXT.backgrounds) });
+    const floor = this.gauntletFloor();
+    if (floor) this.startMission(floor.id);
+  }
+
+  /** The ways into the floor ahead: two for an open floor, one for a warden's. None without a run. */
+  gauntletDoors(): Door[] {
+    return this.run ? doors(this.run, GAUNTLET_TEXT.backgrounds) : [];
+  }
+
+  /** Takes one of the two relics a warden left. */
+  takeRelic(relic: RelicId): void {
+    const game = this.game;
+    const run = this.run;
+    if (!game || !run || !run.relicOwed) return;
+    this.commit({ ...game, gauntlet: takeRelic(run, relic) });
   }
 
   /** The floor ahead, whether or not a draft is still owed: what the pilot is choosing for. */
@@ -640,11 +660,24 @@ export class App {
     if (!game || !run) return;
     // What was fought down there has been met, and a floor cleared counts towards the best at once.
     const met = [...new Set([...game.met, ...end.units.flatMap((u) => (u.side === 'enemy' && u.kind && Object.hasOwn(ENEMIES, u.kind) ? [u.kind] : []))])];
+    // An Overdrive set off down here counts like any other.
+    const used = end.events.filter((event) => event.type === 'overdrive').length;
+    const counted = { ...game, met, ...(used > 0 ? { overdrives: (game.overdrives ?? 0) + used } : {}) };
     if (end.outcome === 'victory') {
-      return this.commit({ ...game, met, gauntlet: descend(run, end), gauntletBest: Math.max(game.gauntletBest ?? 0, run.floor) });
+      return this.commit({ ...counted, gauntlet: descend(run, end), gauntletBest: Math.max(game.gauntletBest ?? 0, run.floor) });
     }
-    this.commit({ ...game, met });
-    this.endGauntlet();
+    this.commit(counted);
+    this.loseFloor();
+  }
+
+  /** A floor lost, left or closed on: a Spare Core puts the run before it again, once; without one the run is over. */
+  private loseFloor(): void {
+    const game = this.game;
+    const run = this.run;
+    if (!game || !run) return;
+    const again = fall(run);
+    if (again) this.commit({ ...game, gauntlet: again });
+    else this.endGauntlet();
   }
 
   /** Ends the run where it stands and pays it out. */
@@ -654,8 +687,9 @@ export class App {
     if (!game || !run) return;
     const cleared = floorsCleared(run);
     const best = Math.max(game.gauntletBest ?? 0, cleared);
-    this.lastRun = { cleared, paid: payout(cleared), record: cleared > (run.bestBefore ?? 0) };
-    this.commit({ ...game, credits: game.credits + payout(cleared), gauntlet: null, gauntletBest: best });
+    const paid = runPayout(run);
+    this.lastRun = { cleared, paid, record: cleared > (run.bestBefore ?? 0) };
+    this.commit({ ...game, credits: game.credits + paid, gauntlet: null, gauntletBest: best });
   }
 
   /** How the last run of this sitting ended, for the Gauntlet's own screen. */

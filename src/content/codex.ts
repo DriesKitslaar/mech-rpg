@@ -253,7 +253,11 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'gauntlet', title: 'THE GAUNTLET',
-    text: 'A run of floors in a stock frame, with none of your own parts or perks. After each floor take one of three: a part, a full service, or a boon for the run. Every fifth floor has a warden; beat it and you are patched up free. Falling, retreating or closing the game on a floor ends the run. It pays by floors cleared.',
+    text: 'A run of floors in a stock frame, with none of your own parts or perks. Most floors have two doors: pick your fight. After each floor take one thing on offer: a part, a full service, or a boon for the run. Every fifth floor has a warden. Falling, retreating or closing the game on a floor ends the run. It pays by floors cleared.',
+  },
+  {
+    id: 'elites', title: 'ELITES AND RELICS',
+    text: 'Behind one of two doors there is sometimes an elite. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. Beat it and one more thing is on offer. A warden beaten patches you up and leaves one of two relics: each bends a rule for the rest of the run.',
   },
   {
     id: 'cups', title: 'ARENA CUPS',

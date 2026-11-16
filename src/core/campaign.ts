@@ -1,4 +1,4 @@
-import type { OverdriveId } from './battle';
+import type { EnemyMark, OverdriveId } from './battle';
 import type { Support } from './battle';
 import type { GameState } from './game';
 import type { Build, Objective, Part } from './types';
@@ -34,6 +34,8 @@ export interface Battle {
   /** Rounds a good pilot needs; 3 plus 2 for each enemy when absent. Ranks are measured against it. */
   par?: number;
   talk?: TalkLine[];
+  /** Elite enemies, by their place in `enemies`: which mark each one carries. */
+  marks?: Partial<Record<number, EnemyMark>>;
 }
 
 export interface Mission {

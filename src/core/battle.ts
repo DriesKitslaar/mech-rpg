@@ -46,6 +46,8 @@ export interface BattleOptions {
   ground?: Ground;
   /** The pilot's Overdrive. Without one there is no meter. */
   overdrive?: OverdriveId;
+  /** Elite enemies, by their place in the line: which mark each one carries. */
+  marks?: Partial<Record<number, EnemyMark>>;
   /** What the meter starts at, when nothing is carried: a drill hands the pilot a full one. */
   drive?: number;
 }
@@ -76,6 +78,15 @@ export const DRIVE_MAX = 100;
 export const DRIVE_GAIN = { landed: 8, taken: 10, blast: 10, kill: 15 } as const;
 export const IRON_SKIN = 0.5;
 export const DEADEYE_DAMAGE = 1.25;
+
+/**
+ * What sets an elite enemy apart from others of its kind.
+ * Armoured: more armour on every part. Overclocked: more damage. Swift: harder to hit.
+ * Shielded: a barrier of a share of its armour, raised anew at every turn of its own.
+ */
+export type EnemyMark = 'armoured' | 'overclocked' | 'swift' | 'shielded';
+export const MARKS: EnemyMark[] = ['armoured', 'overclocked', 'swift', 'shielded'];
+export const MARK = { armour: 0.4, damage: 1.25, evasion: 15, shield: 0.1 } as const;
 
 /** Something the player has to keep from being worn down; see the `protect` objective. */
 export interface Asset { name: string; hp: number; maxHp: number }
@@ -135,6 +146,8 @@ export interface UnitState {
   chaff: number;
   /** Multiplies the unit's damage for the rest of its turn. */
   damageBoost: number;
+  /** What sets this enemy apart, if it is an elite one. */
+  mark?: EnemyMark;
   /** The Overdrive this unit has, if any: only the pilot's own mech has one. */
   overdrive?: OverdriveId;
   /** How far the Overdrive's meter has filled, 0 to `DRIVE_MAX`. Stays 0 without an Overdrive. */
@@ -308,16 +321,27 @@ function createUnit(
   };
 }
 
-function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scale: number, catalog: Catalog): UnitState {
+/** The barrier a shielded elite stands behind: a share of all the armour it came with. */
+function markShield(unit: UnitState): number {
+  return Math.round(MARK.shield * Object.values(unit.parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0));
+}
+
+function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scale: number, catalog: Catalog, mark?: EnemyMark): UnitState {
   const abilities = def.abilities ?? {};
-  return createUnit(id, name, 'enemy', def.build, catalog, {
+  const unit = createUnit(id, name, 'enemy', def.build, catalog, {
     ai: def.ai, sprite: def.sprite, composed: def.composed ?? false, kind: def.id, slot, abilities, phases: def.phases ?? [],
     ...(def.paint ? { paint: def.paint } : {}),
     ...(def.partNames ? { partNames: def.partNames } : {}),
     ...(def.portrait ? { portrait: def.portrait } : {}),
     ...(abilities.bomb ? { fuse: abilities.bomb.fuse } : {}),
     ...(abilities.carrier ? { launchIn: abilities.carrier.every } : {}),
-  }, { damage: scale, toughness: scale });
+    ...(mark ? { mark } : {}),
+  }, {
+    damage: scale * (mark === 'overclocked' ? MARK.damage : 1), toughness: scale,
+    ...(mark === 'armoured' ? { armour: MARK.armour } : {}), ...(mark === 'swift' ? { evasion: MARK.evasion } : {}),
+  });
+  if (mark === 'shielded') unit.barrier = markShield(unit);
+  return unit;
 }
 
 const isAlive = (part: PartState | undefined): boolean => !!part && part.ap > 0;
@@ -503,7 +527,8 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     unit.guarding = false;
     unit.ironSkin = false;
     unit.deadeye = false;
-    unit.barrier = 0;
+    // A barrier lasts until the unit's next turn; a shielded elite raises a new one there.
+    unit.barrier = unit.mark === 'shielded' ? markShield(unit) : 0;
     unit.chaff = 0;
     if (unit.painted > 0) unit.painted -= 1;
     if (unit.staggered > 0) {
@@ -630,7 +655,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
   if (playerUnit.overdrive && opts.drive !== undefined) playerUnit.drive = Math.max(0, Math.min(DRIVE_MAX, opts.drive));
   if (opts.carry) applyCarry(playerUnit, opts.carry);
   const enemyScale = opts.enemyScale ?? 1;
-  const units = [playerUnit, ...enemies.map((e, i) => createEnemy(e, `enemy-${i}`, enemyName(enemies, i), i, enemyScale, catalog))];
+  const units = [playerUnit, ...enemies.map((e, i) => createEnemy(e, `enemy-${i}`, enemyName(enemies, i), i, enemyScale, catalog, opts.marks?.[i]))];
   const state: BattleState = {
     units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing', objective, enemyScale,
     ...(objective.type === 'protect' ? { asset: { name: objective.name, hp: objective.hp, maxHp: objective.hp } } : {}),

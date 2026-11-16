@@ -1,5 +1,5 @@
-import { carryFrom, type BattleState, type Carry, type UnitMods } from './battle';
-import { Dice, MAX_BUDGET, rollEnemies } from './board';
+import { DRIVE_MAX, MARKS, carryFrom, type BattleState, type Carry, type EnemyMark, type OverdriveId, type UnitMods } from './battle';
+import { Dice, ENEMY_COST, MAX_BUDGET, rollEnemies } from './board';
 import { validatePlayerBuild } from './build';
 import type { Mission } from './campaign';
 import { BUILD_SLOTS, fits, type BuildSlot } from './game';
@@ -7,9 +7,12 @@ import { FRAME_SLOTS, type Build, type Catalog, type Part } from './types';
 
 /**
  * The Gauntlet: a run of battles that goes on until the pilot falls. It is flown in a stock frame,
- * not the pilot's own, and after every floor one of three things on offer is taken: a part, fitted
- * at once; a full service; or a boon that lasts the run. Everything about a run follows from its
- * seed and what was taken, so the same run can be played twice.
+ * not the pilot's own, and after every floor one of the things on offer is taken: a part, fitted
+ * at once; a full service; or a boon that lasts the run. An open floor has two doors, and behind
+ * one of them there is sometimes an elite: harder, and one more on offer after it. Every fifth
+ * floor is a warden's, and a warden beaten leaves a relic, which bends a rule for the rest of the
+ * run. Everything about a run follows from its seed and what was taken, so the same run can be
+ * played twice.
  */
 export interface Run {
   seed: number;
@@ -26,6 +29,16 @@ export interface Run {
   fighting?: boolean;
   /** The best there was when the run began, to say at its end whether it set a new one. */
   bestBefore?: number;
+  /** The door taken into the floor being fought. Absent between floors, and on a run from before there were doors. */
+  door?: number;
+  /** The relics held, in the order they were taken. */
+  relics?: RelicId[];
+  /** Set between a warden beaten and a relic taken: the relic comes before the draft. */
+  relicOwed?: boolean;
+  /** Set when the floor entered has an elite on it, and kept once it is won until the draft is taken: that draft has one more on offer. */
+  elite?: boolean;
+  /** Set when the Spare Core has just brought the run back, until the floor is entered again. */
+  revived?: boolean;
 }
 
 export type BoonId = 'capacitor' | 'heatsinks' | 'plating' | 'optics' | 'patchkit';
@@ -38,6 +51,26 @@ export const BOONS: Record<BoonId, Partial<UnitMods>> = {
   patchkit: { repairs: 1 },
 };
 export const BOON_IDS = Object.keys(BOONS) as BoonId[];
+/** How often one boon can be taken in a run: past this it is no longer offered, so what the enemy gains with depth is not outrun for ever. */
+export const BOON_CAP = 5;
+
+/**
+ * What a warden leaves behind. Each bends one rule for the rest of the run:
+ * redline: the frame has an Overdrive (Second Wind), and its meter goes from floor to floor.
+ * rig: twice as much armour is patched between floors.
+ * key: one more thing on offer after every floor.
+ * spare: once, a floor lost is fought again in a whole mech; then it is spent.
+ * cannon: more damage dealt, thinner armour.
+ * ledger: the run pays half as much again.
+ */
+export type RelicId = 'redline' | 'rig' | 'key' | 'spare' | 'cannon' | 'ledger';
+export const RELIC_IDS: RelicId[] = ['redline', 'rig', 'key', 'spare', 'cannon', 'ledger'];
+export const RELIC_OVERDRIVE: OverdriveId = 'second-wind';
+export const RIG_PATCH = 0.6;
+export const CANNON = { damage: 1.3, armour: -0.15 } as const;
+export const LEDGER_PAY = 1.5;
+
+export const hasRelic = (run: Run, relic: RelicId): boolean => (run.relics ?? []).includes(relic);
 
 export type Offer =
   | { kind: 'part'; slot: BuildSlot; part: string }
@@ -52,6 +85,10 @@ export const WARDENS = ['scrap-king', 'night-train', 'rival', 'sable', 'rook', '
 export const WARDEN_EVERY = 5;
 /** Share of the missing armour of every part that is patched between floors. */
 export const GAUNTLET_PATCH = 0.3;
+
+/** Elites are met from this floor on, behind one of the two doors of this share of the open floors. */
+export const ELITE_FROM = 3;
+export const ELITE_CHANCE = 0.4;
 
 export const isGauntlet = (mission: Mission): boolean => mission.id.startsWith('gauntlet-');
 export const isWardenFloor = (floor: number): boolean => floor % WARDEN_EVERY === 0;
@@ -76,34 +113,71 @@ export interface GauntletText {
   backgrounds: string[];
 }
 
-/** The floor the run is on, in the shape of a contract, so it is briefed and fought like one. It pays nothing by itself. */
-export function floorMission(run: Run, text: GauntletText, names: Record<string, string>): Mission {
-  const dice = diceFor(run, 1);
+/** One way into a floor: who is behind it, where, how hard they hit, and which of them is an elite. */
+export interface Door {
+  enemies: string[];
+  background: string;
+  scale: number;
+  /** The elite behind this door: its place among the enemies and the mark it carries. */
+  elite?: { at: number; mark: EnemyMark };
+}
+
+const sameCrowd = (a: string[], b: string[]): boolean => [...a].sort().join() === [...b].sort().join();
+
+/**
+ * The ways into the floor the run is on: one for a warden's floor, two for any other. The two lead
+ * to different machines on different ground, and now and then one of them to an elite.
+ */
+export function doors(run: Run, backgrounds: string[]): Door[] {
   // Open floors go round the places in order; wardens go round them on their own count, so that
   // every fifth floor is not always the same ground.
   const turn = isWardenFloor(run.floor) ? run.floor / WARDEN_EVERY : run.floor - 1;
-  const background = text.backgrounds[turn % text.backgrounds.length];
-  let enemies: string[];
-  let briefing: string[];
-  // Wardens are met a little weaker than the story fields them: the frame is whatever the run has made of it.
-  let scale = floorScale(run.floor);
+  const background = backgrounds[turn % backgrounds.length];
   if (isWardenFloor(run.floor)) {
     const round = run.floor / WARDEN_EVERY - 1;
-    const warden = WARDENS[round % WARDENS.length];
-    enemies = [warden];
-    briefing = [text.floor(run.floor), text.warden(names[warden] ?? warden)];
-    scale = Math.round((0.42 + 0.12 * round) * 100) / 100;
-  } else {
-    enemies = rollEnemies(dice, floorBudget(run.floor));
-    briefing = [text.floor(run.floor)];
+    // Wardens are met a little weaker than the story fields them: the frame is whatever the run has made of it.
+    return [{ enemies: [WARDENS[round % WARDENS.length]], background, scale: Math.round((0.42 + 0.12 * round) * 100) / 100 }];
   }
+  const scale = floorScale(run.floor);
+  const budget = floorBudget(run.floor);
+  const first = rollEnemies(diceFor(run, 1), budget);
+  // The other door: rolled again until it is not the same crowd, as far as a few tries go.
+  let second = first;
+  for (let salt = 5; salt < 9 && sameCrowd(second, first); salt++) second = rollEnemies(diceFor(run, salt), budget);
+  const found: Door[] = [
+    { enemies: first, background, scale },
+    { enemies: second, background: backgrounds[(turn + 2) % backgrounds.length], scale },
+  ];
+  const dice = diceFor(run, 4);
+  if (run.floor >= ELITE_FROM && dice.roll(100) < ELITE_CHANCE * 100) {
+    const door = found[dice.roll(2)];
+    // The mark goes to the dearest machine behind the door, the first of them when two cost the same.
+    let at = 0;
+    door.enemies.forEach((id, i) => { if ((ENEMY_COST[id] ?? 0) > (ENEMY_COST[door.enemies[at]] ?? 0)) at = i; });
+    door.elite = { at, mark: dice.pick(MARKS) };
+  }
+  return found;
+}
+
+/** The door the run has taken, or the first while none has been. */
+export function doorOf(run: Run, backgrounds: string[]): Door {
+  const found = doors(run, backgrounds);
+  return found[run.door ?? 0] ?? found[0];
+}
+
+/** The floor the run is on, in the shape of a contract, so it is briefed and fought like one. It pays nothing by itself. */
+export function floorMission(run: Run, text: GauntletText, names: Record<string, string>): Mission {
+  const door = doorOf(run, text.backgrounds);
+  const warden = isWardenFloor(run.floor) ? door.enemies[0] : null;
+  const briefing = warden ? [text.floor(run.floor), text.warden(names[warden] ?? warden)] : [text.floor(run.floor)];
   return {
     id: `gauntlet-${run.floor}`, phase: 'patrol', title: text.title(run.floor), client: text.client, briefing, debrief: text.debrief,
-    reward: 0, battles: [{ enemies, background }], scale, loaner: run.build,
+    reward: 0, battles: [{ enemies: door.enemies, background: door.background, ...(door.elite ? { marks: { [door.elite.at]: door.elite.mark } } : {}) }],
+    scale: door.scale, loaner: run.build,
   };
 }
 
-/** Everything the boons taken add up to. */
+/** Everything the boons taken add up to, and what the Glass Cannon does on top. */
 export function runMods(run: Run): Partial<UnitMods> {
   const mods: Record<string, number> = {};
   for (const id of BOON_IDS) {
@@ -111,8 +185,16 @@ export function runMods(run: Run): Partial<UnitMods> {
     if (count === 0) continue;
     for (const [key, value] of Object.entries(BOONS[id])) mods[key] = (mods[key] ?? 0) + (value as number) * count;
   }
+  if (hasRelic(run, 'cannon')) {
+    mods.damage = CANNON.damage;
+    // Thinner by a share of the plain armour, whatever plating has been taken.
+    mods.armour = Math.round(((mods.armour ?? 0) + CANNON.armour) * 100) / 100;
+  }
   return mods as Partial<UnitMods>;
 }
+
+/** The Overdrive the run's frame has: none without the Redline Core. */
+export const runOverdrive = (run: Run): OverdriveId | undefined => (hasRelic(run, 'redline') ? RELIC_OVERDRIVE : undefined);
 
 /** How worn the mech is: the share of its armour that is gone, from 0 to 1. Fresh when nothing is carried. */
 export function wear(run: Run, catalog: Catalog): number {
@@ -150,34 +232,58 @@ function partOffers(run: Run, catalog: Catalog): { slot: BuildSlot; part: string
   return offers.sort((a, b) => (a.part < b.part ? -1 : 1));
 }
 
+/** How many things are on offer after the floor just won: three, one more after an elite, one more with the Quartermaster's Key. */
+export const draftSize = (run: Run): number => 3 + (run.elite ? 1 : 0) + (hasRelic(run, 'key') ? 1 : 0);
+
 /**
- * What is on offer after the floor just won: always three, always different. Two parts when there
- * are parts to offer, and a full service once the mech is worn; boons fill the rest.
+ * What is on offer after the floor just won, always different things. Two parts when there are
+ * parts to offer, and a full service once the mech is worn; boons that can still be taken fill the
+ * rest, and more parts after them when the boons run out.
  */
 export function draft(run: Run, catalog: Catalog): Offer[] {
   const dice = diceFor(run, 2);
+  const size = draftSize(run);
   const offers: Offer[] = [];
   const parts = partOffers(run, catalog);
-  for (let i = 0; i < 2 && parts.length > 0; i++) {
+  const part = (): void => {
     const [picked] = parts.splice(dice.roll(parts.length), 1);
     // Not two things for the same slot: the choice should be between kinds of help.
     for (let j = parts.length - 1; j >= 0; j--) if (parts[j].slot === picked.slot) parts.splice(j, 1);
     offers.push({ kind: 'part', ...picked });
-  }
+  };
+  for (let i = 0; i < 2 && parts.length > 0; i++) part();
   if (wear(run, catalog) >= 0.25) offers.push({ kind: 'service' });
-  const boons = [...BOON_IDS];
-  while (offers.length < 3) {
+  const boons = BOON_IDS.filter((id) => (run.boons[id] ?? 0) < BOON_CAP);
+  while (offers.length < size && boons.length > 0) {
     const [boon] = boons.splice(dice.roll(boons.length), 1);
     offers.push({ kind: 'boon', boon });
   }
-  return offers.slice(0, 3);
+  while (offers.length < size && parts.length > 0) part();
+  return offers.slice(0, size);
+}
+
+/** The relics on offer after a warden: two of those the run does not hold, or what is left of them. */
+export function relicOffers(run: Run): RelicId[] {
+  const dice = diceFor(run, 3);
+  const left = RELIC_IDS.filter((id) => !hasRelic(run, id));
+  const offers: RelicId[] = [];
+  while (offers.length < 2 && left.length > 0) offers.push(...left.splice(dice.roll(left.length), 1));
+  return offers;
+}
+
+/** Takes one of the two relics a warden left. The draft that is owed comes after it. */
+export function takeRelic(run: Run, relic: RelicId): Run {
+  if (!run.relicOwed) throw new Error('no relic is owed');
+  if (!relicOffers(run).includes(relic)) throw new Error('that relic is not on offer');
+  return { ...run, relicOwed: false, relics: [...(run.relics ?? []), relic] };
 }
 
 /** Takes one of the things on offer. A part goes on at once and is whole; a service makes everything whole. */
 export function take(run: Run, offer: Offer, catalog: Catalog): Run {
   if (!run.drafting) throw new Error('nothing is on offer');
+  if (run.relicOwed) throw new Error('a relic is owed first');
   if (!draft(run, catalog).some((o) => JSON.stringify(o) === JSON.stringify(offer))) throw new Error('that is not on offer');
-  const next: Run = { ...run, drafting: false };
+  const next: Run = { ...run, drafting: false, elite: false };
   if (offer.kind === 'service') return { ...next, carry: null };
   if (offer.kind === 'boon') return { ...next, boons: { ...run.boons, [offer.boon]: (run.boons[offer.boon] ?? 0) + 1 } };
   const build = { ...run.build, [offer.slot]: offer.part };
@@ -189,23 +295,49 @@ export function take(run: Run, offer: Offer, catalog: Catalog): Run {
   return { ...next, build, carry };
 }
 
-/** The run after a floor is won: one floor deeper, cooled, a little patched, and owed a draft. */
+/** Into the floor the run is on, by one of its doors. Written down before the first shot: a game closed on a floor finds the run fallen there. */
+export function enter(run: Run, door: number, backgrounds: string[]): Run {
+  if (run.drafting) throw new Error('a draft is owed first');
+  const found = doors(run, backgrounds);
+  if (!Number.isInteger(door) || door < 0 || door >= found.length) throw new Error('there is no such door');
+  return { ...run, door, fighting: true, revived: false, elite: !!found[door].elite };
+}
+
+/** The run after a floor is won: one floor deeper, cooled, a little patched, and owed a draft (and, after a warden, a relic first). */
 export function descend(run: Run, end: BattleState): Run {
   if (end.outcome !== 'victory') throw new Error('the floor was not won');
   const carry = carryFrom(end);
   const player = end.units[0];
+  const patch = hasRelic(run, 'rig') ? RIG_PATCH : GAUNTLET_PATCH;
   for (const slot of FRAME_SLOTS) {
     const part = player.parts[slot];
     if (!part) continue;
-    carry.ap[slot] = Math.min(part.maxAp, part.ap + Math.round((part.maxAp - part.ap) * GAUNTLET_PATCH));
+    carry.ap[slot] = Math.min(part.maxAp, part.ap + Math.round((part.maxAp - part.ap) * patch));
   }
   carry.heat = 0;
   // Magazines are refilled and the field repairs restocked: the next floor is hard enough.
   carry.ammo = {};
   carry.restocked = {};
   delete carry.repairsLeft;
-  // Beating a warden earns a full service on the house: the mech goes on whole.
-  return { ...run, floor: run.floor + 1, carry: isWardenFloor(run.floor) ? null : carry, drafting: true, fighting: false };
+  const warden = isWardenFloor(run.floor);
+  const next: Run = { ...run, floor: run.floor + 1, drafting: true, fighting: false, elite: !!run.elite, revived: false };
+  delete next.door;
+  // Beating a warden earns a full service on the house: the mech goes on whole, and with what the warden left.
+  // Only the meter of an Overdrive survives the service: it is the pilot's, not the mech's.
+  next.carry = !warden ? carry : carry.drive ? { ap: {}, heat: 0, ammo: {}, restocked: {}, destroyed: false, drive: carry.drive } : null;
+  next.relicOwed = warden && relicOffers(next).length > 0;
+  return next;
+}
+
+/**
+ * What becomes of a run whose floor was lost or left: with a Spare Core it stands before the same
+ * floor again in a whole mech, and the core is spent; without one there is nothing, and the run is over.
+ */
+export function fall(run: Run): Run | null {
+  if (!hasRelic(run, 'spare')) return null;
+  const next: Run = { ...run, relics: (run.relics ?? []).filter((id) => id !== 'spare'), carry: null, fighting: false, elite: false, revived: true };
+  delete next.door;
+  return next;
 }
 
 /** Floors cleared by a run that ended on, or was left at, this floor. */
@@ -216,6 +348,8 @@ export function payout(cleared: number): number {
   for (let floor = 1; floor <= cleared; floor++) total += 100 + 40 * floor;
   return total;
 }
+/** What this run would pay if it ended where it stands: half as much again with Hazard Pay. */
+export const runPayout = (run: Run): number => Math.round(payout(floorsCleared(run)) * (hasRelic(run, 'ledger') ? LEDGER_PAY : 1));
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const whole = (v: unknown, max: number): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 && v <= max;
@@ -226,6 +360,14 @@ export function isValidRun(value: unknown, catalog: Catalog): value is Run {
   if (!whole(value.floor, 999) || value.floor < 1 || typeof value.drafting !== 'boolean') return false;
   if (value.fighting !== undefined && typeof value.fighting !== 'boolean') return false;
   if (value.bestBefore !== undefined && !whole(value.bestBefore, 999)) return false;
+  if (value.door !== undefined && !whole(value.door, 1)) return false;
+  for (const flag of ['relicOwed', 'elite', 'revived']) if (value[flag] !== undefined && typeof value[flag] !== 'boolean') return false;
+  if (value.relics !== undefined) {
+    const { relics } = value;
+    if (!Array.isArray(relics) || !relics.every((id) => (RELIC_IDS as unknown[]).includes(id)) || new Set(relics).size !== relics.length) return false;
+  }
+  // A relic is owed only with a draft, and a door is held only while a floor is fought.
+  if (value.relicOwed && !value.drafting) return false;
   const { build, boons, carry } = value;
   if (!isRecord(build) || !Object.entries(build).every(([slot, id]) => BUILD_SLOTS.includes(slot as BuildSlot) && typeof id === 'string')) return false;
   if (validatePlayerBuild(build as unknown as Build, catalog).length > 0) return false;
@@ -234,6 +376,7 @@ export function isValidRun(value: unknown, catalog: Catalog): value is Run {
   if (carry === null) return true;
   if (!isRecord(carry) || !isRecord(carry.ap) || !isRecord(carry.ammo) || !isRecord(carry.restocked)) return false;
   if (carry.destroyed !== false || (carry.repairsLeft !== undefined && !whole(carry.repairsLeft, 99)) || typeof carry.heat !== 'number' || !(carry.heat >= 0 && carry.heat <= 1000)) return false;
+  if (carry.drive !== undefined && !whole(carry.drive, DRIVE_MAX)) return false;
   if (!Object.entries(carry.ap).every(([slot, ap]) => (FRAME_SLOTS as string[]).includes(slot) && whole(ap, 100000))) return false;
   // A mech with no core left is a wreck, whatever else the save says.
   if (carry.ap.core !== undefined && (carry.ap.core as number) < 1) return false;
