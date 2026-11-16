@@ -96,7 +96,7 @@ export const STORY_NL: Record<string, string> = {
     'Piloot. Hadron betaalt goed voor nieuws over een vermist belegframe. Bedenk wie in deze stad het licht aanhoudt.',
   'Never seen her.': 'Nooit gezien.',
   'Tell Brenn where she is. (+1500)': 'Zeg Brenn waar ze is. (+1500)',
-  'Then I owe you one. I pay my debts in ordnance.': 'Dan heb je wat te goed. Ik betaal in granaten.',
+  'Then I owe you one. I pay my debts in ordnance.': 'Dan heb je wat te goed. Ik betaal in geschut.',
   'Noted, and paid. She will not be taking contracts again.': 'Genoteerd, en betaald. Zij neemt geen contracten meer aan.',
 
   // Old Sixty.
@@ -156,7 +156,7 @@ export const STORY_NL: Record<string, string> = {
 
   // How the war ended.
   'ONE COMPANY': 'EEN BEDRIJF',
-  'Hadron Mining owns Varn now: the pits, the towers, the air.': 'Varn is nu van Hadron Mining: putten, torens en lucht.',
+  'Hadron Mining owns Varn now: the pits, the towers, the air.': 'Varn is nu van Hadron Mining: mijnen, torens en lucht.',
   'Your account has never looked better. The city has never been quieter.':
     'Je rekening stond er nooit beter voor. De stad was nooit stiller.',
   'Director Brenn sends a retainer offer. It is generous. It does not expire.':
@@ -203,7 +203,7 @@ export const STORY_NL: Record<string, string> = {
   'With the policy void, Hadron owns only what it can hold. It turns out to be less than Brenn told the board.':
     'Zonder polis bezit Hadron alleen wat het kan vasthouden. Dat blijkt minder dan Brenn het bestuur vertelde.',
   'The pits strike in the spring. Nobody is hired to break it: you are busy, and Ashfall is expensive.':
-    'In de lente staken de putten. Niemand komt de staking breken: jij hebt het druk en Ashfall is duur.',
+    'In de lente staken de mijnen. Niemand komt de staking breken: jij hebt het druk en Ashfall is duur.',
   "Varn is nobody's now. You are poorer than you were promised and freer than you were sold.":
     'Varn is nu van niemand. Je bent armer dan je was beloofd en vrijer dan je was verkocht.',
   'OFF THE BOOKS': 'UIT DE BOEKEN',
@@ -230,7 +230,7 @@ export const STORY_NL: Record<string, string> = {
   'Parts sell back for what you paid. Experiment.': 'Onderdelen verkoop je voor de aankoopprijs. Experimenteer.',
   'Not bad': 'Niet slecht',
   'You shoot straight. One more job and I can put your name in front of real clients.':
-    'Je schiet recht. Nog een klus en ik kan je naam aan echte klanten voorleggen.',
+    'Je schiet raak. Nog een klus en ik kan je naam aan echte klanten voorleggen.',
   'Spend what you earned. A second weapon in your other hand, or one on your shoulder, lets you do more with every turn.':
     'Geef uit wat je verdiende. Een tweede wapen in je andere hand, of op je schouder, en je doet meer per beurt.',
   'Three offers': 'Drie aanbiedingen',
@@ -304,17 +304,17 @@ export const STORY_NL: Record<string, string> = {
   'You can only answer one of them, and whichever you pick is the end of this. I want my office back. Choose well.':
     'Je kunt er maar een antwoorden, en wat je ook kiest, daarmee eindigt dit. Ik wil mijn kantoor terug. Kies goed.',
   'You have a following now, so the office has a proposal: a mirror match.':
-    'Je hebt nu een aanhang, dus het kantoor heeft een voorstel: een spiegelgevecht.',
+    'Je hebt nu een aanhang, dus het kantoor heeft een voorstel: een spiegelduel.',
   'Our house pilot flies a copy of your own mech against you. Your frame, your weapons, whatever you have fitted that day. The crowd loves it.':
     'Onze huispiloot vliegt een kopie van je eigen mech tegen je. Jouw frame, jouw wapens, alles wat je die dag hebt gemonteerd. Het publiek smult ervan.',
   'Full purse the first time you win, a quarter after that. It is on the arena list under the ladder.':
-    'Vol prijzengeld bij je eerste winst, daarna een kwart. Het staat op de arenalijst, onder de ranglijst.',
+    'De volle pot bij je eerste winst, daarna een kwart. Het staat op de arenalijst, onder de ranglijst.',
   'A door behind the pit': 'Een deur achter de kuil',
   'Champion. There is a room behind the pit that the crowd does not know about.':
     'Kampioen. Achter de kuil is een kamer waar het publiek niets van weet.',
   'Five pilots fight there who stopped caring about the ladder years ago. They have asked to meet you.':
     'Daar vechten vijf piloten die al jaren niets meer om de ranglijst geven. Ze hebben naar je gevraagd.',
-  'No rules change. The purses do.': 'De regels blijven. Het prijzengeld niet.',
+  'No rules change. The purses do.': 'De regels blijven. De potten niet.',
   "Meridian's stock": 'Meridians inboedel',
   'Whatever else happened, a great deal of black and gold equipment is suddenly on the market.':
     'Wat er verder ook gebeurde, er is opeens heel veel zwart-gouden materieel op de markt.',
@@ -347,7 +347,7 @@ export const STORY_NL: Record<string, string> = {
     'Een volledige Wraith met een Void Rifle die de weerstand van je pantser halveert, en een Arc Blade waarmee hij elke ronde op je af komt.',
   'Eight seasons. Nobody has touched the mask.': 'Acht seizoenen. Niemand heeft het masker geraakt.',
   'A full Colossus with a breaker cannon and a barrier for when it hurts. Both guns landing take half a core.':
-    'Een volle Colossus met Breaker Cannon en een barrier voor als het pijn doet. Twee treffers kosten je een halve kern.',
+    'Een volle Colossus met Breaker Cannon en een barriere voor als het pijn doet. Twee treffers kosten je een halve kern.',
   'Take your time. I have all the armour in the world.': 'Neem je tijd. Ik heb al het pantser van de wereld.',
   'The champion. Colossus armour, a Wraith mask, a void rifle and a null beam that drains your generator.':
     'De kampioen. Colossus-pantser, een Wraith-masker, een Void Rifle en een Null Beam die je generator leegzuigt.',

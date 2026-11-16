@@ -89,4 +89,13 @@ describe('a cup in the arena', () => {
     expect((snap(app).arena as unknown as { cups: string[] }).cups).toEqual(['cup-bronze']);
     expect(snap(app).menu.items.find((i) => i.id === 'cup-bronze')!.note).toBe('625');
   });
+
+  test('a cup that is not open cannot be entered by its name, and its line says whom to beat first', () => {
+    const { app } = inHub(at(3));
+    app.openCupBriefing('cup-gold');
+    expect(snap(app).screen).toBe('hub');
+    app.startMission('cup-gold');
+    expect(snap(app).screen).toBe('hub');
+    expect(A.cups.locked(ARENA[9].name)).toContain(ARENA[9].name);
+  });
 });

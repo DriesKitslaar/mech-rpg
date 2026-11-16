@@ -23,7 +23,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'Tracks and a howitzer. Bullets bounce off the hull; blasts do not.':
     'Rupsbanden en een houwitser. Kogels ketsen af op de romp; explosies niet.',
   'Launches a recon drone every second turn while fewer than three enemies stand. Kill the carrier, not its drones.':
-    'Lanceert om de beurt een Recon Drone zolang er minder dan drie vijanden staan. Sloop de carrier, niet zijn drones.',
+    'Lanceert elke tweede beurt een Recon Drone zolang er minder dan drie vijanden staan. Sloop de drager, niet zijn drones.',
   'Lumen security. Quick, and hard to hit while its legs work. Fire at the core anyway. Staggered, it cannot dodge.':
     'Beveiliging van Lumen. Snel, en lastig te raken zolang zijn benen werken. Vuur toch op de kern. Wankelt het, dan ontwijkt het niet.',
   'Charges a piercing longbow for a turn, then fires it. Guard or boost on the turn it is loaded.':
@@ -75,7 +75,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'A ram on wheels. It drives in and hits with the plate, and what it hits is thrown off balance. Its wheels are softer than its hull.':
     'Een ram op wielen. Rijdt in en slaat met de plaat, en wat hij raakt, raakt uit balans. Zijn wielen zijn zachter dan zijn romp.',
   'A pylon that throws lightning. It cannot move. Every hit heats you by 16. Beams slide off it.':
-    'Een mast die bliksem werpt. Kan niet bewegen. Elke treffer geeft je 16 hitte. Stralen glijden eraf.',
+    'Een paal die bliksem werpt. Kan niet bewegen. Elke treffer geeft je 16 hitte. Stralen glijden eraf.',
   'A rail on rotors. It charges for a turn, then shoots through half your armour. Frail: kill it while it charges.':
     'Een railkanon op rotors. Laadt een beurt op en schiet dan door de helft van je pantser. Broos: sloop het tijdens het opladen.',
   'The Scrap King': 'De Scrap King',
@@ -99,7 +99,7 @@ export const REFERENCE_NL: Record<string, string> = {
 
   // --- Database: the world ---
   'A mining city on a seam that should have run dry forty years ago. The pits go down, the towers go up, and the lowest streets flood every spring. Nobody governs Varn. Three powers hold it between them, and none of them will fight for it in person.':
-    'Een mijnstad op een ader die veertig jaar geleden op had moeten zijn. De putten gaan omlaag, de torens omhoog, en de laagste straten lopen elk voorjaar onder. Niemand bestuurt Varn. Drie machten delen het, en geen van de drie vecht er zelf voor.',
+    'Een mijnstad op een ader die veertig jaar geleden op had moeten zijn. De mijnen gaan omlaag, de torens omhoog, en de laagste straten lopen elk voorjaar onder. Niemand bestuurt Varn. Drie machten delen het, en geen van de drie vecht er zelf voor.',
   'THE LICENCE': 'DE LICENTIE',
   "A pilot's licence lets you carry weapons inside the city for pay. It is issued on credit. Yours came with a salvaged frame and a debt, and the debt is the larger of the two. Repairs and ammunition come out of every fee.":
     'Met een pilotenlicentie mag je in de stad tegen betaling wapens dragen. Je krijgt haar op krediet. Bij de jouwe zaten een geborgen frame en een schuld, en de schuld is de grootste van de twee. Reparaties en munitie gaan van elk loon af.',
@@ -117,7 +117,7 @@ export const REFERENCE_NL: Record<string, string> = {
     'Niet elk frame draagt een vlag. Ronin, Wraith en Colossus komen uit kleine werkplaatsen, voor piloten zonder baas, en gaan naar wie kan betalen. Goedkoop zijn ze niet.',
   'THE ARENA': 'DE ARENA',
   'Ranked pilots fight for purses in a pit under the rail yard. It is licensed, legal and heavily bet on. Beat the next rank and the purse is yours in full; beat someone you have beaten before and you get a quarter.':
-    'Piloten met rang vechten om prijzengeld in een kuil onder het emplacement. Vergund, legaal, en er wordt zwaar gewed. Versla de volgende rang en de hele pot is van jou; versla iemand opnieuw: een kwart.',
+    'Piloten met rang vechten om de pot in een kuil onder het emplacement. Vergund, legaal, en er wordt zwaar gewed. Versla de volgende rang en de hele pot is van jou; versla iemand opnieuw: een kwart.',
   'THE BACK ROOM': 'DE ACHTERKAMER',
   'Behind the pit is a room the crowd does not know about. Five pilots fight there who stopped caring about the ladder years ago: for larger purses, without an audience, and only against a champion.':
     'Achter de kuil ligt een kamer waar het publiek niets van weet. Daar vechten vijf piloten die de ranglijst al jaren niets meer kan schelen: om hogere potten, zonder publiek, en alleen tegen een kampioen.',
@@ -134,7 +134,7 @@ export const REFERENCE_NL: Record<string, string> = {
   "The Undertow's champion. He came up through the salvage yards with a cutting torch and never put it down. He fought for the pleasure of it, which Lumen's models found difficult to price.":
     'De kampioen van de Undertow. Hij kwam op uit de sloperijen met een snijbrander en legde hem nooit meer neer. Hij vocht voor zijn plezier, en dat konden Lumens modellen moeilijk prijzen.',
   'Hadron ran its pits through one man. Krell broke every strike Varn ever had from inside a Colossus, behind a tower shield and a jammer mast. He fought dirty and he never tired.':
-    'Hadron leidde zijn putten via een enkele man. Krell brak elke staking in Varn vanuit een Colossus, achter een torenschild en een stoormast. Hij vocht vuil en werd nooit moe.',
+    'Hadron leidde zijn mijnen via een enkele man. Krell brak elke staking in Varn vanuit een Colossus, achter een torenschild en een stoormast. Hij vocht vuil en werd nooit moe.',
   'A barge the Undertow floated out of the old drowned yards and gave a jaw. It ate pump stations and shed walking bombs like a dog sheds hair. Blasts barely marked it. It is back under the water now.':
     'Een schuit die de Undertow uit de oude verdronken werven lichtte en een kaak gaf. Hij vrat pompstations en verloor loopbommen zoals een hond haar verliest. Explosies deerden hem amper. Hij ligt nu weer onder water.',
   'THE STRIP-MINER': 'DE STRIP-MINER',
@@ -195,7 +195,7 @@ export const REFERENCE_NL: Record<string, string> = {
     'Twee keer per contract kun je in het veld een beschadigd onderdeel oplappen: dat herstelt 40% van zijn pantser. Een vernietigd onderdeel is niet op te lappen. Een reparatie eindigt je beurt, dus vuur eerst. Elke reparatie verlaagt je rang iets.',
   'ENEMY TRICKS': 'VIJANDELIJKE TRUCS',
   'Shield drones cover the others. Repair drones weld them back together. Jammers spoil your aim. Bomb crawlers go off on a fuse. Carriers launch more. Shoot the helper first.':
-    'Shield Drones dekken de rest. Repair Drones lassen ze weer aan elkaar. Jammers bederven je mikken. Bomb Crawlers gaan af op een lont. Carriers lanceren er meer. Schiet eerst op de helper.',
+    'Shield Drones dekken de rest. Repair Drones lassen ze weer aan elkaar. Stoorders bederven je mikken. Bomb Crawlers gaan af op een lont. Dragers lanceren er meer. Schiet eerst op de helper.',
   OBJECTIVES: 'DOELEN',
   'Not every battle is won by destroying everything. Some ask you to outlast a number of rounds, to protect something, to take out one leader, to disable a machine without destroying it, or to drive a pilot off. The line at the top of the field says which.':
     'Niet elk gevecht win je door alles te vernietigen. Soms moet je een aantal rondes overleven, iets beschermen, een leider uitschakelen, een machine stilleggen zonder haar te vernietigen, of een piloot verjagen. De regel boven het veld zegt welke.',
@@ -222,9 +222,9 @@ export const REFERENCE_NL: Record<string, string> = {
     'Verhaal: een vijfde minder pantser en vuurkracht voor vijanden; Veteraan: een vijfde meer. Altijd te wijzigen in de opties. Snelle gevechten: alles tweeenhalf keer zo snel.',
   GROUND: 'TERREIN',
   'Seven places have a rule for both sides. Rain: all shed 4 more heat a turn. Furnace heat: 4 less. Dust: every shot 5 less likely to hit. Flood water: a boost dodges 6 less. Sealed vault: explosions do 15% less. Crosswind: kinetic hits 6 less likely. Clear air: beams 4 more likely. The briefing and the field name it.':
-    'Zeven plekken hebben een regel voor beide kanten. Regen: ieder voert 4 hitte meer af per beurt. Ovenhitte: 4 minder. Stof: elk schot 5 minder trefkans. Vloedwater: een boost ontwijkt 6 minder. Dichte kluis: explosies doen 15% minder. Zijwind: kogels 6 minder trefkans. Heldere lucht: stralen 4 meer. Briefing en veld noemen het.',
+    'Zeven plekken hebben een regel voor beide kanten. Regen: ieder voert 4 hitte meer af per beurt. Ovenhitte: 4 minder. Stof: elk schot 5 minder trefkans. Vloedwater: een boost ontwijkt 6 minder. Dichte kluis: explosies doen 15% minder. Zijwind: kogels 6 minder trefkans. Klare lucht: stralen 4 meer. Briefing en veld noemen het.',
   'A wingman is hired in the briefing for a share of fee and experience, and fires once a round from round 2. In battle the Wing row gives orders for nothing: strike the strongest, strike what you fired at last, or cover you, which takes a share off every shot at you while they hold fire.':
-    'Een wingman huur je in de briefing in voor een deel van loon en ervaring; hij vuurt een keer per ronde vanaf ronde 2. In het gevecht geeft de rij Wing gratis orders: val de sterkste aan, val aan waar jij het laatst op vuurde, of dek jou, wat van elk schot op jou een deel afhaalt terwijl hij niet vuurt.',
+    'Een wingman huur je in de briefing in voor een deel van loon en ervaring; die vuurt een keer per ronde vanaf ronde 2. In het gevecht geeft de rij Wing gratis orders: de sterkste aanvallen, aanvallen waar jij het laatst op vuurde, of jou dekken, wat van elk schot op jou een deel afhaalt zolang de wingman niet vuurt.',
   'THE GAUNTLET': 'DE GAUNTLET',
   'A run of floors in a stock frame, with none of your own parts or perks. After each floor take one of three: a part, a full service, or a boon for the run. Every fifth floor has a warden; beat it and you are patched up free. Falling, retreating or closing the game on a floor ends the run. It pays by floors cleared.':
     'Een reeks etages in een standaardframe, zonder je eigen onderdelen of perks. Kies na elke etage een uit drie: onderdeel, groot onderhoud of reeksbonus. Elke vijfde etage heeft een bewaker; versla hem voor gratis herstel. Vallen, Aftocht of afsluiten op een etage eindigt de reeks. Loon per gehaalde etage.',
@@ -321,7 +321,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'Champion of Varn': 'Kampioen van Varn',
   'Take first place in the arena.': 'Pak de eerste plaats in de arena.',
   'Know Thyself': 'Ken jezelf',
-  'Win a mirror match against your own build.': 'Win een spiegelgevecht tegen je eigen build.',
+  'Win a mirror match against your own build.': 'Win een spiegelduel tegen je eigen build.',
   'Last One Standing': 'Laatste overeind',
   'Beat everyone in the back room of the arena.': 'Versla iedereen in de achterkamer van de arena.',
   Silverware: 'Tafelzilver',

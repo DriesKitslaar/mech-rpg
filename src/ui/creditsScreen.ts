@@ -17,16 +17,23 @@ export interface CreditLine { text: string; size?: number; color?: string; gap?:
 const ever = (game: GameState, missionId: string): boolean => game.completed.includes(missionId) || Object.hasOwn(game.ranks, missionId);
 
 /** The people of the story, in the order they come into it, and how the game knows the pilot has met each. */
-export const CAST: { name: string; role: string; met(game: GameState): boolean }[] = [
-  { name: 'Dispatch', role: C.roles.dispatch, met: () => true },
-  { name: 'Director Brenn', role: C.roles.brenn, met: (g) => ever(g, 'hadron-1') },
-  { name: 'Analyst Varga', role: C.roles.varga, met: (g) => ever(g, 'lumen-1') },
-  { name: 'Tamsin', role: C.roles.tamsin, met: (g) => ever(g, 'undertow-1') },
-  { name: 'Ashfall', role: C.roles.ashfall, met: (g) => g.met.includes('rival') || ever(g, 'rival-1') },
-  { name: 'Sable', role: C.roles.sable, met: (g) => g.met.includes('sable') },
-  { name: 'Rook', role: C.roles.rook, met: (g) => g.met.includes('rook') },
-  { name: 'Krell', role: C.roles.krell, met: (g) => g.met.includes('krell') },
-  { name: 'The Actuary', role: C.roles.actuary, met: (g) => ever(g, 'audit-1') },
+type Member = keyof typeof C.roles;
+const cast = (key: Member, met: (game: GameState) => boolean) => ({
+  // Read when asked, not when the game starts: the roll is in whatever language is set then.
+  get name(): string { return C.names[key]; },
+  get role(): string { return C.roles[key]; },
+  met,
+});
+export const CAST: { readonly name: string; readonly role: string; met(game: GameState): boolean }[] = [
+  cast('dispatch', () => true),
+  cast('brenn', (g) => ever(g, 'hadron-1')),
+  cast('varga', (g) => ever(g, 'lumen-1')),
+  cast('tamsin', (g) => ever(g, 'undertow-1')),
+  cast('ashfall', (g) => g.met.includes('rival') || ever(g, 'rival-1')),
+  cast('sable', (g) => g.met.includes('sable')),
+  cast('rook', (g) => g.met.includes('rook')),
+  cast('krell', (g) => g.met.includes('krell')),
+  cast('actuary', (g) => ever(g, 'audit-1')),
 ];
 
 /**

@@ -2,7 +2,10 @@ import { language, setLanguage } from '../../src/content/language';
 import { MISSIONS } from '../../src/content/missions';
 import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
-import { SETTINGS_KEY } from '../../src/platform/storage';
+import { CATALOG } from '../../src/content/parts';
+import { SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
+import { App } from '../../src/ui/app';
+import { creditLines } from '../../src/ui/creditsScreen';
 import { BRIEFING_CHARS, briefingRows, groundLines, objectiveLines } from '../../src/ui/briefingScreen';
 import { SCENE_LINES, sceneRows } from '../../src/ui/sceneScreen';
 import { charsFor, wrap } from '../../src/ui/widgets';
@@ -102,5 +105,45 @@ describe('the game in Dutch', () => {
       expect(scene.title.length, scene.title).toBeLessThanOrEqual(14);
     }
     expect(STRINGS.title).toBe('IRONWAGE');
+  });
+
+  test('the end roll is in Dutch from top to bottom, and in English again afterwards', () => {
+    const game = { ...strong(done('intro-1', 'intro-2', 'hadron-1', 'lumen-1')), met: ['rival', 'sable'] };
+    const roll = () => creditLines(game, 50).map((line) => line.text);
+    const english = roll();
+    expect(english).toEqual(expect.arrayContaining(['Director Brenn', 'who found you the work', 'a licensed pilot']));
+    setLanguage('nl');
+    const dutchRoll = roll();
+    expect(dutchRoll).toEqual(expect.arrayContaining(['Directeur Brenn', 'Analist Varga', 'die je het werk bezorgde', 'een erkende piloot']));
+    for (const text of ['Director Brenn', 'Analyst Varga', 'who found you the work', 'a licensed pilot', 'Lumen\'s best']) expect(dutchRoll).not.toContain(text);
+    setLanguage('en');
+    expect(roll()).toEqual(english);
+  });
+
+  test('the content goes back to English whole, not only the interface', () => {
+    const texts = () => JSON.stringify([MISSIONS.map((m) => [m.title, m.briefing, m.debrief]), SCENES.map((s) => [s.title, s.lines, s.talk?.map((t) => t.text)])]);
+    const english = texts();
+    setLanguage('nl');
+    expect(texts()).not.toBe(english);
+    expect(MISSIONS.find((m) => m.id === 'patrol')!.briefing[0]).not.toContain('Standing contract');
+    setLanguage('en');
+    expect(texts()).toBe(english);
+  });
+
+  test('the language kept with the settings is the language the game opens in, before any game is loaded', () => {
+    const { app, store } = inHub();
+    select(app, 'options');
+    select(app, 'language');
+    const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites: app.deps.sprites, fast: true, seed: 2 });
+    expect(language()).toBe('nl');
+    expect(snap(again).menu.items.map((i) => i.label)).not.toContain('Continue');
+  });
+
+  test('the line about a thermal weapon stays on the screen in both languages', () => {
+    for (const lang of ['en', 'nl'] as const) {
+      setLanguage(lang);
+      // Drawn from x 176 on a 310 screen, at 4.8 a letter.
+      expect(176 + STRINGS.partInfo.traits.thermal(26).length * 4.8, lang).toBeLessThanOrEqual(310);
+    }
   });
 });

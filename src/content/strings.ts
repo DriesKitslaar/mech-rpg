@@ -238,6 +238,10 @@ export const STRINGS = {
   credits: {
     flownBy: 'FLOWN BY', level: (n: number) => `PILOT LEVEL ${n}`, record: 'THE RECORD', stat: (label: string, value: string) => `${label}  ${value}`,
     cast: 'IN VARN', unknown: '? ? ?', notMet: 'on a road not taken',
+    names: {
+      dispatch: 'Dispatch', brenn: 'Director Brenn', varga: 'Analyst Varga', tamsin: 'Tamsin', ashfall: 'Ashfall', sable: 'Sable',
+      rook: 'Rook', krell: 'Krell', actuary: 'The Actuary',
+    },
     roles: {
       dispatch: 'who found you the work', brenn: 'Hadron Mining', varga: 'Lumen Systems', tamsin: 'The Undertow',
       ashfall: 'a licensed pilot', sable: 'Lumen\'s best', rook: 'the Undertow\'s champion', krell: 'Hadron\'s strike-breaker',

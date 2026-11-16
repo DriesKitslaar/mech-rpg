@@ -86,7 +86,7 @@ export const STRINGS_NL = {
   orders: {
     item: (order: 'strongest' | 'target' | 'cover') => ({ strongest: 'Wing: sterkste', target: 'Wing: mijn doel', cover: 'Wing: dek mij' })[order],
     told: (name: string, order: 'strongest' | 'target' | 'cover') => ({
-      strongest: `${name}: vuur op de sterkste.`, target: `${name}: vuur waar jij vuurt.`, cover: `${name}: vuur niet, lok hun vuur.`,
+      strongest: `${name}: vuurt op de sterkste.`, target: `${name}: vuurt waar jij vuurt.`, cover: `${name}: vuurt niet, lokt hun vuur.`,
     })[order],
   },
   support: (ally: string, target: string, damage: number) => `${ally} vuurt op ${obj(target)} -${damage}`,
@@ -145,7 +145,7 @@ export const STRINGS_NL = {
       plating: { name: 'Beplating', short: 'PLAAT', note: '+8% pantser' }, optics: { name: 'Optiek', short: 'OPTIEK', note: '+4 tref' },
       patchkit: { name: 'Plakset', short: 'PLAK', note: '+1 reparatie/etage' },
     },
-    fell: 'Gestopt op een etage: reeks gevallen.',
+    fell: 'Afgesloten op etage: reeks viel daar.',
     over: 'REEKS OM', cleared: (n: number) => (n === 1 ? '1 etage geruimd' : `${n} etages geruimd`), paid: (n: number) => `Loon ${n}`, record: 'Nieuw record.',
     hint: 'A: kies   B: terug', expected: 'VERWACHT',
     slots: {
@@ -227,6 +227,10 @@ export const STRINGS_NL = {
   credits: {
     flownBy: 'PILOOT', level: (n: number) => `PILOOTLEVEL ${n}`, record: 'HET DOSSIER', stat: (label: string, value: string) => `${label}  ${value}`,
     cast: 'IN VARN', unknown: '? ? ?', notMet: 'op een andere weg',
+    names: {
+      dispatch: 'Dispatch', brenn: 'Directeur Brenn', varga: 'Analist Varga', tamsin: 'Tamsin', ashfall: 'Ashfall', sable: 'Sable',
+      rook: 'Rook', krell: 'Krell', actuary: 'The Actuary',
+    },
     roles: {
       dispatch: 'die je het werk bezorgde', brenn: 'Hadron Mining', varga: 'Lumen Systems', tamsin: 'De Undertow',
       ashfall: 'een erkende piloot', sable: 'Lumens beste', rook: 'kampioen van de Undertow', krell: 'stakingsbreker van Hadron',
@@ -298,7 +302,7 @@ export const STRINGS_NL = {
     rightHand: 'Rechterhand', leftHand: 'Linkerhand', shoulder: 'Schouder',
   },
   garage: {
-    heading: 'GARAGE', empty: 'Leeg', none: '(geen)', inUse: 'Bezet', fitted: '*',
+    heading: 'GARAGE', empty: 'Leeg', none: '(geen)', inUse: 'Gebruikt', fitted: '*',
     weight: 'Gewicht', energy: 'Energie', mobility: 'Mobiliteit', armour: 'Pantser', stability: 'Stabiliteit', cooling: 'Koeling',
     evasion: 'Boost ontwijk', volley: 'Salvo EN', back: 'B: terug',
     factoryPaint: 'Fabriek', paint: (name: string) => `L1/R1 LAK: ${name}`, toLoadouts: 'LEFT/RIGHT: MIJN BUILDS',
@@ -317,7 +321,7 @@ export const STRINGS_NL = {
     },
     bought: (name: string) => `Gekocht: ${name}`,
     sold: (name: string, price: number) => `Verk. ${name} +${price}`,
-    cannotAfford: 'Te weinig credits', inUse: 'Bezet', nothingToSell: 'Niets te verkopen hier',
+    cannotAfford: 'Te weinig credits', inUse: 'Gebruikt', nothingToSell: 'Niets te verkopen hier',
     lastWeapon: 'Laatste wapen', needWeapon: 'Je moet een wapen houden',
     hint: 'A handel  L1/R1 categorie  LEFT/RIGHT koop/verkoop  B terug', fitHint: 'Monteer in de Garage.',
   },
@@ -332,7 +336,7 @@ export const STRINGS_NL = {
     traits: {
       twin: () => 'DUO: vuurt tweemaal',
       pierce: () => 'DOORBOOR: halve weerstand',
-      thermal: (power: number) => `THERMISCH: +${power} hitte bij doel`,
+      thermal: (power: number) => `THERMISCH: doel +${power} hitte`,
       drain: (power: number) => `AFTAP: -${power} energie bij doel`,
       burst: (power: number) => `STOOT: vuurt ${power} keer`,
       salvo: () => 'SALVO: raakt elke vijand',

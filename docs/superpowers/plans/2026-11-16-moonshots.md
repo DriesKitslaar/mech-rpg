@@ -16,12 +16,10 @@ Update as work lands. After a context reset, start here.
       (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Reviewed with its neighbour; the fixes are on `feat/moon-dutch`. APK sent.
 - [x] M3: New machines (branch `feat/moon-machines`, PR 20, on top of M2). Built and tested: six machines for the open
       contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Reviewed with its neighbour; the fixes are on `feat/moon-dutch`. APK sent.
-- [ ] M4: Orders for the wingman (branch `feat/moon-orders`, PR 21, on top of M3). Built and tested. Pending: review, APK.
-- [ ] M5: Cups (branch `feat/moon-cups`, PR 22, on top of M4). Built and tested. Pending: review, APK.
-- [ ] M6: Dutch (branch `feat/moon-dutch`, PR 23, on top of M5). All text is translated (about 1300 texts in
-      `src/content/nl/`), tested in both languages. Review of M4 to M6 together is running (snapshot `scratchpad/reviewM456`);
-      APK sent from this branch. Pending: fixes from that review.
-- [ ] M7: Last review, APK, summary
+- [x] M4: Orders for the wingman (branch `feat/moon-orders`, PR 21, on top of M3). Built, reviewed with M6; fixes on `feat/moon-dutch`.
+- [x] M5: Cups (branch `feat/moon-cups`, PR 22, on top of M4). Built, reviewed with M6; fixes on `feat/moon-dutch`.
+- [x] M6: Dutch (branch `feat/moon-dutch`, PR 23, on top of M5). Translated, tested in both languages, reviewed, fixed.
+- [x] M7: The last APK was sent from `feat/moon-dutch` with the summary. Nothing is merged: PRs 18 to 23 wait for the owner's word.
 
 ## M1: The Gauntlet
 
@@ -152,3 +150,14 @@ M6:
 - Four translators worked side by side on a snapshot, one file each, held to the same tests; their
   word choices were then brought into line (the tags a drill quotes, the clearing house, callsign).
 - Names stay English: people, companies, places, machines, parts and weapons.
+
+M4 to M6, after their review:
+
+- The end roll read its names and roles when the game started, so it stayed English: it now reads
+  them when it is made. A shop line about thermal weapons ran off the screen in Dutch and was
+  reworded. A wingman's order is kept through the battles of one contract.
+- The Dutch was brought into line where the four files disagreed (pits, purse, mirror match,
+  carrier, jammer) and where it read wrongly (the wingman's reports, a few sentences).
+- Left as it is: some machines are still called by Dutch common nouns in a few contract texts
+  (schilddrone, reparatiedrone, kruiper); cover does not reduce a bomb's blast; the database's
+  count says GEHAD, since GEZIEN is a letter too long for its place.
