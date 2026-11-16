@@ -50,6 +50,11 @@ import { OptionsScreen } from './optionsScreen';
 import { PilotScreen } from './pilotScreen';
 import { SceneScreen } from './sceneScreen';
 import { TalkScreen } from './talkScreen';
+import { GauntletScreen } from './gauntletScreen';
+import { descend, floorMission, floorsCleared, isGauntlet, payout, runMods, startRun, take, type Offer, type Run } from '../core/gauntlet';
+import { GAUNTLET_BUILD, GAUNTLET_TEXT } from '../content/gauntlet';
+import { ENEMIES } from '../content/enemies';
+import type { BattleState } from '../core/battle';
 import { SettlementScreen } from './settlementScreen';
 import { battleTrack, briefingTrack, trackFor } from './soundtrack';
 import { ShopScreen } from './shopScreen';
@@ -74,7 +79,7 @@ export interface Screen {
 
 export type ScreenName =
   | 'title' | 'callsign' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
-  | 'arena' | 'pilot' | 'options' | 'database' | 'training' | 'credits';
+  | 'arena' | 'pilot' | 'options' | 'database' | 'training' | 'credits' | 'gauntlet';
 
 /** One of the kept games as the title shows it: empty, unreadable, or a game. */
 export interface SlotView { slot: number; game: GameState | null; unusable: boolean }
@@ -173,10 +178,15 @@ class MissionHost implements Screen {
     // The pilot's perks apply in every battle of the contract, the first and the carried ones alike.
     // A drill is fought in the simulator's mech as it comes: the pilot's own build and perks stay outside.
     const { aim, evasion, energy, cooling, repairs, armour } = this.app.perks();
-    const drill = isDrill(this.mission);
+    const run = isGauntlet(this.mission) ? this.app.run : null;
+    const drill = isDrill(this.mission) || !!run;
     const state = startMissionBattle(
       this.mission.loaner ?? this.app.game!.build, this.mission, this.index, this.app.enemies(), catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
-      { enemyScale: this.enemyScale(), ...(drill ? {} : { mods: { aim, evasion, energy, cooling, repairs, armour } }) },
+      {
+        enemyScale: this.enemyScale(),
+        // A run of the Gauntlet has its own boons and arrives as the last floor left it; the pilot's perks stay outside.
+        ...(run ? { mods: runMods(run), carry: run.carry ?? undefined } : drill ? {} : { mods: { aim, evasion, energy, cooling, repairs, armour } }),
+      },
     );
     // Each battle of a contract has its own song: the last one may be against a boss.
     this.app.playTrack(battleTrack(this.mission, this.index, this.app.enemies()));
@@ -204,7 +214,7 @@ class MissionHost implements Screen {
 
   /** The contract's own scale times the difficulty the player chose. A drill is the same for everyone. */
   private enemyScale(): number {
-    return (this.mission.scale ?? 1) * (isDrill(this.mission) ? 1 : DIFFICULTY_SCALE[this.app.settings.difficulty]);
+    return (this.mission.scale ?? 1) * (isDrill(this.mission) || isGauntlet(this.mission) ? 1 : DIFFICULTY_SCALE[this.app.settings.difficulty]);
   }
 
   /** True when winning the current battle leads to another one. */
@@ -221,6 +231,12 @@ class MissionHost implements Screen {
     if (this.settlement || outcome === 'ongoing' || (outcome === 'victory' && this.hasNext())) return;
     // After a defeat Dispatch has a word about what went wrong in the battle that was lost.
     this.tip = adviceAfter(this.flow.state);
+    if (isGauntlet(this.mission)) {
+      // A floor bills nothing and pays nothing by itself: the run is paid when it ends.
+      this.settlement = { won: outcome === 'victory', reward: 0, ammoCost: 0, repairCost: 0, net: 0, lines: [] };
+      this.app.bookGauntlet(this.flow.state);
+      return;
+    }
     if (isDrill(this.mission)) {
       // The simulator bills nothing and counts for nothing but the list of drills passed.
       this.settlement = drillSettlement(outcome === 'victory', this.mission);
@@ -264,7 +280,9 @@ class MissionHost implements Screen {
       return;
     }
     if (action !== 'confirm') return;
-    if (this.settlement) this.app.showSettlement(this.settlement, this.mission, this.tip);
+    // A floor of the Gauntlet has no bill to show: straight back to the run, and what is on offer.
+    if (this.settlement && isGauntlet(this.mission)) this.app.go('gauntlet');
+    else if (this.settlement) this.app.showSettlement(this.settlement, this.mission, this.tip);
     else {
       this.rounds += this.flow.state.round;
       this.count();
@@ -433,7 +451,10 @@ export class App {
     // Saved at once: a game from an older version is brought up to date where it is kept, and what it
     // had already done is recognised now (medals, entries of the database, the enemies its finished
     // contracts put in front of it) rather than at its next save.
+    this.lastRun = null;
     this.commit({ ...settleOldStory(saved, SCENES, MISSIONS), met: metByRecord(saved, MISSIONS, ARENA), settings: { ...this.settings } });
+    // A run that was on a floor when the game was closed fell there.
+    if (this.run?.fighting) this.endGauntlet();
     this.go('hub');
   }
 
@@ -541,6 +562,83 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
+  /** The run of the Gauntlet under way, if any. */
+  get run(): Run | null {
+    return this.game?.gauntlet ?? null;
+  }
+
+  /** The floor the run is on, as a contract; nothing while a draft is owed or no run is under way. */
+  gauntletFloor(): Mission | undefined {
+    const run = this.run;
+    if (!run || run.drafting) return undefined;
+    const names = Object.fromEntries(Object.values(this.enemies()).map((e) => [e.id, e.name]));
+    return floorMission(run, GAUNTLET_TEXT, names);
+  }
+
+  /** Starts a run in the stock frame. A run already under way is left as it is. */
+  startGauntlet(): void {
+    if (!this.game || this.run || !this.sideWorkOpen()) return;
+    this.seed = (this.seed + 7919) % 2147483647;
+    this.lastRun = null;
+    this.commit({ ...this.game, gauntlet: startRun(this.seed, GAUNTLET_BUILD, this.game.gauntletBest ?? 0) });
+  }
+
+  /** Into the floor the run is on. */
+  descendGauntlet(): void {
+    const floor = this.gauntletFloor();
+    if (!floor || !this.game || !this.run) return;
+    // Written down before the first shot: a game closed on a floor finds the run fallen there.
+    this.commit({ ...this.game, gauntlet: { ...this.run, fighting: true } });
+    this.startMission(floor.id);
+  }
+
+  /** The floor ahead, whether or not a draft is still owed: what the pilot is choosing for. */
+  gauntletAhead(): Mission | undefined {
+    const run = this.run;
+    if (!run) return undefined;
+    const names = Object.fromEntries(Object.values(this.enemies()).map((e) => [e.id, e.name]));
+    return floorMission({ ...run, drafting: false }, GAUNTLET_TEXT, names);
+  }
+
+  /**
+   * Books a floor the moment it is decided: won, the run goes one deeper and is owed a draft; lost
+   * or left, the run is over and pays for the floors it cleared. Returns what it paid, if it ended.
+   */
+  bookGauntlet(end: BattleState): void {
+    const game = this.game;
+    const run = this.run;
+    if (!game || !run) return;
+    // What was fought down there has been met, and a floor cleared counts towards the best at once.
+    const met = [...new Set([...game.met, ...end.units.flatMap((u) => (u.side === 'enemy' && u.kind && Object.hasOwn(ENEMIES, u.kind) ? [u.kind] : []))])];
+    if (end.outcome === 'victory') {
+      return this.commit({ ...game, met, gauntlet: descend(run, end), gauntletBest: Math.max(game.gauntletBest ?? 0, run.floor) });
+    }
+    this.commit({ ...game, met });
+    this.endGauntlet();
+  }
+
+  /** Ends the run where it stands and pays it out. */
+  endGauntlet(): void {
+    const game = this.game;
+    const run = this.run;
+    if (!game || !run) return;
+    const cleared = floorsCleared(run);
+    const best = Math.max(game.gauntletBest ?? 0, cleared);
+    this.lastRun = { cleared, paid: payout(cleared), record: cleared > (run.bestBefore ?? 0) };
+    this.commit({ ...game, credits: game.credits + payout(cleared), gauntlet: null, gauntletBest: best });
+  }
+
+  /** How the last run of this sitting ended, for the Gauntlet's own screen. */
+  lastRun: { cleared: number; paid: number; record: boolean } | null = null;
+
+  /** Takes one of the three things on offer after a floor. */
+  takeDraft(offer: Offer): void {
+    const game = this.game;
+    const run = this.run;
+    if (!game || !run || !run.drafting) return;
+    this.commit({ ...game, gauntlet: take(run, offer, this.deps.catalog) });
+  }
+
   /** Books a drill: the first pass pays and is remembered; nothing else changes. */
   bookDrill(settlement: Settlement, mission: Mission): void {
     const next = recordDrill(this.game!, settlement, mission);
@@ -549,7 +647,8 @@ export class App {
 
   /** Leaves a settlement: a drill for the training list, anything else for the hub. */
   leaveSettlement(mission: Mission): void {
-    if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
+    if (isGauntlet(mission)) this.go('gauntlet');
+    else if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
     else this.go('hub');
   }
 
@@ -583,6 +682,7 @@ export class App {
   private offered(missionId: string, replay: boolean): Mission | undefined {
     if (replay) return this.archive().find((m) => m.id === missionId);
     if (missionId.startsWith('drill-')) return this.drillFight(missionId);
+    if (missionId.startsWith('gauntlet-')) return this.gauntletFloor()?.id === missionId ? this.gauntletFloor() : undefined;
     if (missionId === MIRROR_ID) return this.mirrorFight();
     const arena = /^arena-(\d+)$/.exec(missionId);
     return arena ? this.arenaFight(Number(arena[1])) : this.missions().find((m) => m.id === missionId);
@@ -621,6 +721,7 @@ export class App {
       case 'pilot': return this.show(name, new PilotScreen(this));
       case 'database': return this.show(name, new DatabaseScreen(this));
       case 'training': return this.show(name, new TrainingScreen(this));
+      case 'gauntlet': if (this.sideWorkOpen()) this.show(name, new GauntletScreen(this)); return;
       case 'arena': if (this.sideWorkOpen()) this.show(name, new ArenaScreen(this)); return;
       case 'options': return this.openOptions();
       default: return; // briefings, battles, settlements and endings open through their own methods

@@ -12,7 +12,7 @@ import { idlePose } from './pose';
 import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const H = STRINGS.hub;
-const ROWS = 10;
+const ROWS = 11;
 /** The entry of the contract list that opens the archive. No contract has this id. */
 export const ARCHIVE = 'archive';
 
@@ -41,6 +41,8 @@ export class HubScreen implements Screen {
       // Until the arena opens, the entry says what opens it: the last of the introductory contracts.
       { id: 'arena', label: H.arena, enabled: sideWork && errors.length === 0, note: sideWork ? undefined : H.opensAfter(lastIntroduction()) },
       { id: 'training', label: H.training, enabled: true },
+      // A run is flown in a stock frame, so it is open whatever state the pilot's own mech is in.
+      { id: 'gauntlet', label: STRINGS.gauntlet.item, enabled: sideWork, note: sideWork ? undefined : H.opensAfter(lastIntroduction()) },
       { id: 'garage', label: H.garage, enabled: true },
       { id: 'shop', label: H.shop, enabled: true },
       { id: 'pilot', label: H.pilot, enabled: true, note: points > 0 ? H.points(points) : undefined },
@@ -49,7 +51,7 @@ export class HubScreen implements Screen {
       { id: 'options', label: H.options, enabled: true },
       ...(app.canStartCycle() ? [{ id: 'cycle', label: H.cycle, enabled: true }] : []),
       // With a build that may not deploy the cursor starts on the garage, where that is fixed.
-    ], errors.length === 0 ? 0 : 3);
+    ], errors.length === 0 ? 0 : 4);
     if (list) {
       this.openContracts();
       if (list === 'archive' && this.app.archive().length > 0) this.openArchive();
@@ -115,7 +117,7 @@ export class HubScreen implements Screen {
       else if (id === 'cycle') {
         this.asking = true;
         this.sub = new MenuList([{ id: 'no', label: H.no, enabled: true }, { id: 'yes', label: H.yes, enabled: true }]);
-      } else this.app.go(id as 'arena' | 'training' | 'garage' | 'shop' | 'pilot' | 'messages' | 'database' | 'options');
+      } else this.app.go(id as 'arena' | 'training' | 'gauntlet' | 'garage' | 'shop' | 'pilot' | 'messages' | 'database' | 'options');
     }
   }
 

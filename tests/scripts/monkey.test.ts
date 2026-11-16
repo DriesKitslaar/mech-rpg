@@ -166,13 +166,13 @@ describe('random buttons starting on each screen of the hub', () => {
   const veteran = (): GameState => ({ ...done(...ACT_ONE, 'choice-hadron'), credits: 30000, arenaRank: 10, xp: xpForLevel(12), endingSeen: true });
   const seen = new Set<string>();
 
-  test.each(['contracts', 'arena', 'training', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'])('%s', (entry) => {
+  test.each(['contracts', 'arena', 'training', 'gauntlet', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'])('%s', (entry) => {
     for (const seed of [21, 22]) for (const screen of monkey(seed, 3000, veteran(), 0, entry).screens) seen.add(screen);
     expect(seen.size).toBeGreaterThan(0);
   });
 
   test('between them these runs have been on every screen there is', () => {
-    for (const screen of ['hub', 'garage', 'shop', 'messages', 'briefing', 'battle', 'settlement', 'arena', 'pilot', 'options', 'database', 'training', 'credits']) {
+    for (const screen of ['hub', 'garage', 'shop', 'messages', 'briefing', 'battle', 'settlement', 'arena', 'pilot', 'options', 'database', 'training', 'credits', 'gauntlet']) {
       expect([...seen], screen).toContain(screen);
     }
   });

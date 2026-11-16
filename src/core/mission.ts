@@ -37,7 +37,7 @@ function fieldService(state: BattleState, catalog: Catalog): void {
  */
 export function startMissionBattle(
   build: Build, mission: Mission, index: number, enemies: Record<string, EnemyDef>, catalog: Catalog,
-  seed: number, previous?: BattleState, opts: Pick<BattleOptions, 'mods' | 'enemyScale'> = {},
+  seed: number, previous?: BattleState, opts: Pick<BattleOptions, 'mods' | 'enemyScale' | 'carry'> = {},
 ): BattleState {
   const battle = mission.battles[index];
   if (!battle) throw new Error(`mission ${mission.id} has no battle ${index}`);
@@ -46,7 +46,8 @@ export function startMissionBattle(
     return enemies[id];
   });
   const state = createBattle(build, defs, catalog, seed + index, {
-    ...opts, carry: previous ? carryFrom(previous) : undefined,
+    // What an earlier battle of this contract left is carried; failing that, what the caller says the mech arrives with.
+    ...opts, carry: previous ? carryFrom(previous) : opts.carry,
     ...(battle.objective ? { objective: battle.objective } : {}),
     ...(battle.support ? { support: battle.support } : {}),
   });

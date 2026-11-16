@@ -1,3 +1,4 @@
+import { isValidRun } from '../core/gauntlet';
 import {
   DEFAULT_CALLSIGN, DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LOADOUT_SLOTS, SAVE_VERSION, isValidState,
   type Difficulty, type GameState, type Settings,
@@ -104,8 +105,13 @@ export class SaveFile {
     try {
       const raw = this.store.getItem(this.key);
       if (!raw) return null;
-      const value = upgrade(JSON.parse(raw));
-      return isValidState(value, this.catalog) ? value : null;
+      const upgraded = upgrade(JSON.parse(raw));
+      // Whatever sits where a run should be and is not one is dropped before the game is judged: the game around it is kept.
+      const value = typeof upgraded === 'object' && upgraded !== null && 'gauntlet' in upgraded && !isValidRun((upgraded as { gauntlet: unknown }).gauntlet, this.catalog)
+        ? { ...upgraded, gauntlet: null } : upgraded;
+      if (!isValidState(value, this.catalog)) return null;
+      // A run of the Gauntlet that cannot be flown on is dropped; the game around it is kept.
+      return value;
     } catch {
       return null;
     }

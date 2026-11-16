@@ -59,6 +59,10 @@ const EARNED: Medal[] = [
   { id: 'champion', name: 'Champion of Varn', text: 'Take first place in the arena.', tier: 3, progress: count(CHAMPION_RANK, (g) => g.arenaRank) },
   { id: 'mirror', name: 'Know Thyself', text: 'Win a mirror match against your own build.', tier: 2, progress: count(1, (g) => g.stats.mirrors) },
   { id: 'apex', name: 'Last One Standing', text: 'Beat everyone in the back room of the arena.', tier: 3, secret: true, progress: count(ARENA_RANKS, (g) => g.arenaRank) },
+  // The Gauntlet.
+  { id: 'gauntlet-5', name: 'Past the Warden', text: 'Clear 5 floors of the Gauntlet in one run.', tier: 1, progress: count(5, (g) => g.gauntletBest ?? 0) },
+  { id: 'gauntlet-10', name: 'Deep Water', text: 'Clear 10 floors of the Gauntlet in one run.', tier: 2, progress: count(10, (g) => g.gauntletBest ?? 0) },
+  { id: 'gauntlet-20', name: 'No Floor', text: 'Clear 20 floors of the Gauntlet in one run.', tier: 3, progress: count(20, (g) => g.gauntletBest ?? 0) },
   // The pilot.
   { id: 'level-5', name: 'Licensed', text: 'Reach pilot level 5.', tier: 1, progress: count(5, (g) => levelFor(g.xp)) },
   { id: 'level-10', name: 'Veteran', text: 'Reach pilot level 10.', tier: 2, progress: count(10, (g) => levelFor(g.xp)) },
