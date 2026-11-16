@@ -138,12 +138,12 @@ describe('the arena, past the ladder', () => {
   test('the back room is listed for the champion only, and its first pilot can then be challenged', () => {
     const climbing = pit({ arenaRank: 9 }).app;
     select(climbing, 'arena');
-    expect(ids(climbing)).toHaveLength(11);
+    expect(ids(climbing)).toHaveLength(14);
     expect(ids(climbing)).not.toContain('rank-11');
 
     const { app } = pit({ arenaRank: 10 });
     select(app, 'arena');
-    expect(ids(app)).toEqual([...Array.from({ length: 15 }, (_, i) => `rank-${i + 1}`), 'mirror']);
+    expect(ids(app)).toEqual([...Array.from({ length: 15 }, (_, i) => `rank-${i + 1}`), 'mirror', 'cup-bronze', 'cup-silver', 'cup-gold']);
     expect(snap(app).menu.cursor).toBe(10);
     expect(snap(app).menu.items[10]).toMatchObject({ id: 'rank-11', label: '11. Longshot', enabled: true, note: '9000' });
     expect(snap(app).menu.items[11]).toMatchObject({ id: 'rank-12', enabled: false });

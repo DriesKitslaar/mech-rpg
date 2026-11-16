@@ -252,9 +252,9 @@ const ENEMY_PARTS: Part[] = [
   // Arc pylon: cannot move, and every hit heats what it hits.
   frame('core-pylon', 'Pylon Column', 'core', 170, r(0.2, 0.45, 0.15), 300, 0, 0, undefined),
   weapon('wpn-pylon-arc', 'Arc Discharge', 'shoulder', 'energy', 26, 84, 110, 20, null, 0, 150, 0, undefined, 'thermal', 16),
-  // Longshot: a rail on rotors. It charges for a turn, then shoots through armour.
-  frame('core-longshot', 'Longshot Spine', 'core', 85, r(0.15, 0.15, 0.15), 80, 0, 0, undefined),
-  weapon('wpn-longshot-rail', 'Longshot Rail', 'shoulder', 'kinetic', 70, 90, 90, 20, null, 0, 60, 0, undefined, 'pierce', undefined, { charge: true }),
+  // Railhawk: a rail on rotors. It charges for a turn, then shoots through armour.
+  frame('core-longshot', 'Railhawk Spine', 'core', 85, r(0.15, 0.15, 0.15), 80, 0, 0, undefined),
+  weapon('wpn-longshot-rail', 'Railhawk Rail', 'shoulder', 'kinetic', 70, 90, 90, 20, null, 0, 60, 0, undefined, 'pierce', undefined, { charge: true }),
   // The Scrap King: a crab of welded wrecks. It closes in with the pincer and sprays flak on the way.
   frame('core-king', 'King Shell', 'core', 420, r(0.35, 0.25, 0.3), 1000, 0, 0, undefined),
   frame('legs-king', 'Six Legs', 'legs', 240, r(0.3, 0.2, 0.25), 600, 0, 0, undefined, { capacity: 6000, mobility: 14, legType: 'quad' }),

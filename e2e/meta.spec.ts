@@ -122,9 +122,17 @@ test('the arena past the ladder: the back room for a champion, and a mirror matc
   await choose(page, 'arena');
   await waitForScreen(page, 'arena');
   const list = await snap(page);
-  expect(list.menu.items).toHaveLength(16);
+  // Fifteen on the ladder, the mirror match, and the three cups.
+  expect(list.menu.items).toHaveLength(19);
   expect(list.menu.items[list.menu.cursor].id).toBe('rank-11');
   await page.screenshot({ path: shot('arena-back-room') });
+  // The gold cup is open to a champion: three fights back to back.
+  await choose(page, 'cup-gold');
+  await waitForScreen(page, 'briefing');
+  await page.screenshot({ path: shot('arena-cup-briefing') });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'arena');
+  await page.screenshot({ path: shot('arena-cup') });
   await choose(page, 'mirror');
   await waitForScreen(page, 'briefing');
   await page.screenshot({ path: shot('arena-mirror-briefing') });

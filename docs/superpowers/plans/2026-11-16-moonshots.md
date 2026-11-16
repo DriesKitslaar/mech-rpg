@@ -17,7 +17,7 @@ Update as work lands. After a context reset, start here.
 - [ ] M3: New machines (branch `feat/moon-machines`, PR 20, on top of M2). Built and tested: six machines for the open
       contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Review of M2 and M3 together is running (snapshot `scratchpad/reviewM23`); APK sent.
 - [ ] M4: Orders for the wingman (branch `feat/moon-orders`, PR 21, on top of M3). Built and tested. Pending: review, APK.
-- [ ] M5: Cups
+- [ ] M5: Cups (branch `feat/moon-cups`, PR 22, on top of M4). Built and tested. Pending: review, APK.
 - [ ] M6: Dutch
 - [ ] M7: Last review, APK, summary
 
@@ -115,3 +115,13 @@ M4:
   last, `BattleState.focus`), cover (no shot; every shot at the pilot does less by a share that
   grows with the wingman's damage, at most three in ten). Only a hired wingman takes them. The row
   in the battle menu says what they are doing; choosing it gives the next order, for nothing.
+
+M5:
+
+- Three cups under the mirror match in the arena, each three of the ladder back to back (ranks
+  1-3, 5-7, 8-10), open to a pilot who has beaten its three. The purse is paid once, a quarter
+  after; the win is kept in `GameState.cups`; two medals. No prize parts: the purse is the prize.
+- Each cup's strength is the mean of its three times a measured factor (0.95, 0.85, 0.6): three
+  in a row with only field service between is far harder than three apart.
+- The new enemy first called Longshot shares that name with an arena pilot and is now the Railhawk;
+  a test holds every enemy's name apart from the ladder's.

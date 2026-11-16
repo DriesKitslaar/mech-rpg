@@ -40,7 +40,7 @@ export const BOARD_TEXT: BoardText = {
     'flak-walker': 'A flak walker covers the site. Small blasts, three at a time, all over you.',
     breacher: 'A Breacher is on site: a ram on wheels. It will knock you off balance if it reaches you.',
     'arc-pylon': 'An arc pylon is live on site. Every hit heats you up, so vent before you have to.',
-    longshot: 'A Longshot is overhead: it charges for a turn, then shoots through armour. Kill it while it charges.',
+    longshot: 'A Railhawk is overhead: it charges for a turn, then shoots through armour. Kill it while it charges.',
     bulldozer: 'A Hadron Bulldozer holds the ground: tracks, a riot shield and no interest in dodging.',
   },
   debriefs: [
