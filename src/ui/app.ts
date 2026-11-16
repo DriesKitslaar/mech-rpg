@@ -37,7 +37,7 @@ import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
 import { SONGS } from '../content/songs';
 import { STRINGS } from '../content/strings';
 import type { Sfx, SoundName } from '../platform/audio';
-import type { TrackName } from '../platform/music';
+import { HUSH, type TrackName } from '../platform/music';
 import type { InputAction } from '../platform/input';
 import { SLOTS, type SaveFile } from '../platform/storage';
 import { ArenaScreen, MIRROR } from './arenaScreen';
@@ -175,6 +175,8 @@ export interface MusicControl {
   enabled: boolean;
   /** Set while a battle is going badly for the pilot; the song then ticks faster. */
   tense?: boolean;
+  /** How loud the music is beside what it usually is: turned down while something is to be heard above it. */
+  hush?: number;
   play(track: TrackName | null): void;
 }
 
@@ -322,6 +324,11 @@ class MissionHost implements Screen {
   }
 
   draw(ctx: CanvasRenderingContext2D): void { this.screen.draw(ctx); }
+
+  /** True while the last machine of a battle is looked at from close by: the music is turned down for it. */
+  get closeLook(): boolean {
+    return this.screen.closeLook;
+  }
 
   /** True while the pilot's core is nearly gone and the battle is still on: the music is told. */
   get tense(): boolean {
@@ -1032,7 +1039,10 @@ export class App {
   update(dtMs: number): void {
     this.entering.left = Math.max(0, this.entering.left - dtMs);
     this.current.update(dtMs);
-    if (this.deps.music) this.deps.music.tense = this.current instanceof MissionHost && this.current.tense;
+    if (this.deps.music) {
+      this.deps.music.tense = this.current instanceof MissionHost && this.current.tense;
+      this.deps.music.hush = this.current instanceof MissionHost && this.current.closeLook ? HUSH : 1;
+    }
     if (this.game && this.name !== 'title' && this.name !== 'callsign') this.played += dtMs;
     this.stepToast(dtMs);
   }

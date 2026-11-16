@@ -6,9 +6,9 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList, type ListItem } from './menuList';
 import { playTime } from './record';
 import { drawLights } from './light';
-import { LOGO, drawLogo, logoGleam, logoLevel, logoLights } from './logo';
+import { LOGO, drawLogo, logoGleam, logoLevel, logoLights, signStrikes } from './logo';
 import { drawSearchlights, drawTitleScene } from './titleScene';
-import { drawWeather, drawWeatherExtras } from './weather';
+import { THUNDER_AFTER_MS, drawWeather, drawWeatherExtras, strokeBegan } from './weather';
 import { COLORS, LINE, drawList, drawOutlined, drawPanel, drawRowLight, drawText } from './widgets';
 
 const T = STRINGS.titleScreen;
@@ -97,7 +97,14 @@ export class TitleScreen implements Screen {
   }
 
   update(dtMs: number): void {
+    const before = this.clock;
     this.clock += dtMs;
+    // What is seen is heard: the sign striking as it comes on, and thunder a moment after each stroke of
+    // lightning. A hurried game shows neither, and a calm picture neither.
+    if (this.app.deps.fast) return;
+    const calm = this.app.settings.calm === true;
+    for (let strikes = signStrikes(before, this.clock, calm); strikes > 0; strikes--) this.app.deps.sfx?.play('sign', 0, true);
+    if (strokeBegan(before, this.clock, calm)) this.app.deps.sfx?.play('thunder', THUNDER_AFTER_MS, true);
   }
 
   onInput(action: InputAction): void {

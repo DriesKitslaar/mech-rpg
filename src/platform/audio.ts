@@ -7,7 +7,8 @@ export type SoundName =
   | 'shotKinetic' | 'shotEnergy' | 'shotExplosive' | 'hit' | 'miss'
   | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat'
   | 'guard' | 'stagger' | 'charge' | 'module'
-  | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive' | 'radio' | 'relic';
+  | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive' | 'radio' | 'relic'
+  | 'thunder' | 'sign' | 'slam';
 
 /** One synthesised note or burst. Times are in seconds, frequencies in hertz. */
 export interface Tone {
@@ -18,10 +19,20 @@ export interface Tone {
   start: number;
   dur: number;
   gain: number;
+  /** Everything of this tone above so many hertz is taken off: what is left sounds dark, or far away. Omitted, nothing is. */
+  cut?: number;
+  /** How loud the tone still is when it ends. Omitted, it dies away to nothing; with it, it is held, for something else to take over from. */
+  fade?: number;
 }
 
 const t = (wave: Tone['wave'], from: number, start: number, dur: number, gain: number, to?: number): Tone =>
   ({ wave, from, to, start, dur, gain });
+/**
+ * A burst of noise with its top taken off, held to the loudness it ends on. Taking the top off
+ * takes most of a noise's power with it, so these are given more to start with than a bare noise.
+ */
+const dark = (start: number, dur: number, gain: number, cut: number, fade?: number): Tone =>
+  ({ wave: 'noise', from: 0, start, dur, gain, cut, ...(fade ? { fade } : {}) });
 
 /** Every sound is built from a few tones, so the game ships no audio files. */
 export const SOUNDS: Record<SoundName, Tone[]> = {
@@ -70,6 +81,16 @@ export const SOUNDS: Record<SoundName, Tone[]> = {
   radio: [t('noise', 0, 0, 0.03, 0.12), t('square', 1175, 0.03, 0.04, 0.1), t('square', 1568, 0.08, 0.05, 0.1)],
   // A relic taken in the Gauntlet: a low bell, and a fifth and an octave opening over it.
   relic: [t('triangle', 147, 0, 0.6, 0.3), t('triangle', 220, 0.06, 0.5, 0.22), t('triangle', 294, 0.14, 0.55, 0.22), t('square', 587, 0.28, 0.3, 0.1)],
+  // Thunder, some way off: a crack, something tearing, and a roll that goes on under it and dies away, each burst darker than the last.
+  thunder: [
+    t('noise', 0, 0, 0.08, 0.6), t('sawtooth', 150, 0, 0.3, 0.3, 50),
+    dark(0.03, 0.5, 0.9, 1100, 0.35), dark(0.35, 0.55, 0.8, 800, 0.3), dark(0.7, 0.6, 0.65, 600, 0.2), dark(1.1, 0.6, 0.45, 450, 0.1), dark(1.5, 0.55, 0.3, 330),
+    { ...t('triangle', 72, 0.02, 1.9, 0.5, 36), fade: 0.02 },
+  ],
+  // A tube of the sign striking: the snap of its starter, a buzz, and the glass ringing.
+  sign: [t('noise', 0, 0, 0.03, 0.35), t('sawtooth', 100, 0, 0.12, 0.3), t('triangle', 3100, 0.01, 0.14, 0.16, 2600)],
+  // The blow a battle ends with, as the field is held for it: an iron door falling shut.
+  slam: [t('noise', 0, 0, 0.05, 0.7), dark(0.02, 0.4, 0.9, 500, 0.1), { ...t('triangle', 110, 0, 0.45, 0.8, 34), fade: 0.05 }, t('square', 55, 0, 0.16, 0.3)],
   // A medal: three bright notes going up and a held fourth.
   medal: [t('triangle', 784, 0, 0.07, 0.3), t('triangle', 988, 0.08, 0.07, 0.3), t('triangle', 1175, 0.16, 0.07, 0.3), t('square', 1568, 0.24, 0.22, 0.18)],
   // The database growing: two quiet notes, like a terminal acknowledging.
@@ -165,20 +186,48 @@ export class Sfx {
     return this.noise;
   }
 
-  play(name: SoundName, delayMs = 0): void {
+  /** True when a sound asked for now is heard now: there is an engine, and it is not asleep. */
+  get awake(): boolean {
+    const state = this.ctx?.state as string | undefined;
+    return !!this.ctx && (state === undefined || state === 'running');
+  }
+
+  /** Where a tone goes in: straight into its own loudness, or through a filter first where its top is to come off. */
+  private into(ctx: AudioContext, tone: Tone, gain: GainNode): AudioNode {
+    if (!tone.cut) return gain;
+    try {
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = tone.cut;
+      filter.connect(gain);
+      return filter;
+    } catch {
+      // An engine that makes no filters plays the tone as it is.
+      return gain;
+    }
+  }
+
+  /**
+   * Plays a sound, so much later. An `ambient` sound belongs to a moment nobody pressed for (thunder,
+   * a sign coming on): an engine that is asleep, as a browser's is before its first input, would keep
+   * it and play it on waking, at the wrong moment and together with all the others it kept. Those
+   * are not played at all then. The answer to a press is kept: the press is what wakes the engine.
+   */
+  play(name: SoundName, delayMs = 0, ambient = false): void {
     const ctx = this.ctx;
-    if (!ctx || this.muted) return;
+    if (!ctx || this.muted || (ambient && !this.awake)) return;
     try {
       for (const tone of SOUNDS[name]) {
         const at = ctx.currentTime + delayMs / 1000 + tone.start;
         const gain = ctx.createGain();
         gain.gain.setValueAtTime(tone.gain * MASTER, at);
-        gain.gain.exponentialRampToValueAtTime(0.0001, at + tone.dur);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, (tone.fade ?? 0) * MASTER), at + tone.dur);
         gain.connect(ctx.destination);
+        const into = this.into(ctx, tone, gain);
         if (tone.wave === 'noise') {
           const source = ctx.createBufferSource();
           source.buffer = this.noiseBuffer(ctx);
-          source.connect(gain);
+          source.connect(into);
           source.start(at);
           source.stop(at + tone.dur + 0.02);
         } else {
@@ -186,7 +235,7 @@ export class Sfx {
           osc.type = tone.wave;
           osc.frequency.setValueAtTime(tone.from, at);
           if (tone.to) osc.frequency.exponentialRampToValueAtTime(tone.to, at + tone.dur);
-          osc.connect(gain);
+          osc.connect(into);
           osc.start(at);
           osc.stop(at + tone.dur + 0.02);
         }

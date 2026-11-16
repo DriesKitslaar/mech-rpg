@@ -268,6 +268,9 @@ const scatter = (a: number, b: number): number => {
   return x - Math.floor(x);
 };
 
+/** The moments at which the sign strikes as it comes on: it goes from dark to lit, and is heard to. */
+export const SIGN_STRIKES = [300, 520];
+
 /**
  * How lit the sign is, from 0 to 1, this long after it was switched on: dark, a first strike, dark
  * again, a second that falters, and then on; after that it holds, but for a moment's dip every so
@@ -275,16 +278,21 @@ const scatter = (a: number, b: number): number => {
  */
 export function logoLevel(clockMs: number, calm = false): number {
   if (calm) return 1;
-  if (clockMs < 300) return 0;
-  if (clockMs < 360) return 1;
-  if (clockMs < 520) return 0;
-  if (clockMs < 640) return 0.7;
+  if (clockMs < SIGN_STRIKES[0]) return 0;
+  if (clockMs < SIGN_STRIKES[0] + 60) return 1;
+  if (clockMs < SIGN_STRIKES[1]) return 0;
+  if (clockMs < SIGN_STRIKES[1] + 120) return 0.7;
   if (clockMs < 700) return 0.1;
   if (clockMs < SIGN_ON_MS) return 0.6 + 0.4 * ((clockMs - 700) / (SIGN_ON_MS - 700));
   // Every eleven seconds or so, a twelfth of a second's dip.
   const slot = Math.floor(clockMs / 11000);
   const at = clockMs - slot * 11000 - 2000 - scatter(slot, 5) * 8000;
   return at >= 0 && at < 80 ? 0.45 : 1;
+}
+
+/** How many times the sign struck between two moments: after the first, up to and including the second. None in a calm picture, where it is simply on. */
+export function signStrikes(beforeMs: number, nowMs: number, calm = false): number {
+  return calm ? 0 : SIGN_STRIKES.filter((at) => at > beforeMs && at <= nowMs).length;
 }
 
 /** How far across the sign the gleam is, from 0 to 1, or null while there is none. */

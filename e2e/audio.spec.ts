@@ -52,7 +52,7 @@ test('every song and every sound effect makes sound, none of it too loud, and a 
       return measure(await ctx.startRendering());
     };
     const effect = async (name: string) => {
-      const ctx = new OfflineAudioContext(2, RATE * 2, RATE);
+      const ctx = new OfflineAudioContext(2, RATE * 4, RATE);
       const sfx = new audio.Sfx(() => ctx);
       sfx.unlock();
       sfx.play(name);
@@ -80,8 +80,9 @@ test('every song and every sound effect makes sound, none of it too loud, and a 
     expect(sound.peak, `${name} is not deafening`).toBeLessThan(0.6);
     expect(sound.clipped, `${name} does not clip`).toBe(0);
     expect(sound.firstSound, `${name} starts at once`).toBeLessThan(0.05);
-    // An effect is over well inside two seconds.
-    expect(sound.quietShare, `${name} ends`).toBeGreaterThan(0.4);
+    // An effect is over in a second or so. Thunder is the one that rolls on: it is over inside two and a half.
+    expect(sound.quietShare, `${name} ends`).toBeGreaterThan(name === 'thunder' ? 0.4 : 0.7);
+    if (name === 'thunder') expect(sound.quietShare, 'thunder rolls on for well over a second').toBeLessThan(0.7);
   }
   // The loudest effect is still several times quieter than the loudest a speaker can take, so a handful at once fit.
   expect(Math.max(...Object.values(heard.sounds).map((s) => s.peak))).toBeLessThan(0.5);

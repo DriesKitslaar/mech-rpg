@@ -644,16 +644,17 @@ describe('the staged moments in a battle', () => {
       const { screen, kill, played } = screenOf(fight(['gun-turret'], [0]), speed === 1 ? {} : { speed });
       kill(0);
       const booms = (): number => played.filter((p) => p.name === 'unitDestroyed').length;
-      // The machine going up is heard at once, as any machine is, and with no delay asked for.
-      expect(booms()).toBe(1);
-      expect(played.filter((p) => p.name === 'unitDestroyed').every((p) => p.delay === 0)).toBe(true);
+      const slams = (): { name: string; delay: number }[] => played.filter((p) => p.name === 'slam');
+      // The blow that ends the battle is a slam, heard at once as the field is held: the machine has not gone up yet.
+      expect(slams()).toEqual([{ name: 'slam', delay: 0 }]);
+      expect(booms()).toBe(0);
       let seenAt = -1;
       let heardAt = -1;
       let endedAt = -1;
       for (let ms = 16; ms <= 4000 && endedAt < 0; ms += 16) {
         screen.update(16);
         if (seenAt < 0 && screen.motion.blasts.includes(26)) seenAt = ms;
-        if (heardAt < 0 && booms() === 2) heardAt = ms;
+        if (heardAt < 0 && booms() === 1) heardAt = ms;
         if (!screen.motion.finish) endedAt = ms;
       }
       // Seen while the look is still up, heard in the same frame, and looked at for a while after.
@@ -662,15 +663,18 @@ describe('the staged moments in a battle', () => {
       expect(endedAt, `speed ${speed}`).toBeGreaterThan(seenAt);
       // Two fifths of the look are after the blast: 200 of the field's 500 milliseconds, at half speed.
       expect(endedAt - seenAt, `speed ${speed}`).toBeGreaterThanOrEqual(Math.floor(200 / FINISH_SLOW / speed) - 16);
-      // And it is heard no more than that once more.
+      // And it is heard no more than that once, with no delay asked for; and there was the one slam.
       for (let i = 0; i < 120; i++) screen.update(16);
-      expect(booms()).toBe(2);
+      expect(played.filter((p) => p.name === 'unitDestroyed')).toEqual([{ name: 'unitDestroyed', delay: 0 }]);
+      expect(slams()).toHaveLength(1);
     }
-    // A machine that is not the last is heard once.
+    // A machine that is not the last is heard to go up at once, as any machine is, and there is no slam for it.
     const first = screenOf(fight(['gun-turret', 'tank'], [0]));
     first.kill(0);
+    expect(first.played.filter((p) => p.name === 'unitDestroyed')).toEqual([{ name: 'unitDestroyed', delay: 0 }]);
     for (let i = 0; i < 120; i++) first.screen.update(16);
     expect(first.played.filter((p) => p.name === 'unitDestroyed')).toEqual([{ name: 'unitDestroyed', delay: 0 }]);
+    expect(first.played.filter((p) => p.name === 'slam')).toEqual([]);
   });
 
   test('a press that ends the close look takes its last blast\'s sound with it: nothing is heard over what comes after', () => {
@@ -682,8 +686,9 @@ describe('the staged moments in a battle', () => {
     for (let i = 0; i < 20 && flow.phase !== 'result'; i++) { screen.onInput('confirm'); screen.update(16); }
     expect(flow.phase).toBe('result');
     for (let i = 0; i < 200; i++) screen.update(16);
-    // Heard once, when it went up; no sound was put by for later.
-    expect(played.filter((p) => p.name === 'unitDestroyed')).toEqual([{ name: 'unitDestroyed', delay: 0 }]);
+    // The blow was heard, as a slam; the blast that was never seen is not heard, and no sound was put by for later.
+    expect(played.filter((p) => p.name === 'slam')).toEqual([{ name: 'slam', delay: 0 }]);
+    expect(played.filter((p) => p.name === 'unitDestroyed')).toEqual([]);
     expect(played.every((p) => p.delay < 700)).toBe(true);
   });
 
