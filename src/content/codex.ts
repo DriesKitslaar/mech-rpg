@@ -258,7 +258,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'elites', title: 'ELITES AND RELICS',
-    text: 'Behind one of two doors there is sometimes an elite. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. Beat it and one more thing is on offer. A warden beaten patches you up and leaves one of two relics: each bends a rule for the rest of the run.',
+    text: 'An elite is a machine with a mark. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. The Gauntlet hides one behind some doors: beat it for one more thing on offer. Some open contracts have one, and pay more. A warden beaten leaves one of two relics.',
   },
   {
     id: 'cups', title: 'ARENA CUPS',
