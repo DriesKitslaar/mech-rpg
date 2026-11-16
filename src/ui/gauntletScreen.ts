@@ -1,4 +1,5 @@
 import { draft, floorsCleared, isWardenFloor, payout, wear, type BoonId, type Offer } from '../core/gauntlet';
+import { groundFor } from '../core/ground';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -101,6 +102,7 @@ export class GauntletScreen implements Screen {
         best: this.app.game?.gauntletBest ?? 0, floor: run?.floor ?? null, drafting: !!run?.drafting, asking: this.asking,
         offers: this.offers, boons: run?.boons ?? {}, build: run?.build ?? null, enemies: floor?.battles[0].enemies ?? [],
         wear: run ? Math.round(wear(run, this.app.deps.catalog) * 100) : 0, last: this.app.lastRun,
+        ground: groundFor(floor?.battles[0].background ?? '')?.id ?? null,
       },
     };
   }
@@ -168,6 +170,9 @@ export class GauntletScreen implements Screen {
       drawText(ctx, G.expected, x + 6, y, { color: COLORS.dim });
       const names = (floor?.battles[0].enemies ?? []).map((id) => this.app.enemies()[id]?.name ?? id);
       names.forEach((name, i) => drawText(ctx, name, x + 6, y + (i + 1) * LINE));
+      // What the floor's ground does, under who is on it.
+      const ground = groundFor(floor?.battles[0].background ?? '');
+      if (ground) drawText(ctx, STRINGS.ground[ground.id].name, x + w - 6, y, { align: 'right', color: COLORS.energy, size: 10 });
       drawList(ctx, this.list, x + 6, y + 5 * LINE, w - 16, 3);
     }
     // What the frame carries, at the foot of the panel: the run is flown blind otherwise.

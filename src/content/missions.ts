@@ -123,7 +123,7 @@ export const MISSIONS: Mission[] = [
   {
     id: 'lumen-2', phase: 'faction', after: 'lumen-1', title: 'Line Noise', ...VARGA, reward: 2100,
     briefing: [
-      'Hadron has raised a jamming mast over the survey fields. Our instruments now disagree with each other, which is unacceptable.',
+      'Hadron has raised a jamming mast over the survey fields. Our instruments now disagree, which is unacceptable.',
       'The mast is the contract. Destroy it and its escort has no orders left to follow.',
       'While it stands, your targeting will suffer. Consider that an incentive.',
     ],

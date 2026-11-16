@@ -116,6 +116,16 @@ export const STRINGS = {
     heading: 'YOUR CALLSIGN', hint: 'A: pick   B: erase', del: 'DEL', ok: 'OK',
     rows: ['ABCDEFGHI', 'JKLMNOPQR', 'STUVWXYZ0', '123456789'],
   },
+  // What each kind of ground does, for the briefing and for the field. The numbers are the rules' own; a test holds them to it.
+  ground: {
+    rain: { name: 'RAIN', note: 'all shed 4 more heat a turn' },
+    furnace: { name: 'FURNACE HEAT', note: 'all shed 4 less heat a turn' },
+    dust: { name: 'DUST', note: 'every shot is 5 less likely to hit' },
+    flood: { name: 'FLOOD WATER', note: 'a boost dodges 6 less' },
+    sealed: { name: 'SEALED VAULT', note: 'blasts do 15% less damage' },
+    wind: { name: 'CROSSWIND', note: 'bullets are 6 less likely to hit' },
+    clear: { name: 'CLEAR AIR', note: 'beams are 4 more likely to hit' },
+  } as Record<string, { name: string; note: string }>,
   // The Gauntlet: a run of battles in a stock frame that goes on until the pilot falls.
   gauntlet: {
     item: 'The Gauntlet', heading: 'THE GAUNTLET', client: 'The Gauntlet',

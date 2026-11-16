@@ -1,5 +1,6 @@
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
+import { groundFor } from '../core/ground';
 import { isDrill } from '../core/training';
 import { feeAfter, takesWingman, type Wingman } from '../core/wingman';
 import { ALL_ENEMIES } from '../content/arena';
@@ -39,9 +40,15 @@ export function objectiveLines(mission: Mission): string[] {
   });
 }
 
+/** What the ground does, one line for each kind of ground the contract is fought on. */
+export function groundLines(mission: Mission): string[] {
+  const ids = [...new Set(mission.battles.flatMap((battle) => groundFor(battle.background)?.id ?? []))];
+  return ids.map((id) => `${STRINGS.ground[id].name}: ${STRINGS.ground[id].note}`);
+}
+
 /** Rows of briefing text that fit in the body, given how many lines of objectives sit under them. */
 export const BRIEFING_ROWS = 10;
-export const briefingRows = (mission: Mission): number => BRIEFING_ROWS - objectiveLines(mission).length;
+export const briefingRows = (mission: Mission): number => BRIEFING_ROWS - objectiveLines(mission).length - groundLines(mission).length;
 export const BRIEFING_CHARS = charsFor(LOGICAL_W - 24);
 
 /** A contract's briefing: who is asking, what they say, what to expect, and whether to take it. */
@@ -96,7 +103,7 @@ export class BriefingScreen implements Screen {
     return {
       menu: { items: this.list.items, cursor: this.list.cursor },
       briefing: {
-        mission: this.mission.id, replay: !!this.mission.replay, reward: this.fee, objectives: objectiveLines(this.mission),
+        mission: this.mission.id, replay: !!this.mission.replay, reward: this.fee, objectives: objectiveLines(this.mission), ground: groundLines(this.mission),
         wingman: this.hires.length === 0 ? null
           : { id: this.wingman?.id ?? null, name: this.wingman?.name ?? B.alone, share: Math.round((this.wingman?.share ?? 0) * 100), open: this.hires.length },
         lent: !isDrill(this.mission) && this.mission.loaner !== undefined,
@@ -133,6 +140,7 @@ export class BriefingScreen implements Screen {
     // Body: what the client says, and under it what the contract asks for when that is more than a fight.
     drawPanel(ctx, 4, 72, LOGICAL_W - 8, 122);
     const objectives = objectiveLines(mission);
+    const ground = groundLines(mission);
     const lastRow = 78 + (briefingRows(mission) - 1) * LINE;
     const onHire = this.list.selected?.id === 'wingman';
     const written = this.writer.visible();
@@ -155,7 +163,11 @@ export class BriefingScreen implements Screen {
       y += 4;
     }
     // What the contract asks for appears when the client has finished talking.
-    if (this.writer.done && !onHire) objectives.forEach((line, i) => drawText(ctx, line, 12, 191 - (objectives.length - i) * LINE, { color: COLORS.heat }));
+    // What the ground does comes last, in the colour of the weather.
+    if (this.writer.done && !onHire) {
+      const under = [...objectives.map((text) => ({ text, color: COLORS.heat })), ...ground.map((text) => ({ text, color: COLORS.energy }))];
+      under.forEach((line, i) => drawText(ctx, line.text, 12, 191 - (under.length - i) * LINE, { color: line.color }));
+    }
 
     // Footer: what to expect, what it pays, and the choice.
     drawPanel(ctx, 4, 198, LOGICAL_W - 8, 68);

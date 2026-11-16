@@ -13,7 +13,8 @@ Update as work lands. After a context reset, start here.
 
 - [ ] M1: The Gauntlet (branch `feat/moon-gauntlet`, PR 18). Built and tested (rules in `src/core/gauntlet.ts`, screen in
       `src/ui/gauntletScreen.ts`). Its review is running (snapshot `scratchpad/reviewM1`). Pending: fixes, APK.
-- [ ] M2: Ground and weather
+- [ ] M2: Ground and weather (branch `feat/moon-ground`, PR 19, on top of M1). Built and tested: seven places have a rule
+      (`src/core/ground.ts`), said in the briefing, on the field and in the Gauntlet. Pending: review, APK.
 - [ ] M3: New machines
 - [ ] M4: Orders for the wingman
 - [ ] M5: Cups
@@ -78,3 +79,14 @@ M1:
   median clears 7 floors, the best 12, the worst 2. Beating a warden earns a full service, or the
   floor after the first warden was a wall.
 - A game closed in the middle of a floor finds the run on that floor again: closing is not falling.
+
+M2:
+
+- Seven rules: rain and furnace heat (cooling up or down 4), dust (aim down 5), flood water (a
+  boost dodges 6 less), a sealed vault (blasts 15% down), crosswind (bullets down 6), clear air
+  (beams up 4). The undercity, the clearing house, the hangar, the arena and the simulator are
+  level ground.
+- Furnace heat lowers cooling instead of raising the heat of each shot, so that what the enemy and
+  the Auto Turn count on when they decide to fire stays true.
+- The measured limits of the career tests and the difficulty of every contract held with the
+  rules in; one briefing (Line Noise) lost a few words to make room for its ground line.
