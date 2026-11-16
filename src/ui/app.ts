@@ -52,7 +52,8 @@ import { SceneScreen } from './sceneScreen';
 import { TalkScreen } from './talkScreen';
 import { GauntletScreen } from './gauntletScreen';
 import { descend, floorMission, floorsCleared, isGauntlet, payout, runMods, startRun, take, type Offer, type Run } from '../core/gauntlet';
-import { GAUNTLET_TEXT } from '../content/gauntlet';
+import { GAUNTLET_BUILD, GAUNTLET_TEXT } from '../content/gauntlet';
+import { ENEMIES } from '../content/enemies';
 import type { BattleState } from '../core/battle';
 import { SettlementScreen } from './settlementScreen';
 import { battleTrack, briefingTrack, trackFor } from './soundtrack';
@@ -451,7 +452,10 @@ export class App {
     // Saved at once: a game from an older version is brought up to date where it is kept, and what it
     // had already done is recognised now (medals, entries of the database, the enemies its finished
     // contracts put in front of it) rather than at its next save.
+    this.lastRun = null;
     this.commit({ ...settleOldStory(saved, SCENES, MISSIONS), met: metByRecord(saved, MISSIONS, ARENA), settings: { ...this.settings } });
+    // A run that was on a floor when the game was closed fell there.
+    if (this.run?.fighting) this.endGauntlet();
     this.go('hub');
   }
 
@@ -576,13 +580,25 @@ export class App {
   startGauntlet(): void {
     if (!this.game || this.run || !this.sideWorkOpen()) return;
     this.seed = (this.seed + 7919) % 2147483647;
-    this.commit({ ...this.game, gauntlet: startRun(this.seed, STARTER_BUILD) });
+    this.lastRun = null;
+    this.commit({ ...this.game, gauntlet: startRun(this.seed, GAUNTLET_BUILD, this.game.gauntletBest ?? 0) });
   }
 
   /** Into the floor the run is on. */
   descendGauntlet(): void {
     const floor = this.gauntletFloor();
-    if (floor) this.startMission(floor.id);
+    if (!floor || !this.game || !this.run) return;
+    // Written down before the first shot: a game closed on a floor finds the run fallen there.
+    this.commit({ ...this.game, gauntlet: { ...this.run, fighting: true } });
+    this.startMission(floor.id);
+  }
+
+  /** The floor ahead, whether or not a draft is still owed: what the pilot is choosing for. */
+  gauntletAhead(): Mission | undefined {
+    const run = this.run;
+    if (!run) return undefined;
+    const names = Object.fromEntries(Object.values(this.enemies()).map((e) => [e.id, e.name]));
+    return floorMission({ ...run, drafting: false }, GAUNTLET_TEXT, names);
   }
 
   /**
@@ -593,7 +609,12 @@ export class App {
     const game = this.game;
     const run = this.run;
     if (!game || !run) return;
-    if (end.outcome === 'victory') return this.commit({ ...game, gauntlet: descend(run, end) });
+    // What was fought down there has been met, and a floor cleared counts towards the best at once.
+    const met = [...new Set([...game.met, ...end.units.flatMap((u) => (u.side === 'enemy' && u.kind && Object.hasOwn(ENEMIES, u.kind) ? [u.kind] : []))])];
+    if (end.outcome === 'victory') {
+      return this.commit({ ...game, met, gauntlet: descend(run, end), gauntletBest: Math.max(game.gauntletBest ?? 0, run.floor) });
+    }
+    this.commit({ ...game, met });
     this.endGauntlet();
   }
 
@@ -604,7 +625,7 @@ export class App {
     if (!game || !run) return;
     const cleared = floorsCleared(run);
     const best = Math.max(game.gauntletBest ?? 0, cleared);
-    this.lastRun = { cleared, paid: payout(cleared), record: cleared > (game.gauntletBest ?? 0) };
+    this.lastRun = { cleared, paid: payout(cleared), record: cleared > (run.bestBefore ?? 0) };
     this.commit({ ...game, credits: game.credits + payout(cleared), gauntlet: null, gauntletBest: best });
   }
 

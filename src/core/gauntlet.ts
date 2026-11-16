@@ -22,6 +22,10 @@ export interface Run {
   boons: Record<string, number>;
   /** Set between a floor won and the draft taken: the pilot owes themselves a choice. */
   drafting: boolean;
+  /** Set while a floor is being fought. A game closed then finds the run fallen: closing is not a way out. */
+  fighting?: boolean;
+  /** The best there was when the run began, to say at its end whether it set a new one. */
+  bestBefore?: number;
 }
 
 export type BoonId = 'capacitor' | 'heatsinks' | 'plating' | 'optics' | 'patchkit';
@@ -40,8 +44,11 @@ export type Offer =
   | { kind: 'service' }
   | { kind: 'boon'; boon: BoonId };
 
-/** Every fifth floor is somebody with a name, or something very large. They come round again, harder. */
-export const WARDENS = ['rival', 'scrap-king', 'sable', 'night-train', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan', 'ashfall-unbound'];
+/**
+ * Every fifth floor is somebody with a name, or something very large. They come round again, harder.
+ * The first two are the Gauntlet's own machines: nobody from the story is met down here before floor 15.
+ */
+export const WARDENS = ['scrap-king', 'night-train', 'rival', 'sable', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan', 'ashfall-unbound'];
 export const WARDEN_EVERY = 5;
 /** Share of the missing armour of every part that is patched between floors. */
 export const GAUNTLET_PATCH = 0.3;
@@ -49,8 +56,8 @@ export const GAUNTLET_PATCH = 0.3;
 export const isGauntlet = (mission: Mission): boolean => mission.id.startsWith('gauntlet-');
 export const isWardenFloor = (floor: number): boolean => floor % WARDEN_EVERY === 0;
 
-export function startRun(seed: number, starter: Build): Run {
-  return { seed: seed | 0, floor: 1, build: { ...starter }, carry: null, boons: {}, drafting: false };
+export function startRun(seed: number, starter: Build, bestBefore = 0): Run {
+  return { seed: seed | 0, floor: 1, build: { ...starter }, carry: null, boons: {}, drafting: false, fighting: false, bestBefore };
 }
 
 const diceFor = (run: Run, salt: number): Dice => new Dice((Math.imul(run.seed, 31) + run.floor * 7919 + salt * 104729) | 0);
@@ -82,7 +89,7 @@ export function floorMission(run: Run, text: GauntletText, names: Record<string,
     const warden = WARDENS[round % WARDENS.length];
     enemies = [warden];
     briefing = [text.floor(run.floor), text.warden(names[warden] ?? warden)];
-    scale = Math.round((0.55 + 0.12 * round) * 100) / 100;
+    scale = Math.round((0.42 + 0.12 * round) * 100) / 100;
   } else {
     enemies = rollEnemies(dice, floorBudget(run.floor));
     briefing = [text.floor(run.floor)];
@@ -109,11 +116,14 @@ export function wear(run: Run, catalog: Catalog): number {
   if (!run.carry) return 0;
   let max = 0;
   let left = 0;
+  // Plating raises what whole means: wear is measured against the plated armour, as the battle does.
+  const plated = 1 + (runMods(run).armour ?? 0);
   for (const slot of FRAME_SLOTS) {
     const part = catalog[run.build[slot] ?? ''];
     if (!part || !('ap' in part)) continue;
-    max += part.ap;
-    left += Math.min(part.ap, run.carry.ap[slot] ?? part.ap);
+    const whole = Math.round(part.ap * plated);
+    max += whole;
+    left += Math.min(whole, run.carry.ap[slot] ?? whole);
   }
   return max > 0 ? 1 - left / max : 0;
 }
@@ -121,18 +131,18 @@ export function wear(run: Run, catalog: Catalog): number {
 /** Parts the run may be offered on this floor: for sale somewhere, not too dear for how deep it is, and not what is already fitted. */
 function partOffers(run: Run, catalog: Catalog): { slot: BuildSlot; part: string }[] {
   const ceiling = 900 + run.floor * 550;
-  const floor = Math.max(0, ceiling - 4500);
+  // The cheap end drops out as the run goes deeper, but never so far that nothing is left to offer.
+  const floor = Math.min(2000, Math.max(0, ceiling - 4500));
+  const price = (id: string | undefined): number => (id ? (catalog[id] as Part | undefined)?.price ?? 0 : -1);
   const offers: { slot: BuildSlot; part: string }[] = [];
   for (const part of Object.values(catalog) as Part[]) {
     if (!part.vendor || part.price > ceiling || part.price < floor) continue;
-    for (const slot of BUILD_SLOTS) {
-      if (!fits(part, slot) || run.build[slot] === part.id) continue;
-      // A second copy of a hand weapon is not offered for the other hand, and nothing that would leave a mech that cannot deploy.
-      if (Object.values(run.build).includes(part.id)) continue;
-      if (validatePlayerBuild({ ...run.build, [slot]: part.id }, catalog).length > 0) continue;
-      offers.push({ slot, part: part.id });
-      break;
-    }
+    // Nothing the frame already carries, in whichever hand.
+    if (Object.values(run.build).includes(part.id)) continue;
+    // Where it would go: an empty mount first, else the mount holding the cheaper thing. So a weapon for the hand fills the empty hand.
+    const slots = BUILD_SLOTS.filter((slot) => fits(part, slot)).sort((a, b) => price(run.build[a]) - price(run.build[b]));
+    const slot = slots.find((s) => validatePlayerBuild({ ...run.build, [s]: part.id }, catalog).length === 0);
+    if (slot) offers.push({ slot, part: part.id });
   }
   return offers.sort((a, b) => (a.part < b.part ? -1 : 1));
 }
@@ -190,9 +200,9 @@ export function descend(run: Run, end: BattleState): Run {
   // Magazines are refilled and the field repairs restocked: the next floor is hard enough.
   carry.ammo = {};
   carry.restocked = {};
-  carry.repairsLeft = player.repairsLeft;
+  delete carry.repairsLeft;
   // Beating a warden earns a full service on the house: the mech goes on whole.
-  return { ...run, floor: run.floor + 1, carry: isWardenFloor(run.floor) ? null : carry, drafting: true };
+  return { ...run, floor: run.floor + 1, carry: isWardenFloor(run.floor) ? null : carry, drafting: true, fighting: false };
 }
 
 /** Floors cleared by a run that ended on, or was left at, this floor. */
@@ -210,16 +220,20 @@ const whole = (v: unknown, max: number): v is number => typeof v === 'number' &&
 /** Whether what a save holds is a run that can be flown on: anything else is dropped, never trusted. */
 export function isValidRun(value: unknown, catalog: Catalog): value is Run {
   if (!isRecord(value) || typeof value.seed !== 'number' || !Number.isSafeInteger(value.seed)) return false;
-  if (!whole(value.floor, 9999) || value.floor < 1 || typeof value.drafting !== 'boolean') return false;
+  if (!whole(value.floor, 999) || value.floor < 1 || typeof value.drafting !== 'boolean') return false;
+  if (value.fighting !== undefined && typeof value.fighting !== 'boolean') return false;
+  if (value.bestBefore !== undefined && !whole(value.bestBefore, 999)) return false;
   const { build, boons, carry } = value;
   if (!isRecord(build) || !Object.entries(build).every(([slot, id]) => BUILD_SLOTS.includes(slot as BuildSlot) && typeof id === 'string')) return false;
   if (validatePlayerBuild(build as unknown as Build, catalog).length > 0) return false;
   if (!Object.values(build).every((id) => !!(catalog[id as string] as Part | undefined)?.vendor)) return false;
-  if (!isRecord(boons) || !Object.entries(boons).every(([id, n]) => (BOON_IDS as string[]).includes(id) && whole(n, 999))) return false;
+  if (!isRecord(boons) || !Object.entries(boons).every(([id, n]) => (BOON_IDS as string[]).includes(id) && whole(n, 99))) return false;
   if (carry === null) return true;
   if (!isRecord(carry) || !isRecord(carry.ap) || !isRecord(carry.ammo) || !isRecord(carry.restocked)) return false;
-  if (carry.destroyed !== false || !whole(carry.repairsLeft, 99) || typeof carry.heat !== 'number' || !(carry.heat >= 0 && carry.heat <= 1000)) return false;
+  if (carry.destroyed !== false || (carry.repairsLeft !== undefined && !whole(carry.repairsLeft, 99)) || typeof carry.heat !== 'number' || !(carry.heat >= 0 && carry.heat <= 1000)) return false;
   if (!Object.entries(carry.ap).every(([slot, ap]) => (FRAME_SLOTS as string[]).includes(slot) && whole(ap, 100000))) return false;
+  // A mech with no core left is a wreck, whatever else the save says.
+  if (carry.ap.core !== undefined && (carry.ap.core as number) < 1) return false;
   const slots = ['rightHand', 'leftHand', 'shoulder'];
   if (!Object.entries(carry.ammo).every(([slot, n]) => slots.includes(slot) && (n === null || whole(n, 100000)))) return false;
   return Object.entries(carry.restocked).every(([slot, n]) => slots.includes(slot) && whole(n, 100000));

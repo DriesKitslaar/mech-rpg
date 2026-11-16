@@ -1,5 +1,9 @@
 import { payout } from '../../src/core/gauntlet';
-import { STARTER_BUILD } from '../../src/content/parts';
+import { GAUNTLET_BUILD } from '../../src/content/gauntlet';
+import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
+import { MEDALS } from '../../src/content/medals';
+import { SaveFile } from '../../src/platform/storage';
+import { App } from '../../src/ui/app';
 import { SAVE_KEY } from '../../src/platform/storage';
 import { done, finishBattle, ids, inHub, press, savedGame, select, snap, strong } from '../helpers/app';
 
@@ -37,12 +41,14 @@ describe('the Gauntlet', () => {
     const { app, store } = ready();
     select(app, 'gauntlet');
     select(app, 'start');
-    expect(g(app)).toMatchObject({ floor: 1, drafting: false, build: STARTER_BUILD, wear: 0 });
+    expect(g(app)).toMatchObject({ floor: 1, drafting: false, build: GAUNTLET_BUILD, wear: 0 });
+    // An arc pistol in the other hand: it needs no ammunition, so no floor is faced with nothing to fire.
+    expect(GAUNTLET_BUILD).toEqual({ ...STARTER_BUILD, leftHand: 'wpn-arc-pistol' });
     expect(g(app).enemies.length).toBeGreaterThan(0);
     expect(ids(app)).toEqual(['descend', 'abandon', 'back']);
     expect(savedGame(store).gauntlet).toMatchObject({ floor: 1 });
     // The pilot's own mech and money are untouched.
-    expect(savedGame(store).build).not.toEqual(STARTER_BUILD);
+    expect(savedGame(store).build).not.toEqual(GAUNTLET_BUILD);
   });
 
   test('a floor won leads to three things on offer; one is taken and the way down opens again', () => {
@@ -152,5 +158,101 @@ describe('the Gauntlet', () => {
     expect(widths.map((w) => w.text)).toEqual(expect.arrayContaining(['THE GAUNTLET', 'FLOOR 1', 'FLOOR 2', 'TAKE ONE', 'RUN OVER', 'Descend']));
     // Everything in the right-hand panel starts inside it and ends before the screen does.
     for (const w of widths.filter((w) => w.x >= 150 && w.x < 300)) expect(w.x + w.text.length * 4.8, w.text).toBeLessThanOrEqual(310);
+  });
+
+  test('a game closed on a floor finds the run fallen there: closing is not a way out', () => {
+    const { app, store } = ready();
+    select(app, 'gauntlet');
+    select(app, 'start');
+    clear(app);
+    press(app, 'confirm');
+    select(app, 'descend');
+    expect(savedGame(store).gauntlet).toMatchObject({ floor: 2, fighting: true });
+    const credits = savedGame(store).credits;
+    // The game is closed there and opened again.
+    const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites: app.deps.sprites, fast: true, seed: 9 });
+    press(again, 'confirm');
+    expect(snap(again).screen).toBe('hub');
+    expect(savedGame(store)).toMatchObject({ gauntlet: null, gauntletBest: 1, credits: credits + payout(1) });
+    select(again, 'gauntlet');
+    expect(g(again)).toMatchObject({ floor: null, last: { cleared: 1, paid: payout(1) } });
+    // A run left between floors is still there.
+    select(again, 'start');
+    const between = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites: app.deps.sprites, fast: true, seed: 9 });
+    press(between, 'confirm');
+    expect(savedGame(store).gauntlet).toMatchObject({ floor: 1, fighting: false });
+  });
+
+  test('a floor is fought as the run has made the frame: its boons and its wear, not the pilot\'s perks or the difficulty', () => {
+    const { app } = inHub({ ...strong(done('intro-1', 'intro-2')), perks: { plating: 3 }, settings: { ...strong(done()).settings, difficulty: 'veteran' } });
+    select(app, 'gauntlet');
+    select(app, 'start');
+    const armour = () => (snap(app).player as { maxAp: number }).maxAp;
+    select(app, 'descend');
+    const stock = armour();
+    expect((snap(app).battle as { enemyScale: number }).enemyScale).toBe(0.7);
+    finishBattle(app);
+    press(app, 'confirm');
+    press(app, 'confirm');
+    app.commit({ ...app.game!, gauntlet: { ...app.game!.gauntlet!, boons: { plating: 5 } } });
+    app.go('gauntlet');
+    select(app, 'descend');
+    expect(armour()).toBeGreaterThan(stock * 1.3);
+    expect((snap(app).battle as { enemyScale: number }).enemyScale).toBeCloseTo(0.74, 2);
+  });
+
+  test('a floor cleared counts at once: the best and its medal do not wait for the run to end, and what was fought is in the database', () => {
+    const { app, store } = ready();
+    select(app, 'gauntlet');
+    select(app, 'start');
+    app.commit({ ...app.game!, gauntlet: { ...app.game!.gauntlet!, floor: 5, boons: { plating: 30, capacitor: 20, optics: 30 } } });
+    app.go('gauntlet');
+    expect(g(app)).toMatchObject({ floor: 5, warden: true });
+    clear(app);
+    expect(savedGame(store).gauntletBest).toBe(5);
+    expect(savedGame(store).medals).toContain('gauntlet-5');
+    expect(MEDALS.find((m) => m.id === 'gauntlet-5')).toBeDefined();
+    expect(savedGame(store).met).toContain('scrap-king');
+    // While choosing, the floor ahead is in view.
+    expect(g(app)).toMatchObject({ drafting: true, floor: 6 });
+    expect(g(app).enemies.length).toBeGreaterThan(0);
+  });
+
+  test('what one game\'s last run came to is not shown to another game', () => {
+    const { app } = ready();
+    select(app, 'gauntlet');
+    select(app, 'start');
+    select(app, 'abandon');
+    select(app, 'yes');
+    expect(g(app).last).not.toBeNull();
+    app.continueGame(0);
+    app.go('gauntlet');
+    expect(g(app).last).toBeNull();
+  });
+
+  test('late in a run nothing on the panel is written over anything else', () => {
+    const { app } = ready();
+    select(app, 'gauntlet');
+    select(app, 'start');
+    const rows: { text: string; x: number; y: number }[] = [];
+    const target: Record<string, unknown> = {};
+    const ctx = new Proxy(target, {
+      get: (t, name: string) => (name in t ? t[name] : name === 'measureText' ? () => ({ width: 10 })
+        : (...args: unknown[]) => { if (name === 'fillText') rows.push({ text: String(args[0]), x: Number(args[1]), y: Number(args[2]) }); }),
+      set: (t, name: string, value) => { t[name] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    const full = { ...GAUNTLET_BUILD, shoulder: 'wpn-mortar-pod', module: 'mod-barrier' };
+    const boons = { capacitor: 12, heatsinks: 11, plating: 13, optics: 10, patchkit: 14 };
+    for (const drafting of [false, true]) {
+      rows.length = 0;
+      app.commit({ ...app.game!, gauntlet: { ...app.game!.gauntlet!, floor: 23, build: full, boons, drafting } });
+      app.go('gauntlet');
+      for (let i = 0; i < 3; i++) { app.update(16); app.draw(ctx); press(app, 'down'); }
+      const panel = rows.filter((r) => r.x >= 150 && r.x < 300);
+      // Things on one line share a height; two lines must be a line apart.
+      const ys = [...new Set(panel.map((r) => r.y))].sort((a, b) => a - b);
+      for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1], `drafting ${drafting}: rows at ${ys[i - 1]} and ${ys[i]}`).toBeGreaterThanOrEqual(8);
+      for (const r of panel) expect(r.y, r.text).toBeLessThanOrEqual(258);
+    }
   });
 });

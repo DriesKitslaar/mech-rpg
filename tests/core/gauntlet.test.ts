@@ -36,7 +36,7 @@ function play(seed: number, limit = 40): Run {
 
 describe('a run of the Gauntlet', () => {
   test('starts on the first floor in the stock frame, whole, with nothing taken', () => {
-    expect(fresh()).toEqual({ seed: 5, floor: 1, build: STARTER_BUILD, carry: null, boons: {}, drafting: false });
+    expect(fresh()).toEqual({ seed: 5, floor: 1, build: STARTER_BUILD, carry: null, boons: {}, drafting: false, fighting: false, bestBefore: 0 });
     expect(wear(fresh(), CATALOG)).toBe(0);
     expect(runMods(fresh())).toEqual({});
   });
@@ -65,11 +65,11 @@ describe('a run of the Gauntlet', () => {
 
   test('every fifth floor has a warden, each in turn, and they come round again harder', () => {
     const at = (floor: number) => mission({ ...fresh(), floor });
-    expect([5, 10, 15, 20].map((f) => at(f).battles[0].enemies)).toEqual([['rival'], ['scrap-king'], ['sable'], ['night-train']]);
-    expect(at(5).briefing.join(' ')).toContain('Ashfall');
+    expect([5, 10, 15, 20].map((f) => at(f).battles[0].enemies)).toEqual([['scrap-king'], ['night-train'], ['rival'], ['sable']]);
+    expect(at(5).briefing.join(' ')).toContain('Scrap King');
     expect(isWardenFloor(4)).toBe(false);
     const again = 5 * (WARDENS.length + 1);
-    expect(at(again).battles[0].enemies).toEqual(['rival']);
+    expect(at(again).battles[0].enemies).toEqual(['scrap-king']);
     expect(at(again).scale!).toBeGreaterThan(at(5).scale!);
     // The open floors never field a warden or anything else that belongs to the story.
     for (let floor = 1; floor <= 60; floor++) {
@@ -157,6 +157,89 @@ describe('after a floor', () => {
     const end = fight({ ...run, boons: { plating: 20, capacitor: 20, optics: 20 } });
     expect(end.outcome).toBe('victory');
     expect(descend(run, end)).toMatchObject({ floor: 6, carry: null, drafting: true });
+  });
+});
+
+describe('what the review of the Gauntlet found', () => {
+  const start = (run: Run) => {
+    const m = mission(run);
+    return startMissionBattle(run.build, m, 0, ALL_ENEMIES, CATALOG, 1, undefined, { enemyScale: m.scale, mods: runMods(run), carry: run.carry ?? undefined });
+  };
+
+  test('field repairs are restocked on every floor, and a patch kit adds one from the next floor on', () => {
+    const run = fresh();
+    const end = fight(run);
+    end.units[0].repairsLeft = 0;
+    const next = descend(run, end);
+    expect(next.carry!.repairsLeft).toBeUndefined();
+    const plain = start({ ...next, drafting: false }).units[0].repairsLeft;
+    expect(plain).toBeGreaterThan(0);
+    expect(start({ ...next, drafting: false, boons: { patchkit: 2 } }).units[0].repairsLeft).toBe(plain + 2);
+  });
+
+  test('parts are still on offer deep into a run', () => {
+    for (const floor of [15, 16, 25, 40, 80]) {
+      const run: Run = { ...fresh(), floor, drafting: true };
+      expect(draft(run, CATALOG).filter((o) => o.kind === 'part').length, `floor ${floor}`).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  test('a weapon for the hand goes to the empty hand, and with both full to the hand holding the cheaper thing', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 300; seed++) {
+      const run: Run = { ...fresh(seed), floor: 2 + (seed % 10), drafting: true };
+      for (const offer of draft(run, CATALOG)) {
+        if (offer.kind !== 'part' || CATALOG[offer.part].kind !== 'weapon' || (CATALOG[offer.part] as { mount: string }).mount !== 'hand') continue;
+        seen.add(offer.slot);
+        expect(offer.slot).toBe('leftHand');
+      }
+    }
+    expect([...seen]).toEqual(['leftHand']);
+    const both: Run = { ...fresh(), build: { ...STARTER_BUILD, leftHand: 'wpn-void-rifle' }, floor: 4, drafting: true };
+    const hands = Array.from({ length: 200 }, (_, i) => draft({ ...both, seed: i }, CATALOG)).flat()
+      .filter((o): o is Extract<Offer, { kind: 'part' }> => o.kind === 'part' && (o.slot === 'leftHand' || o.slot === 'rightHand') && CATALOG[o.part].kind === 'weapon');
+    expect(hands.length).toBeGreaterThan(0);
+    for (const offer of hands) expect(offer.slot).toBe('rightHand');
+  });
+
+  test('wear is measured against plated armour, so a plated mech that is worn is offered a service', () => {
+    const base: Run = { ...fresh(), floor: 3, drafting: true, boons: { plating: 5 } };
+    const plated = (ap: number) => Math.round(ap * 1.4);
+    const parts = (['core', 'legs', 'arms', 'head'] as const).map((slot) => [slot, (CATALOG[STARTER_BUILD[slot]!] as { ap: number }).ap] as const);
+    const worn: Run = { ...base, carry: { ap: Object.fromEntries(parts.map(([slot, ap]) => [slot, Math.round(plated(ap) * 0.6)])), heat: 0, ammo: {}, restocked: {}, destroyed: false } };
+    expect(wear(worn, CATALOG)).toBeCloseTo(0.4, 1);
+    expect(draft(worn, CATALOG)).toContainEqual({ kind: 'service' });
+    const whole: Run = { ...base, carry: { ...worn.carry!, ap: Object.fromEntries(parts.map(([slot, ap]) => [slot, plated(ap)])) } };
+    expect(wear(whole, CATALOG)).toBe(0);
+  });
+
+  test('a run stays sound to floor sixty whatever is taken: three different offers, a build that can deploy, a run the save accepts', () => {
+    const policies: ((offers: Offer[], i: number) => Offer)[] = [
+      (o) => o[0], (o) => o[2], (o, i) => o[i % 3], (o) => o.find((x) => x.kind === 'boon') ?? o[0], (o) => o.find((x) => x.kind === 'part') ?? o[1],
+    ];
+    for (const [p, policy] of policies.entries()) {
+      let run: Run = { ...fresh(100 + p) };
+      for (let floor = 1; floor < 60; floor++) {
+        // The first floors are fought, with a cheated frame, so that what is carried is real; the rest are walked: what is checked is the run itself.
+        const end = floor < 8 ? fight({ ...run, boons: { plating: 60, capacitor: 20, optics: 30, heatsinks: 10 } }) : null;
+        if (end?.outcome === 'victory') run = descend(run, end);
+        else run = { ...run, floor: run.floor + 1, drafting: true };
+        const offers = draft(run, CATALOG);
+        expect(new Set(offers.map((o) => JSON.stringify(o))).size).toBe(3);
+        run = take(run, policy(offers, floor), CATALOG);
+        expect(validatePlayerBuild(run.build, CATALOG)).toEqual([]);
+        expect(isValidRun(JSON.parse(JSON.stringify(run)), CATALOG), `policy ${p} floor ${floor}`).toBe(true);
+      }
+    }
+  });
+
+  test('a save cannot hand in a run with no core, an absurd floor or a mountain of boons', () => {
+    const run = play(3, 3);
+    expect(isValidRun({ ...run, floor: 1000 }, CATALOG)).toBe(false);
+    expect(isValidRun({ ...run, boons: { plating: 100 } }, CATALOG)).toBe(false);
+    expect(isValidRun({ ...run, carry: { ...run.carry, ap: { ...run.carry!.ap, core: 0 } } }, CATALOG)).toBe(false);
+    expect(isValidRun({ ...run, fighting: 'yes' }, CATALOG)).toBe(false);
+    expect(isValidRun({ ...run, fighting: true, bestBefore: 4 }, CATALOG)).toBe(true);
   });
 });
 
