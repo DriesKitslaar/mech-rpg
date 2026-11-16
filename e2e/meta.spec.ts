@@ -75,6 +75,10 @@ test('the database: units met and not met, the world so far, and the manual', as
     await page.screenshot({ path: shot(`database-${id}`) });
   }
   await press(page, 'KeyE');
+  expect((await snap(page)).page).toBe('people');
+  await press(page, 'ArrowDown');
+  await page.screenshot({ path: shot('database-people') });
+  await press(page, 'KeyE');
   expect((await snap(page)).page).toBe('world');
   await press(page, 'ArrowDown');
   await press(page, 'ArrowDown');

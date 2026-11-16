@@ -278,7 +278,7 @@ export const JUKEBOX: { id: SongName; title: string; text: string }[] = [
   { id: 'battle', title: 'CONTRACT WORK', text: 'The first act and the odd jobs.' },
   { id: 'victory', title: 'PAID IN FULL', text: 'A contract won.' },
   { id: 'defeat', title: 'WRITTEN OFF', text: 'A contract lost.' },
-  { id: 'hadron', title: 'HADRON EXTRACTION', text: 'The briefings of Director Brenn.' },
+  { id: 'hadron', title: 'HADRON MINING', text: 'The briefings of Director Brenn.' },
   { id: 'lumen', title: 'LUMEN SYSTEMS', text: 'The briefings of Analyst Varga.' },
   { id: 'undertow', title: 'THE UNDERTOW', text: 'The briefings of Tamsin.' },
   { id: 'arena', title: 'THE PITS', text: 'The arena, its cups and its back room.' },
@@ -288,4 +288,58 @@ export const JUKEBOX: { id: SongName; title: string; text: string }[] = [
   { id: 'gauntlet', title: 'THE WAY DOWN', text: 'The room of the Gauntlet, between floors.' },
   { id: 'descent', title: 'FLOOR BY FLOOR', text: 'The floors of the Gauntlet.' },
   { id: 'ending', title: 'WHAT IT COST', text: 'The endings and the end roll.' },
+];
+
+/** Somebody of Varn with a face: who they are, whose side they are on, and a line about them. */
+export interface Person {
+  id: string;
+  name: string;
+  portrait: string;
+  /** Whom they work for, or what they are to the pilot. */
+  role: string;
+  /** When their page opens: once the story has got that far, or once they have been met in battle. */
+  when: { after: string } | { met: string };
+  text: string;
+}
+
+/** The people of Varn, in the order a pilot comes across them. */
+export const PEOPLE: Person[] = [
+  { id: 'dispatch', name: 'Dispatch', portrait: 'portrait-dispatch', role: 'Dispatch', when: { after: 'start' },
+    text: 'The voice on the night shift that hands out the work and reads out the bill. Never gave a name. Sounds tired in a way sleep does not fix.' },
+  { id: 'brenn', name: 'Director Brenn', portrait: 'portrait-hadron', role: 'Hadron Mining', when: { after: 'intro-2' },
+    text: 'Runs the pits of Hadron Mining and counts everything in them, pilots included. Pays promptly. Remembers who cost him money.' },
+  { id: 'varga', name: 'Analyst Varga', portrait: 'portrait-lumen', role: 'Lumen Systems', when: { after: 'intro-2' },
+    text: 'Files people the way Lumen files data: neatly, and for later. Being called reliable by her is a pay grade.' },
+  { id: 'tamsin', name: 'Tamsin', portrait: 'portrait-undertow', role: 'The Undertow', when: { after: 'intro-2' },
+    text: 'Organises the Undertow from wherever the pumps still run. Pays in small notes and long memories.' },
+  { id: 'guild', name: 'Guild Broker', portrait: 'portrait-guild', role: 'Night Market Guild', when: { after: 'intro-2' },
+    text: 'The voice of the Night Market Guild. Half a face, many rings, and a price for everything, the lights included.' },
+  { id: 'kite', name: 'Kite', portrait: 'portrait-kite', role: 'Wingman', when: { after: 'intro-2' },
+    text: 'The newest licence in Varn, in a frame older than its pilot. Flies wing for a small share and thanks everyone on the radio.' },
+  { id: 'ashfall', name: 'Ashfall', portrait: 'portrait-rival', role: 'Licensed pilot', when: { after: 'hadron-1' },
+    text: 'Keeps turning up on the other side of the contract. Insists it is only ever business. Keeps count anyway.' },
+  { id: 'marrow', name: 'Marrow', portrait: 'portrait-marrow', role: 'Wingman', when: { after: 'rival-1' },
+    text: 'A siege gunner who left Hadron and is officially dead. Fires from somewhere you will not see and invoices promptly.' },
+  { id: 'sixty', name: 'Old Sixty', portrait: 'portrait-sixty', role: 'Wingman', when: { after: 'choice' },
+    text: 'Sixty contracts without a loss, the callsign says. Expensive, careful, and still counting something that is not contracts.' },
+  { id: 'sable', name: 'Sable', portrait: 'portrait-sable', role: 'Lumen Systems', when: { met: 'sable' },
+    text: 'The ace of Lumen Systems. Cold, exact, and writes up every fight afterwards. You are in the notes.' },
+  { id: 'rook', name: 'Rook', portrait: 'portrait-rook', role: 'The Undertow', when: { met: 'rook' },
+    text: 'Flies a scrapyard Mantis for the Undertow and laughs on an open channel. Hits harder than the laugh suggests.' },
+  { id: 'krell', name: 'Krell', portrait: 'portrait-krell', role: 'Hadron Mining', when: { met: 'krell' },
+    text: 'Chief of security at Hadron. Was here before the company and expects to be here after it.' },
+  { id: 'actuary', name: 'The Actuary', portrait: 'portrait-actuary', role: 'Meridian Mutual', when: { after: 'finale' },
+    text: 'The adjuster Meridian sends when a war is over. Polite, immaculate, and already knows what you are worth to the decimal.' },
+  { id: 'magpie', name: 'Magpie', portrait: 'portrait-magpie', role: 'Wanted', when: { met: 'magpie' },
+    text: 'Stripped the cockpits of downed frames with the pilots still in them. Proud of the helmet collection.' },
+  { id: 'dredge', name: 'Dredge', portrait: 'portrait-dredge', role: 'Wanted', when: { met: 'dredge' },
+    text: 'Ran a toll on the old mine road and collected it with a mortar.' },
+  { id: 'lark', name: 'Lark', portrait: 'portrait-lark', role: 'Wanted', when: { met: 'lark' },
+    text: 'Contract killer. One shot a job from behind a tower shield, until the job was you.' },
+  { id: 'hollow', name: 'Hollow', portrait: 'portrait-hollow', role: 'Wanted', when: { met: 'hollow' },
+    text: 'Cut frames open for the Night Market and left the pilots where they fell.' },
+  { id: 'paragon', name: 'Paragon', portrait: 'portrait-paragon', role: 'Wanted', when: { met: 'paragon' },
+    text: 'Decorated in the war by whichever side was paying. Kept the mech, the medals and the habit.' },
+  { id: 'notary', name: 'The Notary', portrait: 'portrait-notary', role: 'Wanted', when: { met: 'notary' },
+    text: 'Left Meridian with a frame, a seal and a client list, and went on foreclosing in private.' },
 ];

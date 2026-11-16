@@ -641,7 +641,7 @@ describe('the screens the pilot\'s record added', () => {
     expect(y('Press A to continue') + 12).toBeLessThanOrEqual(stripTop);
   });
 
-  test('the database draws its three pages: a unit with its picture and figures, an entry about the world, a topic of the manual', () => {
+  test('the database draws its pages: a unit with its picture and figures, somebody with a face, an entry about the world, a topic of the manual', () => {
     const app = start({ ...done('intro-1'), met: ['recon-drone', 'gun-turret'], scenes: ['act-1'] });
     select(app, 'database');
     const page = () => { const { ctx, calls } = recorder(); app.update(16); app.draw(ctx); return { said: texts(calls), calls }; };
@@ -651,6 +651,9 @@ describe('the screens the pilot\'s record added', () => {
       'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'SEEN 2/44', '? ? ?',
     ]));
     expect(unit.calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'enemy-gun-turret')).toBe(true);
+    press(app, 'next');
+    // A pilot one contract in knows only the voice that hands out the work.
+    expect(page().said).toEqual(expect.arrayContaining(['PEOPLE', 'DISPATCH', 'Dispatch', 'KNOWN 1/19', '? ? ?']));
     press(app, 'next');
     expect(page().said).toEqual(expect.arrayContaining(['VARN', 'Varn', 'The Licence', 'Hadron Mining']));
     press(app, 'next');

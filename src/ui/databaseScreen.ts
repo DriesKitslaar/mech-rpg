@@ -1,4 +1,7 @@
-import { JUKEBOX, MANUAL, UNITS, WORLD } from '../content/codex';
+import { reached } from '../core/campaign';
+import type { GameState } from '../core/game';
+import { JUKEBOX, MANUAL, PEOPLE, UNITS, WORLD, type Person } from '../content/codex';
+import { MISSIONS } from '../content/missions';
 import { SONGS } from '../content/songs';
 import { songSeconds, type TrackName } from '../platform/music';
 import { STRINGS } from '../content/strings';
@@ -8,11 +11,16 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { unitPage } from './unitPage';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
+import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawTabs, drawText, wrap } from './widgets';
 
 const D = STRINGS.database;
-export type DatabasePage = 'units' | 'world' | 'manual' | 'music';
-const PAGES: DatabasePage[] = ['units', 'world', 'manual', 'music'];
+export type DatabasePage = 'units' | 'people' | 'world' | 'manual' | 'music';
+const PAGES: DatabasePage[] = ['units', 'people', 'world', 'manual', 'music'];
+
+/** Whether somebody's page has opened: the story has got as far as them, or they have been met in battle. */
+export function personKnown(game: GameState, person: Person): boolean {
+  return 'met' in person.when ? game.met.includes(person.when.met) : reached(game, person.when.after, MISSIONS);
+}
 /** The list on the left and the page on the right. */
 const LIST = { x: 4, y: 18, w: 106, h: 234 };
 const PAGE = { x: 114, y: 18, w: LOGICAL_W - 118, h: 234 };
@@ -20,6 +28,8 @@ const ROWS = Math.floor((LIST.h - 10) / LINE);
 /** Characters to a line of the page, and the box a unit's picture stands in. */
 export const PAGE_CHARS = charsFor(PAGE.w - 12);
 const PICTURE_H = 106;
+/** A face is drawn at the size it was painted. */
+const PORTRAIT = 56;
 
 /** What the page on the right shows, as words: tests read it, and the screen draws it. */
 interface Detail {
@@ -28,6 +38,9 @@ interface Detail {
   /** A unit's picture and the three figures written beside it. */
   sprite?: string;
   stats?: { label: string; value: string }[];
+  /** Somebody's face, and whom they work for, written beside it. */
+  portrait?: string;
+  role?: string;
 }
 
 /**
@@ -50,6 +63,11 @@ export class DatabaseScreen implements Screen {
       // What has not come to light is not listed at all: a title would give it away.
       world: new MenuList(WORLD.filter((entry) => game.codex.includes(entry.id)).map((entry) => ({ id: entry.id, label: titleCase(entry.title), enabled: true }))),
       manual: new MenuList(MANUAL.map((topic) => ({ id: topic.id, label: titleCase(topic.title), enabled: true }))),
+      // Everybody has a row, like every unit: somebody not come across yet keeps their name.
+      people: new MenuList(PEOPLE.map((person) => {
+        const known = personKnown(game, person);
+        return { id: person.id, label: known ? person.name : D.unknown, enabled: known };
+      })),
       // Every song has its row, like every unit: one not heard yet keeps its name to itself.
       music: new MenuList(JUKEBOX.map((song) => {
         const heard = app.heard().includes(song.id);
@@ -74,6 +92,7 @@ export class DatabaseScreen implements Screen {
     if (this.page === 'units') return D.met(this.lists.units.items.filter((item) => item.enabled).length, UNITS.length);
     if (this.page === 'world') return D.entries(this.lists.world.items.length, WORLD.length);
     if (this.page === 'music') return D.heard(this.lists.music.items.filter((item) => item.enabled).length, JUKEBOX.length);
+    if (this.page === 'people') return D.known(this.lists.people.items.filter((item) => item.enabled).length, PEOPLE.length);
     return D.topics(MANUAL.length);
   }
 
@@ -89,6 +108,11 @@ export class DatabaseScreen implements Screen {
         title: this.unitTitle(selected.id).toUpperCase(), sprite: def.sprite, stats: text.stats,
         lines: [...text.weapons, ...text.abilities, '', ...wrap(note, PAGE_CHARS)],
       };
+    }
+    if (this.page === 'people') {
+      const person = PEOPLE.find((p) => p.id === selected.id);
+      if (!selected.enabled || !person) return { title: D.unknown, lines: [D.notMet] };
+      return { title: person.name.toUpperCase(), portrait: person.portrait, role: person.role, lines: wrap(person.text, PAGE_CHARS) };
     }
     if (this.page === 'music') {
       const song = JUKEBOX.find((s) => s.id === selected.id);
@@ -184,6 +208,12 @@ export class DatabaseScreen implements Screen {
         drawText(ctx, stat.value, x + 4, y + 4 + i * 2 * LINE + 9);
       });
       y += PICTURE_H + 4;
+    }
+    if (detail.portrait) {
+      // The face at its own size, and beside it whom they work for.
+      drawPortrait(ctx, this.app.deps.sprites, detail.portrait, x, y, PORTRAIT);
+      if (detail.role) drawText(ctx, detail.role.toUpperCase(), x + PORTRAIT + 6, y + 2, { color: COLORS.dim, size: 10 });
+      y += PORTRAIT + 6;
     }
     const room = Math.floor((PAGE.y + PAGE.h - 4 - y) / LINE);
     detail.lines.slice(0, room).forEach((text, i) => drawText(ctx, text, x, y + i * LINE));

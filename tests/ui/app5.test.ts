@@ -233,9 +233,11 @@ describe('the database', () => {
     expect(snap(app).detail).toEqual({ title: '? ? ?', lines: ['Not met yet.'] });
   });
 
-  test('the shoulder buttons turn the page: units, world, manual, music and round again', () => {
+  test('the shoulder buttons turn the page: units, people, world, manual, music and round again', () => {
     const { app } = inHub(scout());
     select(app, 'database');
+    press(app, 'next');
+    expect(snap(app).page).toBe('people');
     press(app, 'next');
     expect(snap(app)).toMatchObject({ page: 'world', count: `ENTRIES 6/${WORLD.length}` });
     press(app, 'next');
@@ -246,14 +248,14 @@ describe('the database', () => {
     expect(snap(app).page).toBe('units');
     press(app, 'prev', 'prev');
     expect(snap(app).page).toBe('manual');
-    press(app, 'left', 'left');
+    press(app, 'left', 'left', 'left');
     expect(snap(app).page).toBe('units');
   });
 
   test('the world page lists what has come to light so far and nothing of what has not', () => {
     const { app } = inHub(scout());
     select(app, 'database');
-    press(app, 'next');
+    press(app, 'next', 'next');
     expect(ids(app)).toEqual(['varn', 'licence', 'dispatch', 'hadron', 'lumen', 'undertow']);
     expect(snap(app).detail).toMatchObject({ title: 'VARN' });
     expect((snap(app).detail as { lines: string[] }).lines.join(' ')).toContain('Three powers hold it between them');
@@ -297,7 +299,7 @@ describe('the database', () => {
     const { app, store } = inHub({ ...done('intro-1', 'intro-2', 'rival-1'), scenes: ['act-1'] });
     expect(savedGame(store).codex).toEqual(['varn', 'licence', 'dispatch', 'hadron', 'lumen', 'undertow', 'freelance', 'arena', 'ashfall']);
     select(app, 'database');
-    press(app, 'next');
+    press(app, 'next', 'next');
     expect(ids(app)).toHaveLength(9);
   });
 
@@ -306,7 +308,7 @@ describe('the database', () => {
     app.update(16);
     expect(snap(app).toast).toBeNull();
     select(app, 'database');
-    press(app, 'next');
+    press(app, 'next', 'next');
     expect(ids(app)).toEqual(WORLD.map((entry) => entry.id));
   });
 
