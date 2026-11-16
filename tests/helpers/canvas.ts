@@ -11,7 +11,11 @@ export interface Written {
 }
 export interface Filled { x: number; y: number; w: number; h: number; color: string; blend: string; alpha: number }
 /** A picture as it was drawn: what it was handed (a sprite store that names its pictures makes this tellable) and where. */
-export interface Pictured { image: unknown; x: number; y: number; w: number; h: number; blend: string; alpha: number; filter: string }
+export interface Pictured {
+  image: unknown; x: number; y: number; w: number; h: number; blend: string; alpha: number; filter: string;
+  /** The box the drawing was kept inside when the picture was drawn, or null when it was free to go anywhere. */
+  clip: { x: number; y: number; w: number; h: number } | null;
+}
 /** A soft light or shadow: a round gradient, where its middle is, how far it reaches, its colours and how it was laid on. */
 export interface Glowed { x: number; y: number; r: number; ry: number; stops: [number, string][]; blend: string }
 /** A gradient that runs in a line, laid over a rectangle: where the rectangle is, the gradient's colours, and how it was laid on. */
@@ -20,7 +24,13 @@ export interface Washed { x: number; y: number; w: number; h: number; stops: [nu
 export interface Stroked { points: { x: number; y: number }[]; width: number; color: string; blend: string }
 /** A shape that was filled: its corners, what it was filled with (a colour, or a gradient's colours) and how it was laid on. */
 export interface Shaped { points: { x: number; y: number }[]; color: string; stops: [number, string][]; blend: string }
-export interface Drawn { texts: Written[]; rects: Filled[]; images: Pictured[]; glows: Glowed[]; strokes: Stroked[]; washes: Washed[]; shapes: Shaped[] }
+/** One thing that was drawn, by what kind of thing it was and its place among those of its kind. */
+export interface Step { kind: 'text' | 'rect' | 'image' | 'glow' | 'stroke' | 'wash' | 'shape'; at: number }
+export interface Drawn {
+  texts: Written[]; rects: Filled[]; images: Pictured[]; glows: Glowed[]; strokes: Stroked[]; washes: Washed[]; shapes: Shaped[];
+  /** Everything that was drawn, in the order it was drawn in: what comes later lies over what came before. */
+  order: Step[];
+}
 
 interface Gradient { x: number; y: number; r: number; linear?: boolean; stops: [number, string][]; addColorStop(offset: number, color: string): void }
 const isGradient = (style: unknown): style is Gradient => typeof style === 'object' && style !== null && Array.isArray((style as Gradient).stops);
@@ -39,23 +49,29 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
   const strokes: Stroked[] = [];
   const washes: Washed[] = [];
   const shapes: Shaped[] = [];
+  const order: Step[] = [];
   const state: Record<string, unknown> = {
     font: '12px x', textAlign: 'left', fillStyle: '', strokeStyle: '', lineWidth: 1, globalCompositeOperation: 'source-over', globalAlpha: 1, filter: 'none',
   };
   // Where the drawing has moved the canvas to, and by how much it has scaled it.
   let at = { tx: 0, ty: 0, sx: 1, sy: 1 };
-  const saved: { at: typeof at; state: Record<string, unknown> }[] = [];
+  type Box = { x: number; y: number; w: number; h: number };
+  // What the drawing is kept inside, and the last box that was laid out as a path.
+  let clip: Box | null = null;
+  let boxed: Box | null = null;
+  const saved: { at: typeof at; state: Record<string, unknown>; clip: Box | null }[] = [];
   let path: { x: number; y: number }[] = [];
   const X = (x: number): number => at.tx + x * at.sx;
   const Y = (y: number): number => at.ty + y * at.sy;
   const size = (): number => Number(/(\d+(?:\.\d+)?)px/.exec(String(state.font))?.[1] ?? 12);
   const methods: Record<string, (...args: unknown[]) => unknown> = {
     measureText: (text) => ({ width: String(text).length * size() * 0.4 }),
-    save: () => { saved.push({ at: { ...at }, state: { ...state } }); },
+    save: () => { saved.push({ at: { ...at }, state: { ...state }, clip }); },
     restore: () => {
       const back = saved.pop();
       if (!back) return;
       at = back.at;
+      clip = back.clip;
       for (const key of Object.keys(state)) delete state[key];
       Object.assign(state, back.state);
     },
@@ -75,29 +91,46 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
       const align = String(state.textAlign);
       const where = X(Number(x));
       const left = align === 'right' ? where - width : align === 'center' ? where - width / 2 : where;
+      order.push({ kind: 'text', at: texts.length });
       texts.push({ text: said, x: where, y: Y(Number(y)), left, right: left + width, size: size(), align, color: String(state.fillStyle) });
     },
     fillRect: (x, y, w, h) => {
       const style = state.fillStyle;
       if (isGradient(style) && style.linear) {
+        order.push({ kind: 'wash', at: washes.length });
         washes.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, stops: style.stops, blend: String(state.globalCompositeOperation) });
         return;
       }
       if (isGradient(style)) {
+        order.push({ kind: 'glow', at: glows.length });
         glows.push({ x: X(style.x), y: Y(style.y), r: style.r * at.sx, ry: style.r * at.sy, stops: style.stops, blend: String(state.globalCompositeOperation) });
         return;
       }
+      order.push({ kind: 'rect', at: rects.length });
       rects.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, color: String(style), blend: String(state.globalCompositeOperation), alpha: Number(state.globalAlpha) });
     },
     drawImage: (image, x, y, w, h) => {
-      images.push({ image, x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, blend: String(state.globalCompositeOperation), alpha: Number(state.globalAlpha), filter: String(state.filter) });
+      order.push({ kind: 'image', at: images.length });
+      images.push({
+        image, x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy,
+        blend: String(state.globalCompositeOperation), alpha: Number(state.globalAlpha), filter: String(state.filter), clip: clip ? { ...clip } : null,
+      });
     },
-    beginPath: () => { path = []; },
+    beginPath: () => { path = []; boxed = null; },
+    rect: (x, y, w, h) => { boxed = { x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy }; },
+    clip: () => {
+      if (!boxed) return;
+      if (!clip) { clip = boxed; return; }
+      const x = Math.max(clip.x, boxed.x);
+      const y = Math.max(clip.y, boxed.y);
+      clip = { x, y, w: Math.max(0, Math.min(clip.x + clip.w, boxed.x + boxed.w) - x), h: Math.max(0, Math.min(clip.y + clip.h, boxed.y + boxed.h) - y) };
+    },
     moveTo: (x, y) => { path.push({ x: X(Number(x)), y: Y(Number(y)) }); },
     lineTo: (x, y) => { path.push({ x: X(Number(x)), y: Y(Number(y)) }); },
-    stroke: () => { strokes.push({ points: [...path], width: Number(state.lineWidth), color: String(state.strokeStyle), blend: String(state.globalCompositeOperation) }); },
+    stroke: () => { order.push({ kind: 'stroke', at: strokes.length }); strokes.push({ points: [...path], width: Number(state.lineWidth), color: String(state.strokeStyle), blend: String(state.globalCompositeOperation) }); },
     fill: () => {
       const style = state.fillStyle;
+      order.push({ kind: 'shape', at: shapes.length });
       shapes.push({ points: [...path], color: isGradient(style) ? '' : String(style), stops: isGradient(style) ? style.stops : [], blend: String(state.globalCompositeOperation) });
     },
   };
@@ -106,7 +139,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
     set: (t, name: string, value) => { t[name] = value; return true; },
   }) as unknown as CanvasRenderingContext2D;
   draw(ctx);
-  return { texts, rects, images, glows, strokes, washes, shapes };
+  return { texts, rects, images, glows, strokes, washes, shapes, order };
 }
 
 /** Whether two pieces of text share a row and run into each other. */

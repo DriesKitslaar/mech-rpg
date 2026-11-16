@@ -1,6 +1,6 @@
 import { STRINGS } from '../../src/content/strings';
 import {
-  GLEAM_EVERY_MS, GLEAM_MS, LOGO, LOGO_WORD, SIGN_ON_MS, buildLogo, drawLogo, faceColor, logoGleam, logoLevel, logoLights, type Run,
+  GLEAM_EVERY_MS, GLEAM_MS, KEEP_TRIES, LOGO, LOGO_WORD, SIGN_ON_MS, buildLogo, drawLogo, faceColor, forgetSign, logoGleam, logoLevel, logoLights, type Run,
 } from '../../src/ui/logo';
 import { rgb } from '../../src/ui/light';
 import { record } from '../helpers/canvas';
@@ -343,5 +343,87 @@ describe('the sign, as it is drawn', () => {
     expect(lights.map((l) => l.color)).toEqual(['#7fa8ff', '#7fa8ff', '#7fa8ff', '#ff5db1', '#ff5db1', '#ff5db1']);
     expect(lights.map((l) => l.x)).toEqual([...lights.map((l) => l.x)].sort((a, b) => a - b));
     expect(logoLights(BOX.x, BOX.y, 0.5)[0].alpha).toBeCloseTo(0.1, 5);
+  });
+});
+
+describe('the sign, kept', () => {
+  const total = count(LOGO.edge) + LOGO.depth.reduce((sum, layer) => sum + count(layer), 0) + count(LOGO.face) + count(LOGO.top) + count(LOGO.bottom);
+  /** A platform with canvases: how many were asked for, and whether they give a context to paint on. */
+  function platform(gives: () => boolean) {
+    const made: { width: number; height: number; fills: number }[] = [];
+    (globalThis as { document?: unknown }).document = {
+      createElement: () => {
+        const canvas = { width: 0, height: 0, fills: 0, getContext: () => (gives() ? { set fillStyle(_: string) { /* a colour */ }, fillRect: () => { canvas.fills++; } } : null) };
+        made.push(canvas);
+        return canvas;
+      },
+    };
+    return made;
+  }
+  afterEach(() => {
+    delete (globalThis as { document?: unknown }).document;
+    forgetSign();
+  });
+
+  test('where the platform has a canvas the sign is painted on it once, and from then on drawn from there in one go', () => {
+    forgetSign();
+    const made = platform(() => true);
+    const first = record((ctx) => drawLogo(ctx, 22, 16));
+    expect(made).toHaveLength(1);
+    expect(made[0]).toMatchObject({ width: LOGO.w, height: LOGO.h, fills: total });
+    expect(first.rects).toEqual([]);
+    expect(first.images).toHaveLength(1);
+    expect(first.images[0]).toMatchObject({ x: 22, y: 16, alpha: 1 });
+    expect(first.images[0].image).toBe(made[0]);
+    for (let i = 0; i < 20; i++) record((ctx) => drawLogo(ctx, 22, 16));
+    expect(made).toHaveLength(1);
+    expect(made[0].fills).toBe(total);
+    // Half lit it is two pictures, the unlit one and the lit one over it as strongly as it is lit; the gleam is drawn over them.
+    const half = record((ctx) => drawLogo(ctx, 22, 16, { level: 0.4, gleam: null }));
+    expect(made).toHaveLength(2);
+    expect(half.images.map((i) => i.alpha)).toEqual([1, 0.4]);
+    expect(half.images[0].image).toBe(made[1]);
+    expect(half.images[1].image).toBe(made[0]);
+    const gleam = record((ctx) => drawLogo(ctx, 22, 16, { level: 1, gleam: 0.5 }));
+    expect(gleam.images).toHaveLength(1);
+    expect(gleam.rects.length).toBeGreaterThan(20);
+    expect(gleam.rects.every((r) => r.color === 'rgba(255, 255, 255, 0.7)')).toBe(true);
+  });
+
+  test('a canvas that gives nothing to paint on is asked for again, a few times, and the sign is painted afresh meanwhile', () => {
+    forgetSign();
+    let gives = false;
+    const made = platform(() => gives);
+    expect(KEEP_TRIES).toBe(3);
+    // Painted directly, every run of it, and nothing is drawn from a canvas that has nothing on it.
+    for (let i = 0; i < 2; i++) {
+      const page = record((ctx) => drawLogo(ctx, 22, 16));
+      expect(page.rects).toHaveLength(total);
+      expect(page.images).toEqual([]);
+    }
+    expect(made).toHaveLength(2);
+    // The third time it works: from then on the sign is kept.
+    gives = true;
+    const kept = record((ctx) => drawLogo(ctx, 22, 16));
+    expect(made).toHaveLength(3);
+    expect(kept.rects).toEqual([]);
+    expect(kept.images).toHaveLength(1);
+    expect(record((ctx) => drawLogo(ctx, 22, 16)).images).toHaveLength(1);
+    expect(made).toHaveLength(3);
+  });
+
+  test('after three tries in vain it is not asked for again: the sign is painted afresh each time, in colours worked out once', () => {
+    forgetSign();
+    const made = platform(() => false);
+    for (let i = 0; i < 12; i++) expect(record((ctx) => drawLogo(ctx, 22, 16)).rects).toHaveLength(total);
+    expect(made).toHaveLength(KEEP_TRIES);
+    // Unlit is asked for separately, and gives up separately.
+    for (let i = 0; i < 12; i++) record((ctx) => drawLogo(ctx, 22, 16, { level: 0, gleam: null }));
+    expect(made).toHaveLength(KEEP_TRIES * 2);
+    // What is painted is what it always was.
+    const page = record((ctx) => drawLogo(ctx, 22, 16));
+    const at = (x: number, y: number) => page.rects.filter((r) => r.y === 16 + y && r.x <= 22 + x && 22 + x < r.x + r.w).at(-1)!.color;
+    expect(at(LOGO.letters[0].x + 8, 20)).toBe(faceColor(20, true, true));
+    expect(at(LOGO.letters[7].x + 3, 20)).toBe(faceColor(20, false, true));
   });
 });

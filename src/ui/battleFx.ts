@@ -344,8 +344,8 @@ export class BattleFx {
   }
 
   /** Draws what is solid of every effect that is playing: flame, tracers, fire, rings, sparks, smoke, figures. */
-  draw(ctx: CanvasRenderingContext2D): void {
-    for (const { fx, p } of this.active()) paintFx(ctx, fx, p);
+  draw(ctx: CanvasRenderingContext2D, calm = false): void {
+    for (const { fx, p } of this.active()) paintFx(ctx, fx, p, calm);
   }
 
   /** The light that everything playing throws at this moment, for the screen to add over the field. */
