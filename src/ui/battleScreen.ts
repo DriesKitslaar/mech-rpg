@@ -94,6 +94,8 @@ function drawRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius:
 export class BattleScreen {
   private timer = 0;
   private clock = 0;
+  /** The Overdrive's meter as far as the messages have got: the rules are an action ahead of what has been shown. */
+  private shownDrive = 0;
   /** The hired wingman's voice, when one flies along and has things to say. */
   private radio: Radio | null = null;
   private radioOpened = false;
@@ -154,6 +156,7 @@ export class BattleScreen {
     },
   ) {
     if (opts.radio) this.radio = new Radio(opts.radio.who, opts.radio.lines);
+    this.shownDrive = flow.state.units[0].drive;
     this.particles = new Particles(7, !opts.fast);
     this.hitStop = new HitStop(!opts.fast);
     this.introTotal = opts.fast ? 0 : opts.boss ? WARNING_MS : INTRO_MS;
@@ -283,8 +286,11 @@ export class BattleScreen {
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
     }
     this.fxDone = shown;
-    // With every message shown the screen has caught up with the rules.
-    if (shown >= events.length) this.stances.sync(this.flow.state.units);
+    // With every message shown the screen has caught up with the rules: the stances, and how full the Overdrive's meter is.
+    if (shown >= events.length) {
+      this.stances.sync(this.flow.state.units);
+      this.shownDrive = this.flow.state.units[0].drive;
+    }
   }
 
   /** What is moving on the field right now, for tests: nobody can watch a test run. */
@@ -380,15 +386,14 @@ export class BattleScreen {
 
   /**
    * What the wingman is saying: one small line at the foot of the field, from its left edge, where
-   * the longest line still ends short of the bars of the enemy standing lowest. While the
-   * Overdrive's label has that row, the line stands a row above it. Not over the banner, not while
-   * somebody is talking, and not where a new pilot is being told the buttons.
+   * the longest line still ends short of the bars of the enemy standing lowest. Not over the banner,
+   * not while somebody is talking, and not where a new pilot is being told the buttons.
    */
   private drawRadio(ctx: CanvasRenderingContext2D): void {
     const line = this.radio?.line;
     if (!line || this.intro > 0 || this.opts.coach || this.flow.phase === 'talk') return;
     const width = line.length * 4 + 8;
-    const y = PANEL_Y - 13 - (this.driveReady ? 12 : 0);
+    const y = PANEL_Y - 13;
     ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
     ctx.fillRect(RADIO_X, y, width, 11);
     // The name in the colour of a friendly voice, what is said in plain white.
@@ -397,11 +402,6 @@ export class BattleScreen {
     drawText(ctx, line.slice(at), RADIO_X + 4 + at * 4, y + 1, { size: 10 });
   }
 
-  /** True while the field names the button that sets off the Overdrive: the meter is full and the battle is on. */
-  private get driveReady(): boolean {
-    const player = this.flow.state.units[0];
-    return !!player.overdrive && !player.destroyed && this.intro <= 0 && player.drive >= DRIVE_MAX && this.flow.phase !== 'result';
-  }
 
   /** Two rings running out from the mech whose Overdrive has just gone off, fading as they go. */
   private drawSurge(ctx: CanvasRenderingContext2D): void {
@@ -413,15 +413,16 @@ export class BattleScreen {
 
   /**
    * The Overdrive's meter: a thin column at the left edge of the field that fills from the bottom,
-   * and, once it is full, the button that sets it off, blinking beside it.
+   * as far as the messages have got. The button that sets it off is named in the message bar; see `drawMessage`.
    */
   private drawDrive(ctx: CanvasRenderingContext2D): void {
     const player = this.flow.state.units[0];
     if (!player.overdrive || this.intro > 0 || player.destroyed) return;
     const top = FIELD_Y + 18;
     const height = PANEL_Y - 6 - top;
-    const filled = Math.round((height * Math.min(DRIVE_MAX, player.drive)) / DRIVE_MAX);
-    const full = player.drive >= DRIVE_MAX;
+    const drive = Math.min(DRIVE_MAX, this.shownDrive);
+    const filled = Math.round((height * drive) / DRIVE_MAX);
+    const full = drive >= DRIVE_MAX;
     const lit = full && (this.opts.fast || Math.floor(this.clock / 260) % 2 === 0);
     ctx.fillStyle = 'rgba(8, 8, 20, 0.7)';
     ctx.fillRect(1, top - 1, 5, height + 2);
@@ -429,14 +430,6 @@ export class BattleScreen {
     ctx.fillRect(2, top, 3, height);
     ctx.fillStyle = full ? (lit ? '#ffffff' : COLORS.accent) : COLORS.accent;
     ctx.fillRect(2, top + height - filled, 3, filled);
-    if (!this.driveReady) return;
-    const label = STRINGS.overdrive.ready;
-    const width = label.length * 4 + 6;
-    // A new pilot's line about the buttons has the foot of the field: the label stands a row above it.
-    const y = PANEL_Y - 13 - (this.opts.coach ? 12 : 0);
-    ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
-    ctx.fillRect(8, y, width, 11);
-    drawText(ctx, label, 11, y + 1, { size: 10, color: lit ? '#ffffff' : COLORS.accent });
   }
 
   /** The ground's rule, small, in the top right corner of the field: its name, so the briefing's line is not forgotten. */
@@ -876,8 +869,17 @@ export class BattleScreen {
     if (this.flow.phase !== 'result') {
       drawText(ctx, this.flow.message, 5, 1, { color: this.flow.overheatWarning ? COLORS.danger : COLORS.text });
     }
-    // Which battle of the contract this is makes way for a message that needs the room.
     const message = this.flow.phase !== 'result' ? this.flow.message : '';
+    // While R1 would set off the Overdrive, the bar says so at its right end: only on the pilot's own
+    // menu, where R1 does nothing else. It blinks when the press would count, and stands dim while a
+    // Second Wind is still waiting for something of the turn to be spent.
+    const drive = this.intro <= 0 ? this.flow.overdrive : null;
+    if (drive && labelFits(message, STRINGS.overdrive.ready)) {
+      const lit = this.opts.fast || Math.floor(this.clock / 260) % 2 === 0;
+      drawText(ctx, STRINGS.overdrive.ready, LOGICAL_W - 5, 1, { align: 'right', color: drive === 'wait' ? COLORS.dim : lit ? '#ffffff' : COLORS.accent });
+      return;
+    }
+    // Which battle of the contract this is makes way for a message that needs the room.
     if (this.opts.label && labelFits(message, this.opts.label)) drawText(ctx, this.opts.label, LOGICAL_W - 5, 1, { align: 'right', color: COLORS.dim });
   }
 

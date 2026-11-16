@@ -45,6 +45,13 @@ test('the Overdrive: one is fitted on the pilot\'s page, the simulator teaches i
   const drive = async () => (await snap(page) as unknown as { battle: { drive: { kind: string; value: number } | null } }).battle.drive;
   expect(await drive()).toEqual({ kind: 'second-wind', value: 100 });
   await page.screenshot({ path: shot('battle-overdrive-ready') });
+  // A Second Wind gives a turn back, so something of this one is spent first: R1 before that keeps the meter.
+  await press(page, 'KeyE');
+  expect(await drive()).toEqual({ kind: 'second-wind', value: 100 });
+  await press(page, 'Enter');
+  await press(page, 'Enter');
+  await press(page, 'Enter');
+  await waitForPhase(page, 'action');
   await press(page, 'KeyE');
   await waitForPhase(page, 'action');
   expect(await drive()).toEqual({ kind: 'second-wind', value: 0 });

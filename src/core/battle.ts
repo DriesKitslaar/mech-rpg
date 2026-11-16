@@ -148,6 +148,8 @@ export interface UnitState {
   damageBoost: number;
   /** What sets this enemy apart, if it is an elite one. */
   mark?: EnemyMark;
+  /** The energy the unit's turn began with: what Second Wind gives back. */
+  turnEnergy: number;
   /** The Overdrive this unit has, if any: only the pilot's own mech has one. */
   overdrive?: OverdriveId;
   /** How far the Overdrive's meter has filled, 0 to `DRIVE_MAX`. Stays 0 without an Overdrive. */
@@ -260,7 +262,7 @@ export type Action =
 export type Refusal =
   | 'noEnergy' | 'noAmmo' | 'alreadyFired' | 'weaponDisabled' | 'noWeapon' | 'invalidTarget'
   | 'alreadyUsed' | 'legsDisabled' | 'noRepairs' | 'partDestroyed' | 'partFull' | 'battleOver'
-  | 'staggered' | 'cannotBoost' | 'notCharged' | 'needsBoost' | 'noModule' | 'noUses' | 'noAbility' | 'noWingman' | 'noOverdrive';
+  | 'staggered' | 'cannotBoost' | 'notCharged' | 'needsBoost' | 'noModule' | 'noUses' | 'noAbility' | 'noWingman' | 'noOverdrive' | 'nothingSpent';
 
 /** What a boost gives a unit that fits no booster. Kept for callers that predate boosters. */
 export const BOOST_EVASION = DEFAULT_BOOST.thrust;
@@ -317,7 +319,7 @@ function createUnit(
     usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
     stagger: 0, staggerMax: Math.max(1, Math.round(stats.stability * mods.toughness)), staggered: 0,
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
-    barrier: 0, painted: 0, paintBonus: 0, chaff: 0, damageBoost: 1, drive: 0, ironSkin: false, deadeye: false,
+    barrier: 0, painted: 0, paintBonus: 0, chaff: 0, damageBoost: 1, drive: 0, ironSkin: false, deadeye: false, turnEnergy: 0,
   };
 }
 
@@ -549,6 +551,7 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     }
     const energy = Math.max(0, turnEnergyOf(unit, catalog) - unit.energyDebt);
     unit.energy = unit.staggered > 0 ? Math.floor(energy * STAGGER_ENERGY) : energy;
+    unit.turnEnergy = unit.energy;
     unit.energyDebt = 0;
     unit.usedBoost = false;
     unit.usedGuard = false;
@@ -769,7 +772,9 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
     }
     case 'overdrive':
       if (!unit.overdrive) return 'noOverdrive';
-      return unit.drive < DRIVE_MAX ? 'notCharged' : null;
+      if (unit.drive < DRIVE_MAX) return 'notCharged';
+      // Second Wind gives a turn back: with nothing of this one spent yet there is nothing to give, and the meter is not thrown away.
+      return unit.overdrive === 'second-wind' && !turnSpent(unit) ? 'nothingSpent' : null;
     case 'order':
       if (unit.side !== 'player' || !state.support?.orders) return 'noWingman';
       return (state.support.order ?? 'strongest') === action.order ? 'alreadyUsed' : null;
@@ -930,6 +935,10 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   checkOutcome(state);
 }
 
+/** True once the unit has done anything this turn that can only be done once: fired or charged a weapon, taken a stance, vented, used its module. */
+export const turnSpent = (unit: UnitState): boolean =>
+  unit.fired.length > 0 || unit.usedBoost || unit.usedGuard || unit.usedCool || unit.usedModule;
+
 /** Fills a unit's Overdrive meter, if it has an Overdrive at all. */
 function addDrive(unit: UnitState, amount: number): void {
   if (unit.overdrive && !unit.destroyed) unit.drive = Math.min(DRIVE_MAX, unit.drive + amount);
@@ -998,12 +1007,15 @@ function useModule(
       }
       return restored;
     }
-    case 'shock':
+    case 'shock': {
       event.damage = 0;
-      for (const enemy of state.units.filter((u) => u.side !== unit.side && !u.destroyed)) {
-        event.damage += strike(state, enemy, SHOCK_DAMAGE, power, catalog);
-      }
+      const struck = state.units.filter((u) => u.side !== unit.side && !u.destroyed);
+      for (const enemy of struck) event.damage += strike(state, enemy, SHOCK_DAMAGE, power, catalog);
+      // A pulse that lands is a volley that lands, and what it destroys counts like anything else destroyed.
+      if (struck.length > 0) addDrive(unit, DRIVE_GAIN.landed);
+      for (const enemy of struck) if (enemy.destroyed) addDrive(unit, DRIVE_GAIN.kill);
       return power;
+    }
     case 'chaff':
       unit.chaff = power;
       return power;
@@ -1036,13 +1048,14 @@ export function applyAction(input: BattleState, action: Action, catalog: Catalog
       if (kind === 'iron-skin') unit.ironSkin = true;
       else if (kind === 'deadeye') unit.deadeye = true;
       else {
-        // The turn starts over: the energy of a turn (a staggered one, if that is what this is), and
-        // everything that can be done once a turn can be done again. The heat is still there.
-        const energy = turnEnergyOf(unit, catalog);
-        unit.energy = unit.staggered > 0 ? Math.floor(energy * STAGGER_ENERGY) : energy;
+        // The turn starts over: the energy this turn began with comes back (never less than there is
+        // now, and never what was drained before the turn began), and what can be done once a turn can
+        // be done again. The heat is still there. A stance that is still up stays up and stays the one
+        // stance of the turn: it is not paid for twice, and a boost is not joined by a guard.
+        unit.energy = Math.max(unit.energy, unit.turnEnergy);
         unit.fired = [];
-        unit.usedBoost = false;
-        unit.usedGuard = false;
+        unit.usedBoost = unit.boosted;
+        unit.usedGuard = unit.guarding;
         unit.usedCool = false;
         unit.usedModule = false;
       }

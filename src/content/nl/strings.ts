@@ -88,11 +88,12 @@ export const STRINGS_NL = {
     heading: 'OVERDRIVE', ready: 'R1: OVERDRIVE', used: (name: string) => `OVERDRIVE: ${name.toUpperCase()}`,
     names: { 'second-wind': 'Tweede Adem', 'iron-skin': 'IJzerhuid', deadeye: 'Scherpoog' } as Record<string, string>,
     notes: {
-      'second-wind': 'Je beurt begint opnieuw: energie terug, elk wapen en elke actie klaar. De hitte blijft.',
+      'second-wind': 'Verbruik eerst je beurt, dan begint die opnieuw: energie terug, elk wapen en elke actie klaar. De hitte blijft.',
       'iron-skin': 'Tot je volgende beurt krijg je halve schade en wankel je niet.',
-      deadeye: 'Tot je beurt eindigt is elk schot raak, met een kwart meer.',
+      deadeye: 'Tot je beurt eindigt: elk schot raak, een kwart meer schade.',
     } as Record<string, string>,
-    how: 'De meter aan de rand van het veld vult zich als je raakt, geraakt wordt en machines sloopt. Is hij vol, druk dan R1 in je beurt.',
+    how: 'De meter aan de rand van het veld vult zich als je raakt, geraakt wordt en machines sloopt. Is hij vol, druk dan in je beurt op R1.',
+    spendFirst: 'Tweede Adem: verbruik eerst je beurt.', opened: 'OVERDRIVE VRIJ',
     level: (n: number) => `LV ${n}`, fitted: 'GEKOZEN', hint: 'A: kies   L1/R1: blad   B: terug',
   },
   orders: {

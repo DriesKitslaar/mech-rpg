@@ -92,11 +92,15 @@ export const STRINGS = {
     heading: 'OVERDRIVE', ready: 'R1: OVERDRIVE', used: (name: string) => `OVERDRIVE: ${name.toUpperCase()}`,
     names: { 'second-wind': 'Second Wind', 'iron-skin': 'Iron Skin', deadeye: 'Deadeye' } as Record<string, string>,
     notes: {
-      'second-wind': 'Your turn starts over: energy back, every weapon and action ready again. The heat stays.',
+      'second-wind': 'Spend your turn first, then it starts over: energy back, every weapon and action ready again. The heat stays.',
       'iron-skin': 'Until your next turn you take half damage and cannot be staggered.',
       deadeye: 'Until your turn ends every shot hits and does a quarter more.',
     } as Record<string, string>,
     how: 'The meter at the edge of the field fills as you land hits, take them and destroy machines. When it is full, press R1 on your turn.',
+    // Said when R1 is pressed for a Second Wind before anything of the turn has been spent.
+    spendFirst: 'Second Wind: spend your turn first.',
+    // Announced in passing when the pilot's level opens one.
+    opened: 'OVERDRIVE OPEN',
     level: (n: number) => `LV ${n}`, fitted: 'FITTED', hint: 'A: fit   L1/R1: page   B: back',
   },
   // What a hired wingman can be told, on the pilot's turn, for nothing.

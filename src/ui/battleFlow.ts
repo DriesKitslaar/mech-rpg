@@ -65,6 +65,8 @@ export class BattleFlow {
 
   private shown = 0;
   private weapon: WeaponSlot | null = null;
+  /** The row of the action menu to come back to, after something that leaves the turn going. */
+  private keepCursor: number | null = null;
   /** Set by Auto Turn: the automatic player acts until this turn is over. */
   private autoTurn = false;
   private waiting: Spoken[] = [];
@@ -156,6 +158,16 @@ export class BattleFlow {
 
   private unitName(id: string): string {
     return this.state.units.find((u) => u.id === id)?.name ?? id;
+  }
+
+  /**
+   * Whether R1 would set the Overdrive off right now: `ready` when it would, `wait` when the meter is
+   * full but a Second Wind has nothing to give back yet, and null when there is nothing to say.
+   */
+  get overdrive(): 'ready' | 'wait' | null {
+    if (this.phase !== 'action') return null;
+    const refusal = checkAction(this.state, { type: 'overdrive' }, this.catalog);
+    return refusal === null ? 'ready' : refusal === 'nothingSpent' ? 'wait' : null;
   }
 
   private can(action: Action): boolean {
@@ -323,7 +335,10 @@ export class BattleFlow {
     ];
     const items = entries.map(([id, label, enabled]) => ({ id, label, enabled }));
     this.phase = 'action';
-    this.menu = { items, cursor: items.findIndex((i) => i.enabled) };
+    // After an Overdrive the turn goes on where it was: the cursor comes back to the row it was on.
+    const kept = this.keepCursor !== null && items[this.keepCursor] ? this.keepCursor : null;
+    this.keepCursor = null;
+    this.menu = { items, cursor: kept ?? items.findIndex((i) => i.enabled) };
     this.message = STRINGS.yourTurn(this.state.round);
     this.weapon = null;
     this.targetId = null;
@@ -417,6 +432,8 @@ export class BattleFlow {
 
   private cycleTarget(delta: number): void {
     const enemies = this.targetsOf(this.weapon!);
+    // With one enemy there is nobody to switch to, and the part aimed at stays as it was chosen.
+    if (enemies.length < 2) return;
     const index = enemies.findIndex((e) => e.id === this.targetId);
     this.openTarget(enemies[(index + delta + enemies.length) % enemies.length].id);
   }
@@ -437,7 +454,16 @@ export class BattleFlow {
     switch (this.phase) {
       case 'action':
         // The Overdrive has a button of its own: R1, on the pilot's turn, once the meter is full.
-        if (input === 'next' && this.can({ type: 'overdrive' })) return this.act({ type: 'overdrive' });
+        if (input === 'next') {
+          const refusal = checkAction(this.state, { type: 'overdrive' }, this.catalog);
+          if (refusal === null) {
+            this.keepCursor = this.menu.cursor;
+            return this.act({ type: 'overdrive' });
+          }
+          // A Second Wind with nothing to give back is not thrown away: the pilot is told why nothing happened.
+          if (refusal === 'nothingSpent') this.message = STRINGS.overdrive.spendFirst;
+          return;
+        }
         if (input !== 'confirm' || !item?.enabled) return;
         switch (item.id as ActionId) {
           case 'fire': return this.openWeaponMenu();

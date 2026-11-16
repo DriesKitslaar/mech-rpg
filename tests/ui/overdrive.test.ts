@@ -118,24 +118,82 @@ function screenOf(opts: BattleOptions, fast = true, coach = false) {
 }
 
 describe('the Overdrive on the screen', () => {
-  test('the button is named at the foot of the field once the meter is full, and only then', () => {
-    expect(screenOf({ overdrive: 'second-wind', drive: 100 }).said()).toContain('R1: OVERDRIVE');
-    expect(screenOf({ overdrive: 'second-wind', drive: 99 }).said()).not.toContain('R1: OVERDRIVE');
+  test('the button is named in the message bar once the meter is full, on the pilot\'s own menu and nowhere else', () => {
+    const ready = screenOf({ overdrive: 'iron-skin', drive: 100 });
+    const label = ready.written().find((w) => w.text === 'R1: OVERDRIVE')!;
+    expect(label).toBeDefined();
+    // In the bar at the top, not on the field where the mech stands.
+    expect(label.y).toBe(1);
+    expect(screenOf({ overdrive: 'iron-skin', drive: 99 }).said()).not.toContain('R1: OVERDRIVE');
     expect(screenOf({}).said()).not.toContain('R1: OVERDRIVE');
+    // One menu deeper R1 means something else, and the bar no longer offers it.
+    ready.screen.onInput('confirm');
+    expect(ready.flow.phase).toBe('weapon');
+    expect(ready.said()).not.toContain('R1: OVERDRIVE');
+    ready.screen.onInput('confirm');
+    expect(ready.flow.phase).toBe('target');
+    expect(ready.said()).not.toContain('R1: OVERDRIVE');
+    ready.screen.onInput('cancel');
+    ready.screen.onInput('cancel');
+    expect(ready.said()).toContain('R1: OVERDRIVE');
     // Spent, the name goes.
-    const { screen, said } = screenOf({ overdrive: 'second-wind', drive: 100 });
-    screen.onInput('next');
-    for (let i = 0; i < 20; i++) screen.update(16);
-    expect(said()).not.toContain('R1: OVERDRIVE');
+    ready.screen.onInput('next');
+    for (let i = 0; i < 20; i++) ready.screen.update(16);
+    expect(ready.flow.phase).toBe('action');
+    expect(ready.said()).not.toContain('R1: OVERDRIVE');
   });
 
-  test('a new pilot\'s line about the buttons keeps the foot of the field: the name stands a row above it', () => {
-    const plain = screenOf({ overdrive: 'second-wind', drive: 100 }).written().find((w) => w.text === 'R1: OVERDRIVE')!;
-    const coached = screenOf({ overdrive: 'second-wind', drive: 100 }, true, true).written();
-    const label = coached.find((w) => w.text === 'R1: OVERDRIVE')!;
-    const line = coached.find((w) => w.text === STRINGS.coach.action)!;
-    expect(line.y).toBe(plain.y);
-    expect(label.y).toBeLessThanOrEqual(line.y - 11);
+  test('a Second Wind is named but waits: R1 with nothing of the turn spent says so and keeps the meter', () => {
+    const { flow, screen, said } = screenOf({ overdrive: 'second-wind', drive: 100 });
+    expect(flow.overdrive).toBe('wait');
+    expect(said()).toContain('R1: OVERDRIVE');
+    screen.onInput('next');
+    expect(flow.message).toBe(STRINGS.overdrive.spendFirst);
+    expect(flow.state.units[0].drive).toBe(100);
+    expect(flow.phase).toBe('action');
+    // With a weapon fired the press counts.
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    for (let i = 0; i < 40 && flow.phase !== 'action'; i++) screen.update(16);
+    expect(flow.overdrive).toBe('ready');
+    screen.onInput('next');
+    expect(flow.state.units[0].drive).toBe(0);
+  });
+
+  test('the meter on the field shows what the messages have got to, not what the rules already know', () => {
+    const { flow, screen } = screenOf({ overdrive: 'iron-skin', drive: 92 }, false);
+    const column = (): number => {
+      let filled = 0;
+      const target: Record<string, unknown> = {};
+      const ctx = new Proxy(target, {
+        get: (t, name: string) => (name in t ? t[name] : name === 'measureText' ? () => ({ width: 10 })
+          : (...args: unknown[]) => { if (name === 'fillRect' && args[0] === 2 && args[2] === 3) filled = Number(args[3]); }),
+        set: (t, name: string, value) => { t[name] = value; return true; },
+      }) as unknown as CanvasRenderingContext2D;
+      screen.draw(ctx);
+      return filled;
+    };
+    for (let i = 0; i < 200 && screen.banner; i++) screen.update(16);
+    const before = column();
+    expect(before).toBeGreaterThan(0);
+    // The turn is ended. The rules play the enemy's shot at once; the screen announces it a moment later.
+    for (let j = 0; j < 12 && flow.menu.items[flow.menu.cursor]?.id !== 'endTurn'; j++) flow.onInput('down');
+    screen.onInput('confirm');
+    let ahead = false;
+    for (let i = 0; i < 600 && !ahead && flow.phase !== 'action' && flow.phase !== 'result'; i++) {
+      screen.update(16);
+      // The first moment the rules know of a hit that has not been announced yet: the column has not moved.
+      if (flow.state.units[0].drive > 92 && flow.eventsShown < flow.state.events.length) {
+        ahead = true;
+        expect(column()).toBe(before);
+      }
+    }
+    expect(ahead).toBe(true);
+    // Once the screen has said everything there is to say, the column is where the rules are.
+    for (let i = 0; i < 600 && flow.phase !== 'action' && flow.phase !== 'result'; i++) screen.update(16);
+    screen.update(16);
+    expect(column()).toBeGreaterThan(before);
   });
 
   test('one that lasts is tagged on the pilot\'s mech for as long as it does', () => {
@@ -157,7 +215,8 @@ describe('the Overdrive on the screen', () => {
   });
 
   test('going off, it holds the field for a moment, throws sparks and sends a ring out from the mech', () => {
-    const { screen } = screenOf({ overdrive: 'second-wind', drive: 100 }, false);
+    const { screen } = screenOf({ overdrive: 'iron-skin', drive: 100 }, false);
+    for (let i = 0; i < 200 && screen.banner; i++) screen.update(16);
     expect(screen.motion).toMatchObject({ surge: false, flash: 0 });
     const before = screen.motion.particles;
     screen.onInput('next');
@@ -188,12 +247,10 @@ function fight(app: AppOf): number {
     const s = snap(app);
     if (s.battle!.phase === 'animating') app.update(16);
     else if (s.battle!.phase === 'action') {
-      const full = drive(app)?.value === 100;
-      if (full) {
-        press(app, 'next');
-        expect(drive(app)!.value).toBe(0);
-        used += 1;
-      } else if (s.menu.items[0].enabled) press(app, 'confirm');
+      // R1 whenever the meter is full: a Second Wind does not take it until something of the turn is spent.
+      if (drive(app)?.value === 100) press(app, 'next');
+      if (drive(app)?.value === 0 && s.battle && (s.battle as unknown as { drive: { value: number } }).drive.value === 100) used += 1;
+      else if (s.menu.items[0].enabled) press(app, 'confirm');
       else select(app, 'endTurn');
     } else press(app, 'confirm');
   }
