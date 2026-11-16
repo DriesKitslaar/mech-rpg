@@ -55,7 +55,7 @@ export const THUNDER_AFTER_MS = 380;
  * lightning there to hear.
  */
 export function strokeBegan(beforeMs: number, nowMs: number, calm = false): boolean {
-  if (calm || !soft() || !(nowMs > beforeMs) || beforeMs < 0) return false;
+  if (calm || !soft()) return false;
   for (let slot = Math.floor(beforeMs / LIGHTNING_MS); slot <= Math.floor(nowMs / LIGHTNING_MS); slot++) {
     const at = strokeAt(slot);
     if (at > beforeMs && at <= nowMs) return true;

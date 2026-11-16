@@ -870,7 +870,9 @@ describe('turned down for a moment that is to be heard above it', () => {
   function listening() {
     const audio = fakeAudio();
     const ramps: { to: number; at: number; calledAt: number }[] = [];
-    const make = audio.ctx.createGain as () => { gain: { linearRampToValueAtTime(value: number, at: number): void } };
+    /** Where each move of the loudness was told to start from, and when. */
+    const starts: { from: number; at: number }[] = [];
+    const make = audio.ctx.createGain as () => { gain: { linearRampToValueAtTime(value: number, at: number): void; setValueAtTime(value: number, at: number): void } };
     let masters = 0;
     let breakIt = false;
     audio.ctx.createGain = () => {
@@ -878,30 +880,35 @@ describe('turned down for a moment that is to be heard above it', () => {
       // The first loudness an engine is asked for is the one everything goes through.
       if (masters++ === 0) {
         const ramp = made.gain.linearRampToValueAtTime.bind(made.gain);
+        const set = made.gain.setValueAtTime.bind(made.gain);
         made.gain.linearRampToValueAtTime = (value: number, at: number) => {
           if (breakIt) throw new Error('cannot ramp');
           ramps.push({ to: value, at, calledAt: audio.ctx.currentTime });
           ramp(value, at);
         };
+        made.gain.setValueAtTime = (value: number, at: number) => { starts.push({ from: value, at }); set(value, at); };
       }
       return made;
     };
-    return { audio, ramps, fail: () => { breakIt = true; } };
+    return { audio, ramps, starts, fail: () => { breakIt = true; } };
   }
 
   test('it goes down quickly and comes back a little slower, and is told only when something changes', () => {
     expect([HUSH, HUSH_IN, HUSH_OUT, HUSH_FLOOR]).toEqual([0.35, 0.05, 0.3, 0.1]);
-    const { audio, ramps } = listening();
+    const { audio, ramps, starts } = listening();
     const music = new Music(audio.context);
     expect(music.hush).toBe(1);
     begin(audio, music, 'battle');
     run(audio, music, 1);
     expect(ramps).toEqual([]);
+    expect(starts).toEqual([]);
     music.hush = HUSH;
     run(audio, music, 1);
     expect(ramps).toHaveLength(1);
     expect(ramps[0].to).toBeCloseTo(MASTER_GAIN * HUSH, 9);
     expect(ramps[0].at - ramps[0].calledAt).toBeCloseTo(HUSH_IN, 9);
+    // Each move starts from where the loudness is at that moment: without that an engine would start it from wherever it last was told anything.
+    expect(starts).toEqual([{ from: MASTER_GAIN, at: ramps[0].calledAt }]);
     music.hush = 1;
     run(audio, music, 1);
     expect(ramps).toHaveLength(2);
@@ -958,7 +965,7 @@ describe('turned down for a moment that is to be heard above it', () => {
   });
 
   test('an engine whose loudness cannot be moved leaves the song playing as it was', () => {
-    const { audio, fail } = listening();
+    const { audio, starts, fail } = listening();
     const music = new Music(audio.context);
     begin(audio, music, 'battle');
     run(audio, music, 1);
@@ -967,5 +974,7 @@ describe('turned down for a moment that is to be heard above it', () => {
     const before = audio.sources.length;
     expect(() => run(audio, music, 2)).not.toThrow();
     expect(audio.sources.length).toBeGreaterThan(before + 10);
+    // And it was asked once, not on every frame of those two seconds.
+    expect(starts).toHaveLength(1);
   });
 });

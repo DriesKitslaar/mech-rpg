@@ -573,16 +573,14 @@ export class Music {
     const want = Number.isNaN(this.hush) ? 1 : Math.min(1, Math.max(HUSH_FLOOR, this.hush));
     if (rig.hush === want) return;
     const down = want < rig.hush;
+    // Noted before it is asked for: an engine that cannot do this is asked once, not every frame, and plays on as loud as it was.
     rig.hush = want;
-    try {
-      const gain = rig.master.gain;
-      const now = rig.ctx.currentTime;
-      gain.cancelScheduledValues?.(now);
-      gain.setValueAtTime(gain.value, now);
-      gain.linearRampToValueAtTime(MASTER_GAIN * want, now + (down ? HUSH_IN : HUSH_OUT));
-    } catch {
-      // An engine that cannot do this plays on as loud as it was.
-    }
+    const gain = rig.master.gain;
+    const now = rig.ctx.currentTime;
+    // From where the loudness is at this moment, which may be half way through coming back.
+    gain.cancelScheduledValues?.(now);
+    gain.setValueAtTime(gain.value, now);
+    gain.linearRampToValueAtTime(MASTER_GAIN * want, now + (down ? HUSH_IN : HUSH_OUT));
   }
 
   /** The song laid out flat, or null when it is missing or broken; either way it is only worked out once. */
