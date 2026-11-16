@@ -18,10 +18,9 @@ Update as work lands. After a context reset, start here.
       contracts and the Gauntlet, two great machines (Scrap King, Night Train), four Guild jobs. Reviewed with its neighbour; the fixes are on `feat/moon-dutch`. APK sent.
 - [ ] M4: Orders for the wingman (branch `feat/moon-orders`, PR 21, on top of M3). Built and tested. Pending: review, APK.
 - [ ] M5: Cups (branch `feat/moon-cups`, PR 22, on top of M4). Built and tested. Pending: review, APK.
-- [ ] M6: Dutch (branch `feat/moon-dutch`, on top of M5). The machinery, the option and the tests are in. Four translators
-      are filling `src/content/nl/{strings,missions,story,reference}.ts` in the snapshot `scratchpad/nl/repo`; when each
-      reports, copy its file into the tree, run `tests/content/dutch.test.ts`, then the whole suite in both languages.
-      Pending after that: PR 23, a review of M4 to M6 together, APK.
+- [ ] M6: Dutch (branch `feat/moon-dutch`, PR 23, on top of M5). All text is translated (about 1300 texts in
+      `src/content/nl/`), tested in both languages. Review of M4 to M6 together is running (snapshot `scratchpad/reviewM456`);
+      APK sent from this branch. Pending: fixes from that review.
 - [ ] M7: Last review, APK, summary
 
 ## M1: The Gauntlet
@@ -150,3 +149,6 @@ M6:
   its English at the width it is shown at; a one-line text may be no longer than its English or a
   stated maximum; interface texts may be two letters longer at most. ASCII only.
 - The language is an option, kept with the settings, English when absent.
+- Four translators worked side by side on a snapshot, one file each, held to the same tests; their
+  word choices were then brought into line (the tags a drill quotes, the clearing house, callsign).
+- Names stay English: people, companies, places, machines, parts and weapons.

@@ -115,7 +115,7 @@ export const STRINGS_NL = {
     slot: (n: number, callsign: string, level: number) => `${n}  ${callsign}  LV ${level}`,
     progress: (done: number, cycle: number, time: string) => `${done} af  ${cycle > 0 ? `C${cycle + 1}  ` : ''}${time}`,
   },
-  callsign: { heading: 'JOUW CALLSIGN', hint: 'A: kies   B: wis', del: 'WIS', ok: 'OK' },
+  callsign: { heading: 'JOUW ROEPNAAM', hint: 'A: kies   B: wis', del: 'WIS', ok: 'OK' },
   ground: {
     rain: { name: 'REGEN', note: 'elk koelt 4 meer per beurt' },
     furnace: { name: 'OVENHITTE', note: 'elk koelt 4 minder per beurt' },
