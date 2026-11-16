@@ -1,3 +1,4 @@
+import { MARKS, type EnemyMark } from './battle';
 import type { Mission } from './campaign';
 import { nextRandom } from './rng';
 
@@ -39,6 +40,12 @@ export const BOARD_SIZE = 3;
 export const WINS_PER_TIER = 5;
 export const PAY_PER_POINT = 250;
 export const PAY_PER_BATTLE = 200;
+/**
+ * From this tier on, the heaviest contract on the board is, about one board in two, an elite one: the
+ * dearest machine of its last battle carries a mark, the briefing says which, and the contract pays this much more.
+ */
+export const ELITE_TIER = 3;
+export const ELITE_PAY = 400;
 
 /** The words open contracts are written with. */
 export interface BoardText {
@@ -52,6 +59,8 @@ export interface BoardText {
   threats: Record<string, string>;
   debriefs: string[];
   battles: (count: number) => string;
+  /** Keyed by mark: a line saying that an elite is there and what sets it apart. */
+  elite: Record<EnemyMark, string>;
 }
 
 /** How far the board has grown: one tier per five battles won, two per cycle. */
@@ -129,6 +138,21 @@ export function generateBoard(battlesWon: number, cycle: number, text: BoardText
       reward: PAY_PER_POINT * spent + PAY_PER_BATTLE * battleCount,
       battles, scale: scaleFor(tier),
     });
+  }
+  // Whether the heaviest contract is an elite one is decided on dice of its own, so that every board
+  // is otherwise exactly the board it always was.
+  const fate = new Dice(((battlesWon + 1) * 104729 + cycle * 7919 + 13) | 0);
+  const heaviest = board[BOARD_SIZE - 1];
+  if (contractTier(battlesWon, cycle, BOARD_SIZE - 1) >= ELITE_TIER && fate.roll(2) === 0) {
+    const battle = heaviest.battles[heaviest.battles.length - 1];
+    // The mark goes to the dearest machine of the last battle, the first of them when two cost the same.
+    let at = 0;
+    battle.enemies.forEach((id, i) => { if (ENEMY_COST[id] > ENEMY_COST[battle.enemies[at]]) at = i; });
+    const mark = fate.pick(MARKS);
+    battle.marks = { [at]: mark };
+    heaviest.elite = mark;
+    heaviest.reward += ELITE_PAY;
+    heaviest.briefing = [...heaviest.briefing, text.elite[mark]];
   }
   return board;
 }

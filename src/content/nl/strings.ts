@@ -288,7 +288,7 @@ export const STRINGS_NL = {
   briefing: {
     accept: 'Aannemen', back: 'Terug', reward: 'LOON', engagements: (n: number) => (n === 1 ? '1 GEVECHT' : `${n} GEVECHTEN`),
     hostiles: 'VERWACHT', exclusive: 'EXCLUSIEF: de andere twee klanten trekken hun aanbod in.',
-    finale: 'LAATSTE ZET VAN DE OORLOG', repeatable: 'DOORLOPEND CONTRACT', open: 'OPEN CONTRACT',
+    finale: 'LAATSTE ZET VAN DE OORLOG', repeatable: 'DOORLOPEND CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: EEN ELITE',
     verdict: 'VONNIS: je antwoord eindigt het verhaal. Het andere aanbod vervalt.',
     replay: 'ARCHIEF: minder loon. Het verhaal verandert niet.',
     lent: 'LEENMECH: de jouwe kan niet mee. Rekening blijft van jou.',
