@@ -98,7 +98,7 @@ const FIELD: Record<string, EnemyDef> = {
   },
   // A rail on rotors: it charges for a turn, then shoots through armour.
   longshot: {
-    id: 'longshot', name: 'Longshot', ai: 'gunner', sprite: 'enemy-longshot',
+    id: 'longshot', name: 'Railhawk', ai: 'gunner', sprite: 'enemy-longshot',
     build: { core: 'core-longshot', legs: 'legs-lien-drone', generator: 'gen-lien-drone', shoulder: 'wpn-longshot-rail' },
   },
   // Two more machines that are a battle on their own.

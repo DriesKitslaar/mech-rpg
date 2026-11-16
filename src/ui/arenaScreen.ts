@@ -1,4 +1,4 @@
-import { ARENA_RANKS, CHAMPION_RANK, arenaPurse, checkChallenge, mirrorEnemy, mirrorOpen, mirrorPurse, shownRanks } from '../core/arena';
+import { ARENA_RANKS, CHAMPION_RANK, CUPS, arenaPurse, checkChallenge, cupOpen, cupPurse, cupWon, mirrorEnemy, mirrorOpen, mirrorPurse, shownRanks } from '../core/arena';
 import { ARENA, ARENA_ENEMIES } from '../content/arena';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -36,6 +36,8 @@ export class ArenaScreen implements Screen {
         note: String(arenaPurse(game, o)),
       })),
       { id: MIRROR, label: A.mirror.title, enabled: mirrorOpen(game), note: mirrorOpen(game) ? String(mirrorPurse(game)) : A.locked },
+      // The three cups, under everything else: each opens to a pilot who has beaten its three on the ladder.
+      ...CUPS.map((cup) => ({ id: cup.id, label: A.cups.names[cup.id], enabled: cupOpen(game, cup), note: cupOpen(game, cup) ? String(cupPurse(game, cup)) : A.locked })),
     ];
     // The cursor starts on the next opponent, or on the last one once there is nobody left to beat.
     const index = items.findIndex((item) => item.id === at);
@@ -44,7 +46,12 @@ export class ArenaScreen implements Screen {
 
   /** The opponent under the cursor; none while it is on the mirror match. */
   private get opponent() {
-    return this.list.selected?.id === MIRROR ? undefined : ARENA[this.list.cursor];
+    return this.list.selected?.id.startsWith('rank-') ? ARENA[this.list.cursor] : undefined;
+  }
+
+  /** The cup under the cursor, if it is on one. */
+  private get cup() {
+    return CUPS.find((cup) => cup.id === this.list.selected?.id);
   }
 
   update(dtMs: number): void {
@@ -57,12 +64,13 @@ export class ArenaScreen implements Screen {
     else if (action === 'cancel') this.app.go('hub');
     else if (action === 'confirm' && this.list.selected?.enabled) {
       if (this.opponent) this.app.openArenaBriefing(this.opponent.rank);
+      else if (this.cup) this.app.openCupBriefing(this.cup.id);
       else this.app.openMirrorBriefing();
     }
   }
 
   view(): ScreenView {
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, arena: { rank: this.app.game!.arenaRank, of: this.shown } };
+    return { menu: { items: this.list.items, cursor: this.list.cursor }, arena: { rank: this.app.game!.arenaRank, of: this.shown, cups: this.app.game!.cups ?? [] } };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -75,7 +83,9 @@ export class ArenaScreen implements Screen {
 
     // The selected opponent's mech, facing left towards the list. For the mirror match, the pilot's own in the house paint.
     const o = this.opponent;
-    const shown = o ? ARENA_ENEMIES[o.enemy] : mirrorEnemy(game, A.mirror.name);
+    const cup = this.cup;
+    // For a cup, the last of its three: the one the purse has to be taken from.
+    const shown = o ? ARENA_ENEMIES[o.enemy] : cup ? ARENA_ENEMIES[ARENA[cup.ranks[2] - 1].enemy] : mirrorEnemy(game, A.mirror.name);
     ctx.save();
     ctx.translate(LOGICAL_W + 6, 18);
     ctx.scale(-1, 1);
@@ -91,13 +101,16 @@ export class ArenaScreen implements Screen {
     drawList(ctx, this.list, 10, 32, 134, ROWS);
 
     drawPanel(ctx, 4, 184, LOGICAL_W - 8, 82);
-    const state = !o ? (this.list.selected?.enabled ? A.next : A.locked)
+    const state = cup ? (!cupOpen(game, cup) ? A.locked : cupWon(game, cup) ? A.cups.won : A.cups.open)
+      : !o ? (this.list.selected?.enabled ? A.next : A.locked)
       : o.rank <= game.arenaRank ? A.beaten : o.rank === game.arenaRank + 1 ? A.next : A.locked;
-    drawText(ctx, (o ? o.name : A.mirror.title).toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
+    drawText(ctx, (o ? o.name : cup ? A.cups.names[cup.id] : A.mirror.title).toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
     drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === A.locked ? COLORS.danger : state === A.next ? COLORS.armor : COLORS.dim });
     // The one at the top of what this pilot can see has a word for whoever has beaten them.
     const last = o && o.rank === game.arenaRank && (o.rank === CHAMPION_RANK || o.rank === ARENA_RANKS);
-    const words = !o ? (this.list.selected?.enabled ? A.mirror.style : A.mirror.locked)
+    const cupNames = cup ? cup.ranks.map((rank) => ARENA[rank - 1].name) : [];
+    const words = cup ? (cupOpen(game, cup) ? A.cups.style(cupNames) : A.cups.locked(cupNames[2]))
+      : !o ? (this.list.selected?.enabled ? A.mirror.style : A.mirror.locked)
       : last ? (o.rank === ARENA_RANKS ? A.apex : A.champion) : o.style;
     wrap(words, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + i * LINE));
     drawText(ctx, A.back, LOGICAL_W / 2, 253, { align: 'center', color: COLORS.dim });

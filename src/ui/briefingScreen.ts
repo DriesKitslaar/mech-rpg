@@ -129,6 +129,7 @@ export class BriefingScreen implements Screen {
     const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
     const tag = isDrill(mission) ? STRINGS.training.tag
       : mission.loaner !== undefined ? B.lent
+      : mission.id.startsWith('cup-') ? STRINGS.arena.cups.tag
       : mission.arenaRank !== undefined || mission.id === MIRROR_ID ? STRINGS.arena.fight
       : mission.replay ? B.replay
       : mission.id.startsWith('open-') ? B.open

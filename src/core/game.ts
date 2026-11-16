@@ -45,6 +45,8 @@ export interface GameState {
   ranks: Record<string, Rank>;
   /** Ids of the scenes shown in this cycle. */
   scenes: string[];
+  /** Ids of the arena cups won. */
+  cups?: string[];
   /** The run of the Gauntlet under way, if there is one. */
   gauntlet?: Run | null;
   /** The most floors of the Gauntlet cleared in one run. */
@@ -276,6 +278,7 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
+  if (value.cups !== undefined && !(isTextList(value.cups) && value.cups.length <= 16)) return false;
   const { gauntlet, gauntletBest } = value;
   // What the run holds is checked where a game is loaded; here it only has to be a thing or nothing.
   if (gauntlet !== undefined && gauntlet !== null && !isRecord(gauntlet)) return false;

@@ -22,7 +22,7 @@ export function battleTrack(mission: Mission, index: number, enemies: Record<str
   // The last word goes to the boss song: the rival at full strength is a boss like any other.
   if (isBossBattle(mission.battles[index], enemies)) return 'boss';
   if (mission.battles[index]?.enemies.some((id) => RIVALS.includes(id))) return 'rival';
-  if (mission.arenaRank !== undefined || mission.id === MIRROR_ID) return 'arena';
+  if (mission.arenaRank !== undefined || mission.id === MIRROR_ID || mission.id.startsWith('cup-')) return 'arena';
   // The war, the audit and the verdicts have a harder song than the first act and the odd jobs.
   return ['path', 'finale', 'audit', 'verdict'].includes(mission.phase) ? 'battle2' : 'battle';
 }

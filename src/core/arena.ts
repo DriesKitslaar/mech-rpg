@@ -84,3 +84,44 @@ export function mirrorMission(state: GameState, text: { client: string; win: str
 export function recordMirrorWin(state: GameState): GameState {
   return { ...state, stats: { ...state.stats, mirrors: state.stats.mirrors + 1 } };
 }
+
+/**
+ * A cup: three opponents of the ladder back to back, with only field service between them. It opens
+ * to a pilot who has beaten all three, pays its purse once and a quarter after, and is kept on record.
+ */
+export interface Cup {
+  /** Begins with `cup-`. */
+  id: string;
+  /** The ranks of the three opponents, in the order they are fought. */
+  ranks: [number, number, number];
+  purse: number;
+  /**
+   * Multiplies the mean strength of its three on the ladder. Measured, not reasoned: three in a row
+   * with only field service between is much harder than three apart, and the more so the higher up.
+   */
+  tune: number;
+}
+export const CUPS: Cup[] = [
+  { id: 'cup-bronze', ranks: [1, 2, 3], purse: 2500, tune: 0.95 },
+  { id: 'cup-silver', ranks: [5, 6, 7], purse: 6000, tune: 0.85 },
+  { id: 'cup-gold', ranks: [8, 9, 10], purse: 12000, tune: 0.6 },
+];
+
+export const isCup = (mission: Mission): boolean => mission.id.startsWith('cup-');
+export const cupOpen = (state: GameState, cup: Cup): boolean => state.arenaRank >= cup.ranks[2];
+export const cupWon = (state: GameState, cup: Cup): boolean => (state.cups ?? []).includes(cup.id);
+export const cupPurse = (state: GameState, cup: Cup): number => (cupWon(state, cup) ? Math.round(cup.purse / 4) : cup.purse);
+
+/** A cup in the shape of a contract of three battles. */
+export function cupMission(state: GameState, cup: Cup, ladder: ArenaOpponent[], text: { client: string; win: string; title: string; briefing: (names: string[]) => string[] }): Mission {
+  const opponents = cup.ranks.map((rank) => ladder[rank - 1]);
+  const scale = Math.round((opponents.reduce((sum, o) => sum + o.scale, 0) / opponents.length) * cup.tune * 100) / 100;
+  return {
+    id: cup.id, phase: 'patrol', title: text.title, client: text.client, briefing: text.briefing(opponents.map((o) => o.name)), debrief: text.win,
+    reward: cupPurse(state, cup), battles: opponents.map((o) => ({ enemies: [o.enemy], background: 'bg-arena' })), scale,
+  };
+}
+
+export function recordCupWin(state: GameState, cupId: string): GameState {
+  return (state.cups ?? []).includes(cupId) ? state : { ...state, cups: [...(state.cups ?? []), cupId] };
+}

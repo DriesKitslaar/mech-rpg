@@ -1,5 +1,7 @@
 import { adviceAfter, type Advice } from '../core/advice';
-import { MIRROR_ID, arenaMission, checkChallenge, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordMirrorWin } from '../core/arena';
+import {
+  CUPS, MIRROR_ID, arenaMission, checkChallenge, cupMission, cupOpen, isCup, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordCupWin, recordMirrorWin,
+} from '../core/arena';
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
@@ -536,6 +538,20 @@ export class App {
     return mirrorMission(game, { client: STRINGS.arena.client, win: STRINGS.arena.win, ...STRINGS.arena.mirror });
   }
 
+  /** A cup, if the office enters this pilot for it. */
+  private cupFight(cupId: string): Mission | undefined {
+    const game = this.game;
+    const cup = CUPS.find((c) => c.id === cupId);
+    if (!game || !cup || !this.sideWorkOpen() || !cupOpen(game, cup)) return undefined;
+    const A = STRINGS.arena;
+    return cupMission(game, cup, ARENA, { client: A.client, win: A.win, title: A.cups.names[cup.id], briefing: A.cups.briefing });
+  }
+
+  openCupBriefing(cupId: string): void {
+    const mission = this.cupFight(cupId);
+    if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
+  }
+
   openMirrorBriefing(): void {
     const mission = this.mirrorFight();
     if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
@@ -657,6 +673,7 @@ export class App {
   closeBriefing(mission: Mission): void {
     if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
     else if (mission.id === MIRROR_ID) this.show('arena', new ArenaScreen(this, MIRROR));
+    else if (isCup(mission)) this.show('arena', new ArenaScreen(this, mission.id));
     else if (mission.arenaRank !== undefined) this.show('arena', new ArenaScreen(this, `rank-${mission.arenaRank}`));
     else this.openHub(mission.replay ? 'archive' : 'contracts', mission.id);
   }
@@ -685,6 +702,7 @@ export class App {
     if (missionId.startsWith('drill-')) return this.drillFight(missionId);
     if (missionId.startsWith('gauntlet-')) return this.gauntletFloor()?.id === missionId ? this.gauntletFloor() : undefined;
     if (missionId === MIRROR_ID) return this.mirrorFight();
+    if (missionId.startsWith('cup-')) return this.cupFight(missionId);
     const arena = /^arena-(\d+)$/.exec(missionId);
     return arena ? this.arenaFight(Number(arena[1])) : this.missions().find((m) => m.id === missionId);
   }
@@ -762,6 +780,7 @@ export class App {
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
       else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);
+      else if (isCup(mission)) next = recordCupWin(next, mission.id);
       else if (MISSIONS.some((m) => m.id === mission.id)) {
         // Winning a contract again from the archive completes nothing new; its rank can still improve.
         next = completeMission(next, mission.id, MISSIONS);

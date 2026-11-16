@@ -171,6 +171,18 @@ export const STRINGS = {
     next: 'NEXT OPPONENT', beaten: 'BEATEN', locked: 'LOCKED', champion: 'You are the champion of Varn.',
     yourRank: (n: number, of: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/${of}`), fight: 'ARENA FIGHT', back: 'A: challenge   B: back',
     apex: 'There is nobody left to beat. The back room drinks to you.',
+    // The cups: three of the ladder back to back.
+    cups: {
+      tag: 'ARENA CUP: three fights, no rest',
+      names: { 'cup-bronze': 'Bronze Cup', 'cup-silver': 'Silver Cup', 'cup-gold': 'Gold Cup' } as Record<string, string>,
+      briefing: (names: string[]) => [
+        `Three fights back to back: ${names[0]}, then ${names[1]}, then ${names[2]}.`,
+        'Field service between them and nothing more. What you lose in the first you miss in the third.',
+      ],
+      style: (names: string[]) => `${names.join(', ')}: one after the other, with only field service between. The purse is paid for all three or not at all.`,
+      locked: (name: string) => `The office enters pilots who have beaten ${name} on the ladder.`,
+      won: 'WON', open: 'OPEN',
+    },
     mirror: {
       title: 'Mirror Match', name: 'Echo', taunt: 'After you.',
       style: 'The house pilot flies a copy of your mech as it stands today, part for part, tuned a little hotter. Whatever you bring, it brings.',

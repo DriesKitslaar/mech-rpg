@@ -33,7 +33,7 @@ describe('the bounty board', () => {
     const targets = BOUNTIES.map((m) => m.battles[0].enemies[0]);
     expect(targets).toEqual(['magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary']);
     // Nobody on the board shares a name with anybody in the arena, and the open contracts never field them.
-    expect(ARENA.map((a) => a.name).filter((name) => targets.some((t) => ENEMIES[t].name === name))).toEqual([]);
+    expect(ARENA.map((a) => a.name).filter((name) => Object.values(ENEMIES).some((e) => e.name === name))).toEqual([]);
     for (let wins = 0; wins < 300; wins += 7) {
       for (const open of generateBoard(wins, wins % 3, BOARD_TEXT)) expect(open.battles.flatMap((b) => b.enemies).filter((id) => targets.includes(id))).toEqual([]);
     }

@@ -143,8 +143,8 @@ export const GUILD_JOBS: Mission[] = [
   {
     id: 'guild-2', phase: 'side', series: 'guild', when: 'rival-1', title: 'Live Wires', ...GUILD, reward: 2400, scale: 1.25,
     briefing: [
-      'Lumen has planted arc pylons along our lane and hung a Longshot over them. Every hit from a pylon heats you up.',
-      'The Longshot charges for a turn before it fires through your armour. A hunter drone runs errands for them. Clear the lane.',
+      'Lumen has planted arc pylons along our lane and hung a Railhawk over them. Every hit from a pylon heats you up.',
+      'The Railhawk charges for a turn before it fires through your armour. A hunter drone runs errands for them. Clear the lane.',
     ],
     debrief: 'The lane is dark again, which is how the Night Market likes it.',
     battles: [battle(['arc-pylon', 'longshot', 'hunter-drone'], 'bg-neon-district'), battle(['arc-pylon', 'breacher'], 'bg-neon-district')],
