@@ -119,3 +119,37 @@ test('the Gauntlet\'s doors: an elite behind one, a fourth thing on offer for be
   await page.screenshot({ path: shot('gauntlet-relic-held') });
   expect(errors).toEqual([]);
 });
+
+test('faces and voices: a wanted notice with a face, the wanted pilot\'s word as the fight opens, and the wingman on the radio', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  let g = pilot(6);
+  for (const id of ['hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1']) g = completeMission(g, id, MISSIONS);
+  await page.addInitScript((save) => {
+    if (!window.localStorage.getItem('ironwage-save')) window.localStorage.setItem('ironwage-save', save);
+  }, JSON.stringify({ ...g, credits: 9000, scenes: SCENES.map((s) => s.id), choices: {} }));
+  // At the game's own speed: in fast mode nobody talks.
+  await page.goto('/?seed=7');
+  await page.waitForFunction(() => (window as any).__game?.snapshot().screen === 'title');
+  await choose(page, 'continue');
+  await enterHub(page);
+  await choose(page, 'contracts');
+  await choose(page, 'bounty-1');
+  await waitForScreen(page, 'briefing');
+  // The screen opens out of the dark and writes its text: wait for both.
+  await page.waitForTimeout(4500);
+  await page.screenshot({ path: shot('briefing-wanted') });
+  await choose(page, 'wingman');
+  await choose(page, 'accept');
+  await waitForPhase(page, 'talk');
+  expect((await snap(page)).battle?.spoken).toBe('Nice helmet. I will have it when you are done with it.');
+  for (let i = 0; i < 60 && (await snap(page) as unknown as { battle: { typing: boolean } }).battle.typing; i++) await page.waitForTimeout(100);
+  await page.screenshot({ path: shot('battle-wanted-talk') });
+  // The wingman waits until Magpie is done, and then reports in.
+  expect((await snap(page) as unknown as { battle: { radio: string | null } }).battle.radio).toMatch(/^KITE: /);
+  for (let i = 0; i < 40 && (await snap(page)).battle?.phase === 'talk'; i++) { await press(page, 'Enter'); await page.waitForTimeout(150); }
+  await page.waitForTimeout(300);
+  expect((await snap(page) as unknown as { battle: { radio: string | null } }).battle.radio).toBe('KITE: On station. Ready when you are.');
+  await page.screenshot({ path: shot('battle-radio') });
+  expect(errors).toEqual([]);
+});

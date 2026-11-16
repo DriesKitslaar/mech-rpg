@@ -38,32 +38,32 @@ const MANTIS = { head: 'head-mantis', core: 'core-mantis', arms: 'arms-mantis', 
 const WANTED: Record<string, EnemyDef> = {
   // Quick, and after the head: a thief who strips cockpits.
   magpie: {
-    id: 'magpie', name: 'Magpie', ai: 'skirmisher', sprite: 'enemy-rival', composed: true, paint: 'royal',
+    id: 'magpie', name: 'Magpie', ai: 'skirmisher', sprite: 'enemy-rival', composed: true, portrait: 'portrait-magpie', paint: 'royal',
     build: { ...HALO, generator: 'gen-prism', rightHand: 'wpn-enemy-carbine', leftHand: 'wpn-enemy-needle' },
   },
   // A Bulwark on tracks with a mortar: slow, and it hunts whatever is already broken.
   dredge: {
-    id: 'dredge', name: 'Dredge', ai: 'bruiser', sprite: 'enemy-rival', composed: true, paint: 'desert',
+    id: 'dredge', name: 'Dredge', ai: 'bruiser', sprite: 'enemy-rival', composed: true, portrait: 'portrait-dredge', paint: 'desert',
     build: { ...BULWARK, legs: 'legs-crawler', generator: 'gen-furnace', rightHand: 'wpn-enemy-shotgun', shoulder: 'wpn-enemy-mortar' },
   },
   // Charges a rail behind a tower shield.
   lark: {
-    id: 'lark', name: 'Lark', ai: 'gunner', sprite: 'enemy-rival', composed: true, paint: 'rose',
+    id: 'lark', name: 'Lark', ai: 'gunner', sprite: 'enemy-rival', composed: true, portrait: 'portrait-lark', paint: 'rose',
     build: { ...HALO, generator: 'gen-prism', rightHand: 'wpn-enemy-longbow', leftHand: 'shd-tower' },
   },
   // A hot blade, a leap, and needles for when the blade arm is gone.
   hollow: {
-    id: 'hollow', name: 'Hollow', ai: 'skirmisher', sprite: 'enemy-rival', composed: true, paint: 'toxic',
+    id: 'hollow', name: 'Hollow', ai: 'skirmisher', sprite: 'enemy-rival', composed: true, portrait: 'portrait-hollow', paint: 'toxic',
     build: { ...MANTIS, generator: 'gen-tidal', booster: 'bst-ram', rightHand: 'wpn-thermal-cutter', leftHand: 'wpn-enemy-needle' },
   },
   // A Ronin that cooks its targets and takes its time.
   paragon: {
-    id: 'paragon', name: 'Paragon', ai: 'sprayer', sprite: 'enemy-rival', composed: true, paint: 'sunburst',
+    id: 'paragon', name: 'Paragon', ai: 'sprayer', sprite: 'enemy-rival', composed: true, portrait: 'portrait-paragon', paint: 'sunburst',
     build: { ...RONIN, ...STOCK, generator: 'gen-furnace', module: 'mod-coolant', rightHand: 'wpn-thermal-lance', shoulder: 'wpn-inferno-pod' },
   },
   // Meridian's own, gone private: an Auditor frame with a barrier and a decree.
   notary: {
-    id: 'notary', name: 'The Notary', ai: 'bruiser', sprite: 'enemy-bailiff', composed: true, paint: 'obsidian',
+    id: 'notary', name: 'The Notary', ai: 'bruiser', sprite: 'enemy-bailiff', composed: true, portrait: 'portrait-notary', paint: 'obsidian',
     build: { ...AUDITOR, generator: 'gen-tidal', module: 'mod-barrier', rightHand: 'wpn-enemy-writ', leftHand: 'wpn-enemy-seizer', shoulder: 'wpn-enemy-decree' },
     phases: [{ at: 0.4, damage: 1.15, line: 'Witnessed, sealed, and now enforced.' }],
   },

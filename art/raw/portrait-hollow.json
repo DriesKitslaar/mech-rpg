@@ -1,0 +1,9 @@
+{
+  "id": "portrait-hollow",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a gaunt hollow-cheeked salvage cutter with sunken eyes and a shaved head, a breathing mask hanging loose at the throat, wearing an oil-stained leather apron over a sickly yellow-green coverall. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

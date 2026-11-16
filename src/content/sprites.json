@@ -1666,6 +1666,41 @@
     "w": 56,
     "h": 56
   },
+  "portrait-magpie": {
+    "file": "sprites/portrait-magpie.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-dredge": {
+    "file": "sprites/portrait-dredge.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-lark": {
+    "file": "sprites/portrait-lark.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-hollow": {
+    "file": "sprites/portrait-hollow.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-paragon": {
+    "file": "sprites/portrait-paragon.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-notary": {
+    "file": "sprites/portrait-notary.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-guild": {
+    "file": "sprites/portrait-guild.png",
+    "w": 56,
+    "h": 56
+  },
   "app-icon": {
     "file": "sprites/app-icon.png",
     "w": 192,

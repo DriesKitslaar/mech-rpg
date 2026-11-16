@@ -1,0 +1,9 @@
+{
+  "id": "portrait-notary",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a severe pale bureaucrat with slicked silver hair and thin lips, a round brass seal lens over one eye like a monocle, wearing a glossy black high-collared robe with a heavy brass seal on a chain. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

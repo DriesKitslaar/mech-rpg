@@ -6,9 +6,15 @@ import type { GameState } from './game';
  * once at the strongest enemy, the way an ally in the story does. They are paid a share of the fee,
  * win or lose nothing: a contract that is lost pays nobody.
  */
+/** The moments a wingman has a word to say on the radio: the battle opening, their own kill, the pilot's, the pilot's core getting thin, the battle won. */
+export type RadioCue = 'start' | 'kill' | 'cheer' | 'warn' | 'win';
+export const RADIO_CUES: RadioCue[] = ['start', 'kill', 'cheer', 'warn', 'win'];
+
 export interface Wingman {
   id: string;
   name: string;
+  /** What they say over the radio during a battle, a short line for each moment. */
+  radio: Record<RadioCue, string>;
   /** A line about them, for the briefing. */
   text: string;
   /** Armour their shot takes off, before the target's guard and cover. */

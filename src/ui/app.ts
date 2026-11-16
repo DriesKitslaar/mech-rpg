@@ -215,10 +215,19 @@ class MissionHost implements Screen {
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
       ...(boss ? { boss: boss.name } : {}),
       coach: this.coach,
+      ...(this.radio() ? { radio: this.radio()! } : {}),
       background: this.mission.battles[this.index].background,
       label: total > 1 ? STRINGS.mission.engagement(this.index + 1, total) : '',
       resultHint: this.hasNext() ? STRINGS.mission.next : STRINGS.hints.result,
     });
+  }
+
+  /** The hired wingman flying along on this battle, and what they say on the radio. An ally of the story's own keeps quiet. */
+  private radio(): { who: string; lines: Wingman['radio'] } | undefined {
+    // Only a wingman who was hired takes orders: that is how one is told from an ally of the story.
+    const support = this.flow.state.support;
+    const wingman = support?.orders ? WINGMEN.find((w) => w.name === support.name) : undefined;
+    return wingman ? { who: wingman.name, lines: wingman.radio } : undefined;
   }
 
   /** True for a pilot who has not finished the introductions of a first story: they are told which button does what. */
@@ -326,6 +335,8 @@ class MissionHost implements Screen {
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
         support: flow.state.support?.name ?? null,
+        // What the hired wingman is saying on the radio, if anything.
+        radio: this.screen.radioLine,
         coach: this.coach,
         ground: flow.state.ground?.id ?? null,
         // The elites on the field, and what sets each apart.
