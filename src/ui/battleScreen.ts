@@ -16,7 +16,7 @@ import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
-import { disc, drawGlow, drawGlows, drawShadow, type Glow, type Pt } from './light';
+import { MAX_LIGHTS, disc, drawGlow, drawGlows, drawShadow, type Glow, type Pt } from './light';
 import {
   CUT_IN_MS, FINISH_HOLD_MS, FINISH_MS, FINISH_SLOW, drawCutIn, drawDefeat, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
 } from './cinema';
@@ -116,6 +116,8 @@ export class BattleScreen {
   private finish: { at: Pt; ms: number } | null = null;
   /** How long the battle has been over. */
   private resultMs = 0;
+  /** How many lights this frame has given to what stands on the field (what flies burns, what is hot glows): the effects get what room is left. */
+  private standing = 0;
   /** Where machines went up, and when: what is left of them smokes for the rest of the battle. */
   private wrecks: { at: Pt; since: number }[] = [];
   private fx = new BattleFx(this.scene());
@@ -384,6 +386,7 @@ export class BattleScreen {
     const { dx, dy } = this.opts.calm ? { dx: 0, dy: 0 } : this.fx.shake();
     this.syncTalk();
     const field = { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W };
+    this.standing = 0;
     ctx.save();
     // The last machine to fall is looked at from twice as close. A calm picture stays where it is.
     if (this.finish && !this.opts.calm) lookClose(ctx, this.finish.at, field);
@@ -414,8 +417,9 @@ export class BattleScreen {
     this.fx.draw(ctx);
     this.drawSurge(ctx);
     // The light of everything that burns, fires or glows is added over the field: at half strength, and
-    // never over the whole of it, in a calm picture.
-    if (!this.opts.fast) drawGlows(ctx, this.lights(), this.opts.calm === true);
+    // never over the whole of it, in a calm picture. Sixteen lights are the battle's in all, with those
+    // of what stands on the field counted first.
+    if (!this.opts.fast) drawGlows(ctx, this.lights(), this.opts.calm === true, MAX_LIGHTS - this.standing);
     if (this.hitStop.flash > 0 && !this.opts.calm) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
       ctx.fillRect(0, 14, LOGICAL_W, PANEL_Y - 14);
@@ -586,6 +590,7 @@ export class BattleScreen {
       if (unit.destroyed || this.hidden(unit) || unit.heat < HEAT_LIMIT * HOT) continue;
       const at = scene.hitPoint(unit.id, 'core');
       const over = Math.min(1, (unit.heat / HEAT_LIMIT - HOT) / (1 - HOT));
+      this.standing++;
       drawGlow(ctx, { x: at.x, y: at.y, r: 30, color: '#ff5a20', alpha: (0.16 + 0.16 * over) * (0.8 + 0.2 * Math.sin(this.clock / 140)) }, this.opts.calm ? 0.5 : 1);
       // Wisps of hot air rising off it.
       for (let i = 0; i < 4; i++) {
@@ -820,6 +825,7 @@ export class BattleScreen {
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
       // What flies burns underneath to stay up.
       if (flies && !this.opts.fast && !this.duel()) {
+        this.standing++;
         drawGlow(ctx, { x: r.x + r.w / 2, y: r.y + r.h - 4 + hover, r: 9 + r.w * 0.22, color: '#ff7ab8', alpha: 0.3 + 0.1 * Math.sin(this.clock / 90 + i) }, this.opts.calm ? 0.5 : 1);
       }
       if (this.duel()) {

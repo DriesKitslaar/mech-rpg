@@ -583,6 +583,43 @@ describe('the staged moments in a battle', () => {
     expect(booms(hurried)).toEqual([0, (FINISH_HOLD_MS + 300 / FINISH_SLOW) / 2]);
   });
 
+  test('a whole battle at three times the speed with Auto Turn: the ceilings hold, and nothing staged is left over the result', () => {
+    for (const seed of [3, 7, 11]) {
+      const { flow, screen, page } = screenOf(fight(['gun-turret', 'recon-drone', 'tank'], [], { overdrive: 'deadeye', drive: 100 }, seed), { speed: 3 });
+      let most = 0;
+      let lights = 0;
+      let drove = false;
+      for (let i = 0; i < 40000 && flow.phase !== 'result'; i++) {
+        if (flow.phase === 'action') {
+          // The Overdrive goes off as soon as it can, and after that the turn is left to Auto Turn.
+          if (!drove && flow.overdrive === 'ready') { screen.onInput('next'); drove = true; }
+          const at = flow.menu.items.findIndex((item) => item.id === 'auto');
+          for (let n = flow.menu.cursor; n < at; n++) screen.onInput('down');
+          for (let n = flow.menu.cursor; n > at; n--) screen.onInput('up');
+          screen.onInput('confirm');
+        } else if (flow.phase !== 'animating') screen.onInput('confirm');
+        screen.update(16);
+        most = Math.max(most, screen.motion.particles);
+        if (i % 7 === 0) lights = Math.max(lights, page().glows.filter((g) => g.blend === 'lighter').length);
+      }
+      expect(flow.phase, `seed ${seed}`).toBe('result');
+      expect(drove).toBe(true);
+      expect(most).toBeLessThanOrEqual(320);
+      // Sixteen lights of the battle's own at most; this ground has none of its own.
+      expect(lights).toBeLessThanOrEqual(16);
+      expect(lights).toBeGreaterThan(0);
+      // The battle is over: no band, no close look, no bars, and the field at its own size.
+      for (let i = 0; i < 200; i++) screen.update(16);
+      expect(screen.motion.cutIn).toBeNull();
+      expect(screen.motion.finish).toBeNull();
+      const after = page();
+      expect(after.rects.filter((r) => r.color === BAND || r.color === BARS)).toEqual([]);
+      expect(background(after).w).toBeLessThanOrEqual(322);
+      // What was thrown up has come down: only what a wreck keeps smoking with is left.
+      expect(screen.motion.particles).toBeLessThan(40);
+    }
+  });
+
   test('a press while it lasts goes on to what is next, and the close look is over', () => {
     const { flow, screen, page, kill } = screenOf(fight(['gun-turret'], [0]));
     kill(0);
