@@ -99,9 +99,9 @@ export class DatabaseScreen implements Screen {
       return {
         title: song.title,
         lines: [
-          ...wrap(song.text, PAGE_CHARS), '', D.length(time), D.tempo(SONGS[song.id].bpm), '', ...(on ? [D.playing, D.stop] : [D.play]),
-          // With the music off there is nothing to hear: said, rather than leaving a button that seems dead.
-          ...(this.app.settings.music ? [] : ['', ...wrap(D.musicOff, PAGE_CHARS)]),
+          ...wrap(song.text, PAGE_CHARS), '', D.length(time), D.tempo(SONGS[song.id].bpm), '',
+          // With the music off there is nothing to hear and nothing to press: said, rather than leaving a button that seems dead.
+          ...(this.app.settings.music ? (on ? [D.playing, D.stop] : [D.play]) : wrap(D.musicOff, PAGE_CHARS)),
         ],
       };
     }
@@ -126,6 +126,7 @@ export class DatabaseScreen implements Screen {
 
   /** Plays a song, or stops the one that is playing. Leaving the database brings the hub's own song back. */
   private toggle(id: string): void {
+    if (!this.app.settings.music) return;
     if (this.playing === id) {
       this.playing = null;
       this.app.stopMusic();

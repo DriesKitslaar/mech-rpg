@@ -210,7 +210,7 @@ describe('the database', () => {
   test('is reached from the hub and opens on the units: every kind is listed, the ones not met without a name', () => {
     const { app } = inHub(scout());
     select(app, 'database');
-    expect(snap(app)).toMatchObject({ screen: 'database', page: 'units', count: 'MET 3/44' });
+    expect(snap(app)).toMatchObject({ screen: 'database', page: 'units', count: 'SEEN 3/44' });
     const items = snap(app).menu.items;
     expect(items).toHaveLength(UNITS.length);
     expect(items[0]).toMatchObject({ id: 'recon-drone', label: 'Recon Drone', enabled: true });
