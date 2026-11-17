@@ -1,4 +1,7 @@
-import { JOBS, paintFamilyOf } from '../../scripts/art/jobs';
+import { JOBS, paintFamilyOf, paintGroups } from '../../scripts/art/jobs';
+import manifest from '../../src/content/sprites.json';
+import { analyse } from '../../src/ui/paint';
+import { readPng } from '../helpers/png';
 
 const layer = (id: string) => JOBS.find((job) => job.id === id)!;
 
@@ -48,4 +51,51 @@ test('every frame layer belongs to a family that has a body', () => {
   for (const family of families) {
     expect(JOBS.some((job) => job.kind === 'layer' && job.id.startsWith('core-') && paintFamilyOf(job) === family), family).toBe(true);
   }
+});
+
+describe('what a family is judged by', () => {
+  test('what was cut from its own drawing from the front: not its views from behind, its small copies, or legs edited onto it', () => {
+    const groups = paintGroups(JOBS);
+    expect([...groups.keys()].sort()).toEqual(['auditor', 'bulwark', 'colossus', 'halo', 'mantis', 'ronin', 'salvage', 'wraith']);
+    for (const [family, { judged, all }] of groups) {
+      expect(judged.length, family).toBeGreaterThanOrEqual(5);
+      for (const id of judged) {
+        expect(/\.(back|small)$/.test(id), id).toBe(false);
+        expect(layer(id).references?.[0], id).toMatch(new RegExp(`family-${family}\\.png$`));
+        // Each of them takes the family's paint in all three views.
+        for (const view of ['', '.back', '.small']) expect(all, `${id}${view}`).toContain(`${id}${view}`);
+      }
+      // Whatever takes a family's paint is one of its layers.
+      for (const id of all) expect(paintFamilyOf(layer(id)), id).toBe(family);
+    }
+    expect([...groups.get('bulwark')!.judged].sort()).toEqual(['arms-bulwark.far', 'arms-bulwark.near', 'core-bulwark', 'head-bulwark', 'legs-bulwark']);
+    // Tracks were edited onto the Bulwark's drawing: they take its paint and are no part of what it is judged by.
+    expect(groups.get('bulwark')!.all).toEqual(expect.arrayContaining(['legs-crawler', 'legs-crawler.back', 'legs-crawler.small']));
+    expect(groups.get('bulwark')!.judged).not.toContain('legs-crawler');
+    // Every frame layer there is takes some family's paint.
+    expect([...groups.values()].flatMap((group) => group.all).sort()).toEqual(JOBS.filter((job) => job.kind === 'layer').map((job) => job.id).sort());
+  });
+
+  test('a family with nothing cut from a drawing of its own is judged by what it has from the front, and failing that by what there is', () => {
+    const tracks = JOBS.filter((job) => job.kind === 'layer' && /^legs-crawler(\.|$)/.test(job.id));
+    expect(tracks.map((job) => job.id).sort()).toEqual(['legs-crawler', 'legs-crawler.back', 'legs-crawler.small']);
+    expect(paintGroups(tracks).get('bulwark')!.judged).toEqual(['legs-crawler']);
+    expect([...paintGroups(tracks.filter((job) => job.id !== 'legs-crawler')).get('bulwark')!.judged].sort()).toEqual(['legs-crawler.back', 'legs-crawler.small']);
+    // Only frame layers have a family.
+    expect(paintGroups(JOBS.filter((job) => job.kind !== 'layer')).size).toBe(0);
+  });
+
+  test('the paint that shipped is what that rule gives: worked out again here from each family\'s pictures from the front', () => {
+    const pixels = (id: string): { data: Uint8ClampedArray } => {
+      const picture = readPng(`public/sprites/${id}.png`);
+      const data = new Uint8ClampedArray(picture.w * picture.h * 4);
+      for (let y = 0; y < picture.h; y++) for (let x = 0; x < picture.w; x++) data.set(picture.at(x, y), (y * picture.w + x) * 4);
+      return { data };
+    };
+    const shipped = manifest as Record<string, { paint?: unknown }>;
+    for (const [family, { judged, all }] of paintGroups(JOBS)) {
+      const paint = analyse(judged.map(pixels));
+      for (const id of all) expect(shipped[id].paint, `${family}: ${id}`).toEqual(paint);
+    }
+  });
 });

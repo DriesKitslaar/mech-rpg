@@ -150,6 +150,31 @@ export function paintFamilyOf(layerJob: ArtJob): string {
   return JOBS.find((job) => job.id === `family-${name}`)?.base ?? name;
 }
 
+/**
+ * Per family of frame layers: every layer that takes its paint (`all`), and the layers it is judged
+ * by (`judged`). A family is judged by what was cut from its own drawing from the front. The views
+ * from behind and the small copies take the family's paint and do not shift it: they are the same
+ * machine, and what it looks like painted in the garage must not change because it was drawn again.
+ * Free-standing legs come from an edited copy of a drawing: they take that family's paint and do not
+ * shift it either; a family that has nothing of its own is judged by all it has from the front.
+ */
+export function paintGroups(jobs: ArtJob[]): Map<string, { judged: string[]; all: string[] }> {
+  const families = new Map<string, { own: string[]; front: string[]; all: string[] }>();
+  for (const job of jobs) {
+    if (job.kind !== 'layer') continue;
+    const family = paintFamilyOf(job);
+    const group = families.get(family) ?? { own: [], front: [], all: [] };
+    group.all.push(job.id);
+    // From the front: not a copy of another job's picture, and in the pose box every layer has unless it says otherwise.
+    if (!job.source && !job.box) {
+      group.front.push(job.id);
+      if (job.references?.[0]?.endsWith(`family-${family}.png`)) group.own.push(job.id);
+    }
+    families.set(family, group);
+  }
+  return new Map([...families].map(([family, { own, front, all }]) => [family, { judged: own.length > 0 ? own : front.length > 0 ? front : all, all }]));
+}
+
 /* ---- The mech from behind ---- */
 
 const backFile = (family: string): string => `${RAW}/back-${family}.png`;
