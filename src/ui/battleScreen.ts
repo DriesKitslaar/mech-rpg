@@ -962,11 +962,13 @@ export class BattleScreen {
   /**
    * The pilot's mech stands with its back to the camera: it has no eye that can be seen. What is
    * seen of it being alive is its generator, a small warm light on its back that breathes, grows
-   * as the mech runs hotter, and sinks low while the mech is dazed. It goes where the body goes.
-   * Like an eye it is too small to be one of the battle's lights; a hurried game has none.
+   * as the mech runs hotter, and sinks low while the mech is dazed. It goes where the body goes,
+   * and goes out in the frame the mech is seen to come apart, not sooner: the shot that ends it is
+   * still in the air when the rules have it ended. Like an eye it is too small to be one of the
+   * battle's lights; a hurried game has none.
    */
   private drawGenerator(ctx: CanvasRenderingContext2D, player: UnitState, pose: Pose): void {
-    if (this.opts.fast || player.destroyed) return;
+    if (this.opts.fast || this.puppet(player).breaking !== null) return;
     const t = this.fx.transform(player.id);
     const body = pose.core ?? { dx: 0, dy: 0 };
     const stance = this.stances.of(player.id);

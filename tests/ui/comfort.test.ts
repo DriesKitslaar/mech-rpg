@@ -120,6 +120,8 @@ describe('a calm picture', () => {
     expect(app.settings.calm).toBeUndefined();
     expect(JSON.parse(store.data[SETTINGS_KEY]).calm).toBeUndefined();
     expect(STRINGS.options.calmHelp).toMatch(/shaking/);
+    // And since the battle is looked at through a camera that moves: that it stands still.
+    expect(STRINGS.options.calmHelp).toMatch(/camera/);
   });
 
   /**

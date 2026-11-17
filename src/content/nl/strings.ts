@@ -267,7 +267,7 @@ export const STRINGS_NL = {
     heading: 'OPTIES', sfx: 'Geluidseffecten', music: 'Muziek', rumble: 'Trillen', fastBattles: 'Snel vechten', difficulty: 'Moeilijkheid',
     credits: 'Aftiteling', watch: 'Kijk', title: 'Naar titel',
     textSpeed: 'Teksttempo', textSpeeds: { slow: 'Traag', normal: 'Normaal', fast: 'Snel', instant: 'Direct' },
-    calm: 'Schermeffecten', full: 'Voluit', calmed: 'Rustig', calmHelp: 'Rustig: geen schudden of flitsen in gevecht.',
+    calm: 'Schermeffecten', full: 'Voluit', calmed: 'Rustig', calmHelp: 'Rustig: geen schudden of flitsen, camera stil.',
     detail: 'Lichteffecten', details: { auto: 'Auto', full: 'Vol', lean: 'Minder', bare: 'Uit' },
     detailAuto: { lean: 'Auto: minder', bare: 'Auto: uit' },
     detailHelp: 'Auto: minder gloed als het toestel traag wordt.',

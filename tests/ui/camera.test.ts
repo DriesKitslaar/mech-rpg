@@ -181,6 +181,18 @@ describe('the camera', () => {
     expect(right.view().y).toBeCloseTo(ENEMY.y, 6);
   });
 
+  test('what it pushes in on is where the blow landed, whatever becomes of the point it was told with', () => {
+    const camera = new Camera(NEON);
+    const at = { ...ENEMY };
+    camera.push(at, 0.1);
+    // The one who asked goes on to use its point for something else.
+    at.x = 0;
+    at.y = 300;
+    camera.update(PUSH_IN_MS);
+    expect(camera.view().x).toBeGreaterThan(HOME.x + 5);
+    expect(camera.view().y).toBeCloseTo(ENEMY.y, 6);
+  });
+
   test('a push that is to come starts when its moment does: a blow is pushed in on as it lands, not as it is fired', () => {
     const camera = new Camera(NEON);
     camera.push(ENEMY, 0.1, 200);
@@ -235,6 +247,8 @@ describe('the camera', () => {
       const view = camera.view();
       expect(Math.abs(view.zoom - last.zoom)).toBeLessThan(0.06);
       expect(Math.abs(view.x - last.x)).toBeLessThan(8);
+      // Up and down it has the whole picture to turn in: it turns there by degrees too, as far as it has pushed in.
+      expect(Math.abs(view.y - last.y)).toBeLessThan(6);
       last = view;
     }
     expect(last).toBe(HOME);

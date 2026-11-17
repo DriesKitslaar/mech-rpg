@@ -139,6 +139,20 @@ describe('where enemies stand', () => {
     expect(farLine(sluice)).toBeGreaterThan(FAR_LINE);
     for (const spot of enemySpots(3, sluice)) expect(spot.y).toBeGreaterThanOrEqual(horizonOf(sluice) + 12);
     expect(farLine(placeFor('bg-arena'))).toBe(FAR_LINE);
+    // A picture with next to no floor still has two lines to stand on, fourteen pixels apart: the farthest is never nearer than that.
+    const noFloor = { row: LOWEST_ROW, floor: 262 };
+    expect(horizonOf(noFloor)).toBeGreaterThan(NEAR_LINE);
+    expect(farLine(noFloor)).toBe(NEAR_LINE - 14);
+    for (const spot of enemySpots(3, noFloor)) {
+      expect(spot.y).toBeGreaterThanOrEqual(NEAR_LINE - 14);
+      expect(spot.y).toBeLessThanOrEqual(NEAR_LINE);
+    }
+  });
+
+  test('what flies: the four drones, the gunship, the hunter, the longshot and the Overseer, and nothing else', () => {
+    expect([...FLYERS].sort()).toEqual([
+      'boss-overseer', 'enemy-gunship', 'enemy-hunter-drone', 'enemy-lien-drone', 'enemy-longshot', 'enemy-recon-drone', 'enemy-repair-drone', 'enemy-shield-drone',
+    ]);
   });
 
   test('every machine there is stands on the field wherever it is put: inside the edges, under the message bar, its bars over the panel', () => {
@@ -248,6 +262,16 @@ describe('the bars under the enemies', () => {
     expect(placeBars([{ x: 150, y: 100, w: 60, h: 40 }, { x: 220, y: 100, w: 60, h: 40 }]).map((bar) => bar.y)).toEqual([142, 142]);
   });
 
+  test('bars that would only touch are moved apart too: a pixel is between any two that are one over the other', () => {
+    // Two machines whose feet are four pixels apart: the lower one's armour line would lie right under the higher one's balance line.
+    const boxes = [{ x: 200, y: 100, w: 64, h: 40 }, { x: 210, y: 104, w: 64, h: 40 }];
+    expect(placeBars(boxes).map((bar) => bar.y)).toEqual([142, 147]);
+    // Five apart, there is a pixel between them as they are.
+    expect(placeBars([{ x: 200, y: 100, w: 64, h: 40 }, { x: 210, y: 105, w: 64, h: 40 }]).map((bar) => bar.y)).toEqual([142, 147]);
+    // Six apart, nothing is moved.
+    expect(placeBars([{ x: 200, y: 100, w: 64, h: 40 }, { x: 210, y: 106, w: 64, h: 40 }]).map((bar) => bar.y)).toEqual([142, 148]);
+  });
+
   test('none goes under the panel, however many are stacked', () => {
     const boxes = [0, 1, 2, 3, 4].map(() => ({ x: 200, y: 110, w: 64, h: 50 }));
     for (const bar of placeBars(boxes)) expect(bar.y + BARS_H).toBeLessThanOrEqual(PANEL_Y - 2);
@@ -301,6 +325,17 @@ describe('a mech built from parts that is fought alone', () => {
       expect(body.w).toBeGreaterThan(70);
       expect(body.h).toBeGreaterThan(90);
     }
+  });
+
+  test('a spot too far right or too far up moves its box in, never its body out of the enemies\' part of the field', () => {
+    const right = duelAt({ x: 400, y: 150 });
+    expect(right.body.x + right.body.w).toBe(ENEMY_RIGHT);
+    expect(right.right).toBeLessThan(400 + SMALL_MIDDLE);
+    const high = duelAt({ x: 238, y: 60 });
+    expect(high.top).toBe(ENEMY_TOP);
+    expect(high.body.y).toBeGreaterThanOrEqual(ENEMY_TOP);
+    // One that fits is left where it was put.
+    expect(duelAt({ x: 238, y: 143 })).toMatchObject({ right: 238 + SMALL_MIDDLE, top: 143 - SMALL_GROUND });
   });
 
   test('every pair of legs it can have stands on the line its box is put on', () => {

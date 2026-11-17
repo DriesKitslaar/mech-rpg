@@ -297,6 +297,17 @@ describe('weather that does more than fall', () => {
     // Where the drops land does not depend on it.
     const crowns = (page: typeof drawn) => page.rects.filter((r) => r.w === 3 && r.h === 1).map((r) => [r.x, r.y]);
     expect(crowns(drawn)).toEqual(crowns(field));
+    // The sky's light fades down from the top of that box, not from the top of the field: the line it is laid along says so.
+    const lines: number[][] = [];
+    const stops = { addColorStop: () => undefined };
+    const ctx = new Proxy({ globalCompositeOperation: 'source-over', fillStyle: '' } as Record<string, unknown>, {
+      get: (t, name: string) => (name === 'createLinearGradient' ? (...args: number[]) => { lines.push(args); return stops; }
+        : name in t ? t[name] : () => undefined),
+      set: (t, name: string, value) => { t[name] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    drawWeatherExtras(ctx, 'rain', stroke, 310, 164, false, 14, lit);
+    drawWeatherExtras(ctx, 'rain', stroke, 310, 164, false, 14);
+    expect(lines).toEqual([[0, -60, 0, -60 + 150 * 0.7], [0, 0, 0, 164 * 0.7]]);
   });
 
   test('where the floor reaches far up the field, rain lands on all of it: as far up as the floor goes and no further', () => {

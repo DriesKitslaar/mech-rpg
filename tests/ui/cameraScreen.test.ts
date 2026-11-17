@@ -257,6 +257,90 @@ describe('when a blow lands', () => {
     expect(PUSH.shell).toBeLessThan(PUSH.blade);
   });
 
+  test('a shell that lands is pushed in on harder than a bullet, and a blade hardest', () => {
+    /** The closest the camera gets over a volley with this weapon, for the first battle it lands in. */
+    const closest = (weapon: 'rightHand' | 'shoulder', build = DEMO_BUILD, boost = false): number => {
+      for (let seed = 1; seed < 40; seed++) {
+        const flow = new BattleFlow(createBattle(build, [ENEMIES['gun-turret']], CATALOG, seed), CATALOG, { quiet: true });
+        const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, background: NEON });
+        const settle = (): void => { for (let i = 0; i < 4000 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16); };
+        const choose = (id: string): boolean => {
+          const at = flow.menu.items.findIndex((item) => item.id === id);
+          if (at < 0 || !flow.menu.items[at].enabled) return false;
+          for (let n = flow.menu.cursor; n < at; n++) screen.onInput('down');
+          for (let n = flow.menu.cursor; n > at; n--) screen.onInput('up');
+          screen.onInput('confirm');
+          return true;
+        };
+        settle();
+        if (boost) { if (!choose('boost')) continue; settle(); }
+        if (!choose('fire') || !choose(weapon)) continue;
+        screen.onInput('confirm');
+        if (!/hits Gun Turret/.test(flow.message) || flow.state.units[1].destroyed) continue;
+        let most = 1;
+        for (let i = 0; i < 70; i++) { screen.update(16); most = Math.max(most, screen.motion.view.zoom); }
+        return most;
+      }
+      throw new Error('no volley landed');
+    };
+    expect(closest('rightHand')).toBeCloseTo(1 + PUSH.shot, 2);
+    expect(closest('shoulder')).toBeCloseTo(1 + PUSH.shell, 2);
+    expect(closest('rightHand', { ...DEMO_BUILD, rightHand: 'wpn-arc-blade' }, true)).toBeCloseTo(1 + PUSH.blade, 2);
+  });
+
+  test('while it is pushed in, the darker edges, the white of a held blow and a stroke of lightning cover what is seen: the field, exactly', () => {
+    const whole = (r: { x: number; y: number; w: number; h: number }): void => {
+      expect(r.x).toBeCloseTo(0, 6);
+      expect(r.y).toBeCloseTo(FIELD_Y, 6);
+      expect(r.w).toBeCloseTo(310, 6);
+      expect(r.h).toBeCloseTo(PANEL_Y - FIELD_Y, 6);
+    };
+    // The darker edges, as a shot lands.
+    const plain = screenOf(fight(['recon-drone', 'tank', 'gun-turret']));
+    plain.ready();
+    plain.fire();
+    let pushed: Drawn | null = null;
+    for (let i = 0; i < 60 && !pushed; i++) { plain.screen.update(16); if (plain.screen.motion.view.zoom > 1.04) pushed = plain.page(); }
+    const edges = pushed!.glows.filter(isVignette);
+    expect(edges).toHaveLength(1);
+    expect(edges[0].x).toBeCloseTo(155, 6);
+    expect(edges[0].y).toBeCloseTo(FIELD_Y + (PANEL_Y - FIELD_Y) / 2, 6);
+    // The white of a held blow. A blow that is held holds the camera too, so the two meet only when the field is held
+    // while a push is still going: with battles played faster, one blow lands on the heels of another. Here the two are
+    // brought together by hand: the camera is half way into a push when the field is struck.
+    const held = screenOf(fight(['recon-drone', 'tank']));
+    held.ready();
+    const inner = held.screen as unknown as { camera: { push(at: { x: number; y: number }, amount: number): void }; hitStop: { strike(ms: number): void } };
+    inner.camera.push({ x: 240, y: 60 }, 0.12);
+    held.screen.update(64);
+    inner.hitStop.strike(140);
+    held.screen.update(16);
+    expect(held.screen.motion.flash).toBeGreaterThan(0);
+    expect(held.screen.motion.view.zoom).toBeGreaterThan(1.05);
+    // It has turned up the picture, past the top of the stage's own field: what is seen is not inside that field.
+    expect(held.screen.motion.view.y - (PANEL_Y - FIELD_Y) / 2 / held.screen.motion.view.zoom).toBeLessThan(FIELD_Y);
+    const flash = held.page();
+    const white = flash.rects.filter((r) => /^rgba\(255, 255, 255, 0\.\d+\)$/.test(r.color) && r.w > 200);
+    expect(white).toHaveLength(1);
+    whole(white[0]);
+    // A stroke of lightning that falls while a shot lands.
+    const storm = screenOf(fight(['recon-drone', 'tank', 'gun-turret']));
+    storm.ready();
+    const clock = (): number => (storm.screen as unknown as { clock: number }).clock;
+    // The first stroke that is still far enough off for the shot to be fired into it.
+    const from = Math.ceil(clock() / 2) * 2 + 500;
+    const stroke = Array.from({ length: LIGHTNING_MS }, (_, i) => from + i * 2).find((ms) => lightning(ms) === 1 && lightning(ms - 2) === 0)!;
+    expect(stroke).toBeGreaterThan(clock() + 400);
+    while (clock() < stroke - 190) storm.screen.update(2);
+    storm.fire();
+    expect(storm.flow.message).toMatch(/hits/);
+    while (clock() < stroke + 40) storm.screen.update(2);
+    expect(storm.screen.motion.view.zoom).toBeGreaterThan(1.01);
+    const lit = storm.page().rects.filter((r) => r.blend === 'overlay');
+    expect(lit).toHaveLength(1);
+    whole(lit[0]);
+  });
+
   test('while it is pushed in everything on the field is drawn inside the field, and what is written over the field stays where it is', () => {
     const { screen, page, ready, fire } = screenOf(fight(['recon-drone', 'tank', 'gun-turret']));
     ready();

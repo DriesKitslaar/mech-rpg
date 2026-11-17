@@ -131,6 +131,46 @@ describe('the place a battle is fought in', () => {
   });
 });
 
+describe('what happens on the floor', () => {
+  test('rain lands on the whole of it: from where the floor begins down to the panel, and nowhere over the floor', () => {
+    const { screen, page } = screenOf(['gun-turret'], { fast: false });
+    const horizon = horizonOf(placeFor('bg-neon-district'));
+    const rows = new Set<number>();
+    for (let i = 0; i < 400; i++) {
+      screen.update(48);
+      for (const crown of page().rects.filter((r) => r.w === 3 && r.h === 1 && r.color.startsWith('rgba(190, 215, 255,'))) rows.add(crown.y);
+    }
+    expect(rows.size).toBeGreaterThan(40);
+    expect(Math.min(...rows)).toBeGreaterThanOrEqual(horizon + 3);
+    expect(Math.min(...rows)).toBeLessThan(horizon + 12);
+    expect(Math.max(...rows)).toBeLessThan(PANEL_Y);
+    expect(Math.max(...rows)).toBeGreaterThanOrEqual(PANEL_Y - 6);
+  });
+
+  test('what falls off a machine comes to rest on the floor under that machine: a casing under the pilot\'s gun, wreckage under the drone it came off', () => {
+    const { state, flow, screen } = screenOf(['recon-drone', 'tank'], { fast: false });
+    // The drone at the back has a point of armour left: the first thing that lands takes it apart.
+    for (const part of Object.values(state.units[1].parts)) if (part) part.ap = 1;
+    for (let i = 0; i < 4000 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
+    const thrown: { kind: string; floor: number | undefined }[] = [];
+    const particles = (screen as unknown as { particles: { emit: (...args: unknown[]) => void } }).particles;
+    const emit = particles.emit.bind(particles);
+    particles.emit = (...args: unknown[]) => { thrown.push({ kind: args[0] as string, floor: args[4] as number | undefined }); emit(...args); };
+    screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm');
+    expect(flow.message).toMatch(/Rivet Rifle/);
+    for (let i = 0; i < 200; i++) screen.update(16);
+    const own = screen.motion.at.floor('player');
+    const theirs = screen.motion.at.floor('enemy-0');
+    expect(theirs).toBeLessThan(own - 40);
+    // The rifle throws a casing: it falls at the pilot's feet.
+    expect(thrown.filter((p) => p.kind === 'casing').map((p) => p.floor)).toEqual([own]);
+    // The drone comes apart: every piece of it falls to the line under the drone, far up the screen from the pilot's feet.
+    const debris = thrown.filter((p) => p.kind === 'debris');
+    expect(debris.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(debris.map((p) => p.floor))).toEqual(new Set([theirs]));
+  });
+});
+
 describe('the enemies, further off', () => {
   test('each stands on its spot: its feet on it and its middle over it, or over it when it flies', () => {
     const line = ['recon-drone', 'tank', 'gun-turret'];
