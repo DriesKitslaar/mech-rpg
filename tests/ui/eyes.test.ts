@@ -253,6 +253,10 @@ describe('the eyes of the machines on the field', () => {
     const awake = battle(['tank', 'gun-turret'], () => undefined, { calm: true });
     const full = strength(eyeIn(awake.page(), 'enemy-tank')!);
     const dazed = battle(['tank', 'gun-turret'], (state) => { state.units[1].staggered = 2; state.units[2].overheated = true; }, { calm: true });
+    // The screen shows how they stand once it has caught up with the rules: a frame after the banner is gone.
+    dazed.screen.update(16);
+    expect(dazed.screen.motion.stance('enemy-0').staggered).toBe(true);
+    expect(dazed.screen.motion.stance('enemy-1').overheated).toBe(true);
     // A calm picture's eyes hold: at half strength, the dazed ones at 0.35 of the brightest an eye is.
     for (const picture of ['enemy-tank', 'enemy-gun-turret']) {
       const low = strength(eyeIn(dazed.page(), picture)!);
@@ -294,6 +298,45 @@ describe('the eyes of the machines on the field', () => {
     const bare = battle(['tank', 'gun-turret']);
     setDetail(0);
     expect(bare.page().glows).toEqual([]);
+  });
+
+  test('it sputters when the stagger is seen, not when the rules know of it: the screen can be behind the rules', () => {
+    const { flow, screen, page } = battle(['tank'], () => undefined, { calm: true });
+    const awake = strength(eyeIn(page(), 'enemy-tank')!);
+    expect(awake).toBeGreaterThanOrEqual(EYE_ALPHA * 0.7 * 0.5 - 0.001);
+    // The rules stagger it and cook it with nothing of that shown yet, as when the shot that does it is still in the air: the eye holds.
+    flow.state.units[1].staggered = 2;
+    flow.state.units[1].overheated = true;
+    expect(screen.motion.stance('enemy-0')).toMatchObject({ staggered: false, overheated: false });
+    expect(strength(eyeIn(page(), 'enemy-tank')!)).toBe(awake);
+    // Once the screen has caught up with the rules it is low.
+    screen.update(16);
+    expect(screen.motion.stance('enemy-0')).toMatchObject({ staggered: true, overheated: true });
+    expect(strength(eyeIn(page(), 'enemy-tank')!)).toBeCloseTo(EYE_ALPHA * 0.35 * 0.5, 2);
+  });
+
+  test('a flyer the rules have ended hangs still until it is seen to come apart, and its eye hangs with it', () => {
+    const { flow, screen, page } = battle(['recon-drone', 'tank']);
+    // It bobs, and its eye bobs with it.
+    const heights = new Set<number>();
+    for (let i = 0; i < 120; i++) {
+      screen.update(16);
+      const drawn = page();
+      expect(eyeIn(drawn, 'enemy-recon-drone'), `frame ${i}`).toBeDefined();
+      heights.add(drawnAt(drawn, 'enemy-recon-drone').y);
+    }
+    expect(heights.size).toBeGreaterThanOrEqual(3);
+    // Ended in the rules, not yet seen to break: it hangs where it is, and the eye is on its lens, not bobbing by itself.
+    flow.state.units[1].destroyed = true;
+    const still = new Set<number>();
+    for (let i = 0; i < 120; i++) {
+      screen.update(16);
+      const drawn = page();
+      expect(screen.motion.breaking('enemy-0')).toBeNull();
+      expect(eyeIn(drawn, 'enemy-recon-drone'), `frame ${i}`).toBeDefined();
+      still.add(drawnAt(drawn, 'enemy-recon-drone').y);
+    }
+    expect(still.size).toBe(1);
   });
 
   test('the eyes are apart from the battle\'s sixteen lights, and from its eight where there is to be less light: they are too small to count', () => {

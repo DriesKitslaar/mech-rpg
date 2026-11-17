@@ -7,7 +7,7 @@ import { MenuList } from './menuList';
 import { SCENE_HOLD_MS, drawPlace, hearThunder } from './sceneScreen';
 import { drawWord, fitTall, wordTop } from './signType';
 import { Typewriter } from './typewriter';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawOutlined, drawText, wrap } from './widgets';
+import { COLORS, LINE, OVER_PICTURE, charsFor, drawList, drawPanel, drawPortrait, drawOutlined, drawText, wrap } from './widgets';
 
 /** Where the words of a conversation go: beside the portrait, in the panel at the foot of the screen. */
 const PANEL_Y = 176;
@@ -138,7 +138,7 @@ export class TalkScreen implements Screen {
     if (scene.picture) drawPlace(ctx, this.app, scene.picture, this.clock);
     ctx.fillStyle = `rgba(8, 8, 20, ${TALK_VEIL})`;
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    if (scene.heading) drawOutlined(ctx, scene.heading, LOGICAL_W / 2, 10, { align: 'center', color: COLORS.dim });
+    if (scene.heading) drawOutlined(ctx, scene.heading, LOGICAL_W / 2, 10, { align: 'center', color: OVER_PICTURE });
     // What the conversation is called, in the sign's letters; in the font where the sign cannot write it.
     const tall = fitTall(scene.title, TALK_TITLE_W, TALK_TITLE_TALL);
     if (tall === null) drawText(ctx, scene.title, LOGICAL_W / 2, 22, { size: 16, align: 'center', color: COLORS.accent });

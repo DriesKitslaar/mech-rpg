@@ -34,9 +34,11 @@ export class TitleScreen implements Screen {
   private mode: Mode = 'main';
   /** The slot the question on screen is about. */
   private asked = 0;
-  private clock = 0;
+  /** How long the title has been looked at this session, this visit and those before it. */
+  private clock: number;
 
   constructor(private app: App) {
+    this.clock = app.titleClock;
     this.slots = app.slots();
     this.list = this.mainMenu();
   }
@@ -99,6 +101,7 @@ export class TitleScreen implements Screen {
   update(dtMs: number): void {
     const before = this.clock;
     this.clock += dtMs;
+    this.app.titleClock = this.clock;
     // What is seen is heard: the sign striking as it comes on, and thunder a moment after each stroke of
     // lightning. A hurried game shows neither, and a calm picture neither.
     if (this.app.deps.fast) return;

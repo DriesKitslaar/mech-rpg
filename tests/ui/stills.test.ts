@@ -14,7 +14,7 @@ import { PAPERS, RAY_ALPHA, RAY_SWAY, STILLS, drawStill, paperAt, stillLights, s
 import { TALK_VEIL, TalkScreen } from '../../src/ui/talkScreen';
 import { SEARCHLIGHTS, TITLE_LIGHTS, titleLights } from '../../src/ui/titleScene';
 import { EMBER_LIGHTS, LIGHTNING_MS, PARTICLES, SPLASHES, THUNDER_AFTER_MS, lightning, strokeBegan } from '../../src/ui/weather';
-import { COLORS } from '../../src/ui/widgets';
+import { COLORS, OVER_PICTURE } from '../../src/ui/widgets';
 import { done, memoryStore, press, snap } from '../helpers/app';
 import { record, type Drawn, type Filled, type Glowed, type Shaped } from '../helpers/canvas';
 import { brightAt, brightOverall, readPng } from '../helpers/png';
@@ -478,10 +478,64 @@ describe('a page of story on its picture', () => {
           expect(word.right, word.text).toBeLessThanOrEqual(306);
           expect(word.y + word.size, word.text).toBeLessThanOrEqual(266);
         }
-        // The way on is written in the dim colour, the lines in the plain one.
-        expect(words.at(-1)!.color).toBe(COLORS.dim);
+        // The way on is written in the colour of small words over a picture, the lines in the plain one.
+        expect(words.at(-1)!.color).toBe(OVER_PICTURE);
       }
     }
+  });
+
+  test('a notice sways as it falls, and never jumps from one side of the page to the other', () => {
+    for (let i = 0; i < PAPERS; i++) {
+      let last = paperAt(i, 0, 310, 270);
+      for (let t = 16; t <= 120_000; t += 16) {
+        const now = paperAt(i, t, 310, 270);
+        if (Math.abs(now.x - last.x) > 1 || now.x < 0 || now.x > 307) expect([i, t, last.x, now.x]).toEqual('a notice that sways a pixel at a time, on the page');
+        last = now;
+      }
+    }
+    // They are still spread over the whole width of the page.
+    const xs = Array.from({ length: PAPERS }, (_, i) => paperAt(i, 0, 310, 270).x);
+    expect(Math.min(...xs)).toBeLessThan(60);
+    expect(Math.max(...xs)).toBeGreaterThan(250);
+  });
+
+  test('what is written small over a picture can be told from the picture, over the lightest sky there is', () => {
+    const light = (rgb: number[]): number => {
+      const [r, g, b] = rgb.map((c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const contrast = (a: number, b: number): number => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    const rgbOf = (color: string): number[] => [1, 3, 5].map((at) => parseInt(color.slice(at, at + 2), 16));
+    /** How light the picture is under a word, with the page's shade over it. Below a picture that is not as high as the page there is only the dark. */
+    const under = (picture: string, word: { left: number; right: number; y: number; size: number }, veil: number): number => {
+      const pixels = readPng(fileOf(picture));
+      let sum = 0;
+      let n = 0;
+      for (let y = Math.floor(word.y); y < word.y + word.size; y++) {
+        for (let x = Math.floor(word.left); x < word.right; x++) {
+          const [r, g, b] = x >= 0 && y >= 0 && x < pixels.w && y < pixels.h ? pixels.at(x, y) : [12, 12, 24];
+          sum += light([r, g, b].map((c, i) => c * (1 - veil) + [8, 8, 20][i] * veil));
+          n++;
+        }
+      }
+      return sum / n;
+    };
+    const { app } = appWith({ textSpeed: 'instant' }, true);
+    let seen = 0;
+    let dimAtWorst = Infinity;
+    for (const page of SCENES.filter((s) => s.picture)) {
+      const screen = page.talk ? new TalkScreen(app, page) : new SceneScreen(app, page);
+      const drawn = record((ctx) => screen.draw(ctx));
+      for (const word of drawn.texts.filter((t) => t.color === OVER_PICTURE)) {
+        const ground = under(page.picture!, word, page.talk ? TALK_VEIL : VEIL_WORDS);
+        expect(contrast(light(rgbOf(OVER_PICTURE)), ground), `${page.id}: ${word.text}`).toBeGreaterThanOrEqual(3);
+        dimAtWorst = Math.min(dimAtWorst, contrast(light(rgbOf(COLORS.dim)), ground));
+        seen++;
+      }
+    }
+    expect(seen).toBeGreaterThan(20);
+    // The dim colour of the boxes would not do: over the gates at daybreak it is the colour of the sky behind it.
+    expect(dimAtWorst).toBeLessThan(1.3);
   });
 
   test('where it rains on the page there is lightning, and its thunder is heard; nowhere else, and not in a calm picture or a hurried game', () => {
@@ -534,7 +588,7 @@ describe('a conversation in its place', () => {
     // The heading has a dark edge; it is not in a box.
     const heading = page.texts.filter((t) => t.text === scene('talk-marrow').heading);
     expect(heading).toHaveLength(9);
-    expect(heading.at(-1)!.color).toBe(COLORS.dim);
+    expect(heading.at(-1)!.color).toBe(OVER_PICTURE);
   });
 
   test('every conversation\'s place is one that is told about: none is a bare picture', () => {

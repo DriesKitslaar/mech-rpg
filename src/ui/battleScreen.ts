@@ -962,7 +962,9 @@ export class BattleScreen {
         // the largest eye is a seventh of a common light.
         if (!this.opts.fast && breaking === null) {
           const t = this.fx.transform(enemy.id);
-          const dazed = enemy.staggered > 0 || enemy.overheated;
+          // Dazed as far as has been shown: the rules can be a shot ahead of the screen.
+          const stance = this.stances.of(enemy.id);
+          const dazed = stance.staggered || stance.overheated;
           // Where its picture is drawn: one that the rules have ended hangs still until it is seen to come apart.
           const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + (enemy.destroyed ? 0 : hover) + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);
           if (eye) drawGlow(ctx, eye, this.opts.calm ? 0.5 : 1);

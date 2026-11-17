@@ -415,6 +415,12 @@ export class App {
   saveFailed = false;
   /** True while the options as they are now have not been stored: storing them is tried again with every save. */
   private settingsUnsaved = false;
+  /**
+   * How long the title has been looked at this session. The title is built anew every time it is
+   * come back to, and goes on from here: its sign comes on once, not at every return from the
+   * options, and its weather does not start over.
+   */
+  titleClock = 0;
   /** How well the handheld keeps up, and so how much soft light there is when that is left to the game. */
   private pace: Pace;
   /** A session that is a chance at more light: the light it began with, how often the chance was lost before, and whether it has been kept so far. */

@@ -131,6 +131,26 @@ describe('the title', () => {
     for (let i = 1; i < thunder.length; i++) expect(thunder[i].at - thunder[i - 1].at).toBeGreaterThan(3000);
   });
 
+  test('back on the title from the options: the sign is on already and says nothing, and the weather goes on from where it was', () => {
+    const { app, heard, run, named } = title();
+    run(1000);
+    expect(named('sign')).toHaveLength(2);
+    select(app, 'options');
+    run(5000);
+    expect(heard).toHaveLength(2);
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('title');
+    // The sign does not come on a second time.
+    run(1000);
+    expect(named('sign')).toHaveLength(2);
+    expect(named('thunder')).toEqual([]);
+    // The title has been looked at for two seconds in all: its first stroke falls when that is two and two thirds,
+    // which is less than a second from now, and not two and two thirds after coming back.
+    run(1000);
+    expect(named('thunder')).toHaveLength(1);
+    expect(named('thunder')[0].at).toBeLessThan(1000 + 5000 + 2000);
+  });
+
   test('a calm picture hears neither, and a hurried game neither', () => {
     for (const opts of [{ calm: true }, { fast: true }]) {
       const { heard, run } = title(opts);
