@@ -340,7 +340,12 @@ describe('a battle against a boss', () => {
     expect(inWindow.every((image) => image.w < 0)).toBe(true);
     const onField = drawn.images.filter((image) => !image.clip && image.w < 0);
     expect(onField.length).toBe(inWindow.length);
-    inWindow.forEach((image, i) => expect([image.w, image.h]).toEqual([onField[i].w * ENTRANCE_SCALE, onField[i].h * ENTRANCE_SCALE]));
+    // On the field it stands far off: the same parts in the same order, each the small drawing of it, two thirds the size.
+    inWindow.forEach((image, i) => {
+      const id = (image.image as { id: string }).id;
+      expect((onField[i].image as { id: string }).id).toBe(`${id}.small`);
+      expect([onField[i].w, onField[i].h]).toEqual([-Math.round((-image.w / ENTRANCE_SCALE) * 0.65), Math.round((image.h / ENTRANCE_SCALE) * 0.65)]);
+    });
     // No light: where such a frame's eye is, is not known.
     expect(drawn.glows.filter((g) => isLight(g) && g.y === MIDDLE && g.x > ENTRANCE_WINDOW_X && g.r >= 20)).toEqual([]);
     expect(signIn(drawn, ENEMIES['rival-2'].name.toUpperCase(), 'steel')).not.toBeNull();

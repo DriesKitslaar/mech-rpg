@@ -4,6 +4,7 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
+import { PLAIN, pictureTop } from '../../src/ui/stage';
 import {
   CUT_IN_H, CUT_IN_MS, CUT_IN_NAME_TALL, CUT_IN_NAME_W, CUT_IN_SCALE, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
   cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox, lookClose,
@@ -525,10 +526,13 @@ describe('the staged moments in a battle', () => {
     const up = page();
     expect(up.rects.some((r) => r.color === BAND)).toBe(true);
     expect(up.texts.map((t) => t.text)).toEqual(expect.arrayContaining(['OVERDRIVE', 'IRON SKIN']));
-    // The mech in the band is the pilot's own, at twice its size: one picture for each of its parts.
+    // The mech in the band is the pilot's own, from the front and at twice its size: one picture for each of its parts.
+    // On the field the same parts are seen from behind, four fifths the size.
     const id = (i: { image: unknown }): string => (i.image as { id: string }).id;
-    const big = up.images.filter((i) => i.w > 0 && up.images.some((o) => id(o) === id(i) && o.w * 2 === i.w && o.h * 2 === i.h));
+    const big = up.images.filter((i) => i.w > 0 && !id(i).endsWith('.back')
+      && up.images.some((o) => id(o) === `${id(i)}.back` && o.w === Math.round((i.w / 2) * 0.8) && o.h === Math.round((i.h / 2) * 0.8)));
     expect(big.length).toBeGreaterThanOrEqual(5);
+    expect(big.every((i) => up.images.indexOf(i) > up.images.findIndex((o) => id(o) === `${id(i)}.back`))).toBe(true);
     for (let i = 0; i < 60 && screen.motion.cutIn; i++) screen.update(16);
     expect(screen.motion.cutIn).toBeNull();
     expect(page().rects.some((r) => r.color === BAND)).toBe(false);
@@ -551,7 +555,8 @@ describe('the staged moments in a battle', () => {
   test('the machine a battle ends with is looked at from twice as close, between black bars, with nothing else over the field', () => {
     const { flow, screen, page, kill } = screenOf(fight(['gun-turret'], [0], { overdrive: 'iron-skin', drive: 100 }));
     const before = page();
-    expect(background(before)).toMatchObject({ x: 0, y: 0, w: 310, h: 270 });
+    // The picture of the place, as far up as shows the band of it the field looks at.
+    expect(background(before)).toMatchObject({ x: 0, y: pictureTop(PLAIN), w: 310, h: 270 });
     // The Overdrive's meter is one of the things written over the field while a battle goes on.
     const meter = (p: Drawn) => p.rects.filter((r) => r.x <= 6 && r.w <= 4 && r.h >= 40 && r.y > 14 && r.y + r.h <= 178);
     expect(meter(before).length).toBeGreaterThan(0);
@@ -845,7 +850,7 @@ describe('the staged moments in a battle', () => {
     calm.kill(0);
     expect(calm.screen.motion.finish).not.toBeNull();
     calm.screen.update(200);
-    expect(background(calm.page())).toMatchObject({ x: 0, y: 0, w: 310, h: 270 });
+    expect(background(calm.page())).toMatchObject({ x: 0, y: pictureTop(PLAIN), w: 310, h: 270 });
     expect(calm.page().rects.filter((r) => r.color === BARS)).toHaveLength(2);
     const fast = screenOf(fight(['gun-turret'], [0]), { fast: true });
     for (let i = 0; i < 200 && fast.flow.phase !== 'result'; i++) { if (fast.flow.phase === 'action') fast.fire(); fast.screen.update(16); expect(fast.screen.motion.finish).toBeNull(); }

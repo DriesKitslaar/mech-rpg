@@ -14,7 +14,7 @@ import { soundsForEvent } from '../platform/audio';
 import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
-import { BACK_MOUNT, FAR_FIST, MECH_BOX, NEAR_FIST, dropOf } from './mechLayout';
+import { MECH_BOX, VIEWS, dropOf, muzzleOf, type MechView } from './mechLayout';
 import { HitStop } from './hitStop';
 import { eyeLight, eyeOf } from './eyes';
 import { MAX_LIGHTS, disc, drawAll, drawGlow, drawGlows, drawShadow, lightRoom, type Glow, type Pt } from './light';
@@ -27,6 +27,9 @@ import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
 import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
+import {
+  FIELD, FIELD_Y, FLYERS, HERO, HERO_FEET, PANEL_Y, duelAt, enemySpots, farToNear, horizonOf, pictureTop, placeBars, placeFor, standAt, type Place, type Spot,
+} from './stage';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { intentOf } from '../core/intent';
 import { PLAIN_TYPING, TYPING_SPEED, Typewriter, type Typing } from './typewriter';
@@ -36,7 +39,6 @@ import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, dra
 export { BattleFlow } from './battleFlow';
 export type { BattlePhase, FlowOptions, MenuView } from './battleFlow';
 
-const PANEL_Y = 178;
 /**
  * The box a line of talk is shown in: the panel under the field, where the menu is at other times,
  * so that whatever is being talked about stays in view. Lines of `TALK_CHARS`, at most `TALK_LINES`.
@@ -51,35 +53,22 @@ const MESSAGE_MS = 600;
 /** How long the banner that opens a battle stays up: longer when it warns of a boss. */
 export const INTRO_MS = 1100;
 export const WARNING_MS = 1700;
-/** Top of the field: the message bar ends here. */
-const FIELD_Y = 14;
 /** The share of the heat limit from which a machine is seen to be hot. */
 const HOT = 0.75;
 const DEFAULT_BACKGROUND = 'bg-neon-district';
-const MECH_ORIGIN = { x: -8, y: 16 };
-/** Where each enemy stands (the bottom centre of its sprite), by how many there are. */
-const ENEMY_ANCHORS: Record<number, { x: number; y: number }[]> = {
-  1: [{ x: 250, y: 150 }],
-  2: [{ x: 240, y: 120 }, { x: 270, y: 174 }],
-  3: [{ x: 252, y: 96 }, { x: 274, y: 174 }, { x: 210, y: 174 }],
-};
-/** Right edge of the mirrored pose box of a duelling enemy mech, and the area its body covers. */
-const DUEL_RIGHT = 330;
-const DUEL_BODY = { x: 192, y: 22, w: 118, h: 150 };
-/** In a duel the player's mech stands this much further left, so two full-size mechs cross weapons, not bodies. */
-const DUEL_SHIFT = 6;
-/** Sprites of units that fly: these bob up and down, everything else stands still. */
-const FLYERS = new Set([
-  'enemy-recon-drone', 'enemy-gunship', 'enemy-shield-drone', 'enemy-repair-drone', 'enemy-lien-drone', 'boss-overseer',
-  'enemy-hunter-drone', 'enemy-longshot',
-]);
 const MENU_W = 154;
-/** Where a hit on each part of the player's mech lands, inside the pose box. */
-const PLAYER_HIT: Record<FrameSlot, { x: number; y: number }> = {
-  head: { x: 76, y: 20 }, core: { x: 78, y: 50 }, arms: { x: 108, y: 44 }, legs: { x: 76, y: 108 },
-};
-/** Where the strip the wingman's line is written on starts. */
+/**
+ * Where a hit on each part of the pilot's mech lands and where its middle is, inside its pose box
+ * from behind; and the same for a mech built from parts that is fought alone, inside its small box
+ * as it is drawn from the front.
+ */
+const HERO_HIT: Record<FrameSlot, Pt> = { head: { x: 60, y: 14 }, core: { x: 58, y: 40 }, arms: { x: 88, y: 33 }, legs: { x: 58, y: 94 } };
+const HERO_MIDDLE: Pt = { x: 58, y: 62 };
+const SMALL_HIT: Record<FrameSlot, Pt> = { head: { x: 49, y: 14 }, core: { x: 50, y: 32 }, arms: { x: 74, y: 27 }, legs: { x: 50, y: 72 } };
+const SMALL_MIDDLE: Pt = { x: 51, y: 46 };
+/** Where the strip the wingman's line is written on starts, and how far under the top of the field it and the new pilot's line are. */
 const RADIO_X = 8;
+const STRIP_Y = FIELD_Y + 13;
 /** How long an elite under cover says each of the two over its head before it says the other. */
 export const MARK_TURN_MS = 1600;
 
@@ -151,6 +140,8 @@ export class BattleScreen {
   private shownAp: ApDisplay;
   /** How many places the enemies stand in: as many as the battle opened with, or all of them when more can join. */
   private places: number;
+  /** What is known of the picture the battle is fought in front of: the band of it the field shows, and where its floor begins. */
+  private place: Place;
   /** Units that are on the field as far as the player has been shown: one that is launched appears with its launch. */
   private arrived: Set<string>;
   /** The line of talk being written out, and the writer doing it. */
@@ -197,6 +188,7 @@ export class BattleScreen {
     this.hitStop = new HitStop(!opts.fast);
     this.introTotal = opts.fast ? 0 : opts.boss ? WARNING_MS : INTRO_MS;
     this.intro = this.introTotal;
+    this.place = placeFor(opts.background ?? DEFAULT_BACKGROUND);
     this.shownAp = new ApDisplay(flow.state.units);
     const enemies = flow.state.units.filter((u) => u.side === 'enemy');
     this.places = enemies.some((u) => u.abilities.carrier)
@@ -388,8 +380,12 @@ export class BattleScreen {
     cutIn: string | null; finish: Pt | null;
     /** How large each blast is that is going off right now, and where what is left of machines lies. */
     blasts: number[]; wrecks: Pt[];
+    /** Where things are on the field: where a unit's weapon fires from, where a hit on a part of it lands, its middle, and the line of the floor under it. */
+    at: { muzzle: (id: string, weapon: 'rightHand' | 'leftHand' | 'shoulder') => Pt; hit: (id: string, part: FrameSlot) => Pt; centre: (id: string) => Pt; floor: (id: string) => number };
   } {
+    const scene = this.scene();
     return {
+      at: { muzzle: (id, weapon) => scene.muzzle(id, weapon), hit: (id, part) => scene.hitPoint(id, part), centre: (id) => scene.centre(id), floor: (id) => this.floorUnder(id) },
       particles: this.particles.count, flash: this.hitStop.flash, surge: this.surge !== null, stance: (id) => ({ ...this.stances.of(id) }),
       breaking: (id) => this.puppets.get(id)?.breaking ?? null,
       cutIn: this.cutIn?.name ?? null, finish: this.finish ? { ...this.finish.at } : null,
@@ -438,7 +434,9 @@ export class BattleScreen {
     // larger so that no edge shows when it moves.
     const { dx, dy } = this.opts.calm ? { dx: 0, dy: 0 } : this.fx.shake();
     this.syncTalk();
-    const field = { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W };
+    const field = FIELD;
+    // The band of the picture the field shows: its floor begins about half way down.
+    const top = pictureTop(this.place);
     this.standing = 0;
     // A battle that is over is not staged any more, from the very frame its result is up.
     const over = this.flow.phase === 'result';
@@ -450,24 +448,29 @@ export class BattleScreen {
     ctx.translate(dx, dy);
     // Pixel for pixel while the field is still. Only while a blow moves it is the picture drawn a
     // little larger, so that no edge shows: stretched, a pixel picture loses its grid.
-    if (dx === 0 && dy === 0) ctx.drawImage(bg.image, 0, 0, LOGICAL_W, LOGICAL_H);
-    else ctx.drawImage(bg.image, -6, -6, LOGICAL_W + 12, LOGICAL_H + 12);
+    if (dx === 0 && dy === 0) ctx.drawImage(bg.image, 0, top, LOGICAL_W, LOGICAL_H);
+    else ctx.drawImage(bg.image, -6, top - 6, LOGICAL_W + 12, LOGICAL_H + 12);
     // What the place adds to its picture: darker edges, its own lights, a haze over the ground. A hurried
     // screen has it standing still, as it is at the first moment.
     const calm = this.opts.calm === true;
     const placeClock = this.opts.fast ? 0 : this.clock;
-    drawAmbience(ctx, background, placeClock, 'behind', field, calm);
+    // The place's lights are where its picture is; its haze lies where the floor begins and, thinner, at the pilot's feet.
+    const lie = { shift: top, far: horizonOf(this.place) + 6, near: HERO_FEET - 8 };
+    drawAmbience(ctx, background, placeClock, 'behind', field, calm, lie);
     this.drawShadows(ctx);
-    this.drawPlayer(ctx);
+    // What is furthest off is drawn first: the enemies from the back to the front, and the pilot's mech, the nearest of all, last.
     this.drawEnemies(ctx);
+    this.drawPlayer(ctx);
+    this.drawEnemyMarks(ctx);
     this.drawHeat(ctx);
     this.drawSmoke(ctx);
-    drawAmbience(ctx, background, placeClock, 'front', field, calm);
+    drawAmbience(ctx, background, placeClock, 'front', field, calm, lie);
     if (!this.opts.fast) {
       ctx.save();
       ctx.translate(0, FIELD_Y);
       drawWeather(ctx, weatherFor(background), this.clock, LOGICAL_W, PANEL_Y - FIELD_Y);
-      drawWeatherExtras(ctx, weatherFor(background), this.clock, LOGICAL_W, PANEL_Y - FIELD_Y, calm);
+      // Rain lands on the whole of the floor, from where it begins down to the panel.
+      drawWeatherExtras(ctx, weatherFor(background), this.clock, LOGICAL_W, PANEL_Y - FIELD_Y, calm, PANEL_Y - horizonOf(this.place) - 6);
       ctx.restore();
     }
     this.particles.draw(ctx);
@@ -505,7 +508,7 @@ export class BattleScreen {
     }
     if (cutIn) {
       drawCutIn(ctx, cutIn.ms, field, { heading: STRINGS.overdrive.heading, name: cutIn.name },
-        (c) => drawMech(c, this.playerSprites(), 0, 0), calm);
+        (c) => drawMech(c, mechSprites(this.sprites, this.flow.state.units[0].build, this.opts.paint), 0, 0), calm);
     }
     // While someone talks, their words have the panel: there is nothing to choose until they are done.
     const talking = this.flow.phase === 'talk' && this.intro <= 0;
@@ -516,15 +519,16 @@ export class BattleScreen {
   }
 
   /**
-   * What the wingman is saying: one small line at the foot of the field, from its left edge, where
-   * the longest line still ends short of the bars of the enemy standing lowest. Not over the banner,
-   * not while somebody is talking, and not where a new pilot is being told the buttons.
+   * What the wingman is saying: one small line near the top of the field, from its left edge, under
+   * what the battle asks for and over the pilot's mech: the foot of the field is where that mech
+   * stands. Not over the banner, not while somebody is talking, and not where a new pilot is being
+   * told the buttons.
    */
   private drawRadio(ctx: CanvasRenderingContext2D): void {
     const line = this.radio?.line;
     if (!line || this.intro > 0 || this.opts.coach || this.flow.phase === 'talk') return;
     const width = line.length * 4 + 8;
-    const y = PANEL_Y - 13;
+    const y = STRIP_Y;
     ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
     ctx.fillRect(RADIO_X, y, width, 11);
     // The name in the colour of a friendly voice, what is said in plain white.
@@ -574,14 +578,14 @@ export class BattleScreen {
     drawText(ctx, name, LOGICAL_W - 3, 14, { align: 'right', size: 10, color: COLORS.energy });
   }
 
-  /** For a new pilot: one small line at the foot of the field saying which button does what right now. */
+  /** For a new pilot: one small line near the top of the field saying which button does what right now. */
   private drawCoach(ctx: CanvasRenderingContext2D): void {
     const line = (STRINGS.coach as Record<string, string>)[this.flow.phase];
     if (!line) return;
     const width = line.length * 4 + 8;
     ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
-    ctx.fillRect(Math.round(LOGICAL_W / 2 - width / 2), PANEL_Y - 13, width, 11);
-    drawText(ctx, line, LOGICAL_W / 2, PANEL_Y - 12, { align: 'center', size: 10, color: COLORS.heat });
+    ctx.fillRect(Math.round(LOGICAL_W / 2 - width / 2), STRIP_Y, width, 11);
+    drawText(ctx, line, LOGICAL_W / 2, STRIP_Y + 1, { align: 'center', size: 10, color: COLORS.heat });
   }
 
   /** The banner that opens a battle: the contract and what it asks for, or a warning with the name of a boss. */
@@ -654,11 +658,13 @@ export class BattleScreen {
   /** The ground under every unit is darker: it is what makes them stand on it. */
   private drawShadows(ctx: CanvasRenderingContext2D): void {
     const player = this.flow.state.units[0];
-    if (!this.hidden(player)) drawShadow(ctx, this.playerX() + 76, PANEL_Y - 7, 108, 13, 0.5);
+    if (!this.hidden(player)) drawShadow(ctx, HERO.x + HERO_MIDDLE.x, HERO_FEET - 4, 104, 13, 0.5);
     for (const enemy of this.flow.state.units.slice(1)) {
       if (this.hidden(enemy)) continue;
       const r = this.enemyRect(enemy);
-      drawShadow(ctx, r.x + r.w / 2, Math.min(PANEL_Y - 5, r.y + r.h - 1), r.w * 0.9, Math.max(5, r.w * 0.16), 0.45);
+      // On the floor under it: what hangs over the floor throws a smaller, fainter one than what stands on it.
+      const lifted = r.ground - (r.y + r.h) > 2;
+      drawShadow(ctx, r.x + r.w / 2, r.ground - 1, r.w * (lifted ? 0.7 : 0.9), Math.max(5, r.w * (lifted ? 0.12 : 0.16)), lifted ? 0.35 : 0.45);
     }
   }
 
@@ -770,11 +776,12 @@ export class BattleScreen {
   private move(event: BattleEvent, melee: boolean, flight: number, staged = false): void {
     const unit = (id: string): UnitState | undefined => this.flow.state.units.find((u) => u.id === id);
     const scene = this.scene();
-    const ground = PANEL_Y - 6;
+    // What falls, falls to the floor under the machine it came off: further up the screen for one that stands further off.
+    const ground = (id: string): number => this.floorUnder(id);
     if (event.type === 'shot') {
       const dtype = scene.damageType(event.unit, event.weapon);
       // A gun that fires bullets throws a casing; whatever lands throws sparks in its own colour.
-      if (!melee && dtype === 'kinetic') this.particles.emit('casing', scene.muzzle(event.unit, event.weapon), scene.facing(event.unit), 0, ground);
+      if (!melee && dtype === 'kinetic') this.particles.emit('casing', scene.muzzle(event.unit, event.weapon), scene.facing(event.unit), 0, ground(event.unit));
       if (event.hit) {
         const at = scene.hitPoint(event.target, event.appliedTo);
         this.particles.emit('sparks', at, scene.facing(event.unit), flight, undefined, { kinetic: '#ffe9a8', energy: '#7fe9ff', explosive: '#ffb46b' }[dtype]);
@@ -786,11 +793,11 @@ export class BattleScreen {
     }
     if (event.type === 'boost') {
       const c = scene.centre(event.unit);
-      this.particles.emit('dust', { x: c.x, y: ground }, scene.facing(event.unit));
+      this.particles.emit('dust', { x: c.x, y: ground(event.unit) }, scene.facing(event.unit));
     }
     if (event.type === 'partDestroyed') {
       const at = scene.hitPoint(event.unit, event.part);
-      this.particles.emit('debris', at, 1, 0, ground);
+      this.particles.emit('debris', at, 1, 0, ground(event.unit));
       this.particles.emit('fire', at, 1);
       this.particles.emit('smoke', at, 1, 80);
     }
@@ -813,13 +820,13 @@ export class BattleScreen {
         // The field is held, then looked at from close by while the machine goes up slowly.
         this.finish = { at: focusOn(c, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W }), real: 0, field: 0, heard: false };
       }
-      this.particles.emit('debris', c, 1, 60, ground);
-      this.particles.emit('debris', c, 1, 180, ground);
+      this.particles.emit('debris', c, 1, 60, ground(event.unit));
+      this.particles.emit('debris', c, 1, 180, ground(event.unit));
       this.particles.emit('fire', c, 1);
       this.particles.emit('embers', c, 1, 60);
       this.particles.emit('smoke', c, 1, 120);
       // The last blast throws the most, and what is left smokes from then on.
-      this.particles.emit('debris', c, 1, 300, ground);
+      this.particles.emit('debris', c, 1, 300, ground(event.unit));
       this.particles.emit('fire', c, 1, 300);
       this.particles.emit('embers', c, 1, 320);
       this.particles.emit('smoke', c, 1, 380);
@@ -830,7 +837,7 @@ export class BattleScreen {
       const c = scene.centre(event.target);
       this.particles.emit('fire', c, 1, MELEE_MS);
       this.particles.emit('embers', c, 1, MELEE_MS);
-      this.particles.emit('debris', c, 1, MELEE_MS + 40, ground);
+      this.particles.emit('debris', c, 1, MELEE_MS + 40, ground(event.target));
       this.particles.emit('smoke', c, 1, MELEE_MS + 100);
     }
     if (event.type === 'shot') {
@@ -877,48 +884,61 @@ export class BattleScreen {
     ctx.globalAlpha = 1;
   }
 
+  /** The pilot's mech as the field shows it: from behind. */
   private playerSprites(): MechSprites {
-    return mechSprites(this.sprites, this.flow.state.units[0].build, this.opts.paint);
+    return mechSprites(this.sprites, this.flow.state.units[0].build, this.opts.paint, 'back');
   }
 
+  /** The pilot's mech: near, in the lower left, its back to the camera. */
   private drawPlayer(ctx: CanvasRenderingContext2D): void {
     const player = this.flow.state.units[0];
     if (this.hidden(player)) return;
     // Its layers move by themselves: breathing, kicking back, flinching, coming apart.
     const pose = this.poseOf(player);
     this.withTransform(ctx, player, 0, (dx, dy) =>
-      drawMech(ctx, this.playerSprites(), this.playerX(), MECH_ORIGIN.y, { dx, dy: 0 }, dy, pose));
+      drawMech(ctx, this.playerSprites(), HERO.x, HERO.y, { dx, dy: 0 }, dy, pose, 'back'));
   }
 
-  /** Left edge of the player's pose box. */
-  private playerX(): number {
-    return MECH_ORIGIN.x - (this.duel() ? DUEL_SHIFT : 0);
-  }
-
-  /** True when the battle's single enemy is a mech drawn full size from its parts, mirrored. */
+  /** True when the battle's single enemy is a mech drawn from its parts, turned round to face the pilot's. */
   private duel(): boolean {
     return this.places === 1 && this.flow.state.units[1].composed;
   }
 
-  private enemyRect(enemy: UnitState): { x: number; y: number; w: number; h: number; sprite: Sprite } {
-    // A duelling mech fills the mirrored pose box; this is the part of it the body occupies.
-    if (this.duel()) return { x: DUEL_BODY.x, y: DUEL_BODY.y, w: DUEL_BODY.w, h: DUEL_BODY.h, sprite: { image: null as unknown as CanvasImageSource, w: 0, h: 0 } };
-    const anchor = (ENEMY_ANCHORS[this.places] ?? ENEMY_ANCHORS[3])[enemy.slot ?? 0] ?? ENEMY_ANCHORS[3][2];
+  /** The place each enemy stands on, by how many places there are. */
+  private spotOf(enemy: UnitState): Spot {
+    const spots = enemySpots(this.places, this.place);
+    return spots[enemy.slot ?? 0] ?? spots[spots.length - 1];
+  }
+
+  /** A mech that is fought alone, as it stands far off: small, from the front. */
+  private duelSprites(enemy: UnitState): MechSprites {
+    return mechSprites(this.sprites, enemy.build, enemy.paint, 'small');
+  }
+
+  /** The box an enemy is drawn in, and the line of the floor it stands on or hangs over. */
+  private enemyRect(enemy: UnitState): { x: number; y: number; w: number; h: number; ground: number; sprite: Sprite } {
+    const spot = this.spotOf(enemy);
+    // A duelling mech stands in its small pose box, turned round; this is the part of it the body occupies.
+    if (this.duel()) return { ...duelAt(spot).body, ground: spot.y, sprite: { image: null as unknown as CanvasImageSource, w: 0, h: 0 } };
     const fallback = { w: 48, h: 48, label: enemy.name };
     const id = enemy.sprite ?? enemy.id;
     const sprite = enemy.paint && this.sprites.painted ? this.sprites.painted(id, enemy.paint, fallback) : this.sprites.get(id, fallback);
-    // A machine too big for its place is moved in from the edges rather than cut off by them.
-    const x = Math.max(MENU_W - 20, Math.min(Math.round(anchor.x - sprite.w / 2), LOGICAL_W - sprite.w - 2));
-    const y = Math.max(16, Math.min(anchor.y, PANEL_Y - 8) - sprite.h);
-    return { x, y, w: sprite.w, h: sprite.h, sprite };
+    // On its spot, or over it when it flies; one too big for its place is moved in from the edges rather than cut off by them.
+    return { ...standAt(spot, sprite, FLYERS.has(enemy.sprite ?? '')), w: sprite.w, h: sprite.h, sprite };
   }
 
+  /** The line of the floor under a unit: where what falls off it comes to rest. */
+  private floorUnder(id: string): number {
+    const unit = this.flow.state.units.find((u) => u.id === id);
+    return !unit || unit.side === 'player' ? HERO_FEET - 2 : this.enemyRect(unit).ground - 1;
+  }
+
+  /** The enemies' machines, the farthest first, so that one that stands nearer stands in front. */
   private drawEnemies(ctx: CanvasRenderingContext2D): void {
-    const enemies = this.flow.state.units.slice(1).filter((enemy) => !this.hidden(enemy));
-    const marked = this.flow.objective?.target;
-    // The machines first, back to front as they were placed.
-    enemies.forEach((enemy, i) => {
-      const r = this.enemyRect(enemy);
+    const shown = this.flow.state.units.slice(1).filter((enemy) => !this.hidden(enemy));
+    // Each keeps the number it has among those on the field, whatever order they are drawn in: its bob and its eye go by it.
+    const standing = shown.map((enemy, i) => { const r = this.enemyRect(enemy); return { enemy, i, r, ground: r.ground }; });
+    farToNear(standing).forEach(({ enemy, i, r }) => {
       // Flying units bob; anything that stands on the ground stays put.
       const flies = FLYERS.has(enemy.sprite ?? '');
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
@@ -928,14 +948,15 @@ export class BattleScreen {
         drawGlow(ctx, { x: r.x + r.w / 2, y: r.y + r.h - 4 + hover, r: 9 + r.w * 0.22, color: '#ff7ab8', alpha: 0.3 + 0.1 * Math.sin(this.clock / 90 + i) }, this.opts.calm ? 0.5 : 1);
       }
       if (this.duel()) {
-        const parts = mechSprites(this.sprites, enemy.build, enemy.paint);
+        const parts = this.duelSprites(enemy);
         const pose = this.poseOf(enemy);
+        const box = duelAt(this.spotOf(enemy));
         this.withTransform(ctx, enemy, 0, (dx, dy) => {
           // Mirror the pose box so the mech faces left; a shift to the right is a shift to the left in there.
           ctx.save();
-          ctx.translate(DUEL_RIGHT, MECH_ORIGIN.y);
+          ctx.translate(box.right, box.top);
           ctx.scale(-1, 1);
-          drawMech(ctx, parts, 0, 0, { dx: -dx, dy: 0 }, dy, pose);
+          drawMech(ctx, parts, 0, 0, { dx: -dx, dy: 0 }, dy, pose, 'small');
           ctx.restore();
         });
       } else {
@@ -971,14 +992,23 @@ export class BattleScreen {
         }
       }
     });
-    // Then everything that is written over them, so no machine hides another's bars.
+  }
+
+  /** Everything that is written over the enemies, after every machine is drawn, so that none hides another's bars. */
+  private drawEnemyMarks(ctx: CanvasRenderingContext2D): void {
+    const enemies = this.flow.state.units.slice(1).filter((enemy) => !this.hidden(enemy));
+    const marked = this.flow.objective?.target;
+    // Each machine's bars are under it; where machines stand so close that their bars would lie on one another, they are stacked.
+    const standing = enemies.filter((enemy) => !enemy.destroyed);
+    const bars = placeBars(standing.map((enemy) => this.enemyRect(enemy)));
     for (const enemy of enemies) {
       if (enemy.destroyed) continue;
       const r = this.enemyRect(enemy);
       const core = enemy.parts.core!;
-      drawMeter(ctx, r.x + 8, r.y + r.h + 2, r.w - 16, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
+      const bar = bars[standing.indexOf(enemy)];
+      drawMeter(ctx, bar.x, bar.y, bar.w, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
       // Under the armour line, how much balance the enemy has left.
-      drawMeter(ctx, r.x + 8, r.y + r.h + 5, r.w - 16, 1, enemy.staggerMax - enemy.stagger, enemy.staggerMax, COLORS.heat);
+      drawMeter(ctx, bar.x, bar.y + 3, bar.w, 1, enemy.staggerMax - enemy.stagger, enemy.staggerMax, COLORS.heat);
       const mark = this.fieldMark(enemy) ?? (enemy.id === marked ? { text: STRINGS.objectives.mark, color: COLORS.heat } : null);
       if (mark) {
         // Above the unit, unless that is where the bars of one standing higher up are: then on the unit, on a dark ground.
@@ -1079,41 +1109,53 @@ export class BattleScreen {
   private scene(): Scene {
     const isPlayer = (id: string) => id === 'player';
     const rectOf = (id: string) => this.enemyRect(this.flow.state.units.find((u) => u.id === id)!);
+    const rival = () => this.flow.state.units[1];
     // A mech on tracks carries its upper body lower; every point above the legs comes down with it.
     const lowered = (unitIndex: number, part?: FrameSlot): number =>
-      (part === 'legs' ? 0 : dropOf(unitIndex === 0 ? this.playerSprites() : mechSprites(this.sprites, this.flow.state.units[unitIndex].build)));
-    const at = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: this.playerX() + p.x, y: MECH_ORIGIN.y + p.y + lowered(0, part) });
-    /** A point of the pose box as it lands on screen for the mirrored enemy. */
-    const mirror = (p: { x: number; y: number }, part?: FrameSlot) => ({ x: DUEL_RIGHT - p.x, y: MECH_ORIGIN.y + p.y + lowered(1, part) });
+      (part === 'legs' ? 0 : dropOf(unitIndex === 0 ? this.playerSprites() : this.duelSprites(rival())));
+    /** A point of the pilot's pose box from behind, as it lands on the screen. */
+    const at = (p: Pt, part?: FrameSlot) => ({ x: HERO.x + p.x, y: HERO.y + p.y + lowered(0, part) });
+    /** A point of the small pose box as it lands on the screen for the mech that is turned round. */
+    const mirror = (p: Pt, part?: FrameSlot) => {
+      const box = duelAt(this.spotOf(rival()));
+      return { x: box.right - p.x, y: box.top + p.y + lowered(1, part) };
+    };
+    /**
+     * Where a weapon fires from in a mech's pose box: the far end of what is held, or, where nothing
+     * is held (or there is no arm left to hold it), the fist it would be in or the mount on the
+     * shoulder. What the legs lower is in the point already.
+     */
+    const firesFrom = (parts: MechSprites, weapon: 'rightHand' | 'leftHand' | 'shoulder', view: MechView): Pt => {
+      const end = muzzleOf(parts, weapon, view);
+      if (end) return end;
+      const { nearFist, farFist, mount } = VIEWS[view];
+      const from = weapon === 'rightHand' ? nearFist : weapon === 'leftHand' ? farFist : mount;
+      return { x: from.x, y: from.y + dropOf(parts) };
+    };
     return {
       muzzle: (id, weapon) => {
         if (!isPlayer(id)) {
           if (this.duel()) {
-            const enemy = this.flow.state.units[1];
-            const w = mechSprites(this.sprites, enemy.build)[weapon]?.w ?? 40;
-            const p = weapon === 'rightHand' ? { x: NEAR_FIST.x + 0.8 * w, y: NEAR_FIST.y - 2 }
-              : weapon === 'leftHand' ? { x: FAR_FIST.x + 0.8 * w, y: FAR_FIST.y - 2 }
-              : { x: BACK_MOUNT.x + 0.4 * w, y: BACK_MOUNT.y };
-            return mirror(p);
+            const p = firesFrom(this.duelSprites(rival()), weapon, 'small');
+            const box = duelAt(this.spotOf(rival()));
+            return { x: box.right - p.x, y: box.top + p.y };
           }
           const r = rectOf(id);
           return { x: r.x + 2, y: r.y + Math.round(r.h * 0.62) };
         }
-        const w = this.playerSprites()[weapon]?.w ?? 40;
-        if (weapon === 'rightHand') return at({ x: NEAR_FIST.x + 0.8 * w, y: NEAR_FIST.y - 2 });
-        if (weapon === 'leftHand') return at({ x: FAR_FIST.x + 0.8 * w, y: FAR_FIST.y - 2 });
-        return at({ x: BACK_MOUNT.x + 0.4 * w, y: BACK_MOUNT.y });
+        const p = firesFrom(this.playerSprites(), weapon, 'back');
+        return { x: HERO.x + p.x, y: HERO.y + p.y };
       },
       hitPoint: (id, part) => {
-        if (isPlayer(id)) return at(PLAYER_HIT[part], part);
-        if (this.duel()) return mirror(PLAYER_HIT[part], part);
+        if (isPlayer(id)) return at(HERO_HIT[part], part);
+        if (this.duel()) return mirror(SMALL_HIT[part], part);
         const r = rectOf(id);
         const offset = { core: 0.5, legs: 0.25, arms: 0.5, head: 0.2 }[part];
         return { x: r.x + r.w / 2, y: r.y + r.h * offset };
       },
       centre: (id) => {
-        if (isPlayer(id)) return at({ x: 78, y: 70 });
-        if (this.duel()) return mirror({ x: 78, y: 70 });
+        if (isPlayer(id)) return at(HERO_MIDDLE);
+        if (this.duel()) return mirror(SMALL_MIDDLE);
         const r = rectOf(id);
         return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
       },

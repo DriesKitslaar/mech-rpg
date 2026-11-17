@@ -82,12 +82,15 @@ export function lightning(clockMs: number): number {
  */
 export const struck = (clockMs: number, calm = false): number => (calm || !soft() ? 0 : lightning(clockMs));
 
+/** How tall the strip of ground at the foot of a field is that rain lands on, where nothing else is said. */
+export const GROUND_STRIP = 14;
+
 /**
  * What the weather does besides fall: rain lands, and now and then lightning lights the whole
  * field; embers throw a little light. A calm picture has no lightning and its embers glow at half
- * strength.
+ * strength. `floor` is how much of the foot of the field is ground: rain lands anywhere on it.
  */
-export function drawWeatherExtras(ctx: CanvasRenderingContext2D, kind: Weather, clockMs: number, w: number, h: number, calm = false): void {
+export function drawWeatherExtras(ctx: CanvasRenderingContext2D, kind: Weather, clockMs: number, w: number, h: number, calm = false, floor = GROUND_STRIP): void {
   const t = clockMs / 1000;
   if (kind === 'rain') {
     // Each drop that lands throws up a crown for a moment, somewhere new every time.
@@ -97,7 +100,7 @@ export function drawWeatherExtras(ctx: CanvasRenderingContext2D, kind: Weather, 
       const phase = turn - Math.floor(turn);
       if (phase > 0.3) continue;
       const x = Math.floor(scatter(Math.floor(turn), i + 6) * (w - 4)) + 2;
-      const y = h - 3 - Math.floor(scatter(Math.floor(turn), i + 7) * 14);
+      const y = h - 3 - Math.floor(scatter(Math.floor(turn), i + 7) * floor);
       ctx.fillStyle = `rgba(190, 215, 255, ${(0.4 * (1 - phase / 0.3)).toFixed(2)})`;
       ctx.fillRect(x - 1, y, 3, 1);
       if (phase < 0.15) { ctx.fillRect(x - 2, y - 1, 1, 1); ctx.fillRect(x + 2, y - 1, 1, 1); }

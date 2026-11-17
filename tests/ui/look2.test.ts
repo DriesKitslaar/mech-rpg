@@ -4,6 +4,7 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { AMBIENCE } from '../../src/ui/ambience';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
+import { ENEMY_LEFT, HERO, HERO_FEET, PLAIN, horizonOf } from '../../src/ui/stage';
 import { FIELD_LIGHT, MAX_LIGHTS } from '../../src/ui/light';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { EMBER_LIGHTS, LIGHTNING_MS } from '../../src/ui/weather';
@@ -143,14 +144,19 @@ describe('what is left of a machine', () => {
 });
 
 describe('where the pilot stands', () => {
-  test('the pilot\'s shadow lies under the mech\'s feet, on the ground at the foot of the field', () => {
+  test('the pilot\'s shadow lies under the mech\'s feet, on the floor at the foot of the field, and every other shadow on the floor further off', () => {
     const { page } = screenOf(fight(['gun-turret']), { fast: true });
     const shadows = page().glows.filter(isShadow);
     const own = shadows.reduce((a, b) => (b.r > a.r ? b : a));
-    expect(own).toMatchObject({ x: 68, y: 171, r: 54 });
+    // Under the middle of the mech as it is seen from behind, a few pixels over the line its feet stand on.
+    expect(own).toMatchObject({ x: HERO.x + 58, y: HERO_FEET - 4, r: 52 });
     expect(own.ry).toBeCloseTo(6.5, 5);
-    // Every shadow is on the ground: in the lowest quarter of the field.
-    for (const shadow of shadows) expect(shadow.y).toBeGreaterThan(178 - 45);
+    expect(shadows).toHaveLength(2);
+    // Every shadow is on the floor: under where the floor begins, and the enemy's further off than the pilot's own.
+    for (const shadow of shadows) expect(shadow.y).toBeGreaterThan(horizonOf(PLAIN));
+    const other = shadows.find((shadow) => shadow !== own)!;
+    expect(other.y).toBeLessThan(own.y - 10);
+    expect(other.x).toBeGreaterThan(ENEMY_LEFT);
   });
 });
 
