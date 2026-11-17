@@ -201,6 +201,11 @@ describe('the notices that fall over Meridian\'s tower', () => {
       expect(fell / 60, `paper ${i}`).toBeLessThan(18);
       expect(turned, `paper ${i}`).toBeGreaterThan(20);
     }
+    // Each sways from side to side as it falls: over a minute it is seen well to either side of where it would fall straight.
+    for (let i = 0; i < PAPERS; i++) {
+      const xs = Array.from({ length: 300 }, (_, k) => paperAt(i, k * 200, 310, 270).x);
+      expect(Math.max(...xs) - Math.min(...xs), `paper ${i}`).toBeGreaterThanOrEqual(12);
+    }
     // No two of them fall together, and where each is depends on the clock alone.
     const spots = Array.from({ length: PAPERS }, (_, i) => paperAt(i, 5000, 310, 270));
     expect(new Set(spots.map((spot) => `${spot.x},${spot.y}`)).size).toBe(PAPERS);
@@ -225,6 +230,13 @@ describe('a picture, drawn as a place', () => {
       expect(spark.x).toBeLessThan(310);
       expect(spark.y).toBeGreaterThanOrEqual(0);
       expect(spark.y).toBeLessThan(270);
+    }
+    // They are all over the picture, not only its upper part where a battle's field would be.
+    const everywhere = Array.from({ length: 20 }, (_, k) => particles(draw('still-war', 2000 + k * 700))).flat();
+    expect(everywhere.filter((spark) => spark.y > 200).length).toBeGreaterThan(20);
+    for (const picture of ['still-varn', 'still-ledger', 'still-dawn', 'bg-mine']) {
+      const fallen = Array.from({ length: 20 }, (_, k) => draw(picture, 2000 + k * 700).rects.filter((r) => r.w <= 3 && r.h <= 5)).flat();
+      expect(fallen.filter((r) => r.y > 200).length, picture).toBeGreaterThan(10);
     }
     // They rise.
     const before = particles(draw('still-war', 2000)).map((spark) => spark.y);
@@ -310,6 +322,12 @@ describe('a picture, drawn as a place', () => {
       want.forEach((light, i) => expect(strength(calm[i]), `${picture} light ${i}`).toBeCloseTo(light.alpha / 2, 2));
       expect(particles(draw(picture, 2000, true))).toHaveLength(particles(draw(picture, 2000)).length);
     }
+    // The title's picture as well: its beacons hold instead of coming and going, and all of it is at half strength.
+    const varn = draw('still-varn', 2000, true).glows.filter(isLight);
+    const wanted = titleLights(2000, true);
+    expect(varn).toHaveLength(wanted.length);
+    wanted.forEach((light, i) => expect(strength(varn[i]), `varn light ${i}`).toBeCloseTo(light.alpha / 2, 2));
+    expect(titleLights(2000, true).map((light) => light.alpha)).not.toEqual(titleLights(2000).map((light) => light.alpha));
     const shafts = draw('still-dawn', 1000, true).shapes;
     expect(shafts).toHaveLength(6);
     expect(alphaOf(shafts[0])).toBeCloseTo(alphaOf(draw('still-dawn', 1000).shapes[0]) / 2, 3);
@@ -384,6 +402,17 @@ describe('a page of story on its picture', () => {
     // What was moved for the picture is put back for what is drawn after it.
     const after = record((ctx) => { drawPlace(ctx, app, 'still-war', DRIFT_MS / 4); ctx.fillRect(5, 5, 1, 1); });
     expect(after.rects.at(-1)).toMatchObject({ x: 5, y: 5 });
+  });
+
+  test('a calm picture is told to the place: its lights are at half strength on a page as anywhere', () => {
+    const { app } = appWith({ calm: true });
+    const page = record((ctx) => drawPlace(ctx, app, 'still-war', 0));
+    const wanted = stillLights('still-war', 0, true);
+    const lit = page.glows.filter(isLight).slice(0, wanted.length);
+    wanted.forEach((light, i) => expect(strength(lit[i]), `light ${i}`).toBeCloseTo(light.alpha / 2, 2));
+    // Otherwise they are at full strength.
+    const full = record((ctx) => drawPlace(ctx, appWith().app, 'still-war', 0)).glows.filter(isLight);
+    expect(strength(full[0])).toBeCloseTo(stillLights('still-war', 0)[0].alpha, 2);
   });
 
   test('a hurried game has the picture standing still, drawn once, with nothing falling', () => {
