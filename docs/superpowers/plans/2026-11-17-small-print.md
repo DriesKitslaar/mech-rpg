@@ -25,7 +25,7 @@
 
 - A game saved before this round, at any point of the story and in any cycle: it must load, and what it has already earned must be found at once, in one announcement, without a page of story being run ahead of.
 - A pilot in the first cycle: no line of the recorder, no contract without a client, no third offer, whatever they hold.
-- A pilot in a later cycle who sold the logs, or holds eight checks, or has not brought up the box: the third offer is not made, and nothing says why.
+- A pilot in a later cycle who sold the logs, or holds eight checks, or has not brought up the box: the third offer is not made. (With the box and too few checks a letter says what the box wants; nothing says how to get it.)
 - A battle with a line for `last` or `hurt` that is won before the moment comes, or in which the moment comes twice: the line is said at most once, and never after the battle is over.
 - Every find's clue against the deed that finds it: a clue may not name a contract, an answer or a person outright, and may not be so dark that the find is a matter of luck.
 
@@ -34,7 +34,7 @@
 - [x] K1: Voices in a battle (branch `feat/print-voices`)
 - [x] K2: Finds (branch `feat/print-finds`)
 - [x] K3: A later cycle (branch `feat/print-cycle`)
-- [ ] K4: The third verdict (branch `feat/print-ending`)
+- [x] K4: The third verdict (branch `feat/print-ending`)
 - [ ] K5: Review, soak, APK, summary (branch `feat/print-review`)
 
 ## K1: Voices in a battle
@@ -169,13 +169,21 @@ The finds (when; what it is):
 - `type Verdict = 'enforce' | 'default' | 'quorum'`.
 - A contract of the phase `verdict` with a `when` is on offer only once `when` is reached. `verdict-quorum` waits for `quest-3&checks:9`.
 
-- [ ] Tests first: with two verdicts on offer and the third one's condition not reached, two are offered; reached, three; once any is done, none.
-- [ ] `verdict-quorum` Any Other Business: client `Tamsin, for the Society`; the door (six rounds, the count read out a round at a time), then the Proxy; Ashfall on the stair in both.
-- [ ] The Proxy: a machine hung with the checks of the drowned; three ways of fighting; its numbers set against the reference builds like the Adjuster's.
-- [ ] Pictures: the hall, the still of the meeting, the Proxy; `quest-3` moved to the hall.
-- [ ] Three epilogues (`quorum` for each client), the scene of the ending, the third offer in Dispatch's letter when it is made, a world entry, a medal for the verdict and one for nine checks, the credits and the manual where they speak of two verdicts.
-- [ ] A career: two cycles, the second by each client's road, ends with the third ending seen.
-- [ ] All tests, screenshots, an APK.
+- [x] Tests first: with two verdicts on offer and the third one's condition not reached, two are offered; reached, three; once any is done, none.
+- [x] `verdict-quorum` Any Other Business: client `Tamsin, for the Society`; the door (six rounds, the count read out a round at a time), then the Proxy; Ashfall on the stair in both.
+- [x] The Proxy: a machine hung with the checks of the drowned; three ways of fighting; its numbers set against the reference builds like the Adjuster's.
+- [x] Pictures: the hall, the still of the meeting, the Proxy; `quest-3` moved to the hall.
+- [x] Three epilogues (`quorum` for each client), the scene of the ending, the third offer in Dispatch's letter when it is made, a world entry, a medal for the verdict and one for nine checks, the credits and the manual where they speak of two verdicts.
+- [x] A career: two cycles, the second by each client's road, ends with the third ending seen.
+- [x] All tests, screenshots, an APK.
+
+Notes on what K4 became:
+
+- The picture of the meeting shows eight checks on the board, not nine. The count in the last contract and the minutes (paper 24) say so, and say where the ninth is: tied to the left foot of the frame in the door, where the first find of every telling put it. Nothing was redrawn.
+- A pilot with the box and fewer than nine checks is written to by Tamsin (`short-of-nine`): the box will not open for less, and some people would hand theirs to a pilot they trusted. The plan's Review Focus had "nothing says why"; a letter that says what the box wants without saying how to get it is fairer.
+- The Proxy is sturdier than the Adjuster part for part and hits less sharply: at first it was a race that a fifth more strength turned from nearly always won to never won. The contract's scale is 1.25, the highest of the story: with the best frame and no perks it is won 9 times in 10 at that scale, in a second cycle (a quarter tougher again) hardly ever; with a seasoned pilot's perks nearly always. Four whole careers of two cycles, by different roads and on all three difficulties, reach it and win it.
+- Four medals rather than two: the meeting (secret), nine checks, twelve papers, all the papers.
+
 
 ## K5: Review, soak, APK, summary
 

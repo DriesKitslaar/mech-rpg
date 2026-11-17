@@ -99,6 +99,8 @@ const RESERVE = 400;
 const TRIES = 3;
 /** Patrols flown in one stretch before the contract is tried again, and in a whole career before it is called stuck. */
 const PATROLS = 10;
+/** How many contracts go by before a contract beside the story that was lost is tried again. */
+const SIDE_REST = 4;
 const MAX_GRIND = 150;
 
 class Stuck extends Error {}
@@ -262,6 +264,8 @@ export function playCareer(options: CareerOptions): CareerReport {
     const limit = options.maxContracts ?? 2000;
     let streak = 0;
     let last = '';
+    /** Contracts beside the story that were lost, with the count of contracts flown at which each may be tried again. */
+    const rested = new Map<string, number>();
     while (report.contracts < limit) {
       gearUp();
       learn();
@@ -272,8 +276,9 @@ export function playCareer(options: CareerOptions): CareerReport {
         toHub();
         continue;
       }
-      // What this pilot was told to fly beside the story comes first, as soon as it is on offer.
-      const extra = (options.side ?? []).find((wanted) => app.missions().some((m) => m.id === wanted));
+      // What this pilot was told to fly beside the story comes first, as soon as it is on offer. One that was
+      // lost is left alone for a while: the story goes on, and it is tried again with what the story has paid for.
+      const extra = (options.side ?? []).find((wanted) => (rested.get(wanted) ?? 0) <= report.contracts && app.missions().some((m) => m.id === wanted));
       const id = extra ?? nextStory();
       if (!id) throw new Stuck('no story contract on offer and the story is not over');
       const won = contract(id);
@@ -285,6 +290,10 @@ export function playCareer(options: CareerOptions): CareerReport {
         continue;
       }
       report.losses[id] = (report.losses[id] ?? 0) + 1;
+      if (id === extra) {
+        rested.set(id, report.contracts + SIDE_REST);
+        continue;
+      }
       streak = id === last ? streak + 1 : 1;
       last = id;
       if (streak > report.worst.streak) report.worst = { id, streak };

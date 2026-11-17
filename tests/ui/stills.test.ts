@@ -51,10 +51,10 @@ function appWith(settings: Partial<Settings> = {}, fast = false, saved: GameStat
 
 describe('what each picture is told about itself', () => {
   test('every picture a page or a conversation is shown on is a place: it has lights of its own', () => {
-    expect(PICTURES.sort()).toEqual(['bg-mine', 'bg-neon-district', 'bg-plaza', 'still-dawn', 'still-ledger', 'still-notice', 'still-varn', 'still-war']);
+    expect(PICTURES.sort()).toEqual(['bg-mine', 'bg-neon-district', 'bg-plaza', 'still-dawn', 'still-ledger', 'still-meeting', 'still-notice', 'still-varn', 'still-war']);
     for (const picture of PICTURES) expect(stillLights(picture, 0).length, picture).toBeGreaterThanOrEqual(3);
-    // The four that are neither the title's picture nor a battlefield are told about here.
-    expect(Object.keys(STILLS).sort()).toEqual(['still-dawn', 'still-ledger', 'still-notice', 'still-war']);
+    // The five that are neither the title's picture nor a battlefield are told about here.
+    expect(Object.keys(STILLS).sort()).toEqual(['still-dawn', 'still-ledger', 'still-meeting', 'still-notice', 'still-war']);
     for (const picture of Object.keys(STILLS)) expect(Object.keys(SPRITES)).toContain(picture);
     // The title's picture has the title's lights, and a battlefield its own.
     expect(stillLights('still-varn', 1234)).toEqual(titleLights(1234));
@@ -123,7 +123,17 @@ describe('what each picture is told about itself', () => {
 
   test('where a picture has a sun, the sun is where its light is brightest and its shafts come down from it', () => {
     const suns = Object.entries(STILLS).filter(([, still]) => still.sun);
-    expect(suns.map(([picture]) => picture)).toEqual(['still-dawn']);
+    expect(suns.map(([picture]) => picture).sort()).toEqual(['still-dawn', 'still-meeting']);
+    // The morning at the door of the hall: the sky beside the frame that stands in it, and three shafts across the water.
+    const door = STILLS['still-meeting'].sun!;
+    expect(brightAt(readPng(fileOf('still-meeting')), door.x, door.y, 6)).toBeGreaterThan(200);
+    expect(door.rays.map((ray) => Math.sign(ray.to.x - door.x))).toEqual([-1, 0, 1]);
+    for (const ray of door.rays) {
+      expect(ray.to.y).toBeGreaterThan(door.y + 150);
+      expect(ray.to.x - RAY_SWAY).toBeGreaterThan(40);
+      expect(ray.to.x + RAY_SWAY).toBeLessThan(290);
+      expect(ray.width).toBeLessThanOrEqual(40);
+    }
     const { sun } = STILLS['still-dawn'];
     const pixels = readPng(fileOf('still-dawn'));
     expect(brightAt(pixels, sun!.x, sun!.y, 6)).toBeGreaterThan(220);

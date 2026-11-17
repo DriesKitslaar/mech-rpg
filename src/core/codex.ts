@@ -1,6 +1,8 @@
 import { framePart, weaponIn } from './build';
 import { reached, type Condition, type Mission } from './campaign';
 export { checksHeld } from './campaign';
+/** How many of the papers there are to find the pilot has found. */
+export const papersFound = (game: GameState): number => game.codex.filter((id) => id.startsWith('paper-')).length;
 import type { GameState } from './game';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog, type DamageType, type EnemyDef } from './types';
 

@@ -100,7 +100,7 @@ describe('where each machine\'s eye is', () => {
 
   test('a great machine\'s eye throws its light further than a small one\'s', () => {
     const bosses = Object.keys(EYES).filter((picture) => picture.startsWith('boss-'));
-    expect(bosses).toHaveLength(6);
+    expect(bosses).toHaveLength(7);
     for (const boss of bosses) expect(EYES[boss].r, boss).toBeGreaterThanOrEqual(8);
     for (const [picture, eye] of Object.entries(EYES)) if (!picture.startsWith('boss-')) expect(eye.r, picture).toBeLessThanOrEqual(8);
   });

@@ -3,11 +3,11 @@ import { ENDINGS, EPILOGUES } from './missions';
 import { AFTERMATH, TALKS } from './talks';
 
 const FACTIONS: Faction[] = ['hadron', 'lumen', 'undertow'];
-const VERDICTS: Verdict[] = ['enforce', 'default'];
+const VERDICTS: Verdict[] = ['enforce', 'default', 'quorum'];
 /** The place each client's war ended in. */
 const WON_IN: Record<Faction, string> = { hadron: 'bg-mine', lumen: 'bg-plaza', undertow: 'bg-neon-district' };
 /** What the city looks like after each verdict. */
-const AFTER: Record<Verdict, string> = { enforce: 'still-ledger', default: 'still-dawn' };
+const AFTER: Record<Verdict, string> = { enforce: 'still-ledger', default: 'still-dawn', quorum: 'still-meeting' };
 
 /** How the war ended for the client the pilot chose: the close of the second act. */
 const warWon = (faction: Faction): Scene => ({

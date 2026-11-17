@@ -122,7 +122,7 @@ describe('the medals', () => {
   });
 
   test('the turns of the third act and the back room of the arena keep their names to themselves until they are earned', () => {
-    expect(MEDALS.filter((m) => m.secret).map((m) => m.id)).toEqual(['audit', 'verdict-enforce', 'verdict-default', 'both-verdicts', 'apex']);
+    expect(MEDALS.filter((m) => m.secret).map((m) => m.id)).toEqual(['audit', 'verdict-enforce', 'verdict-default', 'both-verdicts', 'verdict-quorum', 'apex']);
   });
 
   test('the arena: the champion at the tenth rank, the back room at the fifteenth, and a mirror match won', () => {

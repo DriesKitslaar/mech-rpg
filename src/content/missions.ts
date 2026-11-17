@@ -12,6 +12,7 @@ const SLUICE = 'bg-sluice';
 const ROOFTOP = 'bg-rooftop';
 const CLEARING = 'bg-clearing';
 const HANGAR = 'bg-garage';
+const HALL = 'bg-hall';
 
 const BRENN = { client: 'Director Brenn, Hadron Mining', portrait: 'portrait-hadron', faction: 'hadron' } as const;
 const VARGA = { client: 'Analyst Varga, Lumen Systems', portrait: 'portrait-lumen', faction: 'lumen' } as const;
@@ -41,7 +42,7 @@ const ASHFALL_ALL_IN: Support = { name: 'Ashfall', damage: 45 };
 const battle = (enemies: string[], background: string, extra: Partial<Battle> = {}): Battle => ({ enemies, background, ...extra });
 
 /**
- * Every contract in the game: the patrol and twenty-nine story contracts, of which one pilot plays eighteen.
+ * Every contract in the game: the patrol and thirty story contracts, of which one pilot plays eighteen.
  * Act I is the introductions, two contracts for each client and the first meeting with Ashfall; Act II
  * the choice of a client, that client's three contracts and the end of the war; Act III the audit.
  */
@@ -598,6 +599,41 @@ export const MISSIONS: Mission[] = [
       }),
     ],
   },
+  // The third verdict: only in a later telling, for a pilot who has brought the box home and holds nine checks.
+  {
+    id: 'verdict-quorum', phase: 'verdict', verdict: 'quorum', when: 'quest-3&checks:9', scale: 1.25, title: 'Any Other Business', client: 'Tamsin, for the Society',
+    portrait: 'portrait-undertow', reward: 9000,
+    briefing: [
+      'You have the box and nine in brass. That makes a meeting, if it is held in the hall with the door shut.',
+      'Meridian will come to stop the count. Its Secretary votes for everybody who ever drowned.',
+      'Stand in the door while they are hung. Six rounds.',
+    ],
+    debrief: 'The Proxy goes down in the water it was built to keep. Behind you, somebody calls the next item.',
+    battles: [
+      battle(['bailiff', 'lien-drone', 'lien-drone'], HALL, {
+        objective: { type: 'survive', rounds: 6 },
+        support: ASHFALL_ALL_IN,
+        talk: [
+          tamsin('start', 'The door is shut. Hang them up as I call them. One. Two. Three.'),
+          dispatch(2, 'I am reading the roll on channel nine. It is a long roll. Most of it does not answer.'),
+          tamsin(3, 'Four. Five. Six. Keep them off the door, pilot.'),
+          ashfall(4, 'I am on the stair. Nothing gets behind you. I owe a convoy that much.'),
+          tamsin(5, 'Seven. Eight. Eight on the board. That is every hook we have a living hand for.'),
+          tamsin(6, 'The ninth is tied to your left foot. It has been there since the dock. Stay where you are. That makes nine.'),
+          actuary('win', 'A quorum. How irregular. Then I must vote the absent. The Proxy, please.'),
+        ],
+      }),
+      battle(['proxy'], HALL, {
+        par: 12,
+        support: ASHFALL_ALL_IN,
+        talk: [
+          actuary('start', 'I hold forty years of votes. They are all against. The dead do not change their minds. It is their chief merit.'),
+          tamsin('hurt', 'Stay up. We are still here. Every one of us can see you from the benches.'),
+          actuary('win', 'The motion is carried. I shall minute it. It appears I work for you now. All of you.'),
+        ],
+      }),
+    ],
+  },
 
   // Beside the story: the bounty board, and what comes of the pilot's decisions.
   ...SIDE_WORK,
@@ -685,10 +721,36 @@ export const EPILOGUES: Record<Verdict, Record<Faction, { title: string; body: s
       ],
     },
   },
+  quorum: {
+    hadron: {
+      title: 'IN ARREARS',
+      body: [
+        'Hadron Mining is called to a meeting for the first time in forty years. Director Brenn attends in person, and is asked to wait outside.',
+        'The pits open in the spring under new owners, who are the old owners. Nobody is sure what to dig for. Somebody suggests the truth.',
+        'Your debt is on the agenda. It is moved, seconded and struck out. You are thanked from the chair, which nobody has done before.',
+      ],
+    },
+    lumen: {
+      title: 'RECOUNT',
+      body: [
+        'Lumen\'s models are asked a new question: who is here. They answer it correctly the first time. That worries Analyst Varga more than anything has.',
+        'The towers stay lit. The count that went up them every night now comes down again, and is read out below.',
+        'Your debt is on the agenda. It is moved, seconded and struck out. The minute is four words long. You keep a copy.',
+      ],
+    },
+    undertow: {
+      title: 'MUTUAL',
+      body: [
+        'The gates stay open, and now there is a hall to walk down to. Tamsin chairs. She still counts twice, and now it is called a division.',
+        'The Society owns an insurer with liens on eleven other cities. It has not decided what to do about that. It has asked what you would charge.',
+        'Your check hangs on the board with the others. Nobody will say whose it was. They have stopped pretending not to know whose it is.',
+      ],
+    },
+  },
 };
 
 const FACTIONS: Faction[] = ['hadron', 'lumen', 'undertow'];
-const VERDICTS: Verdict[] = ['enforce', 'default'];
+const VERDICTS: Verdict[] = ['enforce', 'default', 'quorum'];
 
 /** After the finale, how the war ended can be read again in the inbox; after the verdict, how everything did. */
 const warWon = (faction: Faction): Message => ({
@@ -830,6 +892,30 @@ export const MESSAGES: Message[] = [
     ],
   },
   {
+    id: 'third-offer', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'A third offer', after: 'audit-3&quest-3&checks:9',
+    body: [
+      'I hear you have two offers. Here is a third. It pays nothing, which you will be used to from me.',
+      'You brought the box home. You hold nine in brass. By the rules of a society older than either company, that is enough to call a meeting.',
+      'Meridian will not want it held. Come down to the hall. Bring the frame. It has a seat.',
+    ],
+  },
+  {
+    id: 'short-of-nine', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'Short of nine', after: 'audit-3&quest-3&!checks:9',
+    body: [
+      'The box is in the hall and it will not open. Nine hasps, and you hold fewer than nine in brass.',
+      'People in this city carry those and do not know what they are. Some would hand theirs to a pilot they trusted. That is all I can tell you.',
+      'There will be other years. The box has waited forty.',
+    ],
+  },
+  {
+    id: 'count-closed', from: 'Dispatch', portrait: 'portrait-dispatch', subject: 'Channel nine', after: 'verdict-quorum',
+    body: [
+      'The roll is read and the count is closed. Sixty-one answered to their names, counting one frame. I counted twice.',
+      'Somebody moved that the night desk be kept on. I abstained. It was carried anyway.',
+      'I am on your channel. It is not an order any more. It is only where I am.',
+    ],
+  },
+  {
     ...DESK, id: 'tidy-desk-box', subject: 'Nine hasps', after: 'quest-3',
     body: [
       'I see the box is back where it started. Forty years late, which for the Society is prompt.',
@@ -839,7 +925,7 @@ export const MESSAGES: Message[] = [
   },
   ...VERDICTS.flatMap((verdict) => FACTIONS.map((faction) => epilogue(verdict, faction))),
   {
-    ...DESK, id: 'tidy-desk-again', subject: 'One more file', after: 'verdict',
+    ...DESK, id: 'tidy-desk-again', subject: 'One more file', after: 'verdict&!verdict-quorum',
     body: [
       'So it is decided. I had hoped to be out of envelopes by now.',
       'Your frame has a recorder. It was never wiped. It was only never asked anything. It knows the sluice, and it knows it from before your time.',

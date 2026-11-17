@@ -620,8 +620,8 @@ export const REFERENCE_NL: Record<string, string> = {
     "Society Hall. De inkt is nog nat.",
   "Not written yet.":
     "Nog niet geschreven.",
-  "General meeting, Society Hall. Present: nine checks on the board, and their holders; the Secretary; one frame in the door. Item 1: that the Society resume its business. Carried. Item 2: any other business. There was a great deal.":
-    "Ledenvergadering, Society Hall. Aanwezig: negen penningen op het bord, en hun houders; de Secretaris; een frame in de deur. Punt 1: dat de Society haar werk hervat. Aangenomen. Punt 2: wat verder ter tafel komt. Dat was heel wat.",
+  "General meeting, Society Hall. Present: eight checks on the board, with their holders; a ninth, tied to the foot of a frame in the door; the Secretary. Item 1: that the Society resume its business. Carried. Item 2: any other business. There was a great deal.":
+    "Ledenvergadering, Society Hall. Aanwezig: acht penningen op het bord, met hun houders; een negende, aan de voet van een frame in de deur; de Secretaris. Punt 1: dat de Society haar werk hervat. Aangenomen. Punt 2: de rondvraag. Dat was heel wat.",
   "CHECK 117":
     "PENNING 117",
   "Tied to your frame's left foot.":
@@ -750,4 +750,29 @@ export const REFERENCE_NL: Record<string, string> = {
     "Een poort houdt omdat een mech zijn mond hield. Iemand bij de poort stuurt hem omhoog.",
   "Stamped 133. It came in a twist of small notes. \"One of ours wants you counted with us. It is not a gift. It is a seat.\"":
     "Gestempeld 133. Hij kwam in een rolletje kleine biljetten. \"Een van ons wil dat jij met ons wordt meegeteld. Het is geen cadeau. Het is een zetel.\"",
+  // --- The third verdict: the Proxy, the Society, and the medals for what is found ---
+  "Gavel":
+    "Hamer",
+  "Meridian's vote for everybody who cannot attend. A barrier, a gavel that knocks you off balance, lien drones every fifth turn, three ways of fighting.":
+    "De stem van Meridian voor ieder die niet kan komen. Een barriere, een hamer die je uit balans slaat, Lien Drones om de vijf beurten, drie vechtwijzen.",
+  "THE SOCIETY":
+    "DE SOCIETY",
+  "The Meridian Pit Mutual Aid Society met in its hall for the first time in forty years, with nine checks on the board. The Secretary took the minutes. Nobody owns the city now but the people in it, and they own a good deal more than the city.":
+    "De Meridian Pit Mutual Aid Society vergaderde voor het eerst in veertig jaar in haar zaal, met negen penningen op het bord. De Secretaris notuleerde. De stad is nu van niemand dan van wie er woont, en die bezitten veel meer dan de stad.",
+  "Any Other Business":
+    "Rondvraag",
+  "Hold the meeting.":
+    "Hou de vergadering.",
+  "Paper Trail":
+    "Papieren spoor",
+  "Find 12 papers.":
+    "Vind 12 papieren.",
+  "The Small Print":
+    "Kleine lettertjes",
+  "Find all 24 papers.":
+    "Vind alle 24 papieren.",
+  "Nine on the Board":
+    "Negen op het bord",
+  "Hold nine lamp checks.":
+    "Heb negen lampenpenningen.",
 };

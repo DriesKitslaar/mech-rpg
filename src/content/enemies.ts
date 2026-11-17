@@ -341,4 +341,20 @@ export const ENEMIES: Record<string, EnemyDef> = {
       { at: 0.33, ai: 'gunner', damage: 1.1, refit: { leftHand: 'wpn-adjuster-liquidation' }, line: 'Then we proceed to liquidation.' },
     ],
   },
+  // The machine that casts the votes of the drowned: every disc it is hung with is a lamp check. A gavel that
+  // unbalances, a volley of small votes, a motion that charges for a turn; its clerks arrive every fifth turn.
+  // Losing, it stops counting and starts closing: the volley gives way to a drain.
+  proxy: {
+    id: 'proxy', name: 'The Proxy', ai: 'gunner', sprite: 'boss-proxy', portrait: 'portrait-actuary',
+    partNames: { core: 'Urn', legs: 'Dais', arms: 'Gavel', head: 'Mask' },
+    abilities: { carrier: { unit: LIEN_DRONE, every: 5 } },
+    build: {
+      head: 'head-proxy', core: 'core-proxy', arms: 'arms-proxy', legs: 'legs-proxy', generator: 'gen-proxy',
+      module: 'mod-barrier', rightHand: 'wpn-proxy-gavel', leftHand: 'wpn-proxy-ballot', shoulder: 'wpn-proxy-motion',
+    },
+    phases: [
+      { at: 0.66, ai: 'bruiser', damage: 1.1, line: 'The absent have voted. They are unanimous. They always are.' },
+      { at: 0.33, ai: 'gunner', damage: 1.1, refit: { leftHand: 'wpn-proxy-closure' }, line: 'Then I move the closure. There will be no further business.' },
+    ],
+  },
 };

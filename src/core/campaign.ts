@@ -10,8 +10,11 @@ export type Faction = 'hadron' | 'lumen' | 'undertow';
  * The patrol stands outside the story.
  */
 export type MissionPhase = 'patrol' | 'intro' | 'faction' | 'rival' | 'choice' | 'path' | 'finale' | 'audit' | 'verdict' | 'side';
-/** How the pilot ends the story: by enforcing the foreclosure, or by defaulting on it. */
-export type Verdict = 'enforce' | 'default';
+/**
+ * How the pilot ends the story: by enforcing the foreclosure, by defaulting on it, or, where the
+ * story has been told before and the pilot has what it takes, by holding the meeting that can undo it.
+ */
+export type Verdict = 'enforce' | 'default' | 'quorum';
 /** The story's phases in the order they are played. */
 const STAGES: MissionPhase[] = ['intro', 'faction', 'rival', 'choice', 'path', 'finale', 'audit', 'verdict'];
 
@@ -51,7 +54,7 @@ export interface Mission {
   faction?: Faction;
   /** A faction contract that is offered only once this other contract is done. */
   after?: string;
-  /** A side contract is on offer once this has happened; see `Condition`. */
+  /** A side contract is on offer once this has happened, and a verdict that names one only then; see `Condition`. */
   when?: Condition;
   /** Wingmen who cannot be hired for this contract, by id: it is their own trouble the pilot is flying into. */
   busy?: string[];
@@ -200,7 +203,8 @@ function offeredIn(phase: MissionPhase, state: GameState, missions: Mission[]): 
     case 'choice': return chosen ? [] : all(missions, 'choice');
     case 'path': return left.filter((m) => m.faction === chosen).slice(0, 1);
     case 'finale': return done(state, missions, 'finale').length > 0 ? [] : left.filter((m) => m.faction === chosen);
-    case 'verdict': return done(state, missions, 'verdict').length > 0 ? [] : left;
+    // Every verdict at once; one that waits for something is on offer only once that has happened.
+    case 'verdict': return done(state, missions, 'verdict').length > 0 ? [] : left.filter((m) => !m.when || reached(state, m.when, missions));
     case 'patrol':
     case 'side': return [];
   }

@@ -384,6 +384,24 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Good evening. This is the registered office. It is not open to the public. It has not been open to anybody for some time.`]: `Goedenavond. Dit is de statutaire zetel. Niet open voor publiek. Al enige tijd voor niemand open.`,
   [`I shall have to minute this. There has been nothing to minute in forty years.`]: `Dit moet ik notuleren. Er viel veertig jaar niets te notuleren.`,
 
+  // The third verdict.
+  [`Any Other Business`]: `Rondvraag`,
+  [`Tamsin, for the Society`]: `Tamsin, voor de Society`,
+  [`You have the box and nine in brass. That makes a meeting, if it is held in the hall with the door shut.`]: `Je hebt de kist en negen in koper. Dat maakt een vergadering, mits in de zaal en met de deur dicht.`,
+  [`Meridian will come to stop the count. Its Secretary votes for everybody who ever drowned.`]: `Meridian komt de telling stoppen. Hun Secretaris stemt voor iedereen die ooit verdronk.`,
+  [`Stand in the door while they are hung. Six rounds.`]: `Sta in de deur terwijl ze worden opgehangen. Zes rondes.`,
+  [`The Proxy goes down in the water it was built to keep. Behind you, somebody calls the next item.`]: `De Proxy gaat onder in het water dat hij moest bewaren. Achter je roept iemand het volgende punt af.`,
+  [`The door is shut. Hang them up as I call them. One. Two. Three.`]: `De deur is dicht. Hang ze op als ik ze afroep. Een. Twee. Drie.`,
+  [`I am reading the roll on channel nine. It is a long roll. Most of it does not answer.`]: `Ik lees de lijst voor op kanaal negen. Een lange lijst. Het meeste antwoordt niet.`,
+  [`Four. Five. Six. Keep them off the door, pilot.`]: `Vier. Vijf. Zes. Hou ze van de deur, piloot.`,
+  [`I am on the stair. Nothing gets behind you. I owe a convoy that much.`]: `Ik sta op de trap. Niets komt achter je. Zoveel ben ik een konvooi schuldig.`,
+  [`Seven. Eight. Eight on the board. That is every hook we have a living hand for.`]: `Zeven. Acht. Acht op het bord. Voor meer haken hebben we geen levende hand.`,
+  [`The ninth is tied to your left foot. It has been there since the dock. Stay where you are. That makes nine.`]: `De negende zit aan je linkervoet geknoopt. Al sinds het dok. Blijf staan waar je staat. Dat maakt negen.`,
+  [`A quorum. How irregular. Then I must vote the absent. The Proxy, please.`]: `Een quorum. Hoe ongebruikelijk. Dan moet ik de afwezigen laten stemmen. De Proxy, graag.`,
+  [`I hold forty years of votes. They are all against. The dead do not change their minds. It is their chief merit.`]: `Ik heb veertig jaar aan stemmen. Ze zijn alle tegen. Doden veranderen niet van gedachten. Dat is hun grootste verdienste.`,
+  [`Stay up. We are still here. Every one of us can see you from the benches.`]: `Blijf overeind. Wij zijn er nog. Ieder van ons ziet je vanaf de banken.`,
+  [`The motion is carried. I shall minute it. It appears I work for you now. All of you.`]: `De motie is aangenomen. Ik zal het notuleren. Kennelijk werk ik nu voor u. Voor u allen.`,
+
   // The drills: what the simulator says.
   [`Fire, pick a weapon, then pick a part with up and down. Legs first: it is quick, and without them it cannot dodge.`]: `Vuur, kies een wapen, kies dan een onderdeel met omhoog en omlaag. Eerst de benen: hij is snel, en zonder kan hij niet ontwijken.`,
   [`This fire control aims at limbs as well as it aims at a core: the hit chance is the same all the way down the list. With most, it drops.`]: `Deze vuurleiding mikt even goed op ledematen als op een kern: de trefkans is de hele lijst lang gelijk. Bij de meeste zakt hij.`,

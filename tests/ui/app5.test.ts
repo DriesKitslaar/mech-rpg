@@ -210,7 +210,7 @@ describe('the database', () => {
   test('is reached from the hub and opens on the units: every kind is listed, the ones not met without a name', () => {
     const { app } = inHub(scout());
     select(app, 'database');
-    expect(snap(app)).toMatchObject({ screen: 'database', page: 'units', count: 'SEEN 3/44' });
+    expect(snap(app)).toMatchObject({ screen: 'database', page: 'units', count: 'SEEN 3/45' });
     const items = snap(app).menu.items;
     expect(items).toHaveLength(UNITS.length);
     expect(items[0]).toMatchObject({ id: 'recon-drone', label: 'Recon Drone', enabled: true });
@@ -229,7 +229,7 @@ describe('the database', () => {
       stats: [{ label: 'ARMOUR', value: '260' }, { label: 'WEAK TO', value: 'Explosive' }, { label: 'TOUGH VS', value: 'Kinetic' }],
       lines: ['Bastion Cannon (Kinetic)', '', 'Bolted down, so it never dodges. Its', 'plating stops bullets well and blasts', 'badly.'],
     });
-    for (let i = 0; i < 40 && snap(app).menu.items[snap(app).menu.cursor].id !== 'gunship'; i++) press(app, 'down');
+    for (let i = 0; i < 60 && snap(app).menu.items[snap(app).menu.cursor].id !== 'gunship'; i++) press(app, 'down');
     expect(snap(app).detail).toEqual({ title: '? ? ?', lines: ['Not met yet.'] });
   });
 

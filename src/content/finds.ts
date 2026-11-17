@@ -86,7 +86,7 @@ export const FINDS: Find[] = [
     'MERIDIAN PIT MUTUAL AID SOCIETY. REGISTERED OFFICE. MEMBERS ONLY. Everything else down here is green with forty years of water. Somebody has kept the plate polished.'),
   paper(24, 'minutes', 'THE MINUTES', 'Society Hall. The ink is still wet.', 'verdict-quorum',
     'Not written yet.',
-    'General meeting, Society Hall. Present: nine checks on the board, and their holders; the Secretary; one frame in the door. Item 1: that the Society resume its business. Carried. Item 2: any other business. There was a great deal.'),
+    'General meeting, Society Hall. Present: eight checks on the board, with their holders; a ninth, tied to the foot of a frame in the door; the Secretary. Item 1: that the Society resume its business. Carried. Item 2: any other business. There was a great deal.'),
 
   check(117, 'dock', 'Tied to your frame\'s left foot.', 'undertow-2',
     'Somebody leaves it on the frame when the last boat is away.',

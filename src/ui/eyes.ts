@@ -46,6 +46,7 @@ export const EYES: Record<string, Eye> = {
   'boss-overseer': { x: 70, y: 58, r: 14, color: '#26c9ff' },
   'boss-leviathan': { x: 53, y: 67, r: 9, color: '#f2bf1e' },
   'boss-adjuster': { x: 57, y: 29, r: 8, color: '#ffcf5a' },
+  'boss-proxy': { x: 51, y: 22, r: 8, color: '#f9db77' },
 };
 
 /** The eye of the machine with this picture, or null where none is known. */

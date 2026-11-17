@@ -79,6 +79,23 @@ test('a second cycle with the logs kept flies the three contracts nobody posted;
   expect(sold.side).toEqual(['quest-1']);
 });
 
+test('a second cycle that keeps faith and brings the box home is offered the third verdict, and reaches its ending', () => {
+  // The first answer to every question but one: the logs are kept. Beside the story: the three contracts nobody posted,
+  // the favours that come of what was answered, the first notice and the Guild's first three jobs. Between two cycles
+  // by two clients' roads that is more than nine checks.
+  const side = [
+    'quest-1', 'quest-2', 'quest-3', 'favour-kite', 'favour-undertow', 'favour-ashfall', 'favour-marrow', 'favour-sixty', 'favour-dispatch',
+    'bounty-1', 'guild-1', 'guild-2', 'guild-3',
+  ];
+  const report = playCareer({
+    faction: 'lumen', verdict: 'default', later: [{ faction: 'undertow', verdict: 'quorum' }], difficulty: 'standard', seed: 2, cycles: 2,
+    answers: { 'talk-logs': 'keep' }, side,
+  });
+  expect(report.finished, careerLine(report)).toBe(true);
+  expect(report.endings).toEqual(['finale-lumen', 'verdict-default', 'finale-undertow', 'verdict-quorum']);
+  expect(report.side).toEqual(expect.arrayContaining(['quest-1', 'quest-2', 'quest-3']));
+});
+
 test('the same career played twice goes the same way', () => {
   const a = playCareer({ faction: 'undertow', verdict: 'enforce', difficulty: 'standard', seed: 7 });
   const b = playCareer({ faction: 'undertow', verdict: 'enforce', difficulty: 'standard', seed: 7 });
