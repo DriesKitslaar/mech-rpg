@@ -253,14 +253,15 @@ export class BattleScreen {
   }
 
   /**
-   * A battle that is over is not staged any more: the close look at the last machine, the band of an
-   * Overdrive and whatever push was going on or still to come are over the moment its result is up.
-   * This is seen to after every press and every step of time, either of which can bring the result
-   * up, so that nothing that draws the battle or reports on it has to ask whether it is over.
+   * A battle that is over is not staged any more: the band of an Overdrive and whatever push was
+   * going on or still to come are over the moment its result is up. This is seen to after every
+   * press and every step of time, either of which can bring the result up, so that nothing that
+   * draws the battle or reports on it has to ask whether it is over. (The close look at the last
+   * machine is over before a result can come up: a press ends it, and while it lasts nothing goes
+   * on to what is next.)
    */
   private endStaging(): void {
     if (this.flow.phase !== 'result') return;
-    this.finish = null;
     this.cutIn = null;
     this.camera.settle();
   }
@@ -1157,10 +1158,10 @@ export class BattleScreen {
       drawMeter(ctx, bar.x, bar.y + 3, bar.w, 1, enemy.staggerMax - enemy.stagger, enemy.staggerMax, COLORS.heat);
       const mark = this.fieldMark(enemy) ?? (enemy.id === marked ? { text: STRINGS.objectives.mark, color: COLORS.heat } : null);
       if (mark) {
-        // Above the unit, unless that is where the bars of one standing higher up are: then on the unit, on a dark ground.
-        const others = bars.filter((_, i) => standing[i] !== enemy);
+        // Above the unit, unless that is where the bars of one standing higher up are: then on the unit, on a dark
+        // ground. (Its own bars are under its feet: they are never where its mark would go.)
         const width = mark.text.length * 4;
-        const at = markPosition(r, others, width);
+        const at = markPosition(r, bars, width);
         if (at.inside) {
           ctx.fillStyle = 'rgba(8, 8, 20, 0.7)';
           ctx.fillRect(at.x - width / 2 - 2, at.y - 1, width + 4, 10);
