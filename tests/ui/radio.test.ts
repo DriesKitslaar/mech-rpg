@@ -7,6 +7,7 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { WINGMEN } from '../../src/content/wingmen';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
+import { FIELD_Y, HERO } from '../../src/ui/stage';
 import { RADIO_CHARS, RADIO_MS, RADIO_WARN, Radio, cheered, radioText } from '../../src/ui/radio';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { done, finishBattle, inHub, select, snap, strong } from '../helpers/app';
@@ -343,7 +344,7 @@ describe('where the strip is written', () => {
     return { rects, texts };
   }
 
-  test('from the left edge of the field, just above the panel, on a strip as wide as the line', () => {
+  test('from the left edge of the field, near its top: under what the battle asks for and over the pilot\'s mech, on a strip as wide as the line', () => {
     const state = createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 7, { support: { name: 'Kite', damage: 500, orders: true } });
     const screen = new BattleScreen(new BattleFlow(state, CATALOG, { quiet: true }), sprites, CATALOG, { fast: true, radio: { who: 'Kite', lines: LINES } });
     screen.update(16);
@@ -354,11 +355,12 @@ describe('where the strip is written', () => {
     // What is said follows the name on the same row.
     expect(words.x).toBe(12 + 'KITE:'.length * 4);
     expect(words.y).toBe(name.y);
-    // The strip behind them: from 8, as wide as the line and its margins, and it ends above the panel.
+    // The strip behind them: from 8, as wide as the line and its margins. The foot of the field is where the pilot's mech
+    // stands, so it is near the top: under the strip that says what the battle asks for, and over the mech's head.
     const strip = rects.find(([x, y]) => x === 8 && y === name.y - 1)!;
     expect(strip).toEqual([8, name.y - 1, 'KITE: here'.length * 4 + 8, 11]);
-    expect(strip[1] + strip[3]).toBeLessThan(180);
-    expect(strip[1]).toBeGreaterThan(150);
+    expect(strip[1]).toBeGreaterThanOrEqual(FIELD_Y + 12);
+    expect(strip[1] + strip[3]).toBeLessThanOrEqual(HERO.y - 5);
   });
 });
 

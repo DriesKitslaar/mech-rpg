@@ -5,8 +5,9 @@ import SPRITES from '../../src/content/sprites.json';
 import { AMBIENCE, LIGHT_ALPHA, ambienceFor, drawAmbience, lightLevel, placeLights, type LightKind } from '../../src/ui/ambience';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
+import { FIELD_Y, HERO_FEET, PANEL_Y, horizonOf, pictureTop, placeFor } from '../../src/ui/stage';
 import type { SpriteStore } from '../../src/ui/sprites';
-import { EMBER_LIGHTS, LIGHTNING_ALPHA, LIGHTNING_MS, SKY_ALPHA, SPLASHES, WEATHER, drawWeatherExtras, lightning } from '../../src/ui/weather';
+import { EMBER_LIGHTS, GROUND_STRIP, LIGHTNING_ALPHA, LIGHTNING_MS, SKY_ALPHA, SPLASHES, WEATHER, drawWeatherExtras, lightning } from '../../src/ui/weather';
 import { record, type Glowed } from '../helpers/canvas';
 
 /** What a place adds to its picture: its own lights, a haze over the ground, darker edges, and weather that does more than fall. */
@@ -115,6 +116,44 @@ describe('a place, as it is drawn', () => {
     expect(Math.max(...front.glows.map(strength))).toBeLessThan(Math.max(...behind.map(strength)));
   });
 
+  test('a picture that is not where the screen is: its lights move with it, those of its lowest part are seen, and those that have left the field are not drawn', () => {
+    const lie = { shift: -92, far: 120, near: 169 };
+    const plain = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD)).glows.filter(isLight);
+    const moved = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, false, lie)).glows.filter(isLight);
+    // As a room shows it: the six lights of the picture, where the picture has them, and nothing of its lowest part.
+    expect(plain.map((g) => [g.x, g.y, g.r])).toEqual(AMBIENCE['bg-sluice'].lights.map((l) => [l.x, l.y, l.r]));
+    // Looked at lower: every light is 92 further up; five of the six have left the field and are not drawn; the five low ones are.
+    const all = [...AMBIENCE['bg-sluice'].lights, ...AMBIENCE['bg-sluice'].low!];
+    const seen = all.filter((l) => l.y - 92 + l.r > FIELD.top && l.y - 92 - l.r < FIELD.top + FIELD.height);
+    expect(seen).toHaveLength(6);
+    expect(moved.map((g) => [g.x, g.y, g.r])).toEqual(seen.map((l) => [l.x, l.y - 92, l.r]));
+    // A light keeps its own flicker whichever others are drawn with it: the one both show is as bright in both.
+    expect(strength(moved[0])).toBeCloseTo(strength(plain[0]), 6);
+    // A light that only touches the field's edge is still drawn; one that has just left it is not.
+    const edge = (shift: number) => record((ctx) => drawAmbience(ctx, 'bg-sluice', 0, 'behind', FIELD, false, { ...lie, shift })).glows.filter(isLight).some((g) => g.x === 155 && g.r === 35);
+    expect(edge(FIELD.top - 145 - 35 + 1)).toBe(true);
+    expect(edge(FIELD.top - 145 - 35)).toBe(false);
+    expect(edge(FIELD.top + FIELD.height - 145 + 35 - 1)).toBe(true);
+    expect(edge(FIELD.top + FIELD.height - 145 + 35)).toBe(false);
+  });
+
+  test('its haze lies along the two lines it is given: far off behind the units, near in front of them', () => {
+    const lie = { shift: -92, far: 120, near: 169 };
+    const haze = (layer: 'behind' | 'front', with_?: typeof lie) => record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, layer, FIELD, false, with_)).glows.filter((g) => !isLight(g) && !isVignette(g));
+    expect(haze('behind', lie)).toHaveLength(3);
+    expect(haze('front', lie)).toHaveLength(3);
+    // Each bank lies within a few pixels of its line: they are stacked five apart and sway by two.
+    for (const bank of haze('behind', lie)) expect(Math.abs(bank.y - 120)).toBeLessThanOrEqual(7);
+    for (const bank of haze('front', lie)) expect(Math.abs(bank.y - 169)).toBeLessThanOrEqual(7);
+    // Without one it lies where the picture's own ground is, and a little lower in front.
+    const own = AMBIENCE['bg-sluice'].haze!.y;
+    for (const bank of haze('behind')) expect(Math.abs(bank.y - own)).toBeLessThanOrEqual(7);
+    for (const bank of haze('front')) expect(Math.abs(bank.y - (own + 6))).toBeLessThanOrEqual(7);
+    // The darker edges are the field's, wherever the picture is.
+    const edges = (with_?: typeof lie) => record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, false, with_)).glows.filter(isVignette);
+    expect(edges(lie)).toEqual(edges());
+  });
+
   test('a place without haze has none, and ground the game does not know still gets its darker edges', () => {
     expect(AMBIENCE['bg-simulator'].haze).toBeUndefined();
     expect(record((ctx) => drawAmbience(ctx, 'bg-simulator', 0, 'front', FIELD)).glows).toEqual([]);
@@ -220,6 +259,29 @@ describe('weather that does more than fall', () => {
     expect(seen.size).toBeGreaterThan(40);
   });
 
+  test('where the floor reaches far up the field, rain lands on all of it: as far up as the floor goes and no further', () => {
+    expect(GROUND_STRIP).toBe(14);
+    const rows = (floor?: number) => {
+      const ys = new Set<number>();
+      for (let ms = 0; ms < 20000; ms += 50) {
+        for (const crown of record((ctx) => drawWeatherExtras(ctx, 'rain', ms, 310, 164, true, floor)).rects.filter((r) => r.w === 3 && r.h === 1)) ys.add(crown.y);
+      }
+      return [...ys].sort((a, b) => a - b);
+    };
+    // Nothing said: the strip at the foot of the field, as it was.
+    expect(rows()).toEqual(rows(GROUND_STRIP));
+    expect(rows()[0]).toBeGreaterThanOrEqual(164 - 3 - GROUND_STRIP);
+    // A floor seventy pixels deep: drops land all over it, the furthest near its far edge, none beyond it.
+    const deep = rows(70);
+    expect(deep[0]).toBeGreaterThanOrEqual(164 - 3 - 70);
+    expect(deep[0]).toBeLessThan(164 - 3 - 60);
+    expect(deep.at(-1)).toBe(164 - 3);
+    expect(deep.length).toBeGreaterThan(50);
+    // At a moment a drop lands, it lands at the same place across the field however deep the floor is: only how far up differs.
+    const at = (floor: number) => record((ctx) => drawWeatherExtras(ctx, 'rain', 1000, 310, 164, true, floor)).rects.filter((r) => r.w === 3 && r.h === 1);
+    expect(at(70).map((r) => r.x)).toEqual(at(14).map((r) => r.x));
+  });
+
   test('embers throw a little light, a few of them, at half strength in a calm picture', () => {
     expect(EMBER_LIGHTS).toBe(6);
     const glows = (calm: boolean) => record((ctx) => drawWeatherExtras(ctx, 'embers', 1200, 310, 164, calm)).glows;
@@ -240,15 +302,56 @@ describe('the battle screen and its place', () => {
     for (let i = 0; i < 400 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
     return { flow, screen, page: () => record((ctx) => screen.draw(ctx)) };
   }
-  const placeOf = (glows: Glowed[], id: string) => glows.filter(isLight).filter((g) => AMBIENCE[id].lights.some((l) => l.x === g.x && l.y === g.y && l.r === g.r));
+  /** The picture of a place is not where the screen is: the field shows a band of it, and its lights are where it is. */
+  const shiftOf = (id: string): number => pictureTop(placeFor(id));
+  /** Every light a place has: those of its picture as a room shows it, and those of the lowest part only a battle shows. */
+  const allOf = (id: string) => [...AMBIENCE[id].lights, ...(AMBIENCE[id].low ?? [])];
+  const placeOf = (glows: Glowed[], id: string) => glows.filter(isLight).filter((g) => allOf(id).some((l) => l.x === g.x && l.y + shiftOf(id) === g.y && l.r === g.r));
+  /** The lights of a place that reach onto the field once its picture is where it is. */
+  const onField = (id: string) => allOf(id).filter((l) => l.y + shiftOf(id) + l.r > FIELD_Y && l.y + shiftOf(id) - l.r < PANEL_Y);
 
   test('the place is under the units and its last haze over them', () => {
     const { page } = screenOf();
     const drawn = page();
-    expect(placeOf(drawn.glows, 'bg-mine')).toHaveLength(AMBIENCE['bg-mine'].lights.length);
+    // The mine's lamps hang where its picture has them: four of the six are in the band of it the field shows,
+    // and so are the two down by the floor that only a battle sees.
+    expect(AMBIENCE['bg-mine'].lights.filter((l) => onField('bg-mine').includes(l))).toHaveLength(4);
+    expect(onField('bg-mine')).toHaveLength(6);
+    expect(placeOf(drawn.glows, 'bg-mine')).toHaveLength(6);
     expect(drawn.glows.filter(isVignette)).toHaveLength(1);
     // Six banks of haze in all: three behind the units and three in front.
-    expect(drawn.glows.filter((g) => g.stops[0][1].startsWith('rgba(138, 116, 64,'))).toHaveLength(6);
+    const haze = drawn.glows.filter((g) => g.stops[0][1].startsWith('rgba(138, 116, 64,'));
+    expect(haze).toHaveLength(6);
+    // Those behind lie far off, where the floor begins; those in front lie near, at the feet of the pilot's mech.
+    const horizon = horizonOf(placeFor('bg-mine'));
+    for (const bank of haze.slice(0, 3)) expect(Math.abs(bank.y - (horizon + 6))).toBeLessThanOrEqual(8);
+    for (const bank of haze.slice(3)) expect(Math.abs(bank.y - (HERO_FEET - 8))).toBeLessThanOrEqual(8);
+    // What is drawn first is what is under everything else.
+    const firstUnit = drawn.order.findIndex((step) => step.kind === 'image' && step.at > 0);
+    const hazeAt = drawn.order.map((step, i) => (step.kind === 'glow' && haze.includes(drawn.glows[step.at]) ? i : -1)).filter((i) => i >= 0);
+    expect(hazeAt.slice(0, 3).every((i) => i < firstUnit)).toBe(true);
+    expect(hazeAt.slice(3).every((i) => i > firstUnit)).toBe(true);
+  });
+
+  test('every place has lights in the band of its picture the field shows, and none of those drawn has left the field', () => {
+    for (const id of Object.keys(AMBIENCE)) {
+      const drawn = screenOf({ background: id }).page();
+      const seen = placeOf(drawn.glows, id);
+      expect(seen.length, id).toBe(onField(id).length);
+      // Enough of them that the place glows, and no more than a place had before the field looked lower.
+      expect(seen.length, id).toBeGreaterThanOrEqual(5);
+      expect(seen.length, id).toBeLessThanOrEqual(8);
+      // What glows in the lowest part of a picture is in it: all of it is seen in a battle.
+      for (const low of AMBIENCE[id].low ?? []) {
+        expect(low.y, id).toBeGreaterThanOrEqual(150);
+        expect(low.y, id).toBeLessThan(270);
+        expect(onField(id), id).toContain(low);
+      }
+      for (const light of seen) {
+        expect(light.y + light.r, id).toBeGreaterThan(FIELD_Y);
+        expect(light.y - light.r, id).toBeLessThan(PANEL_Y);
+      }
+    }
   });
 
   test('a hurried screen has the place standing still: the same lights, the same haze, frame after frame', () => {
@@ -256,7 +359,7 @@ describe('the battle screen and its place', () => {
     const first = page().glows;
     for (let i = 0; i < 60; i++) screen.update(16);
     expect(page().glows).toEqual(first);
-    expect(placeOf(first, 'bg-mine')).toHaveLength(AMBIENCE['bg-mine'].lights.length);
+    expect(placeOf(first, 'bg-mine')).toHaveLength(onField('bg-mine').length);
     // One that is watched moves.
     const watched = screenOf();
     const before = watched.page().glows;

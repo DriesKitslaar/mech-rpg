@@ -3,6 +3,7 @@ import { completeMission } from '../../src/core/campaign';
 import type { EnemyDef } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { BattleFlow, BattleScreen, INTRO_MS, TALK_CHARS, TALK_HOLD_MS, TALK_LINES, WARNING_MS } from '../../src/ui/battleScreen';
+import { pictureTop, placeFor } from '../../src/ui/stage';
 import { SCENE_HOLD_MS } from '../../src/ui/sceneScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { WORLD } from '../../src/content/codex';
@@ -89,8 +90,10 @@ test('an enemy mech that fights alone is drawn mirrored from its parts, with its
   app.draw(ctx);
   expect(calls.some((c) => c.name === 'scale' && c.args[0] === -1 && c.args[1] === 1)).toBe(true);
   const drawn = calls.filter((c) => c.name === 'drawImage').map((c) => (c.args[0] as { id: string }).id);
+  // It stands far off: every part of it is its small drawing.
   for (const id of ['legs-bulwark', 'core-bulwark', 'head-bulwark', 'arms-bulwark.near', 'arms-bulwark.far', 'wpn-enemy-shotgun']) {
-    expect(drawn, id).toContain(id);
+    expect(drawn, id).toContain(`${id}.small`);
+    expect(drawn, id).not.toContain(id);
   }
   expect(drawn).not.toContain('enemy-heavy-mech');
 });
@@ -594,7 +597,9 @@ describe('the screens the three-act story added', () => {
     const { ctx, calls } = recorder();
     screen.draw(ctx);
     const field = calls.filter((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'bg-mine');
-    expect(field.map((c) => c.args.slice(1))).toEqual([[0, 0, 310, 270]]);
+    // Once, at its own size, as far up as shows the band of it the field looks at.
+    expect(field.map((c) => c.args.slice(1))).toEqual([[0, pictureTop(placeFor('bg-mine')), 310, 270]]);
+    expect(pictureTop(placeFor('bg-mine'))).toBe(-89);
   });
 
   test('every objective draws its line', () => {
