@@ -14,12 +14,14 @@ import { soundsForEvent } from '../platform/audio';
 import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
-import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
+import { BACK_MOUNT, FAR_FIST, MECH_BOX, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
-import { MAX_LIGHTS, disc, drawGlow, drawGlows, drawLights, drawShadow, type Glow, type Pt } from './light';
+import { eyeLight, eyeOf } from './eyes';
+import { MAX_LIGHTS, disc, drawGlow, drawGlows, drawLights, drawShadow, lightRoom, type Glow, type Pt } from './light';
 import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import {
-  CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, drawCutIn, drawDefeat, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
+  CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, MECH_HEAD, drawCutIn, drawDefeat, drawEntrance, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
+  type Entrant,
 } from './cinema';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
@@ -105,8 +107,6 @@ function drawRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius:
   }
 }
 
-/** How tall the letters of the word over a boss are. */
-export const WARNING_TALL = 23;
 /** The box a battle's result is in, how tall the letters of its word are at most and at least, and how far down the box their middle is. */
 export const RESULT_W = 190;
 export const RESULT_TALL = 26;
@@ -476,8 +476,10 @@ export class BattleScreen {
     // The light of everything that burns, fires or glows is added over the field: at half strength, and
     // never over the whole of it, in a calm picture. Sixteen lights are the battle's in all, with those
     // of what stands on the field counted first.
-    // From close by every light is four times the size: half as many are drawn.
-    if (!this.opts.fast) drawGlows(ctx, this.lights(), calm, (finish && !calm ? MAX_LIGHTS / 2 : MAX_LIGHTS) - this.standing);
+    // From close by every light is four times the size: half as many are drawn. And where there is to
+    // be less light the sixteen are eight: what stands on the field then counts for two of the sixteen each.
+    const weight = lightRoom(MAX_LIGHTS) > 0 ? MAX_LIGHTS / lightRoom(MAX_LIGHTS) : 1;
+    if (!this.opts.fast) drawGlows(ctx, this.lights(), calm, (finish && !calm ? MAX_LIGHTS / 2 : MAX_LIGHTS) - this.standing * weight);
     if (this.hitStop.flash > 0 && !this.opts.calm) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
       ctx.fillRect(0, 14, LOGICAL_W, PANEL_Y - 14);
@@ -584,41 +586,52 @@ export class BattleScreen {
   /** The banner that opens a battle: the contract and what it asks for, or a warning with the name of a boss. */
   private drawIntro(ctx: CanvasRenderingContext2D): void {
     const p = 1 - this.intro / this.introTotal;
+    const boss = this.opts.boss;
+    if (boss) {
+      // A boss comes in on a band of its own, from its side of the field: the warning, its name, and itself from close by.
+      const alarm = this.opts.calm === true || Math.floor(this.clock / 180) % 2 === 0;
+      drawEntrance(ctx, p, this.clock, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W },
+        { warning: STRINGS.battleIntro.warning, name: boss.toUpperCase(), alarm }, this.entrant(boss), this.opts.calm === true);
+      return;
+    }
     // It slides in from the left, holds, and leaves to the right.
     const x = Math.round(LOGICAL_W * (Math.min(1, p / 0.16) - 1 + Math.max(0, (p - 0.88) / 0.12)));
-    const boss = this.opts.boss;
     const h = 46;
     const y = 62;
     ctx.fillStyle = 'rgba(8, 8, 20, 0.92)';
     ctx.fillRect(x, y, LOGICAL_W, h);
-    const edge = boss ? COLORS.danger : COLORS.accent;
-    if (boss) {
-      // Hazard stripes run along both edges of a warning.
-      const shift = Math.floor(this.clock / 40) % 16;
-      for (let sx = -16; sx < LOGICAL_W + 16; sx += 16) {
-        ctx.fillStyle = COLORS.danger;
-        ctx.fillRect(x + sx + shift, y, 8, 3);
-        ctx.fillRect(x + sx + 16 - shift, y + h - 3, 8, 3);
-      }
-      const blink = this.opts.calm || Math.floor(this.clock / 180) % 2 === 0;
-      const word = STRINGS.battleIntro.warning;
-      // The word in the sign's letters, red and amber by turns; in the font where the sign cannot write it.
-      const tall = fitTall(word, LOGICAL_W - 20, WARNING_TALL);
-      if (tall === null) {
-        drawText(ctx, word, x + LOGICAL_W / 2, y + 5, { size: 32, align: 'center', color: blink ? COLORS.danger : COLORS.heat });
-        drawText(ctx, boss.toUpperCase(), x + LOGICAL_W / 2, y + 30, { align: 'center' });
-        return;
-      }
-      drawWord(ctx, word, x + LOGICAL_W / 2, y + 4, { tall, metal: blink ? 'red' : 'amber' });
-      drawText(ctx, boss.toUpperCase(), x + LOGICAL_W / 2, y + 31, { align: 'center' });
-      return;
-    }
+    const edge = COLORS.accent;
     ctx.fillStyle = edge;
     ctx.fillRect(x, y, LOGICAL_W, 1);
     ctx.fillRect(x, y + h - 1, LOGICAL_W, 1);
     const title = this.opts.title ?? this.opts.label ?? '';
     drawText(ctx, title, x + LOGICAL_W / 2, y + 7, { size: 16, align: 'center', color: COLORS.accent });
     drawText(ctx, this.instruction(), x + LOGICAL_W / 2, y + 27, { align: 'center', color: COLORS.heat });
+  }
+
+  /**
+   * The boss as its band shows it: the machine of that name on the field, looked at where its eye
+   * is. A frame built from parts like the pilot's own is looked at where its head is, and has no
+   * eye that is known. Null where there is no such machine: the band then has its words and
+   * nothing else.
+   */
+  private entrant(name: string): Entrant | null {
+    const unit = this.flow.state.units.find((u) => u.side === 'enemy' && u.name === name);
+    if (!unit) return null;
+    if (this.duel()) {
+      const parts = mechSprites(this.sprites, unit.build, unit.paint);
+      // Turned round in its own box, as it stands on the field: it faces left.
+      return {
+        draw: (c) => { c.translate(MECH_BOX, 0); c.scale(-1, 1); drawMech(c, parts, 0, 0); },
+        focus: { x: MECH_BOX - MECH_HEAD.x, y: MECH_HEAD.y }, eye: null,
+      };
+    }
+    const r = this.enemyRect(unit);
+    const eye = eyeOf(unit.sprite ?? unit.id);
+    return {
+      draw: (c) => c.drawImage(r.sprite.image, 0, 0, r.w, r.h),
+      focus: eye ?? { x: r.w / 2, y: Math.min(r.h / 2, 24) }, eye: eye && { r: eye.r, color: eye.color },
+    };
   }
 
   /** What the battle asks for, in the words the briefing used: the strip above the field keeps the count. */
@@ -942,6 +955,17 @@ export class BattleScreen {
             ctx.drawImage(r.sprite.image, col * iw, row * ih, iw, ih, r.x + col * (r.w - w) + o.dx, r.y + row * (r.h - h) + o.dy, w, h);
           });
         });
+        // A machine that stands looks back: a small light on its eye, that moves as it moves. Not on one
+        // that is coming apart, and not in a hurried game. It is one of the battle's sixteen lights.
+        if (!this.opts.fast && breaking === null && !enemy.destroyed) {
+          const t = this.fx.transform(enemy.id);
+          const dazed = enemy.staggered > 0 || enemy.overheated;
+          const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + hover + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);
+          if (eye) {
+            this.standing++;
+            drawGlow(ctx, eye, this.opts.calm ? 0.5 : 1);
+          }
+        }
       }
     });
     // Then everything that is written over them, so no machine hides another's bars.
