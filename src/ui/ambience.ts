@@ -167,8 +167,10 @@ export function drawVignette(ctx: CanvasRenderingContext2D, x: number, y: number
  * How a picture lies on the screen when it is not drawn from the screen's top: how far down (or,
  * under nothing, up) its top is, and the two lines its haze lies along instead of the picture's
  * own: one far off, where the floor begins, and one near, at the feet of whoever stands in front.
+ * `seen` is the part of what is drawn that a camera has in view, where that is not the field
+ * itself: the darker edges are the edges of that, and a light is drawn if it reaches into that.
  */
-export interface Lie { shift: number; far: number; near: number }
+export interface Lie { shift: number; far: number; near: number; seen?: { left: number; top: number; width: number; height: number } }
 
 /**
  * Draws what a place adds to its picture. `behind` goes over the background and under everything
@@ -184,12 +186,13 @@ export function drawAmbience(
 ): void {
   const place = ambienceFor(background);
   if (layer === 'behind') {
-    drawVignette(ctx, 0, field.top, field.width, field.height);
+    const view = lie?.seen ?? { left: 0, top: field.top, width: field.width, height: field.height };
+    drawVignette(ctx, view.left, view.top, view.width, view.height);
     // A picture that is not where the screen is shows its lowest part: what glows there is seen too.
     const lights = placeLights(background, clockMs, calm, !!lie);
     const seen = !lie ? lights : lights
       .map((light) => ({ ...light, y: light.y + lie.shift }))
-      .filter((light) => light.y + light.r > field.top && light.y - light.r < field.top + field.height);
+      .filter((light) => light.y + light.r > view.top && light.y - light.r < view.top + view.height);
     drawLights(ctx, seen, calm ? 0.5 : 1);
     if (place?.haze) drawHaze(ctx, lie ? { ...place.haze, y: lie.far } : place.haze, clockMs, field.width, 0.7);
     return;

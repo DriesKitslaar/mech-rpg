@@ -7,7 +7,7 @@ import { BattleScreen } from '../../src/ui/battleScreen';
 import { BLINK_EVERY_MS, BLINK_MS, EYES, EYE_ALPHA, eyeLevel, eyeLight, eyeOf } from '../../src/ui/eyes';
 import { MAX_LIGHTS, setDetail } from '../../src/ui/light';
 import type { SpriteStore } from '../../src/ui/sprites';
-import { record, type Drawn, type Glowed } from '../helpers/canvas';
+import { onStage, record, type Drawn, type Glowed } from '../helpers/canvas';
 import { eyesIn } from '../helpers/eyes';
 import { readPng } from '../helpers/png';
 
@@ -205,7 +205,8 @@ describe('the eyes of the machines on the field', () => {
     const flow = new BattleFlow(state, CATALOG, { quiet: true });
     const screen = new BattleScreen(flow, sprites, CATALOG, { fast: opts.fast ?? false, background: 'bg-nowhere', ...(opts.calm ? { calm: true } : {}) });
     for (let i = 0; i < 400 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
-    return { flow, screen, page: (): Drawn => record((ctx) => screen.draw(ctx)) };
+    // The field as it stands on the stage: the camera pushes in when a blow lands, and an eye is no larger for that.
+    return { flow, screen, page: (): Drawn => onStage(record((ctx) => screen.draw(ctx)), screen.motion.view) };
   }
   /** Where each machine's picture was drawn, by its name. */
   const drawnAt = (page: Drawn, picture: string) => page.images.find((image) => (image.image as { id: string }).id === picture)!;

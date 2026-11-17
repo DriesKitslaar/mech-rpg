@@ -14,7 +14,7 @@ import {
   pictureTop, placeBars, placeFor, standAt,
 } from '../../src/ui/stage';
 import { COLORS } from '../../src/ui/widgets';
-import { record, type Drawn, type Glowed, type Pictured } from '../helpers/canvas';
+import { onStage, record, type Drawn, type Glowed, type Pictured } from '../helpers/canvas';
 
 /**
  * A battle as it is looked at: over the shoulder of the pilot's mech. That mech is near, in the
@@ -36,7 +36,8 @@ function screenOf(enemies: string[], opts: { build?: Build; background?: string;
     fast: opts.fast ?? true, background: opts.background ?? 'bg-neon-district', ...(opts.coach ? { coach: true } : {}),
   });
   screen.update(16);
-  const page = (): Drawn => record((ctx) => screen.draw(ctx));
+  // The field as it stands on the stage: where the camera is, is another matter (tests/ui/cameraScreen.test.ts).
+  const page = (): Drawn => onStage(record((ctx) => screen.draw(ctx)), screen.motion.view);
   return { state, flow, screen, page };
 }
 /** The pictures of the pilot's mech on a page: those drawn from behind. */

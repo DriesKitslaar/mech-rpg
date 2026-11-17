@@ -338,7 +338,8 @@ describe('a battle against a boss', () => {
     expect(inWindow.length).toBeGreaterThanOrEqual(4);
     // Turned round: each part is drawn from its right edge leftward, as on the field, where the same frame faces left.
     expect(inWindow.every((image) => image.w < 0)).toBe(true);
-    const onField = drawn.images.filter((image) => !image.clip && image.w < 0);
+    // On the field, where the camera is on its way down the picture: what is not kept inside the band's window.
+    const onField = drawn.images.filter((image) => image.clip?.x !== ENTRANCE_WINDOW_X && image.w < 0);
     expect(onField.length).toBe(inWindow.length);
     // On the field it stands far off: the same parts in the same order, each the small drawing of it, two thirds the size.
     inWindow.forEach((image, i) => {
@@ -357,7 +358,8 @@ describe('a battle against a boss', () => {
     const { screen, page } = against('recon-drone', { boss: 'Nobody' });
     screen.update(WARNING_MS / 2);
     const drawn = page();
-    expect(drawn.images.filter((image) => image.clip !== null)).toEqual([]);
+    // No picture is kept inside a window: the only box drawing is kept in is the field's, while the camera comes down.
+    expect(drawn.images.filter((image) => image.clip !== null && image.clip.x !== 0)).toEqual([]);
     const name = signIn(drawn, 'NOBODY', 'steel')!;
     expect(Math.abs(name.x + name.w / 2 - 155)).toBeLessThanOrEqual(0.5);
   });
@@ -399,7 +401,7 @@ describe('a battle against a boss', () => {
     const banner = plate(drawn);
     expect(banner).toMatchObject({ y: 62, w: 310, h: 46 });
     expect(banner.x).toBeLessThan(0);
-    expect(drawn.images.filter((image) => image.clip !== null)).toEqual([]);
+    expect(drawn.images.filter((image) => image.clip !== null && image.clip.x !== 0)).toEqual([]);
     expect(signCount(drawn)).toBe(0);
   });
 });

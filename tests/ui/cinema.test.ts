@@ -16,7 +16,7 @@ import type { App } from '../../src/ui/app';
 import { SettlementScreen } from '../../src/ui/settlementScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { COLORS } from '../../src/ui/widgets';
-import { record, signCount, signIn, type Drawn, type Filled } from '../helpers/canvas';
+import { onStage, record, signCount, signIn, type Drawn, type Filled } from '../helpers/canvas';
 import { eyesIn } from '../helpers/eyes';
 import { setLanguage } from '../../src/content/language';
 import { RESULT_TALL, RESULT_W, RESULT_WORD_Y } from '../../src/ui/battleScreen';
@@ -523,7 +523,9 @@ describe('the staged moments in a battle', () => {
     expect(flow.state.units[0].ironSkin).toBe(true);
     expect(screen.motion.cutIn).toBe('IRON SKIN');
     screen.update(300);
-    const up = page();
+    // The camera pushes in on the mech as its Overdrive goes off: what stands on the field is measured as it stands there.
+    expect(screen.motion.view.zoom).toBeGreaterThan(1);
+    const up = onStage(page(), screen.motion.view);
     expect(up.rects.some((r) => r.color === BAND)).toBe(true);
     expect(up.texts.map((t) => t.text)).toEqual(expect.arrayContaining(['OVERDRIVE', 'IRON SKIN']));
     // The mech in the band is the pilot's own, from the front and at twice its size: one picture for each of its parts.
@@ -811,7 +813,7 @@ describe('the staged moments in a battle', () => {
         screen.update(16);
         most = Math.max(most, screen.motion.particles);
         if (i % 7 === 0) {
-          const drawn = page();
+          const drawn = onStage(page(), screen.motion.view);
           lights = Math.max(lights, drawn.glows.filter((g) => g.blend === 'lighter').length - eyesIn(drawn).length);
         }
       }

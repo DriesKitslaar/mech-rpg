@@ -8,7 +8,7 @@ import { ENEMY_LEFT, HERO, HERO_FEET, PLAIN, horizonOf } from '../../src/ui/stag
 import { FIELD_LIGHT, MAX_LIGHTS } from '../../src/ui/light';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { EMBER_LIGHTS, LIGHTNING_MS } from '../../src/ui/weather';
-import { record, type Drawn, type Glowed } from '../helpers/canvas';
+import { onStage, record, type Drawn, type Glowed } from '../helpers/canvas';
 import { eyesIn } from '../helpers/eyes';
 
 /**
@@ -36,7 +36,8 @@ function screenOf(state: BattleState, opts: { fast?: boolean; calm?: boolean; ba
   const screen = new BattleScreen(flow, sprites, CATALOG, { fast: opts.fast ?? false, background: opts.background ?? 'bg-nowhere', ...(opts.calm ? { calm: true } : {}) });
   for (let i = 0; i < 4000 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
   expect(flow.phase).toBe('action');
-  const page = (): Drawn => record((ctx) => screen.draw(ctx));
+  // The field as it stands on the stage, whatever the camera is doing: a light is counted by where and how large it is there.
+  const page = (): Drawn => onStage(record((ctx) => screen.draw(ctx)), screen.motion.view);
   /** The phase as it is now: asked for afresh, since a press or a moment changes it. */
   const phase = (): string => flow.phase;
   /** Walks the cursor to an entry of the pilot's menu and takes it. */

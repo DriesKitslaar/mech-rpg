@@ -28,10 +28,14 @@ export interface Stroked { points: { x: number; y: number }[]; width: number; co
 export interface Shaped { points: { x: number; y: number }[]; color: string; stops: [number, string][]; blend: string }
 /** One thing that was drawn, by what kind of thing it was and its place among those of its kind. */
 export interface Step { kind: 'text' | 'rect' | 'image' | 'glow' | 'stroke' | 'wash' | 'shape'; at: number }
+/** A box on the screen. */
+export interface Box { x: number; y: number; w: number; h: number }
 export interface Drawn {
   texts: Written[]; rects: Filled[]; images: Pictured[]; glows: Glowed[]; strokes: Stroked[]; washes: Washed[]; shapes: Shaped[];
   /** Everything that was drawn, in the order it was drawn in: what comes later lies over what came before. */
   order: Step[];
+  /** The box the drawing was kept inside as each text, rectangle and light was drawn (a picture says so itself): null where it was free. */
+  kept: { texts: (Box | null)[]; rects: (Box | null)[]; glows: (Box | null)[] };
 }
 
 interface Gradient { x: number; y: number; r: number; linear?: boolean; stops: [number, string][]; addColorStop(offset: number, color: string): void }
@@ -52,12 +56,12 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
   const washes: Washed[] = [];
   const shapes: Shaped[] = [];
   const order: Step[] = [];
+  const kept: Drawn['kept'] = { texts: [], rects: [], glows: [] };
   const state: Record<string, unknown> = {
     font: '12px x', textAlign: 'left', fillStyle: '', strokeStyle: '', lineWidth: 1, globalCompositeOperation: 'source-over', globalAlpha: 1, filter: 'none',
   };
   // Where the drawing has moved the canvas to, and by how much it has scaled it.
   let at = { tx: 0, ty: 0, sx: 1, sy: 1 };
-  type Box = { x: number; y: number; w: number; h: number };
   // What the drawing is kept inside, and the last box that was laid out as a path.
   let clip: Box | null = null;
   let boxed: Box | null = null;
@@ -94,6 +98,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
       const where = X(Number(x));
       const left = align === 'right' ? where - width : align === 'center' ? where - width / 2 : where;
       order.push({ kind: 'text', at: texts.length });
+      kept.texts.push(clip ? { ...clip } : null);
       texts.push({ text: said, x: where, y: Y(Number(y)), left, right: left + width, size: size(), align, color: String(state.fillStyle) });
     },
     fillRect: (x, y, w, h) => {
@@ -105,10 +110,12 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
       }
       if (isGradient(style)) {
         order.push({ kind: 'glow', at: glows.length });
+        kept.glows.push(clip ? { ...clip } : null);
         glows.push({ x: X(style.x), y: Y(style.y), r: style.r * at.sx, ry: style.r * at.sy, stops: style.stops, blend: String(state.globalCompositeOperation) });
         return;
       }
       order.push({ kind: 'rect', at: rects.length });
+      kept.rects.push(clip ? { ...clip } : null);
       rects.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, color: String(style), blend: String(state.globalCompositeOperation), alpha: Number(state.globalAlpha) });
     },
     drawImage: (image, x, y, w, h) => {
@@ -141,7 +148,35 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
     set: (t, name: string, value) => { t[name] = value; return true; },
   }) as unknown as CanvasRenderingContext2D;
   draw(ctx);
-  return { texts, rects, images, glows, strokes, washes, shapes, order };
+  return { texts, rects, images, glows, strokes, washes, shapes, order, kept };
+}
+
+/** The field of a battle: what a camera that has left home keeps its drawing inside. */
+const FIELD_BOX: Box = { x: 0, y: 14, w: 310, h: 164 };
+
+/**
+ * A battle's field as it stands on the stage, whatever the camera was doing when it was drawn. A
+ * camera that has left home moves and scales everything on the field, and keeps the drawing
+ * inside the field while it does: here every picture, light, rectangle and text that was drawn so
+ * is put back where and as large as it is on the stage. What was drawn over the field (the bars,
+ * a band, the panel) is left as it is. `view` is the screen's own account of where its camera is.
+ */
+export function onStage(drawn: Drawn, view: { x: number; y: number; zoom: number }): Drawn {
+  const middle = { x: FIELD_BOX.w / 2, y: FIELD_BOX.y + FIELD_BOX.h / 2 };
+  if (view.zoom === 1 && view.x === middle.x && view.y === middle.y) return drawn;
+  const under = (box: Box | null): boolean => !!box && box.x === FIELD_BOX.x && box.y === FIELD_BOX.y && box.w === FIELD_BOX.w && box.h === FIELD_BOX.h;
+  // To a ten-thousandth of a pixel: what stands on whole pixels on the stage comes back on them.
+  const whole = (n: number): number => Math.round(n * 1e4) / 1e4;
+  const x = (n: number): number => whole((n - middle.x) / view.zoom + view.x);
+  const y = (n: number): number => whole((n - middle.y) / view.zoom + view.y);
+  const size = (n: number): number => whole(n / view.zoom);
+  return {
+    ...drawn,
+    images: drawn.images.map((image) => (under(image.clip) ? { ...image, x: x(image.x), y: y(image.y), w: size(image.w), h: size(image.h) } : image)),
+    glows: drawn.glows.map((glow, i) => (under(drawn.kept.glows[i]) ? { ...glow, x: x(glow.x), y: y(glow.y), r: size(glow.r), ry: size(glow.ry) } : glow)),
+    rects: drawn.rects.map((rect, i) => (under(drawn.kept.rects[i]) ? { ...rect, x: x(rect.x), y: y(rect.y), w: size(rect.w), h: size(rect.h) } : rect)),
+    texts: drawn.texts.map((text, i) => (under(drawn.kept.texts[i]) ? { ...text, x: x(text.x), y: y(text.y), left: x(text.left), right: x(text.right) } : text)),
+  };
 }
 
 /** Whether two pieces of text share a row and run into each other. */
