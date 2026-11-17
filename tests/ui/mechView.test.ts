@@ -132,7 +132,7 @@ describe('drawing a mech in a view', () => {
   });
 
   test('a shift moves all of it, a sway all but the legs, and a pose each layer by itself, in every view', () => {
-    for (const view of ['front', 'back'] as MechView[]) {
+    for (const view of ['front', 'back', 'small'] as MechView[]) {
       const { store: s } = store();
       const parts = mechSprites(s, DEMO_BUILD, undefined, view);
       const still = record((ctx) => drawMech(ctx, parts, 0, 0, { dx: 0, dy: 0 }, 0, {}, view)).images;

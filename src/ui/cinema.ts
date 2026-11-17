@@ -277,15 +277,6 @@ export function focusOn(at: Pt, field: Field): Pt {
   };
 }
 
-/** Moves and scales the canvas so that `focus` is in the middle of the field at twice its size, and keeps the drawing inside the field. */
-export function lookClose(ctx: CanvasRenderingContext2D, focus: Pt, field: Field): void {
-  ctx.beginPath();
-  ctx.rect(0, field.top, field.width, field.height);
-  ctx.clip();
-  ctx.translate(Math.round(field.width / 2) - focus.x * FINISH_ZOOM, field.top + Math.round(field.height / 2) - focus.y * FINISH_ZOOM);
-  ctx.scale(FINISH_ZOOM, FINISH_ZOOM);
-}
-
 /** The two black bars, as far in as `open` says. */
 export function drawLetterbox(ctx: CanvasRenderingContext2D, open: number, field: Field): void {
   const h = Math.round(LETTERBOX * Math.max(0, Math.min(1, open)));

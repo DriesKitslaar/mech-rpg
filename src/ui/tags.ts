@@ -1,5 +1,6 @@
 import type { Intent } from '../core/intent';
 import { STRINGS } from '../content/strings';
+import { BARS_H } from './stage';
 
 /** A short label for something that is on a unit right now. */
 export interface Tag {
@@ -45,17 +46,17 @@ export interface Box { x: number; y: number; w: number; h: number }
 
 /**
  * Where the small mark over a unit on the field is written (a fuse, a charge, the contract's
- * target): centred just above it, but not on the bars under another unit that stands higher up.
- * Where it would be, it is written on the unit itself.
+ * target): centred just above it, but not on the bars of another unit that stands higher up.
+ * Where it would be, it is written on the unit itself. `bars` are the others' bars where they were
+ * put (`placeBars`): bars that were moved down out of each other's way are kept clear of where they are.
  */
-export function markPosition(unit: Box, others: Box[], textWidth: number): { x: number; y: number; inside: boolean } {
+export function markPosition(unit: Box, bars: { x: number; y: number; w: number }[], textWidth: number): { x: number; y: number; inside: boolean } {
   const x = Math.round(unit.x + unit.w / 2);
   const y = Math.max(26, unit.y - 10);
   const left = x - textWidth / 2;
   const right = x + textWidth / 2;
-  // Under every unit: its armour line and its balance line, a few pixels below its feet.
-  const onBars = others.some((o) =>
-    left < o.x + o.w - 8 && right > o.x + 8 && y < o.y + o.h + 7 && y + 9 > o.y + o.h + 1);
+  // A row of text is nine pixels high; bars are kept a pixel clear above and below.
+  const onBars = bars.some((bar) => left < bar.x + bar.w && right > bar.x && y < bar.y + BARS_H + 1 && y + 9 > bar.y - 1);
   return onBars ? { x, y: unit.y + 2, inside: true } : { x, y, inside: false };
 }
 

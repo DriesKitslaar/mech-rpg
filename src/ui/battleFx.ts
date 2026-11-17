@@ -115,11 +115,11 @@ type Timed = { start: number; dur: number };
  */
 export type Fx = Timed & (
   | { kind: 'projectile'; from: Pt; to: Pt; dtype: DamageType; grow: [number, number]; under?: true }
-  | { kind: 'muzzle'; at: Pt; dtype: DamageType; dir: number; aim: Pt; size: number; under?: true }
-  | { kind: 'recoil'; unit: string; dir: number; aim: Pt }
+  | { kind: 'muzzle'; at: Pt; dtype: DamageType; aim: Pt; size: number; under?: true }
+  | { kind: 'recoil'; unit: string; aim: Pt }
   | { kind: 'hit'; unit: string }
   | { kind: 'pulse'; unit: string }
-  | { kind: 'lunge'; unit: string; dir: number; from: Pt; aim: Pt }
+  | { kind: 'lunge'; unit: string; from: Pt; aim: Pt }
   | { kind: 'death'; unit: string; at: Pt }
   | { kind: 'burst'; at: Pt; size: number; color: string; style: BurstStyle }
   | { kind: 'sparks'; at: Pt; color: string }
@@ -127,7 +127,7 @@ export type Fx = Timed & (
   /** A figure or a word. One that is `over` the field is written where the screen has it, not on the stage: it belongs to what is written along the field's top. */
   | { kind: 'text'; at: Pt; text: string; color: string; over?: true }
   | { kind: 'slash'; at: Pt; dir: number; color: string }
-  | { kind: 'shield'; at: Pt; dir: number; aim: Pt }
+  | { kind: 'shield'; at: Pt; aim: Pt }
   | { kind: 'gather'; at: Pt; color: string }
 );
 
@@ -226,7 +226,7 @@ export class BattleFx {
         const far = this.sizeOf(event.target);
         if (melee) {
           // A blade is carried to the target by the mech itself, over the floor between the two.
-          this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir, from: s.centre(event.unit), aim: this.wayTo(event.unit, event.target, target) });
+          this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from: s.centre(event.unit), aim: this.wayTo(event.unit, event.target, target) });
           this.add(flight, SLASH_MS, { kind: 'slash', at: target, dir, color: TYPE_COLOR[dtype] });
         } else {
           const aim = towards(from, target, dir);
@@ -235,8 +235,8 @@ export class BattleFx {
           const to = event.hit ? target : { x: target.x + aim.x * MISS_ON + up.x * MISS_WIDE, y: target.y + aim.y * MISS_ON + up.y * MISS_WIDE };
           // A weapon on the far side of its mech: the flash at its barrel and what it fires are behind the mech.
           const under = s.hidden?.(event.unit, event.weapon) === true ? { under: true as const } : {};
-          this.add(0, MUZZLE_MS, { kind: 'muzzle', at: from, dtype, dir, aim, size: near, ...under });
-          this.add(0, RECOIL_MS, { kind: 'recoil', unit: event.unit, dir, aim });
+          this.add(0, MUZZLE_MS, { kind: 'muzzle', at: from, dtype, aim, size: near, ...under });
+          this.add(0, RECOIL_MS, { kind: 'recoil', unit: event.unit, aim });
           this.add(0, flight, { kind: 'projectile', from, to, dtype, grow: [near, far], ...under });
         }
         if (event.hit) {
@@ -276,7 +276,7 @@ export class BattleFx {
       }
       case 'boost': {
         const from = s.centre(event.unit);
-        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir: s.facing(event.unit), from, aim: this.headingOf(event.unit) });
+        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from, aim: this.headingOf(event.unit) });
         break;
       }
       case 'cool':
@@ -296,7 +296,7 @@ export class BattleFx {
         this.say(0, s.centre(event.unit), STRINGS.fx.overheat, COLORS.danger);
         break;
       case 'guard':
-        this.add(0, SHIELD_MS, { kind: 'shield', at: s.centre(event.unit), dir: s.facing(event.unit), aim: this.headingOf(event.unit) });
+        this.add(0, SHIELD_MS, { kind: 'shield', at: s.centre(event.unit), aim: this.headingOf(event.unit) });
         break;
       case 'stagger': {
         const at = s.centre(event.unit);
@@ -332,7 +332,7 @@ export class BattleFx {
         const from = s.centre(event.unit);
         const at = s.hitPoint(event.target, 'core');
         const size = this.sizeOf(event.target);
-        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir: s.facing(event.unit), from, aim: this.wayTo(event.unit, event.target, at) });
+        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from, aim: this.wayTo(event.unit, event.target, at) });
         for (const [i, off] of [[0, 0], [-14, 8], [12, -10], [4, 14]].entries()) {
           this.add(MELEE_MS + i * 90, 380, { kind: 'burst', at: { x: at.x + off[0] * size, y: at.y + off[1] * size }, size: (i === 0 ? 26 : 18) * size, color: '#ff8a3c', style: 'fire' });
         }

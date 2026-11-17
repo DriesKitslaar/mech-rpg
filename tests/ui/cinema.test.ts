@@ -3,12 +3,13 @@ import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
+import { applyView } from '../../src/ui/camera';
 import { BattleScreen } from '../../src/ui/battleScreen';
 import { PLAIN, depthOf, pictureTop } from '../../src/ui/stage';
 import { WRECK_SIZE, sizeAt } from '../../src/ui/battleFx';
 import {
   CUT_IN_H, CUT_IN_MS, CUT_IN_NAME_TALL, CUT_IN_NAME_W, CUT_IN_SCALE, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
-  cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox, lookClose,
+  cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox,
 } from '../../src/ui/cinema';
 import type { Settlement } from '../../src/core/economy';
 import { MISSIONS } from '../../src/content/missions';
@@ -272,9 +273,9 @@ describe('looking at the last machine from close by', () => {
     expect(focusOn({ x: -40, y: 400 }, FIELD)).toEqual({ x: 78, y: 137 });
   });
 
-  test('the point is put in the middle of the field and everything is twice its size, on whole pixels', () => {
+  test('looked at as the camera looks at anything, the point is in the middle of the field and everything is twice its size, on whole pixels', () => {
     const page = record((ctx) => {
-      lookClose(ctx, { x: 200, y: 120 }, FIELD);
+      applyView(ctx, { x: 200, y: 120, zoom: FINISH_ZOOM });
       ctx.fillStyle = '#123456';
       ctx.fillRect(200, 120, 10, 6);
       ctx.fillRect(0, 14, 310, 164);
@@ -288,7 +289,7 @@ describe('looking at the last machine from close by', () => {
     expect(whole.y + whole.h).toBeGreaterThanOrEqual(FIELD.top + FIELD.height);
     // And that holds for the corners it can be drawn round.
     for (const at of [{ x: 0, y: 0 }, { x: 310, y: 0 }, { x: 0, y: 270 }, { x: 310, y: 270 }]) {
-      const corner = record((ctx) => { lookClose(ctx, focusOn(at, FIELD), FIELD); ctx.fillRect(0, 14, 310, 164); }).rects[0];
+      const corner = record((ctx) => { applyView(ctx, { ...focusOn(at, FIELD), zoom: FINISH_ZOOM }); ctx.fillRect(0, 14, 310, 164); }).rects[0];
       expect(corner.x).toBeLessThanOrEqual(0);
       expect(corner.y).toBeLessThanOrEqual(FIELD.top);
       expect(corner.x + corner.w).toBeGreaterThanOrEqual(310);
@@ -776,8 +777,8 @@ describe('the staged moments in a battle', () => {
       if (!over()) screen.update(16);
     }
     expect(flow.phase).toBe('result');
-    // The band has had well under its nine tenths of a second, and is still counted as up.
-    expect(screen.motion.cutIn).toBe('DEADEYE');
+    // The band has had well under its nine tenths of a second, and it is down: from the press that brought the result up.
+    expect(screen.motion.cutIn).toBeNull();
     // Drawn straight away, before another moment has passed, and after one.
     expect(page().rects.some((r) => r.color === BAND)).toBe(false);
     // (The small tag on the mech that says the Overdrive is still on is another matter: the band's name is the large one.)

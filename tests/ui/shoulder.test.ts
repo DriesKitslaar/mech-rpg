@@ -6,7 +6,7 @@ import SPRITES from '../../src/content/sprites.json';
 import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen, INTRO_MS } from '../../src/ui/battleScreen';
-import { BACK_BOX, VIEWS, layoutMech } from '../../src/ui/mechLayout';
+import { BACK_BOX, VIEWS, layoutMech, muzzleOf } from '../../src/ui/mechLayout';
 import { mechSprites } from '../../src/ui/mechView';
 import type { Sprite, SpriteStore } from '../../src/ui/sprites';
 import {
@@ -420,18 +420,46 @@ describe('a mech built from parts that is fought alone', () => {
     const [spot] = enemySpots(1, placeFor('bg-neon-district'));
     const box = duelAt(spot);
     const parts = mechSprites(sprites, state.units[1].build, undefined, 'small');
+    const small = page().images.filter((image) => idOf(image).endsWith('.small'));
+    let held = 0;
     for (const weapon of ['rightHand', 'leftHand', 'shoulder'] as const) {
       const from = screen.motion.at.muzzle('enemy-0', weapon);
       // Inside its box, turned round: what lies at x in the box is at box.right - x on the screen.
       expect(from.x, weapon).toBeLessThan(box.right);
       expect(from.x, weapon).toBeGreaterThan(ENEMY_LEFT);
-      // A hand that holds nothing fires from the fist; one that holds something, from further towards the pilot than the fist.
       const fist = weapon === 'rightHand' ? VIEWS.small.nearFist : weapon === 'leftHand' ? VIEWS.small.farFist : VIEWS.small.mount;
-      if (parts[weapon]) expect(from.x, weapon).toBeLessThan(box.right - fist.x);
-      else expect(from.x, weapon).toBe(box.right - fist.x);
-      expect(from.y, weapon).toBeGreaterThan(box.top);
-      expect(from.y, weapon).toBeLessThan(spot.y);
+      const end = muzzleOf(parts, weapon, 'small');
+      if (!parts[weapon]) {
+        // A hand that holds nothing fires from the fist.
+        expect(end, weapon).toBeNull();
+        expect(from, weapon).toEqual({ x: box.right - fist.x, y: box.top + fist.y });
+        continue;
+      }
+      held++;
+      // One that holds something fires from its far end, exactly, turned round with it.
+      expect(from, weapon).toEqual({ x: box.right - end!.x, y: box.top + end!.y });
+      // That is on the picture of what it holds as it was drawn, at the end of it that points at the pilot: the left one.
+      const drawn = small.find((image) => idOf(image) === idOf(parts[weapon]!))!;
+      const [left, right] = [drawn.x + drawn.w, drawn.x];
+      expect(left, weapon).toBeLessThan(right);
+      expect(from.x, weapon).toBeGreaterThanOrEqual(left);
+      expect(from.x, weapon).toBeLessThanOrEqual(left + (right - left) * 0.3);
+      expect(from.y, weapon).toBeGreaterThanOrEqual(drawn.y);
+      expect(from.y, weapon).toBeLessThanOrEqual(drawn.y + drawn.h);
+      expect(from.x, weapon).toBeLessThan(box.right - fist.x);
     }
+    expect(held).toBeGreaterThanOrEqual(2);
+    // On tracks its body sits lower, and an empty fist and what the shoulder carries with it: by as much as its own
+    // tracks lower it, whatever the pilot's mech stands on.
+    const tracked = screenOf([{ ...ENEMIES.rival, build: { ...ENEMIES.rival.build, legs: 'legs-crawler' } }], { build: { ...DEMO_BUILD, legs: 'legs-spider' } });
+    const low = MANIFEST['legs-crawler.small'].drop!;
+    expect(low).toBeGreaterThan(5);
+    expect(low).not.toBe(MANIFEST['legs-spider.back'].drop);
+    for (const weapon of ['rightHand', 'leftHand', 'shoulder'] as const) {
+      const [plain, lowered] = [screen.motion.at.muzzle('enemy-0', weapon), tracked.screen.motion.at.muzzle('enemy-0', weapon)];
+      expect([lowered.x - plain.x, lowered.y - plain.y], weapon).toEqual([0, low]);
+    }
+    expect(tracked.screen.motion.at.centre('enemy-0').y - screen.motion.at.centre('enemy-0').y).toBe(low);
     // The rival carries a long gun in its near fist: that reaches furthest towards the pilot.
     expect(parts.rightHand).toBeDefined();
     expect(screen.motion.at.muzzle('enemy-0', 'rightHand').x).toBeLessThan(screen.motion.at.muzzle('enemy-0', 'leftHand').x);

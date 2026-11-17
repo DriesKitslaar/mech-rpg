@@ -159,16 +159,18 @@ describe('the camera', () => {
   test('stands at home until something moves it, and is home again, exactly, when a push is over', () => {
     const camera = new Camera(NEON);
     expect(camera.view()).toBe(HOME);
-    expect(camera.busy).toBe(false);
     camera.push(ENEMY, 0.1);
-    expect(camera.busy).toBe(true);
     // The moment it is asked for nothing has moved yet.
     expect(camera.view()).toBe(HOME);
     camera.update(PUSH_IN_MS);
     expect(camera.view().zoom).toBeCloseTo(1.1, 6);
     camera.update(PUSH_HOLD_MS + PUSH_OUT_MS);
     expect(camera.view()).toBe(HOME);
-    expect(camera.busy).toBe(false);
+    // And it stays there: a push is over when it is over.
+    for (let ms = 0; ms < PUSH_MS; ms += 16) {
+      camera.update(16);
+      expect(camera.view()).toBe(HOME);
+    }
   });
 
   test('pushes in towards what was hit: to the right for an enemy, to the left for the pilot\'s mech, as far as the field lets it turn', () => {
@@ -223,7 +225,6 @@ describe('the camera', () => {
     camera.push(ENEMY, 0.1, 200);
     camera.update(199);
     expect(camera.view()).toBe(HOME);
-    expect(camera.busy).toBe(true);
     camera.update(1 + PUSH_IN_MS);
     expect(camera.view().zoom).toBeCloseTo(1.1, 6);
   });
@@ -314,7 +315,10 @@ describe('the camera', () => {
     none.push(ENEMY, 0);
     none.push(ENEMY, -1);
     none.push(ENEMY, Number.NaN);
-    expect(none.busy).toBe(false);
+    for (let ms = 0; ms < PUSH_MS; ms += 16) {
+      none.update(16);
+      expect(none.view()).toBe(HOME);
+    }
   });
 
   test('pushed in, it never shows anything from outside the field as it stands, whatever it is pushed towards and whenever it is asked, in every place', () => {
@@ -363,9 +367,18 @@ describe('the camera', () => {
     expect(camera.view(0.35)).toEqual(openingView(0.35, NEON));
     expect(camera.view(1)).toEqual(HOME);
     expect(camera.view().zoom).toBeGreaterThan(1);
+    // Settled, it forgets the one that is going on and the one that is still to come: for good.
+    camera.push(OWN, 0.12, 100);
     camera.settle();
     expect(camera.view()).toBe(HOME);
-    expect(camera.busy).toBe(false);
+    for (let ms = 0; ms < 100 + PUSH_MS; ms += 16) {
+      camera.update(16);
+      expect(camera.view()).toBe(HOME);
+    }
+    // And it can be pushed again after.
+    camera.push(ENEMY, 0.1);
+    camera.update(PUSH_IN_MS);
+    expect(camera.view().zoom).toBeCloseTo(1.1, 6);
   });
 
   test('one that does not move stands at home always: no travel as a battle opens, no push', () => {
@@ -375,6 +388,9 @@ describe('the camera', () => {
     expect(still.view()).toBe(HOME);
     expect(still.view(0)).toBe(HOME);
     expect(still.view(0.3)).toBe(HOME);
-    expect(still.busy).toBe(false);
+    for (let ms = 0; ms < PUSH_MS; ms += 16) {
+      still.update(16);
+      expect(still.view()).toBe(HOME);
+    }
   });
 });

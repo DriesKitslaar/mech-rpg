@@ -181,9 +181,14 @@ describe('sprites', () => {
         // A layer of the frame knows its place in the pose; what is carried knows where it is gripped.
         const framed = ['head', 'core', 'arms', 'legs'].includes(part.kind);
         expect(sprites[id][framed ? 'ox' : 'gx'], id).toBeTypeOf('number');
-        // From behind everything is four fifths the size it is from the front, give or take what its turn and its trim add.
+        // From behind everything is four fifths the size it is from the front, corner to corner; a short thing that was
+        // turned is a little more than that across its new corners, and nothing is less.
         const front = sprites[id.replace(/\.back$/, '')];
-        if (!framed) expect(Math.hypot(sprites[id].w, sprites[id].h) / Math.hypot(front.w, front.h), id).toBeCloseTo(0.8, 0);
+        if (!framed) {
+          const share = Math.hypot(sprites[id].w, sprites[id].h) / Math.hypot(front.w, front.h);
+          expect(share, id).toBeGreaterThan(0.77);
+          expect(share, id).toBeLessThan(0.91);
+        }
       }
     }
     expect(missing).toEqual([]);

@@ -101,11 +101,6 @@ export class Camera {
     this.pushes = [];
   }
 
-  /** True while a push is going on or still to come. */
-  get busy(): boolean {
-    return this.pushes.length > 0;
-  }
-
   /**
    * The view right now. `opening` is how far through its banner the battle is, while it is up.
    * Of several pushes at once the closest says how close the camera is, and each has its say in

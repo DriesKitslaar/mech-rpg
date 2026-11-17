@@ -14,14 +14,14 @@ import { soundsForEvent } from '../platform/audio';
 import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
-import { Camera, HOME, applyView, atHome, seenBy, type View } from './camera';
+import { Camera, applyView, atHome, seenBy, type View } from './camera';
 import { MECH_BOX, VIEWS, dropOf, hitOn, muzzleOf, type MechView } from './mechLayout';
 import { HitStop } from './hitStop';
 import { eyeLight, eyeOf } from './eyes';
 import { MAX_LIGHTS, chosenLights, disc, drawAll, drawGlow, drawGlows, drawShadow, lightRoom, type Glow, type Pt } from './light';
 import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import {
-  CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, MECH_HEAD, drawCutIn, drawDefeat, drawEntrance, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
+  CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, MECH_HEAD, drawCutIn, drawDefeat, drawEntrance, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox,
   type Entrant,
 } from './cinema';
 import { drawMech, layMech, mechSprites, type MechSprites } from './mechView';
@@ -29,7 +29,8 @@ import { Particles } from './particles';
 import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 import {
-  ENEMY_LEFT, ENEMY_RIGHT, FAR_LINE, FIELD, FIELD_Y, FLYERS, HERO, HERO_FEET, NEAR_LINE, PANEL_Y, depthOf, duelAt, enemySpots, farToNear, horizonOf, pictureTop, placeBars,
+  ENEMY_LEFT, ENEMY_RIGHT, FAR_LINE, FIELD, FIELD_Y, FLYERS, HERO, HERO_FEET, NEAR_LINE, PANEL_Y, SMALL_MIDDLE, depthOf, duelAt, enemySpots, farToNear, horizonOf, pictureTop,
+  placeBars,
   placeFor, standAt, type Place, type Spot,
 } from './stage';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
@@ -65,7 +66,7 @@ const MENU_W = 154;
  * on each part lands is the layout's to say (`hitOn`): it is a spot on that part's own picture.
  */
 const HERO_MIDDLE: Pt = { x: 58, y: 62 };
-const SMALL_MIDDLE: Pt = { x: 51, y: 46 };
+const DUEL_MIDDLE: Pt = { x: SMALL_MIDDLE, y: 46 };
 /** The middle of the floor the enemies stand on: what the pilot's mech looks at across the floor. */
 const ACROSS: Pt = { x: (ENEMY_LEFT + ENEMY_RIGHT) / 2, y: (FAR_LINE + NEAR_LINE) / 2 };
 /** The generator's light on the back of the pilot's mech: where it is in the pose box from behind, how large and how bright it is at rest, and how bright while the mech is dazed. */
@@ -247,6 +248,24 @@ export class BattleScreen {
   }
 
   update(realMs: number): void {
+    this.pass(realMs);
+    this.endStaging();
+  }
+
+  /**
+   * A battle that is over is not staged any more: the close look at the last machine, the band of an
+   * Overdrive and whatever push was going on or still to come are over the moment its result is up.
+   * This is seen to after every press and every step of time, either of which can bring the result
+   * up, so that nothing that draws the battle or reports on it has to ask whether it is over.
+   */
+  private endStaging(): void {
+    if (this.flow.phase !== 'result') return;
+    this.finish = null;
+    this.cutIn = null;
+    this.camera.settle();
+  }
+
+  private pass(realMs: number): void {
     // The fast-battles option plays every pause and effect at a multiple of normal speed. What is only
     // there to be looked at (rain, smoke, the sway of a mech, anything that blinks) keeps its own pace.
     const dtMs = realMs * (this.opts.speed ?? 1);
@@ -290,13 +309,7 @@ export class BattleScreen {
       }
       if (this.finish.field >= FINISH_FIELD_MS) this.finish = null;
     }
-    // A battle that is over is not staged any more: whatever was up comes down with the result.
-    if (this.flow.phase === 'result') {
-      this.resultMs += realMs;
-      this.finish = null;
-      this.cutIn = null;
-      this.camera.settle();
-    }
+    if (this.flow.phase === 'result') this.resultMs += realMs;
     this.fx.update(moved);
     this.camera.update(moved);
     for (const puppet of this.puppets.values()) puppet.update(moved);
@@ -426,6 +439,11 @@ export class BattleScreen {
   }
 
   onInput(action: InputAction): void {
+    this.press(action);
+    this.endStaging();
+  }
+
+  private press(action: InputAction): void {
     // The banner can be dismissed; nothing else is listened to while it is up.
     if (this.intro > 0) {
       if (action === 'confirm') this.intro = 0;
@@ -469,19 +487,16 @@ export class BattleScreen {
     // The band of the picture the field shows: its floor begins about half way down.
     const top = pictureTop(this.place);
     this.standing = 0;
-    // A battle that is over is not staged any more, from the very frame its result is up.
-    const over = this.flow.phase === 'result';
-    const finish = over ? null : this.finish;
-    const cutIn = over ? null : this.cutIn;
-    // Where the camera is: on its way down the picture while the banner is up, pushed in towards a blow, or at home.
+    const { finish, cutIn } = this;
+    // Where the camera is: on its way down the picture while the banner is up, pushed in towards a blow, at home, or
+    // looking at the last machine to fall from twice as close. A calm picture stays where it is.
     const view = this.view();
     const close = !!finish && !this.opts.calm;
-    // The part of the stage that is in view: the field itself, unless the camera has left home.
+    // The part of the stage that is in view, where that is not the field itself. From close by the field is drawn as
+    // it stands, only larger: its darker edges and its lights are the field's own.
     const seen = close || atHome(view) ? null : seenBy(view);
     ctx.save();
-    // The last machine to fall is looked at from twice as close. A calm picture stays where it is.
-    if (close) lookClose(ctx, finish.at, field);
-    else applyView(ctx, view);
+    applyView(ctx, view);
     ctx.translate(dx, dy);
     // Pixel for pixel, still or thrown: the picture goes where the field goes, as it is, so the floor stays under
     // the feet that stand on it. So that no edge shows while it is thrown, its outermost rows and columns are drawn
@@ -586,8 +601,6 @@ export class BattleScreen {
    * the way down the picture while the banner is up, a push towards a blow, or home.
    */
   private view(): View {
-    // From the very frame its result is up: whatever push was going on or still to come is not seen.
-    if (this.flow.phase === 'result') return HOME;
     if (this.finish && !this.opts.calm) return { x: this.finish.at.x, y: this.finish.at.y, zoom: FINISH_ZOOM };
     return this.intro > 0 ? this.camera.view(1 - this.intro / this.introTotal) : this.camera.view();
   }
@@ -1144,7 +1157,7 @@ export class BattleScreen {
       const mark = this.fieldMark(enemy) ?? (enemy.id === marked ? { text: STRINGS.objectives.mark, color: COLORS.heat } : null);
       if (mark) {
         // Above the unit, unless that is where the bars of one standing higher up are: then on the unit, on a dark ground.
-        const others = enemies.filter((other) => other !== enemy && !other.destroyed).map((other) => this.enemyRect(other));
+        const others = bars.filter((_, i) => standing[i] !== enemy);
         const width = mark.text.length * 4;
         const at = markPosition(r, others, width);
         if (at.inside) {
@@ -1295,13 +1308,13 @@ export class BattleScreen {
       },
       centre: (id) => {
         if (isPlayer(id)) return at(HERO_MIDDLE);
-        if (this.duel()) return mirror(SMALL_MIDDLE);
+        if (this.duel()) return mirror(DUEL_MIDDLE);
         const r = rectOf(id);
         return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
       },
       facing: (id) => (isPlayer(id) ? 1 : -1),
       // The pilot's mech is as near as anything is; an enemy is as far off as the line of the floor it stands on or hangs over.
-      depth: (id) => (isPlayer(id) ? 0 : depthOf(this.floorUnder(id) + 1)),
+      depth: (id) => (isPlayer(id) ? 0 : depthOf(rectOf(id).ground)),
       // Where each stands on the floor: the pilot's mech on the nearest line, an enemy on the line under it.
       foot: (id) => footOf(id),
       // Each side looks across the floor at the other: the pilot's mech at the middle of where the enemies stand, an enemy at the pilot's mech.

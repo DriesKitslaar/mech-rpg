@@ -363,7 +363,7 @@ describe('how what is fired is painted', () => {
   });
 
   test('fire from a barrel points the way the barrel points, and is as large as the barrel is near', () => {
-    const fire = (aim: Pt, size: number): Drawn => paint({ kind: 'muzzle', at: FROM, dtype: 'kinetic', dir: 1, aim, size }, 0.2);
+    const fire = (aim: Pt, size: number): Drawn => paint({ kind: 'muzzle', at: FROM, dtype: 'kinetic', aim, size }, 0.2);
     /** The middle of everything drawn in the flame's colour, from the barrel's mouth. */
     const lean = (page: Drawn): Pt => {
       const flame = page.rects.filter((r) => r.color === '#ffe9a8' && r.h === 1 && r.w >= 2);
@@ -384,7 +384,7 @@ describe('how what is fired is painted', () => {
     // Larger near, smaller far off: the flame and its light.
     const widest = (page: Drawn): number => Math.max(...page.rects.filter((r) => r.h === 1).map((r) => r.w));
     expect(widest(fire({ x: 1, y: 0 }, NEAR_SIZE))).toBeGreaterThan(widest(fire({ x: 1, y: 0 }, FAR_SIZE)));
-    const light = (size: number) => lightsOf({ start: 0, dur: 90, kind: 'muzzle', at: FROM, dtype: 'kinetic', dir: 1, aim: { x: 0.8, y: -0.6 }, size }, 0)[0];
+    const light = (size: number) => lightsOf({ start: 0, dur: 90, kind: 'muzzle', at: FROM, dtype: 'kinetic', aim: { x: 0.8, y: -0.6 }, size }, 0)[0];
     expect(light(NEAR_SIZE).r).toBeCloseTo(46 * NEAR_SIZE, 9);
     expect(light(FAR_SIZE).r).toBeCloseTo(46 * FAR_SIZE, 9);
     expect([light(1).x, light(1).y]).toEqual([FROM.x + 0.8 * 4, FROM.y - 0.6 * 4]);
@@ -402,7 +402,7 @@ describe('how what is fired is painted', () => {
 
   test('a guard stands across the way its unit looks, between it and the other side; a lunge burns its jet behind it on its line', () => {
     const aim = { x: 0.8, y: -0.6 };
-    const wall = paint({ kind: 'shield', at: FROM, dir: 1, aim }, 0.4).rects.filter((r) => r.w === 2 && r.h === 2);
+    const wall = paint({ kind: 'shield', at: FROM, aim }, 0.4).rects.filter((r) => r.w === 2 && r.h === 2);
     expect(wall.length).toBeGreaterThan(15);
     for (const dot of wall) {
       // Each piece of it is ahead of the unit along its aim: between two and four dozen pixels out.
@@ -413,9 +413,9 @@ describe('how what is fired is painted', () => {
     // It is long across the aim and thin along it.
     const acrossOf = (r: Filled): number => (r.x - FROM.x) * -aim.y + (r.y - FROM.y) * aim.x;
     expect(Math.max(...wall.map(acrossOf)) - Math.min(...wall.map(acrossOf))).toBeGreaterThan(50);
-    expect(lightsOf({ start: 0, dur: 420, kind: 'shield', at: FROM, dir: 1, aim }, 0.4)[0]).toMatchObject({ x: FROM.x + 0.8 * 26, y: FROM.y - 0.6 * 26 });
+    expect(lightsOf({ start: 0, dur: 420, kind: 'shield', at: FROM, aim }, 0.4)[0]).toMatchObject({ x: FROM.x + 0.8 * 26, y: FROM.y - 0.6 * 26 });
 
-    const jet = paint({ kind: 'lunge', unit: 'player', dir: 1, from: FROM, aim }, 0.5).rects.filter((r) => r.color === '#bfe8ff');
+    const jet = paint({ kind: 'lunge', unit: 'player', from: FROM, aim }, 0.5).rects.filter((r) => r.color === '#bfe8ff');
     expect(jet.length).toBeGreaterThan(3);
     for (const row of jet) {
       // Behind it: back along its line, which is down and to the left of where it is going.
@@ -428,7 +428,7 @@ describe('how what is fired is painted', () => {
     // And it burns on down that line: its far end is a good way further down the screen than its nozzle.
     expect(Math.max(...jet.map((row) => row.y))).toBeGreaterThanOrEqual(FROM.y + 30);
     expect(Math.min(...jet.map((row) => row.x))).toBeLessThan(FROM.x - 30);
-    const light = lightsOf({ start: 0, dur: 320, kind: 'lunge', unit: 'player', dir: 1, from: FROM, aim }, 0.5)[0];
+    const light = lightsOf({ start: 0, dur: 320, kind: 'lunge', unit: 'player', from: FROM, aim }, 0.5)[0];
     expect([light.x, light.y]).toEqual([FROM.x - 0.8 * 30, FROM.y + 0.6 * 30 + 6]);
   });
 });
@@ -743,7 +743,8 @@ describe('depth on the battle screen', () => {
     expect(warm.r).toBeCloseTo(GENERATOR.r + 6 * 0.6, 6);
     expect(strength(warm)).toBeGreaterThan(strength(cool) * 1.3);
     const calm = generatorIn(screenOf(['gun-turret'], { calm: true }).page())!;
-    expect(strength(calm)).toBeCloseTo(strength(cool) / 2, 1);
+    // Drawn at the same moment of its breathing: half, to the third decimal the light is written with.
+    expect(strength(calm)).toBeCloseTo(strength(cool) / 2, 2);
     // Overheated, the mech is dazed: what is left of the light is a glimmer.
     const dazed = screenOf(['gun-turret'], { prepare: (state) => { state.units[0].overheated = true; } });
     dazed.screen.update(16);

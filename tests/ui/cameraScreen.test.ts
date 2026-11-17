@@ -4,7 +4,7 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { AMBIENCE } from '../../src/ui/ambience';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen, EDGE, INTRO_MS, PUSH, WARNING_MS } from '../../src/ui/battleScreen';
-import { HOME, MAX_PUSH, PUSH_MS, TRAVEL_SHARE, atHome, openingView, seenBy } from '../../src/ui/camera';
+import { Camera, HOME, MAX_PUSH, PUSH_MS, TRAVEL_SHARE, atHome, openingView, seenBy } from '../../src/ui/camera';
 import { FINISH_ZOOM } from '../../src/ui/cinema';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { FIELD_Y, PANEL_Y, pictureTop, placeFor } from '../../src/ui/stage';
@@ -150,21 +150,22 @@ describe('as a battle opens', () => {
     const home = streaks(page());
     expect(first.length).toBe(home.length * 2);
     for (const r of home) expect(r.y >= FIELD_Y && r.y < PANEL_Y).toBe(true);
-    // A stroke of lightning while the camera is on its way: the whole of the field is lit, not the part of it the stage's field is in.
-    const stroke = Array.from({ length: LIGHTNING_MS / 4 }, (_, i) => i * 4).find((ms) => lightning(ms) === 1)!;
-    const struck = new BattleScreen(new BattleFlow(fight(['recon-drone']), CATALOG, { quiet: true }), sprites, CATALOG, { fast: false, background: NEON, title: 'x'.repeat(4), boss: 'Nobody' });
-    // The warning lasts 1700 ms, the stroke comes later than that: the clock is taken there by a screen that is still opening.
-    expect(stroke).toBeGreaterThan(0);
-    const lit = (drawn: Drawn) => drawn.rects.filter((r) => r.blend === 'overlay');
-    let found: Drawn | null = null;
-    for (let ms = 0; ms < WARNING_MS * TRAVEL_SHARE - 16 && !found; ms += 4) {
-      struck.update(4);
-      const drawn = record((ctx) => struck.draw(ctx));
-      if (lit(drawn).length > 0) found = drawn;
+    // A stroke of lightning while the camera is on its way down: all that is in view is lit, not the part of it the
+    // stage's own field is in. No stroke falls in an opening by itself (the first comes later than the longest warning
+    // lasts), so the storm's clock is put forward by hand, to a little before one.
+    const stroke = Array.from({ length: LIGHTNING_MS / 4 }, (_, i) => i * 4).find((ms) => ms > 100 && lightning(ms) === 1 && lightning(ms - 4) === 0)!;
+    expect(stroke).toBeGreaterThan(WARNING_MS * TRAVEL_SHARE);
+    const struck = screenOf(fight(['recon-drone']));
+    (struck.screen as unknown as { clock: number }).clock = stroke - 40;
+    let lit: Drawn['rects'][number] | null = null;
+    for (let i = 0; i < 12 && !lit; i++) {
+      struck.screen.update(16);
+      lit = struck.page().rects.find((r) => r.blend === 'overlay') ?? null;
     }
-    // Whether a stroke falls in the opening depends on the clock: where it does, it lights the field exactly.
-    if (found) expect(lit(found)[0]).toMatchObject({ x: 0, y: FIELD_Y, w: 310, h: PANEL_Y - FIELD_Y });
-    expect(stroke > WARNING_MS * TRAVEL_SHARE || found !== null).toBe(true);
+    // The battle is still opening and the camera is high up the picture.
+    expect(struck.screen.banner).toBe(true);
+    expect(struck.screen.motion.view.y).toBeLessThan(HOME.y - 40);
+    expect(lit).toMatchObject({ x: 0, y: FIELD_Y, w: 310, h: PANEL_Y - FIELD_Y });
   });
 
   test('a calm picture and a hurried game open at home: the camera does not travel', () => {
@@ -464,6 +465,90 @@ describe('a field that is shaken', () => {
   });
 });
 
+describe('what the camera moves', () => {
+  /** The first way two drawings differ, or null when they are one drawing: numbers to a thousandth of a pixel, and never mind what each was kept inside. */
+  function differ(a: unknown, b: unknown, at: string): string | null {
+    if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) <= 1e-3 ? null : `${at}: ${a} against ${b}`;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return `${at}: ${a.length} of them against ${b.length}`;
+      for (let i = 0; i < a.length; i++) { const d = differ(a[i], b[i], `${at}[${i}]`); if (d) return d; }
+      return null;
+    }
+    if (a && b && typeof a === 'object' && typeof b === 'object') {
+      for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        if (key === 'clip' || key === 'kept') continue;
+        const d = differ((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key], `${at}.${key}`);
+        if (d) return d;
+      }
+      return null;
+    }
+    return Object.is(a, b) ? null : `${at}: ${String(a)} against ${String(b)}`;
+  }
+  /** A drawing without the darker edges of the field: those are laid round what the camera has in view, which is the one thing that is not on the stage. */
+  const plain = (drawn: Drawn): Drawn => ({ ...drawn, glows: drawn.glows.filter((g) => !isVignette(g)) });
+
+  test('is everything that stands or happens on the field, and nothing else: a frame from a camera that is away from home, put back on the stage, is the frame a camera at home draws', () => {
+    // Two battles played alike, frame for frame and press for press. One is looked at through a camera that never leaves home.
+    const play = (still: boolean) => {
+      const made = screenOf(fight(['recon-drone', 'tank', 'gun-turret'], [1], { overdrive: 'iron-skin', drive: 100 }), { background: 'bg-nowhere' });
+      if (still) (made.screen as unknown as { camera: Camera }).camera = new Camera(placeFor('bg-nowhere'), false);
+      return made;
+    };
+    const sides = [play(false), play(true)];
+    const [moving, still] = sides;
+    /** What the pilot does next, on both sides alike: the Overdrive once, then each weapon in turn, and the turn ended when nothing can be fired. */
+    let turns = 0;
+    const press = (): void => {
+      const { flow } = moving;
+      const can = (id: string): boolean => flow.menu.items.some((item) => item.id === id && item.enabled);
+      const all = (action: 'next' | 'confirm' | 'cancel'): void => { for (const side of sides) side.screen.onInput(action); };
+      const choose = (id: string): void => { for (const side of sides) side.choose(id); };
+      if (flow.phase === 'action') {
+        turns++;
+        if (turns === 2) all('next');
+        else choose(can('fire') ? 'fire' : 'endTurn');
+      } else if (flow.phase === 'weapon') {
+        const ready = ['rightHand', 'leftHand', 'shoulder'].filter(can);
+        if (ready.length > 0) choose(ready[turns % ready.length]);
+        else { all('cancel'); choose('endTurn'); }
+      } else if (flow.phase === 'target') all('confirm');
+    };
+    const seen = { away: 0, opening: 0, close: 0, thrown: 0, figures: 0, bars: 0, lights: 0, lines: 0 };
+    for (let i = 0; i < 4000 && moving.flow.phase !== 'result'; i++) {
+      expect(still.flow.phase, `frame ${i}`).toBe(moving.flow.phase);
+      press();
+      for (const side of sides) side.screen.update(16);
+      const view = moving.screen.motion.view;
+      const close = moving.screen.motion.finish !== null;
+      // The close look at the last machine is no camera's: both are drawn from twice as close, alike.
+      if (close) expect(still.screen.motion.view, `frame ${i}`).toEqual(view);
+      else expect(still.screen.motion.view, `frame ${i}`).toBe(HOME);
+      const raw = moving.page();
+      const there = plain(close ? raw : onStage(raw, view));
+      const here = plain(still.page());
+      expect(differ(there, here, `frame ${i}`), `frame ${i}, the camera at ${JSON.stringify(view)}`).toBeNull();
+      if (close) seen.close++;
+      else if (!atHome(view)) {
+        seen.away++;
+        if (moving.screen.banner) seen.opening++;
+        if (raw.images[0].x !== 0) seen.thrown++;
+        // What was being drawn while it was away: figures, bars, lights, the pixels of what flies and burns.
+        seen.figures += here.texts.filter((t) => /^(-\d+|MISS)$/.test(t.text)).length;
+        seen.bars += here.rects.filter((r) => r.color === COLORS.armor && r.h === 2 && r.y > FIELD_Y + 20 && r.y < PANEL_Y).length;
+        seen.lights += here.glows.filter(isLight).length;
+        seen.lines += here.rects.filter((r) => r.w <= 3 && r.h <= 3 && r.y > FIELD_Y && r.y < PANEL_Y).length;
+      }
+    }
+    expect(moving.flow.phase).toBe('result');
+    // It was away as the battle opened, through many blows, while the field was thrown, and with all of that on the field.
+    expect(seen.opening).toBeGreaterThan(30);
+    expect(seen.away).toBeGreaterThan(seen.opening + 300);
+    expect(seen.thrown).toBeGreaterThan(5);
+    expect(seen.close).toBeGreaterThan(10);
+    for (const kind of ['figures', 'bars', 'lights', 'lines'] as const) expect(seen[kind], kind).toBeGreaterThan(100);
+  });
+});
+
 describe('a battle that is over', () => {
   test('is not pushed in on: from the very frame its result is up the camera is at home, and no push comes after', () => {
     const { flow, screen, page, picture, ready, fire } = screenOf(fight(['gun-turret'], [0]));
@@ -472,7 +557,7 @@ describe('a battle that is over', () => {
     // Pressed on to the result at once: the push of the shot that ended it has not begun, or is on its way in.
     for (let i = 0; i < 30 && flow.phase !== 'result'; i++) screen.onInput('confirm');
     expect(flow.phase).toBe('result');
-    const camera = (screen as unknown as { camera: { busy: boolean; push(at: { x: number; y: number }, amount: number, delay?: number): void } }).camera;
+    const camera = (screen as unknown as { camera: { push(at: { x: number; y: number }, amount: number, delay?: number): void } }).camera;
     // What is asked of the camera from here on: the shot's push and the wreck's are asked for as the screen catches up.
     const asked: number[] = [];
     const push = camera.push.bind(camera);
@@ -487,10 +572,9 @@ describe('a battle that is over', () => {
       expect(Math.max(Math.abs(drawn.x), Math.abs(drawn.y - pictureTop(placeFor(NEON)))), `frame ${i}`).toBeLessThan(EDGE);
       screen.update(16);
     }
+    // They were asked for, the hardest of them the one for a machine going up, and not one of them was ever seen.
     expect(asked.length).toBeGreaterThan(0);
     expect(Math.max(...asked)).toBe(PUSH.wreck);
-    // And none of them is left waiting.
-    expect(camera.busy).toBe(false);
   });
 });
 

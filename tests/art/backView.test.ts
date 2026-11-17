@@ -29,10 +29,10 @@ function mask(id: string): Uint8Array {
   }
   return solid;
 }
-/** The joints the game draws under the layers. */
-function joints(): Uint8Array {
+/** The joints the game draws under the layers: its own, or these in their place. */
+function joints(all: Record<string, { x: number; y: number; w: number; h: number }> = BACK_JOINTS): Uint8Array {
   const solid = new Uint8Array(W * H);
-  for (const joint of Object.values(BACK_JOINTS)) {
+  for (const joint of Object.values(all)) {
     for (let y = 0; y < joint.h; y++) for (let x = 0; x < joint.w; x++) solid[(joint.y + y + MARGIN) * W + joint.x + x + MARGIN] = 1;
   }
   return solid;
@@ -131,6 +131,101 @@ describe('the mech from behind, from the pictures that are shipped', () => {
       let bare = 0;
       for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) if (!own[(y + dy + MARGIN) * W + x + dx + MARGIN]) bare++;
       expect(bare / (w * h), family).toBeLessThan(0.15);
+    }
+  });
+});
+
+describe('how far the joints reach', () => {
+  const solid = new Map([...HEADS, ...CORES, ...LEGS, ...ARMS].map((id) => [id, mask(id)]));
+  type Joint = keyof typeof BACK_JOINTS;
+  /** One joint with so many pixels taken off one of its ends. */
+  const cut = (name: Joint, end: 'top' | 'bottom' | 'left' | 'right', by: number) => {
+    const j = BACK_JOINTS[name];
+    const less = end === 'top' ? { ...j, y: j.y + by, h: j.h - by } : end === 'bottom' ? { ...j, h: j.h - by } : end === 'left' ? { ...j, x: j.x + by, w: j.w - by } : { ...j, w: j.w - by };
+    return joints({ ...BACK_JOINTS, [name]: less });
+  };
+  /** Whether what a joint is there for still holds with these joints: every head on every body, every body on every lower body, every arm on every body. */
+  const holds: Record<Joint, (with_: Uint8Array) => boolean> = {
+    neck: (with_) => CORES.every((core) => {
+      const alone = pieces(union(solid.get(core)!, with_));
+      return HEADS.every((head) => pieces(union(solid.get(core)!, solid.get(head)!, with_)) === alone);
+    }),
+    waist: (with_) => LEGS.every((legs) => CORES.every((core) => pieces(union(solid.get(legs)!, lowered(union(solid.get(core)!, with_), MANIFEST[legs].drop ?? 0))) === 1)),
+    shoulders: (with_) => CORES.every((core) => {
+      const alone = pieces(union(solid.get(core)!, with_));
+      return ARMS.every((arm) => pieces(union(solid.get(core)!, solid.get(arm)!, with_)) === alone);
+    }),
+  };
+
+  test('each end of a joint that holds two layers together lies well inside what it holds: three pixels shorter there and every mix is still one figure, seven and some mix comes apart', () => {
+    const ends: [Joint, 'top' | 'bottom' | 'left'][] = [['neck', 'top'], ['neck', 'bottom'], ['waist', 'top'], ['waist', 'bottom'], ['shoulders', 'left']];
+    for (const [name, end] of ends) {
+      expect(holds[name](joints()), name).toBe(true);
+      // Room to spare: a layer drawn a pixel or two off its place would still be joined.
+      expect(holds[name](cut(name, end, 3)), `${name}, three off its ${end}`).toBe(true);
+      // And no more of it than that: it is there to join, not to be seen.
+      expect(holds[name](cut(name, end, 7)), `${name}, seven off its ${end}`).toBe(false);
+    }
+    // Without any one of them some mix comes apart: each is needed.
+    for (const name of Object.keys(BACK_JOINTS) as Joint[]) expect(holds[name](joints({ ...BACK_JOINTS, [name]: { x: 0, y: 0, w: 0, h: 0 } })), name).toBe(false);
+  });
+
+  test('the bar across the shoulders runs from under the far arm to under the near one: its right end lies behind every near arm there is', () => {
+    const { x, y, w, h } = BACK_JOINTS.shoulders;
+    for (const arm of ARMS.filter((id) => id.includes('.near'))) {
+      const layer = solid.get(arm)!;
+      // Its last four columns: some of each is behind the arm, so no end of a bar sticks out past a slim one.
+      let behind = 0;
+      for (let dx = w - 4; dx < w; dx++) for (let dy = 0; dy < h; dy++) if (layer[(y + dy + MARGIN) * W + x + dx + MARGIN]) behind++;
+      expect(behind, arm).toBeGreaterThanOrEqual(8);
+      // And the arm goes on to the right of it.
+      expect(MANIFEST[arm].ox! + MANIFEST[arm].w, arm).toBeGreaterThan(x + w + 6);
+    }
+    // To the left it ends under the far arm the same way.
+    for (const arm of ARMS.filter((id) => id.includes('.far'))) {
+      const layer = solid.get(arm)!;
+      let behind = 0;
+      for (let dx = 0; dx < 4; dx++) for (let dy = 0; dy < h; dy++) if (layer[(y + dy + MARGIN) * W + x + dx + MARGIN]) behind++;
+      expect(behind, arm).toBeGreaterThanOrEqual(8);
+    }
+  });
+});
+
+describe('where a mech holds what it carries', () => {
+  /** How far a point of a view's pose box is from the nearest solid pixel of a layer as it lies in that box. */
+  function off(id: string, p: { x: number; y: number }): number {
+    const entry = MANIFEST[id];
+    const picture = readPng(`public/${entry.file}`);
+    let best = Infinity;
+    for (let py = 0; py < picture.h; py++) {
+      for (let px = 0; px < picture.w; px++) if (picture.at(px, py)[3] > 0) best = Math.min(best, Math.hypot(px + entry.ox! - p.x, py + entry.oy! - p.y));
+    }
+    return best;
+  }
+
+  test('the two fists are the hands at the ends of the arms as they were drawn, and the mount is on the far shoulder: from behind and small, for every pair of arms', () => {
+    for (const view of ['back', 'small'] as MechView[]) {
+      const { suffix, nearFist, farFist, mount } = VIEWS[view];
+      const families = Object.keys(MANIFEST).flatMap((id) => (id.startsWith('arms-') && id.endsWith(`.near${suffix}`) ? [id.slice(0, -`.near${suffix}`.length)] : []));
+      expect(families, view).toHaveLength(8);
+      for (const arms of families) {
+        const [near, far] = [`${arms}.near${suffix}`, `${arms}.far${suffix}`];
+        // On the arm, to a pixel.
+        expect(off(near, nearFist), near).toBeLessThanOrEqual(1);
+        expect(off(far, farFist), far).toBeLessThanOrEqual(1);
+        // And at the end of it: the arm stretched towards the enemy ends a fist's width to the right of its fist, the
+        // one held back a fist's height under it. Further up the arm than that is the forearm, not the hand.
+        const [n, f] = [MANIFEST[near], MANIFEST[far]];
+        expect(n.ox! + n.w - nearFist.x, near).toBeGreaterThanOrEqual(2);
+        expect(n.ox! + n.w - nearFist.x, near).toBeLessThanOrEqual(8);
+        expect(f.oy! + f.h - farFist.y, far).toBeGreaterThanOrEqual(3);
+        expect(f.oy! + f.h - farFist.y, far).toBeLessThanOrEqual(9);
+        // What the shoulder carries rests on the shoulder of the arm that is held back: within a few pixels of that arm,
+        // and far over its fist.
+        expect(off(far, mount), `${far} mount`).toBeLessThanOrEqual(3);
+        expect(mount.y, `${far} mount`).toBeLessThan(farFist.y - 25);
+        expect(Math.abs(mount.x - farFist.x), `${far} mount`).toBeLessThanOrEqual(12);
+      }
     }
   });
 });

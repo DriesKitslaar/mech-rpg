@@ -107,7 +107,7 @@ describe('a unit that lunges', () => {
     expect(reach(0.5)).toBeGreaterThan(reach(0.9));
     expect(reach(0.5)).toBeGreaterThan(40);
     // And its light is behind the unit too, strongest half way.
-    const light = (p: number) => lightsOf({ start: 0, dur: 100, kind: 'lunge', unit: 'player', dir: 1, from: AT, aim: { x: 1, y: 0 } } as Fx, p)[0];
+    const light = (p: number) => lightsOf({ start: 0, dur: 100, kind: 'lunge', unit: 'player', from: AT, aim: { x: 1, y: 0 } } as Fx, p)[0];
     expect(light(0.5).x).toBeLessThan(AT.x - 20);
     expect(light(0.5).alpha).toBeGreaterThan(light(0.1).alpha);
     expect(light(0.5).alpha).toBeGreaterThan(light(0.9).alpha);
@@ -143,7 +143,7 @@ describe('effects in time', () => {
   test('every light an effect throws is strongest when the effect begins', () => {
     const at = (kind: Record<string, unknown>, p: number): number => Math.max(0, ...lightsOf({ start: 0, dur: 100, ...kind } as Fx, p).map((g) => g.alpha));
     const fading = [
-      { kind: 'muzzle', at: AT, dtype: 'kinetic', dir: 1, aim: { x: 1, y: 0 }, size: 1 },
+      { kind: 'muzzle', at: AT, dtype: 'kinetic', aim: { x: 1, y: 0 }, size: 1 },
       { kind: 'burst', style: 'fire', at: AT, size: 12, color: '#ff8a3c' },
       { kind: 'burst', style: 'impact', at: AT, size: 8, color: '#ffe9a8' },
       { kind: 'sparks', at: AT, color: '#ffe9a8' },
