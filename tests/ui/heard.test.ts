@@ -231,7 +231,7 @@ describe('a battle in the rain', () => {
     expect(claps).toBeGreaterThanOrEqual(4);
   });
 
-  test('thunder follows the lightning that is seen there, from the banner on', () => {
+  test('thunder follows the lightning that is seen there, on the clock the battle began with', () => {
     const { run, thunder } = battle('bg-neon-district');
     run(90_000);
     expect(thunder()).toHaveLength(strokes(90_000, 16));
@@ -240,8 +240,12 @@ describe('a battle in the rain', () => {
       expect(clap).toMatchObject({ delay: THUNDER_AFTER_MS, ambient: true });
       expect(lightning(clap.at)).toBe(1);
     }
-    // The first stretch's stroke can fall while the banner is still up: it is seen then, and heard.
-    expect(thunder()[0].at).toBeLessThan(LIGHTNING_MS);
+    // The weather keeps its time from the moment the battle begins, banner and all: the first clap is asked for
+    // in the frame the clock's first stroke falls in, which is a second or so after the banner has gone.
+    const first = (() => { for (let t = 0; t < LIGHTNING_MS; t++) if (lightning(t) > 0) return t; throw new Error('no stroke'); })();
+    expect(first).toBeGreaterThan(1700);
+    expect(thunder()[0].at - first).toBeGreaterThanOrEqual(0);
+    expect(thunder()[0].at - first).toBeLessThan(16);
   });
 
   test('with battles played faster the weather keeps its own time, and so does its thunder', () => {
