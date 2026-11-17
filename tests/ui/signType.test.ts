@@ -482,8 +482,10 @@ describe('the shape of every letter', () => {
 
   test('each of them is, pixel for pixel, the picture that was looked at and kept', () => {
     // The pictures are kept in a file a person can read. After a letter is changed on purpose: look at
-    // what it has become, and write the file anew with UPDATE_GLYPHS=1.
-    if (process.env.UPDATE_GLYPHS || !existsSync(GOLDEN)) writeFileSync(GOLDEN, sheet());
+    // what it has become, and write the file anew with UPDATE_GLYPHS=1. It is never written unasked:
+    // a file that has gone missing is a failure, not a reason to keep whatever the letters are now.
+    if (process.env.UPDATE_GLYPHS) writeFileSync(GOLDEN, sheet());
+    expect(existsSync(GOLDEN), `${GOLDEN} is kept with the tests`).toBe(true);
     const kept = readFileSync(GOLDEN, 'utf8');
     expect(sheet()).toBe(kept);
     // Every character the sign writes is in it, and a letter is a picture of something.
