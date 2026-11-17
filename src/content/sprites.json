@@ -198,7 +198,7 @@
         8,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.255,
       "hi": 0.737
     }
@@ -217,7 +217,7 @@
         8,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.255,
       "hi": 0.737
     }
@@ -236,7 +236,7 @@
         8,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.255,
       "hi": 0.737
     }
@@ -255,7 +255,7 @@
         8,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.255,
       "hi": 0.737
     }
@@ -274,7 +274,7 @@
         8,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.255,
       "hi": 0.737
     }
@@ -486,7 +486,7 @@
       ],
       "lo": 0.005,
       "mid": 0.202,
-      "hi": 0.608
+      "hi": 0.601
     }
   },
   "core-colossus": {
@@ -506,7 +506,7 @@
       ],
       "lo": 0.005,
       "mid": 0.202,
-      "hi": 0.608
+      "hi": 0.601
     }
   },
   "head-colossus": {
@@ -526,7 +526,7 @@
       ],
       "lo": 0.005,
       "mid": 0.202,
-      "hi": 0.608
+      "hi": 0.601
     }
   },
   "arms-colossus.near": {
@@ -546,7 +546,7 @@
       ],
       "lo": 0.005,
       "mid": 0.202,
-      "hi": 0.608
+      "hi": 0.601
     }
   },
   "arms-colossus.far": {
@@ -566,7 +566,7 @@
       ],
       "lo": 0.005,
       "mid": 0.202,
-      "hi": 0.608
+      "hi": 0.601
     }
   },
   "legs-mantis": {
@@ -583,7 +583,7 @@
         7,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.232,
       "hi": 0.734
     }
@@ -602,7 +602,7 @@
         7,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.232,
       "hi": 0.734
     }
@@ -621,7 +621,7 @@
         7,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.232,
       "hi": 0.734
     }
@@ -640,7 +640,7 @@
         7,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.232,
       "hi": 0.734
     }
@@ -659,7 +659,7 @@
         7,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.232,
       "hi": 0.734
     }
@@ -674,13 +674,14 @@
       "accent": [
         1,
         2,
+        5,
         7,
         8,
         11
       ],
       "lo": 0.005,
       "mid": 0.125,
-      "hi": 0.524
+      "hi": 0.491
     }
   },
   "core-auditor": {
@@ -693,13 +694,14 @@
       "accent": [
         1,
         2,
+        5,
         7,
         8,
         11
       ],
       "lo": 0.005,
       "mid": 0.125,
-      "hi": 0.524
+      "hi": 0.491
     }
   },
   "head-auditor": {
@@ -712,13 +714,14 @@
       "accent": [
         1,
         2,
+        5,
         7,
         8,
         11
       ],
       "lo": 0.005,
       "mid": 0.125,
-      "hi": 0.524
+      "hi": 0.491
     }
   },
   "arms-auditor.near": {
@@ -731,13 +734,14 @@
       "accent": [
         1,
         2,
+        5,
         7,
         8,
         11
       ],
       "lo": 0.005,
       "mid": 0.125,
-      "hi": 0.524
+      "hi": 0.491
     }
   },
   "arms-auditor.far": {
@@ -750,13 +754,14 @@
       "accent": [
         1,
         2,
+        5,
         7,
         8,
         11
       ],
       "lo": 0.005,
       "mid": 0.125,
-      "hi": 0.524
+      "hi": 0.491
     }
   },
   "legs-crawler": {
@@ -774,7 +779,7 @@
         8,
         11
       ],
-      "lo": 0.005,
+      "lo": 0.031,
       "mid": 0.255,
       "hi": 0.737
     }
@@ -1786,9 +1791,2359 @@
     "w": 310,
     "h": 270
   },
+  "legs-strider.back": {
+    "file": "sprites/legs-strider.back.png",
+    "w": 91,
+    "h": 72,
+    "ox": 12,
+    "oy": 51,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "core-hauler.back": {
+    "file": "sprites/core-hauler.back.png",
+    "w": 36,
+    "h": 34,
+    "ox": 40,
+    "oy": 22,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "head-scout-mk1.back": {
+    "file": "sprites/head-scout-mk1.back.png",
+    "w": 20,
+    "h": 19,
+    "ox": 50,
+    "oy": 6,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "arms-rigger.near.back": {
+    "file": "sprites/arms-rigger.near.back.png",
+    "w": 38,
+    "h": 28,
+    "ox": 69,
+    "oy": 21,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "arms-rigger.far.back": {
+    "file": "sprites/arms-rigger.far.back.png",
+    "w": 29,
+    "h": 54,
+    "ox": 19,
+    "oy": 15,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "legs-halo.back": {
+    "file": "sprites/legs-halo.back.png",
+    "w": 90,
+    "h": 79,
+    "ox": 14,
+    "oy": 45,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "core-halo.back": {
+    "file": "sprites/core-halo.back.png",
+    "w": 34,
+    "h": 28,
+    "ox": 39,
+    "oy": 20,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "head-halo.back": {
+    "file": "sprites/head-halo.back.png",
+    "w": 22,
+    "h": 19,
+    "ox": 50,
+    "oy": 4,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-halo.near.back": {
+    "file": "sprites/arms-halo.near.back.png",
+    "w": 41,
+    "h": 30,
+    "ox": 67,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-halo.far.back": {
+    "file": "sprites/arms-halo.far.back.png",
+    "w": 25,
+    "h": 48,
+    "ox": 21,
+    "oy": 21,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "legs-bulwark.back": {
+    "file": "sprites/legs-bulwark.back.png",
+    "w": 98,
+    "h": 73,
+    "ox": 11,
+    "oy": 43,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "core-bulwark.back": {
+    "file": "sprites/core-bulwark.back.png",
+    "w": 58,
+    "h": 51,
+    "ox": 23,
+    "oy": 8,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "head-bulwark.back": {
+    "file": "sprites/head-bulwark.back.png",
+    "w": 26,
+    "h": 13,
+    "ox": 44,
+    "oy": 6,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "arms-bulwark.near.back": {
+    "file": "sprites/arms-bulwark.near.back.png",
+    "w": 43,
+    "h": 40,
+    "ox": 68,
+    "oy": 9,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "arms-bulwark.far.back": {
+    "file": "sprites/arms-bulwark.far.back.png",
+    "w": 28,
+    "h": 59,
+    "ox": 15,
+    "oy": 12,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "legs-ronin.back": {
+    "file": "sprites/legs-ronin.back.png",
+    "w": 92,
+    "h": 75,
+    "ox": 13,
+    "oy": 48,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "core-ronin.back": {
+    "file": "sprites/core-ronin.back.png",
+    "w": 53,
+    "h": 60,
+    "ox": 24,
+    "oy": 22,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "head-ronin.back": {
+    "file": "sprites/head-ronin.back.png",
+    "w": 21,
+    "h": 24,
+    "ox": 48,
+    "oy": 2,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "arms-ronin.near.back": {
+    "file": "sprites/arms-ronin.near.back.png",
+    "w": 43,
+    "h": 34,
+    "ox": 65,
+    "oy": 13,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "arms-ronin.far.back": {
+    "file": "sprites/arms-ronin.far.back.png",
+    "w": 31,
+    "h": 55,
+    "ox": 18,
+    "oy": 14,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "legs-wraith.back": {
+    "file": "sprites/legs-wraith.back.png",
+    "w": 85,
+    "h": 75,
+    "ox": 16,
+    "oy": 48,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "core-wraith.back": {
+    "file": "sprites/core-wraith.back.png",
+    "w": 49,
+    "h": 46,
+    "ox": 37,
+    "oy": 16,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "head-wraith.back": {
+    "file": "sprites/head-wraith.back.png",
+    "w": 16,
+    "h": 20,
+    "ox": 53,
+    "oy": 3,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "arms-wraith.near.back": {
+    "file": "sprites/arms-wraith.near.back.png",
+    "w": 43,
+    "h": 27,
+    "ox": 65,
+    "oy": 23,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "arms-wraith.far.back": {
+    "file": "sprites/arms-wraith.far.back.png",
+    "w": 27,
+    "h": 52,
+    "ox": 20,
+    "oy": 18,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "legs-colossus.back": {
+    "file": "sprites/legs-colossus.back.png",
+    "w": 92,
+    "h": 72,
+    "ox": 13,
+    "oy": 51,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "core-colossus.back": {
+    "file": "sprites/core-colossus.back.png",
+    "w": 66,
+    "h": 69,
+    "ox": 25,
+    "oy": 9,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "head-colossus.back": {
+    "file": "sprites/head-colossus.back.png",
+    "w": 17,
+    "h": 21,
+    "ox": 52,
+    "oy": 3,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "arms-colossus.near.back": {
+    "file": "sprites/arms-colossus.near.back.png",
+    "w": 42,
+    "h": 36,
+    "ox": 66,
+    "oy": 12,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "arms-colossus.far.back": {
+    "file": "sprites/arms-colossus.far.back.png",
+    "w": 33,
+    "h": 61,
+    "ox": 17,
+    "oy": 9,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "legs-mantis.back": {
+    "file": "sprites/legs-mantis.back.png",
+    "w": 95,
+    "h": 77,
+    "ox": 10,
+    "oy": 43,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "core-mantis.back": {
+    "file": "sprites/core-mantis.back.png",
+    "w": 54,
+    "h": 54,
+    "ox": 30,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "head-mantis.back": {
+    "file": "sprites/head-mantis.back.png",
+    "w": 15,
+    "h": 20,
+    "ox": 55,
+    "oy": 4,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "arms-mantis.near.back": {
+    "file": "sprites/arms-mantis.near.back.png",
+    "w": 44,
+    "h": 34,
+    "ox": 64,
+    "oy": 16,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "arms-mantis.far.back": {
+    "file": "sprites/arms-mantis.far.back.png",
+    "w": 35,
+    "h": 55,
+    "ox": 16,
+    "oy": 15,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "legs-auditor.back": {
+    "file": "sprites/legs-auditor.back.png",
+    "w": 89,
+    "h": 80,
+    "ox": 12,
+    "oy": 44,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "core-auditor.back": {
+    "file": "sprites/core-auditor.back.png",
+    "w": 58,
+    "h": 42,
+    "ox": 28,
+    "oy": 10,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "head-auditor.back": {
+    "file": "sprites/head-auditor.back.png",
+    "w": 14,
+    "h": 18,
+    "ox": 54,
+    "oy": 3,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "arms-auditor.near.back": {
+    "file": "sprites/arms-auditor.near.back.png",
+    "w": 41,
+    "h": 29,
+    "ox": 69,
+    "oy": 19,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "arms-auditor.far.back": {
+    "file": "sprites/arms-auditor.far.back.png",
+    "w": 28,
+    "h": 56,
+    "ox": 21,
+    "oy": 14,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "legs-crawler.back": {
+    "file": "sprites/legs-crawler.back.png",
+    "w": 101,
+    "h": 51,
+    "ox": 8,
+    "oy": 71,
+    "drop": 22,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "legs-spider.back": {
+    "file": "sprites/legs-spider.back.png",
+    "w": 101,
+    "h": 64,
+    "ox": 6,
+    "oy": 60,
+    "drop": 12,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "legs-glide.back": {
+    "file": "sprites/legs-glide.back.png",
+    "w": 56,
+    "h": 47,
+    "ox": 30,
+    "oy": 65,
+    "drop": 20,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
   "bg-garage": {
     "file": "sprites/bg-garage.png",
     "w": 310,
     "h": 270
+  },
+  "legs-strider.small": {
+    "file": "sprites/legs-strider.small.png",
+    "w": 77,
+    "h": 60,
+    "ox": 12,
+    "oy": 40,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "core-hauler.small": {
+    "file": "sprites/core-hauler.small.png",
+    "w": 28,
+    "h": 31,
+    "ox": 35,
+    "oy": 15,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "head-scout-mk1.small": {
+    "file": "sprites/head-scout-mk1.small.png",
+    "w": 18,
+    "h": 22,
+    "ox": 41,
+    "oy": 4,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "arms-rigger.near.small": {
+    "file": "sprites/arms-rigger.near.small.png",
+    "w": 33,
+    "h": 24,
+    "ox": 59,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "arms-rigger.far.small": {
+    "file": "sprites/arms-rigger.far.small.png",
+    "w": 29,
+    "h": 46,
+    "ox": 15,
+    "oy": 10,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.524
+    }
+  },
+  "legs-halo.small": {
+    "file": "sprites/legs-halo.small.png",
+    "w": 73,
+    "h": 65,
+    "ox": 13,
+    "oy": 35,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "core-halo.small": {
+    "file": "sprites/core-halo.small.png",
+    "w": 21,
+    "h": 27,
+    "ox": 39,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "head-halo.small": {
+    "file": "sprites/head-halo.small.png",
+    "w": 22,
+    "h": 20,
+    "ox": 37,
+    "oy": 3,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-halo.near.small": {
+    "file": "sprites/arms-halo.near.small.png",
+    "w": 35,
+    "h": 24,
+    "ox": 56,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-halo.far.small": {
+    "file": "sprites/arms-halo.far.small.png",
+    "w": 27,
+    "h": 40,
+    "ox": 16,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "legs-bulwark.small": {
+    "file": "sprites/legs-bulwark.small.png",
+    "w": 83,
+    "h": 62,
+    "ox": 9,
+    "oy": 35,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "core-bulwark.small": {
+    "file": "sprites/core-bulwark.small.png",
+    "w": 38,
+    "h": 38,
+    "ox": 31,
+    "oy": 8,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "head-bulwark.small": {
+    "file": "sprites/head-bulwark.small.png",
+    "w": 46,
+    "h": 22,
+    "ox": 30,
+    "oy": 5,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "arms-bulwark.near.small": {
+    "file": "sprites/arms-bulwark.near.small.png",
+    "w": 36,
+    "h": 34,
+    "ox": 60,
+    "oy": 5,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "arms-bulwark.far.small": {
+    "file": "sprites/arms-bulwark.far.small.png",
+    "w": 30,
+    "h": 54,
+    "ox": 10,
+    "oy": 7,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "legs-ronin.small": {
+    "file": "sprites/legs-ronin.small.png",
+    "w": 77,
+    "h": 59,
+    "ox": 12,
+    "oy": 36,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "core-ronin.small": {
+    "file": "sprites/core-ronin.small.png",
+    "w": 28,
+    "h": 50,
+    "ox": 34,
+    "oy": 15,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "head-ronin.small": {
+    "file": "sprites/head-ronin.small.png",
+    "w": 18,
+    "h": 25,
+    "ox": 40,
+    "oy": 2,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "arms-ronin.near.small": {
+    "file": "sprites/arms-ronin.near.small.png",
+    "w": 36,
+    "h": 28,
+    "ox": 57,
+    "oy": 10,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "arms-ronin.far.small": {
+    "file": "sprites/arms-ronin.far.small.png",
+    "w": 29,
+    "h": 49,
+    "ox": 15,
+    "oy": 8,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "legs-wraith.small": {
+    "file": "sprites/legs-wraith.small.png",
+    "w": 74,
+    "h": 60,
+    "ox": 13,
+    "oy": 40,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "core-wraith.small": {
+    "file": "sprites/core-wraith.small.png",
+    "w": 27,
+    "h": 32,
+    "ox": 37,
+    "oy": 10,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "head-wraith.small": {
+    "file": "sprites/head-wraith.small.png",
+    "w": 20,
+    "h": 22,
+    "ox": 40,
+    "oy": 4,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "arms-wraith.near.small": {
+    "file": "sprites/arms-wraith.near.small.png",
+    "w": 34,
+    "h": 23,
+    "ox": 57,
+    "oy": 18,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "arms-wraith.far.small": {
+    "file": "sprites/arms-wraith.far.small.png",
+    "w": 26,
+    "h": 40,
+    "ox": 17,
+    "oy": 16,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.124,
+      "hi": 0.366
+    }
+  },
+  "legs-colossus.small": {
+    "file": "sprites/legs-colossus.small.png",
+    "w": 79,
+    "h": 61,
+    "ox": 11,
+    "oy": 40,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "core-colossus.small": {
+    "file": "sprites/core-colossus.small.png",
+    "w": 31,
+    "h": 55,
+    "ox": 35,
+    "oy": 5,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "head-colossus.small": {
+    "file": "sprites/head-colossus.small.png",
+    "w": 13,
+    "h": 20,
+    "ox": 46,
+    "oy": 2,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "arms-colossus.near.small": {
+    "file": "sprites/arms-colossus.near.small.png",
+    "w": 35,
+    "h": 32,
+    "ox": 60,
+    "oy": 11,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "arms-colossus.far.small": {
+    "file": "sprites/arms-colossus.far.small.png",
+    "w": 31,
+    "h": 54,
+    "ox": 13,
+    "oy": 4,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.601
+    }
+  },
+  "legs-mantis.small": {
+    "file": "sprites/legs-mantis.small.png",
+    "w": 78,
+    "h": 61,
+    "ox": 10,
+    "oy": 39,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "core-mantis.small": {
+    "file": "sprites/core-mantis.small.png",
+    "w": 28,
+    "h": 31,
+    "ox": 36,
+    "oy": 21,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "head-mantis.small": {
+    "file": "sprites/head-mantis.small.png",
+    "w": 15,
+    "h": 25,
+    "ox": 44,
+    "oy": 4,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "arms-mantis.near.small": {
+    "file": "sprites/arms-mantis.near.small.png",
+    "w": 46,
+    "h": 34,
+    "ox": 46,
+    "oy": 11,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "arms-mantis.far.small": {
+    "file": "sprites/arms-mantis.far.small.png",
+    "w": 31,
+    "h": 44,
+    "ox": 12,
+    "oy": 12,
+    "paint": {
+      "accent": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.232,
+      "hi": 0.734
+    }
+  },
+  "legs-auditor.small": {
+    "file": "sprites/legs-auditor.small.png",
+    "w": 70,
+    "h": 63,
+    "ox": 14,
+    "oy": 32,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "core-auditor.small": {
+    "file": "sprites/core-auditor.small.png",
+    "w": 32,
+    "h": 36,
+    "ox": 33,
+    "oy": 10,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "head-auditor.small": {
+    "file": "sprites/head-auditor.small.png",
+    "w": 16,
+    "h": 22,
+    "ox": 40,
+    "oy": 2,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "arms-auditor.near.small": {
+    "file": "sprites/arms-auditor.near.small.png",
+    "w": 35,
+    "h": 30,
+    "ox": 59,
+    "oy": 11,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "arms-auditor.far.small": {
+    "file": "sprites/arms-auditor.far.small.png",
+    "w": 25,
+    "h": 48,
+    "ox": 16,
+    "oy": 8,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.125,
+      "hi": 0.491
+    }
+  },
+  "legs-crawler.small": {
+    "file": "sprites/legs-crawler.small.png",
+    "w": 90,
+    "h": 36,
+    "ox": 7,
+    "oy": 60,
+    "drop": 18,
+    "paint": {
+      "accent": [
+        2,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.255,
+      "hi": 0.737
+    }
+  },
+  "legs-spider.small": {
+    "file": "sprites/legs-spider.small.png",
+    "w": 95,
+    "h": 56,
+    "ox": 3,
+    "oy": 45,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        7,
+        8,
+        10
+      ],
+      "lo": 0.005,
+      "mid": 0.137,
+      "hi": 0.329
+    }
+  },
+  "legs-glide.small": {
+    "file": "sprites/legs-glide.small.png",
+    "w": 52,
+    "h": 49,
+    "ox": 23,
+    "oy": 43,
+    "paint": {
+      "accent": [
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "wpn-rivet-rifle.small": {
+    "file": "sprites/wpn-rivet-rifle.small.png",
+    "w": 38,
+    "h": 11
+  },
+  "wpn-rivet-rifle.back": {
+    "file": "sprites/wpn-rivet-rifle.back.png",
+    "w": 45,
+    "h": 18,
+    "gx": 10,
+    "gy": 12,
+    "mx": 46,
+    "my": 4
+  },
+  "wpn-arc-pistol.small": {
+    "file": "sprites/wpn-arc-pistol.small.png",
+    "w": 22,
+    "h": 14
+  },
+  "wpn-arc-pistol.back": {
+    "file": "sprites/wpn-arc-pistol.back.png",
+    "w": 27,
+    "h": 21,
+    "gx": 6,
+    "gy": 12,
+    "mx": 28,
+    "my": 8
+  },
+  "wpn-scatter-gun.small": {
+    "file": "sprites/wpn-scatter-gun.small.png",
+    "w": 23,
+    "h": 14
+  },
+  "wpn-scatter-gun.back": {
+    "file": "sprites/wpn-scatter-gun.back.png",
+    "w": 28,
+    "h": 19,
+    "gx": 6,
+    "gy": 11,
+    "mx": 28,
+    "my": 7
+  },
+  "wpn-rail-lance.small": {
+    "file": "sprites/wpn-rail-lance.small.png",
+    "w": 38,
+    "h": 10
+  },
+  "wpn-rail-lance.back": {
+    "file": "sprites/wpn-rail-lance.back.png",
+    "w": 46,
+    "h": 17,
+    "gx": 9,
+    "gy": 12,
+    "mx": 46,
+    "my": 4
+  },
+  "wpn-pulse-carbine.small": {
+    "file": "sprites/wpn-pulse-carbine.small.png",
+    "w": 27,
+    "h": 14
+  },
+  "wpn-pulse-carbine.back": {
+    "file": "sprites/wpn-pulse-carbine.back.png",
+    "w": 33,
+    "h": 20,
+    "gx": 7,
+    "gy": 11,
+    "mx": 34,
+    "my": 6
+  },
+  "wpn-lance-emitter.small": {
+    "file": "sprites/wpn-lance-emitter.small.png",
+    "w": 38,
+    "h": 8
+  },
+  "wpn-lance-emitter.back": {
+    "file": "sprites/wpn-lance-emitter.back.png",
+    "w": 46,
+    "h": 15,
+    "gx": 9,
+    "gy": 9,
+    "mx": 45,
+    "my": 1
+  },
+  "wpn-frag-launcher.small": {
+    "file": "sprites/wpn-frag-launcher.small.png",
+    "w": 22,
+    "h": 14
+  },
+  "wpn-frag-launcher.back": {
+    "file": "sprites/wpn-frag-launcher.back.png",
+    "w": 27,
+    "h": 21,
+    "gx": 6,
+    "gy": 11,
+    "mx": 27,
+    "my": 7
+  },
+  "wpn-mortar-pod.small": {
+    "file": "sprites/wpn-mortar-pod.small.png",
+    "w": 27,
+    "h": 17
+  },
+  "wpn-mortar-pod.back": {
+    "file": "sprites/wpn-mortar-pod.back.png",
+    "w": 33,
+    "h": 24,
+    "gx": 20,
+    "gy": 12,
+    "mx": 33,
+    "my": 9
+  },
+  "wpn-siege-cannon.small": {
+    "file": "sprites/wpn-siege-cannon.small.png",
+    "w": 29,
+    "h": 16
+  },
+  "wpn-siege-cannon.back": {
+    "file": "sprites/wpn-siege-cannon.back.png",
+    "w": 35,
+    "h": 19,
+    "gx": 22,
+    "gy": 8,
+    "mx": 35,
+    "my": 5
+  },
+  "wpn-halo-array.small": {
+    "file": "sprites/wpn-halo-array.small.png",
+    "w": 29,
+    "h": 16
+  },
+  "wpn-halo-array.back": {
+    "file": "sprites/wpn-halo-array.back.png",
+    "w": 35,
+    "h": 23,
+    "gx": 22,
+    "gy": 11,
+    "mx": 35,
+    "my": 8
+  },
+  "wpn-swarm-rack.small": {
+    "file": "sprites/wpn-swarm-rack.small.png",
+    "w": 21,
+    "h": 17
+  },
+  "wpn-swarm-rack.back": {
+    "file": "sprites/wpn-swarm-rack.back.png",
+    "w": 27,
+    "h": 23,
+    "gx": 16,
+    "gy": 11,
+    "mx": 27,
+    "my": 9
+  },
+  "wpn-needler.small": {
+    "file": "sprites/wpn-needler.small.png",
+    "w": 27,
+    "h": 14
+  },
+  "wpn-needler.back": {
+    "file": "sprites/wpn-needler.back.png",
+    "w": 33,
+    "h": 19,
+    "gx": 7,
+    "gy": 11,
+    "mx": 34,
+    "my": 6
+  },
+  "wpn-thermal-lance.small": {
+    "file": "sprites/wpn-thermal-lance.small.png",
+    "w": 34,
+    "h": 14
+  },
+  "wpn-thermal-lance.back": {
+    "file": "sprites/wpn-thermal-lance.back.png",
+    "w": 41,
+    "h": 24,
+    "gx": 8,
+    "gy": 14,
+    "mx": 41,
+    "my": 7
+  },
+  "wpn-void-rifle.small": {
+    "file": "sprites/wpn-void-rifle.small.png",
+    "w": 38,
+    "h": 9
+  },
+  "wpn-void-rifle.back": {
+    "file": "sprites/wpn-void-rifle.back.png",
+    "w": 46,
+    "h": 15,
+    "gx": 9,
+    "gy": 9,
+    "mx": 46,
+    "my": 1
+  },
+  "wpn-arc-caster.small": {
+    "file": "sprites/wpn-arc-caster.small.png",
+    "w": 32,
+    "h": 14
+  },
+  "wpn-arc-caster.back": {
+    "file": "sprites/wpn-arc-caster.back.png",
+    "w": 41,
+    "h": 22,
+    "gx": 9,
+    "gy": 12,
+    "mx": 40,
+    "my": 6
+  },
+  "wpn-hailstorm.small": {
+    "file": "sprites/wpn-hailstorm.small.png",
+    "w": 22,
+    "h": 17
+  },
+  "wpn-hailstorm.back": {
+    "file": "sprites/wpn-hailstorm.back.png",
+    "w": 27,
+    "h": 22,
+    "gx": 17,
+    "gy": 9,
+    "mx": 27,
+    "my": 7
+  },
+  "wpn-inferno-pod.small": {
+    "file": "sprites/wpn-inferno-pod.small.png",
+    "w": 22,
+    "h": 17
+  },
+  "wpn-inferno-pod.back": {
+    "file": "sprites/wpn-inferno-pod.back.png",
+    "w": 29,
+    "h": 25,
+    "gx": 18,
+    "gy": 12,
+    "mx": 29,
+    "my": 10
+  },
+  "wpn-null-beam.small": {
+    "file": "sprites/wpn-null-beam.small.png",
+    "w": 29,
+    "h": 12
+  },
+  "wpn-null-beam.back": {
+    "file": "sprites/wpn-null-beam.back.png",
+    "w": 35,
+    "h": 20,
+    "gx": 21,
+    "gy": 10,
+    "mx": 35,
+    "my": 7
+  },
+  "wpn-breaker-cannon.small": {
+    "file": "sprites/wpn-breaker-cannon.small.png",
+    "w": 28,
+    "h": 17
+  },
+  "wpn-breaker-cannon.back": {
+    "file": "sprites/wpn-breaker-cannon.back.png",
+    "w": 35,
+    "h": 22,
+    "gx": 21,
+    "gy": 11,
+    "mx": 34,
+    "my": 8
+  },
+  "wpn-arc-blade.small": {
+    "file": "sprites/wpn-arc-blade.small.png",
+    "w": 38,
+    "h": 7
+  },
+  "wpn-arc-blade.back": {
+    "file": "sprites/wpn-arc-blade.back.png",
+    "w": 45,
+    "h": 12,
+    "gx": 9,
+    "gy": 9,
+    "mx": 45,
+    "my": 1
+  },
+  "wpn-breach-pick.small": {
+    "file": "sprites/wpn-breach-pick.small.png",
+    "w": 24,
+    "h": 14
+  },
+  "wpn-breach-pick.back": {
+    "file": "sprites/wpn-breach-pick.back.png",
+    "w": 30,
+    "h": 19,
+    "gx": 6,
+    "gy": 10,
+    "mx": 30,
+    "my": 5
+  },
+  "wpn-chain-gun.small": {
+    "file": "sprites/wpn-chain-gun.small.png",
+    "w": 18,
+    "h": 14
+  },
+  "wpn-chain-gun.back": {
+    "file": "sprites/wpn-chain-gun.back.png",
+    "w": 22,
+    "h": 18,
+    "gx": 5,
+    "gy": 9,
+    "mx": 22,
+    "my": 6
+  },
+  "wpn-longbow.small": {
+    "file": "sprites/wpn-longbow.small.png",
+    "w": 38,
+    "h": 14
+  },
+  "wpn-longbow.back": {
+    "file": "sprites/wpn-longbow.back.png",
+    "w": 46,
+    "h": 20,
+    "gx": 10,
+    "gy": 10,
+    "mx": 46,
+    "my": 2
+  },
+  "wpn-hornet-salvo.small": {
+    "file": "sprites/wpn-hornet-salvo.small.png",
+    "w": 29,
+    "h": 14
+  },
+  "wpn-hornet-salvo.back": {
+    "file": "sprites/wpn-hornet-salvo.back.png",
+    "w": 36,
+    "h": 20,
+    "gx": 22,
+    "gy": 10,
+    "mx": 36,
+    "my": 7
+  },
+  "wpn-sunlance.small": {
+    "file": "sprites/wpn-sunlance.small.png",
+    "w": 29,
+    "h": 17
+  },
+  "wpn-sunlance.back": {
+    "file": "sprites/wpn-sunlance.back.png",
+    "w": 35,
+    "h": 21,
+    "gx": 22,
+    "gy": 9,
+    "mx": 36,
+    "my": 6
+  },
+  "shd-riot.small": {
+    "file": "sprites/shd-riot.small.png",
+    "w": 22,
+    "h": 34
+  },
+  "shd-riot.back": {
+    "file": "sprites/shd-riot.back.png",
+    "w": 27,
+    "h": 42,
+    "gx": 13,
+    "gy": 25,
+    "mx": 13,
+    "my": 25
+  },
+  "wpn-ram-fist.small": {
+    "file": "sprites/wpn-ram-fist.small.png",
+    "w": 20,
+    "h": 14
+  },
+  "wpn-ram-fist.back": {
+    "file": "sprites/wpn-ram-fist.back.png",
+    "w": 25,
+    "h": 19,
+    "gx": 5,
+    "gy": 12,
+    "mx": 24,
+    "my": 8
+  },
+  "wpn-thermal-cutter.small": {
+    "file": "sprites/wpn-thermal-cutter.small.png",
+    "w": 37,
+    "h": 14
+  },
+  "wpn-thermal-cutter.back": {
+    "file": "sprites/wpn-thermal-cutter.back.png",
+    "w": 46,
+    "h": 19,
+    "gx": 9,
+    "gy": 11,
+    "mx": 45,
+    "my": 4
+  },
+  "wpn-marksman.small": {
+    "file": "sprites/wpn-marksman.small.png",
+    "w": 38,
+    "h": 13
+  },
+  "wpn-marksman.back": {
+    "file": "sprites/wpn-marksman.back.png",
+    "w": 46,
+    "h": 21,
+    "gx": 9,
+    "gy": 11,
+    "mx": 45,
+    "my": 4
+  },
+  "wpn-flak.small": {
+    "file": "sprites/wpn-flak.small.png",
+    "w": 25,
+    "h": 14
+  },
+  "wpn-flak.back": {
+    "file": "sprites/wpn-flak.back.png",
+    "w": 32,
+    "h": 20,
+    "gx": 7,
+    "gy": 11,
+    "mx": 31,
+    "my": 6
+  },
+  "wpn-disruptor.small": {
+    "file": "sprites/wpn-disruptor.small.png",
+    "w": 28,
+    "h": 14
+  },
+  "wpn-disruptor.back": {
+    "file": "sprites/wpn-disruptor.back.png",
+    "w": 35,
+    "h": 18,
+    "gx": 7,
+    "gy": 12,
+    "mx": 34,
+    "my": 7
+  },
+  "wpn-plasma.small": {
+    "file": "sprites/wpn-plasma.small.png",
+    "w": 24,
+    "h": 14
+  },
+  "wpn-plasma.back": {
+    "file": "sprites/wpn-plasma.back.png",
+    "w": 31,
+    "h": 23,
+    "gx": 7,
+    "gy": 14,
+    "mx": 30,
+    "my": 9
+  },
+  "wpn-coil-pistol.small": {
+    "file": "sprites/wpn-coil-pistol.small.png",
+    "w": 27,
+    "h": 14
+  },
+  "wpn-coil-pistol.back": {
+    "file": "sprites/wpn-coil-pistol.back.png",
+    "w": 34,
+    "h": 20,
+    "gx": 7,
+    "gy": 11,
+    "mx": 34,
+    "my": 6
+  },
+  "shd-barrier.small": {
+    "file": "sprites/shd-barrier.small.png",
+    "w": 20,
+    "h": 34
+  },
+  "shd-barrier.back": {
+    "file": "sprites/shd-barrier.back.png",
+    "w": 24,
+    "h": 42,
+    "gx": 12,
+    "gy": 25,
+    "mx": 12,
+    "my": 25
+  },
+  "shd-tower.small": {
+    "file": "sprites/shd-tower.small.png",
+    "w": 20,
+    "h": 34
+  },
+  "shd-tower.back": {
+    "file": "sprites/shd-tower.back.png",
+    "w": 24,
+    "h": 42,
+    "gx": 12,
+    "gy": 25,
+    "mx": 12,
+    "my": 25
+  },
+  "wpn-micro-salvo.small": {
+    "file": "sprites/wpn-micro-salvo.small.png",
+    "w": 21,
+    "h": 17
+  },
+  "wpn-micro-salvo.back": {
+    "file": "sprites/wpn-micro-salvo.back.png",
+    "w": 26,
+    "h": 22,
+    "gx": 16,
+    "gy": 10,
+    "mx": 26,
+    "my": 8
+  },
+  "wpn-gauss.small": {
+    "file": "sprites/wpn-gauss.small.png",
+    "w": 29,
+    "h": 11
+  },
+  "wpn-gauss.back": {
+    "file": "sprites/wpn-gauss.back.png",
+    "w": 35,
+    "h": 17,
+    "gx": 21,
+    "gy": 8,
+    "mx": 35,
+    "my": 5
+  },
+  "wpn-flare-mortar.small": {
+    "file": "sprites/wpn-flare-mortar.small.png",
+    "w": 15,
+    "h": 17
+  },
+  "wpn-flare-mortar.back": {
+    "file": "sprites/wpn-flare-mortar.back.png",
+    "w": 20,
+    "h": 22,
+    "gx": 12,
+    "gy": 11,
+    "mx": 19,
+    "my": 9
+  },
+  "wpn-buzzsaw.small": {
+    "file": "sprites/wpn-buzzsaw.small.png",
+    "w": 25,
+    "h": 17
+  },
+  "wpn-buzzsaw.back": {
+    "file": "sprites/wpn-buzzsaw.back.png",
+    "w": 31,
+    "h": 22,
+    "gx": 18,
+    "gy": 10,
+    "mx": 31,
+    "my": 7
+  },
+  "wpn-storm-array.small": {
+    "file": "sprites/wpn-storm-array.small.png",
+    "w": 14,
+    "h": 17
+  },
+  "wpn-storm-array.back": {
+    "file": "sprites/wpn-storm-array.back.png",
+    "w": 19,
+    "h": 21,
+    "gx": 11,
+    "gy": 10,
+    "mx": 18,
+    "my": 8
+  },
+  "wpn-howler.small": {
+    "file": "sprites/wpn-howler.small.png",
+    "w": 17,
+    "h": 17
+  },
+  "wpn-howler.back": {
+    "file": "sprites/wpn-howler.back.png",
+    "w": 21,
+    "h": 23,
+    "gx": 13,
+    "gy": 11,
+    "mx": 21,
+    "my": 9
+  },
+  "wpn-writ.small": {
+    "file": "sprites/wpn-writ.small.png",
+    "w": 38,
+    "h": 7
+  },
+  "wpn-writ.back": {
+    "file": "sprites/wpn-writ.back.png",
+    "w": 45,
+    "h": 14,
+    "gx": 9,
+    "gy": 8,
+    "mx": 45,
+    "my": 0
+  },
+  "wpn-gavel.small": {
+    "file": "sprites/wpn-gavel.small.png",
+    "w": 22,
+    "h": 14
+  },
+  "wpn-gavel.back": {
+    "file": "sprites/wpn-gavel.back.png",
+    "w": 27,
+    "h": 18,
+    "gx": 5,
+    "gy": 12,
+    "mx": 27,
+    "my": 8
+  },
+  "wpn-decree.small": {
+    "file": "sprites/wpn-decree.small.png",
+    "w": 29,
+    "h": 14
+  },
+  "wpn-decree.back": {
+    "file": "sprites/wpn-decree.back.png",
+    "w": 35,
+    "h": 18,
+    "gx": 21,
+    "gy": 7,
+    "mx": 35,
+    "my": 4
+  },
+  "wpn-enemy-longbow.small": {
+    "file": "sprites/wpn-enemy-longbow.small.png",
+    "w": 38,
+    "h": 14
+  },
+  "wpn-enemy-claw.small": {
+    "file": "sprites/wpn-enemy-claw.small.png",
+    "w": 37,
+    "h": 14
+  },
+  "wpn-enemy-pinpoint.small": {
+    "file": "sprites/wpn-enemy-pinpoint.small.png",
+    "w": 38,
+    "h": 9
+  },
+  "wpn-enemy-edge.small": {
+    "file": "sprites/wpn-enemy-edge.small.png",
+    "w": 38,
+    "h": 7
+  },
+  "wpn-enemy-cutter.small": {
+    "file": "sprites/wpn-enemy-cutter.small.png",
+    "w": 37,
+    "h": 14
+  },
+  "wpn-enemy-flak.small": {
+    "file": "sprites/wpn-enemy-flak.small.png",
+    "w": 25,
+    "h": 14
+  },
+  "wpn-enemy-siege.small": {
+    "file": "sprites/wpn-enemy-siege.small.png",
+    "w": 28,
+    "h": 17
+  },
+  "wpn-enemy-writ.small": {
+    "file": "sprites/wpn-enemy-writ.small.png",
+    "w": 38,
+    "h": 7
+  },
+  "wpn-enemy-seizer.small": {
+    "file": "sprites/wpn-enemy-seizer.small.png",
+    "w": 32,
+    "h": 14
+  },
+  "wpn-enemy-gavel.small": {
+    "file": "sprites/wpn-enemy-gavel.small.png",
+    "w": 22,
+    "h": 14
+  },
+  "wpn-enemy-decree.small": {
+    "file": "sprites/wpn-enemy-decree.small.png",
+    "w": 29,
+    "h": 14
+  },
+  "wpn-enemy-carbine.small": {
+    "file": "sprites/wpn-enemy-carbine.small.png",
+    "w": 27,
+    "h": 14
+  },
+  "wpn-enemy-shotgun.small": {
+    "file": "sprites/wpn-enemy-shotgun.small.png",
+    "w": 23,
+    "h": 14
+  },
+  "wpn-enemy-lance.small": {
+    "file": "sprites/wpn-enemy-lance.small.png",
+    "w": 38,
+    "h": 10
+  },
+  "wpn-enemy-rack.small": {
+    "file": "sprites/wpn-enemy-rack.small.png",
+    "w": 21,
+    "h": 17
+  },
+  "wpn-enemy-needle.small": {
+    "file": "sprites/wpn-enemy-needle.small.png",
+    "w": 27,
+    "h": 14
+  },
+  "wpn-enemy-maul.small": {
+    "file": "sprites/wpn-enemy-maul.small.png",
+    "w": 23,
+    "h": 14
+  },
+  "wpn-enemy-mortar.small": {
+    "file": "sprites/wpn-enemy-mortar.small.png",
+    "w": 27,
+    "h": 17
   }
 }

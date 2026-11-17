@@ -23,11 +23,32 @@ export interface ArtJob {
   flip?: boolean;
   /** On a family drawing that is another family with its lower body replaced: that family. */
   base?: string;
+  /** On a layer: the side of the pose box its drawing is reduced to, where that is not `POSE_BOX`. */
+  box?: number;
+  /**
+   * On a weapon or a shield made from a raw picture that is already there: the view it is made
+   * for. From behind it is turned and reduced to what the mech from behind is; for a mech that
+   * stands far off it is only reduced.
+   */
+  view?: 'back' | 'small';
   quality?: 'low' | 'medium' | 'high';
 }
 
 /** Side of the square pose box that a 1024 px family drawing is reduced to. Matches MECH_BOX in the game. */
 export const POSE_BOX = 160;
+/**
+ * Side of the pose box a drawing of a mech from behind is reduced to. Matches BACK_BOX in the game.
+ * In a battle the pilot's mech is seen from behind, nearer than anything else on the field; it is
+ * drawn smaller than in the garage so that the field has room for what it faces.
+ */
+export const BACK_POSE_BOX = 128;
+/**
+ * Side of the pose box of a mech built from parts that stands far off: the other mech in a duel.
+ * It is made from the same drawings from the front, reduced further. Matches SMALL_BOX in the game.
+ */
+export const SMALL_POSE_BOX = 104;
+/** How many degrees a weapon is turned upwards when its mech is seen from behind: its arm points away, up and to the right. */
+export const BACK_TILT = 12;
 
 /** Maximum processed size for free-standing sprites, in logical pixels. */
 export const BOX: Record<Exclude<JobKind, 'family' | 'layer'>, { w: number; h: number }> = {
@@ -122,11 +143,113 @@ function lowerBody(id: string, fromFamily: string, description: string): ArtJob 
 /**
  * The family whose paint a frame layer takes: the family it was cut from, or, for free-standing
  * legs, the family their drawing was edited from. Legs then take a paint scheme the way the torso
- * above them does.
+ * above them does. A layer cut from a drawing from behind takes the paint of the same family.
  */
 export function paintFamilyOf(layerJob: ArtJob): string {
-  const name = /family-([a-z0-9-]+)\.png$/.exec(layerJob.references?.[0] ?? '')?.[1] ?? layerJob.id;
+  const name = /(?:family|back)-([a-z0-9-]+)\.png$/.exec(layerJob.references?.[0] ?? '')?.[1] ?? layerJob.id;
   return JOBS.find((job) => job.id === `family-${name}`)?.base ?? name;
+}
+
+/* ---- The mech from behind ---- */
+
+const backFile = (family: string): string => `${RAW}/back-${family}.png`;
+
+/** The view every drawing from behind shares, and the stance in it. */
+const BACK_VIEW =
+  'a three-quarter back view: the camera stands behind the mecha and a little to its right, so that its back and its ' +
+  'right side are seen and it faces away from the viewer, towards the upper right of the image';
+const BACK_STANCE =
+  'combat stance with legs apart and knees slightly bent, both feet planted on the ground; the arm on the right side of ' +
+  'the image is stretched forward, away from the viewer and towards the upper right, at chest height, with a closed ' +
+  'empty fist; the arm on the left side of the image is bent at its side with a closed empty fist; the whole body is ' +
+  'visible from head to feet, centred, filling most of the frame. No weapons, nothing held in the hands.';
+
+/** The first drawing from behind, made from that family's drawing from the front: it defines the pose from behind. */
+function backPose(family: string): ArtJob {
+  return {
+    id: `back-${family}`, kind: 'family', references: [familyFile(family)],
+    prompt:
+      'The attached image shows a pixel art mecha from the front. Draw the same mecha seen from behind, in ' +
+      `${BACK_VIEW}. It keeps its design, colours, proportions, pixel size, outline weight and shading; its back shows ` +
+      `armour plates and a compact backpack unit in the same colours and glowing accents. Pose: ${BACK_STANCE} ` +
+      `${PIXEL} ${GREEN}`,
+  };
+}
+
+/**
+ * A further family from behind: the pose from behind redrawn in another design, the way the
+ * families from the front were made. The design is given in words and by its drawing from the front.
+ */
+function backFamily(family: string, poseFrom: string): ArtJob {
+  return {
+    id: `back-${family}`, kind: 'family', references: [backFile(poseFrom), familyFile(family)],
+    prompt:
+      'The first image shows a mecha seen from behind in a combat stance. Redraw it as a different mecha design in ' +
+      'exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, ' +
+      'elbows, hands, hips, knees, feet) stays in the same place. In particular the arm on the right side of the ' +
+      'image stays raised and stretched forward towards the upper right, with its fist exactly where it is in the ' +
+      'first image, and the arm on the left side stays bent at its side. The new design is shown from the front in ' +
+      `the second image; in words it is: ${DESIGNS[family]} Seen from behind, its back shows armour plates and a ` +
+      `backpack unit that suit that design. Keep the same proportions between joints. No weapons, empty hands. ${PIXEL} ${GREEN}`,
+  };
+}
+
+/** A drawing from behind with only its lower body replaced, as `lowerBody` does from the front. */
+function backLowerBody(id: string, fromFamily: string, description: string): ArtJob {
+  return {
+    id: `back-${id}`, kind: 'family', references: [backFile(fromFamily)], base: fromFamily,
+    prompt:
+      'Edit the attached pixel art image of a mecha seen from behind. Keep everything above the waist exactly as it ' +
+      'is: same pixels, same position, same size, same colours. Replace only the lower body (the hips, both legs and ' +
+      `both feet) with: ${description} It is seen from behind like the rest, joins the torso at the same waist and ` +
+      'rests on the same ground line as the original feet, and is drawn in the same colours and style as the rest of ' +
+      `the mecha. ${PIXEL} ${GREEN}`,
+  };
+}
+
+const KEEP_BACK: Record<Layer, string> = {
+  legs: 'only the lower body: the hips with any hip or skirt armour, both legs and both feet. Erase the torso with its backpack, the head and both arms.',
+  torso: 'only the torso seen from behind: the back with its backpack unit, from the waist up to the neck. Erase the head, both arms with their shoulder armour, the hips and the legs.',
+  head: 'only the head: the helmet or sensor unit itself with its crest or antenna, and nothing below the neck. Erase everything else: the whole torso and in particular the backpack unit on its back, which lies under the head, both arms and the legs.',
+  armNear: 'only the arm on the right side of the image that is stretched forward, complete with its shoulder armour, forearm and fist. Erase the torso, head, legs and the other arm.',
+  armFar: 'only the arm on the left side of the image, complete with its shoulder armour, forearm and fist. Erase the torso, head, legs and the other arm.',
+};
+
+/** One layer cut from a drawing from behind. Its sprite is the part's own id with `.back` after it. */
+function backLayer(id: string, fromFamily: string, which: Layer, keep: string = KEEP_BACK[which]): ArtJob {
+  return { ...layer(`${id}.back`, fromFamily, which, keep), references: [backFile(fromFamily)], box: BACK_POSE_BOX };
+}
+
+/**
+ * Heads that came away with a piece of the backpack under them however the usual words were put:
+ * each is told what its own head and its own backpack look like. A head with a backpack on it puts
+ * that backpack on every other family's back.
+ */
+const HEAD_FROM_BEHIND: Record<string, string> = {
+  ronin:
+    'only the helmet itself: the rounded helmet dome with its single tall curved crest and the short flared neck guard ' +
+    'directly under the dome. It is the small part at the very top of the mecha. Erase everything else: in particular ' +
+    'the large round backpack unit with the magenta lights that lies below the helmet, both shoulders with their ' +
+    'layered plates, the arms, the torso, the skirt plates and the legs.',
+  bulwark:
+    'only the head itself: the low cab-like head unit at the very top of the mecha with its small roll bar. Erase ' +
+    'everything else: in particular the big yellow backpack box with the ribbed vents that lies below the head, both ' +
+    'shoulders, the arms, the torso and the legs.',
+  mantis:
+    'only the head itself: the small triangular head with its two short antennae, at the very top of the mecha. Erase ' +
+    'everything else: in particular the rings and the backpack that lie below the head, both shoulders, the arms, the ' +
+    'torso and the legs.',
+};
+
+/** The five layers of one family from behind, named after the parts that use them. */
+function backLayersOf(fromFamily: string, ids: { legs: string; core: string; head: string; arms: string }): ArtJob[] {
+  return [
+    backLayer(ids.legs, fromFamily, 'legs'),
+    backLayer(ids.core, fromFamily, 'torso'),
+    backLayer(ids.head, fromFamily, 'head', HEAD_FROM_BEHIND[fromFamily]),
+    backLayer(`${ids.arms}.near`, fromFamily, 'armNear'),
+    backLayer(`${ids.arms}.far`, fromFamily, 'armFar'),
+  ];
 }
 
 /** The five layers of one family, named after the parts that use them. */
@@ -185,43 +308,54 @@ function portrait(id: string, who: string): ArtJob {
   };
 }
 
-export const JOBS: ArtJob[] = [
+/** What each family looks like, in words: its drawing from the front and its drawing from behind are both made from this. */
+const DESIGNS: Record<string, string> = {
+  halo:
+    'a slender white and navy mecha with sharp angular armour panels, glowing cyan accent lights and a compact ' +
+    'helmet head with a horizontal cyan visor band and one swept-back blade antenna; slimmer limbs than the first image.',
+  salvage:
+    'a scrappy salvaged mecha patched together from mismatched plates in faded teal and rust orange, with visible weld ' +
+    'seams, bolts, a few exposed cables and one hazard-striped shoulder; its head is a simple boxy sensor unit with a single ' +
+    'round amber lens. Medium build, plainer and more worn than the first image, with small amber lights.',
+  bulwark:
+    'a massive industrial mining mecha in safety yellow with black hazard stripes and dark steel joints: very thick blocky ' +
+    'limbs, huge square shoulders, a wide barrel chest, and a low cab-like head with a row of small white work lights. ' +
+    'Bulkier than the first image, with heavy flat feet.',
+  wraith:
+    'a lean stealth reconnaissance mecha in matte indigo and black armour with thin glowing amber light slits: narrow ' +
+    'waist, slim angular limbs, small pointed shoulder guards, and a smooth faceless mask head with one vertical amber ' +
+    'slit. Slimmer than the first image, sinister and quiet.',
+  colossus:
+    'a towering siege mecha in burnished bronze plating with deep blue enamel panels and small white light ports: ' +
+    'enormous rounded pauldrons, a broad barrel chest, forearms like tower shields, thick pillar legs, and a crowned ' +
+    'head with three short upright fins. The biggest and heaviest of all, regal and slow.',
+  mantis:
+    'a wiry insect-like scrapyard mecha in olive green and sand yellow plating with thin glowing lime light strips: ' +
+    'reverse-jointed grasshopper legs whose knees bend backwards and end in two-toed clawed feet (hips and feet stay ' +
+    'where they are in the first image), a narrow waist, forearms with a folded blade-like fin along each, small ' +
+    'angular shoulders, and a triangular head with two short antennae and a wide lime visor. Lean and agile.',
+  auditor:
+    'a tall, severe corporate enforcement mecha in glossy black lacquer armour with fine gold trim lines and a few small ' +
+    'white lights: long coat-like armour skirts hanging from the hips at the front and back, narrow shoulders with upright ' +
+    'gold-edged collar plates, slender precise limbs, and a smooth faceless mask head with one thin vertical gold line and ' +
+    'a low crown ridge. Slimmer and taller-looking than the first image, elegant, cold and expensive.',
+};
+
+/** Everything that is drawn: asked of the image service, or the same raw picture used a second time. */
+const DRAWN: ArtJob[] = [
   // Ronin defines the pose; every other family is that pose redrawn in its own design.
   poseFamily('ronin',
     'Heavy imposing proportions inspired by samurai armour: layered shoulder plates, helmet-like head with a single ' +
     'curved crest, armoured skirt plates over the hips, dark lacquered charcoal and deep red armour with glowing magenta accent lines.'),
-  family('halo', 'ronin',
-    'a slender white and navy mecha with sharp angular armour panels, glowing cyan accent lights and a compact ' +
-    'helmet head with a horizontal cyan visor band and one swept-back blade antenna; slimmer limbs than the first image.',
-    'art/reference/ref-light.png'),
-  family('salvage', 'ronin',
-    'a scrappy salvaged mecha patched together from mismatched plates in faded teal and rust orange, with visible weld ' +
-    'seams, bolts, a few exposed cables and one hazard-striped shoulder; its head is a simple boxy sensor unit with a single ' +
-    'round amber lens. Medium build, plainer and more worn than the first image, with small amber lights.'),
-  family('bulwark', 'ronin',
-    'a massive industrial mining mecha in safety yellow with black hazard stripes and dark steel joints: very thick blocky ' +
-    'limbs, huge square shoulders, a wide barrel chest, and a low cab-like head with a row of small white work lights. ' +
-    'Bulkier than the first image, with heavy flat feet.'),
+  family('halo', 'ronin', DESIGNS.halo, 'art/reference/ref-light.png'),
+  family('salvage', 'ronin', DESIGNS.salvage),
+  family('bulwark', 'ronin', DESIGNS.bulwark),
 
-  family('wraith', 'ronin',
-    'a lean stealth reconnaissance mecha in matte indigo and black armour with thin glowing amber light slits: narrow ' +
-    'waist, slim angular limbs, small pointed shoulder guards, and a smooth faceless mask head with one vertical amber ' +
-    'slit. Slimmer than the first image, sinister and quiet.'),
-  family('colossus', 'ronin',
-    'a towering siege mecha in burnished bronze plating with deep blue enamel panels and small white light ports: ' +
-    'enormous rounded pauldrons, a broad barrel chest, forearms like tower shields, thick pillar legs, and a crowned ' +
-    'head with three short upright fins. The biggest and heaviest of all, regal and slow.'),
+  family('wraith', 'ronin', DESIGNS.wraith),
+  family('colossus', 'ronin', DESIGNS.colossus),
 
-  family('mantis', 'ronin',
-    'a wiry insect-like scrapyard mecha in olive green and sand yellow plating with thin glowing lime light strips: ' +
-    'reverse-jointed grasshopper legs whose knees bend backwards and end in two-toed clawed feet (hips and feet stay ' +
-    'where they are in the first image), a narrow waist, forearms with a folded blade-like fin along each, small ' +
-    'angular shoulders, and a triangular head with two short antennae and a wide lime visor. Lean and agile.'),
-  family('auditor', 'ronin',
-    'a tall, severe corporate enforcement mecha in glossy black lacquer armour with fine gold trim lines and a few small ' +
-    'white lights: long coat-like armour skirts hanging from the hips at the front and back, narrow shoulders with upright ' +
-    'gold-edged collar plates, slender precise limbs, and a smooth faceless mask head with one thin vertical gold line and ' +
-    'a low crown ridge. Slimmer and taller-looking than the first image, elegant, cold and expensive.'),
+  family('mantis', 'ronin', DESIGNS.mantis),
+  family('auditor', 'ronin', DESIGNS.auditor),
   // Free-standing lower bodies: a family drawing with only the legs replaced, from which the legs layer is cut.
   lowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
@@ -473,6 +607,64 @@ export const JOBS: ArtJob[] = [
     prompt: '16-bit pixel art background, no anti-aliasing: a flooded lower level of a megacity, huge rusted pipes and support pillars, shacks built from scrap, strings of mismatched teal and orange neon lights, dripping water and steam, a shallow wet concrete floor filling the lower third. No characters, no robots, no vehicles in the foreground.' },
   { id: 'bg-arena', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: an underground mecha duelling arena at night, a wide scuffed steel floor filling the lower third, tall cage walls, floodlights, banks of spectator stands with a silhouetted crowd, and neon scoreboards in pink and cyan with abstract shapes instead of readable text. No characters or robots in the foreground, no vehicles.' },
+  // The pilot's mech as a battle shows it: from behind. Ronin defines that pose too.
+  backPose('ronin'),
+  backFamily('salvage', 'ronin'),
+  backFamily('halo', 'ronin'),
+  backFamily('bulwark', 'ronin'),
+  backFamily('wraith', 'ronin'),
+  backFamily('colossus', 'ronin'),
+  backFamily('mantis', 'ronin'),
+  backFamily('auditor', 'ronin'),
+  backLowerBody('crawler', 'bulwark',
+    'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
+    'with hazard stripes on the track guards. No legs and no feet.'),
+  backLowerBody('spider', 'ronin',
+    'a four-legged walker base: a compact hip block from which four armoured spider-like legs spread wide, two ' +
+    'towards the front and two towards the back, each ending in a pointed foot planted on the ground.'),
+  backLowerBody('glide', 'halo',
+    'a hover unit: a flared white skirt of armour panels below the waist with three downward-pointing thruster ' +
+    'nozzles glowing cyan under it, floating a little above the ground. No legs and no feet.'),
+  ...backLayersOf('salvage', { legs: 'legs-strider', core: 'core-hauler', head: 'head-scout-mk1', arms: 'arms-rigger' }),
+  ...backLayersOf('halo', { legs: 'legs-halo', core: 'core-halo', head: 'head-halo', arms: 'arms-halo' }),
+  ...backLayersOf('bulwark', { legs: 'legs-bulwark', core: 'core-bulwark', head: 'head-bulwark', arms: 'arms-bulwark' }),
+  ...backLayersOf('ronin', { legs: 'legs-ronin', core: 'core-ronin', head: 'head-ronin', arms: 'arms-ronin' }),
+  ...backLayersOf('wraith', { legs: 'legs-wraith', core: 'core-wraith', head: 'head-wraith', arms: 'arms-wraith' }),
+  ...backLayersOf('colossus', { legs: 'legs-colossus', core: 'core-colossus', head: 'head-colossus', arms: 'arms-colossus' }),
+  ...backLayersOf('mantis', { legs: 'legs-mantis', core: 'core-mantis', head: 'head-mantis', arms: 'arms-mantis' }),
+  ...backLayersOf('auditor', { legs: 'legs-auditor', core: 'core-auditor', head: 'head-auditor', arms: 'arms-auditor' }),
+  backLayer('legs-crawler', 'crawler', 'legs',
+    'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
+  backLayer('legs-spider', 'spider', 'legs',
+    'only the lower body below the waist: the hip block and all four legs with their feet. Erase the torso, head and both arms.'),
+  backLayer('legs-glide', 'glide', 'legs',
+    'only the lower body below the waist: the whole hover skirt with its thruster nozzles and their glow. Erase the torso, head and both arms.'),
+
   { id: 'bg-garage', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: the inside of a dim mecha hangar bay at night, steel gantries and catwalks, hanging chains and cables, tool racks along the walls, strips of cyan and magenta neon work lights, an empty metal floor filling the lower half. No characters, no robots, no vehicles, no text.' },
 ];
+
+const CARRIED: JobKind[] = ['handWeapon', 'shoulderWeapon', 'shield'];
+
+/**
+ * What is made from raw pictures that are already there, with nothing asked of the image service:
+ * every layer from the front once more for a mech that stands far off (`.small`), and every weapon
+ * and shield once more for that mech (`.small`) and for the mech seen from behind (`.back`). The
+ * weapons only enemies carry are never seen from behind.
+ */
+function derived(drawn: ArtJob[]): ArtJob[] {
+  const more: ArtJob[] = [];
+  for (const job of drawn) {
+    if (job.kind === 'layer' && job.box === undefined) {
+      more.push({ ...job, id: `${job.id}.small`, source: job.source ?? job.id, box: SMALL_POSE_BOX });
+    }
+    if (CARRIED.includes(job.kind)) {
+      const source = job.source ?? job.id;
+      more.push({ id: `${job.id}.small`, kind: job.kind, source, view: 'small', prompt: '', ...(job.flip ? { flip: true } : {}) });
+      if (!job.id.startsWith('wpn-enemy-')) more.push({ id: `${job.id}.back`, kind: job.kind, source, view: 'back', prompt: '' });
+    }
+  }
+  return more;
+}
+
+export const JOBS: ArtJob[] = [...DRAWN, ...derived(DRAWN)];
