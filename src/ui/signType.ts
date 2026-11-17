@@ -82,8 +82,8 @@ const GAPS = [0, 3, 4, 6];
 /** How many pixels of depth the letters have, down and to the right: as many as the pen reaches. */
 const depthFor = (tall: number): number => penFor(tall);
 const whole = (tall: number): number => Math.max(MIN_TALL, Math.min(MAX_TALL, Math.round(tall)));
-/** How wide a letter comes out at a height: never narrower than the pen. */
-const widthAt = (glyph: Glyph, tall: number): number => Math.max(penFor(tall) * 2 + 1, Math.round((glyph.w * tall) / FULL_TALL));
+/** How wide a letter comes out at a height. The narrowest of them is still as wide as the pen at every height there is. */
+const widthAt = (glyph: Glyph, tall: number): number => Math.round((glyph.w * tall) / FULL_TALL);
 
 /** How wide a word is at a height, with its depth and the line round it; and how high. */
 export function wordWidth(text: string, tall: number): number {

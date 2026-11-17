@@ -102,13 +102,28 @@ describe('the alphabet', () => {
     for (const tall of TALLS) {
       for (const c of [...CAPITALS, ...DIGITS]) {
         const word = buildWord(c, tall);
-        const width = Math.max(penFor(tall) * 2 + 1, Math.round((GLYPHS[c].w * tall) / FULL_TALL));
+        const width = Math.round((GLYPHS[c].w * tall) / FULL_TALL);
         expect(word.letters, `${c} at ${tall}`).toEqual([{ x: 1, w: width }]);
         const rows = word.face.map((runs, y) => (runs.length ? y : -1)).filter((y) => y >= 0);
         expect([rows[0], rows.at(-1)], `${c} at ${tall}`).toEqual([1, tall]);
         const xs = word.face.flat();
         expect(Math.min(...xs.map((run) => run.x)), `${c} at ${tall}`).toBe(1);
         expect(Math.max(...xs.map((run) => run.x + run.w)), `${c} at ${tall}`).toBe(1 + width);
+      }
+    }
+  });
+
+  test('no character is ever narrower than the pen that draws it, at any height there is', () => {
+    for (let tall = MIN_TALL; tall <= MAX_TALL; tall++) {
+      for (const [c, glyph] of Object.entries(GLYPHS)) {
+        expect(Math.round((glyph.w * tall) / FULL_TALL), `${JSON.stringify(c)} at ${tall}`).toBeGreaterThanOrEqual(penFor(tall) * 2 + 1);
+        // And what is drawn of it stays inside the room it was given.
+        if (c === ' ') continue;
+        const word = buildWord(c, tall);
+        for (const run of word.face.flat()) {
+          expect(run.x).toBeGreaterThanOrEqual(word.letters[0].x);
+          expect(run.x + run.w).toBeLessThanOrEqual(word.letters[0].x + word.letters[0].w);
+        }
       }
     }
   });
@@ -430,9 +445,13 @@ describe('a word, as it is drawn', () => {
     expect(page.rects.slice(0, total(word)).every((rect) => rect.alpha === 0.8)).toBe(true);
     // As lit as it is, on top of however faint everything was already being drawn.
     expect(page.rects.slice(total(word)).every((rect) => Math.abs(rect.alpha - 0.2) < 1e-9)).toBe(true);
-    // More than fully lit is fully lit, and less than unlit is unlit.
-    expect(record((ctx) => drawWord(ctx, 'ALARM', 155, 20, { tall: 23, level: 7 })).rects).toHaveLength(total(word));
-    expect(record((ctx) => drawWord(ctx, 'ALARM', 155, 20, { tall: 23, level: -1 })).rects).toHaveLength(total(word));
+    // More than fully lit is fully lit, and less than unlit is unlit: once, and as strongly as anything is drawn.
+    const over = record((ctx) => drawWord(ctx, 'ALARM', 155, 20, { tall: 23, level: 7 }));
+    expect(over.rects).toHaveLength(total(word));
+    expect(over.rects.every((rect) => rect.alpha === 1)).toBe(true);
+    expect(over.rects).toEqual(record((ctx) => drawWord(ctx, 'ALARM', 155, 20, { tall: 23 })).rects);
+    const under = record((ctx) => drawWord(ctx, 'ALARM', 155, 20, { tall: 23, level: -1 }));
+    expect(under.rects).toEqual(record((ctx) => drawWord(ctx, 'ALARM', 155, 20, { tall: 23, level: 0 })).rects);
   });
 
   test('a text it cannot write is not drawn at all, and nothing fails', () => {
