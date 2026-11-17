@@ -8,7 +8,8 @@
  * Giving light up has to buy something. A handheld can be slow for reasons that have nothing to
  * do with light (a screen that shows thirty frames a second, a setting that saves power), and one
  * like that would lose its light and gain nothing. So once everything has been given up and the
- * frames are no better for it, the light goes back to where it was, once, and stays there.
+ * frames are no better for it, the light goes back to where it was, once, and stays there. That
+ * is only concluded where like is held against like: of one screen, not of two.
  */
 
 /** How much of the soft light is drawn: all of it, less of it, or none. */
@@ -25,7 +26,7 @@ export const LATE_SHARE = 0.2;
 /** So many slow windows in a row, and a step of light is given up. */
 export const SLOW_WINDOWS = 3;
 /** A gap longer than this is no frame: the game was put aside, and the window it fell in starts again. */
-export const PAUSE_MS = 250;
+export const PAUSE_MS = 1000;
 /**
  * The first frames of a session are not judged: pictures are still being unpacked and everything
  * is drawn for the first time. So many frames, or so long, whichever is over first.
@@ -36,10 +37,12 @@ export const WARM_UP_MS = 2000;
 export const HELPED = 0.75;
 /** ...or when frames came to take less than this share of the time they took. */
 export const SHORTER = 0.85;
+/** So many windows on end in which it kept up, and it is steady at the light it has. */
+export const STEADY = 10;
 
-/** A run of slow windows: how many, the frames they had, how many of those were late, and the time they took. */
-interface Spell { windows: number; frames: number; late: number; took: number }
-const NOTHING_SLOW: Spell = { windows: 0, frames: 0, late: 0, took: 0 };
+/** A run of slow windows: how many, the frames they had, how many of those were late, the time they took, and the longest of them. */
+interface Spell { windows: number; frames: number; late: number; took: number; longest: number }
+const NOTHING_SLOW: Spell = { windows: 0, frames: 0, late: 0, took: 0, longest: 0 };
 
 export class Pace {
   /** How much light there is to be. */
@@ -51,10 +54,13 @@ export class Pace {
   private inWindow = 0;
   private late = 0;
   private took = 0;
+  private longest = 0;
   /** The slow windows that have followed each other. */
   private slow = NOTHING_SLOW;
+  /** The windows in which it kept up that have followed each other. */
+  private good = 0;
   /** A coming down that has not yet been seen to help: where it began, and the frames that began it. */
-  private descent: { from: Detail; frames: number; late: number; took: number } | null = null;
+  private descent: { from: Detail; frames: number; late: number; took: number; longest: number } | null = null;
   /** The time the last frames took, for the count of frames a second. */
   private recent: number[] = [];
 
@@ -77,7 +83,9 @@ export class Pace {
       this.inWindow = 0;
       this.late = 0;
       this.took = 0;
+      this.longest = 0;
       this.slow = NOTHING_SLOW;
+      this.good = 0;
       return false;
     }
     this.count(gapMs);
@@ -86,22 +94,29 @@ export class Pace {
     this.inWindow++;
     this.took += gapMs;
     if (gapMs >= LATE_MS) this.late++;
+    if (gapMs > this.longest) this.longest = gapMs;
     if (this.inWindow < WINDOW && this.took < WINDOW_MS) return false;
     if (this.late / this.inWindow > LATE_SHARE) {
-      this.slow = { windows: this.slow.windows + 1, frames: this.slow.frames + this.inWindow, late: this.slow.late + this.late, took: this.slow.took + this.took };
+      this.slow = {
+        windows: this.slow.windows + 1, frames: this.slow.frames + this.inWindow, late: this.slow.late + this.late,
+        took: this.slow.took + this.took, longest: Math.max(this.slow.longest, this.longest),
+      };
+      this.good = 0;
     } else {
       // A window in which it kept up: where the light is now is good enough, and what was given up helped.
       this.slow = NOTHING_SLOW;
       this.descent = null;
+      this.good++;
     }
     this.inWindow = 0;
     this.late = 0;
     this.took = 0;
+    this.longest = 0;
     if (this.slow.windows < SLOW_WINDOWS) return false;
     const spell = this.slow;
     this.slow = NOTHING_SLOW;
     if (this.level > 0) {
-      this.descent ??= { from: this.level, frames: spell.frames, late: spell.late, took: spell.took };
+      this.descent ??= { from: this.level, frames: spell.frames, late: spell.late, took: spell.took, longest: spell.longest };
       this.level = (this.level - 1) as Detail;
       return true;
     }
@@ -113,10 +128,26 @@ export class Pace {
     const was = this.descent;
     if (!was) return false;
     const rarer = spell.late * was.frames < was.late * HELPED * spell.frames;
-    const shorter = spell.took * was.frames < was.took * SHORTER * spell.frames;
+    // The longest frame of each spell is left out of its time: one hitch says nothing about the light.
+    const shorter = (spell.took - spell.longest) * (was.frames - 1) < (was.took - was.longest) * SHORTER * (spell.frames - 1);
     if (rarer || shorter) return false;
     this.level = was.from;
     return true;
+  }
+
+  /**
+   * Told that what is on the screen has changed for something else. A coming down that began on
+   * the screen before cannot be held against what is seen on this one: whatever is found at the
+   * bottom now, nothing is concluded from it about the light. The windows go on being counted:
+   * slow on two screens is slow.
+   */
+  moved(): void {
+    this.descent = null;
+  }
+
+  /** True once it has kept up, at the light it has, for a good while on end: what a chance at more light is won by. */
+  get steady(): boolean {
+    return this.judging && this.good >= STEADY;
   }
 
   private count(gapMs: number): void {

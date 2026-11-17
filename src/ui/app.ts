@@ -39,7 +39,7 @@ import { STRINGS } from '../content/strings';
 import type { Sfx, SoundName } from '../platform/audio';
 import { HUSH, type TrackName } from '../platform/music';
 import type { InputAction } from '../platform/input';
-import { SLOTS, type SaveFile } from '../platform/storage';
+import { MAX_TRIES, SLOTS, type SaveFile } from '../platform/storage';
 import { ArenaScreen, MIRROR } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
@@ -103,23 +103,36 @@ export interface SlotView { slot: number; game: GameState | null; unusable: bool
 export const FAST_BATTLE_SPEED = 2.5;
 /** How much soft light each choice is. */
 const LEVEL_OF: Record<LightDetail, Detail> = { full: 2, lean: 1, bare: 0 };
-/** After so many sessions with less light, the handheld is given one more chance at the next step up. */
+/** A handheld whose light was found not to be what it is slow at is left alone for so many sessions, and then judged again. */
 export const TRY_AGAIN = 5;
+/**
+ * How many sessions a handheld that was found slow waits for a chance at the step of light it
+ * lost, by how often it has lost that chance already: none the first time (what was found may have
+ * been about that day, and not about the handheld), and longer each time after.
+ */
+export const WAITS = [0, 2, 4, 8];
+
+/** How a session starts: with how much light, whether the handheld is judged in it, and whether it is a chance. */
+export interface LightStart {
+  level: Detail;
+  judge: boolean;
+  /** The session is a chance at a step more light than was kept up with: how often that chance was lost before. */
+  chance?: { tries: number };
+}
 
 /**
  * How much light a session starts with, and whether the handheld is judged in it: all of it and
  * judged, unless an earlier session found something out. Then it starts where that one ended, and
- * counts; every so many sessions it starts a step higher and is judged again, in case what was
- * found then was not about the handheld but about that day.
+ * counts; when it has waited long enough it starts a step higher, judged, as a chance. What is
+ * kept is not changed by a chance until it is seen how that goes: a session closed at once has
+ * found nothing out.
  */
-export function startingLight(save: Pick<SaveFile, 'loadPace' | 'savePace'>): { level: Detail; judge: boolean } {
+export function startingLight(save: Pick<SaveFile, 'loadPace' | 'savePace'>): LightStart {
   const hint = save.loadPace();
   if (!hint) return { level: 2, judge: true };
-  if (hint.runs >= TRY_AGAIN) {
-    const level = Math.min(2, hint.level + 1) as Detail;
-    save.savePace(level === 2 ? null : { level, runs: 0 });
-    return { level, judge: true };
-  }
+  const tries = hint.tries ?? 0;
+  const wait = hint.held ? TRY_AGAIN : WAITS[Math.min(tries, WAITS.length - 1)];
+  if (hint.runs >= wait) return { level: Math.min(2, hint.level + 1) as Detail, judge: true, chance: { tries } };
   save.savePace({ ...hint, runs: hint.runs + 1 });
   return { level: hint.level, judge: hint.held !== true };
 }
@@ -404,6 +417,8 @@ export class App {
   private settingsUnsaved = false;
   /** How well the handheld keeps up, and so how much soft light there is when that is left to the game. */
   private pace: Pace;
+  /** A session that is a chance at more light: the light it began with, how often the chance was lost before, and whether it has been kept so far. */
+  private chance: { level: Detail; tries: number; kept: boolean } | null = null;
   /** Sound, music and battle speed. Stored on their own, so they exist before a game does. */
   settings: Settings;
   private name: ScreenName = 'title';
@@ -424,8 +439,9 @@ export class App {
     this.file = deps.save.forSlot(deps.save.lastSlot());
     this.settings = deps.save.loadSettings() ?? { ...DEFAULT_SETTINGS, ...(this.file.load()?.settings ?? {}) };
     // A hurried game is not judged, and neither is one whose player has said how much light there is to be.
-    const from = deps.fast || this.settings.detail ? { level: 2 as Detail, judge: true } : startingLight(deps.save);
+    const from: LightStart = deps.fast || this.settings.detail ? { level: 2, judge: true } : startingLight(deps.save);
     this.pace = new Pace(from.level, from.judge);
+    if (from.chance) this.chance = { level: from.level, tries: from.chance.tries, kept: false };
     this.applySettings();
     this.show('title', new TitleScreen(this));
   }
@@ -434,6 +450,8 @@ export class App {
   private show(name: ScreenName, screen: Screen, track: TrackName = trackFor(name)): void {
     this.current = screen;
     this.name = name;
+    // What the handheld made of the screen before says nothing about this one.
+    this.pace.moved();
     if (name !== 'battle') this.playTrack(track);
     if (name === 'battle') this.openShutter();
     else if (!this.deps.fast) this.entering = { left: FADE_MS, total: FADE_MS, shutter: false };
@@ -504,9 +522,22 @@ export class App {
    * found is kept for the next session. While the player's own choice holds, nothing is found out.
    */
   frame(gapMs: number): void {
-    if (this.deps.fast || !this.pace.frame(gapMs, this.settings.detail === undefined)) return;
+    if (this.deps.fast) return;
+    const { save } = this.deps;
+    if (!this.pace.frame(gapMs, this.settings.detail === undefined)) {
+      // A chance at more light is kept once the handheld has kept up with it for a good while.
+      if (this.chance && !this.chance.kept && this.pace.steady) {
+        this.chance.kept = true;
+        save.savePace(this.chance.level === 2 ? null : { level: this.chance.level, runs: 0 });
+      }
+      return;
+    }
     const { level, judging } = this.pace;
-    this.deps.save.savePace(level === 2 && judging ? null : { level, runs: 0, ...(judging ? {} : { held: true as const }) });
+    // Put back: the light was not what it is slow at. Or a step given up; where that is the step a chance
+    // was at, the chance is lost, however long it had seemed kept, and that is counted.
+    const lost = this.chance !== null && level === this.chance.level - 1;
+    if (!judging) save.savePace({ level, runs: 0, held: true });
+    else save.savePace({ level, runs: 0, ...(lost ? { tries: Math.min(MAX_TRIES, this.chance!.tries + 1) } : {}) });
     this.applyLight();
   }
 
@@ -518,6 +549,7 @@ export class App {
   /** The player has handed the light back to the game: it starts from all of it and judges afresh. */
   judgeAfresh(): void {
     this.pace = new Pace();
+    this.chance = null;
     this.deps.save.savePace(null);
     this.applyLight();
   }

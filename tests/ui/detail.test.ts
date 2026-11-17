@@ -6,7 +6,7 @@ import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
 import { PACE_KEY, SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
 import { AMBIENCE, drawAmbience, placeLights } from '../../src/ui/ambience';
-import { App, TRY_AGAIN, startingLight } from '../../src/ui/app';
+import { App, TRY_AGAIN, WAITS, startingLight } from '../../src/ui/app';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
 import { drawCutIn, drawDefeat, drawVictory } from '../../src/ui/cinema';
@@ -227,34 +227,48 @@ describe('what the handheld managed, from one session to the next', () => {
     expect(store.data[PACE_KEY]).toBeUndefined();
   });
 
-  test('one that was starts where it ended, and the sessions since are counted', () => {
+  test('one that was found slow gets a chance at the step it lost in the very next session: it may have been the day, not the handheld', () => {
     const { store, save } = file({ [PACE_KEY]: JSON.stringify({ level: 1, runs: 0 }) });
-    for (let run = 1; run <= TRY_AGAIN; run++) {
-      expect(startingLight(save)).toEqual({ level: 1, judge: true });
-      expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: run });
-    }
-    // After five such sessions it is given one more chance at all of the light, and nothing is held against it.
-    expect(TRY_AGAIN).toBe(5);
-    expect(startingLight(save)).toEqual({ level: 2, judge: true });
-    expect(store.data[PACE_KEY]).toBeUndefined();
-    // From no light at all the chance is one step, not two, and the count starts over.
-    const dark = file({ [PACE_KEY]: JSON.stringify({ level: 0, runs: TRY_AGAIN }) });
-    expect(startingLight(dark.save)).toEqual({ level: 1, judge: true });
-    expect(JSON.parse(dark.store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+    expect(startingLight(save)).toEqual({ level: 2, judge: true, chance: { tries: 0 } });
+    // What is kept is not touched until it is seen how the chance goes: a session closed at once has found nothing out.
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+    expect(startingLight(save)).toEqual({ level: 2, judge: true, chance: { tries: 0 } });
+    // From no light at all the chance is one step, not two.
+    const dark = file({ [PACE_KEY]: JSON.stringify({ level: 0, runs: 0 }) });
+    expect(startingLight(dark.save)).toEqual({ level: 1, judge: true, chance: { tries: 0 } });
+    expect(JSON.parse(dark.store.data[PACE_KEY])).toEqual({ level: 0, runs: 0 });
   });
 
-  test('one whose light was found not to be what it is slow at is left alone for as many sessions, then judged again', () => {
+  test('a chance that was lost is not given again at once: two sessions later, then four, then every eight', () => {
+    expect(WAITS).toEqual([0, 2, 4, 8]);
+    for (const [tries, wait] of [[1, 2], [2, 4], [3, 8], [4, 8], [40, 8]]) {
+      const { store, save } = file({ [PACE_KEY]: JSON.stringify({ level: 1, runs: 0, tries }) });
+      // Until then it starts where it ended, judged (it may have to give up more), and the sessions are counted.
+      for (let run = 1; run <= wait; run++) {
+        expect(startingLight(save), `${tries} tries`).toEqual({ level: 1, judge: true });
+        expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: run, tries });
+      }
+      expect(startingLight(save), `${tries} tries`).toEqual({ level: 2, judge: true, chance: { tries } });
+      expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: wait, tries });
+    }
+  });
+
+  test('one whose light was found not to be what it is slow at is left alone for five sessions, then judged again', () => {
+    expect(TRY_AGAIN).toBe(5);
     const { store, save } = file({ [PACE_KEY]: JSON.stringify({ level: 2, runs: 0, held: true }) });
     for (let run = 1; run <= TRY_AGAIN; run++) {
       expect(startingLight(save)).toEqual({ level: 2, judge: false });
       expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 2, runs: run, held: true });
     }
-    expect(startingLight(save)).toEqual({ level: 2, judge: true });
-    expect(store.data[PACE_KEY]).toBeUndefined();
+    // Judged again with all of its light; what is kept stays until it is seen how that goes.
+    expect(startingLight(save)).toEqual({ level: 2, judge: true, chance: { tries: 0 } });
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 2, runs: TRY_AGAIN, held: true });
     // Left alone at less than all of it: the chance it gets is a step up, and that is judged.
     const lean = file({ [PACE_KEY]: JSON.stringify({ level: 1, runs: TRY_AGAIN, held: true }) });
-    expect(startingLight(lean.save)).toEqual({ level: 2, judge: true });
-    expect(lean.store.data[PACE_KEY]).toBeUndefined();
+    expect(startingLight(lean.save)).toEqual({ level: 2, judge: true, chance: { tries: 0 } });
+    // Not sooner than that, however often a chance was lost before.
+    const early = file({ [PACE_KEY]: JSON.stringify({ level: 1, runs: TRY_AGAIN - 1, held: true }) });
+    expect(startingLight(early.save)).toEqual({ level: 1, judge: false });
   });
 
   test('what is kept but cannot be read counts as nothing kept', () => {
@@ -264,6 +278,8 @@ describe('what the handheld managed, from one session to the next', () => {
       { level: 2, runs: 0 }, { level: 3, runs: 0, held: true }, { level: -1, runs: 0 },
       { level: 1, runs: -1 }, { level: 1, runs: 1.5 }, { level: 1, runs: 10000 }, { level: '1', runs: 0 }, { level: 1 }, { runs: 1 },
       { level: 1, runs: 0, held: 'yes' }, { level: 1, runs: 0, held: false }, { level: 2, runs: 0, held: 1 },
+      // How often a chance was lost: a whole number from one to ninety-nine, and no reason by itself to keep all of the light.
+      { level: 1, runs: 0, tries: 0 }, { level: 1, runs: 0, tries: 1.5 }, { level: 1, runs: 0, tries: 100 }, { level: 1, runs: 0, tries: '1' }, { level: 2, runs: 0, tries: 1 },
     ].map((raw) => (typeof raw === 'string' ? raw : JSON.stringify(raw)));
     for (const raw of unreadable) {
       const { save } = file({ [PACE_KEY]: raw });
@@ -275,6 +291,8 @@ describe('what the handheld managed, from one session to the next', () => {
     expect(save.loadPace()).toEqual({ level: 0, runs: 3 });
     expect(save.savePace({ level: 2, runs: 9999, held: true })).toBe(true);
     expect(save.loadPace()).toEqual({ level: 2, runs: 9999, held: true });
+    expect(save.savePace({ level: 0, runs: 3, tries: 99 })).toBe(true);
+    expect(save.loadPace()).toEqual({ level: 0, runs: 3, tries: 99 });
     expect(save.savePace(null)).toBe(true);
     expect(save.loadPace()).toBeNull();
     // A store that cannot be written to: it says so, and nothing fails.
@@ -407,13 +425,23 @@ describe('the game keeping pace', () => {
     expect(app.lightNow()).toBe('bare');
     expect(detail()).toBe(0);
     expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 0, runs: 0 });
-    // The next session starts there, and says so in the options.
+    // The next session is a chance at one step more, and the options say where the light is.
     const next = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 3 });
-    expect(next.lightNow()).toBe('bare');
-    expect(detail()).toBe(0);
+    expect(next.lightNow()).toBe('lean');
+    expect(detail()).toBe(1);
     select(next, 'options');
-    expect(note(next)).toBe(STRINGS.options.detailAuto.bare);
-    expect(snap(next).light).toBe('bare');
+    expect(note(next)).toBe(STRINGS.options.detailAuto.lean);
+    expect(snap(next).light).toBe('lean');
+    // A chance that is lost: back to none, and the session after that starts there, with nothing to say but that.
+    warm(next);
+    slowFor(next, 3);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 0, runs: 0, tries: 1 });
+    const third = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 3 });
+    expect(third.lightNow()).toBe('bare');
+    expect(detail()).toBe(0);
+    select(third, 'options');
+    expect(note(third)).toBe(STRINGS.options.detailAuto.bare);
+    expect(snap(third).light).toBe('bare');
   });
 
   test('one that is slow whatever is drawn gets its light back, and the sessions after leave it alone', () => {
@@ -436,6 +464,95 @@ describe('the game keeping pace', () => {
     expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 2, runs: 1, held: true });
     select(next, 'options');
     expect(note(next)).toBe('Auto');
+  });
+
+  test('a chance at more light that is kept: once it has kept up for a good while, what was held against it is forgotten', () => {
+    // Found slow last time, and given all of its light again.
+    const { app, store } = open({ [PACE_KEY]: JSON.stringify({ level: 1, runs: 0 }) });
+    expect(app.lightNow()).toBe('full');
+    warm(app);
+    for (let i = 0; i < 90 * 10 - 1; i++) app.frame(16.7);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+    app.frame(16.7);
+    expect(store.data[PACE_KEY]).toBeUndefined();
+    expect(app.lightNow()).toBe('full');
+    // From none to less: that is kept as where it is now, and the session after is a chance at the rest.
+    const dark = open({ [PACE_KEY]: JSON.stringify({ level: 0, runs: 0 }) });
+    expect(dark.app.lightNow()).toBe('lean');
+    warm(dark.app);
+    for (let i = 0; i < 90 * 10; i++) dark.app.frame(16.7);
+    expect(JSON.parse(dark.store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+    const next = new App({ catalog: CATALOG, save: new SaveFile(dark.store, CATALOG), sprites, fast: false, seed: 3 });
+    expect(next.lightNow()).toBe('full');
+  });
+
+  test('a chance that is lost is counted, so that the next one is longer in coming', () => {
+    const { app, store } = open({ [PACE_KEY]: JSON.stringify({ level: 1, runs: 2, tries: 1 }) });
+    expect(app.lightNow()).toBe('full');
+    warm(app);
+    slowFor(app, 3);
+    expect(app.lightNow()).toBe('lean');
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0, tries: 2 });
+    // Further down in the same session is something new found out: nothing has been tried from there yet.
+    slowFor(app, 3);
+    expect(app.lightNow()).toBe('bare');
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 0, runs: 0 });
+    // Lost after it had seemed kept (the title kept up, a battle did not): counted all the same.
+    const late = open({ [PACE_KEY]: JSON.stringify({ level: 1, runs: 0 }) });
+    warm(late.app);
+    for (let i = 0; i < 90 * 10; i++) late.app.frame(16.7);
+    expect(late.store.data[PACE_KEY]).toBeUndefined();
+    slowFor(late.app, 3);
+    expect(JSON.parse(late.store.data[PACE_KEY])).toEqual({ level: 1, runs: 0, tries: 1 });
+    // And the count does not run away.
+    const often = open({ [PACE_KEY]: JSON.stringify({ level: 0, runs: 8, tries: 99 }) });
+    warm(often.app);
+    slowFor(often.app, 3);
+    expect(JSON.parse(often.store.data[PACE_KEY])).toEqual({ level: 0, runs: 0, tries: 99 });
+  });
+
+  test('a handheld found slow for the first time has nothing counted against it: its next session is a chance', () => {
+    const { app, store } = open();
+    warm(app);
+    slowFor(app, 3);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+    const next = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 3 });
+    expect(next.lightNow()).toBe('full');
+    // That one is closed before anything is seen: what is kept is as it was, and the one after is a chance again.
+    for (let i = 0; i < 200; i++) next.frame(16.7);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
+    const third = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 3 });
+    expect(third.lightNow()).toBe('full');
+  });
+
+  test('slow on one screen and then on another: nothing is concluded about the light, and it stays down', () => {
+    const { app, store } = open();
+    warm(app);
+    slowFor(app, 6);
+    expect(app.lightNow()).toBe('bare');
+    // The player goes somewhere else: what is seen there is not held against what was seen on the title.
+    select(app, 'options');
+    slowFor(app, 30);
+    expect(app.lightNow()).toBe('bare');
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 0, runs: 0 });
+  });
+
+  test('the options say what the light has come down to, also when it comes down while they are open', () => {
+    const { app } = open();
+    select(app, 'options');
+    expect(note(app)).toBe('Auto');
+    warm(app);
+    slowFor(app, 3);
+    app.update(16);
+    expect(note(app)).toBe(STRINGS.options.detailAuto.lean);
+    slowFor(app, 3);
+    app.update(16);
+    expect(note(app)).toBe(STRINGS.options.detailAuto.bare);
+    // The cursor is where it was.
+    const at = snap(app).menu.cursor;
+    slowFor(app, 3);
+    app.update(16);
+    expect(snap(app).menu.cursor).toBe(at);
   });
 
   test('while the player has chosen, nothing is found out about the handheld and what is kept about it is not touched', () => {

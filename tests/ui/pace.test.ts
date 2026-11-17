@@ -1,4 +1,4 @@
-import { HELPED, LATE_MS, LATE_SHARE, PAUSE_MS, Pace, SHORTER, SLOW_WINDOWS, WARM_UP, WARM_UP_MS, WINDOW, WINDOW_MS } from '../../src/ui/pace';
+import { HELPED, LATE_MS, LATE_SHARE, PAUSE_MS, Pace, SHORTER, SLOW_WINDOWS, STEADY, WARM_UP, WARM_UP_MS, WINDOW, WINDOW_MS } from '../../src/ui/pace';
 
 /** How well the handheld keeps up, judged from the time between frames, and what is done about it. */
 
@@ -36,9 +36,10 @@ describe('keeping pace', () => {
     expect(LATE_MS).toBe(25);
     expect(LATE_SHARE).toBe(0.2);
     expect(SLOW_WINDOWS).toBe(3);
-    expect(PAUSE_MS).toBe(250);
+    expect(PAUSE_MS).toBe(1000);
     expect([WARM_UP, WARM_UP_MS]).toEqual([120, 2000]);
     expect([HELPED, SHORTER]).toEqual([0.75, 0.85]);
+    expect(STEADY).toBe(10);
   });
 
   test('a handheld that keeps up has all of its light, for as long as it is on', () => {
@@ -77,7 +78,8 @@ describe('keeping pace', () => {
 
   test('a slow handheld is not kept waiting for being slow: a window is ninety frames or a second and a half, whichever is over first', () => {
     // However long its frames take, it gives a step up in the frame its third window ends in: four and a half seconds, about.
-    for (const [gap, frames] of [[25, 180], [34, 135], [50, 90], [100, 45], [250, 18]] as [number, number][]) {
+    // A handheld that shows two frames a second, or one, is still judged: only a second or more between frames is a pause.
+    for (const [gap, frames] of [[25, 180], [34, 135], [50, 90], [100, 45], [250, 18], [260, 18], [500, 9], [1000, 6]] as [number, number][]) {
       const pace = warm();
       expect(run(pace, frames - 1, gap), `${gap} ms`).toBe(false);
       expect(pace.frame(gap), `${gap} ms`).toBe(true);
@@ -245,6 +247,36 @@ describe('keeping pace', () => {
     expect(mixed.frame(34)).toBe(true);
   });
 
+  test('it is steady once it has kept up for ten windows on end, and no longer when it does not', () => {
+    const pace = warm();
+    expect(pace.steady).toBe(false);
+    run(pace, WINDOW * (STEADY - 1), 16.7);
+    expect(pace.steady).toBe(false);
+    run(pace, WINDOW - 1, 16.7);
+    expect(pace.steady).toBe(false);
+    pace.frame(16.7);
+    expect(pace.steady).toBe(true);
+    // One slow window and the count starts again; so it does after a pause, and while it is not to judge.
+    windows(pace, 1, 34);
+    expect(pace.steady).toBe(false);
+    run(pace, WINDOW * STEADY, 16.7);
+    expect(pace.steady).toBe(true);
+    pace.frame(PAUSE_MS + 1);
+    expect(pace.steady).toBe(false);
+    run(pace, WINDOW * STEADY, 16.7);
+    expect(pace.steady).toBe(true);
+    pace.frame(16.7, false);
+    expect(pace.steady).toBe(false);
+    // A session that is not judged, or has stopped judging, is never steady: nothing is being found out.
+    const held = new Pace(2, false);
+    run(held, WARM_UP + WINDOW * 40, 16.7);
+    expect(held.steady).toBe(false);
+    // Less light that keeps up is steady too: it is the level it is at that is meant.
+    const lean = warm(1);
+    run(lean, WINDOW * STEADY, 16.7);
+    expect(lean.steady).toBe(true);
+  });
+
   test('how many frames a second it is seeing, for whoever looks', () => {
     const pace = new Pace();
     expect(pace.fps).toBe(0);
@@ -356,6 +388,71 @@ describe('giving light up has to help', () => {
     let stepped = false;
     for (let n = 0; n < 3; n++) for (let i = 0; i < 67; i++) stepped = shorter.frame(i % 2 ? 20 : 25) || stepped;
     expect([stepped, shorter.level, shorter.judging]).toEqual([false, 0, false]);
+  });
+
+  test('what is on the screen changed: nothing is concluded about the light from a coming down that began before', () => {
+    // Slow in one place with all of the light and with less; in another, with none. That is two places, not one handheld.
+    const pace = warm();
+    windows(pace, 6, 33.3);
+    expect(pace.level).toBe(0);
+    pace.moved();
+    expect(windows(pace, 3, 33.3)).toBe(false);
+    expect([pace.level, pace.judging]).toEqual([0, false]);
+    // Late frames four in ten with all of the light, three in ten with less; then another screen, and
+    // seven in twenty with none. Held against the first that is no better: but it is not held against it.
+    const other = warm();
+    for (let n = 0; n < 3; n++) window(other, 0.4);
+    for (let n = 0; n < 3; n++) window(other, 0.3);
+    expect(other.level).toBe(0);
+    other.moved();
+    let stepped = false;
+    for (let n = 0; n < 3; n++) stepped = window(other, 0.35) || stepped;
+    expect([stepped, other.level, other.judging]).toEqual([false, 0, false]);
+    // Without the change of screen it would have been: the light goes back.
+    const same = warm();
+    for (let n = 0; n < 3; n++) window(same, 0.4);
+    for (let n = 0; n < 3; n++) window(same, 0.3);
+    stepped = false;
+    for (let n = 0; n < 3; n++) stepped = window(same, 0.35) || stepped;
+    expect([stepped, same.level, same.judging]).toEqual([true, 2, false]);
+  });
+
+  test('a change of screen does not break a run of slow windows, and a coming down that begins after it is judged on its own', () => {
+    const pace = warm();
+    windows(pace, 2, 34);
+    pace.moved();
+    expect(run(pace, 45 - 1, 34)).toBe(false);
+    expect(pace.frame(34)).toBe(true);
+    expect(pace.level).toBe(1);
+    // On the new screen it comes down from less to none, and none is no better: back to less, where it began there.
+    pace.moved();
+    windows(pace, 3, 34);
+    expect(pace.level).toBe(0);
+    expect(windows(pace, 3, 34)).toBe(true);
+    expect([pace.level, pace.judging]).toEqual([1, false]);
+  });
+
+  test('one long frame in a spell is left out of the time its frames took: a hitch says nothing about the light', () => {
+    // Thirty-four milliseconds a frame before; twenty-six after, which is shorter by more than fifteen in a
+    // hundred. One frame of nine tenths of a second among them would make the spell look as long as before.
+    const pace = warm();
+    windows(pace, 6, 34);
+    expect(pace.level).toBe(0);
+    let stepped = pace.frame(900);
+    stepped = run(pace, 24, 26) || stepped;
+    stepped = windows(pace, 2, 26) || stepped;
+    expect([stepped, pace.level, pace.judging]).toEqual([false, 0, false]);
+    // The same in the spell it is held against: a hitch there does not make what came after look better than it was.
+    const before = warm();
+    before.frame(900);
+    run(before, 18, 34);
+    windows(before, 2, 34);
+    expect(before.level).toBe(1);
+    windows(before, 3, 34);
+    expect(before.level).toBe(0);
+    // Thirty-four became thirty-one: not fifteen in a hundred shorter, hitch or no hitch.
+    expect(windows(before, 3, 31)).toBe(true);
+    expect([before.level, before.judging]).toEqual([2, false]);
   });
 
   test('it goes back to where it came down from, which is not always all of the light', () => {
