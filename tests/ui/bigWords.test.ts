@@ -208,13 +208,19 @@ describe('the word a battle ends with', () => {
     expect(page().glows).toEqual([]);
   });
 
-  test('a word the sign cannot write is written in the font, where it always was', () => {
-    const { flow, page } = ended(true);
-    (flow as unknown as { message: string }).message = 'Victory';
-    const drawn = page();
-    expect(signCount(drawn)).toBe(0);
-    expect(drawn.texts.find((t) => t.text === 'Victory')).toMatchObject({ x: 155, y: 38, size: 32, align: 'center', color: COLORS.accent });
-    expect(lights(drawn, 'neon')).toEqual([]);
+  test('a word the sign cannot write, or one too long for the box at the smallest a result is written, is written in the font where it always was', () => {
+    // The second would fit if it were written smaller than a result ever is: it is not.
+    const long = 'GEWONNEN DUS';
+    expect(fitTall(long, RESULT_W - 16, RESULT_TALL, RESULT_SMALL)).toBeNull();
+    expect(fitTall(long, RESULT_W - 16, RESULT_TALL)).not.toBeNull();
+    for (const message of ['Victory', long]) {
+      const { flow, page } = ended(true);
+      (flow as unknown as { message: string }).message = message;
+      const drawn = page();
+      expect(signCount(drawn), message).toBe(0);
+      expect(drawn.texts.find((t) => t.text === message), message).toMatchObject({ x: 155, y: 38, size: 32, align: 'center', color: COLORS.accent });
+      expect(lights(drawn, 'neon'), message).toEqual([]);
+    }
   });
 });
 
@@ -251,15 +257,36 @@ describe('the warning over a boss', () => {
     }
   });
 
-  test('a word the sign cannot write is written in the font, with the name where it was', () => {
+  test('the word comes in with the band and leaves with it: it is the band\'s, not the screen\'s', () => {
+    const flow = new BattleFlow(createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 7), CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, boss: 'Krell', calm: true });
+    // A few frames in, the band is still sliding in from the left.
+    screen.update(64);
+    const page = record((ctx) => screen.draw(ctx));
+    const plate = band(page);
+    expect(plate.x).toBeLessThan(-40);
+    const word = signIn(page, 'WARNING', 'red')!;
+    expect(word).not.toBeNull();
+    expect(Math.abs(word.x + word.w / 2 - (plate.x + 155))).toBeLessThanOrEqual(0.5);
+    const name = page.texts.find((t) => t.text === 'KRELL')!;
+    expect(name.x).toBe(plate.x + 155);
+  });
+
+  test('a word the sign cannot write, or one wider than the screen, is written in the font, with the name where it was', () => {
     const before = STRINGS.battleIntro.warning;
+    // The second is written by the sign, but not in twenty pixels less than the screen is wide.
+    const long = 'WAARSCHUWING AAN IEDEREEN';
+    expect(fitTall(long, 290, WARNING_TALL)).toBeNull();
+    expect(fitTall(long, 9999, WARNING_TALL)).toBe(WARNING_TALL);
     try {
-      (STRINGS.battleIntro as { warning: string }).warning = 'Warning';
-      const page = record((ctx) => warned(true).draw(ctx));
-      const plate = band(page);
-      expect(signCount(page)).toBe(0);
-      expect(page.texts.find((t) => t.text === 'Warning')).toMatchObject({ x: 155, y: plate.y + 5, size: 32, align: 'center', color: COLORS.danger });
-      expect(page.texts.find((t) => t.text === 'KRELL')).toMatchObject({ x: 155, y: plate.y + 30 });
+      for (const word of ['Warning', long]) {
+        (STRINGS.battleIntro as { warning: string }).warning = word;
+        const page = record((ctx) => warned(true).draw(ctx));
+        const plate = band(page);
+        expect(signCount(page), word).toBe(0);
+        expect(page.texts.find((t) => t.text === word), word).toMatchObject({ x: 155, y: plate.y + 5, size: 32, align: 'center', color: COLORS.danger });
+        expect(page.texts.find((t) => t.text === 'KRELL'), word).toMatchObject({ x: 155, y: plate.y + 30 });
+      }
     } finally {
       (STRINGS.battleIntro as { warning: string }).warning = before;
     }
@@ -333,9 +360,13 @@ describe('what a page of story is called', () => {
     expect(signIn(fast, act.title, 'neon')!.level).toBe(1);
   });
 
-  test('a title the sign cannot write, or one too long for the page, is written in the font where it always was', () => {
+  test('a title the sign cannot write, or one too long for the page at the smallest a title is written, is written in the font where it always was', () => {
     const app = appWith({ textSpeed: 'instant' });
-    for (const title of ['The Wage', 'A VERY LONG TITLE THAT GOES ON AND ON']) {
+    // The last would fit across the page if it were written smaller than a title ever is: it is not.
+    const tight = 'THE LONGEST OF TITLES YET';
+    expect(fitTall(tight, TITLE_W, TITLE_TALL, TITLE_SMALL)).toBeNull();
+    expect(fitTall(tight, TITLE_W, TITLE_TALL)).not.toBeNull();
+    for (const title of ['The Wage', 'A VERY LONG TITLE THAT GOES ON AND ON', tight]) {
       const screen = new SceneScreen(app, { ...scene('act-1'), title });
       screen.update(2000);
       const drawn = record((ctx) => screen.draw(ctx));
@@ -377,9 +408,14 @@ describe('what a conversation is called', () => {
     expect(wordHeight(TALK_TITLE_TALL)).toBe(19);
   });
 
-  test('a title the sign cannot write is written in the font where it always was', () => {
-    const drawn = record((ctx) => new TalkScreen(appWith(), { ...talks[0], title: 'New licence' }).draw(ctx));
-    expect(signCount(drawn)).toBe(0);
-    expect(drawn.texts.find((t) => t.text === 'New licence')).toMatchObject({ x: 155, y: 22, size: 16, align: 'center', color: COLORS.accent });
+  test('a title the sign cannot write, or one wider than the screen has room for, is written in the font where it always was', () => {
+    const long = 'A CONVERSATION WITH A VERY LONG NAME INDEED';
+    expect(fitTall(long, TALK_TITLE_W, TALK_TITLE_TALL)).toBeNull();
+    expect(fitTall(long, 9999, TALK_TITLE_TALL)).toBe(TALK_TITLE_TALL);
+    for (const title of ['New licence', long]) {
+      const drawn = record((ctx) => new TalkScreen(appWith(), { ...talks[0], title }).draw(ctx));
+      expect(signCount(drawn), title).toBe(0);
+      expect(drawn.texts.find((t) => t.text === title), title).toMatchObject({ x: 155, y: 22, size: 16, align: 'center', color: COLORS.accent });
+    }
   });
 });
