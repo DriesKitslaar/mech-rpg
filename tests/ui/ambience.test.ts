@@ -154,6 +154,26 @@ describe('a place, as it is drawn', () => {
     expect(edges(lie)).toEqual(edges());
   });
 
+  test('where a camera has only part of what is drawn in view, the darker edges are the edges of that part, and a light is drawn if it reaches into it', () => {
+    const lie = { shift: -92, far: 120, near: 169 };
+    const seen = { left: 20, top: -40, width: 280, height: 150 };
+    const page = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, false, { ...lie, seen }));
+    const whole = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, false, lie));
+    // The edges: round the middle of what is seen, not of the field.
+    expect(page.glows.filter(isVignette)).toHaveLength(1);
+    expect(page.glows.filter(isVignette)[0]).toMatchObject({ x: 20 + 140, y: -40 + 75 });
+    expect(whole.glows.filter(isVignette)[0]).toMatchObject({ x: 155, y: FIELD.top + FIELD.height / 2 });
+    // The lights: those that reach into rows -40 to 110. Higher up than the field goes, lights high in the picture come into view.
+    const all = [...AMBIENCE['bg-sluice'].lights, ...AMBIENCE['bg-sluice'].low!];
+    const inView = all.filter((l) => l.y - 92 + l.r > -40 && l.y - 92 - l.r < 110);
+    expect(page.glows.filter(isLight).map((g) => [g.x, g.y])).toEqual(inView.map((l) => [l.x, l.y - 92]));
+    expect(inView.length).toBeGreaterThan(whole.glows.filter(isLight).length - 3);
+    expect(inView.some((l) => l.y - 92 + l.r <= FIELD.top)).toBe(true);
+    // The haze is where it was: it lies on the stage, not on the screen.
+    const haze = (drawn: typeof page) => drawn.glows.filter((g) => !isLight(g) && !isVignette(g)).map((g) => [g.x, g.y]);
+    expect(haze(page)).toEqual(haze(whole));
+  });
+
   test('a place without haze has none, and ground the game does not know still gets its darker edges', () => {
     expect(AMBIENCE['bg-simulator'].haze).toBeUndefined();
     expect(record((ctx) => drawAmbience(ctx, 'bg-simulator', 0, 'front', FIELD)).glows).toEqual([]);
@@ -257,6 +277,26 @@ describe('weather that does more than fall', () => {
     }
     expect(most).toBeGreaterThan(1);
     expect(seen.size).toBeGreaterThan(40);
+  });
+
+  test('lightning lights what it is told is in view, where that is not the field: the same light, over that box', () => {
+    const stroke = Array.from({ length: LIGHTNING_MS / 10 }, (_, i) => i * 10).find((ms) => lightning(ms) === 1)!;
+    const lit = { x: 12, y: -60, w: 280, h: 150 };
+    const drawn = record((ctx) => drawWeatherExtras(ctx, 'rain', stroke, 310, 164, false, 14, lit));
+    const field = record((ctx) => drawWeatherExtras(ctx, 'rain', stroke, 310, 164, false, 14));
+    const flash = (page: typeof drawn) => page.rects.filter((r) => r.blend === 'overlay');
+    expect(flash(drawn)).toHaveLength(1);
+    expect(flash(drawn)[0]).toMatchObject({ x: 12, y: -60, w: 280, h: 150 });
+    expect(flash(field)[0]).toMatchObject({ x: 0, y: 0, w: 310, h: 164 });
+    expect(flash(drawn)[0].color).toBe(flash(field)[0].color);
+    // The sky over it: from the top of the box down seven tenths of it.
+    expect(drawn.washes).toHaveLength(1);
+    expect(drawn.washes[0]).toMatchObject({ x: 12, y: -60, w: 280, blend: 'lighter' });
+    expect(drawn.washes[0].h).toBeCloseTo(105, 6);
+    expect(field.washes[0]).toMatchObject({ x: 0, y: 0, w: 310 });
+    // Where the drops land does not depend on it.
+    const crowns = (page: typeof drawn) => page.rects.filter((r) => r.w === 3 && r.h === 1).map((r) => [r.x, r.y]);
+    expect(crowns(drawn)).toEqual(crowns(field));
   });
 
   test('where the floor reaches far up the field, rain lands on all of it: as far up as the floor goes and no further', () => {

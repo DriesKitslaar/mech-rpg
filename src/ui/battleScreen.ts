@@ -14,13 +14,14 @@ import { soundsForEvent } from '../platform/audio';
 import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
+import { Camera, applyView, atHome, seenBy, type View } from './camera';
 import { MECH_BOX, VIEWS, dropOf, muzzleOf, type MechView } from './mechLayout';
 import { HitStop } from './hitStop';
 import { eyeLight, eyeOf } from './eyes';
 import { MAX_LIGHTS, disc, drawAll, drawGlow, drawGlows, drawShadow, lightRoom, type Glow, type Pt } from './light';
 import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import {
-  CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, MECH_HEAD, drawCutIn, drawDefeat, drawEntrance, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
+  CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, MECH_HEAD, drawCutIn, drawDefeat, drawEntrance, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
   type Entrant,
 } from './cinema';
 import { drawMech, mechSprites, type MechSprites } from './mechView';
@@ -66,6 +67,8 @@ const HERO_HIT: Record<FrameSlot, Pt> = { head: { x: 60, y: 14 }, core: { x: 58,
 const HERO_MIDDLE: Pt = { x: 58, y: 62 };
 const SMALL_HIT: Record<FrameSlot, Pt> = { head: { x: 49, y: 14 }, core: { x: 50, y: 32 }, arms: { x: 74, y: 27 }, legs: { x: 50, y: 72 } };
 const SMALL_MIDDLE: Pt = { x: 51, y: 46 };
+/** How far the camera pushes in on what happens: a bullet or a beam that lands, a shell, a blade, a machine going up, an Overdrive going off. */
+export const PUSH = { shot: 0.06, shell: 0.09, blade: 0.12, wreck: 0.12, surge: 0.08 };
 /** Where the strip the wingman's line is written on starts, and how far under the top of the field it and the new pilot's line are. */
 const RADIO_X = 8;
 const STRIP_Y = FIELD_Y + 13;
@@ -142,6 +145,8 @@ export class BattleScreen {
   private places: number;
   /** What is known of the picture the battle is fought in front of: the band of it the field shows, and where its floor begins. */
   private place: Place;
+  /** What the field is looked at through: it comes down the picture as the battle opens, and pushes in when a blow lands. */
+  private camera: Camera;
   /** Units that are on the field as far as the player has been shown: one that is launched appears with its launch. */
   private arrived: Set<string>;
   /** The line of talk being written out, and the writer doing it. */
@@ -189,6 +194,8 @@ export class BattleScreen {
     this.introTotal = opts.fast ? 0 : opts.boss ? WARNING_MS : INTRO_MS;
     this.intro = this.introTotal;
     this.place = placeFor(opts.background ?? DEFAULT_BACKGROUND);
+    // A hurried game and a calm picture have it standing at home.
+    this.camera = new Camera(this.place, !opts.fast && opts.calm !== true);
     this.shownAp = new ApDisplay(flow.state.units);
     const enemies = flow.state.units.filter((u) => u.side === 'enemy');
     this.places = enemies.some((u) => u.abilities.carrier)
@@ -279,6 +286,7 @@ export class BattleScreen {
       this.cutIn = null;
     }
     this.fx.update(moved);
+    this.camera.update(moved);
     for (const puppet of this.puppets.values()) puppet.update(moved);
     this.particles.update(moved);
     if (this.surge && (this.surge.ms += moved) >= SURGE_MS) this.surge = null;
@@ -380,11 +388,14 @@ export class BattleScreen {
     cutIn: string | null; finish: Pt | null;
     /** How large each blast is that is going off right now, and where what is left of machines lies. */
     blasts: number[]; wrecks: Pt[];
+    /** Where the camera is: the point of the stage in the middle of the field, and how many times its size the stage is shown at. */
+    view: View;
     /** Where things are on the field: where a unit's weapon fires from, where a hit on a part of it lands, its middle, and the line of the floor under it. */
     at: { muzzle: (id: string, weapon: 'rightHand' | 'leftHand' | 'shoulder') => Pt; hit: (id: string, part: FrameSlot) => Pt; centre: (id: string) => Pt; floor: (id: string) => number };
   } {
     const scene = this.scene();
     return {
+      view: this.view(),
       at: { muzzle: (id, weapon) => scene.muzzle(id, weapon), hit: (id, part) => scene.hitPoint(id, part), centre: (id) => scene.centre(id), floor: (id) => this.floorUnder(id) },
       particles: this.particles.count, flash: this.hitStop.flash, surge: this.surge !== null, stance: (id) => ({ ...this.stances.of(id) }),
       breaking: (id) => this.puppets.get(id)?.breaking ?? null,
@@ -442,9 +453,15 @@ export class BattleScreen {
     const over = this.flow.phase === 'result';
     const finish = over ? null : this.finish;
     const cutIn = over ? null : this.cutIn;
+    // Where the camera is: on its way down the picture while the banner is up, pushed in towards a blow, or at home.
+    const view = this.view();
+    const close = !!finish && !this.opts.calm;
+    // The part of the stage that is in view: the field itself, unless the camera has left home.
+    const seen = close || atHome(view) ? null : seenBy(view);
     ctx.save();
     // The last machine to fall is looked at from twice as close. A calm picture stays where it is.
-    if (finish && !this.opts.calm) lookClose(ctx, finish.at, field);
+    if (close) lookClose(ctx, finish.at, field);
+    else applyView(ctx, view);
     ctx.translate(dx, dy);
     // Pixel for pixel while the field is still. Only while a blow moves it is the picture drawn a
     // little larger, so that no edge shows: stretched, a pixel picture loses its grid.
@@ -455,7 +472,7 @@ export class BattleScreen {
     const calm = this.opts.calm === true;
     const placeClock = this.opts.fast ? 0 : this.clock;
     // The place's lights are where its picture is; its haze lies where the floor begins and, thinner, at the pilot's feet.
-    const lie = { shift: top, far: horizonOf(this.place) + 6, near: HERO_FEET - 8 };
+    const lie = { shift: top, far: horizonOf(this.place) + 6, near: HERO_FEET - 8, ...(seen ? { seen } : {}) };
     drawAmbience(ctx, background, placeClock, 'behind', field, calm, lie);
     this.drawShadows(ctx);
     // What is furthest off is drawn first: the enemies from the back to the front, and the pilot's mech, the nearest of all, last.
@@ -468,9 +485,16 @@ export class BattleScreen {
     if (!this.opts.fast) {
       ctx.save();
       ctx.translate(0, FIELD_Y);
-      drawWeather(ctx, weatherFor(background), this.clock, LOGICAL_W, PANEL_Y - FIELD_Y);
-      // Rain lands on the whole of the floor, from where it begins down to the panel.
-      drawWeatherExtras(ctx, weatherFor(background), this.clock, LOGICAL_W, PANEL_Y - FIELD_Y, calm, PANEL_Y - horizonOf(this.place) - 6);
+      // While the camera is higher up the picture than the field, what falls there falls through what it sees too.
+      if (seen && seen.top < FIELD_Y) {
+        ctx.translate(0, -FIELD.height);
+        drawWeather(ctx, weatherFor(background), this.clock, LOGICAL_W, FIELD.height);
+        ctx.translate(0, FIELD.height);
+      }
+      drawWeather(ctx, weatherFor(background), this.clock, LOGICAL_W, FIELD.height);
+      // Rain lands on the whole of the floor, from where it begins down to the panel; lightning lights all that is in view.
+      drawWeatherExtras(ctx, weatherFor(background), this.clock, LOGICAL_W, FIELD.height, calm, PANEL_Y - horizonOf(this.place) - 6,
+        seen ? { x: seen.left, y: seen.top - FIELD_Y, w: seen.width, h: seen.height } : undefined);
       ctx.restore();
     }
     this.particles.draw(ctx);
@@ -486,7 +510,9 @@ export class BattleScreen {
     if (!this.opts.fast) drawGlows(ctx, this.lights(), calm, (finish && !calm ? MAX_LIGHTS / 2 : MAX_LIGHTS) - this.standing * weight);
     if (this.hitStop.flash > 0 && !this.opts.calm) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
-      ctx.fillRect(0, 14, LOGICAL_W, PANEL_Y - 14);
+      // Over all that is in view.
+      if (seen) ctx.fillRect(seen.left, seen.top, seen.width, seen.height);
+      else ctx.fillRect(0, FIELD_Y, LOGICAL_W, PANEL_Y - FIELD_Y);
     }
     ctx.restore();
 
@@ -516,6 +542,16 @@ export class BattleScreen {
     if (this.intro > 0) return this.drawIntro(ctx);
     if (talking) this.drawTalk(ctx);
     if (this.flow.phase === 'result') this.drawResult(ctx);
+  }
+
+  /**
+   * The view the field is drawn with right now: the close look at the last machine while that
+   * lasts (a battle that is over is not staged any more, and a calm picture keeps its distance),
+   * the way down the picture while the banner is up, a push towards a blow, or home.
+   */
+  private view(): View {
+    if (this.finish && this.flow.phase !== 'result' && !this.opts.calm) return { x: this.finish.at.x, y: this.finish.at.y, zoom: FINISH_ZOOM };
+    return this.intro > 0 ? this.camera.view(1 - this.intro / this.introTotal) : this.camera.view();
   }
 
   /**
@@ -784,6 +820,8 @@ export class BattleScreen {
       if (!melee && dtype === 'kinetic') this.particles.emit('casing', scene.muzzle(event.unit, event.weapon), scene.facing(event.unit), 0, ground(event.unit));
       if (event.hit) {
         const at = scene.hitPoint(event.target, event.appliedTo);
+        // The camera pushes in on the blow as it lands: most for a blade, more for a shell than for a bullet or a beam.
+        this.camera.push(at, melee ? PUSH.blade : dtype === 'explosive' ? PUSH.shell : PUSH.shot, flight);
         this.particles.emit('sparks', at, scene.facing(event.unit), flight, undefined, { kinetic: '#ffe9a8', energy: '#7fe9ff', explosive: '#ffb46b' }[dtype]);
         if (dtype === 'explosive') {
           this.particles.emit('fire', at, 1, flight);
@@ -805,6 +843,7 @@ export class BattleScreen {
       // The field holds its breath, the mech surges, and sparks come off it.
       this.hitStop.strike(140);
       const c = scene.centre(event.unit);
+      this.camera.push(c, PUSH.surge);
       this.particles.emit('embers', c, 1);
       this.particles.emit('sparks', c, 1, 60, undefined, '#ff5db1');
       this.surge = { x: c.x, y: c.y, ms: 0 };
@@ -817,9 +856,10 @@ export class BattleScreen {
       this.hitStop.strike(staged ? FINISH_HOLD_MS : event.unit === 'player' ? 160 : 90);
       const c = scene.centre(event.unit);
       if (staged) {
-        // The field is held, then looked at from close by while the machine goes up slowly.
+        // The field is held, then looked at from close by while the machine goes up slowly: that look has the picture to itself.
         this.finish = { at: focusOn(c, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W }), real: 0, field: 0, heard: false };
-      }
+        this.camera.settle();
+      } else this.camera.push(c, PUSH.wreck);
       this.particles.emit('debris', c, 1, 60, ground(event.unit));
       this.particles.emit('debris', c, 1, 180, ground(event.unit));
       this.particles.emit('fire', c, 1);
@@ -835,6 +875,7 @@ export class BattleScreen {
     if (event.type === 'blast') {
       // A bomb's flash and bursts come a beat after its message, and so does everything it throws up.
       const c = scene.centre(event.target);
+      this.camera.push(c, PUSH.wreck, MELEE_MS);
       this.particles.emit('fire', c, 1, MELEE_MS);
       this.particles.emit('embers', c, 1, MELEE_MS);
       this.particles.emit('debris', c, 1, MELEE_MS + 40, ground(event.target));

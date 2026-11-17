@@ -89,8 +89,12 @@ export const GROUND_STRIP = 14;
  * What the weather does besides fall: rain lands, and now and then lightning lights the whole
  * field; embers throw a little light. A calm picture has no lightning and its embers glow at half
  * strength. `floor` is how much of the foot of the field is ground: rain lands anywhere on it.
+ * `lit` is what the lightning lights where that is not the field itself: what a camera has in view.
  */
-export function drawWeatherExtras(ctx: CanvasRenderingContext2D, kind: Weather, clockMs: number, w: number, h: number, calm = false, floor = GROUND_STRIP): void {
+export function drawWeatherExtras(
+  ctx: CanvasRenderingContext2D, kind: Weather, clockMs: number, w: number, h: number, calm = false, floor = GROUND_STRIP,
+  lit: { x: number; y: number; w: number; h: number } = { x: 0, y: 0, w, h },
+): void {
   const t = clockMs / 1000;
   if (kind === 'rain') {
     // Each drop that lands throws up a crown for a moment, somewhere new every time.
@@ -111,15 +115,15 @@ export function drawWeatherExtras(ctx: CanvasRenderingContext2D, kind: Weather, 
       // The whole field is lit, in a way that leaves dark things dark: what is bright gets brighter, and nothing goes milky.
       ctx.globalCompositeOperation = 'overlay';
       ctx.fillStyle = `rgba(200, 220, 255, ${(LIGHTNING_ALPHA * flash).toFixed(3)})`;
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillRect(lit.x, lit.y, lit.w, lit.h);
       // And the sky itself goes white-blue, most at the top.
-      const sky = wide() ? ctx.createLinearGradient?.(0, 0, 0, h * 0.7) as CanvasGradient | undefined : undefined;
+      const sky = wide() ? ctx.createLinearGradient?.(0, lit.y, 0, lit.y + lit.h * 0.7) as CanvasGradient | undefined : undefined;
       if (sky && typeof sky.addColorStop === 'function') {
         sky.addColorStop(0, `rgba(170, 200, 255, ${(SKY_ALPHA * flash).toFixed(3)})`);
         sky.addColorStop(1, 'rgba(170, 200, 255, 0)');
         ctx.globalCompositeOperation = 'lighter';
         ctx.fillStyle = sky;
-        ctx.fillRect(0, 0, w, h * 0.7);
+        ctx.fillRect(lit.x, lit.y, lit.w, lit.h * 0.7);
       }
       ctx.globalCompositeOperation = before;
     }
