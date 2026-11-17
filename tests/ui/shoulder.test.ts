@@ -1,4 +1,4 @@
-import { createBattle, type BattleState } from '../../src/core/battle';
+import { createBattle, type BattleEvent, type BattleState } from '../../src/core/battle';
 import type { Build, EnemyDef, FrameSlot } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
@@ -477,6 +477,174 @@ describe('a mech built from parts that is fought alone', () => {
     const drawn = page();
     expect(drawn.images.filter((image) => idOf(image).endsWith('.small'))).toEqual([]);
     expect(machinesOf(drawn).map(idOf).sort()).toEqual(['enemy-recon-drone', 'enemy-rival']);
+  });
+});
+
+describe('what happens to a unit happens where that unit is', () => {
+  type At = { x: number; y: number };
+  /** A battle that is not hurried, with what is asked of the camera and of what flies about written down as it is asked. */
+  function watched(enemies: (string | EnemyDef)[] = ['recon-drone', 'tank'], build?: Build) {
+    const made = screenOf(enemies, { fast: false, ...(build ? { build } : {}) });
+    for (let i = 0; i < 4000 && (made.flow.phase !== 'action' || made.screen.banner); i++) made.screen.update(16);
+    const inner = made.screen as unknown as {
+      move(event: BattleEvent, melee: boolean, flight: number, staged?: boolean): void;
+      particles: { emit: (...args: unknown[]) => void };
+      camera: { push: (at: At, amount: number, delay?: number) => void };
+      fx: { onEvent(event: BattleEvent): void; transform(id: string): { dx: number; dy: number; lift: number }; effects: { kind: string; under?: boolean }[]; jolt(delay: number, amount: number, dur: number): void };
+      arrived: Set<string>;
+    };
+    const thrown: { kind: string; from: At }[] = [];
+    const pushed: { at: At; amount: number }[] = [];
+    const emit = inner.particles.emit.bind(inner.particles);
+    inner.particles.emit = (...args: unknown[]) => { thrown.push({ kind: args[0] as string, from: { ...(args[1] as At) } }); emit(...args); };
+    const push = inner.camera.push.bind(inner.camera);
+    inner.camera.push = (at, amount, delay) => { pushed.push({ at: { ...at }, amount }); push(at, amount, delay); };
+    return { ...made, inner, thrown, pushed };
+  }
+  const shot = (unit: string, target: string, part: FrameSlot, weapon: 'rightHand' | 'leftHand' = 'rightHand'): BattleEvent =>
+    ({ type: 'shot', unit, weapon, target, part, appliedTo: part, hit: true, damage: 10 });
+
+  test('a unit that dashes kicks up dust from the floor under it: at the pilot\'s feet, and far up the screen under a machine', () => {
+    const { screen, inner, thrown } = watched();
+    inner.move({ type: 'boost', unit: 'player' } as BattleEvent, false, 0);
+    inner.move({ type: 'boost', unit: 'enemy-1' } as BattleEvent, false, 0);
+    const dust = thrown.filter((p) => p.kind === 'dust');
+    expect(dust.map((p) => p.from)).toEqual([
+      { x: screen.motion.at.centre('player').x, y: screen.motion.at.floor('player') },
+      { x: screen.motion.at.centre('enemy-1').x, y: screen.motion.at.floor('enemy-1') },
+    ]);
+    expect(dust[1].from.y).toBeLessThan(dust[0].from.y - 10);
+  });
+
+  test('the camera pushes in on the part that was hit, and the sparks fly from there: not from the middle of the machine', () => {
+    const { screen, inner, thrown, pushed } = watched();
+    const spots = new Set<string>();
+    for (const part of ['legs', 'core', 'head'] as FrameSlot[]) {
+      inner.move(shot('player', 'enemy-1', part), false, 160);
+      const hit = screen.motion.at.hit('enemy-1', part);
+      expect(pushed.at(-1)!.at, part).toEqual(hit);
+      expect(thrown.filter((p) => p.kind === 'sparks').at(-1)!.from, part).toEqual(hit);
+      spots.add(`${hit.x},${hit.y}`);
+    }
+    expect(spots.size).toBe(3);
+    // And on the pilot's own mech the same: a hit on its legs is pushed in on where its legs are hit.
+    inner.move(shot('enemy-1', 'player', 'legs'), false, 160);
+    expect(pushed.at(-1)!.at).toEqual(screen.motion.at.hit('player', 'legs'));
+    expect(pushed.at(-1)!.at).not.toEqual(screen.motion.at.hit('player', 'core'));
+  });
+
+  test('a machine that is not there yet has no shadow, no bars and no glow of heat; one that has gone has none either', () => {
+    const { flow, page, inner } = watched(['recon-drone', 'tank']);
+    for (const unit of flow.state.units) unit.heat = 95;
+    const heat = (drawn: Drawn): number => drawn.glows.filter((g) => g.blend === 'lighter' && g.stops[0][1].startsWith('rgba(255, 90, 32,')).length;
+    const bars = (drawn: Drawn): number => drawn.rects.filter((r) => r.color === COLORS.armor && r.h === 2 && r.y < PANEL_Y && r.y > FIELD_Y + 20).length;
+    const all = page();
+    expect([heat(all), all.glows.filter(isShadow).length, bars(all), machinesOf(all).length]).toEqual([3, 3, 2, 2]);
+    // The tank has not been launched yet: nothing of it is on the field, its heat least of all.
+    inner.arrived.delete('enemy-1');
+    const before = page();
+    expect([heat(before), before.glows.filter(isShadow).length, bars(before), machinesOf(before).length]).toEqual([2, 2, 1, 1]);
+    inner.arrived.add('enemy-1');
+    expect(heat(page())).toBe(3);
+  });
+
+  test('when the pilot\'s mech is gone, so is its shadow', () => {
+    const { flow, page } = screenOf(['recon-drone', 'tank']);
+    expect(page().glows.filter(isShadow)).toHaveLength(3);
+    // A hurried game: what is destroyed is gone at once.
+    flow.state.units[0].destroyed = true;
+    const after = page();
+    expect(ownOf(after)).toEqual([]);
+    expect(after.glows.filter(isShadow)).toHaveLength(2);
+    // What is left are the machines' shadows, on their side of the field.
+    for (const shadow of after.glows.filter(isShadow)) expect(shadow.x).toBeGreaterThan(ENEMY_LEFT);
+  });
+
+  test('the bars of a machine that has been destroyed take up no room: the others\' bars are where they would be without it', () => {
+    // Three that stand so close that their bars are stacked on three rows: the gunship hangs between the other two.
+    const line = ['heavy-mech', 'light-mech', 'gunship'];
+    const { flow, page } = screenOf(line, { background: 'bg-sluice', fast: false });
+    const armour = (drawn: Drawn) => drawn.rects.filter((r) => r.color === COLORS.armor && r.h === 2 && r.y < PANEL_Y && r.y > FIELD_Y + 20).map((r) => ({ x: r.x, y: r.y }));
+    // Where each stands or hangs: what flies bobs as it is drawn, and its bars do not bob with it.
+    const spots = enemySpots(3, placeFor('bg-sluice'));
+    const boxes = line.map((id, slot) => {
+      const picture = ENEMIES[id].sprite!;
+      return { ...standAt(spots[slot], MANIFEST[picture], FLYERS.has(picture)), w: MANIFEST[picture].w, h: MANIFEST[picture].h };
+    });
+    const byRow = (bars: { x: number; y: number }[]) => bars.map(({ x, y }) => ({ x, y })).sort((p, q) => p.y - q.y);
+    const stacked = placeBars(boxes);
+    expect(byRow(armour(page()))).toEqual(byRow(stacked));
+    expect(new Set(stacked.map((bar) => bar.y)).size).toBe(3);
+    // The one whose bars are highest is destroyed: it is still seen coming apart, but it has no bars, and makes room.
+    const first = stacked.indexOf(stacked.reduce((p, q) => (q.y < p.y ? q : p)));
+    flow.state.units[first + 1].destroyed = true;
+    const left = placeBars(boxes.filter((_, i) => i !== first));
+    expect(byRow(armour(page()))).toEqual(byRow(left));
+    // And that is not where they were: at least one of them has moved up.
+    expect(left.some((bar) => !stacked.some((was) => was.x === bar.x && was.y === bar.y))).toBe(true);
+  });
+
+  test('a unit in a place nobody planned for stands on the last place there is', () => {
+    const { flow, screen } = screenOf(['recon-drone', 'tank']);
+    const spots = enemySpots(2, placeFor('bg-neon-district'));
+    expect(screen.motion.at.foot('enemy-0').y).toBe(spots[0].y);
+    flow.state.units[1].slot = 7;
+    expect(screen.motion.at.foot('enemy-0').y).toBe(spots[1].y);
+    expect(screen.motion.at.foot('enemy-0').y).not.toBe(spots[0].y);
+  });
+
+  test('on tracks the middle of the pilot\'s mech is as much lower as its body is', () => {
+    const plain = screenOf(['gun-turret']).screen.motion.at.centre('player');
+    const tracked = screenOf(['gun-turret'], { build: { ...DEMO_BUILD, legs: 'legs-crawler' } }).screen.motion.at.centre('player');
+    expect([tracked.x - plain.x, tracked.y - plain.y]).toEqual([0, MANIFEST['legs-crawler.back'].drop!]);
+    expect(MANIFEST['legs-crawler.back'].drop!).toBeGreaterThan(10);
+  });
+
+  test('only the pilot\'s own left hand is on the far side of its mech: what an enemy fires from its left hand is in plain view', () => {
+    const { inner } = watched(['rival']);
+    const under = (event: BattleEvent): string[] => {
+      const before = inner.fx.effects.length;
+      inner.fx.onEvent(event);
+      return inner.fx.effects.slice(before).filter((fx) => fx.under).map((fx) => fx.kind).sort();
+    };
+    expect(under(shot('player', 'enemy-0', 'core', 'leftHand'))).toEqual(['muzzle', 'projectile']);
+    expect(under(shot('player', 'enemy-0', 'core', 'rightHand'))).toEqual([]);
+    expect(under(shot('enemy-0', 'player', 'core', 'leftHand'))).toEqual([]);
+    expect(under(shot('enemy-0', 'player', 'core', 'rightHand'))).toEqual([]);
+  });
+
+  test('a machine that is one picture is kicked back by its own gun along its barrel, up the screen as well as down it', () => {
+    const { screen, page, inner } = watched(['recon-drone', 'tank']);
+    const drone = (drawn: Drawn) => machinesOf(drawn).filter((image) => idOf(image) === 'enemy-recon-drone').at(-1)!;
+    // The drone hangs high: firing down at the pilot's legs it is kicked up and to the right.
+    const rest = { x: drone(page()).x, y: drone(page()).y };
+    inner.fx.onEvent(shot('enemy-0', 'player', 'legs'));
+    // (What moves it by itself as it hangs there, its bob, does not change in a thousandth of a second.)
+    screen.update(1);
+    const t = inner.fx.transform('enemy-0');
+    expect(t.lift).toBeLessThan(0);
+    expect(t.dx).toBeGreaterThan(0);
+    const kicked = drone(page());
+    expect([kicked.x - rest.x, kicked.y - rest.y]).toEqual([t.dx, t.dy + t.lift]);
+  });
+
+  test('a mech that is fought alone goes down the floor when it dashes at the pilot: all of it, turned round as it is', () => {
+    const { screen, page, inner } = watched(['rival']);
+    const legs = (drawn: Drawn) => drawn.images.filter((image) => idOf(image).startsWith('legs-') && idOf(image).endsWith('.small')).at(-1)!;
+    const rest = legs(page());
+    inner.fx.onEvent({ type: 'boost', unit: 'enemy-0' } as BattleEvent);
+    let furthest = { dx: 0, lift: 0 };
+    for (let i = 0; i < 30; i++) {
+      screen.update(16);
+      const t = inner.fx.transform('enemy-0');
+      const now = legs(page());
+      // Drawn leftward from its right edge: a step to the left is a step to the left all the same.
+      expect([now.x - rest.x, now.y - rest.y], `frame ${i}`).toEqual([t.dx, t.lift]);
+      if (Math.abs(t.dx) > Math.abs(furthest.dx)) furthest = { dx: t.dx, lift: t.lift };
+    }
+    // Towards the pilot's mech: to the left, and down the screen, for that mech stands nearer.
+    expect(furthest.dx).toBeLessThan(-5);
+    expect(furthest.lift).toBeGreaterThan(0);
   });
 });
 

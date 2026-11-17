@@ -141,11 +141,27 @@ describe('what the effects are told about a scene with depth', () => {
     // The second blast is ten to the left of the first at life size: seven far off, twelve near.
     expect(far[1].at.x - far[0].at.x).toBeCloseTo(-10 * FAR_SIZE, 9);
     expect(near[1].at.x - near[0].at.x).toBeCloseTo(-10 * NEAR_SIZE, 9);
+    // Every blast of it keeps its place among the others, across and up and down: all of it is one picture, smaller or larger.
+    const spread = (bursts: typeof far): number[][] => bursts.map((b) => [b.at.x - bursts[0].at.x, b.at.y - bursts[0].at.y]);
+    expect(spread(far).flat().some((n) => Math.abs(n) > 3)).toBe(true);
+    expect(new Set(spread(far).map(([, y]) => y)).size).toBeGreaterThan(2);
+    spread(far).forEach(([x, y], i) => {
+      expect(spread(near)[i][0], `blast ${i}`).toBeCloseTo((x * NEAR_SIZE) / FAR_SIZE, 9);
+      expect(spread(near)[i][1], `blast ${i}`).toBeCloseTo((y * NEAR_SIZE) / FAR_SIZE, 9);
+    });
     // A part that breaks off and a bomb that goes off are as large as where they are.
     const part = started(scene('kinetic'), { type: 'partDestroyed', unit: 'enemy-1', part: 'arms' } as BattleEvent);
     expect(one(part, 'burst').size).toBeCloseTo(9 * sizeAt(0.3), 9);
     const bomb = started(scene('kinetic'), { type: 'blast', unit: 'enemy-0', target: 'player', damage: 80 } as BattleEvent);
-    expect((bomb.filter((fx) => fx.kind === 'burst') as Extract<Fx, { kind: 'burst' }>[]).map((b) => b.size)).toEqual([26, 18, 18, 18].map((size) => size * NEAR_SIZE));
+    const blasts = bomb.filter((fx) => fx.kind === 'burst') as Extract<Fx, { kind: 'burst' }>[];
+    expect(blasts.map((b) => b.size)).toEqual([26, 18, 18, 18].map((size) => size * NEAR_SIZE));
+    // They are as far apart as they are large: fourteen left and eight down at life size is that times the size near the camera.
+    expect(blasts.map((b) => [b.at.x - places.player.hit.x, b.at.y - places.player.hit.y].map((n) => Math.round(n * 1e6) / 1e6)))
+      .toEqual([[0, 0], [-14, 8], [12, -10], [4, 14]].map(([x, y]) => [x * NEAR_SIZE, y * NEAR_SIZE].map((n) => Math.round(n * 1e6) / 1e6)));
+    // What a carrier launches leaves it as large as the carrier is far off and arrives as large as where it comes to stand.
+    const launch = started(scene('kinetic'), { type: 'launch', unit: 'enemy-0', spawned: 'enemy-1' } as BattleEvent);
+    expect(one(launch, 'projectile').grow).toEqual([FAR_SIZE, sizeAt(0.3)]);
+    expect(one(started(flat('kinetic'), { type: 'launch', unit: 'enemy-0', spawned: 'enemy-1' } as BattleEvent), 'projectile').grow).toEqual([1, 1]);
     // It throws itself down the floor at the pilot's mech: to the left and towards the camera.
     expect(one(bomb, 'lunge').aim.x).toBeLessThan(-0.9);
     expect(one(bomb, 'lunge').aim.y).toBeGreaterThan(0.3);
@@ -430,6 +446,114 @@ describe('how what is fired is painted', () => {
     expect(Math.min(...jet.map((row) => row.x))).toBeLessThan(FROM.x - 30);
     const light = lightsOf({ start: 0, dur: 320, kind: 'lunge', unit: 'player', from: FROM, aim }, 0.5)[0];
     expect([light.x, light.y]).toEqual([FROM.x - 0.8 * 30, FROM.y + 0.6 * 30 + 6]);
+  });
+});
+
+describe('what is painted along a line keeps to that line, however steep it is', () => {
+  /** Lines to paint along: level, up to the right as the pilot fires, steeply up, and down to the left as an enemy does. */
+  const AIMS: Pt[] = [{ x: 1, y: 0 }, { x: 0.8, y: -0.6 }, { x: 0.28, y: -0.96 }, { x: -0.6, y: 0.8 }];
+  const AT = { x: 150, y: 100 };
+  /** Where some rectangles are, taken together: their middle, weighted by how large each is. */
+  const middle = (rects: Filled[]): Pt => {
+    const area = rects.reduce((sum, r) => sum + r.w * r.h, 0);
+    return { x: rects.reduce((sum, r) => sum + (r.x + r.w / 2) * r.w * r.h, 0) / area, y: rects.reduce((sum, r) => sum + (r.y + r.h / 2) * r.w * r.h, 0) / area };
+  };
+  /** A point as seen from `AT`: how far along a line it is, and how far to the side of it. */
+  const seen = (p: Pt, aim: Pt): { along: number; side: number } => ({ along: (p.x - AT.x) * aim.x + (p.y - AT.y) * aim.y, side: -(p.x - AT.x) * aim.y + (p.y - AT.y) * aim.x });
+
+  test('fire from a barrel: its white line runs ahead along the barrel, and its flare stands across it', () => {
+    for (const aim of AIMS) {
+      const page = paint({ kind: 'muzzle', at: AT, dtype: 'energy', aim, size: 1 }, 0);
+      // The white: the heart at the mouth and the line ahead of it, the single pixels of which are the line's.
+      const line = page.rects.filter((r) => r.color === '#ffffff' && r.w === 1 && r.h === 1);
+      expect(line.length, JSON.stringify(aim)).toBeGreaterThan(12);
+      const far = line.map((r) => seen({ x: r.x, y: r.y }, aim)).reduce((a, b) => (b.along > a.along ? b : a));
+      // It reaches a good way past the flame, 1.4 times as far, and ends on the barrel's line.
+      expect(far.along, JSON.stringify(aim)).toBeGreaterThan(18);
+      expect(Math.abs(far.side), JSON.stringify(aim)).toBeLessThanOrEqual(1.5);
+      // The flare, in the weapon's colour: single pixels out to either side of the mouth, as far one way as the other.
+      const flare = page.rects.filter((r) => r.color === '#7fe9ff' && r.w === 1 && r.h === 1).map((r) => seen({ x: r.x, y: r.y }, aim));
+      const [least, most] = [Math.min(...flare.map((f) => f.side)), Math.max(...flare.map((f) => f.side))];
+      expect(most, JSON.stringify(aim)).toBeGreaterThan(7);
+      expect(least, JSON.stringify(aim)).toBeLessThan(-7);
+      expect(Math.abs(most + least), JSON.stringify(aim)).toBeLessThanOrEqual(2);
+      // And it stays at the mouth: none of it is carried ahead along the barrel.
+      for (const f of flare.filter((one) => Math.abs(one.side) > 4)) expect(Math.abs(f.along), JSON.stringify(aim)).toBeLessThanOrEqual(1.5);
+    }
+  });
+
+  test('a guard: the faint wall inside it is four pixels behind the bright one, towards the unit, all along it', () => {
+    for (const aim of AIMS) {
+      const page = paint({ kind: 'shield', at: AT, aim }, 0.4);
+      const bright = page.rects.filter((r) => r.w === 2 && r.h === 2);
+      const faint = page.rects.filter((r) => r.w === 3 && r.h === 2);
+      expect([bright.length, faint.length], JSON.stringify(aim)).toEqual([19, 19]);
+      expect(faint[0].alpha).toBeLessThan(bright[0].alpha / 2);
+      faint.forEach((inner, k) => {
+        const [dx, dy] = [inner.x - bright[k].x, inner.y - bright[k].y];
+        // Four pixels back along the way it looks, to the pixel either way.
+        expect(Math.abs(dx + aim.x * 4), `${JSON.stringify(aim)} ${k}`).toBeLessThanOrEqual(1);
+        expect(Math.abs(dy + aim.y * 4), `${JSON.stringify(aim)} ${k}`).toBeLessThanOrEqual(1);
+      });
+    }
+  });
+
+  test('a lunge: every line of speed streams straight back along the line it lunges on', () => {
+    for (const aim of AIMS) {
+      const p = 0.3;
+      const page = paint({ kind: 'lunge', unit: 'x', from: AT, aim }, p);
+      // The lines are painted fainter than the jet, each pixel by pixel from its head to its tail.
+      const pixels = page.rects.filter((r) => Math.abs(r.alpha - 0.85 * (1 - p)) < 1e-9);
+      const lines: Filled[][] = [];
+      for (const pixel of pixels) {
+        const last = lines.at(-1)?.at(-1);
+        if (last && Math.hypot(pixel.x - last.x, pixel.y - last.y) <= 2) lines.at(-1)!.push(pixel);
+        else lines.push([pixel]);
+      }
+      expect(lines, JSON.stringify(aim)).toHaveLength(9);
+      for (const line of lines) {
+        const [head, tail] = [line[0], line.at(-1)!];
+        const reach = Math.hypot(tail.x - head.x, tail.y - head.y);
+        expect(reach, JSON.stringify(aim)).toBeGreaterThan(12);
+        // From head to tail: against the way it goes, to within a pixel over its whole length.
+        expect(Math.abs((tail.x - head.x) / reach + aim.x), JSON.stringify(aim)).toBeLessThan(0.09);
+        expect(Math.abs((tail.y - head.y) / reach + aim.y), JSON.stringify(aim)).toBeLessThan(0.09);
+      }
+    }
+  });
+});
+
+describe('what flies is as large as where each part of it is', () => {
+  const lines = (page: Drawn, color: string): Filled[] => page.rects.filter((r) => r.color === color);
+
+  test('a shell\'s spark is one pixel far off and two near; the smoke behind it is as large as where each puff of it hangs', () => {
+    const shell = (grow: [number, number], p: number): Drawn => paint({ kind: 'projectile', from: FROM, to: TO, dtype: 'explosive', grow }, p);
+    const spark = (page: Drawn): Filled => lines(page, '#ffffff').at(-1)!;
+    expect([spark(shell([NEAR_SIZE, FAR_SIZE], 0.1)).w, spark(shell([NEAR_SIZE, FAR_SIZE], 0.1)).h]).toEqual([2, 2]);
+    expect([spark(shell([NEAR_SIZE, FAR_SIZE], 0.95)).w, spark(shell([NEAR_SIZE, FAR_SIZE], 0.95)).h]).toEqual([1, 1]);
+    expect([spark(shell([1, 1], 0.95)).w, spark(shell([FAR_SIZE, NEAR_SIZE], 0.95)).w]).toEqual([2, 2]);
+    // Smoke: seven puffs behind the shell, the oldest the widest. One that shrinks fast as it flies (four times life size
+    // where it leaves, life size where it lands) has its oldest puff, which hangs a third of the way back, larger by as much.
+    const widest = (page: Drawn): number => Math.max(...page.rects.filter((r) => ['#8a8494', '#6c6678'].includes(r.color) && r.h === 1).map((r) => r.w));
+    const steady = widest(shell([2.5, 2.5], 0.5));
+    const shrinking = widest(shell([4, 1], 0.5));
+    // Where the shell is, both are two and a half times life size; its oldest puff hangs at 0.185 of the way, where the
+    // shrinking one is still 3.4 times: the widest row of smoke is wider by about that much.
+    expect(shrinking / steady).toBeGreaterThan(1.25);
+    expect(shrinking / steady).toBeLessThan(1.5);
+  });
+
+  test('three tracers in a row are each as thick as where each one is: the first far off and thin while the last is still near and thick', () => {
+    const tracer = (p: number): Drawn => paint({ kind: 'projectile', from: FROM, to: TO, dtype: 'kinetic', grow: [NEAR_SIZE, FAR_SIZE] }, p);
+    // Half way along: the first tracer is past the middle (one thick, a head of two), the third a third of the way behind it (two thick, a head of three).
+    let both = 0;
+    for (let p = 0.3; p <= 0.6; p += 0.02) {
+      const page = tracer(p);
+      const heads = new Set(lines(page, '#ffffff').map((r) => r.w));
+      const bodies = new Set(lines(page, '#ffe9a8').map((r) => r.w));
+      if (heads.has(3) && heads.has(2) && bodies.has(2) && bodies.has(1)) both++;
+    }
+    expect(both).toBeGreaterThan(5);
   });
 });
 
@@ -749,6 +873,12 @@ describe('depth on the battle screen', () => {
     const dazed = screenOf(['gun-turret'], { prepare: (state) => { state.units[0].overheated = true; } });
     dazed.screen.update(16);
     expect(strength(generatorIn(dazed.page())!)).toBeCloseTo(GENERATOR.dazed, 2);
+    // Knocked off its balance it is dazed the same way, with no heat to blame.
+    const reeling = screenOf(['gun-turret'], { prepare: (state) => { state.units[0].staggered = 1; } });
+    reeling.screen.update(16);
+    expect(reeling.screen.motion.stance('player')).toMatchObject({ staggered: true, overheated: false });
+    expect(strength(generatorIn(reeling.page())!)).toBeCloseTo(GENERATOR.dazed, 2);
+    expect(GENERATOR.dazed).toBeLessThan(GENERATOR.alpha / 2);
     // On tracks the body sits lower, and its light with it.
     const tracked = generatorIn(screenOf(['gun-turret'], { build: { ...DEMO_BUILD, legs: 'legs-crawler' } }).page())!;
     expect(tracked.y - cool.y).toBeGreaterThanOrEqual(MANIFEST['legs-crawler.back'].drop! - 3);

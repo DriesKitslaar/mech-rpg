@@ -69,6 +69,9 @@ export const sizeAt = (depth: number): number => NEAR_SIZE - (NEAR_SIZE - FAR_SI
 const MISS_ON = 34;
 const MISS_WIDE = 12;
 
+/** How many pixels the hardest blow there is throws the field: a bomb going off. The screen draws its picture out further than that. */
+export const HARDEST_JOLT = 5;
+
 export const PROJECTILE_MS = 160;
 export const SHELL_MS = 260;
 export const HIT_MS = 220;
@@ -168,9 +171,9 @@ export class BattleFx {
     this.add(delay, TEXT_MS, { kind: 'text', at: { x: at.x, y: at.y - 10 }, text, color, ...(over ? { over: true as const } : {}) });
   }
 
-  /** Shakes the whole field by up to `amount` pixels for `dur`, starting after `delay`. */
+  /** Shakes the whole field by up to `amount` pixels for `dur`, starting after `delay`: never by more than the hardest jolt there is. */
   private jolt(delay: number, amount: number, dur: number): void {
-    this.jolts.push({ start: this.now + delay, dur, amount, felt: false });
+    this.jolts.push({ start: this.now + delay, dur, amount: Math.min(HARDEST_JOLT, amount), felt: false });
   }
 
   /** How far the field is thrown right now: the hardest jolt that is still going, dying away. */
@@ -337,7 +340,7 @@ export class BattleFx {
           this.add(MELEE_MS + i * 90, 380, { kind: 'burst', at: { x: at.x + off[0] * size, y: at.y + off[1] * size }, size: (i === 0 ? 26 : 18) * size, color: '#ff8a3c', style: 'fire' });
         }
         this.add(MELEE_MS, HIT_MS * 2, { kind: 'hit', unit: event.target });
-        this.jolt(MELEE_MS, 5, 450);
+        this.jolt(MELEE_MS, HARDEST_JOLT, 450);
         this.say(MELEE_MS, at, `-${event.damage}`, '#ffffff');
         break;
       }

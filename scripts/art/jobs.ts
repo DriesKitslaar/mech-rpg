@@ -165,8 +165,8 @@ export function paintGroups(jobs: ArtJob[]): Map<string, { judged: string[]; all
     const family = paintFamilyOf(job);
     const group = families.get(family) ?? { own: [], front: [], all: [] };
     group.all.push(job.id);
-    // From the front: not a copy of another job's picture, and in the pose box every layer has unless it says otherwise.
-    if (!job.source && !job.box) {
+    // From the front: in the pose box every layer has unless it says otherwise. A view from behind and a small copy each say so.
+    if (job.box === undefined) {
       group.front.push(job.id);
       if (job.references?.[0]?.endsWith(`family-${family}.png`)) group.own.push(job.id);
     }

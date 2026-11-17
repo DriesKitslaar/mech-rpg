@@ -3,6 +3,7 @@ import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { AMBIENCE } from '../../src/ui/ambience';
 import { BattleFlow } from '../../src/ui/battleFlow';
+import { HARDEST_JOLT } from '../../src/ui/battleFx';
 import { BattleScreen, EDGE, INTRO_MS, PUSH, WARNING_MS } from '../../src/ui/battleScreen';
 import { Camera, HOME, MAX_PUSH, PUSH_MS, TRAVEL_SHARE, atHome, openingView, seenBy } from '../../src/ui/camera';
 import { FINISH_ZOOM } from '../../src/ui/cinema';
@@ -146,10 +147,19 @@ describe('as a battle opens', () => {
     // Streaks in the upper half of the field and in the lower: what is seen is not the stage's own field, and it rains in all of it.
     expect(first.some((r) => r.y < FIELD_Y + 60 && r.y >= FIELD_Y - 5)).toBe(true);
     expect(first.some((r) => r.y > FIELD_Y + 100 && r.y < PANEL_Y)).toBe(true);
-    for (let i = 0; i < 200 && screen.banner; i++) screen.update(16);
+    // All the way down: as long as the camera is higher than the field by a single row, it rains through that row too.
+    const counts = new Map<number, number>();
+    for (let i = 0; i < 200 && screen.banner; i++) {
+      screen.update(16);
+      const above = HOME.y - screen.motion.view.y;
+      counts.set(above, streaks(page()).length);
+    }
     const home = streaks(page());
     expect(first.length).toBe(home.length * 2);
     for (const r of home) expect(r.y >= FIELD_Y && r.y < PANEL_Y).toBe(true);
+    for (const [above, count] of counts) expect(count, `${above} rows above home`).toBe(above > 0 ? home.length * 2 : home.length);
+    // Among them the last rows of the way: a few rows above home, less than the bar along the top is high.
+    expect([...counts.keys()].filter((above) => above > 0 && above < FIELD_Y).length).toBeGreaterThan(2);
     // A stroke of lightning while the camera is on its way down: all that is in view is lit, not the part of it the
     // stage's own field is in. No stroke falls in an opening by itself (the first comes later than the longest warning
     // lasts), so the storm's clock is put forward by hand, to a little before one.
@@ -257,6 +267,8 @@ describe('when a blow lands', () => {
     expect(Math.max(PUSH.shot, PUSH.shell, PUSH.blade, PUSH.wreck, PUSH.surge)).toBeLessThanOrEqual(MAX_PUSH);
     expect(PUSH.shot).toBeLessThan(PUSH.shell);
     expect(PUSH.shell).toBeLessThan(PUSH.blade);
+    // A bullet or a beam six hundredths closer, a shell nine, a blade and a machine going up twelve, an Overdrive eight.
+    expect(PUSH).toEqual({ shot: 0.06, shell: 0.09, blade: 0.12, wreck: 0.12, surge: 0.08 });
   });
 
   test('a shell that lands is pushed in on harder than a bullet, and a blade hardest', () => {
@@ -463,6 +475,32 @@ describe('a field that is shaken', () => {
       expect(thrown.size, background).toBeGreaterThanOrEqual(3);
     }
   });
+
+  test('the hardest blow there is throws it less far than the picture\'s edges are drawn out: nothing behind the picture shows', () => {
+    expect(EDGE).toBe(HARDEST_JOLT + 1);
+    const { screen, page, ready } = screenOf(fight(['recon-drone', 'tank']), { background: 'bg-sluice' });
+    ready();
+    // Brought on by hand, and asked for harder than the hardest there is: it is no harder than that.
+    (screen as unknown as { fx: { jolt(delay: number, amount: number, dur: number): void } }).fx.jolt(0, HARDEST_JOLT + 4, 450);
+    const top = pictureTop(placeFor('bg-sluice'));
+    let furthest = 0;
+    for (let i = 0; i < 40; i++) {
+      screen.update(16);
+      const [picture, ...edges] = page().images.filter((image) => idOf(image) === 'bg-sluice');
+      const by = { x: picture.x, y: picture.y - top };
+      furthest = Math.max(furthest, Math.abs(by.x), Math.abs(by.y));
+      if (by.x === 0 && by.y === 0) continue;
+      expect(edges).toHaveLength(4);
+      // With its edges the picture covers the field on every side, and the sluice's picture ends where the panel begins.
+      expect(Math.min(...edges.map((edge) => edge.x))).toBeLessThanOrEqual(0);
+      expect(Math.max(...edges.map((edge) => edge.x + edge.w))).toBeGreaterThanOrEqual(310);
+      expect(Math.min(...edges.map((edge) => edge.y))).toBeLessThanOrEqual(FIELD_Y);
+      expect(Math.max(...edges.map((edge) => edge.y + edge.h))).toBeGreaterThanOrEqual(PANEL_Y);
+    }
+    // It was thrown about as far as a blow can throw it (how far exactly depends on the moment), and no further.
+    expect(furthest).toBeGreaterThanOrEqual(HARDEST_JOLT - 1);
+    expect(furthest).toBeLessThanOrEqual(HARDEST_JOLT);
+  });
 });
 
 describe('what the camera moves', () => {
@@ -514,6 +552,39 @@ describe('what the camera moves', () => {
       } else if (flow.phase === 'target') all('confirm');
     };
     const seen = { away: 0, opening: 0, close: 0, thrown: 0, figures: 0, bars: 0, lights: 0, lines: 0 };
+    // What stands or happens on the field, by name: the bars under the machines, what flies off them and burns in them,
+    // the smoke of a wreck, the Overdrive's rings, what is fired, the figures, and every light. While the camera is away
+    // each of them is drawn inside the field, where the camera has it: one that was not would have been left behind.
+    const named = { bars: 0, particles: 0, smoke: 0, rings: 0, shots: 0, figures: 0, lights: 0 };
+    const COLOURS: [keyof typeof named, string[]][] = [
+      ['particles', ['#e8c466', '#b8923c', '#fff2b0', '#ffd15a', '#ff8a3c', '#ff5a36', '#3a3a4c', '#56566c', '#22222e', '#8a6a4a', '#46445a', '#5a586e', '#32303e']],
+      ['smoke', ['#3a3644', '#4a4654']],
+      ['shots', ['#ffe9a8', '#7fe9ff', '#ffb46b']],
+    ];
+    const inField = (box: { x: number; y: number; w: number; h: number } | null): boolean => !!box && box.x === 0 && box.y === FIELD_Y && box.w === 310 && box.h === PANEL_Y - FIELD_Y;
+    const check = (raw: Drawn, frame: number, band: boolean): void => {
+      raw.rects.forEach((r, n) => {
+        if (r.y < FIELD_Y || r.y >= PANEL_Y) return;
+        // (From closer by a bar two pixels high and a ring one pixel thick are a little more than that.)
+        const what = [COLORS.armor, COLORS.heat].includes(r.color) && r.h <= 2 * (1 + MAX_PUSH) && r.w >= 8 && r.y > FIELD_Y + 12 ? 'bars'
+          : r.color.startsWith('rgba(255, 93, 177,') && r.w <= 1 + MAX_PUSH ? 'rings'
+            : COLOURS.find(([, colours]) => colours.includes(r.color))?.[0];
+        if (!what) return;
+        named[what]++;
+        expect(inField(raw.kept.rects[n]), `frame ${frame}: ${what} at ${r.x},${r.y}`).toBe(true);
+      });
+      raw.texts.forEach((t, n) => {
+        if (!/^(-\d+|MISS)$/.test(t.text)) return;
+        named.figures++;
+        expect(inField(raw.kept.texts[n]), `frame ${frame}: the figure ${t.text}`).toBe(true);
+      });
+      // (The band of an Overdrive has lights of its own, over the field: while it is up the lights are left uncounted.)
+      if (!band) raw.glows.forEach((g, n) => {
+        if (g.blend !== 'lighter') return;
+        named.lights++;
+        expect(inField(raw.kept.glows[n]), `frame ${frame}: a light at ${g.x},${g.y}`).toBe(true);
+      });
+    };
     for (let i = 0; i < 4000 && moving.flow.phase !== 'result'; i++) {
       expect(still.flow.phase, `frame ${i}`).toBe(moving.flow.phase);
       press();
@@ -530,6 +601,7 @@ describe('what the camera moves', () => {
       if (close) seen.close++;
       else if (!atHome(view)) {
         seen.away++;
+        check(raw, i, moving.screen.motion.cutIn !== null);
         if (moving.screen.banner) seen.opening++;
         if (raw.images[0].x !== 0) seen.thrown++;
         // What was being drawn while it was away: figures, bars, lights, the pixels of what flies and burns.
@@ -546,6 +618,8 @@ describe('what the camera moves', () => {
     expect(seen.thrown).toBeGreaterThan(5);
     expect(seen.close).toBeGreaterThan(10);
     for (const kind of ['figures', 'bars', 'lights', 'lines'] as const) expect(seen[kind], kind).toBeGreaterThan(100);
+    // Each of the things named was there to be checked, many times over.
+    for (const [kind, count] of Object.entries(named)) expect(count, kind).toBeGreaterThan(500);
   });
 });
 

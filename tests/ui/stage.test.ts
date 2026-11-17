@@ -276,6 +276,13 @@ describe('the bars under the enemies', () => {
     expect(placeBars([{ x: 150, y: 100, w: 60, h: 40 }, { x: 220, y: 100, w: 60, h: 40 }]).map((bar) => bar.y)).toEqual([142, 142]);
   });
 
+  test('of two whose bars would lie on one row, the one further left stays and the other is moved down: whichever is listed first', () => {
+    const left = { x: 190, y: 100, w: 60, h: 40 };
+    const right = { x: 220, y: 100, w: 60, h: 40 };
+    expect(placeBars([left, right]).map((bar) => bar.y)).toEqual([142, 147]);
+    expect(placeBars([right, left]).map((bar) => bar.y)).toEqual([147, 142]);
+  });
+
   test('bars that would only touch are moved apart too: a pixel is between any two that are one over the other', () => {
     // Two machines whose feet are four pixels apart: the lower one's armour line would lie right under the higher one's balance line.
     const boxes = [{ x: 200, y: 100, w: 64, h: 40 }, { x: 210, y: 104, w: 64, h: 40 }];

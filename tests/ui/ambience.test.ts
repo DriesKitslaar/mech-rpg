@@ -138,6 +138,44 @@ describe('a place, as it is drawn', () => {
     expect(edge(FIELD.top + FIELD.height - 145 + 35)).toBe(false);
   });
 
+  test('a calm picture has its lamps at half strength, where the picture is the screen and where it is not', () => {
+    const lie = { shift: pictureTop(placeFor('bg-sluice')), far: 0, near: 0 };
+    for (const with_ of [undefined, lie]) {
+      // A sign that flickers is steady in a calm picture, so only what burns evenly is compared: the brightest of each.
+      const plain = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, false, with_)).glows.filter(isLight);
+      const calm = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, true, with_)).glows.filter(isLight);
+      expect(calm.length).toBe(plain.length);
+      expect(calm.length).toBeGreaterThan(3);
+      const steady = placeLights('bg-sluice', 1000, true, !!with_);
+      const lively = placeLights('bg-sluice', 1000, false, !!with_);
+      calm.forEach((glow, i) => {
+        const at = steady.findIndex((l) => l.x === glow.x && l.r === glow.r);
+        expect(at, `${i}`).toBeGreaterThanOrEqual(0);
+        // What is drawn is half of what the place says a calm lamp is, to the third decimal a light is written with.
+        expect(strength(glow), `${i}`).toBeCloseTo(steady[at].alpha / 2, 2);
+        expect(steady[at].alpha, `${i}`).toBeGreaterThan(0.1);
+      });
+      plain.forEach((glow, i) => expect(strength(glow), `${i}`).toBeCloseTo(lively[lively.findIndex((l) => l.x === glow.x && l.r === glow.r)].alpha, 2));
+    }
+  });
+
+  test('the lamps of each picture\'s lowest part are where they were found in the pictures: moving one is a decision, not a slip', () => {
+    const fnv = (text: string): number => { let h = 0x811c9dc5; for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h; };
+    const low = Object.entries(AMBIENCE).map(([id, place]) => [id, (place.low ?? []).map((l) => [l.x, l.y, l.r, l.color])]);
+    expect(low.filter(([, lights]) => (lights as unknown[]).length > 0)).toHaveLength(10);
+    expect(low.flatMap(([, lights]) => lights as unknown[])).toHaveLength(21);
+    expect(fnv(JSON.stringify(low))).toBe(2111618874);
+    // Each lies low in its picture, where the floor is, and inside the picture.
+    for (const [id, place] of Object.entries(AMBIENCE)) {
+      for (const l of place.low ?? []) {
+        expect(l.y, id).toBeGreaterThan(160);
+        expect(l.y, id).toBeLessThan(270);
+        expect(l.x, id).toBeGreaterThanOrEqual(0);
+        expect(l.x, id).toBeLessThanOrEqual(310);
+      }
+    }
+  });
+
   describe('where there is to be less light', () => {
     afterEach(() => setDetail(2));
 

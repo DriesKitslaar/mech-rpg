@@ -13,7 +13,7 @@ import type { Sfx } from '../platform/audio';
 import { soundsForEvent } from '../platform/audio';
 import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
-import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
+import { BattleFx, HARDEST_JOLT, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
 import { Camera, applyView, atHome, seenBy, type View } from './camera';
 import { MECH_BOX, VIEWS, dropOf, hitOn, muzzleOf, type MechView } from './mechLayout';
 import { HitStop } from './hitStop';
@@ -111,8 +111,8 @@ export const RESULT_TALL = 26;
 export const RESULT_SMALL = 20;
 export const RESULT_WORD_Y = 25;
 
-/** How far a place's picture is drawn out beyond its edges while the field is thrown: further than the hardest blow throws it. */
-export const EDGE = 6;
+/** How far a place's picture is drawn out beyond its edges while the field is thrown: a pixel further than the hardest blow throws it. */
+export const EDGE = HARDEST_JOLT + 1;
 
 /** How a mech that is drawn from its parts is put on the canvas: `drawMech`, layer by layer, or `layMech`, whole. */
 type MechPainter = typeof drawMech;
@@ -613,7 +613,8 @@ export class BattleScreen {
    */
   private drawRadio(ctx: CanvasRenderingContext2D): void {
     const line = this.radio?.line;
-    if (!line || this.intro > 0 || this.opts.coach || this.flow.phase === 'talk') return;
+    // (There is no line before the banner has gone: the wingman reports in as it goes.)
+    if (!line || this.opts.coach || this.flow.phase === 'talk') return;
     const width = line.length * 4 + 8;
     const y = STRIP_Y;
     ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';

@@ -192,7 +192,14 @@ describe('the camera', () => {
     // Something less far from the middle than that is looked straight at; something high up, as far up as there is field.
     const near = new Camera(NEON);
     near.push({ x: 160, y: 100 }, 0.1);
-    near.update(PUSH_IN_MS);
+    // It turns to it by degrees, as far as it has pushed in: a frame in, a third of the way, though there is field enough to look straight at it.
+    near.update(16);
+    const begun = pushLevel(16);
+    expect(begun).toBeGreaterThan(0.3);
+    expect(begun).toBeLessThan(0.35);
+    expect(155 / (1 + 0.1 * begun)).toBeLessThan(155 - 4);
+    expect([near.view().x, near.view().y].map((n) => Math.round(n * 1e6) / 1e6)).toEqual([155 + 5 * begun, 96 + 4 * begun].map((n) => Math.round(n * 1e6) / 1e6));
+    near.update(PUSH_IN_MS - 16);
     expect([near.view().x, near.view().y].map((n) => Math.round(n * 1e6) / 1e6)).toEqual([160, 100]);
     const high = new Camera(NEON);
     high.push({ x: 155, y: 20 }, 0.1);

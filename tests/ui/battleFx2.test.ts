@@ -1,6 +1,6 @@
 import type { BattleEvent } from '../../src/core/battle';
 import type { DamageType } from '../../src/core/types';
-import { BattleFx, DEATH_MS, HIT_MS, MELEE_MS, PROJECTILE_MS, SHELL_MS, type Fx, type Scene } from '../../src/ui/battleFx';
+import { BattleFx, DEATH_MS, HARDEST_JOLT, HIT_MS, MELEE_MS, PROJECTILE_MS, SHELL_MS, type Fx, type Scene } from '../../src/ui/battleFx';
 import { TYPE_COLOR, lightsOf, paintFx } from '../../src/ui/fxPaint';
 import { FIELD_LIGHT } from '../../src/ui/light';
 import { record } from '../helpers/canvas';
@@ -83,6 +83,48 @@ describe('what a shot shows, and when', () => {
     expect(at({ type: 'partDestroyed', unit: 'enemy-0', part: 'arms' }, 1)).toEqual([{ style: 'fire', size: 9 }]);
     expect(at({ type: 'phase', unit: 'enemy-0', phase: 1 }, 300)).toEqual([{ style: 'ring', size: 18 }, { style: 'ring', size: 30 }, { style: 'ring', size: 44 }]);
     expect(at({ type: 'launch', unit: 'enemy-0', spawned: 'enemy-1' }, 1)).toEqual([{ style: 'ring', size: 12 }]);
+  });
+});
+
+describe('how hard a blow throws the field', () => {
+  const jolts = (fx: BattleFx): number[] => (fx as unknown as { jolts: { amount: number }[] }).jolts.map((jolt) => jolt.amount);
+
+  test('a bomb going off is the hardest blow there is: nothing else throws the field as far, and nothing can throw it further', () => {
+    expect(HARDEST_JOLT).toBe(5);
+    const events: BattleEvent[] = [
+      { ...shot(true, 80) },
+      { type: 'partDestroyed', unit: 'enemy-0', part: 'arms' } as BattleEvent,
+      { type: 'unitDestroyed', unit: 'enemy-0' },
+      { type: 'stagger', unit: 'enemy-0' } as BattleEvent,
+      { type: 'phase', unit: 'enemy-0', phase: 1 } as BattleEvent,
+      { type: 'overdrive', unit: 'player', kind: 'iron-skin' } as BattleEvent,
+    ];
+    let most = 0;
+    for (const event of events) {
+      const fx = fxOf();
+      fx.onEvent(event);
+      for (const amount of jolts(fx)) {
+        expect(amount, event.type).toBeLessThan(HARDEST_JOLT);
+        most = Math.max(most, amount);
+      }
+    }
+    expect(most).toBeGreaterThanOrEqual(3);
+    const bomb = fxOf();
+    bomb.onEvent({ type: 'blast', unit: 'enemy-0', target: 'player', damage: 80 } as BattleEvent);
+    expect(jolts(bomb)).toEqual([HARDEST_JOLT]);
+    // Asked for harder than that, a jolt is as hard as that: the field is never thrown further, at any moment of it.
+    const over = fxOf();
+    (over as unknown as { jolt(delay: number, amount: number, dur: number): void }).jolt(0, 40, 450);
+    expect(jolts(over)).toEqual([HARDEST_JOLT]);
+    let furthest = 0;
+    for (let ms = 0; ms < 460; ms += 4) {
+      over.update(4);
+      const { dx, dy } = over.shake();
+      furthest = Math.max(furthest, Math.abs(dx), Math.abs(dy));
+    }
+    expect(furthest).toBeLessThanOrEqual(HARDEST_JOLT);
+    expect(furthest).toBeGreaterThanOrEqual(HARDEST_JOLT - 1);
+    expect(over.shake()).toEqual({ dx: 0, dy: 0 });
   });
 });
 

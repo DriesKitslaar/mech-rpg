@@ -45,6 +45,19 @@ test('a frame layer without a recorded position is placed at the origin', () => 
   expect(layoutMech({ core: { w: 10, h: 10 } })).toEqual([{ slot: 'core', x: 0, y: 0 }]);
 });
 
+test('what is taller than it is wide is a shield, by a pixel; what is as wide as it is tall is gripped by one end like a weapon', () => {
+  const at = (size: { w: number; h: number }) => layoutMech({ ...layers, leftHand: size }).find((cmd) => cmd.slot === 'leftHand')!;
+  for (const tall of [{ w: 30, h: 31 }, { w: 30, h: 36 }, { w: 30, h: 52 }]) {
+    expect(at(tall), JSON.stringify(tall)).toEqual({ slot: 'leftHand', x: Math.round(FAR_FIST.x - 0.5 * tall.w), y: Math.round(FAR_FIST.y - 0.6 * tall.h) });
+  }
+  for (const wide of [{ w: 30, h: 30 }, { w: 40, h: 20 }]) {
+    expect(at(wide), JSON.stringify(wide)).toEqual({ slot: 'leftHand', x: Math.round(FAR_FIST.x - 0.2 * wide.w), y: Math.round(FAR_FIST.y - 0.5 * wide.h) });
+  }
+  // In the near fist nothing is a shield, however tall.
+  const near = layoutMech({ ...layers, rightHand: { w: 30, h: 52 } }).find((cmd) => cmd.slot === 'rightHand')!;
+  expect(near).toEqual({ slot: 'rightHand', x: Math.round(NEAR_FIST.x - 0.2 * 30), y: Math.round(NEAR_FIST.y - 0.5 * 52) });
+});
+
 test('a shield, taller than it is wide, is strapped to the far forearm instead of gripped by one end', () => {
   const shield = { w: 33, h: 52 };
   const cmds = layoutMech({ ...layers, leftHand: shield });
