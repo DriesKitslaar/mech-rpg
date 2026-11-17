@@ -4,10 +4,10 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
-import { SCENE_HOLD_MS } from './sceneScreen';
+import { SCENE_HOLD_MS, drawPlace, hearThunder } from './sceneScreen';
 import { drawWord, fitTall, wordTop } from './signType';
 import { Typewriter } from './typewriter';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
+import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawOutlined, drawText, wrap } from './widgets';
 
 /** Where the words of a conversation go: beside the portrait, in the panel at the foot of the screen. */
 const PANEL_Y = 176;
@@ -20,6 +20,8 @@ export const QUESTION_HOLD_MS = 1500;
 /** Characters of an answer that fit on its row of the list. */
 export const ANSWER_CHARS = charsFor(LOGICAL_W - TEXT_X - 22);
 
+/** How dark the shade over the place a conversation is held in is. */
+export const TALK_VEIL = 0.25;
 /** Where the middle of a conversation's title is, how tall its letters are at most, and how wide it may be. */
 export const TALK_TITLE_Y = 31;
 export const TALK_TITLE_TALL = 16;
@@ -59,8 +61,10 @@ export class TalkScreen implements Screen {
   private get asking(): boolean { return this.answers !== null && !this.answered; }
 
   update(dtMs: number): void {
+    const before = this.clock;
     this.clock += dtMs;
     this.hold = Math.max(0, this.hold - dtMs);
+    hearThunder(this.app, this.scene.picture, before, this.clock);
     this.typeTick -= dtMs;
     if (!this.asking && this.writer.update(dtMs) > 0 && this.typeTick <= 0) {
       this.app.deps.sfx?.play('type');
@@ -130,10 +134,11 @@ export class TalkScreen implements Screen {
     const { sprites } = this.app.deps;
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    if (scene.picture) ctx.drawImage(sprites.get(scene.picture, { w: LOGICAL_W, h: LOGICAL_H, label: '' }).image, 0, 0, LOGICAL_W, LOGICAL_H);
-    ctx.fillStyle = 'rgba(8, 8, 20, 0.45)';
+    // The place the talking is done in, alive, under a light shade: what is said has a box of its own to be read in.
+    if (scene.picture) drawPlace(ctx, this.app, scene.picture, this.clock);
+    ctx.fillStyle = `rgba(8, 8, 20, ${TALK_VEIL})`;
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    if (scene.heading) drawText(ctx, scene.heading, LOGICAL_W / 2, 10, { align: 'center', color: COLORS.dim });
+    if (scene.heading) drawOutlined(ctx, scene.heading, LOGICAL_W / 2, 10, { align: 'center', color: COLORS.dim });
     // What the conversation is called, in the sign's letters; in the font where the sign cannot write it.
     const tall = fitTall(scene.title, TALK_TITLE_W, TALK_TITLE_TALL);
     if (tall === null) drawText(ctx, scene.title, LOGICAL_W / 2, 22, { size: 16, align: 'center', color: COLORS.accent });

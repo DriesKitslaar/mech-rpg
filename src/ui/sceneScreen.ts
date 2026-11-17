@@ -5,8 +5,10 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { drawLights } from './light';
 import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
+import { drawStill, stillWeather } from './stills';
 import { Typewriter } from './typewriter';
-import { COLORS, LINE, charsFor, drawText, wrap } from './widgets';
+import { THUNDER_AFTER_MS, strokeBegan } from './weather';
+import { COLORS, LINE, charsFor, drawOutlined, drawText, wrap } from './widgets';
 
 /** Characters of a scene's text that fit on a line, and the lines that fit on the page. */
 export const SCENE_CHARS = charsFor(LOGICAL_W - 40);
@@ -24,6 +26,37 @@ const PICTURE_MS = 900;
  * button mashed through the settlement must not carry the reader past a page of the story.
  */
 export const SCENE_HOLD_MS = 500;
+
+/** How dark the shade over a page's picture is while the picture has the screen to itself, and once the words are up. */
+export const VEIL_CLEAR = 0.1;
+export const VEIL_WORDS = 0.45;
+/** How far the picture drifts up and down, and how long there and back takes: it is seen as from a hovering frame. */
+export const DRIFT = 3;
+export const DRIFT_MS = 16000;
+
+/**
+ * Draws the picture of a page of story or of a conversation, alive: drifting very slightly, with
+ * its lights, its haze and what falls through it. A hurried game has it standing still.
+ */
+export function drawPlace(ctx: CanvasRenderingContext2D, app: App, picture: string, clockMs: number): void {
+  const fast = !!app.deps.fast;
+  const image = app.deps.sprites.get(picture, { w: LOGICAL_W, h: LOGICAL_H, label: '' }).image;
+  const drift = fast ? 0 : Math.round(Math.sin((clockMs / DRIFT_MS) * 2 * Math.PI) * DRIFT);
+  // Pixel for pixel: once as it is, and once more a few pixels up or down, so the drift never shows an edge.
+  ctx.drawImage(image, 0, 0, LOGICAL_W, LOGICAL_H);
+  if (drift !== 0) ctx.drawImage(image, 0, drift, LOGICAL_W, LOGICAL_H);
+  // What makes it a place belongs to the picture, and drifts with it.
+  ctx.save();
+  ctx.translate(0, drift);
+  drawStill(ctx, picture, clockMs, app.settings.calm === true, fast);
+  ctx.restore();
+}
+
+/** Where it rains there is lightning, and its thunder is heard a moment after: not in a hurried game, and not in a calm picture. */
+export function hearThunder(app: App, picture: string | undefined, beforeMs: number, nowMs: number): void {
+  if (app.deps.fast || !picture || stillWeather(picture) !== 'rain') return;
+  if (strokeBegan(beforeMs, nowMs, app.settings.calm === true)) app.deps.sfx?.play('thunder', THUNDER_AFTER_MS, true);
+}
 
 /** Where the middle of a page's title is, how tall its letters are at most and at least, and how wide it may be. */
 export const TITLE_Y = 47;
@@ -56,8 +89,10 @@ export class SceneScreen implements Screen {
   }
 
   update(dtMs: number): void {
+    const before = this.clock;
     this.clock += dtMs;
     this.hold = Math.max(0, this.hold - dtMs);
+    hearThunder(this.app, this.scene.picture, before, this.clock);
     // The picture has the screen to itself for a moment; then the words come.
     if (!this.wordsUp) return;
     this.typeTick -= dtMs;
@@ -108,16 +143,14 @@ export class SceneScreen implements Screen {
     const { scene } = this;
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-    if (scene.picture) {
-      const picture = this.app.deps.sprites.get(scene.picture, { w: LOGICAL_W, h: LOGICAL_H, label: '' });
-      ctx.drawImage(picture.image, 0, 0, LOGICAL_W, LOGICAL_H);
-    }
-    // The picture is seen clearly first; the shade behind the words comes up over it.
+    if (scene.picture) drawPlace(ctx, this.app, scene.picture, this.clock);
+    // The picture is seen clearly first; the shade behind the words comes up over it. It is a light
+    // shade: the picture goes on living under it, and the words have a dark edge to be read by.
     const shade = this.app.deps.fast ? 1 : Math.max(0, Math.min(1, (this.clock - PICTURE_MS * 0.5) / (PICTURE_MS * 0.5)));
-    ctx.fillStyle = `rgba(8, 8, 20, ${(0.2 + 0.5 * shade).toFixed(3)})`;
+    ctx.fillStyle = `rgba(8, 8, 20, ${(VEIL_CLEAR + (VEIL_WORDS - VEIL_CLEAR) * shade).toFixed(3)})`;
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
 
-    if (scene.heading) drawText(ctx, scene.heading, LOGICAL_W / 2, 18, { align: 'center', color: COLORS.dim });
+    if (scene.heading) drawOutlined(ctx, scene.heading, LOGICAL_W / 2, 18, { align: 'center', color: COLORS.dim });
     this.drawTitle(ctx);
     // Not a word before the shade is up: text that is all there at once would otherwise sit on the bare picture.
     if (!this.wordsUp) return;
@@ -128,13 +161,13 @@ export class SceneScreen implements Screen {
       for (const full of paragraph) {
         // Each line is centred as it will be when complete, so the words do not slide while they appear.
         const left = LOGICAL_W / 2 - (full.length * 4.8) / 2;
-        drawText(ctx, written[at++], Math.round(left), y);
+        drawOutlined(ctx, written[at++], Math.round(left), y);
         y += LINE + 1;
       }
       y += 8;
     }
     if (this.writer.done && (this.app.deps.fast || Math.floor(this.clock / 400) % 2 === 0)) {
-      drawText(ctx, scene.ending ? STRINGS.ending.continue : STRINGS.scene.continue, LOGICAL_W / 2, 250, { align: 'center', color: COLORS.dim });
+      drawOutlined(ctx, scene.ending ? STRINGS.ending.continue : STRINGS.scene.continue, LOGICAL_W / 2, 250, { align: 'center', color: COLORS.dim });
     }
   }
 }
