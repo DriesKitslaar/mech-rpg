@@ -65,6 +65,16 @@ async function intoBattle(page: Page, mission: string): Promise<void> {
   await until(page, (s) => s.battle?.phase === 'action');
 }
 
+test('the game is told how long its frames take: one every sixteen milliseconds is sixty-odd a second', async ({ page }) => {
+  await page.goto('/?seed=7&step=1');
+  await page.waitForFunction(() => (window as any).__game?.snapshot().screen === 'title');
+  await adv(page, 2000);
+  // The loop in the page hands every frame's length to the game: that is the one way it knows whether the handheld keeps up.
+  const fps = (await snap(page) as unknown as { fps: number }).fps;
+  expect(fps).toBeGreaterThanOrEqual(60);
+  expect(fps).toBeLessThanOrEqual(65);
+});
+
 /** Photographs what follows, a frame every `step` milliseconds for `ms`. */
 async function film(page: Page, tag: string, ms: number, step = 20, keep: Record<number, string> = {}): Promise<void> {
   for (let t = step; t <= ms; t += step) {

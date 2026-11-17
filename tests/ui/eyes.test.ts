@@ -88,6 +88,15 @@ describe('where each machine\'s eye is', () => {
     for (const picture of dark) expect(EYES[picture].y, picture).toBeLessThan(manifest[picture].h * 0.45);
   });
 
+  test('the eyes that open on something dark have the colours they were given: a lamp\'s, a beacon\'s red, the cold of a visor', () => {
+    // Nothing in their pictures says what colour these are: they were chosen, and are held to what was chosen.
+    const dark = ['enemy-bailiff', 'enemy-stalker', 'enemy-juggernaut', 'boss-adjuster', 'enemy-carrier', 'enemy-bomb-crawler'];
+    expect(Object.fromEntries(dark.map((picture) => [picture, EYES[picture].color]))).toEqual({
+      'enemy-bailiff': '#ffcf5a', 'enemy-stalker': '#ff9a3c', 'enemy-juggernaut': '#cfe6ff',
+      'boss-adjuster': '#ffcf5a', 'enemy-carrier': '#eb22be', 'enemy-bomb-crawler': '#ff3030',
+    });
+  });
+
   test('a great machine\'s eye throws its light further than a small one\'s', () => {
     const bosses = Object.keys(EYES).filter((picture) => picture.startsWith('boss-'));
     expect(bosses).toHaveLength(6);
@@ -121,6 +130,25 @@ describe('how open an eye is', () => {
       expect(blinks, `machine ${i}`).toBeLessThanOrEqual(14);
       expect(narrow * 10, `machine ${i}`).toBeGreaterThanOrEqual(blinks * BLINK_MS - 20 * blinks);
       expect(narrow * 10, `machine ${i}`).toBeLessThanOrEqual(blinks * BLINK_MS + 20 * blinks);
+    }
+  });
+
+  test('an eye that is awake swells and fades slowly: from one frame to the next it hardly changes, but for the blink', () => {
+    for (const i of [0, 1, 2]) {
+      // A calm picture has no blink: there the swell is all there is.
+      let most = 0;
+      let jumps = 0;
+      const seen = new Set<number>();
+      for (let ms = 16; ms < 30_000; ms += 16) {
+        most = Math.max(most, Math.abs(eyeLevel(ms, i, 'awake', true) - eyeLevel(ms - 16, i, 'awake', true)));
+        seen.add(Math.round(eyeLevel(ms, i, 'awake', true) * 50));
+        if (Math.abs(eyeLevel(ms, i, 'awake') - eyeLevel(ms - 16, i, 'awake')) > 0.01) jumps++;
+      }
+      expect(most, `machine ${i}`).toBeLessThan(0.01);
+      expect(seen.size, `machine ${i}`).toBeGreaterThanOrEqual(10);
+      // With blinks: each is two jumps, shut and open again, and there are six or seven in half a minute.
+      expect(jumps, `machine ${i}`).toBeGreaterThanOrEqual(10);
+      expect(jumps, `machine ${i}`).toBeLessThanOrEqual(16);
     }
   });
 
@@ -298,6 +326,22 @@ describe('the eyes of the machines on the field', () => {
     const bare = battle(['tank', 'gun-turret']);
     setDetail(0);
     expect(bare.page().glows).toEqual([]);
+  });
+
+  test('in a calm picture the eyes on the field do not narrow, for as long as it takes a blink to come round twice and more', () => {
+    const lowest = (calm: boolean): number => {
+      const { screen, page } = battle(['tank', 'gun-turret'], () => undefined, { calm });
+      let low = Infinity;
+      for (let t = 0; t < BLINK_EVERY_MS * 2.5; t += 16) {
+        screen.update(16);
+        low = Math.min(low, strength(eyeIn(page(), 'enemy-tank')!));
+      }
+      return low;
+    };
+    // Calm: at half strength, and never under seven tenths of what an eye is at its brightest.
+    expect(lowest(true)).toBeGreaterThanOrEqual(EYE_ALPHA * 0.7 * 0.5 - 0.001);
+    // Otherwise it narrows to a fifth for a moment.
+    expect(lowest(false)).toBeLessThan(EYE_ALPHA * 0.25);
   });
 
   test('it sputters when the stagger is seen, not when the rules know of it: the screen can be behind the rules', () => {

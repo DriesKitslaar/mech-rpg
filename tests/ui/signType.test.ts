@@ -4,6 +4,7 @@ import {
   FULL_TALL, GLYPHS, KEPT_WORDS, LINE, MAX_TALL, METALS, MIN_TALL, buildWord, canWrite, drawWord, fitTall, forgetWords, metalColor, penFor, tonesOf, wordHeight,
   wordLeft, wordOf, wordWidth, type Metal, type Run, type Word,
 } from '../../src/ui/signType';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { record } from '../helpers/canvas';
 
 /**
@@ -469,13 +470,53 @@ describe('a word, as it is drawn', () => {
   });
 });
 
+describe('the shape of every letter', () => {
+  const GOLDEN = 'tests/ui/glyphs.golden.txt';
+  /** The face of a word at this height, a `#` for every pixel of it. */
+  const picture = (text: string, tall: number): string => buildWord(text, tall).face.map((runs) => {
+    const row: string[] = [];
+    for (const run of runs) for (let x = run.x; x < run.x + run.w; x++) row[x] = '#';
+    return Array.from(row, (mark) => mark ?? '.').join('');
+  }).join('\n').replace(/\n+$/, '');
+  const sheet = (): string => Object.keys(GLYPHS).sort().map((c) => `== ${c === ' ' ? 'space' : c} ==\n${picture(c, MIN_TALL)}`).join('\n\n') + '\n';
+
+  test('each of them is, pixel for pixel, the picture that was looked at and kept', () => {
+    // The pictures are kept in a file a person can read. After a letter is changed on purpose: look at
+    // what it has become, and write the file anew with UPDATE_GLYPHS=1.
+    if (process.env.UPDATE_GLYPHS || !existsSync(GOLDEN)) writeFileSync(GOLDEN, sheet());
+    const kept = readFileSync(GOLDEN, 'utf8');
+    expect(sheet()).toBe(kept);
+    // Every character the sign writes is in it, and a letter is a picture of something.
+    for (const c of Object.keys(GLYPHS)) expect(kept, c).toContain(`== ${c === ' ' ? 'space' : c} ==`);
+    expect(kept.split('#').length).toBeGreaterThan(1500);
+  });
+
+  test('a V comes to a point at the bottom, an A at the top, and a T has its bar over its stem', () => {
+    const rows = (c: string): number[] => picture(c, MIN_TALL).split('\n').map((row) => row.split('#').length - 1).filter((n) => n > 0);
+    const spread = (c: string): number[] => picture(c, MIN_TALL).split('\n').filter((row) => row.includes('#')).map((row) => row.lastIndexOf('#') - row.indexOf('#'));
+    const v = spread('V');
+    expect(v[0]).toBeGreaterThan(v.at(-1)! + 3);
+    const a = spread('A');
+    expect(a.at(-1)!).toBeGreaterThan(a[0] + 3);
+    const t = rows('T');
+    expect(t[0]).toBeGreaterThan(t.at(-1)! + 3);
+  });
+});
+
 describe('a word, kept', () => {
-  /** A platform with canvases: how many were asked for, and whether they give a context to paint on. */
+  /** A platform with canvases: how many were asked for, what was painted on each, and whether they give a context to paint on. */
   function platform(gives: () => boolean) {
-    const made: { width: number; height: number; fills: number }[] = [];
+    const made: { width: number; height: number; fills: number; painted: [string, number, number, number, number][] }[] = [];
     (globalThis as { document?: unknown }).document = {
       createElement: () => {
-        const canvas = { width: 0, height: 0, fills: 0, getContext: () => (gives() ? { set fillStyle(_: string) { /* a colour */ }, fillRect: () => { canvas.fills++; } } : null) };
+        let color = '';
+        const canvas = {
+          width: 0, height: 0, fills: 0, painted: [] as [string, number, number, number, number][],
+          getContext: () => (gives() ? {
+            set fillStyle(next: string) { color = next; },
+            fillRect: (x: number, y: number, w: number, h: number) => { canvas.fills++; canvas.painted.push([color, x, y, w, h]); },
+          } : null),
+        };
         made.push(canvas);
         return canvas;
       },
@@ -507,6 +548,24 @@ describe('a word, kept', () => {
     expect(half.images.map((image) => image.alpha)).toEqual([1, 0.5]);
     expect(half.images[0].image).toBe(made[4]);
     expect(half.images[1].image).toBe(made[0]);
+  });
+
+  test('what is kept is the word as it is painted where nothing can be kept: lit where it is lit, dark where it is dark', () => {
+    const fills = (level: number): [string, number, number, number, number][] => record((ctx) => drawWord(ctx, 'VICTORY', 0, 0, { tall: 26, metal: 'neon', level, align: 'left' }))
+      .rects.map((r) => [r.color, r.x, r.y, r.w, r.h]);
+    // Painted afresh, as on a platform without canvases: once lit, once dark.
+    const lit = fills(1);
+    const dark = fills(0);
+    expect(lit.length).toBeGreaterThan(100);
+    expect(lit.map((f) => f[0])).not.toEqual(dark.map((f) => f[0]));
+    // On a platform with canvases the same is painted on the canvas that is kept, to the pixel and the colour.
+    forgetWords();
+    const made = platform(() => true);
+    record((ctx) => drawWord(ctx, 'VICTORY', 0, 0, { tall: 26, metal: 'neon', level: 1, align: 'left' }));
+    record((ctx) => drawWord(ctx, 'VICTORY', 0, 0, { tall: 26, metal: 'neon', level: 0, align: 'left' }));
+    expect(made).toHaveLength(2);
+    expect(made[0].painted).toEqual(lit);
+    expect(made[1].painted).toEqual(dark);
   });
 
   test('a platform whose canvas gives nothing to paint on has the word painted afresh, and is not asked again for that word', () => {

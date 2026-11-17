@@ -544,6 +544,8 @@ export class App {
     const lost = this.chance !== null && level === this.chance.level - 1;
     if (!judging) save.savePace({ level, runs: 0, held: true });
     else save.savePace({ level, runs: 0, ...(lost ? { tries: Math.min(MAX_TRIES, this.chance!.tries + 1) } : {}) });
+    // The chance is over: keeping up with less light for the rest of the session wins nothing back.
+    this.chance = null;
     this.applyLight();
   }
 
@@ -1178,6 +1180,8 @@ export class App {
       toast: this.toast?.item.id ?? null,
       toasts: this.toasts.map((item) => item.id),
       saveFailed: this.saveFailed,
+      // How many frames a second the handheld is showing, as the game has been told.
+      fps: this.pace.fps,
       ...view,
       // Not taking input right now: behind a shutter, or holding a line of text for a moment.
       busy: this.shuttered || view.busy === true,

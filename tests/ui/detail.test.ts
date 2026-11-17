@@ -504,6 +504,13 @@ describe('the game keeping pace', () => {
     expect(late.store.data[PACE_KEY]).toBeUndefined();
     slowFor(late.app, 3);
     expect(JSON.parse(late.store.data[PACE_KEY])).toEqual({ level: 1, runs: 0, tries: 1 });
+    // What is lost is not won back by keeping up with less light for the rest of the session.
+    const after = open({ [PACE_KEY]: JSON.stringify({ level: 1, runs: 2, tries: 1 }) });
+    warm(after.app);
+    slowFor(after.app, 3);
+    for (let i = 0; i < 90 * 12; i++) after.app.frame(16.7);
+    expect(after.app.lightNow()).toBe('lean');
+    expect(JSON.parse(after.store.data[PACE_KEY])).toEqual({ level: 1, runs: 0, tries: 2 });
     // And the count does not run away.
     const often = open({ [PACE_KEY]: JSON.stringify({ level: 0, runs: 8, tries: 99 }) });
     warm(often.app);
@@ -523,6 +530,20 @@ describe('the game keeping pace', () => {
     expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
     const third = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: false, seed: 3 });
     expect(third.lightNow()).toBe('full');
+  });
+
+  test('a player who takes the light in hand and gives it back ends the chance: what follows is judged afresh, with nothing counted', () => {
+    const { app, store } = open({ [PACE_KEY]: JSON.stringify({ level: 1, runs: 2, tries: 1 }) });
+    expect(app.lightNow()).toBe('full');
+    select(app, 'options');
+    for (let i = 0; i < 20 && (snap(app).menu.items as { id: string }[])[snap(app).menu.cursor as number].id !== 'detail'; i++) press(app, 'down');
+    // Round the four choices and back to Auto.
+    for (let i = 0; i < 4; i++) press(app, 'right');
+    expect(note(app)).toBe('Auto');
+    expect(store.data[PACE_KEY]).toBeUndefined();
+    warm(app);
+    slowFor(app, 3);
+    expect(JSON.parse(store.data[PACE_KEY])).toEqual({ level: 1, runs: 0 });
   });
 
   test('slow on one screen and then on another: nothing is concluded about the light, and it stays down', () => {

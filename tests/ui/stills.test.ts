@@ -7,8 +7,8 @@ import { SAVE_KEY, SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
 import { AMBIENCE, LIGHT_ALPHA, lightLevel, placeLights } from '../../src/ui/ambience';
 import { App } from '../../src/ui/app';
 import { drawCone, setDetail } from '../../src/ui/light';
-import { DRIFT, DRIFT_MS, SceneScreen, VEIL_CLEAR, VEIL_WORDS, drawPlace } from '../../src/ui/sceneScreen';
-import { forgetWords } from '../../src/ui/signType';
+import { DRIFT, DRIFT_MS, SceneScreen, TITLE_Y, VEIL_CLEAR, VEIL_WORDS, drawPlace } from '../../src/ui/sceneScreen';
+import { forgetWords, wordLights } from '../../src/ui/signType';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { PAPERS, RAY_ALPHA, RAY_SWAY, STILLS, drawStill, paperAt, stillLights, stillWeather } from '../../src/ui/stills';
 import { TALK_VEIL, TalkScreen } from '../../src/ui/talkScreen';
@@ -16,7 +16,7 @@ import { SEARCHLIGHTS, TITLE_LIGHTS, titleLights } from '../../src/ui/titleScene
 import { EMBER_LIGHTS, LIGHTNING_MS, PARTICLES, SPLASHES, THUNDER_AFTER_MS, lightning, strokeBegan } from '../../src/ui/weather';
 import { COLORS, OVER_PICTURE } from '../../src/ui/widgets';
 import { done, memoryStore, press, snap } from '../helpers/app';
-import { record, type Drawn, type Filled, type Glowed, type Shaped } from '../helpers/canvas';
+import { record, signIn, type Drawn, type Filled, type Glowed, type Shaped } from '../helpers/canvas';
 import { brightAt, brightOverall, readPng } from '../helpers/png';
 
 /**
@@ -351,6 +351,60 @@ describe('a picture, drawn as a place', () => {
     });
   });
 
+  test('the haze over a picture is as thick as the picture is told it is, and no thicker', () => {
+    for (const [picture, still] of Object.entries(STILLS)) {
+      let most = 0;
+      for (let t = 0; t < 30_000; t += 250) for (const bank of hazes(draw(picture, t))) most = Math.max(most, strength(bank));
+      // A bank swells and thins between four fifths and the whole of what the picture says.
+      expect(most, picture).toBeLessThanOrEqual(still.haze!.alpha + 0.0006);
+      expect(most, picture).toBeGreaterThan(still.haze!.alpha * 0.9);
+    }
+  });
+
+  test('nothing in a picture moves or changes faster than the eye is easy with: the sun breathes, its shafts sway slowly, a notice turns over about once a second', () => {
+    // The sun at the gates is a lamp, not a fire: from one frame to the next it changes by less than a two-hundredth.
+    const sun = (t: number): number => stillLights('still-dawn', t).find((g) => g.r === 62)!.alpha;
+    let jump = 0;
+    for (let t = 16; t <= 20_000; t += 16) jump = Math.max(jump, Math.abs(sun(t) - sun(t - 16)));
+    expect(jump).toBeLessThan(LIGHT_ALPHA.lamp * 0.005);
+    expect(sun(0)).toBeGreaterThanOrEqual(LIGHT_ALPHA.lamp * 0.6);
+    // Its shafts: their far ends move less than a tenth of a pixel a frame, and they do move.
+    const ends = (t: number): number[] => draw('still-dawn', t).shapes.map((shape) => (shape.points[1].x + shape.points[2].x) / 2);
+    let moved = 0;
+    let last = ends(0);
+    const where = new Set<number>();
+    for (let t = 16; t <= 20_000; t += 16) {
+      const now = ends(t);
+      now.forEach((x, i) => { moved = Math.max(moved, Math.abs(x - last[i])); });
+      where.add(Math.round(now[0]));
+      last = now;
+    }
+    expect(moved).toBeLessThan(0.1);
+    expect(where.size).toBeGreaterThan(5);
+    // The notices: each turns over between twenty-five and sixty times a minute.
+    for (let i = 0; i < PAPERS; i++) {
+      let turns = 0;
+      let flat = paperAt(i, 0, 310, 270).flat;
+      for (let t = 16; t <= 60_000; t += 16) {
+        const now = paperAt(i, t, 310, 270).flat;
+        if (now !== flat) turns++;
+        flat = now;
+      }
+      expect(turns, `notice ${i}`).toBeGreaterThanOrEqual(25);
+      expect(turns, `notice ${i}`).toBeLessThanOrEqual(60);
+    }
+  });
+
+  test('a calm picture of Varn has its searchlights at half strength, as the title has', () => {
+    const beams = (calm: boolean): number[] => draw('still-varn', 4000, calm).shapes.map(alphaOf);
+    const full = beams(false);
+    const calm = beams(true);
+    expect(full.length).toBe(SEARCHLIGHTS.length * 2);
+    expect(calm.length).toBe(full.length);
+    calm.forEach((alpha, i) => expect(alpha).toBeCloseTo(full[i] / 2, 2));
+    expect(Math.max(...full)).toBeGreaterThan(0.1);
+  });
+
   test('with less light: half of each picture\'s lights and neither haze nor shafts; with none, only what falls', () => {
     setDetail(1);
     for (const picture of PICTURES) {
@@ -460,6 +514,29 @@ describe('a page of story on its picture', () => {
     expect(at('image', 0)).toBeLessThan(at('glow', place[0].i));
   });
 
+  test('the light of a page\'s title is on its letters: along the word, at the height of the middle of it', () => {
+    const { app } = appWith({ textSpeed: 'instant' });
+    let pages = 0;
+    for (const page of SCENES.filter((s) => !s.talk)) {
+      const screen = new SceneScreen(app, page);
+      for (let t = 0; t < 2000; t += 16) screen.update(16);
+      const drawn = record((ctx) => screen.draw(ctx));
+      const sign = signIn(drawn, page.title, 'neon');
+      if (!sign) continue;
+      pages++;
+      // The lights a word of this height throws, wherever they were put: each is found, on the word.
+      const own = wordLights(page.title, 155, TITLE_Y, sign.tall, 'neon', 1);
+      expect(own.length, page.id).toBeGreaterThanOrEqual(1);
+      for (const light of own) {
+        const found = drawn.glows.filter((g) => isLight(g) && g.r === light.r && g.x === light.x && Math.abs(g.y - sign.middle) <= 2);
+        expect(found.length, `${page.id}: a light at ${light.x}`).toBeGreaterThanOrEqual(1);
+        expect(light.x).toBeGreaterThan(sign.x);
+        expect(light.x).toBeLessThan(sign.x + sign.w);
+      }
+    }
+    expect(pages).toBeGreaterThanOrEqual(6);
+  });
+
   test('every word has a dark edge to be read by: the heading, each line of the page, and the way on', () => {
     for (const language of ['en', 'nl'] as const) {
       setLanguage(language);
@@ -497,6 +574,44 @@ describe('a page of story on its picture', () => {
     const xs = Array.from({ length: PAPERS }, (_, i) => paperAt(i, 0, 310, 270).x);
     expect(Math.min(...xs)).toBeLessThan(60);
     expect(Math.max(...xs)).toBeGreaterThan(250);
+  });
+
+  test('the stroke a clap belongs to is on the page, and in the place a conversation is held in: lit in the frame the thunder is asked for, not in the frame before', () => {
+    for (const id of ['act-1', 'talk-kite']) {
+      const { app, heard } = appWith();
+      const picked = scene(id);
+      const screen = picked.talk ? new TalkScreen(app, picked) : new SceneScreen(app, picked);
+      const lit = (): boolean => record((ctx) => screen.draw(ctx)).rects.some((r) => r.blend === 'overlay');
+      let was = false;
+      let claps = 0;
+      for (let i = 0; i < 45_000 / 16; i++) {
+        const had = heard.length;
+        screen.update(16);
+        const now = lit();
+        if (heard.slice(had).some((h) => h.name === 'thunder')) {
+          claps++;
+          expect([was, now], `${id}, clap ${claps}`).toEqual([false, true]);
+        }
+        was = now;
+      }
+      expect(claps, id).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  test('the place a conversation is held in goes on living for as long as it lasts: its picture drifts and what falls there falls', () => {
+    const { app } = appWith();
+    const screen = new TalkScreen(app, scene('talk-kite'));
+    const drifts = new Set<number>();
+    const rain = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      for (let n = 0; n < 50; n++) screen.update(16);
+      const page = record((ctx) => screen.draw(ctx));
+      const pictures = page.images.filter((image) => (image.image as { id: string }).id === scene('talk-kite').picture);
+      drifts.add(pictures.length === 2 ? pictures[1].y : 0);
+      rain.add(page.rects.filter((r) => r.w === 1 && r.h >= 3).slice(0, 6).map((r) => `${r.x},${r.y}`).join(' '));
+    }
+    expect(drifts.size).toBeGreaterThanOrEqual(3);
+    expect(rain.size).toBeGreaterThanOrEqual(15);
   });
 
   test('what is written small over a picture can be told from the picture, over the lightest sky there is', () => {

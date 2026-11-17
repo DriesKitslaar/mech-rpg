@@ -12,6 +12,7 @@ import { SIGN_STRIKES, logoLevel, signStrikes } from '../../src/ui/logo';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { LIGHTNING_MS, THUNDER_AFTER_MS, lightning, strokeBegan } from '../../src/ui/weather';
 import { done, ids, inHub, memoryStore, press, select, snap, strong } from '../helpers/app';
+import { record } from '../helpers/canvas';
 
 /**
  * What the last round made to be seen and left silent now has something to be heard by: thunder
@@ -151,6 +152,24 @@ describe('the title', () => {
     expect(named('thunder')[0].at).toBeLessThan(1000 + 5000 + 2000);
   });
 
+  test('the stroke a clap belongs to is on the screen: the sky is lit in the frame the thunder is asked for, and was not in the frame before', () => {
+    const { app, heard, run } = title();
+    const lit = (): boolean => record((ctx) => app.draw(ctx)).rects.some((r) => r.blend === 'overlay');
+    let was = false;
+    let claps = 0;
+    for (let i = 0; i < 45_000 / 16; i++) {
+      const had = heard.length;
+      run(16);
+      const now = lit();
+      if (heard.slice(had).some((h) => h.name === 'thunder')) {
+        claps++;
+        expect([was, now], `clap ${claps}`).toEqual([false, true]);
+      }
+      was = now;
+    }
+    expect(claps).toBeGreaterThanOrEqual(4);
+  });
+
   test('a calm picture hears neither, and a hurried game neither', () => {
     for (const opts of [{ calm: true }, { fast: true }]) {
       const { heard, run } = title(opts);
@@ -191,8 +210,26 @@ describe('a battle in the rain', () => {
       sfx: { play: (name: string, delay = 0, ambient = false) => { heard.push({ name, delay, ambient, at: clock }); } } as never,
     });
     const run = (ms: number): void => { for (let t = 0; t < ms; t += 16) { clock += 16; screen.update(16); } };
-    return { run, thunder: () => heard.filter((h) => h.name === 'thunder') };
+    return { run, screen, heard, thunder: () => heard.filter((h) => h.name === 'thunder') };
   }
+
+  test('the stroke a clap belongs to is on the field: lit in the frame the thunder is asked for, and not in the frame before', () => {
+    const { run, screen, heard } = battle('bg-neon-district');
+    const lit = (): boolean => record((ctx) => screen.draw(ctx)).rects.some((r) => r.blend === 'overlay');
+    let was = false;
+    let claps = 0;
+    for (let i = 0; i < 45_000 / 16; i++) {
+      const had = heard.length;
+      run(16);
+      const now = lit();
+      if (heard.slice(had).some((h) => h.name === 'thunder')) {
+        claps++;
+        expect([was, now], `clap ${claps}`).toEqual([false, true]);
+      }
+      was = now;
+    }
+    expect(claps).toBeGreaterThanOrEqual(4);
+  });
 
   test('thunder follows the lightning that is seen there, from the banner on', () => {
     const { run, thunder } = battle('bg-neon-district');
