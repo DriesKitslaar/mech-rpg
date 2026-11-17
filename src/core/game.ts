@@ -100,7 +100,12 @@ export interface Settings {
   textSpeed?: TextSpeed;
   /** A calm picture: no shaking field, no flash across it, nothing large that blinks. Off when absent. */
   calm?: boolean;
+  /** How much soft light is drawn. Absent, the game decides: as much as the handheld keeps up with. */
+  detail?: LightDetail;
 }
+/** All the soft light, less of it, or none. */
+export type LightDetail = 'full' | 'lean' | 'bare';
+export const LIGHT_DETAILS: LightDetail[] = ['full', 'lean', 'bare'];
 export type TextSpeed = 'slow' | 'normal' | 'fast' | 'instant';
 export const TEXT_SPEEDS: TextSpeed[] = ['slow', 'normal', 'fast', 'instant'];
 /** How many times the ordinary speed each setting writes at. Instant is not a speed: everything is there at once. */
@@ -301,6 +306,7 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (settings.language !== undefined && settings.language !== 'en' && settings.language !== 'nl') return false;
   if (settings.textSpeed !== undefined && !TEXT_SPEEDS.includes(settings.textSpeed as TextSpeed)) return false;
   if (settings.calm !== undefined && typeof settings.calm !== 'boolean') return false;
+  if (settings.detail !== undefined && !LIGHT_DETAILS.includes(settings.detail as LightDetail)) return false;
   const { inventory, build, paint, loadouts, ranks, scenes } = value;
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;

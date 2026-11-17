@@ -268,6 +268,9 @@ export const STRINGS_NL = {
     credits: 'Aftiteling', watch: 'Kijk', title: 'Naar titel',
     textSpeed: 'Teksttempo', textSpeeds: { slow: 'Traag', normal: 'Normaal', fast: 'Snel', instant: 'Direct' },
     calm: 'Schermeffecten', full: 'Voluit', calmed: 'Rustig', calmHelp: 'Rustig: geen schudden of flitsen in gevecht.',
+    detail: 'Lichteffecten', details: { auto: 'Auto', full: 'Vol', lean: 'Minder', bare: 'Uit' },
+    detailAuto: { lean: 'Auto: minder', bare: 'Auto: uit' },
+    detailHelp: 'Auto: minder gloed als het toestel traag wordt.',
     language: 'Taal',
     swapAB: 'A/B-knoppen', normal: 'Normaal', swapped: 'Gewisseld', swapHelp: 'Wissel ze als B bevestigt op je handheld.',
     unsaved: 'Onbewaard', unsavedHelp: 'Laatste wijziging niet opgeslagen. Weer A: stoppen.',
@@ -393,5 +396,5 @@ export const STRINGS_NL = {
       chaff: 'CHAFF', limiter: 'LIMITER',
     },
   },
-  debug: { title: 'INVOER', action: 'actie', key: 'toets', screen: 'scherm', error: 'fout', close: 'START: sluit', none: '-' },
+  debug: { title: 'INVOER', action: 'actie', key: 'toets', screen: 'scherm', pace: 'tempo', light: 'licht', error: 'fout', close: 'START: sluit', none: '-' },
 };

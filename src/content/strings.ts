@@ -288,6 +288,10 @@ export const STRINGS = {
     language: 'Language', languages: { en: 'English', nl: 'Nederlands' },
     textSpeed: 'Text Speed', textSpeeds: { slow: 'Slow', normal: 'Normal', fast: 'Fast', instant: 'Instant' },
     calm: 'Screen Effects', full: 'Full', calmed: 'Calm', calmHelp: 'Calm: no shaking and no flashes in battle.',
+    // How much glow, haze and shadow is drawn. Auto is the game deciding: all of it while the handheld keeps up.
+    detail: 'Light Effects', details: { auto: 'Auto', full: 'Full', lean: 'Reduced', bare: 'Off' },
+    detailAuto: { lean: 'Auto: reduced', bare: 'Auto: off' },
+    detailHelp: 'Auto: less glow if the handheld cannot keep up.',
     swapAB: 'A/B Buttons', normal: 'Normal', swapped: 'Swapped', swapHelp: 'Swap them if B confirms on your handheld.',
     unsaved: 'Not saved', unsavedHelp: 'The last change could not be saved. A again: quit.',
     on: 'On', off: 'Off',
@@ -414,5 +418,5 @@ export const STRINGS = {
       chaff: 'CHAFF', limiter: 'LIMITER',
     },
   },
-  debug: { title: 'INPUT', action: 'action', key: 'key', screen: 'screen', error: 'error', close: 'START: close', none: '-' },
+  debug: { title: 'INPUT', action: 'action', key: 'key', screen: 'screen', pace: 'pace', light: 'light', error: 'error', close: 'START: close', none: '-' },
 } as const;

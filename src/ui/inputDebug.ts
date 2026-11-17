@@ -16,6 +16,7 @@ export class InputDebug {
   private lastAction: string = D.none;
   private lastKey: string = D.none;
   private size: string = D.none;
+  private speed: string = D.none;
   private error: string | null = null;
 
   toggle(): void {
@@ -37,6 +38,11 @@ export class InputDebug {
     this.size = `${Math.round(deviceW)}x${Math.round(deviceH)} x${scale}`;
   }
 
+  /** How many frames a second the handheld is showing, and how much of the soft light is being drawn (2 all, 1 less, 0 none). */
+  pace(fps: number, light: number): void {
+    this.speed = `${fps} fps, ${D.light} ${light}`;
+  }
+
   /** Something went wrong in a frame: the window opens by itself so that it is seen. */
   fault(message: string): void {
     this.error = message;
@@ -50,12 +56,13 @@ export class InputDebug {
       `${D.action}: ${this.lastAction}`,
       `${D.key}: ${this.lastKey}`,
       `${D.screen}: ${this.size}`,
+      `${D.pace}: ${this.speed}`,
       ...(this.error ? [`${D.error}: ${this.error}`] : []),
     ];
     const fit = Math.floor((W - 8) / CHAR_W);
     drawPanel(ctx, x, 14, W, 16 + (lines.length + 1) * LINE);
     drawText(ctx, D.title, x + 4, 16, { color: COLORS.accent });
-    lines.forEach((line, i) => drawText(ctx, line.slice(0, fit), x + 4, 27 + i * LINE, i === 3 ? { color: COLORS.danger } : {}));
+    lines.forEach((line, i) => drawText(ctx, line.slice(0, fit), x + 4, 27 + i * LINE, i === 4 ? { color: COLORS.danger } : {}));
     drawText(ctx, D.close, x + 4, 27 + lines.length * LINE, { color: COLORS.dim });
   }
 }

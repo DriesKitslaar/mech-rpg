@@ -1,4 +1,4 @@
-import { DIFFICULTIES, TEXT_SPEEDS, type Settings } from '../core/game';
+import { DIFFICULTIES, LIGHT_DETAILS, TEXT_SPEEDS, type LightDetail, type Settings } from '../core/game';
 import { LANGUAGES } from '../content/language';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -9,7 +9,9 @@ import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const O = STRINGS.options;
 type Toggle = 'sfx' | 'music' | 'fastBattles' | 'rumble';
-const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'textSpeed', 'calm', 'difficulty', 'swapAB', 'language'];
+const KEYS: (keyof Settings)[] = ['sfx', 'music', 'rumble', 'fastBattles', 'textSpeed', 'calm', 'detail', 'difficulty', 'swapAB', 'language'];
+/** The choices for how much light is drawn, in the order they are stepped through: the game's own choice first. */
+const DETAILS: ('auto' | LightDetail)[] = ['auto', ...LIGHT_DETAILS];
 /** The entries that are not settings: the end roll once more, and the way back to the title. */
 const CREDITS = 'credits';
 const TITLE = 'title';
@@ -32,7 +34,8 @@ export class OptionsScreen implements Screen {
           : key === 'language' ? O.languages[settings.language ?? 'en']
             : key === 'textSpeed' ? O.textSpeeds[settings.textSpeed ?? 'normal']
               : key === 'calm' ? (settings.calm ? O.calmed : O.full)
-                : this.isOn(key as Toggle) ? O.on : O.off;
+                : key === 'detail' ? this.detailNote()
+                  : this.isOn(key as Toggle) ? O.on : O.off;
     this.list.setItems([
       ...KEYS.map((key) => ({ id: key as string, label: O[key], enabled: true, note: value(key) })),
       // Once an ending has been seen, the end roll can be watched again from here.
@@ -40,6 +43,14 @@ export class OptionsScreen implements Screen {
       // While a game is on, this is the way to the title: to another kept game, or a new one.
       ...(this.app.game ? [{ id: TITLE, label: O.title, enabled: true, ...(this.warned ? { note: O.unsaved } : {}) }] : []),
     ]);
+  }
+
+  /** What the row for the light says: the player's choice, or Auto with what the game has had to turn it down to. */
+  private detailNote(): string {
+    const chosen = this.app.settings.detail;
+    if (chosen) return O.details[chosen];
+    const now = this.app.lightNow();
+    return now === 'full' ? O.details.auto : O.detailAuto[now as 'lean' | 'bare'];
   }
 
   private isAction(): boolean {
@@ -88,6 +99,14 @@ export class OptionsScreen implements Screen {
     } else if (key === 'calm') {
       const { calm, ...rest } = settings;
       this.app.setSettings(calm ? rest : { ...rest, calm: true });
+    } else if (key === 'detail') {
+      // Kept only when the player chose: left to the game, there is nothing to keep.
+      const n = DETAILS.length;
+      const { detail, ...rest } = settings;
+      const next = DETAILS[(DETAILS.indexOf(detail ?? 'auto') + step + n) % n];
+      this.app.setSettings(next === 'auto' ? rest : { ...rest, detail: next });
+      // Handed back to the game, it starts from all of the light and judges afresh.
+      if (next === 'auto') this.app.judgeAfresh();
     } else if (key === 'textSpeed') {
       // Kept only when it is not the ordinary speed.
       const n = TEXT_SPEEDS.length;
@@ -110,7 +129,7 @@ export class OptionsScreen implements Screen {
   }
 
   view(): ScreenView {
-    return { menu: { items: this.list.items, cursor: this.list.cursor } };
+    return { menu: { items: this.list.items, cursor: this.list.cursor }, light: this.app.lightNow() };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -134,7 +153,8 @@ export class OptionsScreen implements Screen {
     drawList(ctx, this.list, x + 14, first, w - 34, rows);
     const selected = this.list.selected?.id;
     const words = selected === 'difficulty' ? O.difficultyHelp[this.app.settings.difficulty]
-      : selected === 'swapAB' ? O.swapHelp : selected === 'calm' ? O.calmHelp : selected === TITLE && this.warned ? O.unsavedHelp : null;
+      : selected === 'swapAB' ? O.swapHelp : selected === 'calm' ? O.calmHelp : selected === 'detail' ? O.detailHelp
+        : selected === TITLE && this.warned ? O.unsavedHelp : null;
     if (words) drawText(ctx, words, LOGICAL_W / 2, help, { align: 'center', color: COLORS.text, size: 10 });
     drawText(ctx, O.hint, LOGICAL_W / 2, help + 14, { align: 'center', color: COLORS.dim });
   }

@@ -876,7 +876,7 @@ describe('options', () => {
     expect(snap(app).menu.items.map((i) => [i.id, i.note]))
       .toEqual([
         ['sfx', 'On'], ['music', 'On'], ['rumble', 'On'], ['fastBattles', 'Off'], ['textSpeed', 'Normal'], ['calm', 'Full'],
-        ['difficulty', 'Standard'], ['swapAB', 'Normal'], ['language', 'English'],
+        ['detail', 'Auto'], ['difficulty', 'Standard'], ['swapAB', 'Normal'], ['language', 'English'],
       ]);
     press(app, 'confirm');
     expect(snap(app).menu.items[0].note).toBe('Off');

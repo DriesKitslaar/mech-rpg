@@ -1,4 +1,4 @@
-import { drawGlow, type Glow } from './light';
+import { drawLights, wide, type Glow } from './light';
 
 /**
  * What makes a place more than a picture. Every background has lamps, signs or fire in it; here
@@ -113,6 +113,7 @@ const BANKS = 3;
 
 /** A low haze: wide, flat banks of the place's colour that drift across the ground and come round again. */
 export function drawHaze(ctx: CanvasRenderingContext2D, haze: NonNullable<Ambience['haze']>, clockMs: number, w: number, share: number): void {
+  if (!wide()) return;
   const [r, g, b] = [1, 3, 5].map((at) => parseInt(haze.color.slice(at, at + 2), 16));
   const t = clockMs / 1000;
   for (let i = 0; i < BANKS; i++) {
@@ -136,6 +137,7 @@ export function drawHaze(ctx: CanvasRenderingContext2D, haze: NonNullable<Ambien
 
 /** The edges of the field are darker than its middle: the eye is kept where the machines are. */
 export function drawVignette(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+  if (!wide()) return;
   const reach = Math.hypot(w, h) / 2;
   const gradient = ctx.createRadialGradient?.(x + w / 2, y + h / 2, reach * 0.55, x + w / 2, y + h / 2, reach) as CanvasGradient | undefined;
   if (!gradient || typeof gradient.addColorStop !== 'function') return;
@@ -157,7 +159,7 @@ export function drawAmbience(
   const place = ambienceFor(background);
   if (layer === 'behind') {
     drawVignette(ctx, 0, field.top, field.width, field.height);
-    for (const light of placeLights(background, clockMs, calm)) drawGlow(ctx, light, calm ? 0.5 : 1);
+    drawLights(ctx, placeLights(background, clockMs, calm), calm ? 0.5 : 1);
     if (place?.haze) drawHaze(ctx, place.haze, clockMs, field.width, 0.7);
     return;
   }

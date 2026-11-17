@@ -1,3 +1,5 @@
+import { soft, wide } from './light';
+
 /** Small drawing helpers. All coordinates are logical (310x270) units. */
 export const COLORS = {
   panel: 'rgba(12, 12, 24, 0.93)',
@@ -78,7 +80,7 @@ export const PANEL_SHADOW = 4;
 
 /** What a panel is filled with: a little lighter at the top than at the bottom, or the plain panel colour where the canvas makes no gradients. */
 function panelFill(ctx: CanvasRenderingContext2D, y: number, h: number): string | CanvasGradient {
-  const body = ctx.createLinearGradient?.(0, y, 0, y + h) as CanvasGradient | undefined;
+  const body = soft() ? ctx.createLinearGradient?.(0, y, 0, y + h) as CanvasGradient | undefined : undefined;
   if (!body || typeof body.addColorStop !== 'function') return COLORS.panel;
   body.addColorStop(0, 'rgba(27, 25, 52, 0.95)');
   body.addColorStop(0.45, 'rgba(14, 14, 28, 0.94)');
@@ -91,7 +93,7 @@ function panelFill(ctx: CanvasRenderingContext2D, y: number, h: number): string 
  * most right under it. Soft, so a canvas that makes no gradients gets none.
  */
 function panelShadow(ctx: CanvasRenderingContext2D, x: number, y: number, w: number): void {
-  const fall = ctx.createLinearGradient?.(0, y, 0, y + PANEL_SHADOW) as CanvasGradient | undefined;
+  const fall = wide() ? ctx.createLinearGradient?.(0, y, 0, y + PANEL_SHADOW) as CanvasGradient | undefined : undefined;
   if (!fall || typeof fall.addColorStop !== 'function') return;
   fall.addColorStop(0, 'rgba(0, 0, 8, 0.5)');
   fall.addColorStop(1, 'rgba(0, 0, 8, 0)');
@@ -246,7 +248,7 @@ export function drawMeter(
  * light: a canvas that makes no gradients is left as it is.
  */
 export function drawRowLight(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height = LINE): void {
-  const band = ctx.createLinearGradient?.(x, 0, x + width, 0) as CanvasGradient | undefined;
+  const band = soft() ? ctx.createLinearGradient?.(x, 0, x + width, 0) as CanvasGradient | undefined : undefined;
   if (!band || typeof band.addColorStop !== 'function') return;
   band.addColorStop(0, 'rgba(255, 93, 177, 0.3)');
   band.addColorStop(0.6, 'rgba(255, 93, 177, 0.1)');

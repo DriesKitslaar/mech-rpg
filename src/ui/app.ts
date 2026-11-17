@@ -12,7 +12,9 @@ import {
 import { metByRecord, openEntries, type Entry } from '../core/codex';
 import { applySettlement, debtRelief, settle, type Settlement } from '../core/economy';
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
-import { TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, ensureArmed, newGame, type GameState, type Settings } from '../core/game';
+import {
+  TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, newGame, type GameState, type LightDetail, type Settings,
+} from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
@@ -71,6 +73,8 @@ import { ShopScreen } from './shopScreen';
 import type { SpriteStore } from './sprites';
 import { TitleScreen } from './titleScreen';
 import { TrainingScreen } from './trainingScreen';
+import { setDetail } from './light';
+import { Pace, type Detail } from './pace';
 import { COLORS, drawMedal, drawPage, drawPanel, drawText } from './widgets';
 import { drawBlind, drawDoors } from './wipe';
 
@@ -97,6 +101,29 @@ export interface SlotView { slot: number; game: GameState | null; unusable: bool
 
 /** How much quicker a battle plays with the fast-battles option on. */
 export const FAST_BATTLE_SPEED = 2.5;
+/** How much soft light each choice is. */
+const LEVEL_OF: Record<LightDetail, Detail> = { full: 2, lean: 1, bare: 0 };
+/** After so many sessions with less light, the handheld is given one more chance at the next step up. */
+export const TRY_AGAIN = 5;
+
+/**
+ * How much light a session starts with, and whether the handheld is judged in it: all of it and
+ * judged, unless an earlier session found something out. Then it starts where that one ended, and
+ * counts; every so many sessions it starts a step higher and is judged again, in case what was
+ * found then was not about the handheld but about that day.
+ */
+export function startingLight(save: Pick<SaveFile, 'loadPace' | 'savePace'>): { level: Detail; judge: boolean } {
+  const hint = save.loadPace();
+  if (!hint) return { level: 2, judge: true };
+  if (hint.runs >= TRY_AGAIN) {
+    const level = Math.min(2, hint.level + 1) as Detail;
+    save.savePace(level === 2 ? null : { level, runs: 0 });
+    return { level, judge: true };
+  }
+  save.savePace({ ...hint, runs: hint.runs + 1 });
+  return { level: hint.level, judge: hint.held !== true };
+}
+
 /** How long the blind over a new screen takes to be drawn off it, and the doors over a battle to open. */
 export const FADE_MS = 200;
 export const SHUTTER_MS = 320;
@@ -368,6 +395,8 @@ export class App {
   saveFailed = false;
   /** True while the options as they are now have not been stored: storing them is tried again with every save. */
   private settingsUnsaved = false;
+  /** How well the handheld keeps up, and so how much soft light there is when that is left to the game. */
+  private pace: Pace;
   /** Sound, music and battle speed. Stored on their own, so they exist before a game does. */
   settings: Settings;
   private name: ScreenName = 'title';
@@ -387,6 +416,9 @@ export class App {
     this.seed = deps.seed;
     this.file = deps.save.forSlot(deps.save.lastSlot());
     this.settings = deps.save.loadSettings() ?? { ...DEFAULT_SETTINGS, ...(this.file.load()?.settings ?? {}) };
+    // A hurried game is not judged, and neither is one whose player has said how much light there is to be.
+    const from = deps.fast || this.settings.detail ? { level: 2 as Detail, judge: true } : startingLight(deps.save);
+    this.pace = new Pace(from.level, from.judge);
     this.applySettings();
     this.show('title', new TitleScreen(this));
   }
@@ -446,6 +478,41 @@ export class App {
     if (this.deps.sfx) this.deps.sfx.muted = !this.settings.sfx;
     if (this.deps.music) this.deps.music.enabled = this.settings.music;
     setLanguage(this.settings.language ?? 'en');
+    this.applyLight();
+  }
+
+  /** How much soft light is drawn from now on: what the player chose, or else what the handheld keeps up with. */
+  private applyLight(): void {
+    setDetail(LEVEL_OF[this.lightNow()]);
+  }
+
+  /** How much soft light is being drawn. */
+  lightNow(): LightDetail {
+    return this.settings.detail ?? LIGHT_DETAILS[2 - this.pace.level];
+  }
+
+  /**
+   * Told how long it has been since the frame before. Where that shows the handheld is not keeping
+   * up, a step of light is given up; where giving it up gained nothing, it is put back. What was
+   * found is kept for the next session. While the player's own choice holds, nothing is found out.
+   */
+  frame(gapMs: number): void {
+    if (this.deps.fast || !this.pace.frame(gapMs, this.settings.detail === undefined)) return;
+    const { level, judging } = this.pace;
+    this.deps.save.savePace(level === 2 && judging ? null : { level, runs: 0, ...(judging ? {} : { held: true as const }) });
+    this.applyLight();
+  }
+
+  /** How many frames a second the handheld is showing. */
+  get fps(): number {
+    return this.pace.fps;
+  }
+
+  /** The player has handed the light back to the game: it starts from all of it and judges afresh. */
+  judgeAfresh(): void {
+    this.pace = new Pace();
+    this.deps.save.savePace(null);
+    this.applyLight();
   }
 
   /** Changes the options, applies them at once and stores them, with the game when there is one. */

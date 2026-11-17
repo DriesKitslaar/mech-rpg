@@ -10,6 +10,7 @@ import { SaveFile, type KeyValueStore } from './platform/storage';
 import { App } from './ui/app';
 import { fitCanvas } from './ui/display';
 import { InputDebug } from './ui/inputDebug';
+import { detail } from './ui/light';
 import { loadSprites } from './ui/sprites';
 import { FONT } from './ui/widgets';
 
@@ -90,6 +91,9 @@ async function start(): Promise<void> {
   // One thing going wrong in a frame must not freeze the game: the next frame is still asked for, and what
   // went wrong is shown in the input window.
   const step = guarded((now: number): void => {
+    // How long the frame before took tells whether the handheld is keeping up: the app turns its light down if not.
+    app.frame(now - last);
+    debug.pace(app.fps, detail());
     const dt = Math.min(100, now - last);
     last = now;
     input.sample(now);
