@@ -16,6 +16,7 @@ import { SettlementScreen } from '../../src/ui/settlementScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { COLORS } from '../../src/ui/widgets';
 import { record, signCount, signIn, type Drawn, type Filled } from '../helpers/canvas';
+import { eyesIn } from '../helpers/eyes';
 import { setLanguage } from '../../src/content/language';
 import { RESULT_TALL, RESULT_W, RESULT_WORD_Y } from '../../src/ui/battleScreen';
 import { fitTall, wordWidth } from '../../src/ui/signType';
@@ -804,12 +805,15 @@ describe('the staged moments in a battle', () => {
         } else if (flow.phase !== 'animating') screen.onInput('confirm');
         screen.update(16);
         most = Math.max(most, screen.motion.particles);
-        if (i % 7 === 0) lights = Math.max(lights, page().glows.filter((g) => g.blend === 'lighter').length);
+        if (i % 7 === 0) {
+          const drawn = page();
+          lights = Math.max(lights, drawn.glows.filter((g) => g.blend === 'lighter').length - eyesIn(drawn).length);
+        }
       }
       expect(flow.phase, `seed ${seed}`).toBe('result');
       expect(drove).toBe(true);
       expect(most).toBeLessThanOrEqual(320);
-      // Sixteen lights of the battle's own at most; this ground has none of its own.
+      // Sixteen lights of the battle's own at most, the eyes of its machines apart; this ground has none of its own.
       expect(lights).toBeLessThanOrEqual(16);
       expect(lights).toBeGreaterThan(0);
       // The battle is over: no band, no close look, no bars, and the field at its own size.

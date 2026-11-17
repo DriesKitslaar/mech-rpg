@@ -3,7 +3,7 @@ import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
-import { drawLights } from './light';
+import { drawAll } from './light';
 import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import { drawStill, stillWeather } from './stills';
 import { Typewriter } from './typewriter';
@@ -135,7 +135,7 @@ export class SceneScreen implements Screen {
     }
     const calm = this.app.settings.calm === true;
     const level = this.app.deps.fast ? 1 : wordLevel(this.clock, calm);
-    drawLights(ctx, wordLights(title, LOGICAL_W / 2, TITLE_Y, tall, 'neon', level), calm ? 0.5 : 1);
+    drawAll(ctx, wordLights(title, LOGICAL_W / 2, TITLE_Y, tall, 'neon', level), calm ? 0.5 : 1);
     drawWord(ctx, title, LOGICAL_W / 2, wordTop(TITLE_Y, tall), { tall, metal: 'neon', level });
   }
 

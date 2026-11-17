@@ -356,7 +356,8 @@ describe('a picture, drawn as a place', () => {
     for (const picture of PICTURES) {
       const page = draw(picture, 2000);
       const own = stillLights(picture, 2000).length;
-      const sparks = stillWeather(picture) === 'embers' ? EMBER_LIGHTS : 0;
+      // Half of the sparks that have a light have one, too.
+      const sparks = stillWeather(picture) === 'embers' ? EMBER_LIGHTS / 2 : 0;
       expect(page.glows.filter(isLight), picture).toHaveLength(Math.ceil(own / 2) + sparks);
       expect(hazes(page), picture).toEqual([]);
       expect(page.shapes, picture).toEqual([]);

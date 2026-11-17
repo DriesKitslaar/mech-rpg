@@ -7,7 +7,7 @@
  * rows of runs of pixels, and it is on the pixel grid like everything solid.
  */
 
-import type { Glow } from './light';
+import { lightRoom, type Glow } from './light';
 
 type At = readonly [number, number];
 export interface Glyph { w: number; strokes: At[][] }
@@ -381,7 +381,8 @@ export const WORD_GLOW = 0.18;
 export function wordLights(text: string, cx: number, cy: number, tall: number, metal: Metal, level = 1): Glow[] {
   if (!(level > 0) || !canWrite(text)) return [];
   const w = wordWidth(text, tall);
-  const n = Math.max(1, Math.round(w / 60));
+  // One to every sixty pixels of the word; half as many where there is to be less light, as evenly along it.
+  const n = lightRoom(Math.max(1, Math.round(w / 60)));
   return Array.from({ length: n }, (_, i) => ({
     x: Math.round(cx - w / 2 + ((i + 0.5) / n) * w), y: Math.round(cy), r: Math.round(whole(tall) * 1.5), color: GLOWS[metal], alpha: WORD_GLOW * Math.min(1, level),
   }));

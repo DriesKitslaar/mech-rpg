@@ -17,7 +17,7 @@ import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } fr
 import { BACK_MOUNT, FAR_FIST, MECH_BOX, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
 import { eyeLight, eyeOf } from './eyes';
-import { MAX_LIGHTS, disc, drawGlow, drawGlows, drawLights, drawShadow, lightRoom, type Glow, type Pt } from './light';
+import { MAX_LIGHTS, disc, drawAll, drawGlow, drawGlows, drawShadow, lightRoom, type Glow, type Pt } from './light';
 import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import {
   CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, MECH_HEAD, drawCutIn, drawDefeat, drawEntrance, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
@@ -475,7 +475,8 @@ export class BattleScreen {
     this.drawSurge(ctx);
     // The light of everything that burns, fires or glows is added over the field: at half strength, and
     // never over the whole of it, in a calm picture. Sixteen lights are the battle's in all, with those
-    // of what stands on the field counted first.
+    // of what stands on the field (the burn under what flies, the heat of what is close to its limit:
+    // seven at most) counted first. The eyes of machines are apart from that: they are too small to count.
     // From close by every light is four times the size: half as many are drawn. And where there is to
     // be less light the sixteen are eight: what stands on the field then counts for two of the sixteen each.
     const weight = lightRoom(MAX_LIGHTS) > 0 ? MAX_LIGHTS / lightRoom(MAX_LIGHTS) : 1;
@@ -957,15 +958,14 @@ export class BattleScreen {
         });
         // A machine that stands looks back: a small light on its eye, that moves as it moves. It goes out
         // in the frame the machine is seen to come apart, not sooner: a shot that will end it is still in
-        // the air. Not in a hurried game. It is one of the battle's sixteen lights.
+        // the air. Not in a hurried game. It is too small to be counted among the battle's sixteen lights:
+        // the largest eye is a seventh of a common light.
         if (!this.opts.fast && breaking === null) {
           const t = this.fx.transform(enemy.id);
           const dazed = enemy.staggered > 0 || enemy.overheated;
-          const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + hover + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);
-          if (eye) {
-            this.standing++;
-            drawGlow(ctx, eye, this.opts.calm ? 0.5 : 1);
-          }
+          // Where its picture is drawn: one that the rules have ended hangs still until it is seen to come apart.
+          const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + (enemy.destroyed ? 0 : hover) + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);
+          if (eye) drawGlow(ctx, eye, this.opts.calm ? 0.5 : 1);
         }
       }
     });
@@ -1323,7 +1323,7 @@ export class BattleScreen {
       const calm = this.opts.calm === true;
       const level = this.opts.fast ? 1 : wordLevel(this.resultMs, calm);
       const metal = won ? 'neon' : 'red';
-      drawLights(ctx, wordLights(word, LOGICAL_W / 2, y + RESULT_WORD_Y, tall, metal, level), calm ? 0.5 : 1);
+      drawAll(ctx, wordLights(word, LOGICAL_W / 2, y + RESULT_WORD_Y, tall, metal, level), calm ? 0.5 : 1);
       drawWord(ctx, word, LOGICAL_W / 2, wordTop(y + RESULT_WORD_Y, tall), { tall, metal, level });
     }
     if (note) drawText(ctx, note, LOGICAL_W / 2, y + 40, { align: 'center' });

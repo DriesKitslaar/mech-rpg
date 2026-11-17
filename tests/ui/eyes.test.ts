@@ -8,6 +8,7 @@ import { BLINK_EVERY_MS, BLINK_MS, EYES, EYE_ALPHA, eyeLevel, eyeLight, eyeOf } 
 import { MAX_LIGHTS, setDetail } from '../../src/ui/light';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { record, type Drawn, type Glowed } from '../helpers/canvas';
+import { eyesIn } from '../helpers/eyes';
 import { readPng } from '../helpers/png';
 
 /**
@@ -295,7 +296,7 @@ describe('the eyes of the machines on the field', () => {
     expect(bare.page().glows).toEqual([]);
   });
 
-  test('the eyes are among the battle\'s sixteen lights, and among its eight where there is to be less light', () => {
+  test('the eyes are apart from the battle\'s sixteen lights, and from its eight where there is to be less light: they are too small to count', () => {
     for (const [detail, most] of [[2, MAX_LIGHTS], [1, MAX_LIGHTS / 2]] as [1 | 2, number][]) {
       const { flow, screen, page } = battle(['recon-drone', 'gunship', 'hunter-drone']);
       setDetail(detail);
@@ -305,13 +306,38 @@ describe('the eyes of the machines on the field', () => {
         if (flow.phase === 'action') { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); }
         screen.update(16);
         const drawn = page();
-        peak = Math.max(peak, drawn.glows.filter(isLight).length);
-        eyesSeen = Math.max(eyesSeen, ['enemy-recon-drone', 'enemy-gunship', 'enemy-hunter-drone'].filter((picture) => drawnAt(drawn, picture) && eyeIn(drawn, picture)).length);
+        const eyes = ['enemy-recon-drone', 'enemy-gunship', 'enemy-hunter-drone'].filter((picture) => drawnAt(drawn, picture) && eyeIn(drawn, picture)).length;
+        peak = Math.max(peak, drawn.glows.filter(isLight).length - eyes);
+        eyesSeen = Math.max(eyesSeen, eyes);
       }
-      // All three flyers burn underneath and look out: six lights that stand, and what is fired on top of them.
+      // All three flyers burn underneath: three lights that stand, and what is fired on top of them. Their three eyes are not counted.
       expect(eyesSeen, `detail ${detail}`).toBe(3);
-      expect(peak, `detail ${detail}`).toBeGreaterThan(6);
+      expect(peak, `detail ${detail}`).toBeGreaterThan(3);
       expect(peak, `detail ${detail}`).toBeLessThanOrEqual(most);
+      setDetail(2);
+    }
+  });
+
+  test('three hot flyers and a hot pilot: sixteen lights at most, eight where there is to be less, the eyes apart, and what is fired still has one', () => {
+    for (const [detail, most] of [[2, MAX_LIGHTS], [1, MAX_LIGHTS / 2]] as [1 | 2, number][]) {
+      const { flow, screen, page } = battle(['recon-drone', 'gunship', 'hunter-drone']);
+      setDetail(detail);
+      let peak = 0;
+      let standing = 0;
+      for (let i = 0; i < 1500 && flow.phase !== 'result'; i++) {
+        // Everything on the field is kept close to its heat limit: each machine glows from inside.
+        for (const unit of flow.state.units) if (!unit.destroyed) unit.heat = 95;
+        if (flow.phase === 'action') { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); }
+        screen.update(16);
+        const drawn = page();
+        const lights = drawn.glows.filter(isLight).length - eyesIn(drawn).length;
+        peak = Math.max(peak, lights);
+        if (i === 0) standing = lights;
+      }
+      // Three burn underneath and all four glow with heat: seven lights that stand.
+      expect(standing, `detail ${detail}`).toBe(7);
+      expect(peak, `detail ${detail}`).toBeLessThanOrEqual(most);
+      expect(peak, `detail ${detail}`).toBeGreaterThan(7);
       setDetail(2);
     }
   });
