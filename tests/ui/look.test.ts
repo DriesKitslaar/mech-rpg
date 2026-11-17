@@ -6,7 +6,9 @@ import { BattleScreen } from '../../src/ui/battleScreen';
 import { FIELD_LIGHT, MAX_LIGHTS } from '../../src/ui/light';
 import { MAX_PARTICLES, PARTICLE_LIGHTS, Particles } from '../../src/ui/particles';
 import type { SpriteStore } from '../../src/ui/sprites';
-import { record, type Drawn, type Glowed } from '../helpers/canvas';
+import { NEAR_SIZE } from '../../src/ui/battleFx';
+import { onStage, record, type Drawn, type Glowed } from '../helpers/canvas';
+import { generatorIn } from '../helpers/eyes';
 
 /** The look of the field in battle: what stands on it, what lights it, and when it is left alone. */
 
@@ -31,7 +33,8 @@ function screenOf(opts: { fast?: boolean; calm?: boolean; state?: BattleState } 
   for (let i = 0; i < 400 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
   expect(flow.phase).toBe('action');
   const fire = (): void => { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); };
-  const page = (): Drawn => record((ctx) => screen.draw(ctx));
+  // The field as it stands on the stage: where the camera is, is another matter.
+  const page = (): Drawn => onStage(record((ctx) => screen.draw(ctx)), screen.motion.view);
   return { flow, screen, fire, page };
 }
 
@@ -69,8 +72,13 @@ describe('light on the field', () => {
 
   test('a gun going off lights the field around its barrel, and the light is gone when the volley is over', () => {
     const { screen, fire, page } = screenOf();
-    // Before anything is fired the only lights on the field are the eyes of the two machines that stand there.
-    const eyes = page().glows.filter(isLight);
+    // Before anything is fired the only lights on the field are the eyes of the two machines that stand there,
+    // and on the back of the pilot's own mech, which has no eye to be seen, its generator.
+    const quiet = page();
+    const generator = generatorIn(quiet)!;
+    expect(generator).toBeDefined();
+    expect(generator.x).toBeLessThan(155);
+    const eyes = quiet.glows.filter((g) => isLight(g) && g !== generator);
     expect(eyes).toHaveLength(2);
     for (const eye of eyes) {
       expect(eye.r).toBeLessThanOrEqual(8);
@@ -79,17 +87,18 @@ describe('light on the field', () => {
     fire();
     screen.update(32);
     const lights = page().glows.filter(isLight);
-    expect(lights.length).toBeGreaterThan(2);
+    expect(lights.length).toBeGreaterThan(3);
     expect(lights.length).toBeLessThanOrEqual(MAX_LIGHTS);
-    // The barrel's own: at the end of the pilot's gun, short of the machines it is aimed at, in the gun's colour.
-    const barrel = lights.find((g) => g.r === 46)!;
+    // The barrel's own: at the end of the pilot's gun, short of the machines it is aimed at, in the gun's colour,
+    // and larger than life: the gun is as near the camera as anything is.
+    const barrel = lights.find((g) => g.r === 46 * NEAR_SIZE)!;
     expect(barrel.x).toBeGreaterThan(120);
     expect(barrel.x).toBeLessThan(200);
     expect(barrel.stops[0][1]).toMatch(/^rgba\(255, 233, 168, /);
     for (let i = 0; i < 200; i++) screen.update(16);
-    // With the volley over, the eyes are all there is again.
-    const after = page().glows.filter(isLight);
-    expect(after.map((g) => [g.x, g.y, g.r])).toEqual(eyes.map((g) => [g.x, g.y, g.r]));
+    // With the volley over, the eyes are all there is again, where they were.
+    const after = page();
+    expect(after.glows.filter((g) => isLight(g) && g !== generatorIn(after)).map((g) => [g.x, g.y, g.r])).toEqual(eyes.map((g) => [g.x, g.y, g.r]));
   });
 
   test('the one that fires is lit by its own gun for a moment; a calm picture leaves that out', () => {
@@ -112,7 +121,7 @@ describe('light on the field', () => {
     };
     const plain = at(false);
     const calm = at(true);
-    const barrel = (lights: Glowed[]) => lights.find((g) => g.r === 46)!;
+    const barrel = (lights: Glowed[]) => lights.find((g) => g.r === 46 * NEAR_SIZE)!;
     expect(strength(barrel(calm))).toBeCloseTo(strength(barrel(plain)) / 2, 2);
     for (const light of calm) expect(light.r).toBeLessThanOrEqual(FIELD_LIGHT);
   });

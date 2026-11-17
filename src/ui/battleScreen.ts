@@ -29,7 +29,8 @@ import { Particles } from './particles';
 import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 import {
-  FIELD, FIELD_Y, FLYERS, HERO, HERO_FEET, PANEL_Y, duelAt, enemySpots, farToNear, horizonOf, pictureTop, placeBars, placeFor, standAt, type Place, type Spot,
+  ENEMY_LEFT, ENEMY_RIGHT, FAR_LINE, FIELD, FIELD_Y, FLYERS, HERO, HERO_FEET, NEAR_LINE, PANEL_Y, depthOf, duelAt, enemySpots, farToNear, horizonOf, pictureTop, placeBars,
+  placeFor, standAt, type Place, type Spot,
 } from './stage';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { intentOf } from '../core/intent';
@@ -67,6 +68,10 @@ const HERO_HIT: Record<FrameSlot, Pt> = { head: { x: 60, y: 14 }, core: { x: 58,
 const HERO_MIDDLE: Pt = { x: 58, y: 62 };
 const SMALL_HIT: Record<FrameSlot, Pt> = { head: { x: 49, y: 14 }, core: { x: 50, y: 32 }, arms: { x: 74, y: 27 }, legs: { x: 50, y: 72 } };
 const SMALL_MIDDLE: Pt = { x: 51, y: 46 };
+/** The middle of the floor the enemies stand on: what the pilot's mech looks at across the floor. */
+const ACROSS: Pt = { x: (ENEMY_LEFT + ENEMY_RIGHT) / 2, y: (FAR_LINE + NEAR_LINE) / 2 };
+/** The generator's light on the back of the pilot's mech: where it is in the pose box from behind, how large and how bright it is at rest, and how bright while the mech is dazed. */
+export const GENERATOR = { x: 58, y: 37, r: 10, color: '#ffb060', alpha: 0.2, dazed: 0.06 };
 /** How far the camera pushes in on what happens: a bullet or a beam that lands, a shell, a blade, a machine going up, an Overdrive going off. */
 export const PUSH = { shot: 0.06, shell: 0.09, blade: 0.12, wreck: 0.12, surge: 0.08 };
 /** Where the strip the wingman's line is written on starts, and how far under the top of the field it and the new pilot's line are. */
@@ -390,13 +395,22 @@ export class BattleScreen {
     blasts: number[]; wrecks: Pt[];
     /** Where the camera is: the point of the stage in the middle of the field, and how many times its size the stage is shown at. */
     view: View;
-    /** Where things are on the field: where a unit's weapon fires from, where a hit on a part of it lands, its middle, and the line of the floor under it. */
-    at: { muzzle: (id: string, weapon: 'rightHand' | 'leftHand' | 'shoulder') => Pt; hit: (id: string, part: FrameSlot) => Pt; centre: (id: string) => Pt; floor: (id: string) => number };
+    /**
+     * Where things are on the field: where a unit's weapon fires from, where a hit on a part of it lands, its middle, the
+     * line of the floor under it, how far off it is (0 near, 1 far) and which way it looks at the other side.
+     */
+    at: {
+      muzzle: (id: string, weapon: 'rightHand' | 'leftHand' | 'shoulder') => Pt; hit: (id: string, part: FrameSlot) => Pt; centre: (id: string) => Pt;
+      floor: (id: string) => number; depth: (id: string) => number; heading: (id: string) => Pt; foot: (id: string) => Pt;
+    };
   } {
     const scene = this.scene();
     return {
       view: this.view(),
-      at: { muzzle: (id, weapon) => scene.muzzle(id, weapon), hit: (id, part) => scene.hitPoint(id, part), centre: (id) => scene.centre(id), floor: (id) => this.floorUnder(id) },
+      at: {
+        muzzle: (id, weapon) => scene.muzzle(id, weapon), hit: (id, part) => scene.hitPoint(id, part), centre: (id) => scene.centre(id), floor: (id) => this.floorUnder(id),
+        depth: (id) => scene.depth!(id), heading: (id) => scene.heading!(id), foot: (id) => scene.foot!(id),
+      },
       particles: this.particles.count, flash: this.hitStop.flash, surge: this.surge !== null, stance: (id) => ({ ...this.stances.of(id) }),
       breaking: (id) => this.puppets.get(id)?.breaking ?? null,
       cutIn: this.cutIn?.name ?? null, finish: this.finish ? { ...this.finish.at } : null,
@@ -906,21 +920,25 @@ export class BattleScreen {
     return this.opts.fast || this.fx.isGone(unit.id) || (this.flow.phase === 'result' && !this.fx.busy);
   }
 
-  /** Applies an effect transform around a draw call. */
-  private withTransform(ctx: CanvasRenderingContext2D, unit: UnitState, idleDy: number, draw: (dx: number, dy: number) => void): void {
+  /**
+   * Applies an effect transform around a draw call. What is drawn is told how far across it has
+   * moved, how far down what stands on its legs is thrown (with how it bobs), and how far up or
+   * down the whole of it has moved: a lunge and a kick go along the line to what they are aimed at.
+   */
+  private withTransform(ctx: CanvasRenderingContext2D, unit: UnitState, idleDy: number, draw: (dx: number, dy: number, lift: number) => void): void {
     const t = this.fx.transform(unit.id);
-    // A unit that lunges leaves two after-images behind it, the further the fainter.
-    if (t.trail !== 0 && !this.opts.fast) {
+    // A unit that lunges leaves two after-images behind it on the line it came along, the further the fainter.
+    if ((t.trail !== 0 || t.trailY !== 0) && !this.opts.fast) {
       for (const k of [2, 1]) {
         ctx.globalAlpha = t.alpha * (k === 1 ? 0.3 : 0.14);
-        draw(t.dx - t.trail * k, t.dy + (unit.destroyed ? 0 : idleDy));
+        draw(t.dx - t.trail * k, t.dy + (unit.destroyed ? 0 : idleDy), t.lift - t.trailY * k);
       }
     }
     ctx.globalAlpha = t.alpha;
     // A unit that is hit lights up: hard as a rule, gently in a calm picture.
     // One that fires is lit by its own gun for a moment, though not in a calm picture.
     ctx.filter = t.flash ? (this.opts.calm ? 'brightness(1.4)' : 'brightness(2.6)') : t.glare && !this.opts.calm ? 'brightness(1.35)' : 'none';
-    draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy));
+    draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy), t.lift);
     ctx.filter = 'none';
     ctx.globalAlpha = 1;
   }
@@ -936,8 +954,32 @@ export class BattleScreen {
     if (this.hidden(player)) return;
     // Its layers move by themselves: breathing, kicking back, flinching, coming apart.
     const pose = this.poseOf(player);
-    this.withTransform(ctx, player, 0, (dx, dy) =>
-      drawMech(ctx, this.playerSprites(), HERO.x, HERO.y, { dx, dy: 0 }, dy, pose, 'back'));
+    this.withTransform(ctx, player, 0, (dx, dy, lift) =>
+      drawMech(ctx, this.playerSprites(), HERO.x, HERO.y, { dx, dy: lift }, dy, pose, 'back'));
+    this.drawGenerator(ctx, player, pose);
+  }
+
+  /**
+   * The pilot's mech stands with its back to the camera: it has no eye that can be seen. What is
+   * seen of it being alive is its generator, a small warm light on its back that breathes, grows
+   * as the mech runs hotter, and sinks low while the mech is dazed. It goes where the body goes.
+   * Like an eye it is too small to be one of the battle's lights; a hurried game has none.
+   */
+  private drawGenerator(ctx: CanvasRenderingContext2D, player: UnitState, pose: Pose): void {
+    if (this.opts.fast || player.destroyed) return;
+    const t = this.fx.transform(player.id);
+    const body = pose.core ?? { dx: 0, dy: 0 };
+    const stance = this.stances.of(player.id);
+    const dazed = stance.staggered || stance.overheated;
+    const hot = Math.max(0, Math.min(1, player.heat / HEAT_LIMIT));
+    const breath = 0.8 + 0.2 * Math.sin(this.clock / 700);
+    drawGlow(ctx, {
+      x: HERO.x + GENERATOR.x + t.dx + body.dx,
+      y: HERO.y + GENERATOR.y + dropOf(this.playerSprites()) + t.dy + t.lift + body.dy,
+      r: GENERATOR.r + 6 * hot,
+      color: GENERATOR.color,
+      alpha: dazed ? GENERATOR.dazed : (GENERATOR.alpha + 0.2 * hot) * breath,
+    }, this.opts.calm ? 0.5 : 1);
   }
 
   /** True when the battle's single enemy is a mech drawn from its parts, turned round to face the pilot's. */
@@ -992,19 +1034,21 @@ export class BattleScreen {
         const parts = this.duelSprites(enemy);
         const pose = this.poseOf(enemy);
         const box = duelAt(this.spotOf(enemy));
-        this.withTransform(ctx, enemy, 0, (dx, dy) => {
+        this.withTransform(ctx, enemy, 0, (dx, dy, lift) => {
           // Mirror the pose box so the mech faces left; a shift to the right is a shift to the left in there.
           ctx.save();
           ctx.translate(box.right, box.top);
           ctx.scale(-1, 1);
-          drawMech(ctx, parts, 0, 0, { dx: -dx, dy: 0 }, dy, pose, 'small');
+          drawMech(ctx, parts, 0, 0, { dx: -dx, dy: lift }, dy, pose, 'small');
           ctx.restore();
         });
       } else {
         // A machine that is one picture moves as a whole, the way its body would: it faces left, so forward is left.
         const body = this.poseOf(enemy).core ?? { dx: 0, dy: 0 };
         const breaking = this.puppet(enemy).breaking;
-        this.withTransform(ctx, enemy, hover, (dx, dy) => {
+        this.withTransform(ctx, enemy, hover, (dx, down, lift) => {
+          // A machine that is one picture has no legs to leave behind: all of it goes where it is thrown and where it lunges.
+          const dy = down + lift;
           if (breaking === null) return ctx.drawImage(r.sprite.image, r.x + dx - body.dx, r.y + dy + body.dy, r.w, r.h);
           // Destroyed, it comes apart in four quarters cut from its own picture.
           const image = r.sprite.image as { naturalWidth?: number; naturalHeight?: number; width?: number; height?: number };
@@ -1028,7 +1072,7 @@ export class BattleScreen {
           const stance = this.stances.of(enemy.id);
           const dazed = stance.staggered || stance.overheated;
           // Where its picture is drawn: one that the rules have ended hangs still until it is seen to come apart.
-          const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + (enemy.destroyed ? 0 : hover) + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);
+          const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + t.lift + (enemy.destroyed ? 0 : hover) + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);
           if (eye) drawGlow(ctx, eye, this.opts.calm ? 0.5 : 1);
         }
       }
@@ -1166,6 +1210,12 @@ export class BattleScreen {
      * is held (or there is no arm left to hold it), the fist it would be in or the mount on the
      * shoulder. What the legs lower is in the point already.
      */
+    /** Where a unit stands on the floor: under its middle, on the line its feet are on or it hangs over. */
+    const footOf = (id: string): Pt => {
+      if (isPlayer(id)) return { x: HERO.x + HERO_MIDDLE.x, y: HERO_FEET };
+      const r = rectOf(id);
+      return { x: r.x + r.w / 2, y: r.ground };
+    };
     const firesFrom = (parts: MechSprites, weapon: 'rightHand' | 'leftHand' | 'shoulder', view: MechView): Pt => {
       const end = muzzleOf(parts, weapon, view);
       if (end) return end;
@@ -1201,6 +1251,17 @@ export class BattleScreen {
         return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
       },
       facing: (id) => (isPlayer(id) ? 1 : -1),
+      // The pilot's mech is as near as anything is; an enemy is as far off as the line of the floor it stands on or hangs over.
+      depth: (id) => (isPlayer(id) ? 0 : depthOf(this.floorUnder(id) + 1)),
+      // Where each stands on the floor: the pilot's mech on the nearest line, an enemy on the line under it.
+      foot: (id) => footOf(id),
+      // Each side looks across the floor at the other: the pilot's mech at the middle of where the enemies stand, an enemy at the pilot's mech.
+      heading: (id) => {
+        const own = footOf(id);
+        const other = isPlayer(id) ? ACROSS : footOf('player');
+        const length = Math.hypot(other.x - own.x, other.y - own.y) || 1;
+        return { x: (other.x - own.x) / length, y: (other.y - own.y) / length };
+      },
       damageType: (id, weapon) => {
         const unit = this.flow.state.units.find((u) => u.id === id)!;
         return weaponIn(unit.build, weapon, this.catalog)?.damageType ?? 'kinetic';

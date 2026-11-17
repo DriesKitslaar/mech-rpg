@@ -125,20 +125,27 @@ describe('a machine going up', () => {
 describe('the light of an effect', () => {
   const at = { x: 100, y: 80 };
   const each: Fx[] = [
-    { kind: 'muzzle', at, dtype: 'kinetic', dir: 1, start: 0, dur: 90 },
-    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'kinetic', start: 0, dur: 160 },
-    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'energy', start: 0, dur: 160 },
-    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'explosive', start: 0, dur: 260 },
+    { kind: 'muzzle', at, dtype: 'kinetic', dir: 1, aim: { x: 1, y: 0 }, size: 1, start: 0, dur: 90 },
+    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'kinetic', grow: [1, 1], start: 0, dur: 160 },
+    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'energy', grow: [1, 1], start: 0, dur: 160 },
+    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'explosive', grow: [1, 1], start: 0, dur: 260 },
     { kind: 'burst', at, size: 8, color: '#ffe9a8', style: 'impact', start: 0, dur: 220 },
     { kind: 'burst', at, size: 14, color: '#ffb46b', style: 'fire', start: 0, dur: 340 },
     { kind: 'burst', at, size: 22, color: '#4aa8ff', style: 'ring', start: 0, dur: 320 },
     { kind: 'sparks', at, color: '#ffd27f', start: 0, dur: 380 },
     { kind: 'steam', at, start: 0, dur: 520 },
-    { kind: 'lunge', unit: 'player', dir: 1, from: at, start: 0, dur: 320 },
+    { kind: 'lunge', unit: 'player', dir: 1, from: at, aim: { x: 1, y: 0 }, start: 0, dur: 320 },
     { kind: 'slash', at, dir: 1, color: '#7fe9ff', start: 0, dur: 200 },
-    { kind: 'shield', at, dir: 1, start: 0, dur: 420 },
+    { kind: 'shield', at, dir: 1, aim: { x: 1, y: 0 }, start: 0, dur: 420 },
     { kind: 'gather', at, color: '#7fe9ff', start: 0, dur: 480 },
     { kind: 'text', at, text: '-38', color: '#ffffff', start: 0, dur: 650 },
+    // The same as they are over the shoulder: larger than life where they leave and smaller where they land (or the other way), and aimed across the floor.
+    { kind: 'muzzle', at, dtype: 'kinetic', dir: 1, aim: { x: 0.8, y: -0.6 }, size: 1.2, start: 0, dur: 90 },
+    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'kinetic', grow: [1.2, 0.7], start: 0, dur: 160 },
+    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'energy', grow: [1.2, 0.7], start: 0, dur: 160 },
+    { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'explosive', grow: [0.7, 1.2], start: 0, dur: 260 },
+    { kind: 'lunge', unit: 'player', dir: 1, from: at, aim: { x: 0.8, y: -0.6 }, start: 0, dur: 320 },
+    { kind: 'shield', at, dir: -1, aim: { x: -0.8, y: 0.6 }, start: 0, dur: 420 },
   ];
   const moments = [0, 0.1, 0.25, 0.5, 0.75, 0.99];
 

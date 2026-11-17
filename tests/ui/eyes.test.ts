@@ -20,7 +20,8 @@ afterEach(() => setDetail(2));
 
 const manifest = SPRITES as Record<string, { file: string; w: number; h: number }>;
 const pictureOf = (enemy: string): string => ENEMIES[enemy].sprite ?? enemy;
-const isLight = (g: Glowed): boolean => g.blend === 'lighter';
+/** A light on the field, the generator on the pilot's own back apart: these tests are about the machines it fights. */
+const isLight = (g: Glowed): boolean => g.blend === 'lighter' && !(g.stops[0][1].startsWith('rgba(255, 176, 96,') && g.r <= 16.01);
 const strength = (g: Glowed): number => Number(/, ([\d.]+)\)$/.exec(g.stops[0][1])![1]);
 
 describe('where each machine\'s eye is', () => {

@@ -1,6 +1,6 @@
 import type { DamageType } from '../core/types';
 import type { Fx } from './battleFx';
-import { disc, drawBeam, fireColor, pixelLine, ringOf, type Glow, type Pt } from './light';
+import { disc, drawBeam, drawTaper, fireColor, pixelLine, ringOf, type Glow, type Pt } from './light';
 import { COLORS, drawText } from './widgets';
 
 /**
@@ -32,18 +32,33 @@ const beamReach = (p: number): number => Math.min(1, p * 2.5);
 const beamFade = (p: number): number => (p < 0.65 ? 1 : (1 - p) / 0.35);
 /** Where the first of a burst of tracers is. */
 const tracerHead = (p: number): number => Math.min(1, p * 1.15);
+/** How wide a beam is at life size. */
+const BEAM_W = 2.2;
 
-/** Fire from a barrel: a white heart at the mouth, a flame that tapers ahead of it, and a short flare up and down. It thins as it goes. */
-function muzzle(ctx: CanvasRenderingContext2D, at: Pt, dir: number, color: string, p: number): void {
-  const reach = 5 + 10 * (1 - p);
+/** How large something that flies is drawn `t` of the way along: between its size where it leaves and its size where it lands. */
+const sizeAlong = (grow: [number, number], t: number): number => lerp(grow[0], grow[1], clamp(t));
+/** From this size up a tracer is drawn two pixels thick; under the other, its head is one pixel. */
+const THICK_FROM = 1.08;
+const THIN_UNDER = 0.86;
+
+/**
+ * Fire from a barrel: a white heart at the mouth, a flame that tapers ahead of it along the way
+ * the barrel points, and a short flare to either side. It thins as it goes. `size` is how large
+ * it is for how far off the barrel is.
+ */
+function muzzle(ctx: CanvasRenderingContext2D, at: Pt, aim: Pt, color: string, p: number, size: number): void {
+  const reach = (5 + 10 * (1 - p)) * size;
+  // Across the barrel.
+  const side = { x: -aim.y, y: aim.x };
   ctx.globalAlpha = 1 - p * p;
   for (let k = 4; k >= 0; k--) {
     const t = k / 4;
-    disc(ctx, at.x + dir * reach * t, at.y, (2.8 - 2.2 * t) * (1 - p * 0.5), k === 0 ? '#ffffff' : color);
+    disc(ctx, at.x + aim.x * reach * t, at.y + aim.y * reach * t, (2.8 - 2.2 * t) * (1 - p * 0.5) * size, k === 0 ? '#ffffff' : color);
   }
-  pixelLine(ctx, at, { x: at.x + dir * reach * 1.4, y: at.y }, '#ffffff');
-  pixelLine(ctx, { x: at.x, y: at.y - 2 }, { x: at.x, y: at.y - reach * 0.6 }, color);
-  pixelLine(ctx, { x: at.x, y: at.y + 2 }, { x: at.x, y: at.y + reach * 0.6 }, color);
+  pixelLine(ctx, at, { x: at.x + aim.x * reach * 1.4, y: at.y + aim.y * reach * 1.4 }, '#ffffff');
+  for (const way of [-1, 1]) {
+    pixelLine(ctx, { x: at.x + side.x * 2 * way, y: at.y + side.y * 2 * way }, { x: at.x + side.x * reach * 0.6 * way, y: at.y + side.y * reach * 0.6 * way }, color);
+  }
   ctx.globalAlpha = 1;
 }
 
@@ -55,7 +70,10 @@ function projectile(ctx: CanvasRenderingContext2D, fx: Extract<Fx, { kind: 'proj
     const end = along(fx.from, fx.to, beamReach(p));
     const fade = beamFade(p);
     const flicker = calm || Math.floor(p * 14) % 2 ? 1 : 0.75;
-    drawBeam(ctx, fx.from, end, 2.2, color, fade * flicker * (calm ? 0.5 : 1));
+    // One that is fired away from the camera narrows as it goes; one fired towards it widens. In a flat scene it is one width.
+    const [near, far] = [fx.grow[0], sizeAlong(fx.grow, beamReach(p))];
+    if (near === far) drawBeam(ctx, fx.from, end, BEAM_W * near, color, fade * flicker * (calm ? 0.5 : 1));
+    else drawTaper(ctx, fx.from, end, BEAM_W * near, BEAM_W * far, color, fade * flicker * (calm ? 0.5 : 1));
     ctx.globalAlpha = fade;
     pixelLine(ctx, fx.from, end, '#ffffff');
     // Where it burns, it spits.
@@ -68,19 +86,21 @@ function projectile(ctx: CanvasRenderingContext2D, fx: Extract<Fx, { kind: 'proj
     }
     ctx.globalAlpha = 1;
   } else if (fx.dtype === 'explosive') {
-    // A shell on a shallow arc, and the smoke it leaves, older and wider the further back.
+    // A shell on a shallow arc, and the smoke it leaves, older and wider the further back. All of it is as large as it is far off.
     for (let k = 7; k >= 1; k--) {
       const t = p - k * 0.045;
       if (t <= 0) continue;
       const at = lobbed(fx.from, fx.to, t);
       ctx.globalAlpha = 0.55 * (1 - k / 8);
-      disc(ctx, at.x, at.y + k * 0.3, 1 + k * 0.4, k % 2 ? '#8a8494' : '#6c6678');
+      disc(ctx, at.x, at.y + k * 0.3, (1 + k * 0.4) * sizeAlong(fx.grow, t), k % 2 ? '#8a8494' : '#6c6678');
     }
     ctx.globalAlpha = 1;
     const head = lobbed(fx.from, fx.to, p);
-    disc(ctx, head.x, head.y, 2, color);
+    const size = sizeAlong(fx.grow, p);
+    disc(ctx, head.x, head.y, 2 * size, color);
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(px(head.x), px(head.y) - 1, 2, 2);
+    const spark = size < THIN_UNDER ? 1 : 2;
+    ctx.fillRect(px(head.x), px(head.y) - 1, spark, spark);
   } else {
     // Three tracers in quick succession: a dim tail, a bright body, a white head.
     for (let i = 0; i < 3; i++) {
@@ -90,12 +110,16 @@ function projectile(ctx: CanvasRenderingContext2D, fx: Extract<Fx, { kind: 'proj
       const mid = along(fx.from, fx.to, Math.max(0, Math.min(1, t) - 0.1));
       const tail = along(fx.from, fx.to, Math.max(0, Math.min(1, t) - 0.26));
       const dy = i - 1;
+      // Near the camera a tracer is two pixels thick and its head three; far off its head is one.
+      const size = sizeAlong(fx.grow, t);
+      const thick = size >= THICK_FROM ? 2 : 1;
+      const spark = size >= THICK_FROM ? 3 : size < THIN_UNDER ? 1 : 2;
       ctx.globalAlpha = 0.45;
-      pixelLine(ctx, { x: tail.x, y: tail.y + dy }, { x: mid.x, y: mid.y + dy }, color);
+      pixelLine(ctx, { x: tail.x, y: tail.y + dy }, { x: mid.x, y: mid.y + dy }, color, thick);
       ctx.globalAlpha = 1;
-      pixelLine(ctx, { x: mid.x, y: mid.y + dy }, { x: head.x, y: head.y + dy }, color);
+      pixelLine(ctx, { x: mid.x, y: mid.y + dy }, { x: head.x, y: head.y + dy }, color, thick);
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(px(head.x) - 1, px(head.y + dy) - 1, 2, 2);
+      ctx.fillRect(px(head.x) - 1, px(head.y + dy) - 1, spark, spark);
     }
   }
 }
@@ -218,19 +242,23 @@ function slash(ctx: CanvasRenderingContext2D, at: Pt, dir: number, color: string
   ctx.globalAlpha = 1;
 }
 
-/** A guard: a curved wall between the unit and whoever it faces, bright at its edge. */
-function shield(ctx: CanvasRenderingContext2D, at: Pt, dir: number, p: number): void {
+/** A guard: a curved wall between the unit and whoever it faces, across the way it looks at them, bright at its edge. */
+function shield(ctx: CanvasRenderingContext2D, at: Pt, aim: Pt, p: number): void {
   const up = Math.sin(Math.PI * Math.min(1, p * 1.2));
+  // Across the way it looks.
+  const side = { x: -aim.y, y: aim.x };
   for (let k = 0; k <= 18; k++) {
     const a = (k / 18 - 0.5) * 1.7;
-    const x = at.x + dir * (24 + Math.cos(a) * 12);
-    const y = at.y + Math.sin(a) * 38;
+    const out = 24 + Math.cos(a) * 12;
+    const across = Math.sin(a) * 38;
+    const x = at.x + aim.x * out + side.x * across;
+    const y = at.y + aim.y * out + side.y * across;
     ctx.globalAlpha = up * 0.9;
     ctx.fillStyle = k % 2 ? COLORS.armor : '#ffffff';
     ctx.fillRect(px(x), px(y), 2, 2);
     ctx.globalAlpha = up * 0.3;
     ctx.fillStyle = COLORS.armor;
-    ctx.fillRect(px(x - dir * 4), px(y), 3, 2);
+    ctx.fillRect(px(x - aim.x * 4), px(y - aim.y * 4), 3, 2);
   }
   ctx.globalAlpha = 1;
 }
@@ -247,23 +275,27 @@ function gather(ctx: CanvasRenderingContext2D, at: Pt, color: string, p: number)
   if (p > 0.3) disc(ctx, at.x, at.y, 1 + 3 * (p - 0.3), '#ffffff');
 }
 
-/** A unit that lunges: a jet from its back, and lines of speed streaming off it. */
-function streaks(ctx: CanvasRenderingContext2D, from: Pt, dir: number, p: number): void {
+/** A unit that lunges: a jet from its back, and lines of speed streaming off it, both behind it on the line it lunges along. */
+function streaks(ctx: CanvasRenderingContext2D, from: Pt, aim: Pt, p: number): void {
   const burn = Math.sin(Math.PI * p);
+  // Across the way it goes.
+  const side = { x: -aim.y, y: aim.x };
   // The jet: widest at the nozzle, tapering away behind.
-  const nozzle = { x: from.x - dir * 24, y: from.y + 6 };
+  const nozzle = { x: from.x - aim.x * 24, y: from.y - aim.y * 24 + 6 };
   const length = 30 * burn;
   ctx.globalAlpha = Math.min(1, burn * 1.4);
   for (let k = 0; k <= 6; k++) {
     const t = k / 6;
-    disc(ctx, nozzle.x - dir * length * t, nozzle.y, (3.2 - 2.6 * t) * burn, k < 2 ? '#ffffff' : k < 4 ? '#bfe8ff' : COLORS.energy);
+    disc(ctx, nozzle.x - aim.x * length * t, nozzle.y - aim.y * length * t, (3.2 - 2.6 * t) * burn, k < 2 ? '#ffffff' : k < 4 ? '#bfe8ff' : COLORS.energy);
   }
   ctx.globalAlpha = 0.85 * (1 - p);
   for (let i = 0; i < 9; i++) {
     const len = 14 + ((i * 11) % 22);
-    const x = from.x - dir * (20 + len * p * 1.8);
-    ctx.fillStyle = i % 3 === 0 ? '#ffffff' : COLORS.energy;
-    ctx.fillRect(px(dir > 0 ? x - len : x), px(from.y - 36 + i * 9), len, i % 4 === 0 ? 2 : 1);
+    // Nine lines side by side across the way it goes, each starting a little behind it and falling further behind as it goes.
+    const back = 20 + len * p * 1.8;
+    const across = -36 + i * 9;
+    const head = { x: from.x - aim.x * back + side.x * across, y: from.y - aim.y * back + side.y * across };
+    pixelLine(ctx, head, { x: head.x - aim.x * len, y: head.y - aim.y * len }, i % 3 === 0 ? '#ffffff' : COLORS.energy, i % 4 === 0 ? 2 : 1);
   }
   ctx.globalAlpha = 1;
 }
@@ -271,7 +303,7 @@ function streaks(ctx: CanvasRenderingContext2D, from: Pt, dir: number, p: number
 /** Draws one effect as it is `p` of the way through (0 at its start, 1 at its end). */
 export function paintFx(ctx: CanvasRenderingContext2D, fx: Fx, p: number, calm = false): void {
   switch (fx.kind) {
-    case 'muzzle': muzzle(ctx, fx.at, fx.dir, TYPE_COLOR[fx.dtype], p); break;
+    case 'muzzle': muzzle(ctx, fx.at, fx.aim, TYPE_COLOR[fx.dtype], p, fx.size); break;
     case 'projectile': projectile(ctx, fx, p, calm); break;
     case 'burst':
       if (fx.style === 'fire') fireball(ctx, fx.at, fx.size, p);
@@ -280,9 +312,9 @@ export function paintFx(ctx: CanvasRenderingContext2D, fx: Fx, p: number, calm =
       break;
     case 'sparks': sparks(ctx, fx.at, fx.color, p); break;
     case 'steam': steam(ctx, fx.at, p); break;
-    case 'lunge': streaks(ctx, fx.from, fx.dir, p); break;
+    case 'lunge': streaks(ctx, fx.from, fx.aim, p); break;
     case 'slash': slash(ctx, fx.at, fx.dir, fx.color, p); break;
-    case 'shield': shield(ctx, fx.at, fx.dir, p); break;
+    case 'shield': shield(ctx, fx.at, fx.aim, p); break;
     case 'gather': gather(ctx, fx.at, fx.color, p); break;
     case 'text': {
       // A figure lands large and settles to its size as it rises.
@@ -303,16 +335,20 @@ export function paintFx(ctx: CanvasRenderingContext2D, fx: Fx, p: number, calm =
 /** The light an effect throws as it is `p` of the way through. */
 export function lightsOf(fx: Fx, p: number): Glow[] {
   switch (fx.kind) {
-    case 'muzzle': return [{ x: fx.at.x + fx.dir * 4, y: fx.at.y, r: 46, color: TYPE_COLOR[fx.dtype], alpha: 0.9 * (1 - p) }];
+    case 'muzzle': return [{ x: fx.at.x + fx.aim.x * 4, y: fx.at.y + fx.aim.y * 4, r: 46 * fx.size, color: TYPE_COLOR[fx.dtype], alpha: 0.9 * (1 - p) }];
     case 'projectile': {
       const color = TYPE_COLOR[fx.dtype];
       if (fx.dtype === 'energy') {
         const end = along(fx.from, fx.to, beamReach(p));
         const fade = beamFade(p);
-        return [{ x: fx.from.x, y: fx.from.y, r: 22, color, alpha: 0.7 * fade }, { x: end.x, y: end.y, r: 30, color, alpha: 0.9 * fade }];
+        return [
+          { x: fx.from.x, y: fx.from.y, r: 22 * fx.grow[0], color, alpha: 0.7 * fade },
+          { x: end.x, y: end.y, r: 30 * sizeAlong(fx.grow, beamReach(p)), color, alpha: 0.9 * fade },
+        ];
       }
-      const head = fx.dtype === 'explosive' ? lobbed(fx.from, fx.to, p) : along(fx.from, fx.to, tracerHead(p));
-      return [{ x: head.x, y: head.y, r: 12, color, alpha: 0.55 }];
+      const t = fx.dtype === 'explosive' ? p : tracerHead(p);
+      const head = fx.dtype === 'explosive' ? lobbed(fx.from, fx.to, p) : along(fx.from, fx.to, t);
+      return [{ x: head.x, y: head.y, r: 12 * sizeAlong(fx.grow, t), color, alpha: 0.55 }];
     }
     case 'burst':
       if (fx.style === 'fire') {
@@ -325,10 +361,10 @@ export function lightsOf(fx: Fx, p: number): Glow[] {
       return [{ x: fx.at.x, y: fx.at.y, r: 16 + fx.size * 2.2, color: fx.color, alpha: 0.95 * (1 - p) }];
     case 'sparks': return [{ x: fx.at.x, y: fx.at.y, r: 24, color: fx.color, alpha: 0.6 * (1 - p) }];
     case 'slash': return [{ x: fx.at.x, y: fx.at.y, r: 34, color: fx.color, alpha: 0.8 * (1 - p) }];
-    case 'shield': return [{ x: fx.at.x + fx.dir * 26, y: fx.at.y, r: 46, color: COLORS.armor, alpha: 0.4 * Math.sin(Math.PI * Math.min(1, p * 1.2)) }];
+    case 'shield': return [{ x: fx.at.x + fx.aim.x * 26, y: fx.at.y + fx.aim.y * 26, r: 46, color: COLORS.armor, alpha: 0.4 * Math.sin(Math.PI * Math.min(1, p * 1.2)) }];
     case 'gather': return [{ x: fx.at.x, y: fx.at.y, r: 10 + 18 * p, color: fx.color, alpha: 0.25 + 0.55 * p }];
     // The jet behind a unit that lunges.
-    case 'lunge': return [{ x: fx.from.x - fx.dir * 30, y: fx.from.y + 6, r: 40, color: COLORS.energy, alpha: 0.75 * Math.sin(Math.PI * p) }];
+    case 'lunge': return [{ x: fx.from.x - fx.aim.x * 30, y: fx.from.y - fx.aim.y * 30 + 6, r: 40, color: COLORS.energy, alpha: 0.75 * Math.sin(Math.PI * p) }];
     default: return [];
   }
 }

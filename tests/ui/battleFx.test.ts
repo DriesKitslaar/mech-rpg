@@ -12,7 +12,7 @@ const scene: Scene = {
 const shot = (hit: boolean): BattleEvent => ({
   type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit, damage: hit ? 38 : 0,
 });
-const NEUTRAL = { dx: 0, dy: 0, flash: false, alpha: 1, glare: false, trail: 0 };
+const NEUTRAL = { dx: 0, dy: 0, lift: 0, flash: false, alpha: 1, glare: false, trail: 0, trailY: 0 };
 
 test('a unit with nothing happening to it is drawn as it is', () => {
   const fx = new BattleFx(scene);
