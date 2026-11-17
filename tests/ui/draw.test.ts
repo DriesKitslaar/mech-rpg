@@ -486,18 +486,17 @@ describe('the screens the three-act story added', () => {
     const shown = flow.eventsShown;
     screen.update(WARNING_MS - 100);
     screen.draw(ctx);
-    expect(texts(calls)).toContain('SABLE');
-    // The word is in the sign's letters, red or amber as it blinks.
+    // The word is in the sign's letters, red or amber as it blinks, and the boss's name in steel under it.
     const warned = record((c) => screen.draw(c));
     expect(signIn(warned, 'WARNING', 'red') ?? signIn(warned, 'WARNING', 'amber')).not.toBeNull();
-    expect(signCount(warned)).toBe(1);
+    expect(signIn(warned, 'SABLE', 'steel')).not.toBeNull();
+    expect(signCount(warned)).toBe(2);
     expect(texts(calls)).not.toContain('HOSTILE AUDIT');
     expect(flow.eventsShown).toBe(shown);
     screen.onInput('confirm');
     calls.length = 0;
     screen.update(16);
     screen.draw(ctx);
-    expect(texts(calls)).not.toContain('SABLE');
     expect(signCount(record((c) => screen.draw(c)))).toBe(0);
   });
 

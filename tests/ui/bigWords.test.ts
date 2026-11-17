@@ -8,7 +8,7 @@ import { STRINGS } from '../../src/content/strings';
 import { SAVE_KEY, SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
 import { App } from '../../src/ui/app';
 import { BattleFlow } from '../../src/ui/battleFlow';
-import { BattleScreen, RESULT_SMALL, RESULT_TALL, RESULT_W, RESULT_WORD_Y, WARNING_TALL } from '../../src/ui/battleScreen';
+import { BattleScreen, RESULT_SMALL, RESULT_TALL, RESULT_W, RESULT_WORD_Y } from '../../src/ui/battleScreen';
 import { setDetail } from '../../src/ui/light';
 import { SceneScreen, TITLE_SMALL, TITLE_TALL, TITLE_W, TITLE_Y } from '../../src/ui/sceneScreen';
 import { GLOWS, WORD_GLOW, WORD_ON_MS, fitTall, forgetWords, wordHeight, wordLevel, wordLights, wordTop, wordWidth, type Metal } from '../../src/ui/signType';
@@ -19,10 +19,10 @@ import { done, memoryStore, press, snap } from '../helpers/app';
 import { record, signCount, signIn, type Drawn, type Glowed } from '../helpers/canvas';
 
 /**
- * The big words of the game are written in the letters of its sign: a battle won or lost, the
- * warning over a boss, what a page of story or a conversation is called. Each stands where the
- * font's word stood, is never wider than the room it has in either language, and is handed back to
- * the font where the sign cannot write it.
+ * The big words of the game are written in the letters of its sign: a battle won or lost, what a
+ * page of story or a conversation is called. Each stands where the font's word stood, is never
+ * wider than the room it has in either language, and is handed back to the font where the sign
+ * cannot write it. (The warning over a boss is one of them too: see the tests of its entrance.)
  */
 
 afterEach(() => { setLanguage('en'); setDetail(2); forgetWords(); });
@@ -220,75 +220,6 @@ describe('the word a battle ends with', () => {
       expect(signCount(drawn), message).toBe(0);
       expect(drawn.texts.find((t) => t.text === message), message).toMatchObject({ x: 155, y: 38, size: 32, align: 'center', color: COLORS.accent });
       expect(lights(drawn, 'neon'), message).toEqual([]);
-    }
-  });
-});
-
-describe('the warning over a boss', () => {
-  function warned(calm = false): BattleScreen {
-    const flow = new BattleFlow(createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 7), CATALOG, { quiet: true });
-    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, boss: 'Krell', calm });
-    // Long enough for the band to have come in and stopped.
-    screen.update(600);
-    return screen;
-  }
-  /** The band: the dark plate the warning is written on. */
-  const band = (page: Drawn) => page.rects.find((r) => r.color === 'rgba(8, 8, 20, 0.92)')!;
-
-  test('in both languages: in the sign\'s letters, between the band\'s striped edges, the boss\'s name under it', () => {
-    expect(WARNING_TALL).toBe(23);
-    for (const language of ['en', 'nl'] as const) {
-      setLanguage(language);
-      const page = record((ctx) => warned(true).draw(ctx));
-      const plate = band(page);
-      expect(plate).toMatchObject({ x: 0, w: 310, h: 46 });
-      const word = signIn(page, STRINGS.battleIntro.warning, 'red')!;
-      expect(word, language).not.toBeNull();
-      expect(word).toMatchObject({ tall: WARNING_TALL, level: 1, y: plate.y + 4 });
-      expect(Math.abs(word.x + word.w / 2 - 155)).toBeLessThanOrEqual(0.5);
-      // Under the stripes along the top (three pixels of them) and over the name.
-      expect(word.y).toBeGreaterThan(plate.y + 3);
-      const name = page.texts.find((t) => t.text === 'KRELL')!;
-      expect(name).toMatchObject({ x: 155, y: plate.y + 31, align: 'center' });
-      expect(word.y + word.h).toBeLessThanOrEqual(name.y + 2);
-      // The name's letters end clear of the stripes along the bottom.
-      expect(name.y + 11).toBeLessThanOrEqual(plate.y + plate.h - 3);
-      expect(signCount(page)).toBe(1);
-    }
-  });
-
-  test('the word comes in with the band and leaves with it: it is the band\'s, not the screen\'s', () => {
-    const flow = new BattleFlow(createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], CATALOG, 7), CATALOG, { quiet: true });
-    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, boss: 'Krell', calm: true });
-    // A few frames in, the band is still sliding in from the left.
-    screen.update(64);
-    const page = record((ctx) => screen.draw(ctx));
-    const plate = band(page);
-    expect(plate.x).toBeLessThan(-40);
-    const word = signIn(page, 'WARNING', 'red')!;
-    expect(word).not.toBeNull();
-    expect(Math.abs(word.x + word.w / 2 - (plate.x + 155))).toBeLessThanOrEqual(0.5);
-    const name = page.texts.find((t) => t.text === 'KRELL')!;
-    expect(name.x).toBe(plate.x + 155);
-  });
-
-  test('a word the sign cannot write, or one wider than the screen, is written in the font, with the name where it was', () => {
-    const before = STRINGS.battleIntro.warning;
-    // The second is written by the sign, but not in twenty pixels less than the screen is wide.
-    const long = 'WAARSCHUWING AAN IEDEREEN';
-    expect(fitTall(long, 290, WARNING_TALL)).toBeNull();
-    expect(fitTall(long, 9999, WARNING_TALL)).toBe(WARNING_TALL);
-    try {
-      for (const word of ['Warning', long]) {
-        (STRINGS.battleIntro as { warning: string }).warning = word;
-        const page = record((ctx) => warned(true).draw(ctx));
-        const plate = band(page);
-        expect(signCount(page), word).toBe(0);
-        expect(page.texts.find((t) => t.text === word), word).toMatchObject({ x: 155, y: plate.y + 5, size: 32, align: 'center', color: COLORS.danger });
-        expect(page.texts.find((t) => t.text === 'KRELL'), word).toMatchObject({ x: 155, y: plate.y + 30 });
-      }
-    } finally {
-      (STRINGS.battleIntro as { warning: string }).warning = before;
     }
   });
 });

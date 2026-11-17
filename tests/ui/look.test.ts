@@ -69,11 +69,17 @@ describe('light on the field', () => {
 
   test('a gun going off lights the field around its barrel, and the light is gone when the volley is over', () => {
     const { screen, fire, page } = screenOf();
-    expect(page().glows.filter(isLight)).toEqual([]);
+    // Before anything is fired the only lights on the field are the eyes of the two machines that stand there.
+    const eyes = page().glows.filter(isLight);
+    expect(eyes).toHaveLength(2);
+    for (const eye of eyes) {
+      expect(eye.r).toBeLessThanOrEqual(8);
+      expect(eye.x).toBeGreaterThan(155);
+    }
     fire();
     screen.update(32);
     const lights = page().glows.filter(isLight);
-    expect(lights.length).toBeGreaterThan(0);
+    expect(lights.length).toBeGreaterThan(2);
     expect(lights.length).toBeLessThanOrEqual(MAX_LIGHTS);
     // The barrel's own: at the end of the pilot's gun, short of the machines it is aimed at, in the gun's colour.
     const barrel = lights.find((g) => g.r === 46)!;
@@ -81,7 +87,9 @@ describe('light on the field', () => {
     expect(barrel.x).toBeLessThan(200);
     expect(barrel.stops[0][1]).toMatch(/^rgba\(255, 233, 168, /);
     for (let i = 0; i < 200; i++) screen.update(16);
-    expect(page().glows.filter(isLight)).toEqual([]);
+    // With the volley over, the eyes are all there is again.
+    const after = page().glows.filter(isLight);
+    expect(after.map((g) => [g.x, g.y, g.r])).toEqual(eyes.map((g) => [g.x, g.y, g.r]));
   });
 
   test('the one that fires is lit by its own gun for a moment; a calm picture leaves that out', () => {

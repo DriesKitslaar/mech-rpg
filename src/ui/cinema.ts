@@ -29,8 +29,9 @@ export const CUT_IN_H = 68;
 export const SPEED_LINES = 16;
 /** Twice life size: the mech's pixels stay square. */
 export const CUT_IN_SCALE = 2;
-/** Where the mech's head is, from the corner the mech is drawn at. */
-const HEAD = { x: 83, y: 27 };
+/** Where a mech's head is, from the corner the mech is drawn at. */
+export const MECH_HEAD = { x: 83, y: 27 };
+const HEAD = MECH_HEAD;
 
 /** How far open the band is, from 0 to 1, this long after the Overdrive went off. */
 export function cutInOpen(ms: number): number {
@@ -117,6 +118,109 @@ export function drawCutIn(
     ctx.fillStyle = `rgba(255, 255, 255, ${(0.5 * (1 - ms / 70)).toFixed(2)})`;
     ctx.fillRect(0, top, field.width, h);
   }
+}
+
+/* ---- A boss's entrance ---- */
+
+/** How tall the band a boss comes in on is, and where its window on the boss begins: the words have the left of the band, the boss the right. */
+export const ENTRANCE_H = 68;
+export const ENTRANCE_WINDOW_X = 164;
+/** Twice life size: the boss's pixels stay square. */
+export const ENTRANCE_SCALE = 2;
+/** How tall the letters of the warning and of the boss's name are at most, and how wide either may be. */
+export const ENTRANCE_WARNING_TALL = 23;
+export const ENTRANCE_NAME_TALL = 18;
+export const ENTRANCE_WORDS_W = ENTRANCE_WINDOW_X - 16;
+/** How far through the band's time the boss's eye begins to open, and how long it takes to. */
+export const EYE_OPENS_AT = 0.2;
+export const EYE_OPENS_FOR = 0.1;
+/** The band and its stripes. */
+const ENTRANCE_PLATE = 'rgba(8, 8, 20, 0.92)';
+const STRIPE = 16;
+
+/** The boss as the band shows it. */
+export interface Entrant {
+  /** Draws the boss with the corner of its picture at 0, 0, facing left as it stands on the field. */
+  draw(ctx: CanvasRenderingContext2D): void;
+  /** What the window looks at, on that picture: its eye, or where its head is. */
+  focus: Pt;
+  /** The light of its eye, where it has one that is known. */
+  eye: { r: number; color: string } | null;
+}
+
+/** How far to the right of its place the band is, this far through its time: it comes in from the right, holds, and leaves to the left. */
+export function entranceShift(share: number, width: number): number {
+  return Math.round(width * (1 - Math.min(1, share / 0.16) - Math.max(0, (share - 0.88) / 0.12)));
+}
+
+/** How open the boss's eye is, from 0 to 1, this far through the band's time: shut, then open in a blink, then holding with a slow swell. A calm picture has it simply open. */
+export function entranceEye(share: number, clockMs: number, calm = false): number {
+  if (calm) return 1;
+  if (share < EYE_OPENS_AT) return 0;
+  const open = Math.min(1, (share - EYE_OPENS_AT) / EYE_OPENS_FOR);
+  return open * (0.8 + 0.2 * Math.sin(clockMs / 160));
+}
+
+/**
+ * The band a boss comes in on: across the middle of the field, from the right. Hazard stripes run
+ * along its edges; at the left the warning and the boss's name, in the sign's letters; at the
+ * right a window on the boss itself at twice its size, looked at where its eye is, and the eye
+ * opens. `share` is how far through the band's time it is, from 0 to 1; `alarm` is which of its
+ * two colours the warning is in at this moment. Words the sign cannot write, or that do not fit,
+ * are written in the font. A calm picture has the eye's light at half strength, and steady.
+ */
+export function drawEntrance(
+  ctx: CanvasRenderingContext2D, share: number, clockMs: number, field: Field,
+  words: { warning: string; name: string; alarm: boolean }, boss: Entrant | null, calm = false,
+): void {
+  const x = entranceShift(share, field.width);
+  const middle = field.top + Math.round(field.height / 2) - 4;
+  const top = middle - ENTRANCE_H / 2;
+  ctx.fillStyle = ENTRANCE_PLATE;
+  ctx.fillRect(x, top, field.width, ENTRANCE_H);
+  if (boss) {
+    // The window: the boss at twice its size, what it is looked at by in the middle of it.
+    const windowW = field.width - ENTRANCE_WINDOW_X;
+    const { focus } = boss;
+    // It comes in a little behind the band, and then drifts on slowly.
+    const behind = Math.max(0, 1 - share / 0.3);
+    const drift = Math.round(36 * behind * behind - 6 * share);
+    const eyeX = x + ENTRANCE_WINDOW_X + Math.round(windowW / 2) + drift;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + ENTRANCE_WINDOW_X, top, windowW, ENTRANCE_H);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(40, 8, 14, 0.9)';
+    ctx.fillRect(x + ENTRANCE_WINDOW_X, top, windowW, ENTRANCE_H);
+    ctx.translate(eyeX - focus.x * ENTRANCE_SCALE, middle - focus.y * ENTRANCE_SCALE);
+    ctx.scale(ENTRANCE_SCALE, ENTRANCE_SCALE);
+    boss.draw(ctx);
+    ctx.restore();
+    // The eye opens: a light on it, soft, that is not there where no soft light is drawn.
+    if (boss.eye) {
+      const open = entranceEye(share, clockMs, calm);
+      drawGlow(ctx, { x: eyeX, y: middle, r: boss.eye.r * ENTRANCE_SCALE + 10, color: boss.eye.color, alpha: 0.6 * open }, calm ? 0.5 : 1);
+    }
+    // The window's edge.
+    ctx.fillStyle = COLORS.danger;
+    ctx.fillRect(x + ENTRANCE_WINDOW_X, top, 1, ENTRANCE_H);
+  }
+  // Hazard stripes run along both edges, the one way along the top and the other along the bottom.
+  const shift = Math.floor(clockMs / 40) % STRIPE;
+  ctx.fillStyle = COLORS.danger;
+  for (let sx = -STRIPE; sx < field.width + STRIPE; sx += STRIPE) {
+    ctx.fillRect(x + sx + shift, top, 8, 3);
+    ctx.fillRect(x + sx + STRIPE - shift, top + ENTRANCE_H - 3, 8, 3);
+  }
+  // The words: over the whole band where there is no boss to show, else at its left.
+  const room = boss ? ENTRANCE_WORDS_W : field.width - 20;
+  const cx = x + (boss ? ENTRANCE_WINDOW_X / 2 : field.width / 2);
+  const warning = fitTall(words.warning, room, ENTRANCE_WARNING_TALL);
+  if (warning === null) drawText(ctx, words.warning, cx, top + 6, { size: 32, align: 'center', color: words.alarm ? COLORS.danger : COLORS.heat });
+  else drawWord(ctx, words.warning, cx, top + 8, { tall: warning, metal: words.alarm ? 'red' : 'amber' });
+  const name = fitTall(words.name, room, ENTRANCE_NAME_TALL);
+  if (name === null) drawText(ctx, words.name, cx, top + 44, { align: 'center' });
+  else drawWord(ctx, words.name, cx, wordTop(top + 50, name), { tall: name, metal: 'steel' });
 }
 
 /* ---- The last machine of a battle ---- */
