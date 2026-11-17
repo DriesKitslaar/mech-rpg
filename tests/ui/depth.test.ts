@@ -4,11 +4,12 @@ import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
 import { BattleFlow } from '../../src/ui/battleFlow';
-import { BattleFx, FAR_SIZE, LUNGE_PX, MELEE_MS, NEAR_SIZE, RECOIL_PX, WRECK_AT, WRECK_SIZE, sizeAt, type Fx, type Scene } from '../../src/ui/battleFx';
+import { BattleFx, FAR_SIZE, LUNGE_PX, MELEE_MS, NEAR_SIZE, RECOIL_PX, WRECK_AT, WRECK_SIZE, layerOf, sizeAt, type Fx, type Scene } from '../../src/ui/battleFx';
 import { BattleScreen, GENERATOR, PUSH } from '../../src/ui/battleScreen';
 import { HOME } from '../../src/ui/camera';
 import { lightsOf, paintFx } from '../../src/ui/fxPaint';
 import { drawTaper, setDetail, type Pt } from '../../src/ui/light';
+import { JOINT_DARK, JOINT_LIT } from '../../src/ui/mechView';
 import type { Sprite, SpriteStore } from '../../src/ui/sprites';
 import { ENEMY_LEFT, ENEMY_RIGHT, FAR_LINE, HERO, NEAR_LINE } from '../../src/ui/stage';
 import { onStage, record, type Drawn, type Filled, type Pictured } from '../helpers/canvas';
@@ -230,6 +231,60 @@ describe('what the effects are told about a scene with depth', () => {
   });
 });
 
+describe('what a weapon on the far side of its mech fires', () => {
+  const at = { muzzle: { x: 150, y: 80 }, hit: { x: 230, y: 90 } };
+  const open: Scene = {
+    muzzle: () => at.muzzle, hitPoint: () => at.hit, centre: () => at.hit, facing: (id) => (id === 'player' ? 1 : -1),
+    damageType: () => 'kinetic', isMelee: () => false,
+  };
+  const hiding: Scene = { ...open, hidden: (id, weapon) => id === 'player' && weapon === 'leftHand' };
+  const shot = (unit: string, weapon: 'rightHand' | 'leftHand' | 'shoulder'): BattleEvent =>
+    ({ type: 'shot', unit, weapon, target: unit === 'player' ? 'enemy-0' : 'player', part: 'core', appliedTo: 'core', hit: true, damage: 30 });
+  const started = (of: Scene, event: BattleEvent): Fx[] => {
+    const fx = new BattleFx(of);
+    fx.onEvent(event);
+    return (fx as unknown as { effects: Fx[] }).effects;
+  };
+
+  test('is under that mech: the flash at its barrel and what flies, and nothing else of the shot', () => {
+    const far = started(hiding, shot('player', 'leftHand'));
+    expect(far.filter((fx) => layerOf(fx) === 'under').map((fx) => fx.kind).sort()).toEqual(['muzzle', 'projectile']);
+    expect(far.filter((fx) => layerOf(fx) === 'over')).toEqual([]);
+    // What happens where it lands is in plain view: the strike, the flinch, the figure.
+    expect(far.filter((fx) => layerOf(fx) === 'stage').map((fx) => fx.kind).sort()).toEqual(['burst', 'hit', 'recoil', 'text']);
+    // The near hand's, the shoulder's and an enemy's are in plain view altogether, and so is anything in a scene that does not say.
+    for (const plain of [started(hiding, shot('player', 'rightHand')), started(hiding, shot('player', 'shoulder')), started(hiding, shot('enemy-0', 'leftHand')), started(open, shot('player', 'leftHand'))]) {
+      expect(plain.length).toBe(far.length);
+      expect(plain.every((fx) => layerOf(fx) === 'stage')).toBe(true);
+    }
+  });
+
+  test('is drawn, and lights, only when what is under is asked for: the same flash, tracers and light a weapon in plain view has on the stage', () => {
+    const hidden = new BattleFx(hiding);
+    hidden.onEvent(shot('player', 'leftHand'));
+    hidden.update(20);
+    const plain = new BattleFx(open);
+    plain.onEvent(shot('player', 'leftHand'));
+    plain.update(20);
+    const under = record((ctx) => hidden.draw(ctx, false, 'under'));
+    expect(under.rects.length).toBeGreaterThan(3);
+    expect(under).toEqual(record((ctx) => plain.draw(ctx)));
+    expect(hidden.lights('under').length).toBeGreaterThan(0);
+    expect(hidden.lights('under')).toEqual(plain.lights());
+    // On the stage there is nothing of it until it lands, and over the field nothing ever.
+    const stage = record((ctx) => hidden.draw(ctx));
+    expect([stage.rects, stage.shapes, stage.glows, stage.texts]).toEqual([[], [], [], []]);
+    expect([hidden.lights(), hidden.lights('stage'), hidden.lights('over')]).toEqual([[], [], []]);
+    expect([plain.lights('under'), record((ctx) => plain.draw(ctx, false, 'under')).rects]).toEqual([[], []]);
+    // As it lands: the strike and the figure are on the stage, in both.
+    hidden.update(160);
+    plain.update(160);
+    expect(record((ctx) => hidden.draw(ctx)).texts.length).toBeGreaterThan(0);
+    expect(record((ctx) => hidden.draw(ctx))).toEqual(record((ctx) => plain.draw(ctx)));
+    expect(record((ctx) => hidden.draw(ctx, false, 'under')).rects).toEqual([]);
+  });
+});
+
 describe('how what is fired is painted', () => {
   const lines = (page: Drawn, color: string): Filled[] => page.rects.filter((r) => r.color === color);
 
@@ -430,6 +485,45 @@ describe('depth on the battle screen', () => {
     const fire = (): void => { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); };
     return { state, flow, screen, page, fire };
   }
+
+  test('what the pilot\'s mech fires from the hand on its far side comes out from behind it: drawn after the enemies and before the mech, its light too', () => {
+    const fired = (weapon: 'rightHand' | 'leftHand') => {
+      const { flow, screen, page } = screenOf(['tank']);
+      const choose = (id: string): void => {
+        const at = flow.menu.items.findIndex((item) => item.id === id);
+        expect(at, id).toBeGreaterThanOrEqual(0);
+        for (let n = flow.menu.cursor; n < at; n++) screen.onInput('down');
+        screen.onInput('confirm');
+      };
+      choose('fire');
+      choose(weapon);
+      screen.onInput('confirm');
+      screen.update(32);
+      const drawn = page();
+      // The mech's own: its joints, which lie under its layers, and its layers.
+      const own = (step: Drawn['order'][number]): boolean =>
+        (step.kind === 'image' && idOf(drawn.images[step.at]).endsWith('.back')) || (step.kind === 'rect' && [JOINT_DARK, JOINT_LIT].includes(drawn.rects[step.at].color));
+      const firstOwn = drawn.order.findIndex(own);
+      const lastOwn = drawn.order.length - 1 - [...drawn.order].reverse().findIndex(own);
+      const lastEnemy = drawn.order.length - 1 - [...drawn.order].reverse().findIndex((step) => step.kind === 'image' && idOf(drawn.images[step.at]) === 'enemy-tank');
+      expect(lastEnemy).toBeLessThan(firstOwn);
+      const muzzle = screen.motion.at.muzzle('player', weapon);
+      /** The lights among some of what was drawn that are at the weapon's far end. */
+      const lit = (steps: Drawn['order']): number =>
+        steps.filter((step) => step.kind === 'glow' && drawn.glows[step.at].blend === 'lighter' && Math.hypot(drawn.glows[step.at].x - muzzle.x, drawn.glows[step.at].y - muzzle.y) < 20).length;
+      return { between: drawn.order.slice(lastEnemy + 1, firstOwn), after: drawn.order.slice(lastOwn + 1), lit };
+    };
+    const [far, near] = [fired('leftHand'), fired('rightHand')];
+    // The near hand: nothing of the shot is drawn between the enemies and the mech (the tank's eye is all there is
+    // there), and its flash lights the field over the mech.
+    expect(near.between.map((step) => step.kind)).toEqual(['glow']);
+    expect(near.lit(near.between)).toBe(0);
+    expect(near.lit(near.after)).toBeGreaterThan(0);
+    // The far hand: its flash, what flies and their light are all drawn there, and no light of it is laid over the mech.
+    expect(far.between.length).toBeGreaterThan(near.between.length + 3);
+    expect(far.lit(far.between)).toBeGreaterThan(0);
+    expect(far.lit(far.after)).toBe(0);
+  });
 
   test('the pilot\'s mech is as near as anything is and looks up the floor to the right; an enemy is as far off as its line and looks back down it', () => {
     const { screen } = screenOf(['recon-drone', 'tank', 'gun-turret']);

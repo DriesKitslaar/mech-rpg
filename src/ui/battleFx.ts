@@ -30,7 +30,21 @@ export interface Scene {
   damageType(unitId: string, weapon: WeaponSlot): DamageType;
   /** True when the weapon is a blade or a ram: it is swung, not fired. */
   isMelee(unitId: string, weapon: WeaponSlot): boolean;
+  /**
+   * True when the weapon is on the far side of its mech from the camera, so that the mech's own
+   * body is between the two: what it fires is seen to come out from behind the mech. A scene that
+   * does not say has every weapon in plain view.
+   */
+  hidden?(unitId: string, weapon: WeaponSlot): boolean;
 }
+
+/**
+ * Where an effect is drawn. Most are on the `stage`, over everything that stands on it. What a
+ * hidden weapon fires is `under` the one that fires it: drawn before that one is, so that its body
+ * covers the flash and the shot comes out from behind it. And what is written `over` the field is
+ * not on the stage at all: it is drawn where the screen has it, after the field is done.
+ */
+export type FxLayer = 'under' | 'stage' | 'over';
 
 export interface UnitTransform {
   dx: number;
@@ -100,8 +114,8 @@ type Timed = { start: number; dur: number };
  * what flies has a size where it leaves and one where it lands.
  */
 export type Fx = Timed & (
-  | { kind: 'projectile'; from: Pt; to: Pt; dtype: DamageType; grow: [number, number] }
-  | { kind: 'muzzle'; at: Pt; dtype: DamageType; dir: number; aim: Pt; size: number }
+  | { kind: 'projectile'; from: Pt; to: Pt; dtype: DamageType; grow: [number, number]; under?: true }
+  | { kind: 'muzzle'; at: Pt; dtype: DamageType; dir: number; aim: Pt; size: number; under?: true }
   | { kind: 'recoil'; unit: string; dir: number; aim: Pt }
   | { kind: 'hit'; unit: string }
   | { kind: 'pulse'; unit: string }
@@ -116,6 +130,13 @@ export type Fx = Timed & (
   | { kind: 'shield'; at: Pt; dir: number; aim: Pt }
   | { kind: 'gather'; at: Pt; color: string }
 );
+
+/** The layer an effect is drawn in. */
+export function layerOf(fx: Fx): FxLayer {
+  if (fx.kind === 'text' && fx.over) return 'over';
+  if ((fx.kind === 'muzzle' || fx.kind === 'projectile') && fx.under) return 'under';
+  return 'stage';
+}
 
 /** The way from one point to another, one pixel long; where the two are one point, straight ahead the way the unit faces. */
 function towards(from: Pt, to: Pt, dir: number): Pt {
@@ -212,9 +233,11 @@ export class BattleFx {
           // A miss flies on past the target, wide of it on the side that is up the screen.
           const up = aim.x >= 0 ? { x: aim.y, y: -aim.x } : { x: -aim.y, y: aim.x };
           const to = event.hit ? target : { x: target.x + aim.x * MISS_ON + up.x * MISS_WIDE, y: target.y + aim.y * MISS_ON + up.y * MISS_WIDE };
-          this.add(0, MUZZLE_MS, { kind: 'muzzle', at: from, dtype, dir, aim, size: near });
+          // A weapon on the far side of its mech: the flash at its barrel and what it fires are behind the mech.
+          const under = s.hidden?.(event.unit, event.weapon) === true ? { under: true as const } : {};
+          this.add(0, MUZZLE_MS, { kind: 'muzzle', at: from, dtype, dir, aim, size: near, ...under });
           this.add(0, RECOIL_MS, { kind: 'recoil', unit: event.unit, dir, aim });
-          this.add(0, flight, { kind: 'projectile', from, to, dtype, grow: [near, far] });
+          this.add(0, flight, { kind: 'projectile', from, to, dtype, grow: [near, far], ...under });
         }
         if (event.hit) {
           // A hit that takes a real bite is felt by the whole field.
@@ -419,16 +442,19 @@ export class BattleFx {
   }
 
   /**
-   * Draws what is solid of every effect that is playing: flame, tracers, fire, rings, sparks, smoke, figures.
-   * That is what is on the stage, which a camera moves and a blow throws. With `over`, what is written over
-   * the field instead: that is drawn where the screen has it, after the field is done.
+   * Draws what is solid of every effect that is playing in one layer: flame, tracers, fire, rings, sparks,
+   * smoke, figures. Without a layer, what is on the stage.
    */
-  draw(ctx: CanvasRenderingContext2D, calm = false, over = false): void {
-    for (const { fx, p } of this.active()) if ((fx.kind === 'text' && fx.over === true) === over) paintFx(ctx, fx, p, calm);
+  draw(ctx: CanvasRenderingContext2D, calm = false, layer: FxLayer = 'stage'): void {
+    for (const { fx, p } of this.active()) if (layerOf(fx) === layer) paintFx(ctx, fx, p, calm);
   }
 
-  /** The light that everything playing throws at this moment, for the screen to add over the field. */
-  lights(): Glow[] {
-    return this.active().flatMap(({ fx, p }) => lightsOf(fx, p));
+  /**
+   * The light that everything playing in one layer throws at this moment, for the screen to add: over the
+   * field for what is on the stage, and before the one that fires for what is under it, so that the flash
+   * of a hidden weapon is seen round its mech and does not light the back the camera sees.
+   */
+  lights(layer: FxLayer = 'stage'): Glow[] {
+    return this.active().flatMap(({ fx, p }) => (layerOf(fx) === layer ? lightsOf(fx, p) : []));
   }
 }

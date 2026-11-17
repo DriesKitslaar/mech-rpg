@@ -1,6 +1,8 @@
 import { SHOP_PARTS } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
-import { BACK_BOX, BACK_JOINTS, VIEWS } from '../../src/ui/mechLayout';
+import { hitSpot } from '../../scripts/art/imageOps';
+import { hitPartOf } from '../../scripts/art/process';
+import { BACK_BOX, BACK_JOINTS, HIT_LAYER, VIEWS, type HitPart, type MechView } from '../../src/ui/mechLayout';
 import { readPng } from '../helpers/png';
 
 /**
@@ -9,7 +11,7 @@ import { readPng } from '../helpers/png';
  * shipped and see that every mix makes one figure, and that what is carried is held.
  */
 
-interface Entry { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; gx?: number; gy?: number; mx?: number; my?: number }
+interface Entry { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number }
 const MANIFEST = SPRITES as Record<string, Entry>;
 
 /** Room round the pose box for what reaches out of it (an arm, a crest), and under it for legs that lower the body. */
@@ -175,5 +177,60 @@ describe('what a mech carries, from behind', () => {
       // In the near fist its far end is beyond the fist: it reaches towards the enemy, not back over the mech.
       if (id.startsWith('wpn-')) expect(VIEWS.back.nearFist.x - entry.gx! + entry.mx!, id).toBeGreaterThan(VIEWS.back.nearFist.x);
     }
+  });
+});
+
+describe('where a hit lands on each part of a mech that is fought', () => {
+  const pixels = (id: string): { width: number; height: number; data: Uint8ClampedArray } => {
+    const picture = readPng(`public/${MANIFEST[id].file}`);
+    const data = new Uint8ClampedArray(picture.w * picture.h * 4);
+    for (let y = 0; y < picture.h; y++) for (let x = 0; x < picture.w; x++) data.set(picture.at(x, y), (y * picture.w + x) * 4);
+    return { width: picture.w, height: picture.h, data };
+  };
+  /** Every frame layer that is drawn in a view that is fought in, with the part it is hit as. */
+  const layers = Object.keys(MANIFEST).flatMap((id) => {
+    const hit = /^(legs|core|head|arms)-/.test(id) ? hitPartOf(id) : null;
+    return hit && hit.view !== 'front' ? [{ id, ...hit }] : [];
+  });
+
+  test('the name of a layer says which view it is drawn for and which part of the frame it is hit as', () => {
+    expect(hitPartOf('legs-crawler.back')).toEqual({ view: 'back', part: 'legs' });
+    expect(hitPartOf('core-halo.small')).toEqual({ view: 'small', part: 'core' });
+    expect(hitPartOf('head-scout-mk1')).toEqual({ view: 'front', part: 'head' });
+    expect(hitPartOf('arms-rigger.near.back')).toEqual({ view: 'back', part: 'arms' });
+    // The arm that hangs back is not what a hit on the arms is seen on.
+    expect(hitPartOf('arms-rigger.far.back')).toBeNull();
+    expect(hitPartOf('arms-rigger.far')).toBeNull();
+  });
+
+  test('every layer that can be hit says where: eleven pairs of legs and eight each of bodies, heads and near arms, from behind and small', () => {
+    const count = (view: MechView, part: HitPart): number => layers.filter((layer) => layer.view === view && layer.part === part).length;
+    for (const view of ['back', 'small'] as MechView[]) expect([count(view, 'legs'), count(view, 'core'), count(view, 'head'), count(view, 'arms')], view).toEqual([11, 8, 8, 8]);
+    for (const { id } of layers) expect([typeof MANIFEST[id].hx, typeof MANIFEST[id].hy], id).toEqual(['number', 'number']);
+    // No other picture says so: nothing from the front (nothing is fought from the front), no far arm, nothing carried, no machine.
+    const said = Object.keys(MANIFEST).filter((id) => MANIFEST[id].hx !== undefined || MANIFEST[id].hy !== undefined);
+    expect(said.sort()).toEqual(layers.map((layer) => layer.id).sort());
+  });
+
+  test('it is the spot of the layer\'s own picture nearest to where the view has that part: solid, with solid pixels all round it', () => {
+    let moved = 0;
+    for (const { id, view, part } of layers) {
+      const entry = MANIFEST[id];
+      const picture = pixels(id);
+      const aim = { x: VIEWS[view].hit![part].x - entry.ox!, y: VIEWS[view].hit![part].y - entry.oy! };
+      // What shipped is what the rule gives for the picture that shipped.
+      expect({ x: entry.hx, y: entry.hy }, id).toEqual(hitSpot(picture, aim));
+      // On the thing: the pixel is solid, and so are the two beside it every way.
+      const solid = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < picture.width && y < picture.height && picture.data[(y * picture.width + x) * 4 + 3] >= 128;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) expect(solid(entry.hx! + dx, entry.hy! + dy), `${id} at ${dx},${dy}`).toBe(true);
+      // And near where the view has the part: a body is hit where it always was, a head within a pixel or two of it, an
+      // arm within a few, a pair of legs on the leg nearest the middle between them.
+      const off = Math.hypot(entry.hx! - aim.x, entry.hy! - aim.y);
+      expect(off, id).toBeLessThanOrEqual({ core: 0, head: 2, arms: 7, legs: 20 }[part]);
+      if (off > 0) moved++;
+    }
+    // Most pairs of legs have nothing between them, and some slim arms miss the view's spot: these are what it is for.
+    expect(moved).toBeGreaterThanOrEqual(16);
+    expect(HIT_LAYER).toEqual({ head: 'head', core: 'core', arms: 'armNear', legs: 'legs' });
   });
 });

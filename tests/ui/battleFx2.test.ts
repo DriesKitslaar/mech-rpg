@@ -93,12 +93,11 @@ describe('what is written over the field', () => {
     fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
     fx.update(PROJECTILE_MS + 1);
     expect(fx.texts().sort()).toEqual(['-38', '-7']);
-    const said = (over?: boolean) => record((ctx) => fx.draw(ctx, false, over)).texts.map((t) => t.text);
     const stage = record((ctx) => fx.draw(ctx));
     expect(new Set(stage.texts.map((t) => t.text))).toEqual(new Set(['-38']));
     expect(stage.rects.length).toBeGreaterThan(0);
-    expect(new Set(said(false))).toEqual(new Set(['-38']));
-    const over = record((ctx) => fx.draw(ctx, false, true));
+    expect(record((ctx) => fx.draw(ctx, false, 'stage'))).toEqual(stage);
+    const over = record((ctx) => fx.draw(ctx, false, 'over'));
     expect(new Set(over.texts.map((t) => t.text))).toEqual(new Set(['-7']));
     // Nothing but the figure: no flame, no burst, no tracer.
     expect([over.rects, over.glows, over.shapes, over.strokes]).toEqual([[], [], [], []]);

@@ -1,4 +1,4 @@
-import { BACK_BOX, BACK_JOINTS, BACK_MOUNT, FAR_FIST, MECH_BOX, NEAR_FIST, SMALL_BOX, VIEWS, layoutMech, muzzleOf } from '../../src/ui/mechLayout';
+import { BACK_BOX, BACK_JOINTS, BACK_MOUNT, FAR_FIST, HIT_LAYER, MECH_BOX, NEAR_FIST, SMALL_BOX, VIEWS, hitOn, layoutMech, muzzleOf, type HitPart } from '../../src/ui/mechLayout';
 
 /** Frame layers carry their own position inside the pose; weapons only have a size. */
 const layers = {
@@ -188,5 +188,64 @@ describe('where a weapon fires from', () => {
     expect(muzzleOf(layers, 'rightHand')).toBeNull();
     const { armNear: _gone, ...armless } = sizes;
     expect(muzzleOf(armless, 'rightHand')).toBeNull();
+  });
+});
+
+describe('where a hit on a part of the frame lands', () => {
+  const PARTS: HitPart[] = ['head', 'core', 'arms', 'legs'];
+  /** Four layers that each say where they are hit, and an arm that hangs back and does not. */
+  const sizes = {
+    head: { w: 20, h: 18, ox: 50, oy: 4, hx: 9, hy: 11 },
+    core: { w: 40, h: 44, ox: 38, oy: 20, hx: 20, hy: 20 },
+    armNear: { w: 30, h: 24, ox: 76, oy: 22, hx: 14, hy: 9 },
+    armFar: { w: 22, h: 40, ox: 14, oy: 30, hx: 1, hy: 1 },
+    legs: { w: 86, h: 66, ox: 12, oy: 51, hx: 59, hy: 38 },
+  };
+
+  test('on the spot the part\'s own layer names, from that layer\'s corner in the pose box: the arms on the one that is stretched towards the enemy', () => {
+    expect(HIT_LAYER).toEqual({ head: 'head', core: 'core', arms: 'armNear', legs: 'legs' });
+    for (const view of ['back', 'small', 'front'] as const) {
+      expect(hitOn(sizes, 'head', view), view).toEqual({ x: 59, y: 15 });
+      expect(hitOn(sizes, 'core', view), view).toEqual({ x: 58, y: 40 });
+      expect(hitOn(sizes, 'arms', view), view).toEqual({ x: 90, y: 31 });
+      expect(hitOn(sizes, 'legs', view), view).toEqual({ x: 71, y: 89 });
+    }
+  });
+
+  test('what stands on legs that lower it is hit lower by as much; the legs themselves are hit where they are', () => {
+    const tracked = { ...sizes, legs: { ...sizes.legs, drop: 22 } };
+    for (const part of PARTS) {
+      const [plain, low] = [hitOn(sizes, part, 'back'), hitOn(tracked, part, 'back')];
+      expect([low.x - plain.x, low.y - plain.y], part).toEqual([0, part === 'legs' ? 0 : 22]);
+    }
+  });
+
+  test('a layer that does not say is hit where the view has the part, and so is a part that is missing', () => {
+    const { hx: _hx, hy: _hy, ...mute } = sizes.legs;
+    const half = { ...sizes.core, hx: 20, hy: undefined };
+    for (const view of ['back', 'small'] as const) {
+      const aim = VIEWS[view].hit!;
+      expect(hitOn({ ...sizes, legs: mute }, 'legs', view), view).toEqual(aim.legs);
+      expect(hitOn({ ...sizes, legs: { ...mute, drop: 9 } }, 'legs', view), view).toEqual(aim.legs);
+      expect(hitOn({ legs: { ...mute, drop: 9 } }, 'core', view), view).toEqual({ x: aim.core.x, y: aim.core.y + 9 });
+      expect(hitOn({ core: half }, 'core', view), view).toEqual(aim.core);
+      for (const part of PARTS) expect(hitOn({}, part, view), `${view} ${part}`).toEqual(aim[part]);
+    }
+  });
+
+  test('the two views that are fought in say where each part is; from the front nothing is fought, and a hit would land in the middle of the box', () => {
+    expect(VIEWS.back.hit).toEqual({ head: { x: 60, y: 14 }, core: { x: 58, y: 40 }, arms: { x: 88, y: 33 }, legs: { x: 58, y: 94 } });
+    expect(VIEWS.small.hit).toEqual({ head: { x: 49, y: 14 }, core: { x: 50, y: 32 }, arms: { x: 74, y: 27 }, legs: { x: 50, y: 72 } });
+    expect(VIEWS.front.hit).toBeUndefined();
+    for (const part of PARTS) expect(hitOn({}, part), part).toEqual({ x: MECH_BOX / 2, y: MECH_BOX / 2 });
+    expect(hitOn({ legs: { w: 1, h: 1, drop: 28 } }, 'core')).toEqual({ x: 80, y: 108 });
+    // Each part is inside its view's box, the head over the body over the legs, the near arm to the right of the body.
+    for (const view of ['back', 'small'] as const) {
+      const { hit, box } = VIEWS[view];
+      for (const part of PARTS) expect(hit![part].x > 0 && hit![part].x < box && hit![part].y > 0 && hit![part].y < box, `${view} ${part}`).toBe(true);
+      expect(hit!.head.y).toBeLessThan(hit!.core.y);
+      expect(hit!.core.y).toBeLessThan(hit!.legs.y);
+      expect(hit!.arms.x).toBeGreaterThan(hit!.core.x + 15);
+    }
   });
 });

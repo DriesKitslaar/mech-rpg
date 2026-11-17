@@ -1,5 +1,5 @@
 import { createBattle, type BattleState } from '../../src/core/battle';
-import type { Build, FrameSlot } from '../../src/core/types';
+import type { Build, EnemyDef, FrameSlot } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
@@ -15,6 +15,7 @@ import {
 } from '../../src/ui/stage';
 import { COLORS } from '../../src/ui/widgets';
 import { onStage, record, type Drawn, type Glowed, type Pictured } from '../helpers/canvas';
+import { readPng } from '../helpers/png';
 
 /**
  * A battle as it is looked at: over the shoulder of the pilot's mech. That mech is near, in the
@@ -29,8 +30,8 @@ const sprites: SpriteStore = { get: (id, fallback) => ({ ...(MANIFEST[id] ?? fal
 const idOf = (image: { image: unknown }): string => (image.image as { id: string }).id;
 const isShadow = (g: Glowed): boolean => g.blend === 'source-over' && g.stops[0][1].startsWith('rgba(0, 0, 8,');
 
-function screenOf(enemies: string[], opts: { build?: Build; background?: string; fast?: boolean; coach?: boolean } = {}) {
-  const state: BattleState = createBattle(opts.build ?? DEMO_BUILD, enemies.map((id) => ENEMIES[id]), CATALOG, 7);
+function screenOf(enemies: (string | EnemyDef)[], opts: { build?: Build; background?: string; fast?: boolean; coach?: boolean } = {}) {
+  const state: BattleState = createBattle(opts.build ?? DEMO_BUILD, enemies.map((enemy) => (typeof enemy === 'string' ? ENEMIES[enemy] : enemy)), CATALOG, 7);
   const flow = new BattleFlow(state, CATALOG, { quiet: true });
   const screen = new BattleScreen(flow, sprites, CATALOG, {
     fast: opts.fast ?? true, background: opts.background ?? 'bg-neon-district', ...(opts.coach ? { coach: true } : {}),
@@ -44,6 +45,25 @@ function screenOf(enemies: string[], opts: { build?: Build; background?: string;
 const ownOf = (page: Drawn): Pictured[] => page.images.filter((image) => idOf(image).endsWith('.back'));
 /** The pictures of the enemies' machines. */
 const machinesOf = (page: Drawn): Pictured[] => page.images.filter((image) => /^(enemy|boss)-/.test(idOf(image)));
+/**
+ * Whether a picture that was drawn is solid at a point of the stage, by the pixels of the picture
+ * that shipped. One that is drawn turned round runs leftward from its right edge.
+ */
+function solidAt(drawn: Pictured, at: { x: number; y: number }): boolean {
+  const picture = readPng(`public/${(MANIFEST[idOf(drawn)] as unknown as { file: string }).file}`);
+  const x = drawn.w < 0 ? drawn.x - at.x : at.x - drawn.x;
+  const y = at.y - drawn.y;
+  return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < picture.w && y < picture.h && picture.at(x, y)[3] >= 128;
+}
+/** Every part of the frame there is a drawing of, by the kind of part: eleven lower bodies, and eight each of the others. */
+const partsOf = (kind: 'legs' | 'core' | 'head' | 'arms'): string[] =>
+  Object.keys(MANIFEST).flatMap((id) => new RegExp(`^(${kind}-[a-z0-9-]+?)(\\.near)?\\.back$`).exec(id)?.[1] ?? []).filter((id, i, all) => all.indexOf(id) === i).sort();
+/** Eleven mechs that between them wear every part there is: each pair of legs once, the other parts in turn. */
+const WARDROBE: Build[] = partsOf('legs').map((legs, i) => ({
+  ...DEMO_BUILD, legs, core: partsOf('core')[i % 8], head: partsOf('head')[(i + 3) % 8], arms: partsOf('arms')[(i + 5) % 8],
+}));
+/** The layer a hit on a part is seen on, for a build in a view. */
+const hitLayer = (build: Build, part: FrameSlot, suffix: string): string => (part === 'arms' ? `${build.arms}.near${suffix}` : `${build[part]}${suffix}`);
 
 describe('the pilot\'s mech, over whose shoulder the battle is looked at', () => {
   test('is seen from behind: every one of its layers and everything it carries is the drawing from behind, laid out in its box in the lower left', () => {
@@ -275,21 +295,63 @@ describe('what is fired', () => {
     expect(tracked.screen.motion.at.muzzle('player', 'shoulder')).toEqual({ x: HERO.x + mount.x, y: HERO.y + mount.y + MANIFEST['legs-crawler.back'].drop! });
   });
 
-  test('lands on the pilot\'s mech where that part of it is drawn: the head, the body, the near arm, the legs', () => {
-    const { screen, page } = screenOf(['gun-turret']);
-    const own = ownOf(page());
-    const layer: Record<FrameSlot, string> = { head: 'head-scout-mk1.back', core: 'core-hauler.back', arms: 'arms-rigger.near.back', legs: 'legs-strider.back' };
-    for (const part of ['head', 'core', 'arms', 'legs'] as FrameSlot[]) {
-      const drawn = own.find((image) => idOf(image) === layer[part])!;
-      const hit = screen.motion.at.hit('player', part);
-      expect(hit.x >= drawn.x && hit.x <= drawn.x + drawn.w && hit.y >= drawn.y && hit.y <= drawn.y + drawn.h, `${part} at ${hit.x},${hit.y}`).toBe(true);
+  test('lands on the pilot\'s mech on the part that is hit, on a pixel of its drawing: whatever it wears, tracks, four legs and a hover unit among it', () => {
+    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([11, 8, 8, 8]);
+    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(35);
+    let lowered = 0;
+    for (const build of WARDROBE) {
+      for (const id of [build.legs!, build.core, build.head!, build.arms!]) expect(CATALOG[id], id).toBeDefined();
+      const { screen, page } = screenOf(['gun-turret'], { build });
+      const own = ownOf(page());
+      const legs = MANIFEST[`${build.legs}.back`];
+      if (legs.drop) lowered++;
+      for (const part of ['head', 'core', 'arms', 'legs'] as FrameSlot[]) {
+        const drawn = own.find((image) => idOf(image) === hitLayer(build, part, '.back'))!;
+        const hit = screen.motion.at.hit('player', part);
+        expect(solidAt(drawn, hit), `${part} of ${JSON.stringify([build.legs, build.core, build.head, build.arms])} at ${hit.x},${hit.y}`).toBe(true);
+        // Near where the view has that part, wherever the legs have lowered the body to.
+        const aim = VIEWS.back.hit![part];
+        const off = Math.hypot(hit.x - (HERO.x + aim.x), hit.y - (HERO.y + aim.y + (part === 'legs' ? 0 : legs.drop ?? 0)));
+        expect(off, `${part} of ${build.legs}`).toBeLessThanOrEqual({ core: 0, head: 2, arms: 7, legs: 20 }[part]);
+      }
+      // Its middle is under its body, at its waist or a little over it, and the floor under it is the line its feet are on.
+      const core = own.find((image) => idOf(image) === `${build.core}.back`)!;
+      const middle = screen.motion.at.centre('player');
+      expect(middle.x, build.core).toBeGreaterThanOrEqual(core.x);
+      expect(middle.x, build.core).toBeLessThanOrEqual(core.x + core.w);
+      expect(middle.y, build.core).toBeGreaterThan(core.y + core.h / 2);
+      expect(middle.y, build.core).toBeLessThan(core.y + core.h + 16);
+      expect(screen.motion.at.floor('player')).toBe(HERO_FEET - 2);
     }
-    // Its middle is on its body, and the floor under it is the line its feet are on.
-    const core = own.find((image) => idOf(image) === layer.core)!;
-    const middle = screen.motion.at.centre('player');
-    expect(middle.x).toBeGreaterThanOrEqual(core.x);
-    expect(middle.x).toBeLessThanOrEqual(core.x + core.w);
-    expect(screen.motion.at.floor('player')).toBe(HERO_FEET - 2);
+    // Three of the eleven lower bodies carry what stands on them lower.
+    expect(lowered).toBe(3);
+  });
+
+  test('lands on a mech that is fought alone on the part that is hit, on a pixel of its small drawing, turned round as it is', () => {
+    for (const worn of WARDROBE) {
+      const rival: EnemyDef = { ...ENEMIES.rival, build: { ...ENEMIES.rival.build, legs: worn.legs, core: worn.core, head: worn.head, arms: worn.arms } };
+      const { state, screen, page } = screenOf([rival]);
+      expect(state.units[1].composed).toBe(true);
+      const small = page().images.filter((image) => idOf(image).endsWith('.small'));
+      const box = duelAt(enemySpots(1, placeFor('bg-neon-district'))[0]);
+      const legs = MANIFEST[`${worn.legs}.small`];
+      for (const part of ['head', 'core', 'arms', 'legs'] as FrameSlot[]) {
+        const drawn = small.find((image) => idOf(image) === hitLayer(rival.build as Build, part, '.small'))!;
+        expect(drawn.w, idOf(drawn)).toBeLessThan(0);
+        const hit = screen.motion.at.hit('enemy-0', part);
+        expect(solidAt(drawn, hit), `${part} of ${JSON.stringify([worn.legs, worn.core, worn.head, worn.arms])} at ${hit.x},${hit.y}`).toBe(true);
+        const aim = VIEWS.small.hit![part];
+        const off = Math.hypot(hit.x - (box.right - aim.x), hit.y - (box.top + aim.y + (part === 'legs' ? 0 : legs.drop ?? 0)));
+        expect(off, `${part} of ${worn.legs}`).toBeLessThanOrEqual({ core: 0, head: 2, arms: 7, legs: 20 }[part]);
+      }
+      // Its middle is under its body too: the body is drawn leftward from its right edge.
+      const core = small.find((image) => idOf(image) === `${worn.core}.small`)!;
+      const middle = screen.motion.at.centre('enemy-0');
+      expect(middle.x, worn.core).toBeLessThanOrEqual(core.x);
+      expect(middle.x, worn.core).toBeGreaterThanOrEqual(core.x + core.w);
+      expect(middle.y, worn.core).toBeGreaterThan(core.y + core.h / 2);
+      expect(middle.y, worn.core).toBeLessThan(core.y + core.h + 16);
+    }
   });
 
   test('lands on the enemy that is drawn, and comes from its side that faces the pilot; what falls off it falls to the floor under it', () => {

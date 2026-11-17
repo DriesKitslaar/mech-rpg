@@ -15,10 +15,10 @@ import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
 import { Camera, HOME, applyView, atHome, seenBy, type View } from './camera';
-import { MECH_BOX, VIEWS, dropOf, muzzleOf, type MechView } from './mechLayout';
+import { MECH_BOX, VIEWS, dropOf, hitOn, muzzleOf, type MechView } from './mechLayout';
 import { HitStop } from './hitStop';
 import { eyeLight, eyeOf } from './eyes';
-import { MAX_LIGHTS, disc, drawAll, drawGlow, drawGlows, drawShadow, lightRoom, type Glow, type Pt } from './light';
+import { MAX_LIGHTS, chosenLights, disc, drawAll, drawGlow, drawGlows, drawShadow, lightRoom, type Glow, type Pt } from './light';
 import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import {
   CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, MECH_HEAD, drawCutIn, drawDefeat, drawEntrance, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
@@ -60,13 +60,11 @@ const HOT = 0.75;
 const DEFAULT_BACKGROUND = 'bg-neon-district';
 const MENU_W = 154;
 /**
- * Where a hit on each part of the pilot's mech lands and where its middle is, inside its pose box
- * from behind; and the same for a mech built from parts that is fought alone, inside its small box
- * as it is drawn from the front.
+ * Where the middle of the pilot's mech is, inside its pose box from behind; and of a mech built
+ * from parts that is fought alone, inside its small box as it is drawn from the front. Where a hit
+ * on each part lands is the layout's to say (`hitOn`): it is a spot on that part's own picture.
  */
-const HERO_HIT: Record<FrameSlot, Pt> = { head: { x: 60, y: 14 }, core: { x: 58, y: 40 }, arms: { x: 88, y: 33 }, legs: { x: 58, y: 94 } };
 const HERO_MIDDLE: Pt = { x: 58, y: 62 };
-const SMALL_HIT: Record<FrameSlot, Pt> = { head: { x: 49, y: 14 }, core: { x: 50, y: 32 }, arms: { x: 74, y: 27 }, legs: { x: 50, y: 72 } };
 const SMALL_MIDDLE: Pt = { x: 51, y: 46 };
 /** The middle of the floor the enemies stand on: what the pilot's mech looks at across the floor. */
 const ACROSS: Pt = { x: (ENEMY_LEFT + ENEMY_RIGHT) / 2, y: (FAR_LINE + NEAR_LINE) / 2 };
@@ -502,9 +500,18 @@ export class BattleScreen {
     // The place's lights are where its picture is; its haze lies where the floor begins and, thinner, at the pilot's feet.
     const lie = { shift: top, far: horizonOf(this.place) + 6, near: HERO_FEET - 8, ...(seen ? { seen } : {}) };
     drawAmbience(ctx, background, placeClock, 'behind', field, calm, lie);
+    // How many of the battle's sixteen lights are still to be had, with what stands on the field counted so far (see below).
+    const weight = lightRoom(MAX_LIGHTS) > 0 ? MAX_LIGHTS / lightRoom(MAX_LIGHTS) : 1;
+    const room = (): number => (finish && !calm ? MAX_LIGHTS / 2 : MAX_LIGHTS) - this.standing * weight;
     this.drawShadows(ctx);
     // What is furthest off is drawn first: the enemies from the back to the front, and the pilot's mech, the nearest of all, last.
     this.drawEnemies(ctx);
+    // What the pilot's mech fires from the hand on its far side comes out from behind it: it is drawn before the mech
+    // is, and its light with it. They are lights of the battle like any other and count among the sixteen, after what
+    // stands on the field: the heat of what is close to its limit is still to be drawn, over the units, and is counted here.
+    this.fx.draw(ctx, calm, 'under');
+    const behind = this.opts.fast ? [] : chosenLights(this.fx.lights('under'), calm, room() - this.hot().length * weight);
+    for (const glow of behind) drawGlow(ctx, glow, calm ? 0.5 : 1);
     this.drawPlayer(ctx);
     this.drawEnemyMarks(ctx);
     this.drawHeat(ctx);
@@ -534,8 +541,7 @@ export class BattleScreen {
     // seven at most) counted first. The eyes of machines are apart from that: they are too small to count.
     // From close by every light is four times the size: half as many are drawn. And where there is to
     // be less light the sixteen are eight: what stands on the field then counts for two of the sixteen each.
-    const weight = lightRoom(MAX_LIGHTS) > 0 ? MAX_LIGHTS / lightRoom(MAX_LIGHTS) : 1;
-    if (!this.opts.fast) drawGlows(ctx, this.lights(), calm, (finish && !calm ? MAX_LIGHTS / 2 : MAX_LIGHTS) - this.standing * weight);
+    if (!this.opts.fast) drawGlows(ctx, this.lights(), calm, room() - behind.length * weight);
     if (this.hitStop.flash > 0 && !this.opts.calm) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
       // Over the field: a camera that is pushed in on a blow has a part of the field in view, and nothing else.
@@ -556,7 +562,7 @@ export class BattleScreen {
       this.drawObjective(ctx);
       // What happens to what the battle is about is written by the strip that names it: on the screen, wherever the
       // camera is and however the field is thrown.
-      this.fx.draw(ctx, calm, true);
+      this.fx.draw(ctx, calm, 'over');
       this.drawGround(ctx);
       this.drawDrive(ctx);
       this.drawRadio(ctx);
@@ -737,11 +743,15 @@ export class BattleScreen {
   }
 
   /** A machine close to its heat limit glows from inside, and the air over it wavers. */
+  /** The units that glow with their own heat at this moment: close to their limit, and there to be seen. A hurried game has none. */
+  private hot(): UnitState[] {
+    if (this.opts.fast) return [];
+    return this.flow.state.units.filter((unit) => !unit.destroyed && !this.hidden(unit) && unit.heat >= HEAT_LIMIT * HOT);
+  }
+
   private drawHeat(ctx: CanvasRenderingContext2D): void {
-    if (this.opts.fast) return;
     const scene = this.scene();
-    for (const unit of this.flow.state.units) {
-      if (unit.destroyed || this.hidden(unit) || unit.heat < HEAT_LIMIT * HOT) continue;
+    for (const unit of this.hot()) {
       const at = scene.hitPoint(unit.id, 'core');
       const over = Math.min(1, (unit.heat / HEAT_LIMIT - HOT) / (1 - HOT));
       this.standing++;
@@ -1232,15 +1242,12 @@ export class BattleScreen {
     const isPlayer = (id: string) => id === 'player';
     const rectOf = (id: string) => this.enemyRect(this.flow.state.units.find((u) => u.id === id)!);
     const rival = () => this.flow.state.units[1];
-    // A mech on tracks carries its upper body lower; every point above the legs comes down with it.
-    const lowered = (unitIndex: number, part?: FrameSlot): number =>
-      (part === 'legs' ? 0 : dropOf(unitIndex === 0 ? this.playerSprites() : this.duelSprites(rival())));
-    /** A point of the pilot's pose box from behind, as it lands on the screen. */
-    const at = (p: Pt, part?: FrameSlot) => ({ x: HERO.x + p.x, y: HERO.y + p.y + lowered(0, part) });
-    /** A point of the small pose box as it lands on the screen for the mech that is turned round. */
-    const mirror = (p: Pt, part?: FrameSlot) => {
+    /** The middle of the pilot's mech as it lands on the screen: a mech on tracks carries its upper body lower, and its middle with it. */
+    const at = (p: Pt) => ({ x: HERO.x + p.x, y: HERO.y + p.y + dropOf(this.playerSprites()) });
+    /** The same for the mech that is fought alone, in its small pose box turned round. */
+    const mirror = (p: Pt) => {
       const box = duelAt(this.spotOf(rival()));
-      return { x: box.right - p.x, y: box.top + p.y + lowered(1, part) };
+      return { x: box.right - p.x, y: box.top + p.y + dropOf(this.duelSprites(rival())) };
     };
     /**
      * Where a weapon fires from in a mech's pose box: the far end of what is held, or, where nothing
@@ -1275,8 +1282,13 @@ export class BattleScreen {
         return { x: HERO.x + p.x, y: HERO.y + p.y };
       },
       hitPoint: (id, part) => {
-        if (isPlayer(id)) return at(HERO_HIT[part], part);
-        if (this.duel()) return mirror(SMALL_HIT[part], part);
+        // On a mech drawn from its parts a hit lands on the part's own picture, wherever its legs have lowered it to.
+        if (isPlayer(id)) { const p = hitOn(this.playerSprites(), part, 'back'); return { x: HERO.x + p.x, y: HERO.y + p.y }; }
+        if (this.duel()) {
+          const p = hitOn(this.duelSprites(rival()), part, 'small');
+          const box = duelAt(this.spotOf(rival()));
+          return { x: box.right - p.x, y: box.top + p.y };
+        }
         const r = rectOf(id);
         const offset = { core: 0.5, legs: 0.25, arms: 0.5, head: 0.2 }[part];
         return { x: r.x + r.w / 2, y: r.y + r.h * offset };
@@ -1307,6 +1319,8 @@ export class BattleScreen {
         const unit = this.flow.state.units.find((u) => u.id === id)!;
         return !!weaponIn(unit.build, weapon, this.catalog)?.melee;
       },
+      // The pilot's mech is seen from behind and a little from its right: its left hand is on the far side of its body.
+      hidden: (id, weapon) => isPlayer(id) && weapon === 'leftHand',
     };
   }
 

@@ -3,15 +3,15 @@ import { COLORS, FONT } from './widgets';
 
 export type SpriteManifest = Record<string, {
   file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo;
-  gx?: number; gy?: number; mx?: number; my?: number;
+  gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number;
 }>;
 /**
- * `ox`/`oy` is a mech layer's place inside the pose box; `drop`, and the `gx`/`gy` and `mx`/`my` of a
- * weapon that was turned for its view, are explained in mechLayout.
+ * `ox`/`oy` is a mech layer's place inside the pose box; `drop`, the `gx`/`gy` and `mx`/`my` of a
+ * weapon that was turned for its view, and the `hx`/`hy` of a layer that can be hit, are explained in mechLayout.
  */
 export interface Sprite {
   image: CanvasImageSource; w: number; h: number; ox?: number; oy?: number; drop?: number;
-  gx?: number; gy?: number; mx?: number; my?: number;
+  gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number;
 }
 /** A sheet to draw on that is not the screen: what is drawn on it can be handed to the screen as one picture. */
 export interface Sheet { image: CanvasImageSource; ctx: CanvasRenderingContext2D }
@@ -56,18 +56,25 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
   });
 }
 
+/** A picture and what the manifest says of it: its size, and whatever of the rest it has. */
+export function spriteOf(image: CanvasImageSource, entry: SpriteManifest[string]): Sprite {
+  const { gx, gy, mx, my, hx, hy } = entry;
+  return {
+    image, w: entry.w, h: entry.h, ox: entry.ox, oy: entry.oy, ...(entry.drop ? { drop: entry.drop } : {}),
+    // A weapon that was turned for its view: where it is held and where it fires from.
+    ...(gx !== undefined && gy !== undefined && mx !== undefined && my !== undefined ? { gx, gy, mx, my } : {}),
+    // A layer that can be hit: where in it a hit lands.
+    ...(hx !== undefined && hy !== undefined ? { hx, hy } : {}),
+  };
+}
+
 /** Loads every sprite in the manifest. Never rejects: a missing file becomes a placeholder on use. */
 export async function loadSprites(manifest: SpriteManifest): Promise<SpriteStore> {
   const loaded = new Map<string, Sprite>();
   await Promise.all(Object.entries(manifest).map(async ([id, entry]) => {
     const image = await loadImage(entry.file);
     if (!image) return;
-    const { gx, gy, mx, my } = entry;
-    loaded.set(id, {
-      image, w: entry.w, h: entry.h, ox: entry.ox, oy: entry.oy, ...(entry.drop ? { drop: entry.drop } : {}),
-      // A weapon that was turned for its view: where it is held and where it fires from.
-      ...(gx !== undefined && gy !== undefined && mx !== undefined && my !== undefined ? { gx, gy, mx, my } : {}),
-    });
+    loaded.set(id, spriteOf(image, entry));
   }));
   const placeholders = new Map<string, Sprite>();
   const paintedSprites = new Map<string, Sprite>();

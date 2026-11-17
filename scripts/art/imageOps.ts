@@ -69,3 +69,30 @@ export function quantize(img: RawImage, palette: RGB[]): RawImage {
   }
   return { width: img.width, height: img.height, data };
 }
+
+/**
+ * The pixel of a picture a hit lands on, given where it is aimed: the solid pixel nearest to `aim`
+ * that has solid pixels all round it for `inside` pixels, so that what lands is seen on the thing
+ * and not on its outline or in a gap of it. A picture too thin to have such a pixel is hit on the
+ * solid pixel nearest to `aim`. Of pixels equally near, the higher one, and of those the one
+ * further left. Null for a picture with nothing in it.
+ */
+export function hitSpot(img: RawImage, aim: { x: number; y: number }, inside = 2): { x: number; y: number } | null {
+  const solid = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < img.width && y < img.height && img.data[(y * img.width + x) * 4 + 3] >= 128;
+  const deep = (x: number, y: number): boolean => {
+    for (let dy = -inside; dy <= inside; dy++) for (let dx = -inside; dx <= inside; dx++) if (!solid(x + dx, y + dy)) return false;
+    return true;
+  };
+  let best: { x: number; y: number; d: number } | null = null;
+  let fallback: { x: number; y: number; d: number } | null = null;
+  for (let y = 0; y < img.height; y++) {
+    for (let x = 0; x < img.width; x++) {
+      if (!solid(x, y)) continue;
+      const d = (x - aim.x) ** 2 + (y - aim.y) ** 2;
+      if (!fallback || d < fallback.d) fallback = { x, y, d };
+      if ((!best || d < best.d) && deep(x, y)) best = { x, y, d };
+    }
+  }
+  const found = best ?? fallback;
+  return found ? { x: found.x, y: found.y } : null;
+}
