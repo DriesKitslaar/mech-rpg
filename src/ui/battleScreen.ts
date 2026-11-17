@@ -24,7 +24,7 @@ import {
   CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, MECH_HEAD, drawCutIn, drawDefeat, drawEntrance, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
   type Entrant,
 } from './cinema';
-import { drawMech, mechSprites, type MechSprites } from './mechView';
+import { drawMech, layMech, mechSprites, type MechSprites } from './mechView';
 import { Particles } from './particles';
 import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
@@ -111,6 +111,9 @@ export const RESULT_W = 190;
 export const RESULT_TALL = 26;
 export const RESULT_SMALL = 20;
 export const RESULT_WORD_Y = 25;
+
+/** How a mech that is drawn from its parts is put on the canvas: `drawMech`, layer by layer, or `layMech`, whole. */
+type MechPainter = typeof drawMech;
 
 export class BattleScreen {
   private timer = 0;
@@ -927,17 +930,20 @@ export class BattleScreen {
    * moved, how far down what stands on its legs is thrown (with how it bobs), and how far up or
    * down the whole of it has moved: a lunge and a kick go along the line to what they are aimed at.
    */
-  private withTransform(ctx: CanvasRenderingContext2D, unit: UnitState, idleDy: number, draw: (dx: number, dy: number, lift: number) => void): void {
+  private withTransform(
+    ctx: CanvasRenderingContext2D, unit: UnitState, idleDy: number,
+    draw: (dx: number, dy: number, lift: number, mech: MechPainter) => void,
+  ): void {
     const t = this.fx.transform(unit.id);
     // A unit that lunges leaves two after-images behind it on the line it came along, the further the fainter.
     if ((t.trail !== 0 || t.trailY !== 0) && !this.opts.fast) {
       for (const k of [2, 1]) {
         ctx.globalAlpha = t.alpha * (k === 1 ? 0.3 : 0.14);
-        draw(t.dx - t.trail * k, t.dy + (unit.destroyed ? 0 : idleDy), t.lift - t.trailY * k);
+        draw(t.dx - t.trail * k, t.dy + (unit.destroyed ? 0 : idleDy), t.lift - t.trailY * k, drawMech);
       }
     }
     ctx.globalAlpha = t.alpha;
-    draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy), t.lift);
+    draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy), t.lift, drawMech);
     // A unit that is hit lights up: hard as a rule, gently in a calm picture.
     // One that fires is lit by its own gun for a moment, though not in a calm picture.
     const bright = t.flash ? (this.opts.calm ? BRIGHT.calm : BRIGHT.hit) : t.glare && !this.opts.calm ? BRIGHT.glare : 1;
@@ -945,11 +951,14 @@ export class BattleScreen {
       // Its own picture is laid over it again as light: once for each whole time brighter it is to be, and once more,
       // fainter, for what is left over. That is what a brightness filter works out, without asking the canvas for one:
       // a canvas that has no graphics chip to do filters on takes sixty milliseconds and more over a frame that has one.
+      // A mech that is drawn from its parts is laid on whole, as the one picture it is seen as: layer by layer, the
+      // layers that lie under others would add their light through them.
+      const whole: MechPainter = (to, parts, x, y, shift, sway, pose, view) => layMech(to, this.sprites, parts, x, y, shift, sway, pose, view);
       const before = ctx.globalCompositeOperation;
       ctx.globalCompositeOperation = 'lighter';
       for (let more = bright - 1; more > 0.001; more -= 1) {
         ctx.globalAlpha = t.alpha * Math.min(1, more);
-        draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy), t.lift);
+        draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy), t.lift, whole);
       }
       ctx.globalCompositeOperation = before;
     }
@@ -967,8 +976,8 @@ export class BattleScreen {
     if (this.hidden(player)) return;
     // Its layers move by themselves: breathing, kicking back, flinching, coming apart.
     const pose = this.poseOf(player);
-    this.withTransform(ctx, player, 0, (dx, dy, lift) =>
-      drawMech(ctx, this.playerSprites(), HERO.x, HERO.y, { dx, dy: lift }, dy, pose, 'back'));
+    this.withTransform(ctx, player, 0, (dx, dy, lift, mech) =>
+      mech(ctx, this.playerSprites(), HERO.x, HERO.y, { dx, dy: lift }, dy, pose, 'back'));
     this.drawGenerator(ctx, player, pose);
   }
 
@@ -1049,12 +1058,12 @@ export class BattleScreen {
         const parts = this.duelSprites(enemy);
         const pose = this.poseOf(enemy);
         const box = duelAt(this.spotOf(enemy));
-        this.withTransform(ctx, enemy, 0, (dx, dy, lift) => {
+        this.withTransform(ctx, enemy, 0, (dx, dy, lift, mech) => {
           // Mirror the pose box so the mech faces left; a shift to the right is a shift to the left in there.
           ctx.save();
           ctx.translate(box.right, box.top);
           ctx.scale(-1, 1);
-          drawMech(ctx, parts, 0, 0, { dx: -dx, dy: lift }, dy, pose, 'small');
+          mech(ctx, parts, 0, 0, { dx: -dx, dy: lift }, dy, pose, 'small');
           ctx.restore();
         });
       } else {

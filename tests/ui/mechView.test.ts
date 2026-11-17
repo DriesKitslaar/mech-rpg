@@ -1,8 +1,8 @@
 import { DEMO_BUILD } from '../../src/content/parts';
 import { BACK_JOINTS, VIEWS, layoutMech, type MechView } from '../../src/ui/mechLayout';
-import { JOINT_DARK, JOINT_LIT, drawMech, mechSprites } from '../../src/ui/mechView';
+import { JOINT_DARK, JOINT_LIT, drawMech, layMech, mechSprites, type MechSprites } from '../../src/ui/mechView';
 import type { SpriteStore } from '../../src/ui/sprites';
-import { record } from '../helpers/canvas';
+import { record, recorder } from '../helpers/canvas';
 
 /**
  * The same build can be asked for in three views: from the front, from behind and small. Each view
@@ -144,5 +144,97 @@ describe('drawing a mech in a view', () => {
         expect([moved[i].x - image.x, moved[i].y - image.y], id).toEqual([3, 1 + (legs ? 0 : 2) + (head ? -4 : 0)]);
       });
     }
+  });
+});
+
+describe('laying a mech on as one picture', () => {
+  /** A store that lends sheets: every loan is a canvas that remembers what is drawn on it, and how large it was asked for. */
+  function lending(): { store: SpriteStore; loans: { w: number; h: number; sheet: ReturnType<typeof recorder> }[] } {
+    const loans: { w: number; h: number; sheet: ReturnType<typeof recorder> }[] = [];
+    const image = { id: 'sheet' } as unknown as CanvasImageSource;
+    return {
+      loans,
+      store: { ...store().store, sheet: (w, h) => { const sheet = recorder(); loans.push({ w, h, sheet }); return { image, ctx: sheet.ctx }; } },
+    };
+  }
+  /** The box that holds everything in a drawing. */
+  const boxOf = (page: ReturnType<typeof record>): { x: number; y: number; w: number; h: number } => {
+    const all = [...page.images, ...page.rects];
+    const x = Math.min(...all.map((piece) => piece.x));
+    const y = Math.min(...all.map((piece) => piece.y));
+    return { x, y, w: Math.max(...all.map((piece) => piece.x + piece.w)) - x, h: Math.max(...all.map((piece) => piece.y + piece.h)) - y };
+  };
+
+  test('all of it is drawn on a sheet of its own as drawMech draws it, and the sheet is laid once, exactly over where the mech stands', () => {
+    for (const view of ['front', 'back', 'small'] as MechView[]) {
+      const { store: s, loans } = lending();
+      const parts = mechSprites(s, DEMO_BUILD, undefined, view);
+      const how = [{ dx: 3, dy: 1 }, 2, { core: { dx: -1, dy: 5 }, armNear: { dx: 14, dy: -22 } }, view] as const;
+      const direct = record((ctx) => drawMech(ctx, parts, 20, 30, ...how));
+      const page = record((ctx) => {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.35;
+        layMech(ctx, s, parts, 20, 30, ...how);
+      });
+      // One loan, as large as the box that holds every layer and joint, the arm that was thrown out included.
+      const box = boxOf(direct);
+      expect(loans.map((loan) => [loan.w, loan.h]), view).toEqual([[box.w, box.h]]);
+      const { drawn: on, wiped } = loans[0].sheet;
+      // The sheet is wiped over all that will be handed on, before anything is drawn on it.
+      expect(wiped, view).toEqual([{ x: 0, y: 0, w: box.w, h: box.h, after: 0 }]);
+      // On it: what drawMech draws, in the same order, as it is, with the box's corner in the sheet's.
+      expect(on.order, view).toEqual(direct.order);
+      expect(on.images.map((i) => [idOf(i.image), i.x, i.y, i.w, i.h, i.blend, i.alpha]), view)
+        .toEqual(direct.images.map((i) => [idOf(i.image), i.x - box.x, i.y - box.y, i.w, i.h, 'source-over', 1]));
+      expect(on.rects.map((r) => [r.color, r.x, r.y, r.w, r.h, r.blend, r.alpha]), view)
+        .toEqual(direct.rects.map((r) => [r.color, r.x - box.x, r.y - box.y, r.w, r.h, 'source-over', 1]));
+      // On the canvas: nothing but the sheet, the part of it that was drawn on, the way the canvas was set to lay things on.
+      expect(page.rects, view).toEqual([]);
+      expect(page.images, view).toHaveLength(1);
+      expect(idOf(page.images[0].image), view).toBe('sheet');
+      expect(page.images[0], view).toMatchObject({ ...box, blend: 'lighter', alpha: 0.35, from: { x: 0, y: 0, w: box.w, h: box.h } });
+    }
+  });
+
+  test('a mech with its back to the camera has its joints on the sheet too, under its layers', () => {
+    const { store: s, loans } = lending();
+    record((ctx) => layMech(ctx, s, mechSprites(s, DEMO_BUILD, undefined, 'back'), 0, 0, { dx: 0, dy: 0 }, 0, {}, 'back'));
+    const on = loans[0].sheet.drawn;
+    expect(on.rects.map((r) => r.color)).toEqual([JOINT_DARK, JOINT_LIT, JOINT_DARK, JOINT_LIT, JOINT_DARK, JOINT_LIT]);
+    expect(on.order.slice(0, 6).every((step) => step.kind === 'rect')).toBe(true);
+    expect(on.order.slice(6).every((step) => step.kind === 'image')).toBe(true);
+  });
+
+  test('a store with no sheet to lend has the layers laid on one by one, as drawMech draws them', () => {
+    const plain = store().store;
+    for (const s of [plain, { ...plain, sheet: () => null }] as SpriteStore[]) {
+      const parts = mechSprites(s, DEMO_BUILD, undefined, 'back');
+      const how = [{ dx: 3, dy: 1 }, 2, { head: { dx: 0, dy: -4 } }, 'back'] as const;
+      const direct = record((ctx) => { ctx.globalAlpha = 0.6; drawMech(ctx, parts, 20, 30, ...how); });
+      const laid = record((ctx) => { ctx.globalAlpha = 0.6; layMech(ctx, s, parts, 20, 30, ...how); });
+      expect(laid.images.length).toBeGreaterThanOrEqual(5);
+      expect(laid).toEqual(direct);
+    }
+  });
+
+  test('a mech of no parts asks for no sheet and lays nothing on', () => {
+    const { store: s, loans } = lending();
+    const page = record((ctx) => layMech(ctx, s, {}, 20, 30));
+    expect(loans).toEqual([]);
+    expect([page.images, page.rects]).toEqual([[], []]);
+  });
+
+  test('a layer that sits between two pixels is held by a box on whole pixels, and keeps its place in it', () => {
+    const { store: s, loans } = lending();
+    const parts: MechSprites = { core: { image: { id: 'body' } as unknown as CanvasImageSource, w: 10, h: 12, ox: 5, oy: 7 } };
+    const how = [{ dx: 0, dy: 0 }, 0, { core: { dx: 0.5, dy: -0.25 } }, 'front'] as const;
+    const [direct] = record((ctx) => drawMech(ctx, parts, 20, 30, ...how)).images;
+    expect([direct.x % 1, direct.y % 1]).toEqual([0.5, 0.75]);
+    const [laid] = record((ctx) => layMech(ctx, s, parts, 20, 30, ...how)).images;
+    // A pixel more each way than the layer is, from the whole pixel before it.
+    expect([laid.x, laid.y, laid.w, laid.h]).toEqual([Math.floor(direct.x), Math.floor(direct.y), 11, 13]);
+    expect([loans[0].w, loans[0].h]).toEqual([11, 13]);
+    const [on] = loans[0].sheet.drawn.images;
+    expect([laid.x + on.x, laid.y + on.y, on.w, on.h]).toEqual([direct.x, direct.y, 10, 12]);
   });
 });

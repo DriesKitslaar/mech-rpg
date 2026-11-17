@@ -17,6 +17,8 @@ export interface Pictured {
   image: unknown; x: number; y: number; w: number; h: number; blend: string; alpha: number; filter: string;
   /** The box the drawing was kept inside when the picture was drawn, or null when it was free to go anywhere. */
   clip: { x: number; y: number; w: number; h: number } | null;
+  /** The part of the picture that was drawn, where it was not all of it. */
+  from?: Box;
 }
 /** A soft light or shadow: a round gradient, where its middle is, how far it reaches, its colours and how it was laid on. */
 export interface Glowed { x: number; y: number; r: number; ry: number; stops: [number, string][]; blend: string }
@@ -48,6 +50,16 @@ const isGradient = (style: unknown): style is Gradient => typeof style === 'obje
  * its size.
  */
 export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
+  const { ctx, drawn } = recorder();
+  draw(ctx);
+  return drawn;
+}
+
+/**
+ * Such a canvas to keep: what is drawn on it, whenever it is drawn, is added to what it remembers.
+ * `wiped` is every time a part of it was cleared: which part, and how many things had been drawn on it by then.
+ */
+export function recorder(): { ctx: CanvasRenderingContext2D; drawn: Drawn; wiped: (Box & { after: number })[] } {
   const texts: Written[] = [];
   const rects: Filled[] = [];
   const images: Pictured[] = [];
@@ -57,6 +69,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
   const shapes: Shaped[] = [];
   const order: Step[] = [];
   const kept: Drawn['kept'] = { texts: [], rects: [], glows: [] };
+  const wiped: (Box & { after: number })[] = [];
   const state: Record<string, unknown> = {
     font: '12px x', textAlign: 'left', fillStyle: '', strokeStyle: '', lineWidth: 1, globalCompositeOperation: 'source-over', globalAlpha: 1, filter: 'none',
   };
@@ -118,13 +131,18 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
       kept.rects.push(clip ? { ...clip } : null);
       rects.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, color: String(style), blend: String(state.globalCompositeOperation), alpha: Number(state.globalAlpha) });
     },
-    drawImage: (image, x, y, w, h) => {
+    drawImage: (image, ...where) => {
+      // With eight numbers, the first four say which part of the picture is drawn and the last four where it goes.
+      const part = where.length >= 8;
+      const [x, y, w, h] = part ? where.slice(4) : where;
       order.push({ kind: 'image', at: images.length });
       images.push({
         image, x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy,
         blend: String(state.globalCompositeOperation), alpha: Number(state.globalAlpha), filter: String(state.filter), clip: clip ? { ...clip } : null,
+        ...(part ? { from: { x: Number(where[0]), y: Number(where[1]), w: Number(where[2]), h: Number(where[3]) } } : {}),
       });
     },
+    clearRect: (x, y, w, h) => { wiped.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, after: order.length }); },
     beginPath: () => { path = []; boxed = null; },
     rect: (x, y, w, h) => { boxed = { x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy }; },
     clip: () => {
@@ -147,8 +165,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
     get: (t, name: string) => (name in t ? t[name] : methods[name] ?? (() => undefined)),
     set: (t, name: string, value) => { t[name] = value; return true; },
   }) as unknown as CanvasRenderingContext2D;
-  draw(ctx);
-  return { texts, rects, images, glows, strokes, washes, shapes, order, kept };
+  return { ctx, drawn: { texts, rects, images, glows, strokes, washes, shapes, order, kept }, wiped };
 }
 
 /** The field of a battle: what a camera that has left home keeps its drawing inside. */

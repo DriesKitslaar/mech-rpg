@@ -13,6 +13,8 @@ export interface Sprite {
   image: CanvasImageSource; w: number; h: number; ox?: number; oy?: number; drop?: number;
   gx?: number; gy?: number; mx?: number; my?: number;
 }
+/** A sheet to draw on that is not the screen: what is drawn on it can be handed to the screen as one picture. */
+export interface Sheet { image: CanvasImageSource; ctx: CanvasRenderingContext2D }
 export interface SpriteStore {
   /** Returns the sprite, or a labelled placeholder of the fallback size when it is unavailable. */
   get(id: string, fallback: { w: number; h: number; ox?: number; oy?: number; label: string }): Sprite;
@@ -21,6 +23,12 @@ export interface SpriteStore {
    * and the factory scheme come back as they are.
    */
   painted?(id: string, paint: string, fallback: { w: number; h: number; ox?: number; oy?: number; label: string }): Sprite;
+  /**
+   * Lends a sheet at least this large, or null where there is none to be had. There is one, and
+   * whoever asks next gets the same one: it is for drawing on and handing over at once, and it is
+   * not wiped between one loan and the next.
+   */
+  sheet?(w: number, h: number): Sheet | null;
 }
 
 function placeholder(w: number, h: number, label: string): Sprite {
@@ -63,6 +71,8 @@ export async function loadSprites(manifest: SpriteManifest): Promise<SpriteStore
   }));
   const placeholders = new Map<string, Sprite>();
   const paintedSprites = new Map<string, Sprite>();
+  // The one sheet that is lent out: made when it is first asked for, null when the browser would not give one.
+  let lent: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null | undefined;
   const get: SpriteStore['get'] = (id, fallback) => {
     const sprite = loaded.get(id);
     if (sprite) return sprite;
@@ -79,6 +89,27 @@ export async function loadSprites(manifest: SpriteManifest): Promise<SpriteStore
       const key = `${id}|${scheme.id}`;
       if (!paintedSprites.has(key)) paintedSprites.set(key, repaint(base, (pixels) => recolour(pixels, scheme, info)));
       return paintedSprites.get(key)!;
+    },
+    sheet(w, h) {
+      try {
+        if (lent === undefined) {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          lent = ctx ? { canvas, ctx } : null;
+        }
+        if (!lent) return null;
+        // It only ever grows: making a canvas another size throws away what it holds and what it was set to.
+        if (lent.canvas.width < w || lent.canvas.height < h) {
+          lent.canvas.width = Math.max(lent.canvas.width, Math.ceil(w));
+          lent.canvas.height = Math.max(lent.canvas.height, Math.ceil(h));
+        }
+        // What it draws stays on whole pixels: nothing on it is ever smoothed.
+        lent.ctx.imageSmoothingEnabled = false;
+        return { image: lent.canvas, ctx: lent.ctx };
+      } catch {
+        lent = null;
+        return null;
+      }
     },
   };
 }

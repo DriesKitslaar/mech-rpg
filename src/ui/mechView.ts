@@ -54,6 +54,48 @@ export function mechSprites(store: SpriteStore, build: Build, paint?: string, vi
   return parts;
 }
 
+/** One thing a mech is drawn from: a bar in a joint's colour or a layer's picture, measured from the pose box's corner. */
+type Piece = { x: number; y: number; w: number; h: number } & ({ color: string } | { image: CanvasImageSource });
+
+/**
+ * What a mech is drawn from, in the order it is drawn in. `sway` moves everything but the legs,
+ * which stay planted; `pose` moves each layer by itself (see `pose.ts`). `view` is the view the
+ * sprites were asked for: it says where the weapons go and what is drawn over what.
+ */
+function piecesOf(parts: MechSprites, sway: number, pose: Pose, view: MechView): Piece[] {
+  const pieces: Piece[] = [];
+  if (view === 'back' && parts.core) {
+    // The joints go where the body goes, and lie under everything.
+    const body = pose.core ?? { dx: 0, dy: 0 };
+    const bx = body.dx;
+    const by = sway + body.dy + dropOf(parts);
+    for (const joint of [BACK_JOINTS.neck, BACK_JOINTS.shoulders, BACK_JOINTS.waist]) {
+      pieces.push({ x: bx + joint.x, y: by + joint.y, w: joint.w, h: joint.h, color: JOINT_DARK });
+      // A line of light along its length: down the side of one that stands, along the top of one that lies.
+      if (joint.h > joint.w) pieces.push({ x: bx + joint.x + 1, y: by + joint.y, w: 2, h: joint.h, color: JOINT_LIT });
+      else pieces.push({ x: bx + joint.x, y: by + joint.y + 1, w: joint.w, h: 2, color: JOINT_LIT });
+    }
+  }
+  for (const cmd of layoutMech(parts, view)) {
+    const sprite = parts[cmd.slot]!;
+    const lift = cmd.slot === 'legs' ? 0 : sway;
+    const moved = pose[cmd.slot] ?? { dx: 0, dy: 0 };
+    pieces.push({ x: cmd.x + moved.dx, y: cmd.y + lift + moved.dy, w: sprite.w, h: sprite.h, image: sprite.image });
+  }
+  return pieces;
+}
+
+/** Puts a mech's pieces on a canvas, one over the other, with the pose box's corner at (x, y). */
+function put(ctx: CanvasRenderingContext2D, pieces: Piece[], x: number, y: number): void {
+  for (const piece of pieces) {
+    if ('image' in piece) ctx.drawImage(piece.image, x + piece.x, y + piece.y, piece.w, piece.h);
+    else {
+      ctx.fillStyle = piece.color;
+      ctx.fillRect(x + piece.x, y + piece.y, piece.w, piece.h);
+    }
+  }
+}
+
 /**
  * Draws a mech with its pose box at (x, y). `shift` moves the whole mech; `sway` moves everything
  * but the legs, which stay planted; `pose` moves each layer by itself (see `pose.ts`). `view` is the
@@ -63,24 +105,31 @@ export function drawMech(
   ctx: CanvasRenderingContext2D, parts: MechSprites, x: number, y: number,
   shift: { dx: number; dy: number } = { dx: 0, dy: 0 }, sway = 0, pose: Pose = {}, view: MechView = 'front',
 ): void {
-  if (view === 'back' && parts.core) {
-    // The joints go where the body goes, and lie under everything.
-    const body = pose.core ?? { dx: 0, dy: 0 };
-    const bx = x + shift.dx + body.dx;
-    const by = y + shift.dy + sway + body.dy + dropOf(parts);
-    for (const joint of [BACK_JOINTS.neck, BACK_JOINTS.shoulders, BACK_JOINTS.waist]) {
-      ctx.fillStyle = JOINT_DARK;
-      ctx.fillRect(bx + joint.x, by + joint.y, joint.w, joint.h);
-      // A line of light along its length: down the side of one that stands, along the top of one that lies.
-      ctx.fillStyle = JOINT_LIT;
-      if (joint.h > joint.w) ctx.fillRect(bx + joint.x + 1, by + joint.y, 2, joint.h);
-      else ctx.fillRect(bx + joint.x, by + joint.y + 1, joint.w, 2);
-    }
-  }
-  for (const cmd of layoutMech(parts, view)) {
-    const sprite = parts[cmd.slot]!;
-    const lift = cmd.slot === 'legs' ? 0 : sway;
-    const moved = pose[cmd.slot] ?? { dx: 0, dy: 0 };
-    ctx.drawImage(sprite.image, x + cmd.x + shift.dx + moved.dx, y + cmd.y + shift.dy + lift + moved.dy, sprite.w, sprite.h);
-  }
+  put(ctx, piecesOf(parts, sway, pose, view), x + shift.dx, y + shift.dy);
+}
+
+/**
+ * Lays a mech on the canvas as one picture, where `drawMech` would draw it: the whole of it is
+ * drawn on a sheet of its own first, and the sheet is laid on. That is for laying a mech over
+ * itself as light. Laid on layer by layer, a layer that lies under another would add its light
+ * through the one over it: the body would shine through an arm. Whole, only what is seen of the
+ * mech is added to it. The store lends the sheet; where it has none to lend, the layers are laid
+ * on one by one after all.
+ */
+export function layMech(
+  ctx: CanvasRenderingContext2D, store: SpriteStore, parts: MechSprites, x: number, y: number,
+  shift: { dx: number; dy: number } = { dx: 0, dy: 0 }, sway = 0, pose: Pose = {}, view: MechView = 'front',
+): void {
+  const pieces = piecesOf(parts, sway, pose, view);
+  if (pieces.length === 0) return;
+  // The box that holds all of it, on whole pixels.
+  const left = Math.floor(Math.min(...pieces.map((piece) => piece.x)));
+  const top = Math.floor(Math.min(...pieces.map((piece) => piece.y)));
+  const w = Math.ceil(Math.max(...pieces.map((piece) => piece.x + piece.w))) - left;
+  const h = Math.ceil(Math.max(...pieces.map((piece) => piece.y + piece.h))) - top;
+  const sheet = store.sheet?.(w, h) ?? null;
+  if (!sheet) return put(ctx, pieces, x + shift.dx, y + shift.dy);
+  sheet.ctx.clearRect(0, 0, w, h);
+  put(sheet.ctx, pieces, -left, -top);
+  ctx.drawImage(sheet.image, 0, 0, w, h, x + shift.dx + left, y + shift.dy + top, w, h);
 }

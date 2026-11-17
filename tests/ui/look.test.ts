@@ -4,10 +4,11 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BRIGHT, BattleScreen } from '../../src/ui/battleScreen';
 import { FIELD_LIGHT, MAX_LIGHTS } from '../../src/ui/light';
+import { JOINT_DARK, JOINT_LIT } from '../../src/ui/mechView';
 import { MAX_PARTICLES, PARTICLE_LIGHTS, Particles } from '../../src/ui/particles';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { NEAR_SIZE } from '../../src/ui/battleFx';
-import { onStage, record, type Drawn, type Glowed } from '../helpers/canvas';
+import { onStage, record, recorder, type Drawn, type Glowed, type Pictured } from '../helpers/canvas';
 import { generatorIn } from '../helpers/eyes';
 
 /** The look of the field in battle: what stands on it, what lights it, and when it is left alone. */
@@ -25,10 +26,10 @@ function battle(seed = 7, wound = false): BattleState {
   if (wound) for (const part of Object.values(state.units[1].parts)) if (part) part.ap = 1;
   return state;
 }
-function screenOf(opts: { fast?: boolean; calm?: boolean; state?: BattleState } = {}) {
+function screenOf(opts: { fast?: boolean; calm?: boolean; state?: BattleState; sprites?: SpriteStore } = {}) {
   const flow = new BattleFlow(opts.state ?? battle(), CATALOG, { quiet: true });
   // On ground that has no lamps or signs of its own, so that every light seen is the battle's.
-  const screen = new BattleScreen(flow, sprites, CATALOG, { fast: opts.fast ?? false, background: 'bg-nowhere', ...(opts.calm ? { calm: true } : {}) });
+  const screen = new BattleScreen(flow, opts.sprites ?? sprites, CATALOG, { fast: opts.fast ?? false, background: 'bg-nowhere', ...(opts.calm ? { calm: true } : {}) });
   // Past the banner that opens the battle, to the pilot's own menu.
   for (let i = 0; i < 400 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
   expect(flow.phase).toBe('action');
@@ -149,6 +150,157 @@ describe('light on the field', () => {
       }
     }
     expect([BRIGHT.hit, BRIGHT.calm, BRIGHT.glare]).toEqual([2.6, 1.4, 1.35]);
+  });
+
+  describe('a mech that is drawn from its parts lights up as the one picture it is seen as', () => {
+    const idOf = (image: Pictured): string => (image.image as { id?: string }).id ?? '';
+    /** A store that lends sheets: every loan is a canvas that remembers what is drawn on it. */
+    function lending(): { store: SpriteStore; loans: ReturnType<typeof recorder>[] } {
+      const loans: ReturnType<typeof recorder>[] = [];
+      const image = { id: 'sheet' } as unknown as CanvasImageSource;
+      return { loans, store: { ...sprites, sheet: () => { const sheet = recorder(); loans.push(sheet); return { image, ctx: sheet.ctx }; } } };
+    }
+    /** The pilot ends the turn whenever it is theirs: whatever lights up after that was hit by something else. */
+    const wait = (flow: BattleFlow, screen: BattleScreen): void => {
+      if (flow.phase !== 'action') return;
+      const at = flow.menu.items.findIndex((item) => item.id === 'endTurn');
+      for (let n = flow.menu.cursor; n < at; n++) screen.onInput('down');
+      screen.onInput('confirm');
+    };
+    /** From its left edge to its right and from its top to its bottom, whichever way round it was drawn. */
+    const span = (p: { x: number; y: number; w: number; h: number }) => ({ left: Math.min(p.x, p.x + p.w), right: Math.max(p.x, p.x + p.w), top: p.y, bottom: p.y + p.h });
+    /**
+     * Checks one frame in which a mech is lit: the sheet lies exactly over the mech as it was drawn layer by layer in that
+     * frame, each time it is laid on; and each loan holds that mech, layer for layer where it stands. `own` picks the
+     * mech's own layers out of the frame, `joints` says whether it has joints to be seen.
+     */
+    function whole(drawn: Drawn, loans: ReturnType<typeof recorder>[], own: (image: Pictured) => boolean, joints: boolean): number[] {
+      const layers = drawn.images.filter((image) => image.blend === 'source-over' && image.alpha === 1 && own(image));
+      const bars = joints ? drawn.rects.filter((r) => r.color === JOINT_DARK || r.color === JOINT_LIT) : [];
+      expect(layers.length).toBeGreaterThanOrEqual(5);
+      expect(bars).toHaveLength(joints ? 6 : 0);
+      const spans = [...layers, ...bars].map(span);
+      const box = { left: Math.min(...spans.map((s) => s.left)), right: Math.max(...spans.map((s) => s.right)), top: Math.min(...spans.map((s) => s.top)), bottom: Math.max(...spans.map((s) => s.bottom)) };
+      const light = drawn.images.filter((image) => image.blend === 'lighter');
+      // Nothing is laid on as light but the sheet: no layer by itself.
+      expect(light.map(idOf)).toEqual(light.map(() => 'sheet'));
+      expect(loans).toHaveLength(light.length);
+      for (const [n, laid] of light.entries()) {
+        expect(span(laid)).toEqual(box);
+        expect(laid.from).toEqual({ x: 0, y: 0, w: box.right - box.left, h: box.bottom - box.top });
+        // On the sheet the mech is as it stands, not turned round: the canvas turns the sheet round with everything else.
+        const turned = laid.w < 0 ? -1 : 1;
+        const on = loans[n].drawn;
+        expect(on.images.map((image) => [idOf(image), image.x, image.y, image.w, image.h]))
+          .toEqual(layers.map((image) => [idOf(image), (image.x - laid.x) * turned || 0, image.y - laid.y, Math.abs(image.w), image.h]));
+        expect(on.rects.map((r) => [r.color, r.x, r.y, r.w, r.h]))
+          .toEqual(bars.map((r) => [r.color, (r.x - laid.x) * turned || 0, r.y - laid.y, Math.abs(r.w), r.h]));
+        expect(on.images.every((image) => image.blend === 'source-over' && image.alpha === 1)).toBe(true);
+      }
+      return light.map((image) => image.alpha);
+    }
+
+    test('the pilot\'s mech by its own gun: once, at a little over a third', () => {
+      const { store, loans } = lending();
+      const { screen, fire } = screenOf({ sprites: store });
+      fire();
+      screen.update(32);
+      const drawn = onStage(record((ctx) => screen.draw(ctx)), screen.motion.view);
+      const alphas = whole(drawn, loans, (image) => idOf(image).endsWith('.back'), true);
+      expect(alphas).toHaveLength(1);
+      expect(alphas[0]).toBeCloseTo(BRIGHT.glare - 1, 6);
+    });
+
+    test('the pilot\'s mech when it is hit: 2.6 times as bright in two layers of light, 1.4 in one in a calm picture, shaken as it is', () => {
+      for (const [calm, want] of [[false, [1, BRIGHT.hit - 2]], [true, [BRIGHT.calm - 1]]] as [boolean, number[]][]) {
+        const { store, loans } = lending();
+        const { flow, screen } = screenOf({ sprites: store, calm });
+        let lit = 0;
+        const shaken = new Set<number>();
+        for (let i = 0; i < 4000 && lit < 6 && flow.phase !== 'result'; i++) {
+          wait(flow, screen);
+          screen.update(16);
+          loans.length = 0;
+          const drawn = onStage(record((ctx) => screen.draw(ctx)), screen.motion.view);
+          if (!drawn.images.some((image) => image.blend === 'lighter' && idOf(image) === 'sheet')) continue;
+          lit++;
+          const alphas = whole(drawn, loans, (image) => idOf(image).endsWith('.back'), true);
+          expect(alphas).toHaveLength(want.length);
+          alphas.forEach((alpha, n) => expect(alpha, `calm ${calm}`).toBeCloseTo(want[n], 6));
+          shaken.add((screen as unknown as { fx: { transform(id: string): { dx: number } } }).fx.transform('player').dx);
+        }
+        expect(lit, `calm ${calm}`).toBe(6);
+        // It was thrown both ways while it was lit, and the light went with it each time.
+        expect([...shaken].sort((a, b) => a - b), `calm ${calm}`).toEqual([-2, 2]);
+      }
+    });
+
+    test('the pilot\'s mech as it goes down: lit while it sinks and comes apart, the light sinking and coming apart with it', () => {
+      const { store, loans } = lending();
+      const state = battle();
+      // One point of armour left everywhere: the first thing that lands ends it.
+      for (const part of Object.values(state.units[0].parts)) if (part) part.ap = 1;
+      const { flow, screen } = screenOf({ sprites: store, state });
+      const fx = (screen as unknown as { fx: { transform(id: string): { dy: number; flash: boolean } } }).fx;
+      let sinking = 0;
+      for (let i = 0; i < 4000 && flow.phase !== 'result'; i++) {
+        wait(flow, screen);
+        screen.update(16);
+        const t = fx.transform('player');
+        // Lit, and already on its way down.
+        if (!t.flash || t.dy === 0) continue;
+        sinking++;
+        loans.length = 0;
+        const drawn = onStage(record((ctx) => screen.draw(ctx)), screen.motion.view);
+        expect(screen.motion.breaking('player')).not.toBeNull();
+        const alphas = whole(drawn, loans, (image) => idOf(image).endsWith('.back'), true);
+        expect(alphas).toHaveLength(2);
+      }
+      expect(flow.state.units[0].destroyed).toBe(true);
+      expect(sinking).toBeGreaterThanOrEqual(2);
+    });
+
+    test('a mech that is fought alone, drawn turned round: the sheet is turned round with it', () => {
+      const { store, loans } = lending();
+      const state = createBattle(DEMO_BUILD, [ENEMIES.rival], CATALOG, 7);
+      const { flow, screen, fire } = screenOf({ sprites: store, state });
+      let lit = 0;
+      for (let i = 0; i < 4000 && lit < 3 && flow.phase !== 'result'; i++) {
+        if (flow.phase === 'action') fire();
+        screen.update(16);
+        loans.length = 0;
+        const drawn = onStage(record((ctx) => screen.draw(ctx)), screen.motion.view);
+        // The pilot's own mech lights up by its gun as well: these are the frames in which the other one is hit.
+        const theirs = drawn.images.filter((image) => image.blend === 'lighter' && image.w < 0);
+        if (theirs.length === 0) continue;
+        lit++;
+        const mine = drawn.images.filter((image) => image.blend === 'lighter' && image.w > 0);
+        const alphas = whole(
+          { ...drawn, images: drawn.images.filter((image) => !mine.includes(image)) },
+          loans.filter((loan) => loan.drawn.images.some((image) => idOf(image).endsWith('.small'))),
+          (image) => idOf(image).endsWith('.small'), false,
+        );
+        expect(alphas).toHaveLength(2);
+        expect(alphas[0] + alphas[1]).toBeCloseTo(BRIGHT.hit - 1, 6);
+      }
+      expect(lit).toBe(3);
+    });
+
+    test('a machine that is one picture needs no sheet: its picture is laid over it as it is', () => {
+      const { store, loans } = lending();
+      const { screen, fire } = screenOf({ sprites: store });
+      fire();
+      let lit = 0;
+      for (let i = 0; i < 40; i++) {
+        screen.update(16);
+        const drawn = record((ctx) => screen.draw(ctx));
+        lit += drawn.images.filter((image) => image.blend === 'lighter' && idOf(image) === 'enemy-tank').length;
+      }
+      expect(lit).toBeGreaterThanOrEqual(6);
+      // Whatever went on a sheet in that time was the pilot's own mech, lit by its gun.
+      expect(loans.length).toBeGreaterThan(0);
+      for (const loan of loans) expect(loan.drawn.images.every((image) => idOf(image).endsWith('.back'))).toBe(true);
+    });
   });
 
   test('a calm picture has the same lights at half strength, and none that covers the field', () => {
