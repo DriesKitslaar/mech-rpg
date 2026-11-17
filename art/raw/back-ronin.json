@@ -1,0 +1,11 @@
+{
+  "id": "back-ronin",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png"
+  ],
+  "prompt": "The attached image shows a pixel art mecha from the front. Draw the same mecha seen from behind, in a three-quarter back view: the camera stands behind the mecha and a little to its right, so that its back and its right side are seen and it faces away from the viewer, towards the upper right of the image. It keeps its design, colours, proportions, pixel size, outline weight and shading; its back shows armour plates and a compact backpack unit in the same colours and glowing accents. Pose: combat stance with legs apart and knees slightly bent, both feet planted on the ground; the arm on the right side of the image is stretched forward, away from the viewer and towards the upper right, at chest height, with a closed empty fist; the arm on the left side of the image is bent at its side with a closed empty fist; the whole body is visible from head to feet, centred, filling most of the frame. No weapons, nothing held in the hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

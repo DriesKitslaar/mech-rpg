@@ -170,6 +170,41 @@ describe('sprites', () => {
     expect(missing).toEqual([]);
   });
 
+  test('every part the player can see has a drawing from behind too, for the battle, in its place in that pose', () => {
+    const sprites = SPRITES as Record<string, { w: number; h: number; ox?: number; oy?: number; gx?: number }>;
+    const missing: string[] = [];
+    for (const part of SHOP_PARTS) {
+      if (['generator', 'booster', 'fcs', 'module'].includes(part.kind)) continue;
+      const ids = part.kind === 'arms' ? [`${part.id}.near.back`, `${part.id}.far.back`] : [`${part.id}.back`];
+      for (const id of ids) {
+        if (!(id in sprites)) { missing.push(id); continue; }
+        // A layer of the frame knows its place in the pose; what is carried knows where it is gripped.
+        const framed = ['head', 'core', 'arms', 'legs'].includes(part.kind);
+        expect(sprites[id][framed ? 'ox' : 'gx'], id).toBeTypeOf('number');
+        // From behind everything is four fifths the size it is from the front, give or take what its turn and its trim add.
+        const front = sprites[id.replace(/\.back$/, '')];
+        if (!framed) expect(Math.hypot(sprites[id].w, sprites[id].h) / Math.hypot(front.w, front.h), id).toBeCloseTo(0.8, 0);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  test('every sprite from the front that is a layer or is carried has a small one, two thirds the size, for a mech that stands far off', () => {
+    const sprites = SPRITES as Record<string, { w: number; h: number; ox?: number; oy?: number }>;
+    const fronts = Object.keys(sprites).filter((id) => /^(head|core|legs|arms|wpn|shd)-/.test(id) && !/\.(back|small)$/.test(id));
+    expect(fronts.length).toBeGreaterThan(80);
+    for (const id of fronts) {
+      const small = sprites[`${id}.small`];
+      expect(small, id).toBeDefined();
+      expect(Math.abs(small.w - sprites[id].w * 0.65), id).toBeLessThanOrEqual(2);
+      expect(Math.abs(small.h - sprites[id].h * 0.65), id).toBeLessThanOrEqual(2);
+      if (sprites[id].ox !== undefined) {
+        expect(Math.abs(small.ox! - sprites[id].ox! * 0.65), id).toBeLessThanOrEqual(2);
+        expect(Math.abs(small.oy! - sprites[id].oy! * 0.65), id).toBeLessThanOrEqual(2);
+      }
+    }
+  });
+
   test('frame layers record where they sit in the pose and free-standing sprites do not', () => {
     const sprites = SPRITES as Record<string, { ox?: number; oy?: number }>;
     expect(sprites['legs-bulwark'].ox).toBeTypeOf('number');
@@ -289,6 +324,8 @@ describe('campaign content', () => {
       const carried = [enemy.build, ...(enemy.phases ?? []).map((p) => p.refit ?? {})].flatMap((b) => [b.rightHand, b.leftHand, b.shoulder]);
       const ids = [head, core, legs, `${arms}.near`, `${arms}.far`, ...carried].filter(Boolean) as string[];
       for (const id of ids) expect(id in SPRITES, `${enemy.id}: ${id}`).toBe(true);
+      // In a battle they stand far off: every one of those has its small drawing.
+      for (const id of ids) expect(`${id}.small` in SPRITES, `${enemy.id}: ${id}.small`).toBe(true);
     }
   });
 

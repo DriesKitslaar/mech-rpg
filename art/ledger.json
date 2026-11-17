@@ -1797,5 +1797,1185 @@
    },
    "total_tokens": 297
   }
+ },
+ {
+  "id": "back-ronin",
+  "at": "2026-11-17T08:22:54.932Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0193,
+  "usage": {
+   "input_tokens": 1267,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 243
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1463
+  }
+ },
+ {
+  "id": "back-salvage",
+  "at": "2026-11-17T08:23:24.634Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0291,
+  "usage": {
+   "input_tokens": 2207,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 159
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2403
+  }
+ },
+ {
+  "id": "back-salvage",
+  "at": "2026-11-17T08:24:54.807Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0297,
+  "usage": {
+   "input_tokens": 2318,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 270
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2514
+  }
+ },
+ {
+  "id": "legs-strider.back",
+  "at": "2026-11-17T08:25:38.479Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-hauler.back",
+  "at": "2026-11-17T08:25:48.374Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-scout-mk1.back",
+  "at": "2026-11-17T08:25:56.628Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0185,
+  "usage": {
+   "input_tokens": 1116,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1312
+  }
+ },
+ {
+  "id": "arms-rigger.near.back",
+  "at": "2026-11-17T08:26:04.662Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-rigger.far.back",
+  "at": "2026-11-17T08:26:14.464Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "back-halo",
+  "at": "2026-11-17T08:29:36.780Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0295,
+  "usage": {
+   "input_tokens": 2289,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 241
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2485
+  }
+ },
+ {
+  "id": "back-bulwark",
+  "at": "2026-11-17T08:29:48.569Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0296,
+  "usage": {
+   "input_tokens": 2307,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 259
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2503
+  }
+ },
+ {
+  "id": "back-wraith",
+  "at": "2026-11-17T08:30:02.859Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0296,
+  "usage": {
+   "input_tokens": 2304,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 256
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2500
+  }
+ },
+ {
+  "id": "back-colossus",
+  "at": "2026-11-17T08:30:14.695Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0296,
+  "usage": {
+   "input_tokens": 2311,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 263
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2507
+  }
+ },
+ {
+  "id": "back-mantis",
+  "at": "2026-11-17T08:30:28.320Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0298,
+  "usage": {
+   "input_tokens": 2340,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 292
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2536
+  }
+ },
+ {
+  "id": "back-auditor",
+  "at": "2026-11-17T08:30:39.386Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0298,
+  "usage": {
+   "input_tokens": 2336,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 288
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2532
+  }
+ },
+ {
+  "id": "head-scout-mk1.back",
+  "at": "2026-11-17T08:30:51.527Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "back-crawler",
+  "at": "2026-11-17T08:31:36.225Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.019,
+  "usage": {
+   "input_tokens": 1201,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 177
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1397
+  }
+ },
+ {
+  "id": "back-spider",
+  "at": "2026-11-17T08:31:47.595Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.019,
+  "usage": {
+   "input_tokens": 1204,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 180
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1400
+  }
+ },
+ {
+  "id": "back-glide",
+  "at": "2026-11-17T08:31:58.109Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.019,
+  "usage": {
+   "input_tokens": 1205,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 181
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1401
+  }
+ },
+ {
+  "id": "legs-halo.back",
+  "at": "2026-11-17T08:32:07.952Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-halo.back",
+  "at": "2026-11-17T08:32:16.433Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-halo.back",
+  "at": "2026-11-17T08:32:24.784Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-halo.near.back",
+  "at": "2026-11-17T08:32:33.171Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-halo.far.back",
+  "at": "2026-11-17T08:32:41.397Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-bulwark.back",
+  "at": "2026-11-17T08:32:48.964Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-bulwark.back",
+  "at": "2026-11-17T08:32:59.019Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-bulwark.back",
+  "at": "2026-11-17T08:33:08.251Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-bulwark.near.back",
+  "at": "2026-11-17T08:33:16.113Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-bulwark.far.back",
+  "at": "2026-11-17T08:33:24.563Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-ronin.back",
+  "at": "2026-11-17T08:33:33.328Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-ronin.back",
+  "at": "2026-11-17T08:33:44.297Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-ronin.back",
+  "at": "2026-11-17T08:33:53.603Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-ronin.near.back",
+  "at": "2026-11-17T08:34:01.929Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-ronin.far.back",
+  "at": "2026-11-17T08:34:10.559Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-wraith.back",
+  "at": "2026-11-17T08:34:19.087Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-wraith.back",
+  "at": "2026-11-17T08:34:29.273Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-wraith.back",
+  "at": "2026-11-17T08:34:37.721Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-wraith.near.back",
+  "at": "2026-11-17T08:34:46.135Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-wraith.far.back",
+  "at": "2026-11-17T08:34:53.791Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-colossus.back",
+  "at": "2026-11-17T08:35:03.112Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-colossus.back",
+  "at": "2026-11-17T08:35:12.793Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-colossus.back",
+  "at": "2026-11-17T08:35:23.510Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-colossus.near.back",
+  "at": "2026-11-17T08:35:32.027Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-colossus.far.back",
+  "at": "2026-11-17T08:35:40.889Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-mantis.back",
+  "at": "2026-11-17T08:35:49.889Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-mantis.back",
+  "at": "2026-11-17T08:35:59.092Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-mantis.back",
+  "at": "2026-11-17T08:36:08.039Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-mantis.near.back",
+  "at": "2026-11-17T08:36:17.265Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-mantis.far.back",
+  "at": "2026-11-17T08:36:27.533Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-auditor.back",
+  "at": "2026-11-17T08:36:37.565Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-auditor.back",
+  "at": "2026-11-17T08:36:47.489Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-auditor.back",
+  "at": "2026-11-17T08:36:56.018Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-auditor.near.back",
+  "at": "2026-11-17T08:37:03.048Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-auditor.far.back",
+  "at": "2026-11-17T08:37:11.903Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-crawler.back",
+  "at": "2026-11-17T08:37:20.593Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1126,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 102
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1322
+  }
+ },
+ {
+  "id": "legs-spider.back",
+  "at": "2026-11-17T08:37:30.605Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1127,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 103
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1323
+  }
+ },
+ {
+  "id": "legs-glide.back",
+  "at": "2026-11-17T08:37:39.818Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1131,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 107
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1327
+  }
+ },
+ {
+  "id": "head-bulwark.back",
+  "at": "2026-11-17T08:40:59.271Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1158,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 134
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1354
+  }
+ },
+ {
+  "id": "head-ronin.back",
+  "at": "2026-11-17T08:41:07.629Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1182,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 158
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1378
+  }
+ },
+ {
+  "id": "head-mantis.back",
+  "at": "2026-11-17T08:41:15.971Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1153,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 129
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1349
+  }
  }
 ]

@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as iq from 'image-q';
 import sharp, { type Sharp } from 'sharp';
-import { BOX, JOBS, POSE_BOX, paintFamilyOf, type ArtJob } from './jobs';
+import { BACK_POSE_BOX, BACK_TILT, BOX, JOBS, POSE_BOX, SMALL_POSE_BOX, paintFamilyOf, type ArtJob } from './jobs';
 import { analyse, type PaintInfo } from '../../src/ui/paint';
 import { bounds, chromaKeyGreen, quantize, trim, type RawImage, type RGB } from './imageOps';
 
@@ -15,13 +15,26 @@ const OUT = 'public/sprites';
 const PALETTE = 'art/palette.json';
 const MANIFEST = 'src/content/sprites.json';
 
-type Entry = { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo };
+type Entry = {
+  file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo;
+  /** On a weapon turned for the view from behind: where in it it is held, and where it fires from. */
+  gx?: number; gy?: number; mx?: number; my?: number;
+};
 
 /**
  * Legs that are lower than a pair of legs: how many pixels the upper body comes down to meet them.
  * Measured from the proof sheets: ordinary legs start about 60 pixels down the pose box.
  */
 const LEGS_DROP: Record<string, number> = { 'legs-crawler': 28 };
+/**
+ * The same from behind, measured from the proof sheets of the drawings from behind, which are not
+ * the drawings from the front made smaller: a walker's hip block sits lower there, and a hover unit
+ * was drawn so short that the whole mech has to come down (`lower`: its own layer comes down by as
+ * much as what sits on it) or it would hang a third of its height over the ground.
+ */
+const LEGS_FROM_BEHIND: Record<string, { drop: number; lower?: number }> = {
+  'legs-crawler.back': { drop: 22 }, 'legs-spider.back': { drop: 12 }, 'legs-glide.back': { drop: 20, lower: 20 },
+};
 
 export async function decode(input: string | Buffer | Sharp): Promise<RawImage> {
   const s = typeof input === 'string' || Buffer.isBuffer(input) ? sharp(input) : input;
@@ -52,15 +65,69 @@ async function buildPalette(): Promise<void> {
   console.log(`wrote ${colours.length} colours to ${PALETTE}`);
 }
 
-/** A layer keeps its place: the whole drawing is reduced to the pose box, then cropped with its offset recorded. */
+/**
+ * A layer keeps its place: the whole drawing is reduced to the pose box, then cropped with its offset recorded.
+ * A layer cut from a drawing from behind has a smaller pose box of its own.
+ */
 async function processLayer(job: ArtJob, palette: RGB[]): Promise<Entry> {
-  const keyed = chromaKeyGreen(await decode(`${RAW}/${job.id}.png`));
-  const small = quantize(await decode(await encode(keyed).resize(POSE_BOX, POSE_BOX).png().toBuffer()), palette);
+  const keyed = chromaKeyGreen(await decode(`${RAW}/${job.source ?? job.id}.png`));
+  const side = job.box ?? POSE_BOX;
+  const small = quantize(await decode(await encode(keyed).resize(side, side).png().toBuffer()), palette);
   const box = bounds(small);
   if (!box) throw new Error('image is empty after background removal');
   await encode(trim(small)).png().toFile(`${OUT}/${job.id}.png`);
-  const drop = LEGS_DROP[job.id];
-  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy: box.y, ...(drop ? { drop } : {}) };
+  const behind = LEGS_FROM_BEHIND[job.id];
+  // The same legs from the front in a smaller pose box bring the upper body down by as much less.
+  const full = LEGS_DROP[job.id.replace(/\.small$/, '')];
+  const drop = behind ? behind.drop : full ? Math.round((full * side) / POSE_BOX) : 0;
+  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy: box.y + (behind?.lower ?? 0), ...(drop ? { drop } : {}) };
+}
+
+/** How much smaller than from the front a weapon is drawn in each view: as much as the mech that carries it. */
+const VIEW_SCALE = { back: BACK_POSE_BOX / POSE_BOX, small: SMALL_POSE_BOX / POSE_BOX };
+
+/**
+ * A weapon or a shield for a view other than from the front, from the same raw picture. For a
+ * mech that stands far off it is only reduced. From behind a weapon is also turned upwards (a
+ * shield stands as it stood), and where it is held and where it fires from are worked out with
+ * it: turned, a picture's corners are no longer where the layout would look for them.
+ */
+async function processCarried(job: ArtJob, palette: RGB[]): Promise<Entry> {
+  const box = BOX[job.kind as keyof typeof BOX];
+  const cut = trim(chromaKeyGreen(await decode(`${RAW}/${job.source ?? job.id}.png`)));
+  // What it is reduced by from the front: as large as fits its box.
+  const front = Math.min(box.w / cut.width, box.h / cut.height);
+  const scale = front * VIEW_SCALE[job.view!];
+  const tilt = job.view === 'back' && job.kind !== 'shield' ? BACK_TILT : 0;
+  let picture = encode(cut);
+  if (job.flip) picture = picture.flop();
+  if (tilt) picture = sharp(await picture.png().toBuffer()).rotate(-tilt, { background: { r: 0, g: 0, b: 0, alpha: 0 } });
+  const turned = await decode(await picture.png().toBuffer());
+  const w = Math.max(1, Math.round(turned.width * scale));
+  const h = Math.max(1, Math.round(turned.height * scale));
+  const small = quantize(await decode(await encode(turned).resize(w, h, { fit: 'fill' }).png().toBuffer()), palette);
+  const kept = bounds(small);
+  if (!kept) throw new Error('image is empty after background removal');
+  await encode(trim(small)).png().toFile(`${OUT}/${job.id}.png`);
+  const entry: Entry = { file: `sprites/${job.id}.png`, w: kept.w, h: kept.h };
+  if (job.view !== 'back') return entry;
+  // Where the layout holds it from the front, as shares of the picture: a hand weapon a fifth of the way
+  // along, a shoulder weapon by its mount, a shield on the forearm. And where it fires from: its far end.
+  const hold = job.kind === 'handWeapon' ? { x: 0.2, y: 0.5 } : job.kind === 'shoulderWeapon' ? { x: 0.6, y: 0.5 } : { x: 0.5, y: 0.6 };
+  const fire = job.kind === 'shield' ? hold : { x: 1, y: 0.5 };
+  const rad = (tilt * Math.PI) / 180;
+  /** A point of the picture before it was turned, as it lies in the sprite that was kept. */
+  const place = (share: { x: number; y: number }): { x: number; y: number } => {
+    const dx = (share.x - 0.5) * cut.width;
+    const dy = (share.y - 0.5) * cut.height;
+    // Turned against the clock: what was to the right goes up.
+    const x = turned.width / 2 + dx * Math.cos(rad) + dy * Math.sin(rad);
+    const y = turned.height / 2 - dx * Math.sin(rad) + dy * Math.cos(rad);
+    return { x: Math.round(x * scale - kept.x), y: Math.round(y * scale - kept.y) };
+  };
+  const g = place(hold);
+  const m = place(fire);
+  return { ...entry, gx: g.x, gy: g.y, mx: m.x, my: m.y };
 }
 
 async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
@@ -128,7 +195,7 @@ async function main(): Promise<void> {
     if (job.kind === 'family') continue; // families are only the source the layers are cut from
     if (!existsSync(`${RAW}/${job.source ?? job.id}.png`)) { console.log(`skip ${job.id} (no raw image)`); continue; }
     try {
-      const entry = await (job.kind === 'layer' ? processLayer(job, palette) : processFree(job, palette));
+      const entry = await (job.kind === 'layer' ? processLayer(job, palette) : job.view ? processCarried(job, palette) : processFree(job, palette));
       manifest[job.id] = entry;
       console.log(`ok   ${job.id} ${entry.w}x${entry.h}${entry.ox !== undefined ? ` at ${entry.ox},${entry.oy}` : ''}`);
     } catch (e) {

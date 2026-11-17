@@ -1,9 +1,18 @@
 import { paintById, recolour, type PaintInfo } from './paint';
 import { COLORS, FONT } from './widgets';
 
-export type SpriteManifest = Record<string, { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo }>;
-/** `ox`/`oy` is a mech layer's place inside the pose box; `drop` is explained in mechLayout. */
-export interface Sprite { image: CanvasImageSource; w: number; h: number; ox?: number; oy?: number; drop?: number }
+export type SpriteManifest = Record<string, {
+  file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo;
+  gx?: number; gy?: number; mx?: number; my?: number;
+}>;
+/**
+ * `ox`/`oy` is a mech layer's place inside the pose box; `drop`, and the `gx`/`gy` and `mx`/`my` of a
+ * weapon that was turned for its view, are explained in mechLayout.
+ */
+export interface Sprite {
+  image: CanvasImageSource; w: number; h: number; ox?: number; oy?: number; drop?: number;
+  gx?: number; gy?: number; mx?: number; my?: number;
+}
 export interface SpriteStore {
   /** Returns the sprite, or a labelled placeholder of the fallback size when it is unavailable. */
   get(id: string, fallback: { w: number; h: number; ox?: number; oy?: number; label: string }): Sprite;
@@ -44,7 +53,13 @@ export async function loadSprites(manifest: SpriteManifest): Promise<SpriteStore
   const loaded = new Map<string, Sprite>();
   await Promise.all(Object.entries(manifest).map(async ([id, entry]) => {
     const image = await loadImage(entry.file);
-    if (image) loaded.set(id, { image, w: entry.w, h: entry.h, ox: entry.ox, oy: entry.oy, ...(entry.drop ? { drop: entry.drop } : {}) });
+    if (!image) return;
+    const { gx, gy, mx, my } = entry;
+    loaded.set(id, {
+      image, w: entry.w, h: entry.h, ox: entry.ox, oy: entry.oy, ...(entry.drop ? { drop: entry.drop } : {}),
+      // A weapon that was turned for its view: where it is held and where it fires from.
+      ...(gx !== undefined && gy !== undefined && mx !== undefined && my !== undefined ? { gx, gy, mx, my } : {}),
+    });
   }));
   const placeholders = new Map<string, Sprite>();
   const paintedSprites = new Map<string, Sprite>();
