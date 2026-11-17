@@ -18,7 +18,7 @@ import { drawRoom, drawRoomSpill } from '../../src/ui/room';
 import { LIGHTNING_MS, drawWeatherExtras, lightning, struck } from '../../src/ui/weather';
 import { COLORS, drawPanel, drawRowLight } from '../../src/ui/widgets';
 import { done, inHub, memoryStore, press, select, snap } from '../helpers/app';
-import { record, type Drawn } from '../helpers/canvas';
+import { record, signIn, type Drawn } from '../helpers/canvas';
 
 /**
  * How much of the soft light is drawn: all of it, less, or none. Less and none are for a handheld
@@ -145,7 +145,8 @@ describe('the three levels', () => {
     const band = record((ctx) => drawCutIn(ctx, 400, FIELD, { heading: 'OVERDRIVE', name: 'DEADEYE' }, () => undefined));
     expect(softThings(band)).toBe(0);
     expect(band.rects.some((r) => r.color === 'rgba(8, 6, 22, 0.94)')).toBe(true);
-    expect(band.texts.map((t) => t.text)).toContain('DEADEYE');
+    // Its name is in the sign's letters: solid, like the plate.
+    expect(signIn(band, 'DEADEYE', 'steel')).not.toBeNull();
   });
 
   test('the rows of a circle are worked out once for each size', () => {

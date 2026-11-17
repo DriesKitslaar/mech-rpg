@@ -1,4 +1,5 @@
 import { drawCone, drawGlow, ringOf, soft, wide, type Pt } from './light';
+import { drawWord, fitTall, wordTop } from './signType';
 import { COLORS, drawOutlined, drawText } from './widgets';
 
 /**
@@ -38,6 +39,10 @@ export function cutInOpen(ms: number): number {
   if (ms > CUT_IN_MS - CUT_CLOSE_MS) return (CUT_IN_MS - ms) / CUT_CLOSE_MS;
   return 1;
 }
+
+/** How tall the letters of the name in the band are at most, and how wide the name may be: the mech has the left of the band. */
+export const CUT_IN_NAME_TALL = 18;
+export const CUT_IN_NAME_W = 142;
 
 /**
  * The band across the middle of the field: dark, edged in the game's colour, with speed lines
@@ -102,7 +107,10 @@ export function drawCutIn(
   // What it is called, once the band is open enough to hold it.
   if (h >= 44) {
     drawText(ctx, words.heading, field.width - 12, middle - 22, { size: 10, align: 'right', color: COLORS.accent });
-    drawOutlined(ctx, words.name, field.width - 12, middle - 12, { size: 20, align: 'right', color: '#ffffff' });
+    // Its name in the sign's letters, steel, as tall as fits beside the mech; in the font where the sign cannot write it.
+    const tall = fitTall(words.name, CUT_IN_NAME_W, CUT_IN_NAME_TALL);
+    if (tall === null) drawOutlined(ctx, words.name, field.width - 12, middle - 12, { size: 20, align: 'right', color: '#ffffff' });
+    else drawWord(ctx, words.name, field.width - 10, wordTop(middle - 1, tall), { tall, metal: 'steel', align: 'right' });
   }
   // It opens with a flash of its own.
   if (!calm && ms < 70) {

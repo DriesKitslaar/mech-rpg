@@ -3,6 +3,8 @@ import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
+import { drawLights } from './light';
+import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import { Typewriter } from './typewriter';
 import { COLORS, LINE, charsFor, drawText, wrap } from './widgets';
 
@@ -22,6 +24,12 @@ const PICTURE_MS = 900;
  * button mashed through the settlement must not carry the reader past a page of the story.
  */
 export const SCENE_HOLD_MS = 500;
+
+/** Where the middle of a page's title is, how tall its letters are at most and at least, and how wide it may be. */
+export const TITLE_Y = 47;
+export const TITLE_TALL = 28;
+export const TITLE_SMALL = 18;
+export const TITLE_W = 294;
 
 /** A page of story between contracts: the opening of an act, or how it all ended. Shown once. */
 export class SceneScreen implements Screen {
@@ -78,6 +86,24 @@ export class SceneScreen implements Screen {
     };
   }
 
+  /**
+   * The title, in the sign's letters and the game's colour, as tall as fits across the page. It
+   * comes on like a tube as the page opens. One the sign cannot write is written in the font.
+   */
+  private drawTitle(ctx: CanvasRenderingContext2D): void {
+    const { title } = this.scene;
+    const tall = fitTall(title, TITLE_W, TITLE_TALL, TITLE_SMALL);
+    if (tall === null) {
+      drawText(ctx, title, LOGICAL_W / 2 + 1, 31, { size: 32, align: 'center', color: '#3b1d5a' });
+      drawText(ctx, title, LOGICAL_W / 2, 30, { size: 32, align: 'center', color: COLORS.accent });
+      return;
+    }
+    const calm = this.app.settings.calm === true;
+    const level = this.app.deps.fast ? 1 : wordLevel(this.clock, calm);
+    drawLights(ctx, wordLights(title, LOGICAL_W / 2, TITLE_Y, tall, 'neon', level), calm ? 0.5 : 1);
+    drawWord(ctx, title, LOGICAL_W / 2, wordTop(TITLE_Y, tall), { tall, metal: 'neon', level });
+  }
+
   draw(ctx: CanvasRenderingContext2D): void {
     const { scene } = this;
     ctx.fillStyle = '#0c0c18';
@@ -92,8 +118,7 @@ export class SceneScreen implements Screen {
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
 
     if (scene.heading) drawText(ctx, scene.heading, LOGICAL_W / 2, 18, { align: 'center', color: COLORS.dim });
-    drawText(ctx, scene.title, LOGICAL_W / 2 + 1, 31, { size: 32, align: 'center', color: '#3b1d5a' });
-    drawText(ctx, scene.title, LOGICAL_W / 2, 30, { size: 32, align: 'center', color: COLORS.accent });
+    this.drawTitle(ctx);
     // Not a word before the shade is up: text that is all there at once would otherwise sit on the bare picture.
     if (!this.wordsUp) return;
     const written = this.writer.visible();

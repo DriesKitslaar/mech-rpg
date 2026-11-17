@@ -5,6 +5,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { SCENE_HOLD_MS } from './sceneScreen';
+import { drawWord, fitTall, wordTop } from './signType';
 import { Typewriter } from './typewriter';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
 
@@ -18,6 +19,11 @@ export const TALK_SCENE_LINES = 5;
 export const QUESTION_HOLD_MS = 1500;
 /** Characters of an answer that fit on its row of the list. */
 export const ANSWER_CHARS = charsFor(LOGICAL_W - TEXT_X - 22);
+
+/** Where the middle of a conversation's title is, how tall its letters are at most, and how wide it may be. */
+export const TALK_TITLE_Y = 31;
+export const TALK_TITLE_TALL = 16;
+export const TALK_TITLE_W = 290;
 
 /**
  * A conversation between contracts: people speak in turn, each with their face beside their words,
@@ -128,7 +134,10 @@ export class TalkScreen implements Screen {
     ctx.fillStyle = 'rgba(8, 8, 20, 0.45)';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     if (scene.heading) drawText(ctx, scene.heading, LOGICAL_W / 2, 10, { align: 'center', color: COLORS.dim });
-    drawText(ctx, scene.title, LOGICAL_W / 2, 22, { size: 16, align: 'center', color: COLORS.accent });
+    // What the conversation is called, in the sign's letters; in the font where the sign cannot write it.
+    const tall = fitTall(scene.title, TALK_TITLE_W, TALK_TITLE_TALL);
+    if (tall === null) drawText(ctx, scene.title, LOGICAL_W / 2, 22, { size: 16, align: 'center', color: COLORS.accent });
+    else drawWord(ctx, scene.title, LOGICAL_W / 2, wordTop(TALK_TITLE_Y, tall), { tall, metal: 'neon' });
 
     const line = this.said[this.at];
     drawPanel(ctx, 4, PANEL_Y, LOGICAL_W - 8, LOGICAL_H - PANEL_Y - 4);

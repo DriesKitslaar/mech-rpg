@@ -1,3 +1,5 @@
+import { LINE, MAX_TALL, MIN_TALL, canWrite, drawWord, wordHeight, wordWidth, type Metal } from '../../src/ui/signType';
+
 /** One piece of text as it was written: its row, where it starts and ends on it, how large it is and in what colour. */
 export interface Written {
   text: string;
@@ -144,3 +146,55 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
 
 /** Whether two pieces of text share a row and run into each other. */
 export const overlap = (a: Written, b: Written): boolean => a.y === b.y && a.left < b.right && b.left < a.right;
+
+/** A word in the sign's letters as it was found in a drawing: its box, how tall its letters are, and how lit it is. */
+export interface Sign { x: number; y: number; w: number; h: number; tall: number; metal: Metal; level: number; middle: number }
+
+/**
+ * Where a word in the sign's letters is in a drawing, or null when it is not there. It is there
+ * when every run of it was filled, in order and in its metal's colours, lit or not. `tall` narrows
+ * the search to one height; without it every height the sign can be written at is tried.
+ */
+export function signIn(page: Drawn, text: string, metal: Metal, tall?: number): Sign | null {
+  if (!canWrite(text)) return null;
+  const heights = tall ? [tall] : Array.from({ length: MAX_TALL - MIN_TALL + 1 }, (_, i) => MAX_TALL - i);
+  for (const height of heights) {
+    const find = (level: 0 | 1): { x: number; y: number; alpha: number } | null => {
+      const want = record((ctx) => drawWord(ctx, text, 0, 0, { tall: height, metal, level, align: 'left' })).rects;
+      for (let i = 0; i + want.length <= page.rects.length; i++) {
+        const dx = page.rects[i].x - want[0].x;
+        const dy = page.rects[i].y - want[0].y;
+        let all = true;
+        for (let k = 0; k < want.length && all; k++) {
+          const got = page.rects[i + k];
+          all = got.color === want[k].color && got.w === want[k].w && got.h === want[k].h && got.x - want[k].x === dx && got.y - want[k].y === dy;
+        }
+        if (all) return { x: dx, y: dy, alpha: page.rects[i].alpha };
+      }
+      return null;
+    };
+    const lit = find(1);
+    const dark = lit ? null : find(0);
+    const at = lit ?? dark;
+    if (!at) continue;
+    return {
+      x: at.x, y: at.y, w: wordWidth(text, height), h: wordHeight(height), tall: height, metal,
+      level: lit ? lit.alpha : 0,
+      // The middle of its letters, which is what is put where the font's word was.
+      middle: at.y + 1 + height / 2,
+    };
+  }
+  return null;
+}
+
+/** How many words in the sign's letters a drawing holds, whatever they say: each is laid on the dark line round it. */
+export function signCount(page: Drawn): number {
+  let count = 0;
+  let inLine = false;
+  for (const rect of page.rects) {
+    const line = rect.color === LINE && rect.h === 1;
+    if (line && !inLine) count++;
+    inLine = line;
+  }
+  return count;
+}

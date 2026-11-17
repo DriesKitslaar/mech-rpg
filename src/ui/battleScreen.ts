@@ -16,7 +16,8 @@ import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
 import { BACK_MOUNT, FAR_FIST, NEAR_FIST, dropOf } from './mechLayout';
 import { HitStop } from './hitStop';
-import { MAX_LIGHTS, disc, drawGlow, drawGlows, drawShadow, type Glow, type Pt } from './light';
+import { MAX_LIGHTS, disc, drawGlow, drawGlows, drawLights, drawShadow, type Glow, type Pt } from './light';
+import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import {
   CUT_IN_MS, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, drawCutIn, drawDefeat, drawLetterbox, drawVictory, endsBattle, focusOn, letterbox, lookClose,
 } from './cinema';
@@ -103,6 +104,14 @@ function drawRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius:
     else { x -= 1; err += 2 * (y - x) + 1; }
   }
 }
+
+/** How tall the letters of the word over a boss are. */
+export const WARNING_TALL = 23;
+/** The box a battle's result is in, how tall the letters of its word are at most and at least, and how far down the box their middle is. */
+export const RESULT_W = 190;
+export const RESULT_TALL = 26;
+export const RESULT_SMALL = 20;
+export const RESULT_WORD_Y = 25;
 
 export class BattleScreen {
   private timer = 0;
@@ -592,8 +601,16 @@ export class BattleScreen {
         ctx.fillRect(x + sx + 16 - shift, y + h - 3, 8, 3);
       }
       const blink = this.opts.calm || Math.floor(this.clock / 180) % 2 === 0;
-      drawText(ctx, STRINGS.battleIntro.warning, x + LOGICAL_W / 2, y + 5, { size: 32, align: 'center', color: blink ? COLORS.danger : COLORS.heat });
-      drawText(ctx, boss.toUpperCase(), x + LOGICAL_W / 2, y + 30, { align: 'center' });
+      const word = STRINGS.battleIntro.warning;
+      // The word in the sign's letters, red and amber by turns; in the font where the sign cannot write it.
+      const tall = fitTall(word, LOGICAL_W - 20, WARNING_TALL);
+      if (tall === null) {
+        drawText(ctx, word, x + LOGICAL_W / 2, y + 5, { size: 32, align: 'center', color: blink ? COLORS.danger : COLORS.heat });
+        drawText(ctx, boss.toUpperCase(), x + LOGICAL_W / 2, y + 30, { align: 'center' });
+        return;
+      }
+      drawWord(ctx, word, x + LOGICAL_W / 2, y + 4, { tall, metal: blink ? 'red' : 'amber' });
+      drawText(ctx, boss.toUpperCase(), x + LOGICAL_W / 2, y + 31, { align: 'center' });
       return;
     }
     ctx.fillStyle = edge;
@@ -1264,13 +1281,26 @@ export class BattleScreen {
 
   private drawResult(ctx: CanvasRenderingContext2D): void {
     const note = this.flow.resultNote;
-    const w = 170;
+    const w = RESULT_W;
     const h = note ? 72 : 60;
     const x = (LOGICAL_W - w) / 2;
     const y = 30;
     drawPanel(ctx, x, y, w, h);
     const won = this.flow.state.outcome === 'victory';
-    drawText(ctx, this.flow.message, LOGICAL_W / 2, y + 8, { size: 32, align: 'center', color: won ? COLORS.accent : COLORS.danger });
+    const word = this.flow.message;
+    // The word in the sign's letters: the game's colour for a battle won, red for one lost. Both of a
+    // language's words are written at the height the longer of them fits at, so neither looks the lesser.
+    const fits = [STRINGS.victory, STRINGS.defeat, word].map((text) => fitTall(text, w - 16, RESULT_TALL, RESULT_SMALL));
+    const tall = fits.includes(null) ? null : Math.min(...(fits as number[]));
+    if (tall === null) drawText(ctx, word, LOGICAL_W / 2, y + 8, { size: 32, align: 'center', color: won ? COLORS.accent : COLORS.danger });
+    else {
+      // It comes on like a tube, and lit it throws a little of its colour on the box it is in.
+      const calm = this.opts.calm === true;
+      const level = this.opts.fast ? 1 : wordLevel(this.resultMs, calm);
+      const metal = won ? 'neon' : 'red';
+      drawLights(ctx, wordLights(word, LOGICAL_W / 2, y + RESULT_WORD_Y, tall, metal, level), calm ? 0.5 : 1);
+      drawWord(ctx, word, LOGICAL_W / 2, wordTop(y + RESULT_WORD_Y, tall), { tall, metal, level });
+    }
     if (note) drawText(ctx, note, LOGICAL_W / 2, y + 40, { align: 'center' });
     drawText(ctx, this.opts.resultHint ?? STRINGS.hints.result, LOGICAL_W / 2, y + h - 18, { align: 'center', color: COLORS.dim });
   }

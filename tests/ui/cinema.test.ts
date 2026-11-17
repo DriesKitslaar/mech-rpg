@@ -5,7 +5,7 @@ import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
 import {
-  CUT_IN_H, CUT_IN_MS, CUT_IN_SCALE, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
+  CUT_IN_H, CUT_IN_MS, CUT_IN_NAME_TALL, CUT_IN_NAME_W, CUT_IN_SCALE, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
   cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox, lookClose,
 } from '../../src/ui/cinema';
 import type { Settlement } from '../../src/core/economy';
@@ -15,7 +15,10 @@ import type { App } from '../../src/ui/app';
 import { SettlementScreen } from '../../src/ui/settlementScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { COLORS } from '../../src/ui/widgets';
-import { record, type Drawn, type Filled } from '../helpers/canvas';
+import { record, signCount, signIn, type Drawn, type Filled } from '../helpers/canvas';
+import { setLanguage } from '../../src/content/language';
+import { RESULT_TALL, RESULT_W, RESULT_WORD_Y } from '../../src/ui/battleScreen';
+import { fitTall, wordWidth } from '../../src/ui/signType';
 
 /** The moments a battle is staged like a film: the Overdrive's band, the last machine going down, a field won and one lost. */
 
@@ -38,6 +41,8 @@ const WORDS = { heading: 'OVERDRIVE', name: 'SECOND WIND' };
 describe('the band an Overdrive goes off behind', () => {
   const band = (ms: number, calm = false): Drawn => record((ctx) => drawCutIn(ctx, ms, FIELD, WORDS, mech, calm));
   const plate = (page: Drawn): Filled => page.rects.find((r) => r.color === BAND)!;
+  /** The band, open, for an Overdrive of this name. */
+  const called = (name: string): Drawn => record((ctx) => drawCutIn(ctx, 400, FIELD, { heading: 'OVERDRIVE', name }, mech));
 
   test('it opens in a tenth of a second, stays, and closes; before and after there is nothing', () => {
     expect(CUT_IN_MS).toBe(900);
@@ -141,20 +146,47 @@ describe('the band an Overdrive goes off behind', () => {
     const p = plate(page);
     const heading = page.texts.find((t) => t.text === 'OVERDRIVE')!;
     expect(heading).toMatchObject({ size: 10, align: 'right', color: COLORS.accent, right: 298 });
-    const names = page.texts.filter((t) => t.text === 'SECOND WIND');
-    expect(names).toHaveLength(9);
-    const name = names.at(-1)!;
-    expect(name).toMatchObject({ size: 20, align: 'right', color: '#ffffff', right: 298 });
-    for (const t of [heading, name]) {
-      expect(t.y).toBeGreaterThan(p.y + 2);
-      expect(t.y + t.size).toBeLessThan(p.y + p.h - 2);
-      expect(t.left).toBeGreaterThan(150);
-    }
+    // The name is in the sign's letters, steel, fully lit: as tall as fits beside the mech, its right
+    // edge by the band's, its letters' middle a pixel above the band's own.
+    const name = signIn(page, 'SECOND WIND', 'steel')!;
+    expect(name).not.toBeNull();
+    expect(name).toMatchObject({ level: 1, tall: fitTall('SECOND WIND', CUT_IN_NAME_W, CUT_IN_NAME_TALL) });
+    expect(name.tall).toBeLessThan(CUT_IN_NAME_TALL);
+    expect(name.x + name.w).toBe(300);
+    expect(name.middle).toBe(p.y + p.h / 2 - 1);
+    expect(name.x).toBeGreaterThan(150);
+    expect(name.y).toBeGreaterThan(p.y + 2);
+    expect(name.y + name.h).toBeLessThan(p.y + p.h - 2);
+    expect(heading.y).toBeGreaterThan(p.y + 2);
     expect(heading.y + 10).toBeLessThanOrEqual(name.y);
-    // The longest name there is in either language still starts right of the mech's head.
-    const long = record((ctx) => drawCutIn(ctx, 400, FIELD, { heading: 'OVERDRIVE', name: 'SCHERPSCHUTTER' }, mech)).texts.at(-1)!;
-    expect(long.left).toBeGreaterThan(150);
-    for (const id of Object.keys(STRINGS.overdrive.names)) expect(STRINGS.overdrive.names[id].length).toBeLessThanOrEqual(14);
+    expect(page.texts.filter((t) => t.text === 'SECOND WIND')).toEqual([]);
+    // A short name is written as tall as a name in the band is.
+    expect(signIn(called('DEADEYE'), 'DEADEYE', 'steel')).toMatchObject({ tall: CUT_IN_NAME_TALL });
+    // Every name there is, in either language, is one the sign writes, and starts right of the mech's head.
+    try {
+      for (const language of ['en', 'nl'] as const) {
+        setLanguage(language);
+        for (const id of Object.keys(STRINGS.overdrive.names)) {
+          const name = STRINGS.overdrive.names[id].toUpperCase();
+          expect(name.length).toBeLessThanOrEqual(14);
+          const found = signIn(called(name), name, 'steel');
+          expect(found, `${language}: ${name}`).not.toBeNull();
+          expect(found!.x, name).toBeGreaterThan(150);
+        }
+      }
+    } finally {
+      setLanguage('en');
+    }
+    // A name the sign cannot write, or one too long to fit beside the mech at its smallest, is written in the font, with a dark edge, where it always was.
+    for (const odd of ['Second wind', 'SCHERPSCHUTTER']) {
+      const other = called(odd);
+      expect(signCount(other), odd).toBe(0);
+      const names = other.texts.filter((t) => t.text === odd);
+      expect(names, odd).toHaveLength(9);
+      expect(names.at(-1), odd).toMatchObject({ size: 20, align: 'right', color: '#ffffff', right: 298 });
+      expect(names.at(-1)!.left, odd).toBeGreaterThan(150);
+    }
+    expect(wordWidth('SCHERPSCHUTTER', 14)).toBeGreaterThan(CUT_IN_NAME_W);
   });
 
   test('while it is still opening it is thinner and says nothing yet', () => {
@@ -849,9 +881,15 @@ describe('the staged moments in a battle', () => {
     expect(light.washes.some((w) => w.blend === 'lighter' && w.stops[0][1] === 'rgba(255, 214, 150, 0.240)')).toBe(true);
     expect(light.shapes.length).toBe(RAYS * 2);
     expect(light.rects.some((r) => r.blend === 'saturation')).toBe(false);
-    // The word and the way on are written over all of it, where they always were.
-    const word = light.texts.find((t) => t.size === 32)!;
-    expect(word).toMatchObject({ x: 155, y: 38, align: 'center', color: COLORS.accent });
+    // The word is written over all of it in the sign's letters, in the game's colour and lit: its
+    // middle where the font's word had its middle, in the box the result has always been in.
+    const word = signIn(light, 'VICTORY', 'neon')!;
+    expect(word).not.toBeNull();
+    expect(word).toMatchObject({ tall: RESULT_TALL, level: 1, middle: 30 + RESULT_WORD_Y });
+    expect(Math.abs(word.x + word.w / 2 - 155)).toBeLessThanOrEqual(0.5);
+    expect(word.x).toBeGreaterThanOrEqual((310 - RESULT_W) / 2 + 8);
+    expect(word.x + word.w).toBeLessThanOrEqual((310 + RESULT_W) / 2 - 8);
+    expect(light.texts.some((t) => t.size === 32)).toBe(false);
 
     // Walking away from a battle loses it.
     const lost = screenOf(fight(['gun-turret'], []));
@@ -868,7 +906,9 @@ describe('the staged moments in a battle', () => {
     const pall = grey.rects.find((r) => r.blend === 'saturation')!;
     expect(pall).toMatchObject({ x: 0, y: 14, w: 310, h: 164, color: GREY });
     expect(grey.shapes).toEqual([]);
-    expect(grey.texts.find((t) => t.size === 32)).toMatchObject({ color: COLORS.danger });
+    // Red, for a battle lost.
+    expect(signIn(grey, 'DEFEAT', 'red')).toMatchObject({ tall: RESULT_TALL, level: 1, middle: 30 + RESULT_WORD_Y });
+    expect(signIn(grey, 'DEFEAT', 'neon')).toBeNull();
     // The grey lies over the field and under the word: it is laid before the word's box.
     expect(grey.rects.indexOf(pall)).toBeLessThan(grey.rects.length - 1);
 

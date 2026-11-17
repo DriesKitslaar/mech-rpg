@@ -15,7 +15,7 @@ import { COLORS, wrap } from '../../src/ui/widgets';
 import { SONGS } from '../../src/content/songs';
 import { songSeconds } from '../../src/platform/music';
 import { done, inHub, memoryStore, press, savedGame, select, skipScenes, snap, sprites, strong } from '../helpers/app';
-import { record } from '../helpers/canvas';
+import { record, signIn } from '../helpers/canvas';
 
 const scene = (id: string) => SCENES.find((s) => s.id === id)!;
 const ACT = scene('act-1');
@@ -115,7 +115,8 @@ describe('text that is all there at once', () => {
     const words = (screen: SceneScreen): string[] => record((ctx) => screen.draw(ctx)).texts.map((t) => t.text);
     const alone = new SceneScreen(app, ACT);
     alone.update(PICTURE_MS - 20);
-    expect(words(alone)).toContain(ACT.title);
+    // The title is there from the start, in the sign's letters.
+    expect(signIn(record((ctx) => alone.draw(ctx)), ACT.title, 'neon')).not.toBeNull();
     expect(words(alone)).not.toContain(first);
     expect(words(alone)).not.toContain(STRINGS.scene.continue);
     expect(typing(alone.view())).toBe(true);
@@ -177,12 +178,14 @@ describe('the options a battle is fought with', () => {
       const seen: string[] = [];
       for (let i = 0; i < 4; i++) {
         screen.update(90);
-        seen.push(record((ctx) => screen.draw(ctx)).texts.find((t) => t.text === STRINGS.battleIntro.warning)!.color);
+        // The word is in the sign's letters: red, or amber when it blinks.
+        const page = record((ctx) => screen.draw(ctx));
+        seen.push(signIn(page, STRINGS.battleIntro.warning, 'red') ? 'red' : signIn(page, STRINGS.battleIntro.warning, 'amber') ? 'amber' : 'not there');
       }
       return seen;
     };
-    expect(colours(false)).toEqual([COLORS.danger, COLORS.heat, COLORS.heat, COLORS.danger]);
-    expect(colours(true)).toEqual([COLORS.danger, COLORS.danger, COLORS.danger, COLORS.danger]);
+    expect(colours(false)).toEqual(['red', 'amber', 'amber', 'red']);
+    expect(colours(true)).toEqual(['red', 'red', 'red', 'red']);
   });
 });
 
