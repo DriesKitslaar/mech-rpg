@@ -219,6 +219,35 @@ describe('the eyes of the machines on the field', () => {
     expect(heights.size).toBeGreaterThanOrEqual(3);
   });
 
+  test('a machine that flinches takes its eye with it', () => {
+    const { flow, screen, page } = battle(['tank'], (state) => { for (const part of Object.values(state.units[1].parts)) if (part) part.ap = 9999; });
+    const home = drawnAt(page(), 'enemy-tank').x;
+    let moved = 0;
+    for (let i = 0; i < 600; i++) {
+      if (flow.phase === 'action') { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); }
+      screen.update(16);
+      const drawn = page();
+      // Every frame the light is on the eye of the picture as it is drawn in that frame.
+      expect(eyeIn(drawn, 'enemy-tank'), `frame ${i}`).toBeDefined();
+      if (drawnAt(drawn, 'enemy-tank').x !== home) moved++;
+    }
+    // And it was hit, and did flinch, in some of them.
+    expect(moved).toBeGreaterThan(3);
+  });
+
+  test('two machines on the field do not narrow their eyes together', () => {
+    const { screen, page } = battle(['tank', 'gun-turret']);
+    const narrowed: Record<string, number[]> = { 'enemy-tank': [], 'enemy-gun-turret': [] };
+    for (let i = 0; i < 700; i++) {
+      screen.update(16);
+      const drawn = page();
+      for (const picture of Object.keys(narrowed)) if (strength(eyeIn(drawn, picture)!) < EYE_ALPHA * 0.3) narrowed[picture].push(i);
+    }
+    // Each did, twice or so in those eleven seconds, and never in the same frame as the other.
+    for (const frames of Object.values(narrowed)) expect(frames.length).toBeGreaterThanOrEqual(8);
+    expect(narrowed['enemy-tank'].filter((frame) => narrowed['enemy-gun-turret'].includes(frame))).toEqual([]);
+  });
+
   test('a machine that is staggered or cooked has its eye low; one that is coming apart or gone has none', () => {
     const awake = battle(['tank', 'gun-turret'], () => undefined, { calm: true });
     const full = strength(eyeIn(awake.page(), 'enemy-tank')!);
@@ -229,23 +258,25 @@ describe('the eyes of the machines on the field', () => {
       expect(low, picture).toBeCloseTo((EYE_ALPHA * 0.35) / 2, 2);
       expect(low).toBeLessThan(full);
     }
-    // Destroyed before the battle began: no picture of it and no light.
-    const gone = battle(['tank', 'gun-turret'], (state) => { state.units[1].destroyed = true; for (const part of Object.values(state.units[1].parts)) if (part) part.ap = 0; });
-    const drawn = gone.page();
-    expect(drawn.glows.filter(isLight)).toHaveLength(1);
-    expect(eyeIn(drawn, 'enemy-gun-turret')).toBeDefined();
   });
 
-  test('a machine shot to pieces loses its eye in the frame it starts to come apart', () => {
+  test('a machine shot to pieces loses its eye in the frame it starts to come apart, and not before', () => {
     const { flow, screen, page } = battle(['gun-turret', 'tank'], (state) => { for (const part of Object.values(state.units[1].parts)) if (part) part.ap = 1; });
     expect(eyeIn(page(), 'enemy-gun-turret')).toBeDefined();
     let seen = false;
+    let doomed = 0;
     for (let i = 0; i < 4000 && !seen; i++) {
       if (flow.phase === 'action') { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); }
       screen.update(16);
       if (screen.motion.breaking('enemy-0') !== null) seen = true;
+      else if (flow.state.units[1].destroyed) {
+        // The rules have it destroyed already, but the shot is still on its way and the machine stands whole: it still looks out.
+        doomed++;
+        expect(eyeIn(page(), 'enemy-gun-turret'), `frame ${i}`).toBeDefined();
+      }
     }
     expect(seen).toBe(true);
+    expect(doomed).toBeGreaterThan(0);
     const drawn = page();
     const turretEye = EYES['enemy-gun-turret'];
     expect(drawn.glows.filter((g) => isLight(g) && g.r === turretEye.r && g.stops[0][1].startsWith('rgba(235, 34, 190,'))).toEqual([]);

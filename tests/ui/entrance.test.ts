@@ -92,6 +92,12 @@ describe('the band a boss comes in on', () => {
       expect(boss.clip).toMatchObject({ x: shift + ENTRANCE_WINDOW_X, y: TOP, w: 310 - ENTRANCE_WINDOW_X, h: ENTRANCE_H });
       const edge = page.rects.find((r) => r.color === COLORS.danger && r.w === 1 && r.h === ENTRANCE_H)!;
       expect(edge.x).toBe(shift + ENTRANCE_WINDOW_X);
+      // The stripes are the band's: they begin where it begins and end where it ends.
+      const stripes = page.rects.filter((r) => r.color === COLORS.danger && r.w === 8 && r.h === 3).map((r) => r.x);
+      expect(Math.min(...stripes)).toBeGreaterThanOrEqual(shift - 16);
+      expect(Math.min(...stripes)).toBeLessThanOrEqual(shift);
+      expect(Math.max(...stripes) + 8).toBeGreaterThanOrEqual(shift + 310);
+      expect(Math.max(...stripes)).toBeLessThanOrEqual(shift + 310 + 32);
     }
   });
 });
@@ -201,6 +207,9 @@ describe('the words on the band', () => {
       expect(word.x + word.w).toBeLessThanOrEqual(ENTRANCE_WINDOW_X - 8);
     }
     expect(signCount(page)).toBe(2);
+    // A short name is as tall as a name is, which is less tall than the warning.
+    expect(signIn(band(0.5, KING, false, 1000, { ...WORDS, name: 'ROOK' }), 'ROOK', 'steel')).toMatchObject({ tall: ENTRANCE_NAME_TALL, middle: TOP + 50 });
+    expect(ENTRANCE_NAME_TALL).toBeLessThan(ENTRANCE_WARNING_TALL);
     // The other of its two colours.
     const other = band(0.5, KING, false, 1000, { ...WORDS, alarm: false });
     expect(signIn(other, 'WARNING', 'amber')).toMatchObject({ y: TOP + 8, tall: 23 });
@@ -280,6 +289,14 @@ describe('a battle against a boss', () => {
     // The words.
     expect(signIn(drawn, 'WARNING', 'red') ?? signIn(drawn, 'WARNING', 'amber')).not.toBeNull();
     expect(signIn(drawn, 'SCRAP KING', 'steel')).not.toBeNull();
+    // A calm picture is told to the band: the eye's light is steady there, and at half strength.
+    const calm = against('scrap-king', { calm: true });
+    calm.screen.update(WARNING_MS / 2);
+    const steady = calm.page().glows.filter((g) => isLight(g) && g.r === eye.r * ENTRANCE_SCALE + 10);
+    expect(steady).toHaveLength(1);
+    expect(strength(steady[0])).toBeCloseTo(0.3, 3);
+    calm.screen.update(100);
+    expect(strength(calm.page().glows.filter((g) => isLight(g) && g.r === eye.r * ENTRANCE_SCALE + 10)[0])).toBeCloseTo(0.3, 3);
   });
 
   test('a boss that is a frame built from parts, like the pilot\'s own, is shown turned to face left and looked at where its head is', () => {
@@ -290,6 +307,11 @@ describe('a battle against a boss', () => {
     // Its parts are drawn in the window, each at twice its size and turned round.
     const inWindow = drawn.images.filter((image) => image.clip && image.clip.x === ENTRANCE_WINDOW_X && image.clip.y === TOP);
     expect(inWindow.length).toBeGreaterThanOrEqual(4);
+    // Turned round: each part is drawn from its right edge leftward, as on the field, where the same frame faces left.
+    expect(inWindow.every((image) => image.w < 0)).toBe(true);
+    const onField = drawn.images.filter((image) => !image.clip && image.w < 0);
+    expect(onField.length).toBe(inWindow.length);
+    inWindow.forEach((image, i) => expect([image.w, image.h]).toEqual([onField[i].w * ENTRANCE_SCALE, onField[i].h * ENTRANCE_SCALE]));
     // No light: where such a frame's eye is, is not known.
     expect(drawn.glows.filter((g) => isLight(g) && g.y === MIDDLE && g.x > ENTRANCE_WINDOW_X && g.r >= 20)).toEqual([]);
     expect(signIn(drawn, ENEMIES['rival-2'].name.toUpperCase(), 'steel')).not.toBeNull();

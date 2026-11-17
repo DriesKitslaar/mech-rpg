@@ -955,9 +955,10 @@ export class BattleScreen {
             ctx.drawImage(r.sprite.image, col * iw, row * ih, iw, ih, r.x + col * (r.w - w) + o.dx, r.y + row * (r.h - h) + o.dy, w, h);
           });
         });
-        // A machine that stands looks back: a small light on its eye, that moves as it moves. Not on one
-        // that is coming apart, and not in a hurried game. It is one of the battle's sixteen lights.
-        if (!this.opts.fast && breaking === null && !enemy.destroyed) {
+        // A machine that stands looks back: a small light on its eye, that moves as it moves. It goes out
+        // in the frame the machine is seen to come apart, not sooner: a shot that will end it is still in
+        // the air. Not in a hurried game. It is one of the battle's sixteen lights.
+        if (!this.opts.fast && breaking === null) {
           const t = this.fx.transform(enemy.id);
           const dazed = enemy.staggered > 0 || enemy.overheated;
           const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + hover + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);

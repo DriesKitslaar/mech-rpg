@@ -74,9 +74,9 @@ export function eyeLevel(clockMs: number, i: number, state: EyeState, calm = fal
   if (state === 'dazed') return calm ? 0.35 : 0.25 + 0.2 * Math.abs(Math.sin(clockMs / 70 + i * 1.3));
   const glow = 0.85 + 0.15 * Math.sin(clockMs / 590 + i * 2.1);
   if (calm) return glow;
-  const own = clockMs + i * 1370;
-  const slot = Math.floor(own / BLINK_EVERY_MS);
-  const at = own - slot * BLINK_EVERY_MS - scatter(slot, i + 3) * (BLINK_EVERY_MS - BLINK_MS);
+  // Once in every stretch of time, at a moment in it that differs from machine to machine and from stretch to stretch.
+  const slot = Math.floor(clockMs / BLINK_EVERY_MS);
+  const at = clockMs - slot * BLINK_EVERY_MS - scatter(slot, i + 3) * (BLINK_EVERY_MS - BLINK_MS);
   return at >= 0 && at < BLINK_MS ? glow * 0.2 : glow;
 }
 

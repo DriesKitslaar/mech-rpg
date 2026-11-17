@@ -199,7 +199,7 @@ export function drawEntrance(
     // The eye opens: a light on it, soft, that is not there where no soft light is drawn.
     if (boss.eye) {
       const open = entranceEye(share, clockMs, calm);
-      if (eyeX > x + ENTRANCE_WINDOW_X) drawGlow(ctx, { x: eyeX, y: middle, r: boss.eye.r * ENTRANCE_SCALE + 10, color: boss.eye.color, alpha: 0.6 * open }, calm ? 0.5 : 1);
+      drawGlow(ctx, { x: eyeX, y: middle, r: boss.eye.r * ENTRANCE_SCALE + 10, color: boss.eye.color, alpha: 0.6 * open }, calm ? 0.5 : 1);
     }
     // The window's edge.
     ctx.fillStyle = COLORS.danger;
