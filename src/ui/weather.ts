@@ -42,14 +42,34 @@ export const LIGHTNING_ALPHA = 0.55;
 /** How bright the top of the sky goes on top of that. */
 export const SKY_ALPHA = 0.3;
 
+/** When the stroke of a stretch of time begins: somewhere in it, differently in each. */
+const strokeAt = (slot: number): number => slot * LIGHTNING_MS + 1500 + scatter(slot, 9) * 5000;
+
+/** How long after a stroke begins its thunder is heard: it is some way off. */
+export const THUNDER_AFTER_MS = 380;
+
+/**
+ * Whether a stroke of lightning that is drawn began between two moments: after the first, up to
+ * and including the second. A frame's two ends, usually: the frame it is true for is the one the
+ * stroke is first seen in. Never in a calm picture or where no soft light is drawn: there is no
+ * lightning there to hear.
+ */
+export function strokeBegan(beforeMs: number, nowMs: number, calm = false): boolean {
+  if (calm || !soft()) return false;
+  for (let slot = Math.floor(beforeMs / LIGHTNING_MS); slot <= Math.floor(nowMs / LIGHTNING_MS); slot++) {
+    const at = strokeAt(slot);
+    if (at > beforeMs && at <= nowMs) return true;
+  }
+  return false;
+}
+
 /**
  * How bright the lightning is at this moment, from 0 to 1: nothing for most of the time, then two
  * strokes close together, the second dying away. When in its stretch of time a stroke comes differs
  * from one stretch to the next.
  */
 export function lightning(clockMs: number): number {
-  const slot = Math.floor(clockMs / LIGHTNING_MS);
-  const at = clockMs - slot * LIGHTNING_MS - 1500 - scatter(slot, 9) * 5000;
+  const at = clockMs - strokeAt(Math.floor(clockMs / LIGHTNING_MS));
   if (at < 0 || at >= 260) return 0;
   if (at < 70) return 1;
   if (at < 150) return 0.15;

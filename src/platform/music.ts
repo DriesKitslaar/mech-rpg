@@ -275,6 +275,13 @@ export function envelopePoints(env: Pick<Tone, 'attack' | 'decay' | 'sustain' | 
  * holds the mix to about full scale at most, so the loudest moment of a song leaves at under 0.2.
  */
 export const MASTER_GAIN = 0.18;
+/** How far the music is turned down for a moment that is to be heard above it: to this share of what it is. */
+export const HUSH = 0.35;
+/** It is never turned off that way: not below this share. */
+export const HUSH_FLOOR = 0.1;
+/** How long going down takes, and coming back, in seconds: a step would click. */
+export const HUSH_IN = 0.05;
+export const HUSH_OUT = 0.3;
 /** No note is let through louder than this, whatever a song says. */
 export const MAX_NOTE_GAIN = 0.6;
 /** An echo that fed back more than this would build up instead of dying away. */
@@ -475,6 +482,9 @@ function makeNoise(ctx: AudioContext): AudioBuffer {
 interface Rig {
   ctx: AudioContext;
   input: AudioNode;
+  /** The loudness everything goes through, and the share of its own it was last told to be at. */
+  master: GainNode;
+  hush: number;
   /** Made on the first drum hit; null when the engine cannot make it. */
   noise?: AudioBuffer | null;
 }
@@ -511,6 +521,11 @@ export class Music {
    * on top, from its own drum kit, for as long as this is set.
    */
   tense = false;
+  /**
+   * How loud the music is beside what it usually is, from a tenth to the whole: turned down for as
+   * long as something is to be heard above it, and set back to 1 when that is over.
+   */
+  hush = 1;
   private wanted: SongName | null = null;
   private playing: Playing | null = null;
   private rig: Rig | null = null;
@@ -544,10 +559,28 @@ export class Music {
       this.sweep(ctx);
       if (!wanted) return;
       this.playing ??= this.begin(ctx, wanted);
+      this.settle();
       if (this.playing) this.queue(this.playing, ctx.currentTime);
     } catch {
       // Music is decoration: a failing audio engine must never interrupt the game.
     }
+  }
+
+  /** Moves the loudness everything goes through to where it is wanted, when that has changed: down quickly, back a little slower. */
+  private settle(): void {
+    const rig = this.rig;
+    if (!rig) return;
+    const want = Number.isNaN(this.hush) ? 1 : Math.min(1, Math.max(HUSH_FLOOR, this.hush));
+    if (rig.hush === want) return;
+    const down = want < rig.hush;
+    // Noted before it is asked for: an engine that cannot do this is asked once, not every frame, and plays on as loud as it was.
+    rig.hush = want;
+    const gain = rig.master.gain;
+    const now = rig.ctx.currentTime;
+    // From where the loudness is at this moment, which may be half way through coming back.
+    gain.cancelScheduledValues?.(now);
+    gain.setValueAtTime(gain.value, now);
+    gain.linearRampToValueAtTime(MASTER_GAIN * want, now + (down ? HUSH_IN : HUSH_OUT));
   }
 
   /** The song laid out flat, or null when it is missing or broken; either way it is only worked out once. */
@@ -582,7 +615,7 @@ export class Music {
     } catch {
       // An engine without a working compressor still plays, only less evenly.
     }
-    return (this.rig = { ctx, input });
+    return (this.rig = { ctx, input, master, hush: 1 });
   }
 
   private begin(ctx: AudioContext, name: SongName): Playing | null {

@@ -27,7 +27,7 @@ import type { Sprite, SpriteStore } from './sprites';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
 import { intentOf } from '../core/intent';
 import { PLAIN_TYPING, TYPING_SPEED, Typewriter, type Typing } from './typewriter';
-import { drawWeather, drawWeatherExtras, weatherFor } from './weather';
+import { THUNDER_AFTER_MS, drawWeather, drawWeatherExtras, strokeBegan, weatherFor } from './weather';
 import { CHAR_W, COLORS, LINE, charsFor, drawMeter, drawPanel, drawPortrait, drawRowLight, drawScrollMenu, drawText, wrap } from './widgets';
 
 export { BattleFlow } from './battleFlow';
@@ -196,6 +196,11 @@ export class BattleScreen {
     this.arrived = new Set(flow.state.units.map((u) => u.id).filter((id) => !unseen.includes(id)));
   }
 
+  /** True while the last machine of the battle is looked at from close by: the music is turned down for it. */
+  get closeLook(): boolean {
+    return this.finish !== null;
+  }
+
   /** True while the opening banner is up. */
   get banner(): boolean {
     return this.intro > 0;
@@ -227,6 +232,11 @@ export class BattleScreen {
     // there to be looked at (rain, smoke, the sway of a mech, anything that blinks) keeps its own pace.
     const dtMs = realMs * (this.opts.speed ?? 1);
     this.clock += realMs;
+    // Where it rains, lightning is seen, and its thunder is heard a moment after: on the weather's own
+    // clock, whatever pace the battle is played at.
+    if (!this.opts.fast && weatherFor(this.opts.background ?? DEFAULT_BACKGROUND) === 'rain' && strokeBegan(this.clock - realMs, this.clock, this.opts.calm === true)) {
+      this.opts.sfx?.play('thunder', THUNDER_AFTER_MS, true);
+    }
     if (this.intro > 0) {
       if (!this.introHeard) this.opts.sfx?.play(this.opts.boss ? 'warning' : 'banner');
       this.introHeard = true;
@@ -340,9 +350,13 @@ export class BattleScreen {
       if (this.opts.fast) continue;
       this.stances.onEvent(event);
       this.fx.onEvent(event);
-      this.move(event, melee, flight, endsBattle(events, this.flow.state.outcome, i));
+      // The one the battle ends with is staged, unless a press has already gone on to the result.
+      const staged = event.type === 'unitDestroyed' && this.flow.phase === 'animating' && endsBattle(events, this.flow.state.outcome, i);
+      this.move(event, melee, flight, staged);
       // The end of a battle is marked once: by the music's fanfare where there is music, by the effect where there is not.
       if (event.type === 'outcome' && this.opts.jingle?.(event.outcome === 'victory')) continue;
+      // The blow that ends it is a slam, as the field is held; the machine is heard to go up when it is seen to, in the close look.
+      if (staged) { this.opts.sfx?.play('slam'); continue; }
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
     }
     this.fxDone = shown;
@@ -722,7 +736,7 @@ export class BattleScreen {
    * Sets the units an event is about in motion: the one that fires kicks, the one that is hit
    * flinches. Only a game that is not hurried comes here: a hurried one has no effects at all.
    */
-  private move(event: BattleEvent, melee: boolean, flight: number, last = false): void {
+  private move(event: BattleEvent, melee: boolean, flight: number, staged = false): void {
     const unit = (id: string): UnitState | undefined => this.flow.state.units.find((u) => u.id === id);
     const scene = this.scene();
     const ground = PANEL_Y - 6;
@@ -762,8 +776,6 @@ export class BattleScreen {
       if (who) this.puppet(who).play('boost');
     }
     if (event.type === 'unitDestroyed') {
-      // The one the battle ends with is staged, unless a press has already gone on to the result.
-      const staged = last && this.flow.phase === 'animating';
       this.hitStop.strike(staged ? FINISH_HOLD_MS : event.unit === 'player' ? 160 : 90);
       const c = scene.centre(event.unit);
       if (staged) {

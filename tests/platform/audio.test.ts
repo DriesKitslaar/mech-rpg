@@ -61,6 +61,12 @@ test('every sound has at least one audible tone', () => {
       expect(tone.dur, name).toBeGreaterThan(0);
       expect(tone.gain, name).toBeGreaterThan(0);
       expect(tone.gain, name).toBeLessThanOrEqual(1);
+      // A tone that is held ends quieter than it began, and on something.
+      if (tone.fade !== undefined) {
+        expect(tone.fade, name).toBeGreaterThan(0);
+        expect(tone.fade, name).toBeLessThan(tone.gain);
+      }
+      if (tone.cut !== undefined) expect(tone.cut, name).toBeGreaterThanOrEqual(100);
     }
   }
 });
@@ -139,4 +145,169 @@ test('a relic has a sound of its own: a low bell that opens upward, nothing like
   expect(medal[0].from).toBeGreaterThan(relic[0].from * 4);
   expect(relic.map((tone) => tone.from)).not.toEqual(medal.map((tone) => tone.from));
   expect(Math.max(...relic.map((tone) => tone.start + tone.dur))).toBeGreaterThan(Math.max(...medal.map((tone) => tone.start + tone.dur)));
+});
+
+// ---- sounds for what is seen ----
+
+/** An engine that also makes filters, and remembers what was plugged into what. */
+function filteringContext(state = 'running') {
+  const started: { kind: string; at: number }[] = [];
+  const filters: { type: string; cut: number }[] = [];
+  const wires: [string, string][] = [];
+  /** What each tone's loudness was told to die away to, and by when. */
+  const fades: { to: number; at: number }[] = [];
+  const param = (kind = '') => ({
+    setValueAtTime() {}, linearRampToValueAtTime() {}, value: 0,
+    exponentialRampToValueAtTime(to: number, at: number) { if (kind === 'gain') fades.push({ to, at }); },
+  });
+  const node = (kind: string) => ({
+    kind,
+    connect(to: { kind?: string }) { wires.push([kind, to.kind ?? 'out']); return to; },
+    start(at: number) { started.push({ kind, at }); },
+    stop() {},
+    frequency: param(), gain: param(kind), type: '', buffer: null as unknown,
+  });
+  const ctx = {
+    currentTime: 10, sampleRate: 8000, state, destination: {}, resume: async () => {},
+    createOscillator: () => node('osc'),
+    createGain: () => node('gain'),
+    createBufferSource: () => node('noise'),
+    createBuffer: (_c: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
+    createBiquadFilter: () => {
+      const filter = node('filter');
+      const record = { type: '', cut: 0 };
+      filters.push(record);
+      Object.defineProperty(filter, 'type', { set: (value: string) => { record.type = value; }, get: () => record.type });
+      filter.frequency = { ...param(), set value(value: number) { record.cut = value; }, get value() { return record.cut; } };
+      return filter;
+    },
+  };
+  return { ctx: ctx as unknown as AudioContext, started, filters, wires, fades };
+}
+const ends = (name: SoundName): number => Math.max(...SOUNDS[name].map((tone) => tone.start + tone.dur));
+
+test('thunder is a crack and a long roll under it that dies away, and nothing in the game goes on for longer', () => {
+  const thunder = SOUNDS.thunder;
+  // The crack: bare noise, at once, over in a moment.
+  expect(thunder[0]).toMatchObject({ wave: 'noise', start: 0 });
+  expect(thunder[0].cut).toBeUndefined();
+  expect(thunder[0].dur).toBeLessThan(0.1);
+  // The roll: noise with its top taken off, one burst after another, each darker and quieter than the one before.
+  const roll = thunder.filter((tone) => tone.wave === 'noise' && tone.cut !== undefined);
+  expect(roll.length).toBeGreaterThanOrEqual(4);
+  for (let i = 1; i < roll.length; i++) {
+    expect(roll[i].start).toBeGreaterThan(roll[i - 1].start);
+    // No gap in it: each burst begins well before the one before has ended, and that one is held until it has.
+    expect(roll[i].start).toBeLessThanOrEqual(roll[i - 1].start + roll[i - 1].dur - 0.1);
+    expect(roll[i - 1].fade).toBeGreaterThan(0);
+    expect(roll[i].cut!).toBeLessThan(roll[i - 1].cut!);
+    expect(roll[i].gain).toBeLessThan(roll[i - 1].gain);
+  }
+  // The last of it dies away to nothing.
+  expect(roll.at(-1)!.fade).toBeUndefined();
+  expect(roll[0].cut!).toBeLessThanOrEqual(1200);
+  // Something low under it all, for whoever has the speakers for it.
+  expect(thunder.some((tone) => tone.wave === 'triangle' && tone.from < 100 && tone.dur > 1)).toBe(true);
+  expect(ends('thunder')).toBeGreaterThan(1.8);
+  expect(ends('thunder')).toBeLessThan(2.2);
+  for (const name of Object.keys(SOUNDS) as SoundName[]) if (name !== 'thunder') expect(ends(name), name).toBeLessThan(ends('thunder'));
+  // It is weather, not a weapon: its crack, the one bare noise in it, is not as loud as a shell going off.
+  expect(thunder[0].gain).toBeLessThan(SOUNDS.blast[0].gain);
+});
+
+test('the sign striking is a snap, a buzz and a ring of glass, over in a moment', () => {
+  const sign = SOUNDS.sign;
+  expect(ends('sign')).toBeLessThan(0.2);
+  expect(sign.some((tone) => tone.wave === 'noise' && tone.dur <= 0.04)).toBe(true);
+  expect(sign.some((tone) => tone.wave !== 'noise' && tone.from >= 80 && tone.from <= 130)).toBe(true);
+  expect(sign.some((tone) => tone.wave === 'triangle' && tone.from >= 2000)).toBe(true);
+  // It is heard under a song: quiet.
+  expect(Math.max(...sign.map((tone) => tone.gain))).toBeLessThanOrEqual(0.35);
+  // And no filter or hold in it: it is as plain as a click.
+  expect(sign.every((tone) => tone.cut === undefined && tone.fade === undefined)).toBe(true);
+});
+
+test('the slam is low and heavy: lower than a machine going up, and as loud as anything', () => {
+  const slam = SOUNDS.slam;
+  const lowest = (name: SoundName): number => Math.min(...SOUNDS[name].filter((tone) => tone.wave !== 'noise').map((tone) => Math.min(tone.from, tone.to ?? tone.from)));
+  expect(lowest('slam')).toBeLessThanOrEqual(lowest('unitDestroyed'));
+  expect(slam.some((tone) => tone.wave === 'noise')).toBe(true);
+  expect(Math.max(...slam.map((tone) => tone.gain))).toBeGreaterThanOrEqual(0.7);
+  // Short: the machine's own blast is heard after it.
+  expect(ends('slam')).toBeLessThanOrEqual(0.5);
+});
+
+test('no burst of noise in the new sounds is longer than the noise there is', () => {
+  for (const name of ['thunder', 'sign', 'slam'] as SoundName[]) {
+    for (const tone of SOUNDS[name]) if (tone.wave === 'noise') expect(tone.dur, name).toBeLessThanOrEqual(0.6);
+  }
+});
+
+test('a tone with a ceiling is played through a filter that takes off what is above it', () => {
+  const { ctx, started, filters, wires } = filteringContext();
+  const sfx = new Sfx(() => ctx);
+  sfx.unlock();
+  sfx.play('thunder');
+  const capped = SOUNDS.thunder.filter((tone) => tone.cut !== undefined);
+  expect(started).toHaveLength(SOUNDS.thunder.length);
+  expect(filters).toEqual(capped.map((tone) => ({ type: 'lowpass', cut: tone.cut })));
+  // The source goes into the filter and the filter into the tone's own loudness; the others go straight there.
+  expect(wires.filter(([from, to]) => from === 'noise' && to === 'filter')).toHaveLength(capped.length);
+  expect(wires.filter(([from, to]) => from === 'filter' && to === 'gain')).toHaveLength(capped.length);
+  expect(wires.filter(([from, to]) => from !== 'filter' && from !== 'gain' && to === 'gain')).toHaveLength(SOUNDS.thunder.length - capped.length);
+  // A sound without one makes no filter.
+  sfx.play('confirm');
+  expect(filters).toHaveLength(capped.length);
+});
+
+test('a tone that is held ends on the loudness it names; the others die away to nothing', () => {
+  const { ctx, fades } = filteringContext();
+  const sfx = new Sfx(() => ctx);
+  sfx.unlock();
+  sfx.play('thunder', 250);
+  expect(fades).toHaveLength(SOUNDS.thunder.length);
+  SOUNDS.thunder.forEach((tone, i) => {
+    // 0.3 is how loud all sound effects are let through.
+    expect(fades[i].to, `tone ${i}`).toBeCloseTo(tone.fade ? tone.fade * 0.3 : 0.0001, 9);
+    expect(fades[i].at, `tone ${i}`).toBeCloseTo(10 + 0.25 + tone.start + tone.dur, 9);
+  });
+  expect(SOUNDS.thunder.filter((tone) => tone.fade).length).toBeGreaterThanOrEqual(4);
+});
+
+test('an engine that makes no filters still plays the sound, with its top left on', () => {
+  const { ctx, started } = fakeContext();
+  const sfx = new Sfx(() => ctx);
+  sfx.unlock();
+  sfx.play('thunder');
+  expect(started).toHaveLength(SOUNDS.thunder.length);
+  // One whose filters fail when they are made, as well.
+  const broken = filteringContext();
+  (broken.ctx as unknown as { createBiquadFilter: () => never }).createBiquadFilter = () => { throw new Error('no filters'); };
+  const other = new Sfx(() => broken.ctx);
+  other.unlock();
+  other.play('slam');
+  expect(broken.started).toHaveLength(SOUNDS.slam.length);
+});
+
+test('a sound that belongs to a moment is not kept for later by an engine that is asleep', () => {
+  const asleep = filteringContext('suspended');
+  const sfx = new Sfx(() => asleep.ctx);
+  sfx.unlock();
+  // Thunder nobody pressed for: by the time the engine wakes, the lightning is long gone.
+  sfx.play('thunder', 380, true);
+  sfx.play('sign', 0, true);
+  expect(asleep.started).toEqual([]);
+  // The answer to a press is kept: the press is what wakes the engine.
+  sfx.play('confirm');
+  expect(asleep.started).toHaveLength(SOUNDS.confirm.length);
+  const awake = filteringContext();
+  const other = new Sfx(() => awake.ctx);
+  other.unlock();
+  other.play('sign', 0, true);
+  expect(awake.started).toHaveLength(SOUNDS.sign.length);
+  // Not heard with the sound off, or before there is an engine at all.
+  other.muted = true;
+  other.play('sign', 0, true);
+  expect(awake.started).toHaveLength(SOUNDS.sign.length);
+  expect(() => new Sfx(() => awake.ctx).play('thunder', 0, true)).not.toThrow();
 });
