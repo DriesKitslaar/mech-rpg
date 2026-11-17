@@ -72,6 +72,8 @@ const SMALL_MIDDLE: Pt = { x: 51, y: 46 };
 const ACROSS: Pt = { x: (ENEMY_LEFT + ENEMY_RIGHT) / 2, y: (FAR_LINE + NEAR_LINE) / 2 };
 /** The generator's light on the back of the pilot's mech: where it is in the pose box from behind, how large and how bright it is at rest, and how bright while the mech is dazed. */
 export const GENERATOR = { x: 58, y: 37, r: 10, color: '#ffb060', alpha: 0.2, dazed: 0.06 };
+/** How many times as bright as it is a unit is drawn: when it is hit, when it is hit in a calm picture, and while its own gun lights it. */
+export const BRIGHT = { hit: 2.6, calm: 1.4, glare: 1.35 };
 /** How far the camera pushes in on what happens: a bullet or a beam that lands, a shell, a blade, a machine going up, an Overdrive going off. */
 export const PUSH = { shot: 0.06, shell: 0.09, blade: 0.12, wreck: 0.12, surge: 0.08 };
 /** Where the strip the wingman's line is written on starts, and how far under the top of the field it and the new pilot's line are. */
@@ -935,11 +937,22 @@ export class BattleScreen {
       }
     }
     ctx.globalAlpha = t.alpha;
+    draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy), t.lift);
     // A unit that is hit lights up: hard as a rule, gently in a calm picture.
     // One that fires is lit by its own gun for a moment, though not in a calm picture.
-    ctx.filter = t.flash ? (this.opts.calm ? 'brightness(1.4)' : 'brightness(2.6)') : t.glare && !this.opts.calm ? 'brightness(1.35)' : 'none';
-    draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy), t.lift);
-    ctx.filter = 'none';
+    const bright = t.flash ? (this.opts.calm ? BRIGHT.calm : BRIGHT.hit) : t.glare && !this.opts.calm ? BRIGHT.glare : 1;
+    if (bright > 1) {
+      // Its own picture is laid over it again as light: once for each whole time brighter it is to be, and once more,
+      // fainter, for what is left over. That is what a brightness filter works out, without asking the canvas for one:
+      // a canvas that has no graphics chip to do filters on takes sixty milliseconds and more over a frame that has one.
+      const before = ctx.globalCompositeOperation;
+      ctx.globalCompositeOperation = 'lighter';
+      for (let more = bright - 1; more > 0.001; more -= 1) {
+        ctx.globalAlpha = t.alpha * Math.min(1, more);
+        draw(t.dx, t.dy + (unit.destroyed ? 0 : idleDy), t.lift);
+      }
+      ctx.globalCompositeOperation = before;
+    }
     ctx.globalAlpha = 1;
   }
 

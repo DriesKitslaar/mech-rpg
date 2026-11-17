@@ -2,7 +2,7 @@ import { createBattle, type BattleState } from '../../src/core/battle';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { BattleFlow } from '../../src/ui/battleFlow';
-import { BattleScreen } from '../../src/ui/battleScreen';
+import { BRIGHT, BattleScreen } from '../../src/ui/battleScreen';
 import { FIELD_LIGHT, MAX_LIGHTS } from '../../src/ui/light';
 import { MAX_PARTICLES, PARTICLE_LIGHTS, Particles } from '../../src/ui/particles';
 import type { SpriteStore } from '../../src/ui/sprites';
@@ -102,14 +102,53 @@ describe('light on the field', () => {
   });
 
   test('the one that fires is lit by its own gun for a moment; a calm picture leaves that out', () => {
-    const lit = (calm: boolean): string[] => {
+    /** The pictures that are laid over themselves as light at the moment the gun goes off: which, and how strongly. */
+    const lit = (calm: boolean): { id: string; alpha: number }[] => {
       const { screen, fire, page } = screenOf({ calm });
       fire();
       screen.update(32);
-      return [...new Set(page().images.map((i) => i.filter))];
+      const drawn = page();
+      // No picture is ever handed to the canvas with a filter on it.
+      expect(new Set(drawn.images.map((i) => i.filter))).toEqual(new Set(['none']));
+      return drawn.images.filter((i) => i.blend === 'lighter').map((i) => ({ id: (i.image as { id?: string }).id ?? '', alpha: i.alpha }));
     };
-    expect(lit(false)).toContain('brightness(1.35)');
-    expect(lit(true)).toEqual(['none']);
+    const glare = lit(false);
+    // Every layer of the pilot's mech and what it carries, once more, at a little over a third: it is that much brighter.
+    expect(glare.length).toBeGreaterThanOrEqual(5);
+    for (const layer of glare) expect(layer.alpha).toBeCloseTo(BRIGHT.glare - 1, 6);
+    expect(lit(true)).toEqual([]);
+  });
+
+  test('a machine that is hit lights up by its own picture laid over it as light: 2.6 times as bright, 1.4 in a calm picture, exactly where it stands', () => {
+    /** Every drawing of the first machine in the frames after a shot at it, frame by frame: how it was laid on and how strongly. */
+    const hit = (calm: boolean): { blend: string; alpha: number; x: number; y: number }[][] => {
+      const { screen, fire, page } = screenOf({ calm });
+      fire();
+      const frames: { blend: string; alpha: number; x: number; y: number }[][] = [];
+      for (let i = 0; i < 40; i++) {
+        screen.update(16);
+        const drawn = page();
+        expect(drawn.images.every((image) => image.filter === 'none')).toBe(true);
+        frames.push(drawn.images.filter((image) => (image.image as { id?: string }).id === 'enemy-tank').map((image) => ({ blend: image.blend, alpha: image.alpha, x: image.x, y: image.y })));
+      }
+      return frames;
+    };
+    for (const [calm, bright] of [[false, BRIGHT.hit], [true, BRIGHT.calm]] as [boolean, number][]) {
+      const frames = hit(calm);
+      const lit = frames.filter((frame) => frame.some((image) => image.blend === 'lighter'));
+      // It lights up for a few frames as the shot lands, and is itself again after.
+      expect(lit.length, `calm ${calm}`).toBeGreaterThanOrEqual(3);
+      expect(frames.at(-1), `calm ${calm}`).toHaveLength(1);
+      for (const frame of lit) {
+        const [own, ...light] = frame;
+        expect(own).toMatchObject({ blend: 'source-over', alpha: 1 });
+        // All of it adds up to how many times as bright it is to be, and every layer of light lies exactly on the picture.
+        expect(1 + light.reduce((sum, image) => sum + image.alpha, 0)).toBeCloseTo(bright, 6);
+        for (const image of light) expect([image.blend, image.x, image.y]).toEqual(['lighter', own.x, own.y]);
+        expect(light.every((image) => image.alpha <= 1)).toBe(true);
+      }
+    }
+    expect([BRIGHT.hit, BRIGHT.calm, BRIGHT.glare]).toEqual([2.6, 1.4, 1.35]);
   });
 
   test('a calm picture has the same lights at half strength, and none that covers the field', () => {
