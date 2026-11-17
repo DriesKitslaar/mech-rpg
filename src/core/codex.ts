@@ -1,5 +1,6 @@
 import { framePart, weaponIn } from './build';
 import { reached, type Condition, type Mission } from './campaign';
+export { checksHeld } from './campaign';
 import type { GameState } from './game';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog, type DamageType, type EnemyDef } from './types';
 
@@ -11,6 +12,24 @@ export interface Entry {
   /** What has to have happened: a contract done, `choice`, `finale`, `verdict`, `arena:N`, or `start`. */
   after: Condition;
 }
+
+/**
+ * Something found: a paper or a brass lamp check. It is an entry of the database like those about
+ * the world (it opens when its time has come and stays open through the cycles), with a number, a
+ * line about where it comes from, and a clue that stands in its place until it is found.
+ */
+export interface Find extends Entry {
+  /** A paper's place among the papers, from 1, in the order of what they are about; a check's own number. */
+  no: number;
+  kind: 'paper' | 'check';
+  /** Who wrote it, or where it lay. */
+  source: string;
+  /** A few words about where it is, shown while it is not found. */
+  clue: string;
+}
+
+/** True of an entry that is a find, rather than a few lines about the world. */
+export const isFind = (entry: Entry): entry is Find => 'kind' in entry;
 
 /**
  * Opens every entry whose time has come and that is not open yet, in list order. An open entry

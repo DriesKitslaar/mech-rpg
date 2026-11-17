@@ -389,4 +389,23 @@ export const STORY_NL: Record<string, string> = {
   'Valuation complete. You are worth more as parts.': 'Taxatie voltooid. Je bent in onderdelen meer waard.',
   'Your objection has been noted. It changes nothing.': 'Je bezwaar is genoteerd. Het verandert niets.',
   'Then we proceed to liquidation.': 'Dan gaan we over tot liquidatie.',
+  // Letters from a clerk who kept copies.
+  "A Tidy Desk":
+    "Een Net Bureau",
+  "Enclosed":
+    "Bijgesloten",
+  "One more file":
+    "Nog een dossier",
+  "I filed things for the board for forty years. Mostly where I was told to. Once where I was paid to, and you have that file now.":
+    "Ik borg veertig jaar dingen op voor de commissie. Meestal waar het moest. Een keer waar ik voor betaald werd, en dat dossier heb jij nu.",
+  "I am retired. I kept copies. I will send a pilot what that pilot has been near, and no more than that. I like a tidy desk.":
+    "Ik ben met pensioen. Ik hield kopieen. Ik stuur een piloot wat die piloot van dichtbij zag, en niet meer. Ik hou van een net bureau.",
+  "What you find, your database keeps under FOUND. Some of it you will have picked up yourself before you ever heard from me.":
+    "Wat je vindt, bewaart je database onder VONDST. Een deel raapte je zelf al op voor je ooit van mij hoorde.",
+  "So it is decided. I had hoped to be out of envelopes by now.":
+    "Het is dus beslist. Ik had gehoopt dat mijn enveloppen nu op waren.",
+  "Your frame has a recorder. It was never wiped. It was only never asked anything. It knows the sluice, and it knows it from before your time.":
+    "Je frame heeft een recorder. Die is nooit gewist. Er is hem alleen nooit iets gevraagd. Hij kent de sluis, en hij kent hem van voor jouw tijd.",
+  "Fly the war again and let it listen. There are papers I can only send to a pilot who has been to the same place twice.":
+    "Vlieg de oorlog opnieuw en laat hem luisteren. Sommige papieren stuur ik alleen aan wie er twee keer was.",
 };

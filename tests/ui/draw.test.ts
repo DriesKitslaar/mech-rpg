@@ -680,7 +680,10 @@ describe('the screens the pilot\'s record added', () => {
     press(app, 'next');
     expect(page().said).toEqual(expect.arrayContaining(['VARN', 'Varn', 'The Licence', 'Hadron Mining']));
     press(app, 'next');
-    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Leg Types', `${28} TOPICS`]));
+    // Nothing is found yet: every paper has its number, and the page of the first says where to look.
+    expect(page().said).toEqual(expect.arrayContaining(['FOUND', '01 ? ? ?', 'Not found yet.', 'FOUND 0/40   LAMP CHECKS 0']));
+    press(app, 'next');
+    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Leg Types', `${29} TOPICS`]));
   });
 
   test('the database growing is announced with its own mark, and medals after it one by one', () => {

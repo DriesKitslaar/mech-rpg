@@ -233,13 +233,15 @@ describe('the database', () => {
     expect(snap(app).detail).toEqual({ title: '? ? ?', lines: ['Not met yet.'] });
   });
 
-  test('the shoulder buttons turn the page: units, people, world, manual, music and round again', () => {
+  test('the shoulder buttons turn the page: units, people, world, what is found, manual, music and round again', () => {
     const { app } = inHub(scout());
     select(app, 'database');
     press(app, 'next');
     expect(snap(app).page).toBe('people');
     press(app, 'next');
     expect(snap(app)).toMatchObject({ page: 'world', count: `ENTRIES 6/${WORLD.length}` });
+    press(app, 'next');
+    expect(snap(app)).toMatchObject({ page: 'finds', count: 'FOUND 0/40   LAMP CHECKS 0' });
     press(app, 'next');
     expect(snap(app)).toMatchObject({ page: 'manual', count: `${MANUAL.length} TOPICS` });
     press(app, 'next');
@@ -248,7 +250,7 @@ describe('the database', () => {
     expect(snap(app).page).toBe('units');
     press(app, 'prev', 'prev');
     expect(snap(app).page).toBe('manual');
-    press(app, 'left', 'left', 'left');
+    press(app, 'left', 'left', 'left', 'left');
     expect(snap(app).page).toBe('units');
   });
 
@@ -297,7 +299,10 @@ describe('the database', () => {
 
   test('a game loaded from before there was a database has its entries at once', () => {
     const { app, store } = inHub({ ...done('intro-1', 'intro-2', 'rival-1'), scenes: ['act-1'] });
-    expect(savedGame(store).codex).toEqual(['varn', 'licence', 'dispatch', 'hadron', 'lumen', 'undertow', 'freelance', 'arena', 'ashfall']);
+    // What it has earned of the world's entries, and what it has found: the wreck in the freight lane leaves a slip of paper.
+    const [world, finds] = [savedGame(store).codex.filter((id) => !/^(paper|check)-/.test(id)), savedGame(store).codex.filter((id) => /^(paper|check)-/.test(id))];
+    expect(world).toEqual(['varn', 'licence', 'dispatch', 'hadron', 'lumen', 'undertow', 'freelance', 'arena', 'ashfall']);
+    expect(finds).toEqual(['paper-booking']);
     select(app, 'database');
     press(app, 'next', 'next');
     expect(ids(app)).toHaveLength(9);

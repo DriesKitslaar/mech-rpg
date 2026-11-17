@@ -59,7 +59,7 @@ test('the pilot screen: perks, medals and the record, paged with the shoulder bu
   expect(errors).toEqual([]);
 });
 
-test('the database: units met and not met, the world so far, and the manual', async ({ page }) => {
+test('the database: units met and not met, the world so far, what has been found, and the manual', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const met = ['recon-drone', 'gunship', 'shield-drone', 'bomb-crawler', 'gun-turret', 'tank', 'light-mech', 'heavy-mech', 'rival', 'leviathan', 'adjuster'];
@@ -84,6 +84,14 @@ test('the database: units met and not met, the world so far, and the manual', as
   await press(page, 'ArrowDown');
   await press(page, 'ArrowDown');
   await page.screenshot({ path: shot('database-world') });
+  await press(page, 'KeyE');
+  // What has been found: every paper under its number, found or not, and the page of the first one that is.
+  expect((await snap(page)).page).toBe('finds');
+  const finds = (await snap(page)).menu.items;
+  expect(finds).toHaveLength(40);
+  expect(finds.some((item) => item.enabled)).toBe(true);
+  for (let i = 0; i < 40 && !(await snap(page)).menu.items[(await snap(page)).menu.cursor].enabled; i++) await press(page, 'ArrowDown');
+  await page.screenshot({ path: shot('database-found') });
   await press(page, 'KeyE');
   expect((await snap(page)).page).toBe('manual');
   await press(page, 'ArrowDown');

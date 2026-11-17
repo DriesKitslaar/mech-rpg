@@ -5,7 +5,7 @@ import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
 import { TALK_CHARS } from '../../src/ui/battleScreen';
 import { BRIEFING_CHARS } from '../../src/ui/briefingScreen';
-import { PAGE_CHARS } from '../../src/ui/databaseScreen';
+import { FIND_CLUE_LINES, FIND_TEXT_LINES, PAGE_CHARS } from '../../src/ui/databaseScreen';
 import { LOGICAL_W } from '../../src/ui/display';
 import { SCENE_CHARS } from '../../src/ui/sceneScreen';
 import { ANSWER_CHARS, TALK_SCENE_CHARS } from '../../src/ui/talkScreen';
@@ -13,10 +13,11 @@ import { charsFor, wrap } from '../../src/ui/widgets';
 
 /**
  * The room each kind of text has. `width`: the text is wrapped at this many characters, and the
- * Dutch may take no more lines than the English does (the English is known to fit). `max`: the
- * text is one line, and the Dutch may be as long as the English or this, whichever is longer.
+ * Dutch may take no more lines than the English does (the English is known to fit), or, where the
+ * room is a box of a known height, no more than `lines`. `max`: the text is one line, and the
+ * Dutch may be as long as the English or this, whichever is longer.
  */
-const ROOM: Record<string, { width?: number; max?: number }> = {
+const ROOM: Record<string, { width?: number; max?: number; lines?: number }> = {
   'mission.title': { max: 18 }, client: { max: 30 }, who: { max: 16 }, asset: { max: 12 },
   briefing: { width: BRIEFING_CHARS }, debrief: { width: charsFor(210) }, 'battle.talk': { width: TALK_CHARS },
   'scene.heading': { max: 22 }, 'scene.title': { max: 14 }, 'scene.lines': { width: SCENE_CHARS },
@@ -32,6 +33,9 @@ const ROOM: Record<string, { width?: number; max?: number }> = {
   radio: { max: 30 },
   // Whom somebody works for, on their page of the database.
   'person.role': { max: 20 },
+  // A find: where it comes from, on one line under its name; and the clue that stands in for one not found.
+  // Its text and its clue stand in a page with room to spare: what they may take is that room, in either language.
+  'find.source': { max: 37 }, 'find.clue': { width: PAGE_CHARS, lines: FIND_CLUE_LINES }, 'find.text': { width: PAGE_CHARS, lines: FIND_TEXT_LINES },
 };
 /** Kinds that are names: they may stay as they are. Everything else has to be translated. */
 const MAY_STAY = new Set(['who', 'client', 'asset', 'part.name', 'board.word', 'scene.heading', 'scene.title', 'mission.title', 'medal.name', 'perk.name', 'page.title', 'person.role']);
@@ -63,7 +67,7 @@ describe('Dutch: the content', () => {
       const room = ROOM[kind];
       if (!room) continue;
       if (room.width !== undefined) {
-        const [had, has] = [wrap(english, room.width).length, wrap(dutch, room.width).length];
+        const [had, has] = [room.lines ?? wrap(english, room.width).length, wrap(dutch, room.width).length];
         if (has > had) tooBig.push(`[${kind}] ${has} lines for ${had} at ${room.width}: ${dutch}`);
       } else if (dutch.length > Math.max(english.length, room.max ?? 0)) tooBig.push(`[${kind}] ${dutch.length} for ${Math.max(english.length, room.max ?? 0)}: ${dutch}`);
     }

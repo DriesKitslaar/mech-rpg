@@ -97,10 +97,19 @@ export interface Message {
 }
 
 /**
- * Something a message, a part or a scene waits for: the start, any exclusive contract (`choice`),
- * any finale, any verdict, an arena rank (`arena:N`), or the id of a contract.
+ * Something a message, a part, a scene or a find waits for: the start, any exclusive contract
+ * (`choice`), any finale, any verdict, the id of a contract, an answer to a question of the story
+ * (`chose:question=answer`), an arena rank (`arena:N`), the cycle (`cycle:N`: the second telling is
+ * cycle 1), an S rank on a contract (`s:contract`), the deepest floor of the Gauntlet (`floor:N`),
+ * or checks held (`checks:N`). Conditions can be joined: `a&b` is both, `a|b` is either, `!a` is
+ * not; `|` binds loosest, so `a|b&c` is a, or b and c.
  */
 export type Condition = 'start' | 'choice' | 'finale' | 'verdict' | string;
+
+/** What the id of a find begins with when it is a lamp check. */
+export const CHECK_ID = 'check-';
+/** How many lamp checks the pilot holds. They are finds, kept with the database's entries through the cycles. */
+export const checksHeld = (state: GameState): number => state.codex.filter((id) => id.startsWith(CHECK_ID)).length;
 
 /** A page of story between contracts: the opening of an act, or an ending. */
 /** One thing said in a conversation. */
@@ -308,6 +317,9 @@ export function campaignComplete(state: GameState, missions: Mission[]): boolean
 
 /** True once the event a part, a message, a scene or a database entry waits for has happened. */
 export function reached(state: GameState, condition: Condition, missions: Mission[]): boolean {
+  if (condition.includes('|')) return condition.split('|').some((part) => reached(state, part, missions));
+  if (condition.includes('&')) return condition.split('&').every((part) => reached(state, part, missions));
+  if (condition.startsWith('!')) return !reached(state, condition.slice(1), missions);
   if (condition === 'start') return true;
   if (condition === 'choice') return chosenFaction(state, missions) !== null;
   if (condition === 'finale' || condition === 'verdict') return done(state, missions, condition).length > 0;
@@ -318,6 +330,11 @@ export function reached(state: GameState, condition: Condition, missions: Missio
   }
   // "arena:N": the arena rank is at least N.
   if (condition.startsWith('arena:')) return state.arenaRank >= Number(condition.slice(6));
+  if (condition.startsWith('cycle:')) return state.cycle >= Number(condition.slice(6));
+  // "s:contract": the best rank ever earned on it is an S. Ranks are kept through the cycles.
+  if (condition.startsWith('s:')) return Object.hasOwn(state.ranks, condition.slice(2)) && state.ranks[condition.slice(2)] === 'S';
+  if (condition.startsWith('floor:')) return (state.gauntletBest ?? 0) >= Number(condition.slice(6));
+  if (condition.startsWith('checks:')) return checksHeld(state) >= Number(condition.slice(7));
   return state.completed.includes(condition);
 }
 

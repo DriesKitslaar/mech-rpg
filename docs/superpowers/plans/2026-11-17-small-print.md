@@ -31,8 +31,8 @@
 
 ## Status
 
-- [ ] K1: Voices in a battle (branch `feat/print-voices`)
-- [ ] K2: Finds (branch `feat/print-finds`)
+- [x] K1: Voices in a battle (branch `feat/print-voices`)
+- [x] K2: Finds (branch `feat/print-finds`)
 - [ ] K3: A later cycle (branch `feat/print-cycle`)
 - [ ] K4: The third verdict (branch `feat/print-ending`)
 - [ ] K5: Review, soak, APK, summary (branch `feat/print-review`)
@@ -46,11 +46,11 @@
 - `FlowOptions.cycle?: number` (0 when absent). `BattleFlow` says a line only when `(line.cycle ?? 0) <= (opts.cycle ?? 0)`.
 - `last`: at the start of the pilot's turn, once, when exactly one enemy stands and the battle began with more than one. `hurt`: at the start of the pilot's turn, once, when the pilot's core is below half its armour. Both are said after the lines of the round, in the order `last`, `hurt`.
 
-- [ ] Tests first (`battleFlow5.test.ts`): a `last` line is said once when one of two enemies is left, never in a battle that began with one enemy, never after the battle is over; a `hurt` line is said once when the core is below half and not at exactly half; a line with `cycle: 1` is not said with no cycle given and is said with `cycle: 1`; the lines of a round still come first; `quiet` says none of it.
-- [ ] `BattleFlow`: the two moments and the cycle; the app hands the game's cycle to every battle of a contract.
-- [ ] The writing: every story contract has at least one line that is not about tactics; the lines of the list in the spec's "Voices in a battle" are in `missions.ts` (see the table below); Dutch for each.
-- [ ] `voices.test.ts`: every story contract (phases intro to verdict) has a line in one of its battles; no battle has more than four lines for one moment; every line fits four lines of 46; no line for `last` in a battle with one enemy; no first-cycle line names Meridian before the finale, the Society, a check, or the box.
-- [ ] All tests, the browser tests that play battles, screenshots that changed, an APK.
+- [x] Tests first (`battleFlow5.test.ts`): a `last` line is said once when one of two enemies is left, never in a battle that began with one enemy, never after the battle is over; a `hurt` line is said once when the core is below half and not at exactly half; a line with `cycle: 1` is not said with no cycle given and is said with `cycle: 1`; the lines of a round still come first; `quiet` says none of it.
+- [x] `BattleFlow`: the two moments and the cycle; the app hands the game's cycle to every battle of a contract.
+- [x] The writing: every story contract has at least one line that is not about tactics; the lines of the list in the spec's "Voices in a battle" are in `missions.ts` (see the table below); Dutch for each.
+- [x] `voices.test.ts`: every story contract (phases intro to verdict) has a line in one of its battles; no battle has more than four lines for one moment; every line fits four lines of 46; no line for `last` in a battle with one enemy; no first-cycle line names Meridian before the finale, the Society, a check, or the box.
+- [x] All tests, the browser tests that play battles, screenshots that changed, an APK.
 
 Lines added in K1 (first cycle; who, when):
 
@@ -93,12 +93,12 @@ Lines added in K1 (first cycle; who, when):
 - `FINDS: Find[]` in list order: papers 1 to 24, then the checks.
 - The database: `DatabasePage` gains `'finds'` after `'world'`; a row is `NN Title` for a paper and `Check NNN` for a check, or `NN ? ? ?` / `Check ? ? ?` while it is not found; the page of one not found shows its clue.
 
-- [ ] Tests first for `reached`: each new form alone, the three joined, a condition of the old kind still read as before (a contract id with a dash, `chose:x=y`, `arena:N`).
-- [ ] `Find`, `FINDS` (the forty of the table below), opened with the world's entries wherever those are opened, announced apart from them: one find by its title, several as a count.
-- [ ] The page FOUND, its count line (`FOUND n/40   CHECKS n`), Dutch.
-- [ ] Two letters: from A Tidy Desk after the talk with Old Sixty (what he sends and why), and after any verdict (the frame has a recorder; fly the war again).
-- [ ] `finds.test.ts`: every condition names contracts, questions and answers that exist; numbers run 1 to 24 without a gap; every text, source, clue and title fits its room; no clue contains the title of a contract or a person's name; a career through each client's road in the first cycle finds between eight and twenty and holds fewer than nine checks without side work.
-- [ ] All tests, screenshots of the page (found, not found, a check), an APK.
+- [x] Tests first for `reached`: each new form alone, the three joined, a condition of the old kind still read as before (a contract id with a dash, `chose:x=y`, `arena:N`).
+- [x] `Find`, `FINDS` (the forty of the table below), opened with the world's entries wherever those are opened, announced apart from them: one find by its title, several as a count.
+- [x] The page FOUND, its count line (`FOUND n/40   CHECKS n`), Dutch.
+- [x] Two letters: from A Tidy Desk after the talk with Old Sixty (what he sends and why), and after any verdict (the frame has a recorder; fly the war again).
+- [x] `finds.test.ts`: every condition names contracts, questions and answers that exist; numbers run 1 to 24 without a gap; every text, source, clue and title fits its room; no clue contains the title of a contract or a person's name; a career through each client's road in the first cycle finds between eight and twenty and holds fewer than nine checks without side work.
+- [x] All tests, screenshots of the page (found, not found, a check), an APK.
 
 The finds (when; what it is):
 
@@ -109,7 +109,7 @@ The finds (when; what it is):
 | 3 | COUNTING RHYME | `undertow-1` | brass for the owner, iron for the digger, water for the floor |
 | 4 | SURVEY REPORT | `lumen-1` | every seam worked out, forty years ago; not to be circulated |
 | 5 | BOARD MINUTE | `hadron-3\|lumen-5\|undertow-4` | a fund that cannot meet cannot object; the pumps are uneconomic |
-| 6 | LAST SHIFT | `floor:15` | water at the nine level; we are hanging our checks on the board |
+| 6 | SHIFT LOG | `floor:15` | water at the nine level; we are hanging our checks on the board |
 | 7 | MINUTE BOOK | `quest-3` | adjourned for want of a quorum; forty years in one hand |
 | 8 | PROXY FORM | `bounty-6\|quest-3` | the Secretary to vote for me, for ever; all signed in one hand |
 | 9 | LETTERHEAD | `audit-1` | owned by its members; registered office: Society Hall, bottom level |

@@ -3,6 +3,7 @@ import { ARENA } from '../arena';
 import { BOARD_TEXT } from '../board';
 import { JUKEBOX, MANUAL, PEOPLE, UNITS, WORLD } from '../codex';
 import { DRILLS } from '../drills';
+import { FINDS } from '../finds';
 import { ENEMIES } from '../enemies';
 import { MEDALS } from '../medals';
 import { ENDINGS, EPILOGUES, MESSAGES, MISSIONS } from '../missions';
@@ -38,6 +39,7 @@ function contentTexts(): TextSlot[] {
     ...textsOf('story', Object.values(REMEMBERED), Object.fromEntries(Object.values(REMEMBERED).flatMap((byAnswer) => Object.keys(byAnswer)).map((k) => [k, 'scene.lines']))),
     ...textsOf('reference', UNITS, { title: 'page.title', note: 'page.text' }),
     ...textsOf('reference', WORLD, { title: 'page.title', text: 'page.text' }),
+    ...textsOf('reference', FINDS, { title: 'page.title', source: 'find.source', clue: 'find.clue', text: 'find.text' }),
     ...textsOf('reference', MANUAL, { title: 'page.title', text: 'page.text' }),
     ...textsOf('reference', JUKEBOX, { title: 'page.title', text: 'page.text' }),
     ...textsOf('reference', PEOPLE, { name: 'who', role: 'person.role', text: 'page.text' }),

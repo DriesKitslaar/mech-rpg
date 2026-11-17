@@ -243,7 +243,10 @@ export const STRINGS = {
     earned: 'CREDITS EARNED', medals: 'MEDALS', cycle: 'CYCLE', time: 'TIME PLAYED', none: '-', ranksHeld: 'RANKS HELD',
   },
   database: {
-    heading: 'DATABASE', pages: { units: 'UNITS', people: 'PEOPLE', world: 'WORLD', manual: 'MANUAL', music: 'MUSIC' }, hint: 'L1/R1: page   B: back',
+    heading: 'DATABASE', pages: { units: 'UNITS', people: 'PEOPLE', world: 'WORLD', finds: 'FOUND', manual: 'MANUAL', music: 'MUSIC' }, hint: 'L1/R1: page   B: back',
+    // What has been found: papers and brass lamp checks. One not found has a clue where its text will be.
+    found: (n: number, of: number) => `FOUND ${n}/${of}`, checks: (n: number) => `LAMP CHECKS ${n}`, check: 'Check', notFound: 'Not found yet.',
+    findToast: 'FOUND', newFinds: (n: number) => `${n} new finds`,
     // The people of Varn the pilot has come across.
     known: (n: number, of: number) => `KNOWN ${n}/${of}`, broughtIn: 'Brought in',
     // The jukebox: the songs heard so far, to be played again.

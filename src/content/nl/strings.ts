@@ -226,7 +226,9 @@ export const STRINGS_NL = {
     earned: 'CREDITS VERDIEND', medals: 'MEDAILLE', cycle: 'CYCLUS', time: 'SPEELTIJD', none: '-', ranksHeld: 'RANGEN',
   },
   database: {
-    heading: 'DATABASE', pages: { units: 'EENHEID', people: 'MENSEN', world: 'WERELD', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
+    heading: 'DATABASE', pages: { units: 'EENHEID', people: 'MENSEN', world: 'WERELD', finds: 'VONDST', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
+    found: (n: number, of: number) => `VONDST ${n}/${of}`, checks: (n: number) => `PENNINGEN ${n}`, check: 'Penning', notFound: 'Niet gevonden.',
+    findToast: 'VONDST', newFinds: (n: number) => `${n} vondsten`,
     known: (n: number, of: number) => `BEKEND ${n}/${of}`, broughtIn: 'Ingerekend',
     heard: (n: number, of: number) => `GEHOORD ${n}/${of}`, notHeard: 'Nog niet gehoord.', play: 'A: speel', stop: 'A: stop', playing: 'SPEELT NU',
     length: (time: string) => `LENGTE ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Muziek staat uit. Zet die aan in Opties.',
