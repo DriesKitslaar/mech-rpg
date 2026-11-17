@@ -28,7 +28,19 @@ describe('the sign, as it is worked out', () => {
     expect(LOGO_WORD).toBe(STRINGS.title);
     expect(LOGO.letters).toHaveLength(STRINGS.title.length);
     expect(() => buildLogo('IRON')).not.toThrow();
-    expect(() => buildLogo('IRONZ')).toThrow(/no letter Z/);
+    // The sign has a whole alphabet now, of capitals; what it has no shape for it still will not write.
+    expect(() => buildLogo('IRONZ')).not.toThrow();
+    expect(() => buildLogo('IRON~')).toThrow(/no letter ~/);
+    expect(() => buildLogo('Iron')).toThrow(/no letter r/);
+  });
+
+  test('it is, pixel for pixel, the sign it was before the game had an alphabet of its letters', () => {
+    // A fingerprint of every run of it and of every colour of its faces, taken before the letters were made to write other words.
+    const fnv = (text: string): number => { let h = 0x811c9dc5; for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h; };
+    expect([LOGO.w, LOGO.h, LOGO.split]).toEqual([267, 45, 123]);
+    expect(fnv(JSON.stringify([LOGO.w, LOGO.h, LOGO.split, LOGO.letters, LOGO.face, LOGO.top, LOGO.bottom, LOGO.depth, LOGO.edge]))).toBe(3636883225);
+    const colours = [true, false].flatMap((steel) => [true, false].flatMap((lit) => Array.from({ length: LOGO.h }, (_, row) => faceColor(row, steel, lit))));
+    expect(fnv(JSON.stringify(colours))).toBe(2767581845);
   });
 
   test('it fits the screen with room either side, its letters stand in a row with the same gap between them', () => {

@@ -12,6 +12,7 @@ import { SCENE_CHARS, SCENE_LINES } from '../../src/ui/sceneScreen';
 import { ANSWER_CHARS, QUESTION_HOLD_MS, TALK_SCENE_CHARS, TALK_SCENE_LINES } from '../../src/ui/talkScreen';
 import { wrap } from '../../src/ui/widgets';
 import { done, fresh, inHub, makeApp, press, savedGame, select, skipTalks, snap, strong } from '../helpers/app';
+import { record, signIn } from '../helpers/canvas';
 
 const [kite, marrow, sixty] = WINGMEN;
 const all = (answer: 0 | 1): Record<string, string> => Object.fromEntries(TALKS.map((t) => [t.choice!.id, t.choice!.options[answer].id]));
@@ -191,7 +192,9 @@ describe('what a conversation guards against', () => {
     const { app } = inHub({ ...strong(done('intro-1', 'intro-2')), scenes: ['act-1'] , choices: { kite: 'pass' } });
     app.commit({ ...app.game!, scenes: ['act-1'], choices: {} });
     app.go('hub');
-    expect(texts(app)).toEqual(expect.arrayContaining(['NEW LICENCE', 'DISPATCH']));
+    expect(texts(app)).toContain('DISPATCH');
+    // What the conversation is called is in the sign's letters, in the game's colour.
+    expect(signIn(record((ctx) => app.draw(ctx)), 'NEW LICENCE', 'neon')).not.toBeNull();
     expect(texts(app).join(' ')).toContain('You have a visitor in the bay. Says he is a pilot. His frame says otherwise.');
     press(app, 'confirm', 'confirm', 'confirm', 'confirm');
     expect(texts(app)).toEqual(expect.arrayContaining(['YOUR CALL', 'Vouch for him.', 'Tell him to ask someone else.']));

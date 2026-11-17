@@ -14,7 +14,7 @@ import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/stora
 import type { InputAction } from '../../src/platform/input';
 import { App, SHUTTER_MS } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
-import { record } from '../helpers/canvas';
+import { record, signCount, signIn } from '../helpers/canvas';
 
 /** A canvas context that accepts anything and remembers what was called. */
 function recorder() {
@@ -146,7 +146,9 @@ describe('the screens the three-act story added', () => {
     press(app, 'confirm', 'confirm');
     expect(snap(app).screen).toBe('scene');
     app.draw(ctx);
-    expect(texts(calls)).toEqual(expect.arrayContaining(['ACT I', 'THE WAGE']));
+    expect(texts(calls)).toContain('ACT I');
+    // The title is in the sign's letters, in the game's colour.
+    expect(signIn(record((c) => app.draw(c)), 'THE WAGE', 'neon')).not.toBeNull();
     expect(calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'still-varn')).toBe(true);
     // A press as the page comes up is held off; a later one writes the page out; one straight after
     // that is held off again; only then does a press leave.
@@ -484,14 +486,19 @@ describe('the screens the three-act story added', () => {
     const shown = flow.eventsShown;
     screen.update(WARNING_MS - 100);
     screen.draw(ctx);
-    expect(texts(calls)).toEqual(expect.arrayContaining(['WARNING', 'SABLE']));
+    expect(texts(calls)).toContain('SABLE');
+    // The word is in the sign's letters, red or amber as it blinks.
+    const warned = record((c) => screen.draw(c));
+    expect(signIn(warned, 'WARNING', 'red') ?? signIn(warned, 'WARNING', 'amber')).not.toBeNull();
+    expect(signCount(warned)).toBe(1);
     expect(texts(calls)).not.toContain('HOSTILE AUDIT');
     expect(flow.eventsShown).toBe(shown);
     screen.onInput('confirm');
     calls.length = 0;
     screen.update(16);
     screen.draw(ctx);
-    expect(texts(calls)).not.toContain('WARNING');
+    expect(texts(calls)).not.toContain('SABLE');
+    expect(signCount(record((c) => screen.draw(c)))).toBe(0);
   });
 
   test('a fast battle has no banner, no weather and no smoke: it is drawn as bare as before', () => {
