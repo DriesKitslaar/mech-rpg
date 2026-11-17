@@ -56,9 +56,13 @@ describe('the voices in a battle', () => {
     const early = story.filter((m) => !['audit', 'verdict'].includes(m.phase));
     // Until the war is over nobody has heard of the insurer by name.
     for (const m of early) for (const line of firstCycle(m)) expect(line.text, m.id).not.toMatch(/Meridian/);
-    // And at no point does anybody in a battle say what is under the story.
-    for (const m of MISSIONS) {
+    // And at no point does anybody in a battle say what is under the story. (A contract that only a later telling offers is not the first telling.)
+    for (const m of MISSIONS.filter((mission) => !(mission.when ?? '').includes('cycle:'))) {
       for (const line of firstCycle(m)) expect(line.text, m.id).not.toMatch(/\b(Society|lamp check|quorum|proxy|the box|second escort)\b/i);
+    }
+    // What the recorder says is never said in a first telling: every line of it is kept for a later one, or is in a contract that is.
+    for (const m of MISSIONS) {
+      for (const line of linesOf(m).filter((l) => l.who === 'Recorder')) expect((line.cycle ?? 0) >= 1 || (m.when ?? '').includes('cycle:1'), `${m.id}: ${line.text}`).toBe(true);
     }
   });
 });

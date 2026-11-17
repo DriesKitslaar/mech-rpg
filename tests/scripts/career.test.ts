@@ -63,6 +63,22 @@ test('a third cycle by the third road finishes too, with every client served onc
   expect(report.endings.filter((id) => id.startsWith('finale-')).sort()).toEqual(['finale-hadron', 'finale-lumen', 'finale-undertow']);
 });
 
+test('a second cycle with the logs kept flies the three contracts nobody posted; the first cycle is not offered them', () => {
+  const report = playCareer({
+    faction: 'lumen', verdict: 'default', later: [{ faction: 'undertow', verdict: 'default' }], difficulty: 'standard', seed: 2, cycles: 2,
+    answers: { 'talk-logs': 'keep' }, side: ['quest-1', 'quest-2', 'quest-3'],
+  });
+  expect(report.finished, careerLine(report)).toBe(true);
+  expect(report.endings).toEqual(['finale-lumen', 'verdict-default', 'finale-undertow', 'verdict-default']);
+  expect(report.side).toEqual(['quest-1', 'quest-2', 'quest-3']);
+  // Sold, the second is never offered, and so neither is the third.
+  const sold = playCareer({
+    faction: 'lumen', verdict: 'default', difficulty: 'standard', seed: 2, cycles: 2, answers: { 'talk-logs': 'sell' }, side: ['quest-1', 'quest-2', 'quest-3'],
+  });
+  expect(sold.finished, careerLine(sold)).toBe(true);
+  expect(sold.side).toEqual(['quest-1']);
+});
+
 test('the same career played twice goes the same way', () => {
   const a = playCareer({ faction: 'undertow', verdict: 'enforce', difficulty: 'standard', seed: 7 });
   const b = playCareer({ faction: 'undertow', verdict: 'enforce', difficulty: 'standard', seed: 7 });

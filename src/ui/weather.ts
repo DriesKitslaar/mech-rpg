@@ -9,7 +9,7 @@ export const WEATHER: Record<string, Weather> = {
   'bg-neon-district': 'rain', 'bg-sluice': 'motes', 'bg-undercity': 'motes',
   'bg-mine': 'dust', 'bg-rooftop': 'motes',
   'bg-foundry': 'embers',
-  'bg-vault': 'motes', 'bg-clearing': 'motes', 'bg-plaza': 'motes',
+  'bg-vault': 'motes', 'bg-clearing': 'motes', 'bg-plaza': 'motes', 'bg-hall': 'motes',
   'bg-arena': 'none', 'bg-garage': 'none', 'bg-simulator': 'none',
 };
 

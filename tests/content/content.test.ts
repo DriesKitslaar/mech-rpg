@@ -374,13 +374,14 @@ describe('campaign content', () => {
     expect(new Set(SCENES.map((s) => s.id)).size).toBe(SCENES.length);
     for (const scene of SCENES) {
       for (const condition of [scene.after, ...(scene.before ? [scene.before] : [])]) {
-        expect(isKeyword(condition) || MISSIONS.some((m) => m.id === condition), `${scene.id}: ${condition}`).toBe(true);
+        expect(unknownTerms(condition), `${scene.id}: ${condition}`).toEqual([]);
       }
       if (scene.picture) expect(scene.picture in SPRITES, scene.picture).toBe(true);
       expect(sceneRows(scene), scene.id).toBeLessThanOrEqual(SCENE_LINES);
       expect(scene.title.length, scene.id).toBeLessThanOrEqual(14);
     }
-    expect(SCENES.filter((s) => !s.ending && !s.faction && !s.talk && !s.linesFor).map((s) => s.id)).toEqual(['act-1', 'act-2', 'act-3']);
+    // The three acts, and the page a later telling of the story opens with.
+    expect(SCENES.filter((s) => !s.ending && !s.faction && !s.talk && !s.linesFor).map((s) => s.id)).toEqual(['act-1', 'playback', 'act-2', 'act-3']);
     const endings = SCENES.filter((s) => s.ending);
     expect(endings.map((s) => `${s.after}|${s.faction}`).sort()).toEqual(
       ['enforce', 'default'].flatMap((v) => FACTIONS.map((f) => `verdict-${v}|${f}`)).sort());

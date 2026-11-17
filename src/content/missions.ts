@@ -29,6 +29,10 @@ const sable = says('Sable', 'portrait-sable');
 const rook = says('Rook', 'portrait-rook');
 const krell = says('Krell', 'portrait-krell');
 const actuary = says('The Actuary', 'portrait-actuary');
+/** The recorder behind the seat of the pilot's frame: what it heard eleven years ago, played back where it heard it. */
+const recorder = says('Recorder', 'portrait-recorder');
+/** A line kept for a later telling: nobody says it in the first cycle. */
+const again = (line: TalkLine): TalkLine => ({ ...line, cycle: 1 });
 
 /** Ashfall on the next roof: one shot a round at the strongest enemy standing. */
 const ASHFALL_FIRE: Support = { name: 'Ashfall', damage: 30 };
@@ -65,6 +69,7 @@ export const MISSIONS: Mission[] = [
       talk: [
         dispatch('start', 'Two drones on the convoy. Fire, choose a weapon, choose a part. Cores kill. Everything else just hurts.'),
         dispatch('win', 'There. The city pays people for that. Not much, but it pays.'),
+        again(dispatch(2, 'Left foot drags a little on the turn. It always did. ...So the file says.')),
       ],
     })],
   },
@@ -174,11 +179,17 @@ export const MISSIONS: Mission[] = [
     battles: [
       battle(['carrier', 'gun-turret'], SLUICE, {
         objective: { type: 'survive', rounds: 6 },
-        talk: [tamsin('start', 'Six rounds, pilot. The boats need six rounds.'), tamsin(4, 'Second boat is away. Hold a little longer.')],
+        talk: [
+          tamsin('start', 'Six rounds, pilot. The boats need six rounds.'), tamsin(4, 'Second boat is away. Hold a little longer.'),
+          again(recorder(2, 'Gate four. Trucks one and two are through. Lead, where are you. Lead, answer.')),
+          again(dispatch(3, '...What was that. Your radio is picking up a dead channel. Ignore it. Please.')),
+        ],
       }),
       battle(['heavy-mech', 'gunship'], SLUICE, {
         objective: { type: 'survive', rounds: 6 },
-        talk: [tamsin('start', 'An Enforcer. Do not trade blows with it. Just be here when it is over.'), tamsin(4, 'Last boat is loading. Forty-one. I will count them again on the far side.')],
+        talk: [tamsin('start', 'An Enforcer. Do not trade blows with it. Just be here when it is over.'), tamsin(4, 'Last boat is loading. Forty-one. I will count them again on the far side.'),
+          again(recorder(2, 'Three is burning. I am staying with four. Count the trucks. Count them again.')),
+        ],
       }),
     ],
   },
@@ -198,6 +209,7 @@ export const MISSIONS: Mission[] = [
         talk: [
           ashfall('start', 'So you are the other booking. Nothing personal. I am simply more expensive than you.'),
           ashfall(3, 'Do you know who bought my half of this booking? Nor do I. The money was very clean. That is how I know it was not.'),
+          again(dispatch('hurt', 'Bring that frame home. It has been left at a gate before.')),
           ashfall('win', 'Enough. You have cost me half a fee and a paint job. We will do this properly some day.'),
         ],
       }),
@@ -280,7 +292,10 @@ export const MISSIONS: Mission[] = [
     debrief: 'Leviathan settles into the canal for good. Hadron bills the Undertow for the obstruction.',
     battles: [
       battle(['tank', 'repair-drone', 'tank'], SLUICE, {
-        talk: [dispatch('start', 'Repair drone. Whatever you break, it mends. You know what to shoot first.')],
+        talk: [
+          dispatch('start', 'Repair drone. Whatever you break, it mends. You know what to shoot first.'),
+          again(recorder(2, 'The water is higher than it was. The mark will be under it now.')),
+        ],
       }),
       battle(['leviathan'], SLUICE, {
         par: 10,
@@ -410,7 +425,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Morning comes and the pumps are still turning. Tamsin brings you tea in a tin mug.',
     battles: [
-      battle(['juggernaut', 'carrier'], SLUICE, { objective: { type: 'survive', rounds: 6 }, talk: [tamsin(3, 'Hear that? Pumps. The bottom streets have not been dry since my mother was a girl.')] }),
+      battle(['juggernaut', 'carrier'], SLUICE, { objective: { type: 'survive', rounds: 6 }, talk: [tamsin(3, 'Hear that? Pumps. The bottom streets have not been dry since my mother was a girl.'), again(recorder(4, 'The water is going down. This is as low as it stood that night.'))] }),
       battle(['stalker', 'heavy-mech', 'gunship'], SLUICE, { objective: { type: 'survive', rounds: 6 }, talk: [tamsin(5, 'One more round. Then somebody should go down and see what the water has been keeping.')] }),
     ],
   },
@@ -509,7 +524,10 @@ export const MISSIONS: Mission[] = [
     battles: [
       battle(['lien-drone', 'bomb-crawler', 'lien-drone'], HANGAR, {
         objective: { type: 'protect', name: 'Hangar', hp: 12 },
-        talk: [dispatch('start', 'Under the desk. There is a drawer down here I have not opened in eleven years. It can wait one more night.')],
+        talk: [
+          dispatch('start', 'Under the desk. There is a drawer down here I have not opened in eleven years. It can wait one more night.'),
+          again(dispatch(2, 'If they take the hangar they take the recorder. That is the item they came for. You are only item two.')),
+        ],
       }),
       battle(['lien-drone', 'shield-drone', 'lien-drone'], HANGAR, {
         objective: { type: 'protect', name: 'Hangar', hp: 12 },
@@ -801,6 +819,22 @@ export const MESSAGES: Message[] = [
     body: [
       'Meridian wants you on staff. Ashfall wants you on the floor of their clearing house with a gun.',
       'You can only answer one of them, and whichever you pick is the end of this. I want my office back. Choose well.',
+    ],
+  },
+  {
+    id: 'ashfall-paper', from: 'Ashfall', portrait: 'portrait-rival', subject: 'Old paper', after: 'quest-1',
+    body: [
+      'Somebody has been through the files of a desk with a nine on it. Word travels. I assume it was you.',
+      'My first contract was one line long. I did what the line said and nothing it did not say. I was twenty.',
+      'I read every contract to the end now. It has not helped as much as you would think.',
+    ],
+  },
+  {
+    ...DESK, id: 'tidy-desk-box', subject: 'Nine hasps', after: 'quest-3',
+    body: [
+      'I see the box is back where it started. Forty years late, which for the Society is prompt.',
+      'It has nine hasps and no key. It was never meant to have a key. Read the rule book again: the ninth rule.',
+      'I have nothing more to send. My desk is tidy. Yours is not, yet.',
     ],
   },
   ...VERDICTS.flatMap((verdict) => FACTIONS.map((faction) => epilogue(verdict, faction))),

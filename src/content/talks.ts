@@ -9,6 +9,7 @@ const ashfall = says('Ashfall', 'portrait-rival');
 const brenn = says('Director Brenn', 'portrait-hadron');
 const varga = says('Analyst Varga', 'portrait-lumen');
 const tamsin = says('Tamsin', 'portrait-undertow');
+const recorder = says('Recorder', 'portrait-recorder');
 
 /** What selling something in a conversation pays. */
 export const TALK_PAY = { logs: 1200, marrow: 1500 } as const;
@@ -104,6 +105,22 @@ export const TALKS: Scene[] = [
       ],
     },
   },
+  // Only in a later telling, once the frame has stood at gate four again: the pilot plays what it kept to the one who said it.
+  {
+    id: 'talk-playback', heading: 'CHANNEL NINE', title: 'THE TAPE', picture: 'bg-neon-district', after: 'quest-2', before: 'verdict', lines: [],
+    talk: [
+      recorder('Count the trucks. Count them again.'),
+      dispatch('Where did you get that. ...No. Leave it running.'),
+      dispatch('That is gate four. Eleven years back, on the night shift. The second escort stayed with the trucks. The second escort got the bill.'),
+      dispatch('Then the second escort got a desk, because a desk was all that was going.'),
+    ],
+    choice: {
+      id: 'frame', options: [
+        { id: 'ask', label: 'Whose frame was this?', reply: dispatch('You know whose. I issued it to you myself. I wanted to see it come home, once. I am on your channel. I always was.') },
+        { id: 'quiet', label: 'Say nothing. Play it again.', reply: dispatch('...Yes. That is me. Younger. Still counting. Leave it running, would you. I never heard how it ended.') },
+      ],
+    },
+  },
 ];
 
 /** One line for each thing the pilot decided, for the pages before the epilogue. */
@@ -132,6 +149,10 @@ export const REMEMBERED: Record<string, Record<string, string>> = {
     forgive: 'Dispatch is still on the night shift. Yours is the one channel that is never muted.',
     cut: 'Dispatch still routes your contracts. Neither of you says a word that is not on the form.',
   },
+  frame: {
+    ask: 'There is a cancelled licence in a frame over the night desk now. The callsign is still cut out of it.',
+    quiet: 'Some nights channel nine carries an old recording from start to finish. Nobody on the desk turns it off.',
+  },
 };
 
 const remembered = (questions: string[]) => (choices: Record<string, string>): string[] =>
@@ -140,5 +161,5 @@ const remembered = (questions: string[]) => (choices: Record<string, string>): s
 /** What became of the people the pilot decided about: shown after the verdict, before the epilogue, and only if anything was decided. */
 export const AFTERMATH: Scene[] = [
   { id: 'left-1', heading: 'AFTERWARDS', title: 'WHO WAS LEFT', picture: 'still-varn', after: 'verdict', lines: [], linesFor: remembered(['kite', 'logs', 'rival']) },
-  { id: 'left-2', heading: 'AFTERWARDS', title: 'WHO WAS LEFT', picture: 'still-varn', after: 'verdict', lines: [], linesFor: remembered(['marrow', 'sixty', 'dispatch']) },
+  { id: 'left-2', heading: 'AFTERWARDS', title: 'WHO WAS LEFT', picture: 'still-varn', after: 'verdict', lines: [], linesFor: remembered(['marrow', 'sixty', 'dispatch', 'frame']) },
 ];

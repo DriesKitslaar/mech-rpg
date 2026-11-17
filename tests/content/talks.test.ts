@@ -18,8 +18,9 @@ const [kite, marrow, sixty] = WINGMEN;
 const all = (answer: 0 | 1): Record<string, string> => Object.fromEntries(TALKS.map((t) => [t.choice!.id, t.choice!.options[answer].id]));
 
 describe('the conversations', () => {
-  test('are six, each ends with a question with two answers, and everything said fits its panel', () => {
-    expect(TALKS.map((t) => t.choice?.id)).toEqual(['kite', 'logs', 'rival', 'marrow', 'sixty', 'dispatch']);
+  test('are seven, the last of them only in a later telling; each ends with a question with two answers, and everything said fits its panel', () => {
+    expect(TALKS.map((t) => t.choice?.id)).toEqual(['kite', 'logs', 'rival', 'marrow', 'sixty', 'dispatch', 'frame']);
+    expect(TALKS.filter((t) => t.after.includes('quest-')).map((t) => t.id)).toEqual(['talk-playback']);
     for (const talk of TALKS) {
       expect(SCENES).toContain(talk);
       expect(talk.picture! in SPRITES, talk.picture).toBe(true);
@@ -78,7 +79,7 @@ describe('what became of them', () => {
   test('a line for each thing decided, on two pages that fit; nothing for a pilot who decided nothing', () => {
     for (const answers of [all(0), all(1)]) {
       const pages = AFTERMATH.map((page) => page.linesFor!(answers));
-      expect(pages.map((p) => p.length)).toEqual([3, 3]);
+      expect(pages.map((p) => p.length)).toEqual([3, 4]);
       for (const lines of pages) {
         const rows = lines.reduce((sum, l) => sum + wrap(l, SCENE_CHARS).length, 0) + (lines.length - 1) * 0.75;
         expect(rows).toBeLessThanOrEqual(SCENE_LINES);

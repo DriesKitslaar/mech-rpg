@@ -1,0 +1,9 @@
+{
+  "id": "still-meeting",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art illustration, crisp pixels, no anti-aliasing, no text, no lettering, cinematic composition: the inside of a flooded old meeting hall lit by dozens of lanterns, a crowd of people in work clothes standing knee-deep in water with their backs to the viewer, facing a wooden board on which nine small round brass discs hang in a row, an iron chest standing open on a table beneath it, and through the tall open doors at the back the silhouette of a battered mecha standing guard against a pale dawn."
+}

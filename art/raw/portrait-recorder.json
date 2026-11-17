@@ -1,0 +1,9 @@
+{
+  "id": "portrait-recorder",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text, no lettering: a close-up of an old flight recorder bolted into the wall of a mecha cockpit, a scuffed orange metal box with two small tape reels behind a round glass window, one small red light glowing on it, a blank riveted brass plate under the window, thick cables running off both sides. Lit by pink and cyan neon from the sides, plain very dark blue background."
+}

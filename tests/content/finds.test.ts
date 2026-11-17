@@ -17,8 +17,8 @@ const checks = FINDS.filter((find) => find.kind === 'check');
 const fresh = (): GameState => newGame(CATALOG, STARTER_BUILD);
 const found = (game: GameState): string[] => openEntries(game, FINDS, MISSIONS).opened.map((find) => find.id);
 const asked = questions();
-/** What finds wait for that later parts of the round bring: three contracts without a client, a third verdict, a question about the frame. */
-const LATER = ['quest-1', 'quest-2', 'quest-3', 'verdict-quorum', 'chose:frame=ask', 'chose:frame=quiet'];
+/** What a find waits for that a later part of the round brings: a third verdict. */
+const LATER = ['verdict-quorum'];
 
 /** A whole road through the story in one cycle, with nothing done beside it, and the first answer given to every question. */
 function road(faction: 'hadron' | 'lumen' | 'undertow', cycle = 0): GameState {
@@ -26,7 +26,8 @@ function road(faction: 'hadron' | 'lumen' | 'undertow', cycle = 0): GameState {
     ['intro', 'faction', 'rival', 'audit'].includes(m.phase) || (['choice', 'path', 'finale'].includes(m.phase) && m.faction === faction) || m.id === 'verdict-default';
   let game: GameState = { ...fresh(), cycle };
   for (const m of MISSIONS.filter(on)) game = completeMission(game, m.id, MISSIONS);
-  for (const [question, answers] of asked) game = decide(game, question, answers[0]);
+  // The first answer to every question the story asks in every telling; the one about the frame is only asked in a later one.
+  for (const [question, answers] of asked) if (question !== 'frame') game = decide(game, question, answers[0]);
   return game;
 }
 
@@ -111,9 +112,10 @@ describe('what a pilot finds', () => {
   test('some papers are for a later telling only, whatever the first one does', () => {
     // Everything there is to do, done, in the first cycle: every contract, an S on each, the arena won, the Gauntlet to its depths.
     let all: GameState = { ...fresh(), arenaRank: ARENA.length, gauntletBest: 99 };
-    for (const m of MISSIONS.filter((mission) => mission.phase !== 'patrol')) all = completeMission(all, m.id, MISSIONS);
+    const offered = MISSIONS.filter((mission) => mission.phase !== 'patrol' && !(mission.when ?? '').includes('cycle:'));
+    for (const m of offered) all = completeMission(all, m.id, MISSIONS);
     all = { ...all, ranks: Object.fromEntries(all.completed.map((id) => [id, 'S' as const])) };
-    for (const [question, answers] of asked) all = decide(all, question, answers[0]);
+    for (const [question, answers] of asked) if (question !== 'frame') all = decide(all, question, answers[0]);
     const missing = FINDS.map((f) => f.id).filter((id) => !found(all).includes(id));
     expect(missing.sort()).toEqual(['check-letter', 'paper-adjourned', 'paper-licence', 'paper-minutes', 'paper-playback-1', 'paper-playback-2', 'paper-stop']);
     // The one check that is missing goes with the other answer to an old pilot's question.

@@ -162,9 +162,9 @@ describe('a place, as it is drawn', () => {
   test('the lamps of each picture\'s lowest part are where they were found in the pictures: moving one is a decision, not a slip', () => {
     const fnv = (text: string): number => { let h = 0x811c9dc5; for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h; };
     const low = Object.entries(AMBIENCE).map(([id, place]) => [id, (place.low ?? []).map((l) => [l.x, l.y, l.r, l.color])]);
-    expect(low.filter(([, lights]) => (lights as unknown[]).length > 0)).toHaveLength(10);
-    expect(low.flatMap(([, lights]) => lights as unknown[])).toHaveLength(21);
-    expect(fnv(JSON.stringify(low))).toBe(2111618874);
+    expect(low.filter(([, lights]) => (lights as unknown[]).length > 0)).toHaveLength(11);
+    expect(low.flatMap(([, lights]) => lights as unknown[])).toHaveLength(23);
+    expect(fnv(JSON.stringify(low))).toBe(2711471819);
     // Each lies low in its picture, where the floor is, and inside the picture.
     for (const [id, place] of Object.entries(AMBIENCE)) {
       for (const l of place.low ?? []) {
