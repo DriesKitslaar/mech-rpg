@@ -1,6 +1,6 @@
 import type { BattleEvent } from '../../src/core/battle';
 import type { DamageType } from '../../src/core/types';
-import { BattleFx, DEATH_MS, HIT_MS, MELEE_MS, PROJECTILE_MS, SHELL_MS, type Fx, type Scene } from '../../src/ui/battleFx';
+import { BattleFx, DEATH_MS, HARDEST_JOLT, HIT_MS, MELEE_MS, PROJECTILE_MS, SHELL_MS, type Fx, type Scene } from '../../src/ui/battleFx';
 import { TYPE_COLOR, lightsOf, paintFx } from '../../src/ui/fxPaint';
 import { FIELD_LIGHT } from '../../src/ui/light';
 import { record } from '../helpers/canvas';
@@ -86,6 +86,77 @@ describe('what a shot shows, and when', () => {
   });
 });
 
+describe('how hard a blow throws the field', () => {
+  const jolts = (fx: BattleFx): number[] => (fx as unknown as { jolts: { amount: number }[] }).jolts.map((jolt) => jolt.amount);
+
+  test('a bomb going off is the hardest blow there is: nothing else throws the field as far, and nothing can throw it further', () => {
+    expect(HARDEST_JOLT).toBe(5);
+    const events: BattleEvent[] = [
+      { ...shot(true, 80) },
+      { type: 'partDestroyed', unit: 'enemy-0', part: 'arms' } as BattleEvent,
+      { type: 'unitDestroyed', unit: 'enemy-0' },
+      { type: 'stagger', unit: 'enemy-0' } as BattleEvent,
+      { type: 'phase', unit: 'enemy-0', phase: 1 } as BattleEvent,
+      { type: 'overdrive', unit: 'player', kind: 'iron-skin' } as BattleEvent,
+    ];
+    let most = 0;
+    for (const event of events) {
+      const fx = fxOf();
+      fx.onEvent(event);
+      for (const amount of jolts(fx)) {
+        expect(amount, event.type).toBeLessThan(HARDEST_JOLT);
+        most = Math.max(most, amount);
+      }
+    }
+    expect(most).toBeGreaterThanOrEqual(3);
+    const bomb = fxOf();
+    bomb.onEvent({ type: 'blast', unit: 'enemy-0', target: 'player', damage: 80 } as BattleEvent);
+    expect(jolts(bomb)).toEqual([HARDEST_JOLT]);
+    // Asked for harder than that, a jolt is as hard as that: the field is never thrown further, at any moment of it.
+    const over = fxOf();
+    (over as unknown as { jolt(delay: number, amount: number, dur: number): void }).jolt(0, 40, 450);
+    expect(jolts(over)).toEqual([HARDEST_JOLT]);
+    let furthest = 0;
+    for (let ms = 0; ms < 460; ms += 4) {
+      over.update(4);
+      const { dx, dy } = over.shake();
+      furthest = Math.max(furthest, Math.abs(dx), Math.abs(dy));
+    }
+    expect(furthest).toBeLessThanOrEqual(HARDEST_JOLT);
+    expect(furthest).toBeGreaterThanOrEqual(HARDEST_JOLT - 1);
+    expect(over.shake()).toEqual({ dx: 0, dy: 0 });
+  });
+});
+
+describe('what is written over the field', () => {
+  test('what a convoy loses is no part of the stage: it is drawn only when what is over the field is asked for, and nothing else is then', () => {
+    const fx = fxOf();
+    fx.onEvent(shot());
+    fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
+    fx.update(PROJECTILE_MS + 1);
+    expect(fx.texts().sort()).toEqual(['-38', '-7']);
+    const stage = record((ctx) => fx.draw(ctx));
+    expect(new Set(stage.texts.map((t) => t.text))).toEqual(new Set(['-38']));
+    expect(stage.rects.length).toBeGreaterThan(0);
+    expect(record((ctx) => fx.draw(ctx, false, 'stage'))).toEqual(stage);
+    const over = record((ctx) => fx.draw(ctx, false, 'over'));
+    expect(new Set(over.texts.map((t) => t.text))).toEqual(new Set(['-7']));
+    // Nothing but the figure: no flame, no burst, no tracer.
+    expect([over.rects, over.glows, over.shapes, over.strokes]).toEqual([[], [], [], []]);
+    // It starts under the strip in the top left corner, in the colour of something lost.
+    const figure = over.texts.at(-1)!;
+    expect(figure.x).toBe(30);
+    expect(figure.y).toBeLessThanOrEqual(34);
+    expect(figure.y).toBeGreaterThan(26);
+    expect(figure.color).toBe('#e04a2c');
+    // With nothing lost there is nothing to write.
+    const none = fxOf();
+    none.onEvent({ type: 'asset', hp: 12, lost: 0 });
+    none.update(1);
+    expect(none.texts()).toEqual([]);
+  });
+});
+
 describe('a machine going up', () => {
   const gone: BattleEvent = { type: 'unitDestroyed', unit: 'enemy-0' };
 
@@ -125,7 +196,7 @@ describe('a machine going up', () => {
 describe('the light of an effect', () => {
   const at = { x: 100, y: 80 };
   const each: Fx[] = [
-    { kind: 'muzzle', at, dtype: 'kinetic', dir: 1, aim: { x: 1, y: 0 }, size: 1, start: 0, dur: 90 },
+    { kind: 'muzzle', at, dtype: 'kinetic', aim: { x: 1, y: 0 }, size: 1, start: 0, dur: 90 },
     { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'kinetic', grow: [1, 1], start: 0, dur: 160 },
     { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'energy', grow: [1, 1], start: 0, dur: 160 },
     { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'explosive', grow: [1, 1], start: 0, dur: 260 },
@@ -134,18 +205,18 @@ describe('the light of an effect', () => {
     { kind: 'burst', at, size: 22, color: '#4aa8ff', style: 'ring', start: 0, dur: 320 },
     { kind: 'sparks', at, color: '#ffd27f', start: 0, dur: 380 },
     { kind: 'steam', at, start: 0, dur: 520 },
-    { kind: 'lunge', unit: 'player', dir: 1, from: at, aim: { x: 1, y: 0 }, start: 0, dur: 320 },
+    { kind: 'lunge', unit: 'player', from: at, aim: { x: 1, y: 0 }, start: 0, dur: 320 },
     { kind: 'slash', at, dir: 1, color: '#7fe9ff', start: 0, dur: 200 },
-    { kind: 'shield', at, dir: 1, aim: { x: 1, y: 0 }, start: 0, dur: 420 },
+    { kind: 'shield', at, aim: { x: 1, y: 0 }, start: 0, dur: 420 },
     { kind: 'gather', at, color: '#7fe9ff', start: 0, dur: 480 },
     { kind: 'text', at, text: '-38', color: '#ffffff', start: 0, dur: 650 },
     // The same as they are over the shoulder: larger than life where they leave and smaller where they land (or the other way), and aimed across the floor.
-    { kind: 'muzzle', at, dtype: 'kinetic', dir: 1, aim: { x: 0.8, y: -0.6 }, size: 1.2, start: 0, dur: 90 },
+    { kind: 'muzzle', at, dtype: 'kinetic', aim: { x: 0.8, y: -0.6 }, size: 1.2, start: 0, dur: 90 },
     { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'kinetic', grow: [1.2, 0.7], start: 0, dur: 160 },
     { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'energy', grow: [1.2, 0.7], start: 0, dur: 160 },
     { kind: 'projectile', from: at, to: { x: 240, y: 60 }, dtype: 'explosive', grow: [0.7, 1.2], start: 0, dur: 260 },
-    { kind: 'lunge', unit: 'player', dir: 1, from: at, aim: { x: 0.8, y: -0.6 }, start: 0, dur: 320 },
-    { kind: 'shield', at, dir: -1, aim: { x: -0.8, y: 0.6 }, start: 0, dur: 420 },
+    { kind: 'lunge', unit: 'player', from: at, aim: { x: 0.8, y: -0.6 }, start: 0, dur: 320 },
+    { kind: 'shield', at, aim: { x: -0.8, y: 0.6 }, start: 0, dur: 420 },
   ];
   const moments = [0, 0.1, 0.25, 0.5, 0.75, 0.99];
 

@@ -13,8 +13,11 @@ export type SpriteSlot = 'armFar' | 'legs' | 'core' | 'head' | 'armNear' | 'righ
  * `drop`, on legs only, is how far everything above them sits lower than usual: tracks are not as tall as legs.
  * `gx`/`gy` and `mx`/`my`, on a weapon that was turned for its view, are where in its picture it is
  * held and where it fires from: turned, those are no longer where its corners would put them.
+ * `hx`/`hy`, on a frame layer that can be hit in its view, is where in its own picture a hit on it lands (see `hitOn`).
  */
-export type SpriteSize = { w: number; h: number; ox?: number; oy?: number; drop?: number; gx?: number; gy?: number; mx?: number; my?: number };
+export type SpriteSize = {
+  w: number; h: number; ox?: number; oy?: number; drop?: number; gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number;
+};
 export type DrawCmd = { slot: SpriteSlot; x: number; y: number };
 export type MechView = 'front' | 'back' | 'small';
 
@@ -43,7 +46,13 @@ export interface ViewLayout {
   mount: Pt;
   /** The order the layers are drawn in, back to front. */
   order: SpriteSlot[];
+  /** Where each part of the frame is in the pose box, for a hit on it to be aimed at. Only a view that is fought in has it. */
+  hit?: Record<HitPart, Pt>;
 }
+
+/** The parts of a mech's frame a hit can land on, and the layer each is seen on: the arms by the one stretched towards the enemy. */
+export type HitPart = 'head' | 'core' | 'arms' | 'legs';
+export const HIT_LAYER: Record<HitPart, SpriteSlot> = { head: 'head', core: 'core', arms: 'armNear', legs: 'legs' };
 
 const FRONT_ORDER: SpriteSlot[] = ['shoulder', 'armFar', 'leftHand', 'legs', 'core', 'head', 'armNear', 'rightHand'];
 const small = (p: Pt): Pt => ({ x: Math.round((p.x * SMALL_BOX) / MECH_BOX), y: Math.round((p.y * SMALL_BOX) / MECH_BOX) });
@@ -56,8 +65,12 @@ export const VIEWS: Record<MechView, ViewLayout> = {
   back: {
     box: BACK_BOX, suffix: '.back', nearFist: { x: 103, y: 33 }, farFist: { x: 27, y: 63 }, mount: { x: 36, y: 20 },
     order: ['armFar', 'leftHand', 'legs', 'head', 'core', 'shoulder', 'armNear', 'rightHand'],
+    hit: { head: { x: 60, y: 14 }, core: { x: 58, y: 40 }, arms: { x: 88, y: 33 }, legs: { x: 58, y: 94 } },
   },
-  small: { box: SMALL_BOX, suffix: '.small', nearFist: small(NEAR_FIST), farFist: small(FAR_FIST), mount: small(BACK_MOUNT), order: FRONT_ORDER },
+  small: {
+    box: SMALL_BOX, suffix: '.small', nearFist: small(NEAR_FIST), farFist: small(FAR_FIST), mount: small(BACK_MOUNT), order: FRONT_ORDER,
+    hit: { head: { x: 49, y: 14 }, core: { x: 50, y: 32 }, arms: { x: 74, y: 27 }, legs: { x: 50, y: 72 } },
+  },
 };
 
 /**
@@ -114,6 +127,23 @@ export function layoutMech(sizes: Partial<Record<SpriteSlot, SpriteSize>>, view:
   if (sizes.shoulder) hold('shoulder', layout.mount);
 
   return layout.order.flatMap((slot) => placed.get(slot) ?? []);
+}
+
+/**
+ * Where a hit on a part of the frame lands, inside the pose box of a view. The view says where
+ * that part is; between a pair of legs that is thin air, and beside a slim arm it can be too. So a
+ * layer says where in its own picture it is hit (`hx`/`hy`): the spot on it nearest to where the
+ * view has the part, found from its pixels when the picture was made. A layer that does not say (a
+ * placeholder, a view nothing is fought in) is hit where the view has the part, or in the middle of
+ * the box. What the legs lower is in the point already.
+ */
+export function hitOn(sizes: Partial<Record<SpriteSlot, SpriteSize>>, part: HitPart, view: MechView = 'front'): Pt {
+  const layout = VIEWS[view];
+  const lowered = part === 'legs' ? 0 : dropOf(sizes);
+  const layer = sizes[HIT_LAYER[part]];
+  if (layer && layer.hx !== undefined && layer.hy !== undefined) return { x: (layer.ox ?? 0) + layer.hx, y: (layer.oy ?? 0) + layer.hy + lowered };
+  const aim = layout.hit?.[part] ?? { x: layout.box / 2, y: layout.box / 2 };
+  return { x: aim.x, y: aim.y + lowered };
 }
 
 /**

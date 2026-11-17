@@ -17,6 +17,8 @@ export interface Pictured {
   image: unknown; x: number; y: number; w: number; h: number; blend: string; alpha: number; filter: string;
   /** The box the drawing was kept inside when the picture was drawn, or null when it was free to go anywhere. */
   clip: { x: number; y: number; w: number; h: number } | null;
+  /** The part of the picture that was drawn, where it was not all of it. */
+  from?: Box;
 }
 /** A soft light or shadow: a round gradient, where its middle is, how far it reaches, its colours and how it was laid on. */
 export interface Glowed { x: number; y: number; r: number; ry: number; stops: [number, string][]; blend: string }
@@ -34,8 +36,8 @@ export interface Drawn {
   texts: Written[]; rects: Filled[]; images: Pictured[]; glows: Glowed[]; strokes: Stroked[]; washes: Washed[]; shapes: Shaped[];
   /** Everything that was drawn, in the order it was drawn in: what comes later lies over what came before. */
   order: Step[];
-  /** The box the drawing was kept inside as each text, rectangle and light was drawn (a picture says so itself): null where it was free. */
-  kept: { texts: (Box | null)[]; rects: (Box | null)[]; glows: (Box | null)[] };
+  /** The box the drawing was kept inside as each text, rectangle, light, line, shape and wash was drawn (a picture says so itself): null where it was free. */
+  kept: { texts: (Box | null)[]; rects: (Box | null)[]; glows: (Box | null)[]; strokes: (Box | null)[]; shapes: (Box | null)[]; washes: (Box | null)[] };
 }
 
 interface Gradient { x: number; y: number; r: number; linear?: boolean; stops: [number, string][]; addColorStop(offset: number, color: string): void }
@@ -48,6 +50,16 @@ const isGradient = (style: unknown): style is Gradient => typeof style === 'obje
  * its size.
  */
 export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
+  const { ctx, drawn } = recorder();
+  draw(ctx);
+  return drawn;
+}
+
+/**
+ * Such a canvas to keep: what is drawn on it, whenever it is drawn, is added to what it remembers.
+ * `wiped` is every time a part of it was cleared: which part, and how many things had been drawn on it by then.
+ */
+export function recorder(): { ctx: CanvasRenderingContext2D; drawn: Drawn; wiped: (Box & { after: number })[] } {
   const texts: Written[] = [];
   const rects: Filled[] = [];
   const images: Pictured[] = [];
@@ -56,7 +68,8 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
   const washes: Washed[] = [];
   const shapes: Shaped[] = [];
   const order: Step[] = [];
-  const kept: Drawn['kept'] = { texts: [], rects: [], glows: [] };
+  const kept: Drawn['kept'] = { texts: [], rects: [], glows: [], strokes: [], shapes: [], washes: [] };
+  const wiped: (Box & { after: number })[] = [];
   const state: Record<string, unknown> = {
     font: '12px x', textAlign: 'left', fillStyle: '', strokeStyle: '', lineWidth: 1, globalCompositeOperation: 'source-over', globalAlpha: 1, filter: 'none',
   };
@@ -105,6 +118,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
       const style = state.fillStyle;
       if (isGradient(style) && style.linear) {
         order.push({ kind: 'wash', at: washes.length });
+        kept.washes.push(clip ? { ...clip } : null);
         washes.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, stops: style.stops, blend: String(state.globalCompositeOperation) });
         return;
       }
@@ -118,13 +132,18 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
       kept.rects.push(clip ? { ...clip } : null);
       rects.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, color: String(style), blend: String(state.globalCompositeOperation), alpha: Number(state.globalAlpha) });
     },
-    drawImage: (image, x, y, w, h) => {
+    drawImage: (image, ...where) => {
+      // With eight numbers, the first four say which part of the picture is drawn and the last four where it goes.
+      const part = where.length >= 8;
+      const [x, y, w, h] = part ? where.slice(4) : where;
       order.push({ kind: 'image', at: images.length });
       images.push({
         image, x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy,
         blend: String(state.globalCompositeOperation), alpha: Number(state.globalAlpha), filter: String(state.filter), clip: clip ? { ...clip } : null,
+        ...(part ? { from: { x: Number(where[0]), y: Number(where[1]), w: Number(where[2]), h: Number(where[3]) } } : {}),
       });
     },
+    clearRect: (x, y, w, h) => { wiped.push({ x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy, after: order.length }); },
     beginPath: () => { path = []; boxed = null; },
     rect: (x, y, w, h) => { boxed = { x: X(Number(x)), y: Y(Number(y)), w: Number(w) * at.sx, h: Number(h) * at.sy }; },
     clip: () => {
@@ -136,10 +155,11 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
     },
     moveTo: (x, y) => { path.push({ x: X(Number(x)), y: Y(Number(y)) }); },
     lineTo: (x, y) => { path.push({ x: X(Number(x)), y: Y(Number(y)) }); },
-    stroke: () => { order.push({ kind: 'stroke', at: strokes.length }); strokes.push({ points: [...path], width: Number(state.lineWidth), color: String(state.strokeStyle), blend: String(state.globalCompositeOperation) }); },
+    stroke: () => { order.push({ kind: 'stroke', at: strokes.length }); kept.strokes.push(clip ? { ...clip } : null); strokes.push({ points: [...path], width: Number(state.lineWidth), color: String(state.strokeStyle), blend: String(state.globalCompositeOperation) }); },
     fill: () => {
       const style = state.fillStyle;
       order.push({ kind: 'shape', at: shapes.length });
+      kept.shapes.push(clip ? { ...clip } : null);
       shapes.push({ points: [...path], color: isGradient(style) ? '' : String(style), stops: isGradient(style) ? style.stops : [], blend: String(state.globalCompositeOperation) });
     },
   };
@@ -147,8 +167,7 @@ export function record(draw: (ctx: CanvasRenderingContext2D) => void): Drawn {
     get: (t, name: string) => (name in t ? t[name] : methods[name] ?? (() => undefined)),
     set: (t, name: string, value) => { t[name] = value; return true; },
   }) as unknown as CanvasRenderingContext2D;
-  draw(ctx);
-  return { texts, rects, images, glows, strokes, washes, shapes, order, kept };
+  return { ctx, drawn: { texts, rects, images, glows, strokes, washes, shapes, order, kept }, wiped };
 }
 
 /** The field of a battle: what a camera that has left home keeps its drawing inside. */
@@ -158,8 +177,9 @@ const FIELD_BOX: Box = { x: 0, y: 14, w: 310, h: 164 };
  * A battle's field as it stands on the stage, whatever the camera was doing when it was drawn. A
  * camera that has left home moves and scales everything on the field, and keeps the drawing
  * inside the field while it does: here every picture, light, rectangle and text that was drawn so
- * is put back where and as large as it is on the stage. What was drawn over the field (the bars,
- * a band, the panel) is left as it is. `view` is the screen's own account of where its camera is.
+ * is put back where and as large as it is on the stage, and so is every line, shape and wash.
+ * What was drawn over the field (a band, the panel, what is written along its top) is left as it
+ * is. `view` is the screen's own account of where its camera is.
  */
 export function onStage(drawn: Drawn, view: { x: number; y: number; zoom: number }): Drawn {
   const middle = { x: FIELD_BOX.w / 2, y: FIELD_BOX.y + FIELD_BOX.h / 2 };
@@ -176,6 +196,9 @@ export function onStage(drawn: Drawn, view: { x: number; y: number; zoom: number
     glows: drawn.glows.map((glow, i) => (under(drawn.kept.glows[i]) ? { ...glow, x: x(glow.x), y: y(glow.y), r: size(glow.r), ry: size(glow.ry) } : glow)),
     rects: drawn.rects.map((rect, i) => (under(drawn.kept.rects[i]) ? { ...rect, x: x(rect.x), y: y(rect.y), w: size(rect.w), h: size(rect.h) } : rect)),
     texts: drawn.texts.map((text, i) => (under(drawn.kept.texts[i]) ? { ...text, x: x(text.x), y: y(text.y), left: x(text.left), right: x(text.right) } : text)),
+    strokes: drawn.strokes.map((stroke, i) => (under(drawn.kept.strokes[i]) ? { ...stroke, points: stroke.points.map((p) => ({ x: x(p.x), y: y(p.y) })) } : stroke)),
+    shapes: drawn.shapes.map((shape, i) => (under(drawn.kept.shapes[i]) ? { ...shape, points: shape.points.map((p) => ({ x: x(p.x), y: y(p.y) })) } : shape)),
+    washes: drawn.washes.map((wash, i) => (under(drawn.kept.washes[i]) ? { ...wash, x: x(wash.x), y: y(wash.y), w: size(wash.w), h: size(wash.h) } : wash)),
   };
 }
 

@@ -6,9 +6,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as iq from 'image-q';
 import sharp, { type Sharp } from 'sharp';
-import { BACK_POSE_BOX, BACK_TILT, BOX, JOBS, POSE_BOX, SMALL_POSE_BOX, paintFamilyOf, type ArtJob } from './jobs';
+import { BACK_POSE_BOX, BACK_TILT, BOX, JOBS, POSE_BOX, SMALL_POSE_BOX, paintGroups, type ArtJob } from './jobs';
 import { analyse, type PaintInfo } from '../../src/ui/paint';
-import { bounds, chromaKeyGreen, quantize, trim, type RawImage, type RGB } from './imageOps';
+import { bounds, chromaKeyGreen, hitSpot, quantize, trim, type RawImage, type RGB } from './imageOps';
+import { HIT_LAYER, VIEWS, type HitPart, type MechView } from '../../src/ui/mechLayout';
 
 const RAW = 'art/raw';
 const OUT = 'public/sprites';
@@ -19,7 +20,18 @@ type Entry = {
   file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo;
   /** On a weapon turned for the view from behind: where in it it is held, and where it fires from. */
   gx?: number; gy?: number; mx?: number; my?: number;
+  /** On a frame layer that can be hit in its view: where in it a hit lands. */
+  hx?: number; hy?: number;
 };
+
+/** The view a layer's drawing is for, and the part of the frame it is hit as, if it is one that is: both are in its name. */
+export function hitPartOf(id: string): { view: MechView; part: HitPart } | null {
+  const view: MechView = id.endsWith('.back') ? 'back' : id.endsWith('.small') ? 'small' : 'front';
+  const name = id.replace(/\.(back|small)$/, '');
+  const slot = name.startsWith('legs-') ? 'legs' : name.startsWith('core-') ? 'core' : name.startsWith('head-') ? 'head' : name.endsWith('.near') ? 'armNear' : null;
+  const part = (Object.keys(HIT_LAYER) as HitPart[]).find((p) => HIT_LAYER[p] === slot);
+  return part ? { view, part } : null;
+}
 
 /**
  * Legs that are lower than a pair of legs: how many pixels the upper body comes down to meet them.
@@ -75,12 +87,18 @@ async function processLayer(job: ArtJob, palette: RGB[]): Promise<Entry> {
   const small = quantize(await decode(await encode(keyed).resize(side, side).png().toBuffer()), palette);
   const box = bounds(small);
   if (!box) throw new Error('image is empty after background removal');
-  await encode(trim(small)).png().toFile(`${OUT}/${job.id}.png`);
+  const cut = trim(small);
+  await encode(cut).png().toFile(`${OUT}/${job.id}.png`);
   const behind = LEGS_FROM_BEHIND[job.id];
   // The same legs from the front in a smaller pose box bring the upper body down by as much less.
   const full = LEGS_DROP[job.id.replace(/\.small$/, '')];
   const drop = behind ? behind.drop : full ? Math.round((full * side) / POSE_BOX) : 0;
-  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy: box.y + (behind?.lower ?? 0), ...(drop ? { drop } : {}) };
+  const oy = box.y + (behind?.lower ?? 0);
+  // In a view that is fought in: the spot of this layer a hit on its part lands on, as near as its pixels let it be to where the view has the part.
+  const hit = hitPartOf(job.id);
+  const aim = hit && VIEWS[hit.view].hit?.[hit.part];
+  const spot = aim ? hitSpot(cut, { x: aim.x - box.x, y: aim.y - oy }) : null;
+  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy, ...(drop ? { drop } : {}), ...(spot ? { hx: spot.x, hy: spot.y } : {}) };
 }
 
 /** How much smaller than from the front a weapon is drawn in each view: as much as the mech that carries it. */
@@ -160,20 +178,10 @@ async function processFree(job: ArtJob, palette: RGB[]): Promise<Entry> {
  * part of a family takes a paint scheme the same way.
  */
 async function addPaintInfo(manifest: Record<string, Entry>): Promise<void> {
-  // Per family: the layers cut from its own drawing, which are what it is judged by, and every layer that takes its paint.
-  const families = new Map<string, { own: string[]; all: string[] }>();
-  for (const job of JOBS) {
-    if (job.kind !== 'layer' || !manifest[job.id]) continue;
-    const family = paintFamilyOf(job);
-    const group = families.get(family) ?? { own: [], all: [] };
-    group.all.push(job.id);
-    // Free-standing legs come from an edited copy of the drawing: they take the family's paint but do not shift it.
-    if (job.references?.[0]?.endsWith(`family-${family}.png`)) group.own.push(job.id);
-    families.set(family, group);
-  }
-  for (const [family, { own, all }] of families) {
+  const families = paintGroups(JOBS.filter((job) => manifest[job.id]));
+  for (const [family, { judged, all }] of families) {
     const ids = all;
-    const images = await Promise.all((own.length > 0 ? own : all).map((id) => decode(`${OUT}/${id}.png`)));
+    const images = await Promise.all(judged.map((id) => decode(`${OUT}/${id}.png`)));
     const paint = analyse(images);
     for (const id of ids) manifest[id].paint = paint;
     console.log(`paint ${family}: trim hues ${JSON.stringify(paint.accent)}, brightness ${paint.lo}/${paint.mid}/${paint.hi}`);

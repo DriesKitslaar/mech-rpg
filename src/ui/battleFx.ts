@@ -30,7 +30,21 @@ export interface Scene {
   damageType(unitId: string, weapon: WeaponSlot): DamageType;
   /** True when the weapon is a blade or a ram: it is swung, not fired. */
   isMelee(unitId: string, weapon: WeaponSlot): boolean;
+  /**
+   * True when the weapon is on the far side of its mech from the camera, so that the mech's own
+   * body is between the two: what it fires is seen to come out from behind the mech. A scene that
+   * does not say has every weapon in plain view.
+   */
+  hidden?(unitId: string, weapon: WeaponSlot): boolean;
 }
+
+/**
+ * Where an effect is drawn. Most are on the `stage`, over everything that stands on it. What a
+ * hidden weapon fires is `under` the one that fires it: drawn before that one is, so that its body
+ * covers the flash and the shot comes out from behind it. And what is written `over` the field is
+ * not on the stage at all: it is drawn where the screen has it, after the field is done.
+ */
+export type FxLayer = 'under' | 'stage' | 'over';
 
 export interface UnitTransform {
   dx: number;
@@ -54,6 +68,9 @@ export const sizeAt = (depth: number): number => NEAR_SIZE - (NEAR_SIZE - FAR_SI
 /** How far past its target a shot that misses flies on, and how far to the side of it it passes. */
 const MISS_ON = 34;
 const MISS_WIDE = 12;
+
+/** How many pixels the hardest blow there is throws the field: a bomb going off. The screen draws its picture out further than that. */
+export const HARDEST_JOLT = 5;
 
 export const PROJECTILE_MS = 160;
 export const SHELL_MS = 260;
@@ -100,21 +117,29 @@ type Timed = { start: number; dur: number };
  * what flies has a size where it leaves and one where it lands.
  */
 export type Fx = Timed & (
-  | { kind: 'projectile'; from: Pt; to: Pt; dtype: DamageType; grow: [number, number] }
-  | { kind: 'muzzle'; at: Pt; dtype: DamageType; dir: number; aim: Pt; size: number }
-  | { kind: 'recoil'; unit: string; dir: number; aim: Pt }
+  | { kind: 'projectile'; from: Pt; to: Pt; dtype: DamageType; grow: [number, number]; under?: true }
+  | { kind: 'muzzle'; at: Pt; dtype: DamageType; aim: Pt; size: number; under?: true }
+  | { kind: 'recoil'; unit: string; aim: Pt }
   | { kind: 'hit'; unit: string }
   | { kind: 'pulse'; unit: string }
-  | { kind: 'lunge'; unit: string; dir: number; from: Pt; aim: Pt }
+  | { kind: 'lunge'; unit: string; from: Pt; aim: Pt }
   | { kind: 'death'; unit: string; at: Pt }
   | { kind: 'burst'; at: Pt; size: number; color: string; style: BurstStyle }
   | { kind: 'sparks'; at: Pt; color: string }
   | { kind: 'steam'; at: Pt }
-  | { kind: 'text'; at: Pt; text: string; color: string }
+  /** A figure or a word. One that is `over` the field is written where the screen has it, not on the stage: it belongs to what is written along the field's top. */
+  | { kind: 'text'; at: Pt; text: string; color: string; over?: true }
   | { kind: 'slash'; at: Pt; dir: number; color: string }
-  | { kind: 'shield'; at: Pt; dir: number; aim: Pt }
+  | { kind: 'shield'; at: Pt; aim: Pt }
   | { kind: 'gather'; at: Pt; color: string }
 );
+
+/** The layer an effect is drawn in. */
+export function layerOf(fx: Fx): FxLayer {
+  if (fx.kind === 'text' && fx.over) return 'over';
+  if ((fx.kind === 'muzzle' || fx.kind === 'projectile') && fx.under) return 'under';
+  return 'stage';
+}
 
 /** The way from one point to another, one pixel long; where the two are one point, straight ahead the way the unit faces. */
 function towards(from: Pt, to: Pt, dir: number): Pt {
@@ -142,13 +167,13 @@ export class BattleFx {
     this.effects.push({ ...fx, start: this.now + delay, dur } as Fx);
   }
 
-  private say(delay: number, at: Pt, text: string, color: string): void {
-    this.add(delay, TEXT_MS, { kind: 'text', at: { x: at.x, y: at.y - 10 }, text, color });
+  private say(delay: number, at: Pt, text: string, color: string, over = false): void {
+    this.add(delay, TEXT_MS, { kind: 'text', at: { x: at.x, y: at.y - 10 }, text, color, ...(over ? { over: true as const } : {}) });
   }
 
-  /** Shakes the whole field by up to `amount` pixels for `dur`, starting after `delay`. */
+  /** Shakes the whole field by up to `amount` pixels for `dur`, starting after `delay`: never by more than the hardest jolt there is. */
   private jolt(delay: number, amount: number, dur: number): void {
-    this.jolts.push({ start: this.now + delay, dur, amount, felt: false });
+    this.jolts.push({ start: this.now + delay, dur, amount: Math.min(HARDEST_JOLT, amount), felt: false });
   }
 
   /** How far the field is thrown right now: the hardest jolt that is still going, dying away. */
@@ -204,16 +229,18 @@ export class BattleFx {
         const far = this.sizeOf(event.target);
         if (melee) {
           // A blade is carried to the target by the mech itself, over the floor between the two.
-          this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir, from: s.centre(event.unit), aim: this.wayTo(event.unit, event.target, target) });
+          this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from: s.centre(event.unit), aim: this.wayTo(event.unit, event.target, target) });
           this.add(flight, SLASH_MS, { kind: 'slash', at: target, dir, color: TYPE_COLOR[dtype] });
         } else {
           const aim = towards(from, target, dir);
           // A miss flies on past the target, wide of it on the side that is up the screen.
           const up = aim.x >= 0 ? { x: aim.y, y: -aim.x } : { x: -aim.y, y: aim.x };
           const to = event.hit ? target : { x: target.x + aim.x * MISS_ON + up.x * MISS_WIDE, y: target.y + aim.y * MISS_ON + up.y * MISS_WIDE };
-          this.add(0, MUZZLE_MS, { kind: 'muzzle', at: from, dtype, dir, aim, size: near });
-          this.add(0, RECOIL_MS, { kind: 'recoil', unit: event.unit, dir, aim });
-          this.add(0, flight, { kind: 'projectile', from, to, dtype, grow: [near, far] });
+          // A weapon on the far side of its mech: the flash at its barrel and what it fires are behind the mech.
+          const under = s.hidden?.(event.unit, event.weapon) === true ? { under: true as const } : {};
+          this.add(0, MUZZLE_MS, { kind: 'muzzle', at: from, dtype, aim, size: near, ...under });
+          this.add(0, RECOIL_MS, { kind: 'recoil', unit: event.unit, aim });
+          this.add(0, flight, { kind: 'projectile', from, to, dtype, grow: [near, far], ...under });
         }
         if (event.hit) {
           // A hit that takes a real bite is felt by the whole field.
@@ -252,7 +279,7 @@ export class BattleFx {
       }
       case 'boost': {
         const from = s.centre(event.unit);
-        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir: s.facing(event.unit), from, aim: this.headingOf(event.unit) });
+        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from, aim: this.headingOf(event.unit) });
         break;
       }
       case 'cool':
@@ -272,7 +299,7 @@ export class BattleFx {
         this.say(0, s.centre(event.unit), STRINGS.fx.overheat, COLORS.danger);
         break;
       case 'guard':
-        this.add(0, SHIELD_MS, { kind: 'shield', at: s.centre(event.unit), dir: s.facing(event.unit), aim: this.headingOf(event.unit) });
+        this.add(0, SHIELD_MS, { kind: 'shield', at: s.centre(event.unit), aim: this.headingOf(event.unit) });
         break;
       case 'stagger': {
         const at = s.centre(event.unit);
@@ -308,12 +335,12 @@ export class BattleFx {
         const from = s.centre(event.unit);
         const at = s.hitPoint(event.target, 'core');
         const size = this.sizeOf(event.target);
-        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, dir: s.facing(event.unit), from, aim: this.wayTo(event.unit, event.target, at) });
+        this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from, aim: this.wayTo(event.unit, event.target, at) });
         for (const [i, off] of [[0, 0], [-14, 8], [12, -10], [4, 14]].entries()) {
           this.add(MELEE_MS + i * 90, 380, { kind: 'burst', at: { x: at.x + off[0] * size, y: at.y + off[1] * size }, size: (i === 0 ? 26 : 18) * size, color: '#ff8a3c', style: 'fire' });
         }
         this.add(MELEE_MS, HIT_MS * 2, { kind: 'hit', unit: event.target });
-        this.jolt(MELEE_MS, 5, 450);
+        this.jolt(MELEE_MS, HARDEST_JOLT, 450);
         this.say(MELEE_MS, at, `-${event.damage}`, '#ffffff');
         break;
       }
@@ -346,7 +373,8 @@ export class BattleFx {
         break;
       }
       case 'asset':
-        if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger);
+        // What is being guarded is no machine on the field: what it loses is written under the strip that names it, on the screen.
+        if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger, true);
         break;
       case 'recover':
       case 'turnStart':
@@ -416,13 +444,20 @@ export class BattleFx {
     return { dx: px(dx), dy: px(dy), lift: px(lift), flash, alpha, glare, trail: px(trail), trailY: px(trailY) };
   }
 
-  /** Draws what is solid of every effect that is playing: flame, tracers, fire, rings, sparks, smoke, figures. */
-  draw(ctx: CanvasRenderingContext2D, calm = false): void {
-    for (const { fx, p } of this.active()) paintFx(ctx, fx, p, calm);
+  /**
+   * Draws what is solid of every effect that is playing in one layer: flame, tracers, fire, rings, sparks,
+   * smoke, figures. Without a layer, what is on the stage.
+   */
+  draw(ctx: CanvasRenderingContext2D, calm = false, layer: FxLayer = 'stage'): void {
+    for (const { fx, p } of this.active()) if (layerOf(fx) === layer) paintFx(ctx, fx, p, calm);
   }
 
-  /** The light that everything playing throws at this moment, for the screen to add over the field. */
-  lights(): Glow[] {
-    return this.active().flatMap(({ fx, p }) => lightsOf(fx, p));
+  /**
+   * The light that everything playing in one layer throws at this moment, for the screen to add: over the
+   * field for what is on the stage, and before the one that fires for what is under it, so that the flash
+   * of a hidden weapon is seen round its mech and does not light the back the camera sees.
+   */
+  lights(layer: FxLayer = 'stage'): Glow[] {
+    return this.active().flatMap(({ fx, p }) => (layerOf(fx) === layer ? lightsOf(fx, p) : []));
   }
 }

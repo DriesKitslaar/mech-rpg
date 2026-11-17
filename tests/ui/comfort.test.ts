@@ -120,6 +120,8 @@ describe('a calm picture', () => {
     expect(app.settings.calm).toBeUndefined();
     expect(JSON.parse(store.data[SETTINGS_KEY]).calm).toBeUndefined();
     expect(STRINGS.options.calmHelp).toMatch(/shaking/);
+    // And since the battle is looked at through a camera that moves: that it stands still.
+    expect(STRINGS.options.calmHelp).toMatch(/camera/);
   });
 
   /**
@@ -139,6 +141,8 @@ describe('a calm picture', () => {
     const moves: { dx: number; dy: number }[] = [];
     const whites: string[] = [];
     const filters: string[] = [];
+    /** How strongly a picture is laid over itself as light: that is how a unit that is hit lights up. */
+    const lit: number[] = [];
     const target: Record<string, unknown> = {};
     // The field as a whole is moved by the first translation of a frame; everything after it places a single thing.
     let first = true;
@@ -147,6 +151,7 @@ describe('a calm picture', () => {
         : (...args: unknown[]) => {
           if (name === 'translate' && first) { first = false; if (Number(args[0]) !== 0 || Number(args[1]) !== 0) moves.push({ dx: Number(args[0]), dy: Number(args[1]) }); }
           if (name === 'fillRect' && /^rgba\(255, 255, 255/.test(String(t.fillStyle)) && Number(args[2]) >= 300) whites.push(String(t.fillStyle));
+          if (name === 'drawImage' && t.globalCompositeOperation === 'lighter') lit.push(Number(t.globalAlpha));
         }),
       set: (t, name: string, value) => { t[name] = value; if (name === 'filter' && value !== 'none') filters.push(String(value)); return true; },
     }) as unknown as CanvasRenderingContext2D;
@@ -161,22 +166,28 @@ describe('a calm picture', () => {
     screen.onInput('confirm');
     frames(120);
     expect(flow.state.units[1].destroyed).toBe(true);
-    return { moves, whites, filters };
+    return { moves, whites, filters, lit };
   }
 
   test('with the picture as it comes, a hard blow shakes the field and an Overdrive flashes across it', () => {
     const full = struck(false);
     expect(full.whites.length).toBeGreaterThan(0);
     expect(full.moves.length).toBeGreaterThan(0);
-    expect(full.filters).toContain('brightness(2.6)');
+    // The drone that is hit lights up hard: its picture laid over itself once in full and once more at six tenths, 2.6 times as bright.
+    expect(full.lit).toContain(1);
+    expect(full.lit.some((alpha) => Math.abs(alpha - 0.6) < 1e-9)).toBe(true);
+    // And never by a filter: a canvas without a graphics chip stalls on one.
+    expect(full.filters).toEqual([]);
   });
 
   test('calm, the field stays where it is and nothing flashes across it; a unit that is hit only lights up a little', () => {
     const calm = struck(true);
     expect(calm.whites).toEqual([]);
     expect(calm.moves).toEqual([]);
-    expect(calm.filters).not.toContain('brightness(2.6)');
-    expect(calm.filters).toContain('brightness(1.4)');
+    // Laid over itself once, at four tenths: 1.4 times as bright, and never in full.
+    expect(calm.lit.length).toBeGreaterThan(0);
+    for (const alpha of calm.lit) expect(alpha).toBeCloseTo(0.4, 9);
+    expect(calm.filters).toEqual([]);
   });
 });
 

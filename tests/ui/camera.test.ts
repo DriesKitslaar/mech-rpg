@@ -1,13 +1,13 @@
 import {
-  Camera, HOME, MAX_PUSH, MIDDLE, PUSH_HOLD_MS, PUSH_IN_MS, PUSH_MS, PUSH_OUT_MS, TRAVEL_SHARE, applyView, atHome, inPicture, openingView, pushLevel, seenBy, type View,
+  Camera, HOME, MAX_PUSH, MIDDLE, PUSH_HOLD_MS, PUSH_IN_MS, PUSH_MS, PUSH_OUT_MS, TRAVEL_SHARE, applyView, atHome, inField, openingView, pushLevel, seenBy, type View,
 } from '../../src/ui/camera';
 import { FIELD, FIELD_Y, PANEL_Y, PLACES, PLAIN, pictureTop, placeFor, type Place } from '../../src/ui/stage';
 import { record } from '../helpers/canvas';
 
 /**
  * The camera a battle is looked at through: at home whenever nothing moves, coming down from the
- * top of the place's picture as a battle opens, pushing in towards a blow as it lands. Whatever it
- * does, it shows nothing from outside the picture.
+ * top of the place's picture as a battle opens, pushing in towards a blow as it lands. On its way
+ * down it shows nothing from outside the picture; pushed in, nothing from outside the field as it stands.
  */
 
 const ALL_PLACES: [string, Place][] = [...Object.entries(PLACES), ['plain', PLAIN]];
@@ -18,6 +18,12 @@ function inside(view: View, place: Place): boolean {
   const top = pictureTop(place);
   const slack = 1e-6;
   return seen.left >= -slack && seen.left + seen.width <= FIELD.width + slack && seen.top >= top - slack && seen.top + seen.height <= top + 270 + slack;
+}
+/** True when a view shows only what the field shows as it stands at home, give or take the smallest part of a pixel. */
+function onField(view: View): boolean {
+  const seen = seenBy(view);
+  const slack = 1e-6;
+  return seen.left >= -slack && seen.left + seen.width <= FIELD.width + slack && seen.top >= FIELD_Y - slack && seen.top + seen.height <= PANEL_Y + slack;
 }
 
 describe('home', () => {
@@ -51,30 +57,31 @@ describe('home', () => {
   });
 });
 
-describe('a view that shows nothing from outside the picture', () => {
+describe('a view that shows nothing from outside the field as it stands', () => {
   test('is left as it is when it already does, and moved only as far as it must be when it does not', () => {
-    expect(inPicture(HOME, NEON)).toEqual(HOME);
-    // Twice as close there is room to look a quarter of the field to either side, and no further.
-    expect(inPicture({ x: 0, y: HOME.y, zoom: 2 }, NEON)).toEqual({ x: 77.5, y: HOME.y, zoom: 2 });
-    expect(inPicture({ x: 400, y: HOME.y, zoom: 2 }, NEON)).toEqual({ x: 232.5, y: HOME.y, zoom: 2 });
-    expect(inPicture({ x: 100, y: HOME.y, zoom: 2 }, NEON)).toEqual({ x: 100, y: HOME.y, zoom: 2 });
-    // At its own size the field is as wide as the picture: there is no looking sideways at all.
-    expect(inPicture({ x: 100, y: HOME.y, zoom: 1 }, NEON).x).toBe(HOME.x);
-    // Up, the picture goes on for as many rows as are over the field; down, for as many as are under it.
-    expect(inPicture({ x: HOME.x, y: -500, zoom: 1 }, NEON).y).toBe(HOME.y - NEON.row);
-    expect(inPicture({ x: HOME.x, y: 900, zoom: 1 }, NEON).y).toBe(HOME.y + (270 - 164 - NEON.row));
-    // Further away than the picture's own size it cannot be looked at: the field would show its edges.
-    expect(inPicture({ x: HOME.x, y: HOME.y, zoom: 0.5 }, NEON)).toEqual(HOME);
+    expect(inField(HOME)).toEqual(HOME);
+    // Twice as close there is room to look a quarter of the field to either side, and a quarter of it up and down, and no further.
+    expect(inField({ x: 0, y: HOME.y, zoom: 2 })).toEqual({ x: 77.5, y: HOME.y, zoom: 2 });
+    expect(inField({ x: 400, y: HOME.y, zoom: 2 })).toEqual({ x: 232.5, y: HOME.y, zoom: 2 });
+    expect(inField({ x: 100, y: HOME.y, zoom: 2 })).toEqual({ x: 100, y: HOME.y, zoom: 2 });
+    expect(inField({ x: HOME.x, y: -500, zoom: 2 })).toEqual({ x: HOME.x, y: FIELD_Y + 41, zoom: 2 });
+    expect(inField({ x: HOME.x, y: 900, zoom: 2 })).toEqual({ x: HOME.x, y: PANEL_Y - 41, zoom: 2 });
+    expect(inField({ x: HOME.x, y: 70, zoom: 2 })).toEqual({ x: HOME.x, y: 70, zoom: 2 });
+    // At its own size the field is all there is: there is no looking sideways, up or down at all.
+    expect(inField({ x: 100, y: 30, zoom: 1 })).toEqual(HOME);
+    // Further away than its own size it cannot be looked at: the field would show its edges.
+    expect(inField({ x: HOME.x, y: HOME.y, zoom: 0.5 })).toEqual(HOME);
   });
 
-  test('whatever is asked for, in every place', () => {
+  test('whatever is asked for', () => {
     let seed = 11;
     const next = (): number => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-    for (const [id, place] of ALL_PLACES) {
-      for (let i = 0; i < 200; i++) {
-        const asked = { x: next() * 500 - 100, y: next() * 500 - 200, zoom: 0.5 + next() * 3 };
-        expect(inside(inPicture(asked, place), place), `${id} ${JSON.stringify(asked)}`).toBe(true);
-      }
+    for (let i = 0; i < 2000; i++) {
+      const asked = { x: next() * 500 - 100, y: next() * 500 - 200, zoom: 0.5 + next() * 3 };
+      const view = inField(asked);
+      expect(onField(view), JSON.stringify(asked)).toBe(true);
+      // And what is on the field is in the picture, in every place: the field is a band of it.
+      for (const [id, place] of ALL_PLACES) expect(inside(view, place), id).toBe(true);
     }
   });
 });
@@ -152,19 +159,21 @@ describe('the camera', () => {
   test('stands at home until something moves it, and is home again, exactly, when a push is over', () => {
     const camera = new Camera(NEON);
     expect(camera.view()).toBe(HOME);
-    expect(camera.busy).toBe(false);
     camera.push(ENEMY, 0.1);
-    expect(camera.busy).toBe(true);
     // The moment it is asked for nothing has moved yet.
     expect(camera.view()).toBe(HOME);
     camera.update(PUSH_IN_MS);
     expect(camera.view().zoom).toBeCloseTo(1.1, 6);
     camera.update(PUSH_HOLD_MS + PUSH_OUT_MS);
     expect(camera.view()).toBe(HOME);
-    expect(camera.busy).toBe(false);
+    // And it stays there: a push is over when it is over.
+    for (let ms = 0; ms < PUSH_MS; ms += 16) {
+      camera.update(16);
+      expect(camera.view()).toBe(HOME);
+    }
   });
 
-  test('pushes in towards what was hit: to the right for an enemy, to the left for the pilot\'s mech, as far as the picture lets it turn', () => {
+  test('pushes in towards what was hit: to the right for an enemy, to the left for the pilot\'s mech, as far as the field lets it turn', () => {
     const right = new Camera(NEON);
     right.push(ENEMY, 0.1);
     right.update(PUSH_IN_MS);
@@ -173,12 +182,49 @@ describe('the camera', () => {
     left.update(PUSH_IN_MS);
     expect(right.view().x).toBeGreaterThan(HOME.x + 5);
     expect(left.view().x).toBeLessThan(HOME.x - 5);
-    // A tenth closer there are fourteen pixels of picture to turn into on either side: it turns that far and no further.
+    // A tenth closer there are fourteen pixels of field to turn into on either side: it turns that far and no further.
     expect(right.view().x).toBeCloseTo(310 - 155 / 1.1, 6);
     expect(left.view().x).toBeCloseTo(155 / 1.1, 6);
-    expect(inside(right.view(), NEON)).toBe(true);
-    // Up and down the picture has rows to spare: it looks at the height of what was hit.
-    expect(right.view().y).toBeCloseTo(ENEMY.y, 6);
+    expect(onField(right.view())).toBe(true);
+    // Up and down there are seven and a half: what was hit is fourteen under the middle, and it turns down as far as there is field.
+    expect(right.view().y).toBeCloseTo(PANEL_Y - 82 / 1.1, 6);
+    expect(right.view().y - HOME.y).toBeCloseTo(82 - 82 / 1.1, 6);
+    // Something less far from the middle than that is looked straight at; something high up, as far up as there is field.
+    const near = new Camera(NEON);
+    near.push({ x: 160, y: 100 }, 0.1);
+    // It turns to it by degrees, as far as it has pushed in: a frame in, a third of the way, though there is field enough to look straight at it.
+    near.update(16);
+    const begun = pushLevel(16);
+    expect(begun).toBeGreaterThan(0.3);
+    expect(begun).toBeLessThan(0.35);
+    expect(155 / (1 + 0.1 * begun)).toBeLessThan(155 - 4);
+    expect([near.view().x, near.view().y].map((n) => Math.round(n * 1e6) / 1e6)).toEqual([155 + 5 * begun, 96 + 4 * begun].map((n) => Math.round(n * 1e6) / 1e6));
+    near.update(PUSH_IN_MS - 16);
+    expect([near.view().x, near.view().y].map((n) => Math.round(n * 1e6) / 1e6)).toEqual([160, 100]);
+    const high = new Camera(NEON);
+    high.push({ x: 155, y: 20 }, 0.1);
+    high.update(PUSH_IN_MS);
+    expect(high.view().y).toBeCloseTo(FIELD_Y + 82 / 1.1, 6);
+    // In every place alike: the rows a picture has to spare over and under the field are not looked at.
+    for (const [id, place] of ALL_PLACES) {
+      const camera = new Camera(place);
+      camera.push({ x: 60, y: 170 }, MAX_PUSH);
+      camera.update(PUSH_IN_MS);
+      expect(camera.view().y, id).toBeCloseTo(PANEL_Y - 82 / (1 + MAX_PUSH), 6);
+    }
+  });
+
+  test('what it pushes in on is where the blow landed, whatever becomes of the point it was told with', () => {
+    const camera = new Camera(NEON);
+    const at = { ...ENEMY };
+    camera.push(at, 0.1);
+    // The one who asked goes on to use its point for something else.
+    at.x = 0;
+    at.y = 300;
+    camera.update(PUSH_IN_MS);
+    expect(camera.view().x).toBeGreaterThan(HOME.x + 5);
+    expect(camera.view().y).toBeGreaterThan(HOME.y + 5);
+    expect(camera.view().y).toBeLessThan(ENEMY.y);
   });
 
   test('a push that is to come starts when its moment does: a blow is pushed in on as it lands, not as it is fired', () => {
@@ -186,18 +232,87 @@ describe('the camera', () => {
     camera.push(ENEMY, 0.1, 200);
     camera.update(199);
     expect(camera.view()).toBe(HOME);
-    expect(camera.busy).toBe(true);
     camera.update(1 + PUSH_IN_MS);
     expect(camera.view().zoom).toBeCloseTo(1.1, 6);
   });
 
-  test('of two pushes at once the stronger has the picture, and no push is closer than the closest there is', () => {
-    const camera = new Camera(NEON);
-    camera.push(OWN, 0.05);
-    camera.push(ENEMY, 0.12);
-    camera.update(PUSH_IN_MS);
-    expect(camera.view().zoom).toBeCloseTo(1.12, 6);
-    expect(camera.view().x).toBeGreaterThan(HOME.x);
+  test('of two pushes at once the closer says how close the camera is, and each has its say in where it looks by how far in it is', () => {
+    // The stronger was asked for first here and the weaker last: it is not the last that wins.
+    for (const order of [[0.12, 0.05], [0.05, 0.12]]) {
+      const camera = new Camera(NEON);
+      for (const amount of order) camera.push(amount === 0.12 ? ENEMY : OWN, amount);
+      camera.update(PUSH_IN_MS);
+      const view = camera.view();
+      expect(view.zoom).toBeCloseTo(1.12, 6);
+      // Each by itself would look as far to its own side as there is field: together they look between, nearer the stronger's.
+      const [right, left] = [310 - 155 / 1.12, 155 / 1.12];
+      expect(view.x).toBeCloseTo((right * 0.12 + left * 0.05) / 0.17, 6);
+      expect(view.x).toBeGreaterThan(HOME.x);
+      expect(view.x).toBeLessThan(right - 5);
+      expect(onField(view)).toBe(true);
+    }
+    // Two that push in on the same thing look at it as one would.
+    const same = new Camera(NEON);
+    same.push(ENEMY, 0.05);
+    same.push(ENEMY, 0.12);
+    same.update(PUSH_IN_MS);
+    const one = new Camera(NEON);
+    one.push(ENEMY, 0.12);
+    one.update(PUSH_IN_MS);
+    expect(same.view().zoom).toBeCloseTo(one.view().zoom, 9);
+    expect(same.view().x).toBeCloseTo(one.view().x, 9);
+    expect(same.view().y).toBeCloseTo(one.view().y, 9);
+  });
+
+  test('a push that begins while another goes on takes the picture over by degrees: it never jumps from the one to the other', () => {
+    // A hit on a machine to the right, high up, and then something on the pilot's own side, lower down (an Overdrive set
+    // off, a hit taken): at every moment the second can begin, with either the stronger. The first four pairs are
+    // strengths a battle uses; the last is the closest a camera can be pushed at all, twice.
+    for (const [first, second, across, down] of [[0.06, 0.08, 8, 4.5], [0.12, 0.06, 8, 4.5], [0.09, 0.12, 8, 4.5], [0.12, 0.12, 8, 4.5], [0.15, 0.15, 10, 5.5]]) {
+      for (let begin = 0; begin <= PUSH_MS; begin += 16) {
+        const camera = new Camera(NEON);
+        camera.push({ x: 300, y: 20 }, first);
+        let last = camera.view();
+        let alone = 0;
+        for (let ms = 0; ms < begin + PUSH_MS + 32; ms += 16) {
+          if (ms === begin) camera.push({ x: 10, y: 170 }, second);
+          camera.update(16);
+          const view = camera.view();
+          const what = `${first} then ${second} at ${begin}, ${ms} in`;
+          expect(Math.abs(view.zoom - last.zoom), what).toBeLessThan(0.06);
+          expect(Math.abs(view.x - last.x), what).toBeLessThan(across);
+          expect(Math.abs(view.y - last.y), what).toBeLessThan(down);
+          expect(onField(view), what).toBe(true);
+          // Once the first is over the second has the picture to itself: the camera looks to the pilot's side, and down.
+          if (ms + 16 >= PUSH_MS && ms + 16 > begin && ms + 16 < begin + PUSH_MS) {
+            alone++;
+            expect(view.x, what).toBeLessThan(HOME.x);
+            expect(view.y, what).toBeGreaterThan(HOME.y);
+          }
+          last = view;
+        }
+        expect(last, `${first} then ${second} at ${begin}`).toBe(HOME);
+        expect(alone, `${first} then ${second} at ${begin}`).toBe(begin / 16);
+      }
+    }
+  });
+
+  test('a push by itself is never further from the frame before it than that either, wherever it is aimed', () => {
+    for (const focus of [{ x: 0, y: FIELD_Y }, { x: 310, y: PANEL_Y }, { x: 58, y: 150 }, { x: 240, y: 60 }, { x: -500, y: 900 }]) {
+      const camera = new Camera(NEON);
+      camera.push(focus, MAX_PUSH);
+      let last = camera.view();
+      for (let ms = 0; ms < PUSH_MS + 32; ms += 16) {
+        camera.update(16);
+        const view = camera.view();
+        expect(Math.abs(view.x - last.x), JSON.stringify(focus)).toBeLessThan(8);
+        expect(Math.abs(view.y - last.y), JSON.stringify(focus)).toBeLessThan(4.5);
+        last = view;
+      }
+    }
+  });
+
+  test('no push is closer than the closest there is, and a push by nothing is no push', () => {
     const far = new Camera(NEON);
     far.push(ENEMY, 5);
     far.update(PUSH_IN_MS);
@@ -207,21 +322,30 @@ describe('the camera', () => {
     none.push(ENEMY, 0);
     none.push(ENEMY, -1);
     none.push(ENEMY, Number.NaN);
-    expect(none.busy).toBe(false);
+    for (let ms = 0; ms < PUSH_MS; ms += 16) {
+      none.update(16);
+      expect(none.view()).toBe(HOME);
+    }
   });
 
-  test('never shows anything from outside the picture, whatever it is pushed towards and whenever it is asked, in every place', () => {
+  test('pushed in, it never shows anything from outside the field as it stands, whatever it is pushed towards and whenever it is asked, in every place', () => {
     let seed = 5;
     const next = (): number => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
     for (const [id, place] of ALL_PLACES) {
       const camera = new Camera(place);
+      let last = camera.view();
       for (let i = 0; i < 300; i++) {
         if (next() < 0.2) camera.push({ x: next() * 400 - 40, y: next() * 300 - 60 }, next() * 0.3, next() * 200);
         camera.update(16);
         const view = camera.view();
+        expect(onField(view), `${id} ${JSON.stringify(view)}`).toBe(true);
         expect(inside(view, place), `${id} ${JSON.stringify(view)}`).toBe(true);
         expect(view.zoom, id).toBeGreaterThanOrEqual(1);
         expect(view.zoom, id).toBeLessThanOrEqual(1 + MAX_PUSH + 1e-9);
+        // However many pushes come over each other, as hard as a push can be and from wherever: no frame is far from the one before it.
+        expect(Math.abs(view.x - last.x), `${id} frame ${i}`).toBeLessThan(12);
+        expect(Math.abs(view.y - last.y), `${id} frame ${i}`).toBeLessThan(6.5);
+        last = view;
       }
     }
   });
@@ -235,6 +359,8 @@ describe('the camera', () => {
       const view = camera.view();
       expect(Math.abs(view.zoom - last.zoom)).toBeLessThan(0.06);
       expect(Math.abs(view.x - last.x)).toBeLessThan(8);
+      // Up and down it has the whole picture to turn in: it turns there by degrees too, as far as it has pushed in.
+      expect(Math.abs(view.y - last.y)).toBeLessThan(6);
       last = view;
     }
     expect(last).toBe(HOME);
@@ -248,9 +374,18 @@ describe('the camera', () => {
     expect(camera.view(0.35)).toEqual(openingView(0.35, NEON));
     expect(camera.view(1)).toEqual(HOME);
     expect(camera.view().zoom).toBeGreaterThan(1);
+    // Settled, it forgets the one that is going on and the one that is still to come: for good.
+    camera.push(OWN, 0.12, 100);
     camera.settle();
     expect(camera.view()).toBe(HOME);
-    expect(camera.busy).toBe(false);
+    for (let ms = 0; ms < 100 + PUSH_MS; ms += 16) {
+      camera.update(16);
+      expect(camera.view()).toBe(HOME);
+    }
+    // And it can be pushed again after.
+    camera.push(ENEMY, 0.1);
+    camera.update(PUSH_IN_MS);
+    expect(camera.view().zoom).toBeCloseTo(1.1, 6);
   });
 
   test('one that does not move stands at home always: no travel as a battle opens, no push', () => {
@@ -260,6 +395,9 @@ describe('the camera', () => {
     expect(still.view()).toBe(HOME);
     expect(still.view(0)).toBe(HOME);
     expect(still.view(0.3)).toBe(HOME);
-    expect(still.busy).toBe(false);
+    for (let ms = 0; ms < PUSH_MS; ms += 16) {
+      still.update(16);
+      expect(still.view()).toBe(HOME);
+    }
   });
 });

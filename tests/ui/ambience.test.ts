@@ -5,6 +5,7 @@ import SPRITES from '../../src/content/sprites.json';
 import { AMBIENCE, LIGHT_ALPHA, ambienceFor, drawAmbience, lightLevel, placeLights, type LightKind } from '../../src/ui/ambience';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
+import { setDetail } from '../../src/ui/light';
 import { FIELD_Y, HERO_FEET, PANEL_Y, horizonOf, pictureTop, placeFor } from '../../src/ui/stage';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { EMBER_LIGHTS, GROUND_STRIP, LIGHTNING_ALPHA, LIGHTNING_MS, SKY_ALPHA, SPLASHES, WEATHER, drawWeatherExtras, lightning } from '../../src/ui/weather';
@@ -135,6 +136,99 @@ describe('a place, as it is drawn', () => {
     expect(edge(FIELD.top - 145 - 35)).toBe(false);
     expect(edge(FIELD.top + FIELD.height - 145 + 35 - 1)).toBe(true);
     expect(edge(FIELD.top + FIELD.height - 145 + 35)).toBe(false);
+  });
+
+  test('a calm picture has its lamps at half strength, where the picture is the screen and where it is not', () => {
+    const lie = { shift: pictureTop(placeFor('bg-sluice')), far: 0, near: 0 };
+    for (const with_ of [undefined, lie]) {
+      // A sign that flickers is steady in a calm picture, so only what burns evenly is compared: the brightest of each.
+      const plain = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, false, with_)).glows.filter(isLight);
+      const calm = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, true, with_)).glows.filter(isLight);
+      expect(calm.length).toBe(plain.length);
+      expect(calm.length).toBeGreaterThan(3);
+      const steady = placeLights('bg-sluice', 1000, true, !!with_);
+      const lively = placeLights('bg-sluice', 1000, false, !!with_);
+      calm.forEach((glow, i) => {
+        const at = steady.findIndex((l) => l.x === glow.x && l.r === glow.r);
+        expect(at, `${i}`).toBeGreaterThanOrEqual(0);
+        // What is drawn is half of what the place says a calm lamp is, to the third decimal a light is written with.
+        expect(strength(glow), `${i}`).toBeCloseTo(steady[at].alpha / 2, 2);
+        expect(steady[at].alpha, `${i}`).toBeGreaterThan(0.1);
+      });
+      plain.forEach((glow, i) => expect(strength(glow), `${i}`).toBeCloseTo(lively[lively.findIndex((l) => l.x === glow.x && l.r === glow.r)].alpha, 2));
+    }
+  });
+
+  test('the lamps of each picture\'s lowest part are where they were found in the pictures: moving one is a decision, not a slip', () => {
+    const fnv = (text: string): number => { let h = 0x811c9dc5; for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h; };
+    const low = Object.entries(AMBIENCE).map(([id, place]) => [id, (place.low ?? []).map((l) => [l.x, l.y, l.r, l.color])]);
+    expect(low.filter(([, lights]) => (lights as unknown[]).length > 0)).toHaveLength(10);
+    expect(low.flatMap(([, lights]) => lights as unknown[])).toHaveLength(21);
+    expect(fnv(JSON.stringify(low))).toBe(2111618874);
+    // Each lies low in its picture, where the floor is, and inside the picture.
+    for (const [id, place] of Object.entries(AMBIENCE)) {
+      for (const l of place.low ?? []) {
+        expect(l.y, id).toBeGreaterThan(160);
+        expect(l.y, id).toBeLessThan(270);
+        expect(l.x, id).toBeGreaterThanOrEqual(0);
+        expect(l.x, id).toBeLessThanOrEqual(310);
+      }
+    }
+  });
+
+  describe('where there is to be less light', () => {
+    afterEach(() => setDetail(2));
+
+    test('which lamps are lit is settled by the field as it stands: none goes out or comes on while a camera has it in view', () => {
+      setDetail(1);
+      const within = (l: { y: number; r: number }, top: number, height: number): boolean => l.y + l.r > top && l.y - l.r < top + height;
+      const key = (l: { x: number; y: number; r: number }): string => `${l.x},${l.y},${l.r}`;
+      /** Lamps a camera can bring into view that stay dark, and lamps that are lit though the field as it stands does not show them. */
+      let dark = 0;
+      let beyond = 0;
+      for (const bg of Object.keys(AMBIENCE)) {
+        const lie = { shift: pictureTop(placeFor(bg)), far: 0, near: 0 };
+        const all = [...AMBIENCE[bg].lights, ...(AMBIENCE[bg].low ?? [])].map((l) => ({ x: l.x, y: l.y + lie.shift, r: l.r }));
+        expect(new Set(all.map(key)).size, bg).toBe(all.length);
+        const litIn = (seen?: { left: number; top: number; width: number; height: number }): Set<string> =>
+          new Set(record((ctx) => drawAmbience(ctx, bg, 1000, 'behind', FIELD, false, { ...lie, ...(seen ? { seen } : {}) })).glows.filter(isLight).map(key));
+        // With the camera at home: the larger half of what the field shows, as it was before there was a camera.
+        const home = all.filter((l) => within(l, FIELD.top, FIELD.height));
+        const atHome = litIn();
+        expect(atHome.size, bg).toBe(Math.ceil(home.length / 2));
+        const kept = home.filter((l) => atHome.has(key(l)));
+        expect(kept, bg).toHaveLength(atHome.size);
+        expect(Math.min(...kept.map((l) => l.r)), bg).toBeGreaterThanOrEqual(Math.max(0, ...home.filter((l) => !atHome.has(key(l))).map((l) => l.r)));
+        // The camera, everywhere it can look: from the top of the picture to its bottom, pushed in and not.
+        const states = new Map<string, Set<boolean>>();
+        for (const height of [FIELD.height, FIELD.height / 1.15]) {
+          for (let top = lie.shift; top + height <= lie.shift + 270; top += 3) {
+            const now = litIn({ left: 0, top, width: FIELD.width, height });
+            const inView = all.filter((l) => within(l, top, height));
+            // Nothing is lit that the camera does not have in view.
+            for (const k of now) expect(inView.map(key), `${bg}, looking from ${top}`).toContain(k);
+            for (const l of inView) states.set(key(l), (states.get(key(l)) ?? new Set<boolean>()).add(now.has(key(l))));
+          }
+        }
+        // Every lamp of the place came into view somewhere, and each was the same wherever it was seen: lit, or not.
+        expect(states.size, bg).toBe(all.length);
+        for (const [k, seenAs] of states) expect([...seenAs], `${bg} ${k}`).toHaveLength(1);
+        for (const k of atHome) expect([...states.get(k)!], `${bg} ${k}`).toEqual([true]);
+        dark += [...states.values()].filter((seenAs) => seenAs.has(false)).length;
+        beyond += [...states].filter(([k, seenAs]) => seenAs.has(true) && !home.some((l) => key(l) === k)).length;
+      }
+      expect(dark).toBeGreaterThan(20);
+      expect(beyond).toBeGreaterThan(3);
+    });
+
+    test('with all the light there is, every lamp a camera has in view is lit', () => {
+      const lie = { shift: pictureTop(placeFor('bg-sluice')), far: 0, near: 0 };
+      const all = [...AMBIENCE['bg-sluice'].lights, ...AMBIENCE['bg-sluice'].low!];
+      for (let top = lie.shift; top + FIELD.height <= lie.shift + 270; top += 7) {
+        const lit = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, false, { ...lie, seen: { left: 0, top, width: FIELD.width, height: FIELD.height } })).glows.filter(isLight);
+        expect(lit, `looking from ${top}`).toHaveLength(all.filter((l) => l.y + lie.shift + l.r > top && l.y + lie.shift - l.r < top + FIELD.height).length);
+      }
+    });
   });
 
   test('its haze lies along the two lines it is given: far off behind the units, near in front of them', () => {
@@ -297,6 +391,17 @@ describe('weather that does more than fall', () => {
     // Where the drops land does not depend on it.
     const crowns = (page: typeof drawn) => page.rects.filter((r) => r.w === 3 && r.h === 1).map((r) => [r.x, r.y]);
     expect(crowns(drawn)).toEqual(crowns(field));
+    // The sky's light fades down from the top of that box, not from the top of the field: the line it is laid along says so.
+    const lines: number[][] = [];
+    const stops = { addColorStop: () => undefined };
+    const ctx = new Proxy({ globalCompositeOperation: 'source-over', fillStyle: '' } as Record<string, unknown>, {
+      get: (t, name: string) => (name === 'createLinearGradient' ? (...args: number[]) => { lines.push(args); return stops; }
+        : name in t ? t[name] : () => undefined),
+      set: (t, name: string, value) => { t[name] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    drawWeatherExtras(ctx, 'rain', stroke, 310, 164, false, 14, lit);
+    drawWeatherExtras(ctx, 'rain', stroke, 310, 164, false, 14);
+    expect(lines).toEqual([[0, -60, 0, -60 + 150 * 0.7], [0, 0, 0, 164 * 0.7]]);
   });
 
   test('where the floor reaches far up the field, rain lands on all of it: as far up as the floor goes and no further', () => {

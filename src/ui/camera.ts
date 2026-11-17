@@ -1,13 +1,14 @@
 import type { Pt } from './light';
-import { FIELD, LOWEST_ROW, pictureTop, type Place } from './stage';
+import { FIELD, type Place } from './stage';
 
 /**
  * The camera a battle is looked at through. At home it shows the field as the stage lays it out,
  * pixel for pixel, and it is at home whenever nothing moves. It leaves home at two kinds of moment:
  * as a battle opens it starts high up in the place's picture and comes down to the floor and who
  * stands on it; and when a blow lands it pushes in a little towards what was hit, and eases back.
- * It never shows anything from outside the picture. A calm picture and a hurried game have it
- * standing at home always.
+ * On its way down it shows the picture's upper rows and nothing from outside the picture; pushed
+ * in, it shows a part of the field as it stands and nothing from outside that. A calm picture and
+ * a hurried game have it standing at home always.
  */
 
 /** A view of the stage: the point of it that is in the middle of the field, and how many times its own size it is shown at. */
@@ -26,19 +27,18 @@ export function seenBy(view: View): Seen {
   return { left: view.x - width / 2, top: view.y - height / 2, width, height };
 }
 
-/** How tall a place's picture is: as tall as the screen. */
-const PICTURE_H = FIELD.height + LOWEST_ROW;
-
-/** The view nearest to this one that shows nothing from outside the place's picture. */
-export function inPicture(view: View, place: Place): View {
+/**
+ * The view nearest to this one that shows nothing from outside the field as it stands at home.
+ * From closer there is room to turn, the same share of the field each way: across and up and down.
+ */
+export function inField(view: View): View {
   const zoom = Math.max(1, view.zoom);
   const halfW = FIELD.width / zoom / 2;
   const halfH = FIELD.height / zoom / 2;
-  const top = pictureTop(place);
   return {
     zoom,
     x: Math.max(halfW, Math.min(FIELD.width - halfW, view.x)),
-    y: Math.max(top + halfH, Math.min(top + PICTURE_H - halfH, view.y)),
+    y: Math.max(FIELD.top + halfH, Math.min(FIELD.top + FIELD.height - halfH, view.y)),
   };
 }
 
@@ -101,31 +101,35 @@ export class Camera {
     this.pushes = [];
   }
 
-  /** True while a push is going on or still to come. */
-  get busy(): boolean {
-    return this.pushes.length > 0;
-  }
-
   /**
    * The view right now. `opening` is how far through its banner the battle is, while it is up.
-   * Of several pushes at once the strongest has the picture. At home the view is `HOME` itself.
+   * Of several pushes at once the closest says how close the camera is, and each has its say in
+   * where it looks by how far in it is. At home the view is `HOME` itself.
    */
   view(opening: number | null = null): View {
     if (!this.moving) return HOME;
     if (opening !== null) return openingView(opening, this.place);
-    let best: { level: number; push: Push } | null = null;
-    for (const push of this.pushes) {
-      const level = pushLevel(this.now - push.start) * push.amount;
-      if (level > 0 && (!best || level > best.level)) best = { level, push };
+    // Every push that is going on: how far through its own coming in and going out it is, and how far in that has it.
+    const going = this.pushes
+      .map((push) => { const turn = pushLevel(this.now - push.start); return { push, turn, level: turn * push.amount }; })
+      .filter(({ level }) => level > 0);
+    if (going.length === 0) return HOME;
+    const zoom = 1 + Math.max(...going.map(({ level }) => level));
+    // Each push has the camera turn towards what it pushes in on: as far as it has come in itself, and as far as the
+    // field lets it that close. Of several, each has its say by how far in it is, and one that is only beginning has
+    // little yet: it takes the picture over by degrees as it comes in and the other goes out, and the picture never
+    // jumps from the one to the other.
+    let x = 0;
+    let y = 0;
+    let all = 0;
+    for (const { push, turn, level } of going) {
+      const own = inField({ zoom, x: HOME.x + (push.focus.x - HOME.x) * turn, y: HOME.y + (push.focus.y - HOME.y) * turn });
+      const say = level * turn;
+      x += own.x * say;
+      y += own.y * say;
+      all += say;
     }
-    if (!best) return HOME;
-    // It turns towards what it pushes in on as far as the picture lets it: closer in, there is more room to turn.
-    const turn = best.level / best.push.amount;
-    return inPicture({
-      zoom: 1 + best.level,
-      x: HOME.x + (best.push.focus.x - HOME.x) * turn,
-      y: HOME.y + (best.push.focus.y - HOME.y) * turn,
-    }, this.place);
+    return { zoom, x: x / all, y: y / all };
   }
 }
 

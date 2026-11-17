@@ -3,12 +3,13 @@ import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
+import { applyView } from '../../src/ui/camera';
 import { BattleScreen } from '../../src/ui/battleScreen';
 import { PLAIN, depthOf, pictureTop } from '../../src/ui/stage';
 import { WRECK_SIZE, sizeAt } from '../../src/ui/battleFx';
 import {
   CUT_IN_H, CUT_IN_MS, CUT_IN_NAME_TALL, CUT_IN_NAME_W, CUT_IN_SCALE, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
-  cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox, lookClose,
+  cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox,
 } from '../../src/ui/cinema';
 import type { Settlement } from '../../src/core/economy';
 import { MISSIONS } from '../../src/content/missions';
@@ -272,9 +273,9 @@ describe('looking at the last machine from close by', () => {
     expect(focusOn({ x: -40, y: 400 }, FIELD)).toEqual({ x: 78, y: 137 });
   });
 
-  test('the point is put in the middle of the field and everything is twice its size, on whole pixels', () => {
+  test('looked at as the camera looks at anything, the point is in the middle of the field and everything is twice its size, on whole pixels', () => {
     const page = record((ctx) => {
-      lookClose(ctx, { x: 200, y: 120 }, FIELD);
+      applyView(ctx, { x: 200, y: 120, zoom: FINISH_ZOOM });
       ctx.fillStyle = '#123456';
       ctx.fillRect(200, 120, 10, 6);
       ctx.fillRect(0, 14, 310, 164);
@@ -288,7 +289,7 @@ describe('looking at the last machine from close by', () => {
     expect(whole.y + whole.h).toBeGreaterThanOrEqual(FIELD.top + FIELD.height);
     // And that holds for the corners it can be drawn round.
     for (const at of [{ x: 0, y: 0 }, { x: 310, y: 0 }, { x: 0, y: 270 }, { x: 310, y: 270 }]) {
-      const corner = record((ctx) => { lookClose(ctx, focusOn(at, FIELD), FIELD); ctx.fillRect(0, 14, 310, 164); }).rects[0];
+      const corner = record((ctx) => { applyView(ctx, { ...focusOn(at, FIELD), zoom: FINISH_ZOOM }); ctx.fillRect(0, 14, 310, 164); }).rects[0];
       expect(corner.x).toBeLessThanOrEqual(0);
       expect(corner.y).toBeLessThanOrEqual(FIELD.top);
       expect(corner.x + corner.w).toBeGreaterThanOrEqual(310);
@@ -574,14 +575,15 @@ describe('the staged moments in a battle', () => {
     expect(focus.y).toBeLessThanOrEqual(137);
     screen.update(200);
     const close = page();
-    // Twice its size; while a blast is shaking the field the picture is drawn a few pixels larger still, as it always is.
+    // Twice its size, and no more than that while a blast is shaking the field: it is thrown as it is, by twice the
+    // few pixels the blast throws the field.
     const bg = background(close);
-    expect([620, 644]).toContain(bg.w);
-    expect([540, 564]).toContain(bg.h);
-    if (bg.w === 620) {
-      expect(bg.x).toBe(155 - focus.x * 2);
-      expect(bg.y).toBe(14 + 82 - focus.y * 2);
-    }
+    expect([bg.w, bg.h]).toEqual([620, 540]);
+    // Where the close look puts it: the point it looks at in the middle of the field, the picture's top as far above it as it is.
+    const thrown = { x: bg.x - (155 - focus.x * 2), y: bg.y - (14 + 82 - focus.y * 2 + pictureTop(PLAIN) * 2) };
+    expect(Math.abs(thrown.x)).toBeLessThanOrEqual(10);
+    expect(Math.abs(thrown.y)).toBeLessThanOrEqual(10);
+    expect([Math.abs(thrown.x % 2), Math.abs(thrown.y % 2)]).toEqual([0, 0]);
     // Nothing of the field at twice its size is let out over the bar along the top or the panel underneath.
     expect(bg.clip).toEqual({ x: 0, y: 14, w: 310, h: 164 });
     const bars = close.rects.filter((r) => r.color === BARS);
@@ -635,7 +637,7 @@ describe('the staged moments in a battle', () => {
     // The field is held for 160, and then its clock runs at half speed for the 500 the look lasts on it.
     expect(ms).toBeGreaterThanOrEqual(FINISH_HOLD_MS + FINISH_FIELD_MS / FINISH_SLOW - 16);
     expect(ms).toBeLessThanOrEqual(FINISH_HOLD_MS + FINISH_FIELD_MS / FINISH_SLOW + 48);
-    expect(background(page()).w).toBeLessThanOrEqual(322);
+    expect(background(page()).w).toBe(310);
     expect(page().rects.filter((r) => r.color === BARS)).toEqual([]);
     // Now what is next is said after the usual wait, and the battle is over.
     expect(flow.phase).toBe('animating');
@@ -756,7 +758,7 @@ describe('the staged moments in a battle', () => {
       expect(screen.motion.finish).toBeNull();
     }
     const after = page();
-    expect(background(after).w).toBeLessThanOrEqual(322);
+    expect(background(after).w).toBe(310);
     expect(after.rects.filter((r) => r.color === BARS)).toEqual([]);
     expect(played.filter((p) => p.name === 'unitDestroyed')).toHaveLength(1);
   });
@@ -775,8 +777,8 @@ describe('the staged moments in a battle', () => {
       if (!over()) screen.update(16);
     }
     expect(flow.phase).toBe('result');
-    // The band has had well under its nine tenths of a second, and is still counted as up.
-    expect(screen.motion.cutIn).toBe('DEADEYE');
+    // The band has had well under its nine tenths of a second, and it is down: from the press that brought the result up.
+    expect(screen.motion.cutIn).toBeNull();
     // Drawn straight away, before another moment has passed, and after one.
     expect(page().rects.some((r) => r.color === BAND)).toBe(false);
     // (The small tag on the mech that says the Overdrive is still on is another matter: the band's name is the large one.)
@@ -836,7 +838,7 @@ describe('the staged moments in a battle', () => {
       expect(screen.motion.finish).toBeNull();
       const after = page();
       expect(after.rects.filter((r) => r.color === BAND || r.color === BARS)).toEqual([]);
-      expect(background(after).w).toBeLessThanOrEqual(322);
+      expect(background(after).w).toBe(310);
       // What was thrown up has come down: only what a wreck keeps smoking with is left.
       expect(screen.motion.particles).toBeLessThan(40);
     }
@@ -849,7 +851,7 @@ describe('the staged moments in a battle', () => {
     expect(screen.motion.finish).not.toBeNull();
     screen.onInput('confirm');
     expect(screen.motion.finish).toBeNull();
-    expect(background(page()).w).toBeLessThanOrEqual(322);
+    expect(background(page()).w).toBe(310);
     for (let i = 0; i < 10 && flow.phase !== 'result'; i++) { screen.onInput('confirm'); screen.update(16); }
     expect(flow.phase).toBe('result');
   });

@@ -287,7 +287,7 @@ export const STRINGS = {
     credits: 'End Roll', watch: 'Watch', title: 'Quit to Title',
     language: 'Language', languages: { en: 'English', nl: 'Nederlands' },
     textSpeed: 'Text Speed', textSpeeds: { slow: 'Slow', normal: 'Normal', fast: 'Fast', instant: 'Instant' },
-    calm: 'Screen Effects', full: 'Full', calmed: 'Calm', calmHelp: 'Calm: no shaking and no flashes in battle.',
+    calm: 'Screen Effects', full: 'Full', calmed: 'Calm', calmHelp: 'Calm: no shaking, no flashes, a still camera.',
     // How much glow, haze and shadow is drawn. Auto is the game deciding: all of it while the handheld keeps up.
     detail: 'Light Effects', details: { auto: 'Auto', full: 'Full', lean: 'Reduced', bare: 'Off' },
     detailAuto: { lean: 'Auto: reduced', bare: 'Auto: off' },

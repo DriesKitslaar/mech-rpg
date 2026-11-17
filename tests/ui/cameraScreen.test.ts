@@ -1,14 +1,16 @@
-import { createBattle, type BattleOptions, type BattleState } from '../../src/core/battle';
+import { createBattle, type BattleEvent, type BattleOptions, type BattleState } from '../../src/core/battle';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { AMBIENCE } from '../../src/ui/ambience';
 import { BattleFlow } from '../../src/ui/battleFlow';
-import { BattleScreen, INTRO_MS, PUSH, WARNING_MS } from '../../src/ui/battleScreen';
-import { HOME, MAX_PUSH, PUSH_MS, TRAVEL_SHARE, atHome, openingView } from '../../src/ui/camera';
+import { HARDEST_JOLT } from '../../src/ui/battleFx';
+import { BattleScreen, EDGE, INTRO_MS, PUSH, WARNING_MS } from '../../src/ui/battleScreen';
+import { Camera, HOME, MAX_PUSH, PUSH_MS, TRAVEL_SHARE, atHome, openingView, seenBy } from '../../src/ui/camera';
 import { FINISH_ZOOM } from '../../src/ui/cinema';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { FIELD_Y, PANEL_Y, pictureTop, placeFor } from '../../src/ui/stage';
 import { LIGHTNING_MS, lightning } from '../../src/ui/weather';
+import { COLORS } from '../../src/ui/widgets';
 import { onStage, record, type Drawn, type Glowed, type Pictured } from '../helpers/canvas';
 
 /**
@@ -145,25 +147,35 @@ describe('as a battle opens', () => {
     // Streaks in the upper half of the field and in the lower: what is seen is not the stage's own field, and it rains in all of it.
     expect(first.some((r) => r.y < FIELD_Y + 60 && r.y >= FIELD_Y - 5)).toBe(true);
     expect(first.some((r) => r.y > FIELD_Y + 100 && r.y < PANEL_Y)).toBe(true);
-    for (let i = 0; i < 200 && screen.banner; i++) screen.update(16);
+    // All the way down: as long as the camera is higher than the field by a single row, it rains through that row too.
+    const counts = new Map<number, number>();
+    for (let i = 0; i < 200 && screen.banner; i++) {
+      screen.update(16);
+      const above = HOME.y - screen.motion.view.y;
+      counts.set(above, streaks(page()).length);
+    }
     const home = streaks(page());
     expect(first.length).toBe(home.length * 2);
     for (const r of home) expect(r.y >= FIELD_Y && r.y < PANEL_Y).toBe(true);
-    // A stroke of lightning while the camera is on its way: the whole of the field is lit, not the part of it the stage's field is in.
-    const stroke = Array.from({ length: LIGHTNING_MS / 4 }, (_, i) => i * 4).find((ms) => lightning(ms) === 1)!;
-    const struck = new BattleScreen(new BattleFlow(fight(['recon-drone']), CATALOG, { quiet: true }), sprites, CATALOG, { fast: false, background: NEON, title: 'x'.repeat(4), boss: 'Nobody' });
-    // The warning lasts 1700 ms, the stroke comes later than that: the clock is taken there by a screen that is still opening.
-    expect(stroke).toBeGreaterThan(0);
-    const lit = (drawn: Drawn) => drawn.rects.filter((r) => r.blend === 'overlay');
-    let found: Drawn | null = null;
-    for (let ms = 0; ms < WARNING_MS * TRAVEL_SHARE - 16 && !found; ms += 4) {
-      struck.update(4);
-      const drawn = record((ctx) => struck.draw(ctx));
-      if (lit(drawn).length > 0) found = drawn;
+    for (const [above, count] of counts) expect(count, `${above} rows above home`).toBe(above > 0 ? home.length * 2 : home.length);
+    // Among them the last rows of the way: a few rows above home, less than the bar along the top is high.
+    expect([...counts.keys()].filter((above) => above > 0 && above < FIELD_Y).length).toBeGreaterThan(2);
+    // A stroke of lightning while the camera is on its way down: all that is in view is lit, not the part of it the
+    // stage's own field is in. No stroke falls in an opening by itself (the first comes later than the longest warning
+    // lasts), so the storm's clock is put forward by hand, to a little before one.
+    const stroke = Array.from({ length: LIGHTNING_MS / 4 }, (_, i) => i * 4).find((ms) => ms > 100 && lightning(ms) === 1 && lightning(ms - 4) === 0)!;
+    expect(stroke).toBeGreaterThan(WARNING_MS * TRAVEL_SHARE);
+    const struck = screenOf(fight(['recon-drone']));
+    (struck.screen as unknown as { clock: number }).clock = stroke - 40;
+    let lit: Drawn['rects'][number] | null = null;
+    for (let i = 0; i < 12 && !lit; i++) {
+      struck.screen.update(16);
+      lit = struck.page().rects.find((r) => r.blend === 'overlay') ?? null;
     }
-    // Whether a stroke falls in the opening depends on the clock: where it does, it lights the field exactly.
-    if (found) expect(lit(found)[0]).toMatchObject({ x: 0, y: FIELD_Y, w: 310, h: PANEL_Y - FIELD_Y });
-    expect(stroke > WARNING_MS * TRAVEL_SHARE || found !== null).toBe(true);
+    // The battle is still opening and the camera is high up the picture.
+    expect(struck.screen.banner).toBe(true);
+    expect(struck.screen.motion.view.y).toBeLessThan(HOME.y - 40);
+    expect(lit).toMatchObject({ x: 0, y: FIELD_Y, w: 310, h: PANEL_Y - FIELD_Y });
   });
 
   test('a calm picture and a hurried game open at home: the camera does not travel', () => {
@@ -255,6 +267,101 @@ describe('when a blow lands', () => {
     expect(Math.max(PUSH.shot, PUSH.shell, PUSH.blade, PUSH.wreck, PUSH.surge)).toBeLessThanOrEqual(MAX_PUSH);
     expect(PUSH.shot).toBeLessThan(PUSH.shell);
     expect(PUSH.shell).toBeLessThan(PUSH.blade);
+    // A bullet or a beam six hundredths closer, a shell nine, a blade and a machine going up twelve, an Overdrive eight.
+    expect(PUSH).toEqual({ shot: 0.06, shell: 0.09, blade: 0.12, wreck: 0.12, surge: 0.08 });
+  });
+
+  test('a shell that lands is pushed in on harder than a bullet, and a blade hardest', () => {
+    /** The closest the camera gets over a volley with this weapon, for the first battle it lands in. */
+    const closest = (weapon: 'rightHand' | 'shoulder', build = DEMO_BUILD, boost = false): number => {
+      for (let seed = 1; seed < 40; seed++) {
+        const flow = new BattleFlow(createBattle(build, [ENEMIES['gun-turret']], CATALOG, seed), CATALOG, { quiet: true });
+        const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, background: NEON });
+        const settle = (): void => { for (let i = 0; i < 4000 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16); };
+        const choose = (id: string): boolean => {
+          const at = flow.menu.items.findIndex((item) => item.id === id);
+          if (at < 0 || !flow.menu.items[at].enabled) return false;
+          for (let n = flow.menu.cursor; n < at; n++) screen.onInput('down');
+          for (let n = flow.menu.cursor; n > at; n--) screen.onInput('up');
+          screen.onInput('confirm');
+          return true;
+        };
+        settle();
+        if (boost) { if (!choose('boost')) continue; settle(); }
+        if (!choose('fire') || !choose(weapon)) continue;
+        screen.onInput('confirm');
+        if (!/hits Gun Turret/.test(flow.message) || flow.state.units[1].destroyed) continue;
+        let most = 1;
+        for (let i = 0; i < 70; i++) { screen.update(16); most = Math.max(most, screen.motion.view.zoom); }
+        return most;
+      }
+      throw new Error('no volley landed');
+    };
+    expect(closest('rightHand')).toBeCloseTo(1 + PUSH.shot, 2);
+    expect(closest('shoulder')).toBeCloseTo(1 + PUSH.shell, 2);
+    expect(closest('rightHand', { ...DEMO_BUILD, rightHand: 'wpn-arc-blade' }, true)).toBeCloseTo(1 + PUSH.blade, 2);
+  });
+
+  test('while it is pushed in, the darker edges, the white of a held blow and a stroke of lightning cover what is seen: the field, exactly', () => {
+    const whole = (r: { x: number; y: number; w: number; h: number }): void => {
+      expect(r.x).toBeCloseTo(0, 6);
+      expect(r.y).toBeCloseTo(FIELD_Y, 6);
+      expect(r.w).toBeCloseTo(310, 6);
+      expect(r.h).toBeCloseTo(PANEL_Y - FIELD_Y, 6);
+    };
+    // The darker edges, as a shot lands.
+    const plain = screenOf(fight(['recon-drone', 'tank', 'gun-turret']));
+    plain.ready();
+    plain.fire();
+    let pushed: Drawn | null = null;
+    for (let i = 0; i < 60 && !pushed; i++) { plain.screen.update(16); if (plain.screen.motion.view.zoom > 1.04) pushed = plain.page(); }
+    const edges = pushed!.glows.filter(isVignette);
+    expect(edges).toHaveLength(1);
+    expect(edges[0].x).toBeCloseTo(155, 6);
+    expect(edges[0].y).toBeCloseTo(FIELD_Y + (PANEL_Y - FIELD_Y) / 2, 6);
+    // The white of a held blow. A blow that is held holds the camera too, so the two meet only when the field is held
+    // while a push is still going: with battles played faster, one blow lands on the heels of another. Here the two are
+    // brought together by hand: the camera is half way into a push when the field is struck.
+    const held = screenOf(fight(['recon-drone', 'tank']));
+    held.ready();
+    const inner = held.screen as unknown as { camera: { push(at: { x: number; y: number }, amount: number): void }; hitStop: { strike(ms: number): void } };
+    inner.camera.push({ x: 240, y: 60 }, 0.12);
+    held.screen.update(64);
+    inner.hitStop.strike(140);
+    held.screen.update(16);
+    expect(held.screen.motion.flash).toBeGreaterThan(0);
+    expect(held.screen.motion.view.zoom).toBeGreaterThan(1.05);
+    // It has turned up and to the right as far as there is field, and what it has in view is a part of the field.
+    const view = seenBy(held.screen.motion.view);
+    expect(view.top).toBeCloseTo(FIELD_Y, 6);
+    expect(view.left + view.width).toBeCloseTo(310, 6);
+    const flash = held.page();
+    const at = flash.rects.findIndex((r) => /^rgba\(255, 255, 255, 0\.\d+\)$/.test(r.color) && r.w > 200);
+    const white = flash.rects[at];
+    expect(flash.rects.filter((r) => /^rgba\(255, 255, 255, 0\.\d+\)$/.test(r.color) && r.w > 200)).toHaveLength(1);
+    // The white is the stage's whole field, drawn as the camera has it: larger than the screen's field, kept inside it, and so all of it.
+    expect(flash.kept.rects[at]).toEqual({ x: 0, y: FIELD_Y, w: 310, h: PANEL_Y - FIELD_Y });
+    expect(white.x).toBeLessThanOrEqual(1e-6);
+    expect(white.y).toBeLessThanOrEqual(FIELD_Y + 1e-6);
+    expect(white.x + white.w).toBeGreaterThanOrEqual(310 - 1e-6);
+    expect(white.y + white.h).toBeGreaterThanOrEqual(PANEL_Y - 1e-6);
+    whole(onStage(flash, held.screen.motion.view).rects[at]);
+    // A stroke of lightning that falls while a shot lands.
+    const storm = screenOf(fight(['recon-drone', 'tank', 'gun-turret']));
+    storm.ready();
+    const clock = (): number => (storm.screen as unknown as { clock: number }).clock;
+    // The first stroke that is still far enough off for the shot to be fired into it.
+    const from = Math.ceil(clock() / 2) * 2 + 500;
+    const stroke = Array.from({ length: LIGHTNING_MS }, (_, i) => from + i * 2).find((ms) => lightning(ms) === 1 && lightning(ms - 2) === 0)!;
+    expect(stroke).toBeGreaterThan(clock() + 400);
+    while (clock() < stroke - 190) storm.screen.update(2);
+    storm.fire();
+    expect(storm.flow.message).toMatch(/hits/);
+    while (clock() < stroke + 40) storm.screen.update(2);
+    expect(storm.screen.motion.view.zoom).toBeGreaterThan(1.01);
+    const lit = storm.page().rects.filter((r) => r.blend === 'overlay');
+    expect(lit).toHaveLength(1);
+    whole(lit[0]);
   });
 
   test('while it is pushed in everything on the field is drawn inside the field, and what is written over the field stays where it is', () => {
@@ -315,6 +422,296 @@ describe('when a blow lands', () => {
       }
       expect(['animating', 'action', 'result']).toContain(flow.phase);
     }
+  });
+});
+
+describe('a field that is shaken', () => {
+  test('takes its picture with it as it is, so the floor stays under the feet on it; the picture\'s edges are drawn out so that none shows', () => {
+    for (const background of [NEON, 'bg-sluice', 'bg-simulator']) {
+      const { flow, screen, page, ready, fire } = screenOf(fight(['recon-drone', 'tank'], [0]), { background });
+      ready();
+      const place = placeFor(background);
+      const legsOf = (drawn: Drawn): Pictured => drawn.images.filter((image) => idOf(image).startsWith('legs-')).at(-1)!;
+      const tankOf = (drawn: Drawn): Pictured => drawn.images.filter((image) => idOf(image) === 'enemy-tank').at(-1)!;
+      const rest = onStage(page(), screen.motion.view);
+      expect(rest.images.filter((image) => idOf(image) === background)).toHaveLength(1);
+      fire();
+      let shaken = 0;
+      const thrown = new Set<string>();
+      for (let i = 0; i < 200 && flow.phase !== 'action'; i++) {
+        screen.update(16);
+        // The field as it stands on the stage: the camera pushes in on the same blow.
+        const drawn = onStage(page(), screen.motion.view);
+        const [picture, ...edges] = drawn.images.filter((image) => idOf(image) === background);
+        // The picture itself: all of it, at its own size, whatever happens.
+        expect([picture.w, picture.h, picture.from], background).toEqual([310, 270, undefined]);
+        const by = { x: picture.x, y: picture.y - pictureTop(place) };
+        if (by.x === 0 && by.y === 0) { expect(edges, background).toEqual([]); continue; }
+        shaken++;
+        thrown.add(`${Math.sign(by.x)},${Math.sign(by.y)}`);
+        // Thrown by the few whole pixels the blow throws the field.
+        expect([Number.isInteger(by.x), Number.isInteger(by.y)], background).toEqual([true, true]);
+        expect(Math.max(Math.abs(by.x), Math.abs(by.y)), background).toBeLessThan(EDGE);
+        // What stands on the floor is thrown exactly as far as the floor is: nothing slides. (A machine that is hit is
+        // shaken by itself as well, two pixels either way: the tank is not hit here.)
+        expect([legsOf(drawn).x - legsOf(rest).x, legsOf(drawn).y - legsOf(rest).y], background).toEqual([by.x, by.y]);
+        expect([tankOf(drawn).x - tankOf(rest).x, tankOf(drawn).y - tankOf(rest).y], background).toEqual([by.x, by.y]);
+        // Round it: its first and last columns and rows, each drawn out EDGE pixels beyond it, corners included.
+        const top = pictureTop(place) + by.y;
+        expect(edges.map((edge) => [edge.from, edge.x, edge.y, edge.w, edge.h]), background).toEqual([
+          [{ x: 0, y: 0, w: 1, h: 270 }, by.x - EDGE, top, EDGE, 270],
+          [{ x: 309, y: 0, w: 1, h: 270 }, by.x + 310, top, EDGE, 270],
+          [{ x: 0, y: 0, w: 310, h: 1 }, by.x - EDGE, top - EDGE, 310 + 2 * EDGE, EDGE],
+          [{ x: 0, y: 269, w: 310, h: 1 }, by.x - EDGE, top + 270, 310 + 2 * EDGE, EDGE],
+        ]);
+        // So nothing of the field is left bare, on any side.
+        expect(by.x - EDGE, background).toBeLessThanOrEqual(0);
+        expect(by.x + 310 + EDGE, background).toBeGreaterThanOrEqual(310);
+        expect(top - EDGE, background).toBeLessThanOrEqual(FIELD_Y);
+        expect(top + 270 + EDGE, background).toBeGreaterThanOrEqual(PANEL_Y);
+      }
+      // A machine going up shakes the field for a good few frames, every which way.
+      expect(shaken, background).toBeGreaterThan(8);
+      expect(thrown.size, background).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  test('the hardest blow there is throws it less far than the picture\'s edges are drawn out: nothing behind the picture shows', () => {
+    expect(EDGE).toBe(HARDEST_JOLT + 1);
+    const { screen, page, ready } = screenOf(fight(['recon-drone', 'tank']), { background: 'bg-sluice' });
+    ready();
+    // Brought on by hand, and asked for harder than the hardest there is: it is no harder than that.
+    (screen as unknown as { fx: { jolt(delay: number, amount: number, dur: number): void } }).fx.jolt(0, HARDEST_JOLT + 4, 450);
+    const top = pictureTop(placeFor('bg-sluice'));
+    let furthest = 0;
+    for (let i = 0; i < 40; i++) {
+      screen.update(16);
+      const [picture, ...edges] = page().images.filter((image) => idOf(image) === 'bg-sluice');
+      const by = { x: picture.x, y: picture.y - top };
+      furthest = Math.max(furthest, Math.abs(by.x), Math.abs(by.y));
+      if (by.x === 0 && by.y === 0) continue;
+      expect(edges).toHaveLength(4);
+      // With its edges the picture covers the field on every side, and the sluice's picture ends where the panel begins.
+      expect(Math.min(...edges.map((edge) => edge.x))).toBeLessThanOrEqual(0);
+      expect(Math.max(...edges.map((edge) => edge.x + edge.w))).toBeGreaterThanOrEqual(310);
+      expect(Math.min(...edges.map((edge) => edge.y))).toBeLessThanOrEqual(FIELD_Y);
+      expect(Math.max(...edges.map((edge) => edge.y + edge.h))).toBeGreaterThanOrEqual(PANEL_Y);
+    }
+    // It was thrown about as far as a blow can throw it (how far exactly depends on the moment), and no further.
+    expect(furthest).toBeGreaterThanOrEqual(HARDEST_JOLT - 1);
+    expect(furthest).toBeLessThanOrEqual(HARDEST_JOLT);
+  });
+});
+
+describe('what the camera moves', () => {
+  /** The first way two drawings differ, or null when they are one drawing: numbers to a thousandth of a pixel, and never mind what each was kept inside. */
+  function differ(a: unknown, b: unknown, at: string): string | null {
+    if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) <= 1e-3 ? null : `${at}: ${a} against ${b}`;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return `${at}: ${a.length} of them against ${b.length}`;
+      for (let i = 0; i < a.length; i++) { const d = differ(a[i], b[i], `${at}[${i}]`); if (d) return d; }
+      return null;
+    }
+    if (a && b && typeof a === 'object' && typeof b === 'object') {
+      for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        if (key === 'clip' || key === 'kept') continue;
+        const d = differ((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key], `${at}.${key}`);
+        if (d) return d;
+      }
+      return null;
+    }
+    return Object.is(a, b) ? null : `${at}: ${String(a)} against ${String(b)}`;
+  }
+  /** A drawing without the darker edges of the field: those are laid round what the camera has in view, which is the one thing that is not on the stage. */
+  const plain = (drawn: Drawn): Drawn => ({ ...drawn, glows: drawn.glows.filter((g) => !isVignette(g)) });
+
+  test('is everything that stands or happens on the field, and nothing else: a frame from a camera that is away from home, put back on the stage, is the frame a camera at home draws', () => {
+    // Two battles played alike, frame for frame and press for press. One is looked at through a camera that never leaves home.
+    const play = (still: boolean) => {
+      const made = screenOf(fight(['recon-drone', 'tank', 'gun-turret'], [1], { overdrive: 'iron-skin', drive: 100 }), { background: 'bg-nowhere' });
+      if (still) (made.screen as unknown as { camera: Camera }).camera = new Camera(placeFor('bg-nowhere'), false);
+      return made;
+    };
+    const sides = [play(false), play(true)];
+    const [moving, still] = sides;
+    /** What the pilot does next, on both sides alike: the Overdrive once, then each weapon in turn, and the turn ended when nothing can be fired. */
+    let turns = 0;
+    const press = (): void => {
+      const { flow } = moving;
+      const can = (id: string): boolean => flow.menu.items.some((item) => item.id === id && item.enabled);
+      const all = (action: 'next' | 'confirm' | 'cancel'): void => { for (const side of sides) side.screen.onInput(action); };
+      const choose = (id: string): void => { for (const side of sides) side.choose(id); };
+      if (flow.phase === 'action') {
+        turns++;
+        if (turns === 2) all('next');
+        else choose(can('fire') ? 'fire' : 'endTurn');
+      } else if (flow.phase === 'weapon') {
+        const ready = ['rightHand', 'leftHand', 'shoulder'].filter(can);
+        if (ready.length > 0) choose(ready[turns % ready.length]);
+        else { all('cancel'); choose('endTurn'); }
+      } else if (flow.phase === 'target') all('confirm');
+    };
+    const seen = { away: 0, opening: 0, close: 0, thrown: 0, figures: 0, bars: 0, lights: 0, lines: 0 };
+    // What stands or happens on the field, by name: the bars under the machines, what flies off them and burns in them,
+    // the smoke of a wreck, the Overdrive's rings, what is fired, the figures, and every light. While the camera is away
+    // each of them is drawn inside the field, where the camera has it: one that was not would have been left behind.
+    const named = { bars: 0, particles: 0, smoke: 0, rings: 0, shots: 0, figures: 0, lights: 0 };
+    const COLOURS: [keyof typeof named, string[]][] = [
+      ['particles', ['#e8c466', '#b8923c', '#fff2b0', '#ffd15a', '#ff8a3c', '#ff5a36', '#3a3a4c', '#56566c', '#22222e', '#8a6a4a', '#46445a', '#5a586e', '#32303e']],
+      ['smoke', ['#3a3644', '#4a4654']],
+      ['shots', ['#ffe9a8', '#7fe9ff', '#ffb46b']],
+    ];
+    const inField = (box: { x: number; y: number; w: number; h: number } | null): boolean => !!box && box.x === 0 && box.y === FIELD_Y && box.w === 310 && box.h === PANEL_Y - FIELD_Y;
+    const check = (raw: Drawn, frame: number, band: boolean): void => {
+      raw.rects.forEach((r, n) => {
+        if (r.y < FIELD_Y || r.y >= PANEL_Y) return;
+        // (From closer by a bar two pixels high and a ring one pixel thick are a little more than that.)
+        const what = [COLORS.armor, COLORS.heat].includes(r.color) && r.h <= 2 * (1 + MAX_PUSH) && r.w >= 8 && r.y > FIELD_Y + 12 ? 'bars'
+          : r.color.startsWith('rgba(255, 93, 177,') && r.w <= 1 + MAX_PUSH ? 'rings'
+            : COLOURS.find(([, colours]) => colours.includes(r.color))?.[0];
+        if (!what) return;
+        named[what]++;
+        expect(inField(raw.kept.rects[n]), `frame ${frame}: ${what} at ${r.x},${r.y}`).toBe(true);
+      });
+      raw.texts.forEach((t, n) => {
+        if (!/^(-\d+|MISS)$/.test(t.text)) return;
+        named.figures++;
+        expect(inField(raw.kept.texts[n]), `frame ${frame}: the figure ${t.text}`).toBe(true);
+      });
+      // (The band of an Overdrive has lights of its own, over the field: while it is up the lights are left uncounted.)
+      if (!band) raw.glows.forEach((g, n) => {
+        if (g.blend !== 'lighter') return;
+        named.lights++;
+        expect(inField(raw.kept.glows[n]), `frame ${frame}: a light at ${g.x},${g.y}`).toBe(true);
+      });
+    };
+    for (let i = 0; i < 4000 && moving.flow.phase !== 'result'; i++) {
+      expect(still.flow.phase, `frame ${i}`).toBe(moving.flow.phase);
+      press();
+      for (const side of sides) side.screen.update(16);
+      const view = moving.screen.motion.view;
+      const close = moving.screen.motion.finish !== null;
+      // The close look at the last machine is no camera's: both are drawn from twice as close, alike.
+      if (close) expect(still.screen.motion.view, `frame ${i}`).toEqual(view);
+      else expect(still.screen.motion.view, `frame ${i}`).toBe(HOME);
+      const raw = moving.page();
+      const there = plain(close ? raw : onStage(raw, view));
+      const here = plain(still.page());
+      expect(differ(there, here, `frame ${i}`), `frame ${i}, the camera at ${JSON.stringify(view)}`).toBeNull();
+      if (close) seen.close++;
+      else if (!atHome(view)) {
+        seen.away++;
+        check(raw, i, moving.screen.motion.cutIn !== null);
+        if (moving.screen.banner) seen.opening++;
+        if (raw.images[0].x !== 0) seen.thrown++;
+        // What was being drawn while it was away: figures, bars, lights, the pixels of what flies and burns.
+        seen.figures += here.texts.filter((t) => /^(-\d+|MISS)$/.test(t.text)).length;
+        seen.bars += here.rects.filter((r) => r.color === COLORS.armor && r.h === 2 && r.y > FIELD_Y + 20 && r.y < PANEL_Y).length;
+        seen.lights += here.glows.filter(isLight).length;
+        seen.lines += here.rects.filter((r) => r.w <= 3 && r.h <= 3 && r.y > FIELD_Y && r.y < PANEL_Y).length;
+      }
+    }
+    expect(moving.flow.phase).toBe('result');
+    // It was away as the battle opened, through many blows, while the field was thrown, and with all of that on the field.
+    expect(seen.opening).toBeGreaterThan(30);
+    expect(seen.away).toBeGreaterThan(seen.opening + 300);
+    expect(seen.thrown).toBeGreaterThan(5);
+    expect(seen.close).toBeGreaterThan(10);
+    for (const kind of ['figures', 'bars', 'lights', 'lines'] as const) expect(seen[kind], kind).toBeGreaterThan(100);
+    // Each of the things named was there to be checked, many times over.
+    for (const [kind, count] of Object.entries(named)) expect(count, kind).toBeGreaterThan(500);
+  });
+});
+
+describe('a battle that is over', () => {
+  test('is not pushed in on: from the very frame its result is up the camera is at home, and no push comes after', () => {
+    const { flow, screen, page, picture, ready, fire } = screenOf(fight(['gun-turret'], [0]));
+    ready();
+    fire();
+    // Pressed on to the result at once: the push of the shot that ended it has not begun, or is on its way in.
+    for (let i = 0; i < 30 && flow.phase !== 'result'; i++) screen.onInput('confirm');
+    expect(flow.phase).toBe('result');
+    const camera = (screen as unknown as { camera: { push(at: { x: number; y: number }, amount: number, delay?: number): void } }).camera;
+    // What is asked of the camera from here on: the shot's push and the wreck's are asked for as the screen catches up.
+    const asked: number[] = [];
+    const push = camera.push.bind(camera);
+    camera.push = (at, amount, delay) => { asked.push(amount); push(at, amount, delay); };
+    for (let i = 0; i < 80; i++) {
+      // Drawn before the screen has been told that time has passed, and in every frame after.
+      expect(screen.motion.view, `frame ${i}`).toBe(HOME);
+      // The picture at its own size and kept inside nothing: the stage is the screen. (The machine still goes up, and
+      // that throws the field a few pixels: a blow is not the camera.)
+      const drawn = picture(page());
+      expect(drawn, `frame ${i}`).toMatchObject({ w: 310, h: 270, clip: null });
+      expect(Math.max(Math.abs(drawn.x), Math.abs(drawn.y - pictureTop(placeFor(NEON)))), `frame ${i}`).toBeLessThan(EDGE);
+      screen.update(16);
+    }
+    // They were asked for, the hardest of them the one for a machine going up, and not one of them was ever seen.
+    expect(asked.length).toBeGreaterThan(0);
+    expect(Math.max(...asked)).toBe(PUSH.wreck);
+  });
+});
+
+describe('what a convoy loses', () => {
+  const guarded = () => {
+    const made = screenOf(fight(['recon-drone'], [], { objective: { type: 'protect', name: 'Ore Train', hp: 12 } }));
+    made.ready();
+    const inner = made.screen as unknown as {
+      fx: { onEvent(event: BattleEvent): void; jolt(delay: number, amount: number, dur: number): void; shake(): { dx: number; dy: number } };
+      camera: { push(at: { x: number; y: number }, amount: number): void };
+    };
+    /** The figure itself, in its own colour (it has a dark edge drawn round it first), and what it was kept inside. */
+    const figure = (drawn: Drawn) => {
+      const at = drawn.texts.findIndex((t) => t.text === '-7' && t.color === COLORS.danger);
+      return at < 0 ? null : { x: drawn.texts[at].x, y: drawn.texts[at].y, size: drawn.texts[at].size, kept: drawn.kept.texts[at], after: drawn.order.findIndex((step) => step.kind === 'text' && step.at === at) };
+    };
+    return { ...made, inner, figure };
+  };
+
+  test('is written by the strip that names it, on the screen: over the strip, under nothing of the field', () => {
+    const { screen, page, inner, figure } = guarded();
+    expect(figure(page())).toBeNull();
+    inner.fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
+    screen.update(16);
+    const drawn = page();
+    const shown = figure(drawn)!;
+    // Under the strip in the top left corner, rising into it; kept inside nothing.
+    expect(shown.x).toBe(30);
+    expect(shown.y).toBeGreaterThan(FIELD_Y + 12);
+    expect(shown.y).toBeLessThanOrEqual(34);
+    expect(shown.kept).toBeNull();
+    // The strip that says what is guarded is drawn before it: the figure lies over the strip when it rises into it.
+    const strip = drawn.order.findIndex((step) => step.kind === 'text' && drawn.texts[step.at].text.startsWith('ORE TRAIN'));
+    expect(strip).toBeGreaterThanOrEqual(0);
+    expect(shown.after).toBeGreaterThan(strip);
+  });
+
+  test('stays where it is while the camera is pushed in and a blow throws the field', () => {
+    const still = guarded();
+    still.inner.fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
+    still.screen.update(64);
+    const moved = guarded();
+    moved.inner.fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
+    moved.inner.camera.push({ x: 300, y: 20 }, 0.12);
+    moved.inner.fx.jolt(0, 5, 400);
+    moved.screen.update(64);
+    expect(moved.screen.motion.view.zoom).toBeGreaterThan(1.05);
+    expect(moved.screen.motion.view.x).toBeGreaterThan(HOME.x + 5);
+    const thrown = moved.inner.fx.shake();
+    expect(Math.abs(thrown.dx) + Math.abs(thrown.dy)).toBeGreaterThan(0);
+    const [a, b] = [still.figure(still.page())!, moved.figure(moved.page())!];
+    expect([b.x, b.y, b.size, b.kept]).toEqual([a.x, a.y, a.size, null]);
+    // What is hit on the field is another matter: its figure is on the stage, and goes where the camera has the stage.
+    const hit = guarded();
+    hit.inner.camera.push({ x: 300, y: 20 }, 0.12);
+    hit.fire();
+    let inField = 0;
+    for (let i = 0; i < 60; i++) {
+      hit.screen.update(16);
+      const drawn = hit.page();
+      drawn.texts.forEach((text, at) => { if (/^(-\d+|MISS)$/.test(text.text) && drawn.kept.texts[at]) inField++; });
+    }
+    expect(inField).toBeGreaterThan(0);
   });
 });
 

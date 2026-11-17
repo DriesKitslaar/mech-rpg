@@ -5,7 +5,7 @@ import { LOGICAL_W } from '../../src/ui/display';
 import { BACK_BOX, VIEWS } from '../../src/ui/mechLayout';
 import {
   BARS_H, ENEMY_LEFT, ENEMY_RIGHT, ENEMY_TOP, FAR_LINE, FIELD, FIELD_Y, FLYERS, FLY_LIFT, HERO, HERO_FEET, HERO_GROUND, LOWEST_ROW, NEAR_LINE, PANEL_Y, PLACES, PLAIN,
-  SMALL_GROUND, SMALL_MIDDLE, depthOf, duelAt, enemySpots, farLine, farToNear, horizonOf, pictureTop, placeBars, placeFor, standAt,
+  SMALL_GROUND, SMALL_MIDDLE, depthOf, duelAt, enemySpots, farLine, farToNear, horizonOf, pictureTop, placeBars, placeFor, standAt, type Place,
 } from '../../src/ui/stage';
 
 /**
@@ -115,9 +115,12 @@ describe('where enemies stand', () => {
 
   test('one stands alone; two stand one behind the other; of three, two stand at the back and one in front between them', () => {
     const place = placeFor('bg-neon-district');
+    // One alone stands between the two lines, nearer the near one, and right of the middle of the enemies' side.
     const [alone] = enemySpots(1, place);
-    expect(alone.depth).toBeGreaterThan(0.2);
-    expect(alone.depth).toBeLessThan(0.8);
+    expect(alone.y).toBeGreaterThan(farLine(place) + (NEAR_LINE - farLine(place)) * 0.4);
+    expect(alone.y).toBeLessThan(NEAR_LINE - (NEAR_LINE - farLine(place)) * 0.2);
+    expect(alone.x).toBeGreaterThan((ENEMY_LEFT + ENEMY_RIGHT) / 2);
+    expect(Object.keys(alone).sort()).toEqual(['x', 'y']);
     const [back, front] = enemySpots(2, place);
     expect(back.y).toBeLessThan(front.y);
     expect(back.x).toBeLessThan(front.x);
@@ -139,6 +142,19 @@ describe('where enemies stand', () => {
     expect(farLine(sluice)).toBeGreaterThan(FAR_LINE);
     for (const spot of enemySpots(3, sluice)) expect(spot.y).toBeGreaterThanOrEqual(horizonOf(sluice) + 12);
     expect(farLine(placeFor('bg-arena'))).toBe(FAR_LINE);
+    // In every place there is, the floor begins high enough for two lines to stand on that are well apart: the sluice's
+    // are the closest together, seventeen pixels.
+    for (const place of ALL_PLACES) {
+      expect(NEAR_LINE - farLine(place)).toBeGreaterThanOrEqual(17);
+      expect(farLine(place)).toBe(Math.max(FAR_LINE, horizonOf(place) + 12));
+    }
+    expect(NEAR_LINE - farLine(sluice)).toBe(17);
+  });
+
+  test('what flies: the four drones, the gunship, the hunter, the longshot and the Overseer, and nothing else', () => {
+    expect([...FLYERS].sort()).toEqual([
+      'boss-overseer', 'enemy-gunship', 'enemy-hunter-drone', 'enemy-lien-drone', 'enemy-longshot', 'enemy-recon-drone', 'enemy-repair-drone', 'enemy-shield-drone',
+    ]);
   });
 
   test('every machine there is stands on the field wherever it is put: inside the edges, under the message bar, its bars over the panel', () => {
@@ -196,7 +212,11 @@ describe('where enemies stand', () => {
       }
     }
     expect(lineUps.size).toBeGreaterThan(50);
-    for (const place of [placeFor('bg-neon-district'), placeFor('bg-sluice')]) {
+    /** The most of a machine's head (the top third of its box, across its middle half) that the box of another may stand in front of: two fifths. */
+    const HEAD_HIDDEN = 0.4;
+    let worst = { hidden: 0, head: 0 };
+    // In every place there is: the lines the enemies stand on are closer together where the floor is short.
+    for (const [where, place] of [...Object.entries(PLACES), ['plain', PLAIN]] as [string, Place][]) {
       for (const [name, sprites] of lineUps) {
         const spots = enemySpots(sprites.length, place);
         const standing = sprites.map((id, slot) => ({ id, slot, ...MANIFEST[id], ...standAt(spots[slot], MANIFEST[id], FLYERS.has(id)) }));
@@ -210,13 +230,21 @@ describe('where enemies stand', () => {
             }
           }
           const hidden = cells.reduce((sum, cell) => sum + cell, 0) / cells.length;
-          expect(hidden, `${name}: ${unit.id} in place ${unit.slot}`).toBeLessThan(0.5);
-          // And its head is clear: the top third of it is covered by nobody at its middle.
-          const mid = unit.x + Math.floor(unit.w / 2) - unit.x;
-          expect(cells[Math.floor(unit.h / 6) * unit.w + mid], `${name}: ${unit.id} head`).toBe(0);
+          expect(hidden, `${where}, ${name}: ${unit.id} in place ${unit.slot}`).toBeLessThan(0.5);
+          // And its head is clear: of the top third of it, across its middle half, how much is behind somebody.
+          let covered = 0;
+          let all = 0;
+          for (let y = 0; y < Math.floor(unit.h / 3); y++) {
+            for (let x = Math.floor(unit.w / 4); x < Math.ceil((unit.w * 3) / 4); x++) { all++; covered += cells[y * unit.w + x]; }
+          }
+          worst = { hidden: Math.max(worst.hidden, hidden), head: Math.max(worst.head, covered / all) };
+          expect(covered / all, `${where}, ${name}: ${unit.id} head`).toBeLessThanOrEqual(HEAD_HIDDEN);
         });
       }
     }
+    // What the worst of them come to: the bounds above are not far off what there is.
+    expect(worst.hidden).toBeGreaterThan(0.4);
+    expect(worst.head).toBeGreaterThan(HEAD_HIDDEN - 0.05);
   });
 });
 
@@ -246,6 +274,23 @@ describe('the bars under the enemies', () => {
     for (const a of bars) for (const b of bars) if (a !== b) expect(overlap(a, b)).toBe(false);
     // The same bars side by side need no moving.
     expect(placeBars([{ x: 150, y: 100, w: 60, h: 40 }, { x: 220, y: 100, w: 60, h: 40 }]).map((bar) => bar.y)).toEqual([142, 142]);
+  });
+
+  test('of two whose bars would lie on one row, the one further left stays and the other is moved down: whichever is listed first', () => {
+    const left = { x: 190, y: 100, w: 60, h: 40 };
+    const right = { x: 220, y: 100, w: 60, h: 40 };
+    expect(placeBars([left, right]).map((bar) => bar.y)).toEqual([142, 147]);
+    expect(placeBars([right, left]).map((bar) => bar.y)).toEqual([147, 142]);
+  });
+
+  test('bars that would only touch are moved apart too: a pixel is between any two that are one over the other', () => {
+    // Two machines whose feet are four pixels apart: the lower one's armour line would lie right under the higher one's balance line.
+    const boxes = [{ x: 200, y: 100, w: 64, h: 40 }, { x: 210, y: 104, w: 64, h: 40 }];
+    expect(placeBars(boxes).map((bar) => bar.y)).toEqual([142, 147]);
+    // Five apart, there is a pixel between them as they are.
+    expect(placeBars([{ x: 200, y: 100, w: 64, h: 40 }, { x: 210, y: 105, w: 64, h: 40 }]).map((bar) => bar.y)).toEqual([142, 147]);
+    // Six apart, nothing is moved.
+    expect(placeBars([{ x: 200, y: 100, w: 64, h: 40 }, { x: 210, y: 106, w: 64, h: 40 }]).map((bar) => bar.y)).toEqual([142, 148]);
   });
 
   test('none goes under the panel, however many are stacked', () => {
@@ -301,6 +346,12 @@ describe('a mech built from parts that is fought alone', () => {
       expect(body.w).toBeGreaterThan(70);
       expect(body.h).toBeGreaterThan(90);
     }
+  });
+
+  test('its box is laid out from its spot and nothing else: its body\'s middle over the spot, its feet on it', () => {
+    expect(duelAt({ x: 238, y: 143 })).toEqual({ right: 238 + SMALL_MIDDLE, top: 143 - SMALL_GROUND, body: { x: 238 + SMALL_MIDDLE - 90, y: 143 - SMALL_GROUND + 2, w: 78, h: 98 } });
+    const [a, b] = [duelAt({ x: 238, y: 143 }), duelAt({ x: 250, y: 150 })];
+    expect([b.right - a.right, b.top - a.top, b.body.x - a.body.x, b.body.y - a.body.y]).toEqual([12, 7, 12, 7]);
   });
 
   test('every pair of legs it can have stands on the line its box is put on', () => {

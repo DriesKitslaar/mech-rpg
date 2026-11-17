@@ -1,4 +1,4 @@
-import { LOGICAL_W } from './display';
+import { LOGICAL_H, LOGICAL_W } from './display';
 
 /**
  * Where everything stands in a battle. The field is looked at over the shoulder of the pilot's
@@ -16,10 +16,8 @@ export const FIELD_Y = 14;
 export const PANEL_Y = 178;
 export const FIELD = { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W };
 
-/** How tall a place's picture is: as tall as the screen. */
-const PICTURE_H = 270;
-/** The lowest row a picture can be looked at from: lower, and its bottom edge would show. */
-export const LOWEST_ROW = PICTURE_H - FIELD.height;
+/** The lowest row a picture can be looked at from: lower, and its bottom edge would show. A picture is as tall as the screen. */
+export const LOWEST_ROW = LOGICAL_H - FIELD.height;
 
 /** What is known of a place's picture: which of its rows is at the top of the field at home, and the row its floor begins at. */
 export interface Place { row: number; floor: number }
@@ -76,27 +74,32 @@ export const FLYERS = new Set([
   'enemy-hunter-drone', 'enemy-longshot',
 ]);
 
-/** The farthest line of a place: `FAR_LINE`, or nearer where its floor begins lower than most. */
+/**
+ * The farthest line of a place: `FAR_LINE`, or nearer where its floor begins lower than most. No
+ * place there is has its floor begin so low that the two lines come close: a picture that did
+ * would need a line-up of its own.
+ */
 export function farLine(place: Place): number {
-  return Math.min(NEAR_LINE - 14, Math.max(FAR_LINE, horizonOf(place) + ONTO_FLOOR));
+  return Math.max(FAR_LINE, horizonOf(place) + ONTO_FLOOR);
 }
 
-/** A place to stand: the middle of the feet, and how far off it is (0 on the nearest line, 1 on the farthest). */
-export interface Spot { x: number; y: number; depth: number }
+/** A place to stand: the middle of the feet. */
+export interface Spot { x: number; y: number }
 
 /**
  * Where each enemy stands, by how many places there are: one stands alone in the middle; two stand
  * one behind the other, the first further off; of three the first two stand at the back and the
  * third in front, between them. What is listed first is as a rule the largest, and stands furthest.
+ * `back` is how far back each stands between the place's two lines: 0 on the nearest, 1 on the farthest.
  */
-const LINE_UPS: Record<number, { x: number; depth: number }[]> = {
-  1: [{ x: 238, depth: 0.4 }],
-  2: [{ x: 204, depth: 0.9 }, { x: 270, depth: 0.05 }],
-  3: [{ x: 196, depth: 1 }, { x: 276, depth: 0.7 }, { x: 240, depth: 0 }],
+const LINE_UPS: Record<number, { x: number; back: number }[]> = {
+  1: [{ x: 238, back: 0.4 }],
+  2: [{ x: 204, back: 0.9 }, { x: 270, back: 0.05 }],
+  3: [{ x: 196, back: 1 }, { x: 276, back: 0.7 }, { x: 240, back: 0 }],
 };
 export function enemySpots(count: number, place: Place): Spot[] {
   const far = farLine(place);
-  return (LINE_UPS[count] ?? LINE_UPS[3]).map(({ x, depth }) => ({ x, y: Math.round(NEAR_LINE - depth * (NEAR_LINE - far)), depth }));
+  return (LINE_UPS[count] ?? LINE_UPS[3]).map(({ x, back }) => ({ x, y: Math.round(NEAR_LINE - back * (NEAR_LINE - far)) }));
 }
 
 /** Where a machine is drawn, and the line of the floor it stands on or hangs over. */
@@ -165,10 +168,11 @@ const SMALL_BODY = { x: 12, y: 2, w: 78, h: 98 };
 /**
  * A mech built from parts that is fought alone stands on its spot turned round, facing the pilot's:
  * its small pose box is mirrored, so its right edge is given, with its top; and the box its body
- * takes up on the screen.
+ * takes up on the screen. The one spot there is for one enemy keeps all of that on the enemies'
+ * part of the field, in every place.
  */
 export function duelAt(spot: { x: number; y: number }): { right: number; top: number; body: { x: number; y: number; w: number; h: number } } {
-  const right = Math.min(ENEMY_RIGHT + SMALL_BODY.x, spot.x + SMALL_MIDDLE);
-  const top = Math.max(ENEMY_TOP, spot.y - SMALL_GROUND);
+  const right = spot.x + SMALL_MIDDLE;
+  const top = spot.y - SMALL_GROUND;
   return { right, top, body: { x: right - SMALL_BODY.x - SMALL_BODY.w, y: top + SMALL_BODY.y, w: SMALL_BODY.w, h: SMALL_BODY.h } };
 }
