@@ -266,3 +266,52 @@ test('the look of the cinema: the Overdrive\'s band, the last machine going down
   await watch(page, 'defeat', 1200, 100, { 1200: 'look-defeat' });
   expect(errors).toEqual([]);
 });
+
+test('the look of the finish: a page of story alive, a great machine on its band, and machines that look back', async ({ page }) => {
+  test.setTimeout(290000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // A pilot with the Guild's third contract open (the Scrap King is what it is about), and one page of
+  // story still unread: the third act's, which opens on Meridian's tower with its notices coming down.
+  let g = gunner();
+  for (const id of ['hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1', 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'guild-1', 'guild-2']) {
+    g = completeMission(g, id, MISSIONS);
+  }
+  const save = { ...g, choices: {}, scenes: SCENES.map((s) => s.id).filter((id) => id !== 'act-3') };
+  await page.addInitScript((data) => {
+    if (!window.localStorage.getItem('ironwage-save')) window.localStorage.setItem('ironwage-save', data);
+  }, JSON.stringify(save));
+  await page.goto('/?seed=7&step=1');
+  await page.waitForFunction(() => (window as any).__game?.snapshot().screen === 'title');
+  await adv(page, 600);
+  await pick(page, 'continue');
+  const first = await until(page, (s) => s.screen === 'scene');
+  expect(first.scene).toBe('act-3');
+  // The picture has the screen to itself for a moment, its title coming on; then the words are written over it.
+  await watch(page, 'story', 6000, 100, { 500: 'look-story-clear', 6000: 'look-story' });
+  // Out of the page: a press writes it out, the next one leaves it.
+  for (let i = 0; i < 20 && (await snap(page)).screen === 'scene'; i++) { await tap(page, 'Enter'); await adv(page, 600); }
+  await until(page, (s) => s.screen === 'hub');
+  await adv(page, 400);
+  await pick(page, 'contracts');
+  await adv(page, 400);
+  await pick(page, 'guild-3');
+  await until(page, (s) => s.screen === 'briefing');
+  await adv(page, 400);
+  await pick(page, 'accept');
+  await until(page, (s) => s.screen === 'battle');
+  // The Scrap King comes in on its band: from the right, with a window on it from close by, and its eyes open.
+  await watch(page, 'entrance', 1600, 50, { 150: 'look-entrance-coming', 900: 'look-entrance' });
+  // Whatever is said as the battle opens is read past.
+  let fight = await snap(page);
+  for (let i = 0; i < 400 && fight.battle?.phase !== 'action'; i++) {
+    if (fight.battle?.phase === 'talk') await tap(page, 'Enter');
+    await adv(page, 96);
+    fight = await snap(page);
+  }
+  expect(fight.battle?.phase).toBe('action');
+  expect(fight.battle?.enemies).toEqual(['scrap-king']);
+  // On the field it looks back.
+  await watch(page, 'eyes', 600, 100, { 300: 'look-eyes' });
+  expect(errors).toEqual([]);
+});
