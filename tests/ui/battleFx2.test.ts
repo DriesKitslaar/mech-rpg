@@ -86,6 +86,36 @@ describe('what a shot shows, and when', () => {
   });
 });
 
+describe('what is written over the field', () => {
+  test('what a convoy loses is no part of the stage: it is drawn only when what is over the field is asked for, and nothing else is then', () => {
+    const fx = fxOf();
+    fx.onEvent(shot());
+    fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
+    fx.update(PROJECTILE_MS + 1);
+    expect(fx.texts().sort()).toEqual(['-38', '-7']);
+    const said = (over?: boolean) => record((ctx) => fx.draw(ctx, false, over)).texts.map((t) => t.text);
+    const stage = record((ctx) => fx.draw(ctx));
+    expect(new Set(stage.texts.map((t) => t.text))).toEqual(new Set(['-38']));
+    expect(stage.rects.length).toBeGreaterThan(0);
+    expect(new Set(said(false))).toEqual(new Set(['-38']));
+    const over = record((ctx) => fx.draw(ctx, false, true));
+    expect(new Set(over.texts.map((t) => t.text))).toEqual(new Set(['-7']));
+    // Nothing but the figure: no flame, no burst, no tracer.
+    expect([over.rects, over.glows, over.shapes, over.strokes]).toEqual([[], [], [], []]);
+    // It starts under the strip in the top left corner, in the colour of something lost.
+    const figure = over.texts.at(-1)!;
+    expect(figure.x).toBe(30);
+    expect(figure.y).toBeLessThanOrEqual(34);
+    expect(figure.y).toBeGreaterThan(26);
+    expect(figure.color).toBe('#e04a2c');
+    // With nothing lost there is nothing to write.
+    const none = fxOf();
+    none.onEvent({ type: 'asset', hp: 12, lost: 0 });
+    none.update(1);
+    expect(none.texts()).toEqual([]);
+  });
+});
+
 describe('a machine going up', () => {
   const gone: BattleEvent = { type: 'unitDestroyed', unit: 'enemy-0' };
 

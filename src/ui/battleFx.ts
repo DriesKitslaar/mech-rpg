@@ -110,7 +110,8 @@ export type Fx = Timed & (
   | { kind: 'burst'; at: Pt; size: number; color: string; style: BurstStyle }
   | { kind: 'sparks'; at: Pt; color: string }
   | { kind: 'steam'; at: Pt }
-  | { kind: 'text'; at: Pt; text: string; color: string }
+  /** A figure or a word. One that is `over` the field is written where the screen has it, not on the stage: it belongs to what is written along the field's top. */
+  | { kind: 'text'; at: Pt; text: string; color: string; over?: true }
   | { kind: 'slash'; at: Pt; dir: number; color: string }
   | { kind: 'shield'; at: Pt; dir: number; aim: Pt }
   | { kind: 'gather'; at: Pt; color: string }
@@ -142,8 +143,8 @@ export class BattleFx {
     this.effects.push({ ...fx, start: this.now + delay, dur } as Fx);
   }
 
-  private say(delay: number, at: Pt, text: string, color: string): void {
-    this.add(delay, TEXT_MS, { kind: 'text', at: { x: at.x, y: at.y - 10 }, text, color });
+  private say(delay: number, at: Pt, text: string, color: string, over = false): void {
+    this.add(delay, TEXT_MS, { kind: 'text', at: { x: at.x, y: at.y - 10 }, text, color, ...(over ? { over: true as const } : {}) });
   }
 
   /** Shakes the whole field by up to `amount` pixels for `dur`, starting after `delay`. */
@@ -346,7 +347,8 @@ export class BattleFx {
         break;
       }
       case 'asset':
-        if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger);
+        // What is being guarded is no machine on the field: what it loses is written under the strip that names it, on the screen.
+        if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger, true);
         break;
       case 'recover':
       case 'turnStart':
@@ -416,9 +418,13 @@ export class BattleFx {
     return { dx: px(dx), dy: px(dy), lift: px(lift), flash, alpha, glare, trail: px(trail), trailY: px(trailY) };
   }
 
-  /** Draws what is solid of every effect that is playing: flame, tracers, fire, rings, sparks, smoke, figures. */
-  draw(ctx: CanvasRenderingContext2D, calm = false): void {
-    for (const { fx, p } of this.active()) paintFx(ctx, fx, p, calm);
+  /**
+   * Draws what is solid of every effect that is playing: flame, tracers, fire, rings, sparks, smoke, figures.
+   * That is what is on the stage, which a camera moves and a blow throws. With `over`, what is written over
+   * the field instead: that is drawn where the screen has it, after the field is done.
+   */
+  draw(ctx: CanvasRenderingContext2D, calm = false, over = false): void {
+    for (const { fx, p } of this.active()) if ((fx.kind === 'text' && fx.over === true) === over) paintFx(ctx, fx, p, calm);
   }
 
   /** The light that everything playing throws at this moment, for the screen to add over the field. */

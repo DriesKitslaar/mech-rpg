@@ -14,7 +14,7 @@ import { soundsForEvent } from '../platform/audio';
 import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
-import { Camera, applyView, atHome, seenBy, type View } from './camera';
+import { Camera, HOME, applyView, atHome, seenBy, type View } from './camera';
 import { MECH_BOX, VIEWS, dropOf, muzzleOf, type MechView } from './mechLayout';
 import { HitStop } from './hitStop';
 import { eyeLight, eyeOf } from './eyes';
@@ -111,6 +111,9 @@ export const RESULT_W = 190;
 export const RESULT_TALL = 26;
 export const RESULT_SMALL = 20;
 export const RESULT_WORD_Y = 25;
+
+/** How far a place's picture is drawn out beyond its edges while the field is thrown: further than the hardest blow throws it. */
+export const EDGE = 6;
 
 /** How a mech that is drawn from its parts is put on the canvas: `drawMech`, layer by layer, or `layMech`, whole. */
 type MechPainter = typeof drawMech;
@@ -294,6 +297,7 @@ export class BattleScreen {
       this.resultMs += realMs;
       this.finish = null;
       this.cutIn = null;
+      this.camera.settle();
     }
     this.fx.update(moved);
     this.camera.update(moved);
@@ -460,8 +464,7 @@ export class BattleScreen {
     ctx.fillStyle = '#101418';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
 
-    // The field, which a heavy blow shakes as a whole; the picture behind it is drawn a little
-    // larger so that no edge shows when it moves.
+    // The field, which a heavy blow shakes as a whole, the picture behind it with it.
     const { dx, dy } = this.opts.calm ? { dx: 0, dy: 0 } : this.fx.shake();
     this.syncTalk();
     const field = FIELD;
@@ -482,10 +485,16 @@ export class BattleScreen {
     if (close) lookClose(ctx, finish.at, field);
     else applyView(ctx, view);
     ctx.translate(dx, dy);
-    // Pixel for pixel while the field is still. Only while a blow moves it is the picture drawn a
-    // little larger, so that no edge shows: stretched, a pixel picture loses its grid.
-    if (dx === 0 && dy === 0) ctx.drawImage(bg.image, 0, top, LOGICAL_W, LOGICAL_H);
-    else ctx.drawImage(bg.image, -6, top - 6, LOGICAL_W + 12, LOGICAL_H + 12);
+    // Pixel for pixel, still or thrown: the picture goes where the field goes, as it is, so the floor stays under
+    // the feet that stand on it. So that no edge shows while it is thrown, its outermost rows and columns are drawn
+    // out a little way beyond it on every side.
+    ctx.drawImage(bg.image, 0, top, LOGICAL_W, LOGICAL_H);
+    if (dx !== 0 || dy !== 0) {
+      ctx.drawImage(bg.image, 0, 0, 1, bg.h, -EDGE, top, EDGE, LOGICAL_H);
+      ctx.drawImage(bg.image, bg.w - 1, 0, 1, bg.h, LOGICAL_W, top, EDGE, LOGICAL_H);
+      ctx.drawImage(bg.image, 0, 0, bg.w, 1, -EDGE, top - EDGE, LOGICAL_W + 2 * EDGE, EDGE);
+      ctx.drawImage(bg.image, 0, bg.h - 1, bg.w, 1, -EDGE, top + LOGICAL_H, LOGICAL_W + 2 * EDGE, EDGE);
+    }
     // What the place adds to its picture: darker edges, its own lights, a haze over the ground. A hurried
     // screen has it standing still, as it is at the first moment.
     const calm = this.opts.calm === true;
@@ -529,9 +538,8 @@ export class BattleScreen {
     if (!this.opts.fast) drawGlows(ctx, this.lights(), calm, (finish && !calm ? MAX_LIGHTS / 2 : MAX_LIGHTS) - this.standing * weight);
     if (this.hitStop.flash > 0 && !this.opts.calm) {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.hitStop.flash.toFixed(2)})`;
-      // Over all that is in view.
-      if (seen) ctx.fillRect(seen.left, seen.top, seen.width, seen.height);
-      else ctx.fillRect(0, FIELD_Y, LOGICAL_W, PANEL_Y - FIELD_Y);
+      // Over the field: a camera that is pushed in on a blow has a part of the field in view, and nothing else.
+      ctx.fillRect(0, FIELD_Y, LOGICAL_W, PANEL_Y - FIELD_Y);
     }
     ctx.restore();
 
@@ -546,6 +554,9 @@ export class BattleScreen {
       drawLetterbox(ctx, letterbox(finish.real, finish.field), field);
     } else {
       this.drawObjective(ctx);
+      // What happens to what the battle is about is written by the strip that names it: on the screen, wherever the
+      // camera is and however the field is thrown.
+      this.fx.draw(ctx, calm, true);
       this.drawGround(ctx);
       this.drawDrive(ctx);
       this.drawRadio(ctx);
@@ -569,7 +580,9 @@ export class BattleScreen {
    * the way down the picture while the banner is up, a push towards a blow, or home.
    */
   private view(): View {
-    if (this.finish && this.flow.phase !== 'result' && !this.opts.calm) return { x: this.finish.at.x, y: this.finish.at.y, zoom: FINISH_ZOOM };
+    // From the very frame its result is up: whatever push was going on or still to come is not seen.
+    if (this.flow.phase === 'result') return HOME;
+    if (this.finish && !this.opts.calm) return { x: this.finish.at.x, y: this.finish.at.y, zoom: FINISH_ZOOM };
     return this.intro > 0 ? this.camera.view(1 - this.intro / this.introTotal) : this.camera.view();
   }
 

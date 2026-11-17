@@ -1,4 +1,4 @@
-import { drawLights, wide, type Glow } from './light';
+import { drawGlow, drawLights, keptLights, wide, type Glow } from './light';
 
 /**
  * What makes a place more than a picture. Every background has lamps, signs or fire in it; here
@@ -190,10 +190,17 @@ export function drawAmbience(
     drawVignette(ctx, view.left, view.top, view.width, view.height);
     // A picture that is not where the screen is shows its lowest part: what glows there is seen too.
     const lights = placeLights(background, clockMs, calm, !!lie);
-    const seen = !lie ? lights : lights
-      .map((light) => ({ ...light, y: light.y + lie.shift }))
-      .filter((light) => light.y + light.r > view.top && light.y - light.r < view.top + view.height);
-    drawLights(ctx, seen, calm ? 0.5 : 1);
+    if (!lie) drawLights(ctx, lights, calm ? 0.5 : 1);
+    else {
+      const within = (light: Glow, top: number, height: number): boolean => light.y + light.r > top && light.y - light.r < top + height;
+      const moved = lights.map((light) => ({ ...light, y: light.y + lie.shift }));
+      // Where there is to be less light, which lights are lit is settled by the field as it stands, not by where the
+      // camera is: half of those the field shows, and half of the others. A camera that moves then only brings lights
+      // into view and takes them out of it: none goes out, and none comes on, while it is being looked at.
+      const shown = moved.filter((light) => within(light, field.top, field.height));
+      const lit = new Set([...keptLights(shown), ...keptLights(moved.filter((light) => !shown.includes(light)))]);
+      for (const light of moved) if (lit.has(light) && within(light, view.top, view.height)) drawGlow(ctx, light, calm ? 0.5 : 1);
+    }
     if (place?.haze) drawHaze(ctx, lie ? { ...place.haze, y: lie.far } : place.haze, clockMs, field.width, 0.7);
     return;
   }

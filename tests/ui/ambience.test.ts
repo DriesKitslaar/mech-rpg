@@ -5,6 +5,7 @@ import SPRITES from '../../src/content/sprites.json';
 import { AMBIENCE, LIGHT_ALPHA, ambienceFor, drawAmbience, lightLevel, placeLights, type LightKind } from '../../src/ui/ambience';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
+import { setDetail } from '../../src/ui/light';
 import { FIELD_Y, HERO_FEET, PANEL_Y, horizonOf, pictureTop, placeFor } from '../../src/ui/stage';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { EMBER_LIGHTS, GROUND_STRIP, LIGHTNING_ALPHA, LIGHTNING_MS, SKY_ALPHA, SPLASHES, WEATHER, drawWeatherExtras, lightning } from '../../src/ui/weather';
@@ -135,6 +136,61 @@ describe('a place, as it is drawn', () => {
     expect(edge(FIELD.top - 145 - 35)).toBe(false);
     expect(edge(FIELD.top + FIELD.height - 145 + 35 - 1)).toBe(true);
     expect(edge(FIELD.top + FIELD.height - 145 + 35)).toBe(false);
+  });
+
+  describe('where there is to be less light', () => {
+    afterEach(() => setDetail(2));
+
+    test('which lamps are lit is settled by the field as it stands: none goes out or comes on while a camera has it in view', () => {
+      setDetail(1);
+      const within = (l: { y: number; r: number }, top: number, height: number): boolean => l.y + l.r > top && l.y - l.r < top + height;
+      const key = (l: { x: number; y: number; r: number }): string => `${l.x},${l.y},${l.r}`;
+      /** Lamps a camera can bring into view that stay dark, and lamps that are lit though the field as it stands does not show them. */
+      let dark = 0;
+      let beyond = 0;
+      for (const bg of Object.keys(AMBIENCE)) {
+        const lie = { shift: pictureTop(placeFor(bg)), far: 0, near: 0 };
+        const all = [...AMBIENCE[bg].lights, ...(AMBIENCE[bg].low ?? [])].map((l) => ({ x: l.x, y: l.y + lie.shift, r: l.r }));
+        expect(new Set(all.map(key)).size, bg).toBe(all.length);
+        const litIn = (seen?: { left: number; top: number; width: number; height: number }): Set<string> =>
+          new Set(record((ctx) => drawAmbience(ctx, bg, 1000, 'behind', FIELD, false, { ...lie, ...(seen ? { seen } : {}) })).glows.filter(isLight).map(key));
+        // With the camera at home: the larger half of what the field shows, as it was before there was a camera.
+        const home = all.filter((l) => within(l, FIELD.top, FIELD.height));
+        const atHome = litIn();
+        expect(atHome.size, bg).toBe(Math.ceil(home.length / 2));
+        const kept = home.filter((l) => atHome.has(key(l)));
+        expect(kept, bg).toHaveLength(atHome.size);
+        expect(Math.min(...kept.map((l) => l.r)), bg).toBeGreaterThanOrEqual(Math.max(0, ...home.filter((l) => !atHome.has(key(l))).map((l) => l.r)));
+        // The camera, everywhere it can look: from the top of the picture to its bottom, pushed in and not.
+        const states = new Map<string, Set<boolean>>();
+        for (const height of [FIELD.height, FIELD.height / 1.15]) {
+          for (let top = lie.shift; top + height <= lie.shift + 270; top += 3) {
+            const now = litIn({ left: 0, top, width: FIELD.width, height });
+            const inView = all.filter((l) => within(l, top, height));
+            // Nothing is lit that the camera does not have in view.
+            for (const k of now) expect(inView.map(key), `${bg}, looking from ${top}`).toContain(k);
+            for (const l of inView) states.set(key(l), (states.get(key(l)) ?? new Set<boolean>()).add(now.has(key(l))));
+          }
+        }
+        // Every lamp of the place came into view somewhere, and each was the same wherever it was seen: lit, or not.
+        expect(states.size, bg).toBe(all.length);
+        for (const [k, seenAs] of states) expect([...seenAs], `${bg} ${k}`).toHaveLength(1);
+        for (const k of atHome) expect([...states.get(k)!], `${bg} ${k}`).toEqual([true]);
+        dark += [...states.values()].filter((seenAs) => seenAs.has(false)).length;
+        beyond += [...states].filter(([k, seenAs]) => seenAs.has(true) && !home.some((l) => key(l) === k)).length;
+      }
+      expect(dark).toBeGreaterThan(20);
+      expect(beyond).toBeGreaterThan(3);
+    });
+
+    test('with all the light there is, every lamp a camera has in view is lit', () => {
+      const lie = { shift: pictureTop(placeFor('bg-sluice')), far: 0, near: 0 };
+      const all = [...AMBIENCE['bg-sluice'].lights, ...AMBIENCE['bg-sluice'].low!];
+      for (let top = lie.shift; top + FIELD.height <= lie.shift + 270; top += 7) {
+        const lit = record((ctx) => drawAmbience(ctx, 'bg-sluice', 1000, 'behind', FIELD, false, { ...lie, seen: { left: 0, top, width: FIELD.width, height: FIELD.height } })).glows.filter(isLight);
+        expect(lit, `looking from ${top}`).toHaveLength(all.filter((l) => l.y + lie.shift + l.r > top && l.y + lie.shift - l.r < top + FIELD.height).length);
+      }
+    });
   });
 
   test('its haze lies along the two lines it is given: far off behind the units, near in front of them', () => {

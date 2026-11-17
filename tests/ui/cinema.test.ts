@@ -574,14 +574,15 @@ describe('the staged moments in a battle', () => {
     expect(focus.y).toBeLessThanOrEqual(137);
     screen.update(200);
     const close = page();
-    // Twice its size; while a blast is shaking the field the picture is drawn a few pixels larger still, as it always is.
+    // Twice its size, and no more than that while a blast is shaking the field: it is thrown as it is, by twice the
+    // few pixels the blast throws the field.
     const bg = background(close);
-    expect([620, 644]).toContain(bg.w);
-    expect([540, 564]).toContain(bg.h);
-    if (bg.w === 620) {
-      expect(bg.x).toBe(155 - focus.x * 2);
-      expect(bg.y).toBe(14 + 82 - focus.y * 2);
-    }
+    expect([bg.w, bg.h]).toEqual([620, 540]);
+    // Where the close look puts it: the point it looks at in the middle of the field, the picture's top as far above it as it is.
+    const thrown = { x: bg.x - (155 - focus.x * 2), y: bg.y - (14 + 82 - focus.y * 2 + pictureTop(PLAIN) * 2) };
+    expect(Math.abs(thrown.x)).toBeLessThanOrEqual(10);
+    expect(Math.abs(thrown.y)).toBeLessThanOrEqual(10);
+    expect([Math.abs(thrown.x % 2), Math.abs(thrown.y % 2)]).toEqual([0, 0]);
     // Nothing of the field at twice its size is let out over the bar along the top or the panel underneath.
     expect(bg.clip).toEqual({ x: 0, y: 14, w: 310, h: 164 });
     const bars = close.rects.filter((r) => r.color === BARS);
@@ -635,7 +636,7 @@ describe('the staged moments in a battle', () => {
     // The field is held for 160, and then its clock runs at half speed for the 500 the look lasts on it.
     expect(ms).toBeGreaterThanOrEqual(FINISH_HOLD_MS + FINISH_FIELD_MS / FINISH_SLOW - 16);
     expect(ms).toBeLessThanOrEqual(FINISH_HOLD_MS + FINISH_FIELD_MS / FINISH_SLOW + 48);
-    expect(background(page()).w).toBeLessThanOrEqual(322);
+    expect(background(page()).w).toBe(310);
     expect(page().rects.filter((r) => r.color === BARS)).toEqual([]);
     // Now what is next is said after the usual wait, and the battle is over.
     expect(flow.phase).toBe('animating');
@@ -756,7 +757,7 @@ describe('the staged moments in a battle', () => {
       expect(screen.motion.finish).toBeNull();
     }
     const after = page();
-    expect(background(after).w).toBeLessThanOrEqual(322);
+    expect(background(after).w).toBe(310);
     expect(after.rects.filter((r) => r.color === BARS)).toEqual([]);
     expect(played.filter((p) => p.name === 'unitDestroyed')).toHaveLength(1);
   });
@@ -836,7 +837,7 @@ describe('the staged moments in a battle', () => {
       expect(screen.motion.finish).toBeNull();
       const after = page();
       expect(after.rects.filter((r) => r.color === BAND || r.color === BARS)).toEqual([]);
-      expect(background(after).w).toBeLessThanOrEqual(322);
+      expect(background(after).w).toBe(310);
       // What was thrown up has come down: only what a wreck keeps smoking with is left.
       expect(screen.motion.particles).toBeLessThan(40);
     }
@@ -849,7 +850,7 @@ describe('the staged moments in a battle', () => {
     expect(screen.motion.finish).not.toBeNull();
     screen.onInput('confirm');
     expect(screen.motion.finish).toBeNull();
-    expect(background(page()).w).toBeLessThanOrEqual(322);
+    expect(background(page()).w).toBe(310);
     for (let i = 0; i < 10 && flow.phase !== 'result'; i++) { screen.onInput('confirm'); screen.update(16); }
     expect(flow.phase).toBe('result');
   });

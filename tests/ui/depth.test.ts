@@ -245,6 +245,19 @@ describe('how what is fired is painted', () => {
     const heads = lines(late, '#ffffff');
     expect(heads.some((r) => r.w === 1 && r.h === 1)).toBe(true);
     expect(lines(late, '#ffe9a8').some((r) => r.w === 1 && r.h === 1)).toBe(true);
+    // Whatever its size, a head lies on the end of its own line: a head of one pixel is a pixel of the line, not the one beside it.
+    for (const p of [0.12, 0.3, 0.5, 0.7, 0.86, 0.95]) {
+      for (const grow of [[NEAR_SIZE, FAR_SIZE], [FAR_SIZE, NEAR_SIZE], [1, 1], [FAR_SIZE, FAR_SIZE]] as [number, number][]) {
+        const page = tracer(grow, p);
+        const body = lines(page, '#ffe9a8');
+        const tips = lines(page, '#ffffff');
+        expect(tips.length, `${grow} at ${p}`).toBeGreaterThan(0);
+        for (const tip of tips) {
+          const on = body.filter((r) => r.x < tip.x + tip.w && tip.x < r.x + r.w && r.y < tip.y + tip.h && tip.y < r.y + r.h);
+          expect(on.length, `${grow} at ${p}: a head ${tip.w} wide at ${tip.x},${tip.y}`).toBeGreaterThan(0);
+        }
+      }
+    }
     // At life size all the way, as it was: one thick, heads of two.
     for (const p of [0.12, 0.5, 0.86]) {
       const plain = tracer([1, 1], p);

@@ -1,14 +1,15 @@
-import { createBattle, type BattleOptions, type BattleState } from '../../src/core/battle';
+import { createBattle, type BattleEvent, type BattleOptions, type BattleState } from '../../src/core/battle';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { AMBIENCE } from '../../src/ui/ambience';
 import { BattleFlow } from '../../src/ui/battleFlow';
-import { BattleScreen, INTRO_MS, PUSH, WARNING_MS } from '../../src/ui/battleScreen';
-import { HOME, MAX_PUSH, PUSH_MS, TRAVEL_SHARE, atHome, openingView } from '../../src/ui/camera';
+import { BattleScreen, EDGE, INTRO_MS, PUSH, WARNING_MS } from '../../src/ui/battleScreen';
+import { HOME, MAX_PUSH, PUSH_MS, TRAVEL_SHARE, atHome, openingView, seenBy } from '../../src/ui/camera';
 import { FINISH_ZOOM } from '../../src/ui/cinema';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { FIELD_Y, PANEL_Y, pictureTop, placeFor } from '../../src/ui/stage';
 import { LIGHTNING_MS, lightning } from '../../src/ui/weather';
+import { COLORS } from '../../src/ui/widgets';
 import { onStage, record, type Drawn, type Glowed, type Pictured } from '../helpers/canvas';
 
 /**
@@ -317,12 +318,21 @@ describe('when a blow lands', () => {
     held.screen.update(16);
     expect(held.screen.motion.flash).toBeGreaterThan(0);
     expect(held.screen.motion.view.zoom).toBeGreaterThan(1.05);
-    // It has turned up the picture, past the top of the stage's own field: what is seen is not inside that field.
-    expect(held.screen.motion.view.y - (PANEL_Y - FIELD_Y) / 2 / held.screen.motion.view.zoom).toBeLessThan(FIELD_Y);
+    // It has turned up and to the right as far as there is field, and what it has in view is a part of the field.
+    const view = seenBy(held.screen.motion.view);
+    expect(view.top).toBeCloseTo(FIELD_Y, 6);
+    expect(view.left + view.width).toBeCloseTo(310, 6);
     const flash = held.page();
-    const white = flash.rects.filter((r) => /^rgba\(255, 255, 255, 0\.\d+\)$/.test(r.color) && r.w > 200);
-    expect(white).toHaveLength(1);
-    whole(white[0]);
+    const at = flash.rects.findIndex((r) => /^rgba\(255, 255, 255, 0\.\d+\)$/.test(r.color) && r.w > 200);
+    const white = flash.rects[at];
+    expect(flash.rects.filter((r) => /^rgba\(255, 255, 255, 0\.\d+\)$/.test(r.color) && r.w > 200)).toHaveLength(1);
+    // The white is the stage's whole field, drawn as the camera has it: larger than the screen's field, kept inside it, and so all of it.
+    expect(flash.kept.rects[at]).toEqual({ x: 0, y: FIELD_Y, w: 310, h: PANEL_Y - FIELD_Y });
+    expect(white.x).toBeLessThanOrEqual(1e-6);
+    expect(white.y).toBeLessThanOrEqual(FIELD_Y + 1e-6);
+    expect(white.x + white.w).toBeGreaterThanOrEqual(310 - 1e-6);
+    expect(white.y + white.h).toBeGreaterThanOrEqual(PANEL_Y - 1e-6);
+    whole(onStage(flash, held.screen.motion.view).rects[at]);
     // A stroke of lightning that falls while a shot lands.
     const storm = screenOf(fight(['recon-drone', 'tank', 'gun-turret']));
     storm.ready();
@@ -403,30 +413,147 @@ describe('when a blow lands', () => {
 });
 
 describe('a field that is shaken', () => {
-  test('has its picture drawn a little larger round where it stands, so that no edge shows: where the band with the floor is, not at the top of the screen', () => {
-    const { flow, screen, page, ready, fire } = screenOf(fight(['recon-drone', 'tank'], [0]));
+  test('takes its picture with it as it is, so the floor stays under the feet on it; the picture\'s edges are drawn out so that none shows', () => {
+    for (const background of [NEON, 'bg-sluice', 'bg-simulator']) {
+      const { flow, screen, page, ready, fire } = screenOf(fight(['recon-drone', 'tank'], [0]), { background });
+      ready();
+      const place = placeFor(background);
+      const legsOf = (drawn: Drawn): Pictured => drawn.images.filter((image) => idOf(image).startsWith('legs-')).at(-1)!;
+      const tankOf = (drawn: Drawn): Pictured => drawn.images.filter((image) => idOf(image) === 'enemy-tank').at(-1)!;
+      const rest = onStage(page(), screen.motion.view);
+      expect(rest.images.filter((image) => idOf(image) === background)).toHaveLength(1);
+      fire();
+      let shaken = 0;
+      const thrown = new Set<string>();
+      for (let i = 0; i < 200 && flow.phase !== 'action'; i++) {
+        screen.update(16);
+        // The field as it stands on the stage: the camera pushes in on the same blow.
+        const drawn = onStage(page(), screen.motion.view);
+        const [picture, ...edges] = drawn.images.filter((image) => idOf(image) === background);
+        // The picture itself: all of it, at its own size, whatever happens.
+        expect([picture.w, picture.h, picture.from], background).toEqual([310, 270, undefined]);
+        const by = { x: picture.x, y: picture.y - pictureTop(place) };
+        if (by.x === 0 && by.y === 0) { expect(edges, background).toEqual([]); continue; }
+        shaken++;
+        thrown.add(`${Math.sign(by.x)},${Math.sign(by.y)}`);
+        // Thrown by the few whole pixels the blow throws the field.
+        expect([Number.isInteger(by.x), Number.isInteger(by.y)], background).toEqual([true, true]);
+        expect(Math.max(Math.abs(by.x), Math.abs(by.y)), background).toBeLessThan(EDGE);
+        // What stands on the floor is thrown exactly as far as the floor is: nothing slides. (A machine that is hit is
+        // shaken by itself as well, two pixels either way: the tank is not hit here.)
+        expect([legsOf(drawn).x - legsOf(rest).x, legsOf(drawn).y - legsOf(rest).y], background).toEqual([by.x, by.y]);
+        expect([tankOf(drawn).x - tankOf(rest).x, tankOf(drawn).y - tankOf(rest).y], background).toEqual([by.x, by.y]);
+        // Round it: its first and last columns and rows, each drawn out EDGE pixels beyond it, corners included.
+        const top = pictureTop(place) + by.y;
+        expect(edges.map((edge) => [edge.from, edge.x, edge.y, edge.w, edge.h]), background).toEqual([
+          [{ x: 0, y: 0, w: 1, h: 270 }, by.x - EDGE, top, EDGE, 270],
+          [{ x: 309, y: 0, w: 1, h: 270 }, by.x + 310, top, EDGE, 270],
+          [{ x: 0, y: 0, w: 310, h: 1 }, by.x - EDGE, top - EDGE, 310 + 2 * EDGE, EDGE],
+          [{ x: 0, y: 269, w: 310, h: 1 }, by.x - EDGE, top + 270, 310 + 2 * EDGE, EDGE],
+        ]);
+        // So nothing of the field is left bare, on any side.
+        expect(by.x - EDGE, background).toBeLessThanOrEqual(0);
+        expect(by.x + 310 + EDGE, background).toBeGreaterThanOrEqual(310);
+        expect(top - EDGE, background).toBeLessThanOrEqual(FIELD_Y);
+        expect(top + 270 + EDGE, background).toBeGreaterThanOrEqual(PANEL_Y);
+      }
+      // A machine going up shakes the field for a good few frames, every which way.
+      expect(shaken, background).toBeGreaterThan(8);
+      expect(thrown.size, background).toBeGreaterThanOrEqual(3);
+    }
+  });
+});
+
+describe('a battle that is over', () => {
+  test('is not pushed in on: from the very frame its result is up the camera is at home, and no push comes after', () => {
+    const { flow, screen, page, picture, ready, fire } = screenOf(fight(['gun-turret'], [0]));
     ready();
     fire();
-    const place = placeFor(NEON);
-    let shaken = 0;
-    for (let i = 0; i < 200 && flow.phase !== 'action'; i++) {
+    // Pressed on to the result at once: the push of the shot that ended it has not begun, or is on its way in.
+    for (let i = 0; i < 30 && flow.phase !== 'result'; i++) screen.onInput('confirm');
+    expect(flow.phase).toBe('result');
+    const camera = (screen as unknown as { camera: { busy: boolean; push(at: { x: number; y: number }, amount: number, delay?: number): void } }).camera;
+    // What is asked of the camera from here on: the shot's push and the wreck's are asked for as the screen catches up.
+    const asked: number[] = [];
+    const push = camera.push.bind(camera);
+    camera.push = (at, amount, delay) => { asked.push(amount); push(at, amount, delay); };
+    for (let i = 0; i < 80; i++) {
+      // Drawn before the screen has been told that time has passed, and in every frame after.
+      expect(screen.motion.view, `frame ${i}`).toBe(HOME);
+      // The picture at its own size and kept inside nothing: the stage is the screen. (The machine still goes up, and
+      // that throws the field a few pixels: a blow is not the camera.)
+      const drawn = picture(page());
+      expect(drawn, `frame ${i}`).toMatchObject({ w: 310, h: 270, clip: null });
+      expect(Math.max(Math.abs(drawn.x), Math.abs(drawn.y - pictureTop(placeFor(NEON)))), `frame ${i}`).toBeLessThan(EDGE);
       screen.update(16);
-      // The field as it stands on the stage: the camera pushes in on the same blow.
-      const picture = onStage(page(), screen.motion.view).images[0];
-      if (picture.w === 310) { expect([picture.x, picture.y]).toEqual([0, pictureTop(place)]); continue; }
-      shaken++;
-      // Twelve wider and taller, six out on every side, and thrown by the few pixels the blow throws the field.
-      expect([picture.w, picture.h]).toEqual([322, 282]);
-      expect(Math.abs(picture.x + 6)).toBeLessThanOrEqual(5);
-      expect(Math.abs(picture.y - (pictureTop(place) - 6))).toBeLessThanOrEqual(5);
-      // No edge of it shows in the field.
-      expect(picture.x).toBeLessThanOrEqual(0);
-      expect(picture.x + picture.w).toBeGreaterThanOrEqual(310);
-      expect(picture.y).toBeLessThanOrEqual(FIELD_Y);
-      expect(picture.y + picture.h).toBeGreaterThanOrEqual(PANEL_Y);
     }
-    // A machine going up shakes the field for a good few frames.
-    expect(shaken).toBeGreaterThan(8);
+    expect(asked.length).toBeGreaterThan(0);
+    expect(Math.max(...asked)).toBe(PUSH.wreck);
+    // And none of them is left waiting.
+    expect(camera.busy).toBe(false);
+  });
+});
+
+describe('what a convoy loses', () => {
+  const guarded = () => {
+    const made = screenOf(fight(['recon-drone'], [], { objective: { type: 'protect', name: 'Ore Train', hp: 12 } }));
+    made.ready();
+    const inner = made.screen as unknown as {
+      fx: { onEvent(event: BattleEvent): void; jolt(delay: number, amount: number, dur: number): void; shake(): { dx: number; dy: number } };
+      camera: { push(at: { x: number; y: number }, amount: number): void };
+    };
+    /** The figure itself, in its own colour (it has a dark edge drawn round it first), and what it was kept inside. */
+    const figure = (drawn: Drawn) => {
+      const at = drawn.texts.findIndex((t) => t.text === '-7' && t.color === COLORS.danger);
+      return at < 0 ? null : { x: drawn.texts[at].x, y: drawn.texts[at].y, size: drawn.texts[at].size, kept: drawn.kept.texts[at], after: drawn.order.findIndex((step) => step.kind === 'text' && step.at === at) };
+    };
+    return { ...made, inner, figure };
+  };
+
+  test('is written by the strip that names it, on the screen: over the strip, under nothing of the field', () => {
+    const { screen, page, inner, figure } = guarded();
+    expect(figure(page())).toBeNull();
+    inner.fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
+    screen.update(16);
+    const drawn = page();
+    const shown = figure(drawn)!;
+    // Under the strip in the top left corner, rising into it; kept inside nothing.
+    expect(shown.x).toBe(30);
+    expect(shown.y).toBeGreaterThan(FIELD_Y + 12);
+    expect(shown.y).toBeLessThanOrEqual(34);
+    expect(shown.kept).toBeNull();
+    // The strip that says what is guarded is drawn before it: the figure lies over the strip when it rises into it.
+    const strip = drawn.order.findIndex((step) => step.kind === 'text' && drawn.texts[step.at].text.startsWith('ORE TRAIN'));
+    expect(strip).toBeGreaterThanOrEqual(0);
+    expect(shown.after).toBeGreaterThan(strip);
+  });
+
+  test('stays where it is while the camera is pushed in and a blow throws the field', () => {
+    const still = guarded();
+    still.inner.fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
+    still.screen.update(64);
+    const moved = guarded();
+    moved.inner.fx.onEvent({ type: 'asset', hp: 5, lost: 7 });
+    moved.inner.camera.push({ x: 300, y: 20 }, 0.12);
+    moved.inner.fx.jolt(0, 5, 400);
+    moved.screen.update(64);
+    expect(moved.screen.motion.view.zoom).toBeGreaterThan(1.05);
+    expect(moved.screen.motion.view.x).toBeGreaterThan(HOME.x + 5);
+    const thrown = moved.inner.fx.shake();
+    expect(Math.abs(thrown.dx) + Math.abs(thrown.dy)).toBeGreaterThan(0);
+    const [a, b] = [still.figure(still.page())!, moved.figure(moved.page())!];
+    expect([b.x, b.y, b.size, b.kept]).toEqual([a.x, a.y, a.size, null]);
+    // What is hit on the field is another matter: its figure is on the stage, and goes where the camera has the stage.
+    const hit = guarded();
+    hit.inner.camera.push({ x: 300, y: 20 }, 0.12);
+    hit.fire();
+    let inField = 0;
+    for (let i = 0; i < 60; i++) {
+      hit.screen.update(16);
+      const drawn = hit.page();
+      drawn.texts.forEach((text, at) => { if (/^(-\d+|MISS)$/.test(text.text) && drawn.kept.texts[at]) inField++; });
+    }
+    expect(inField).toBeGreaterThan(0);
   });
 });
 

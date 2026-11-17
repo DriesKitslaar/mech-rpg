@@ -119,7 +119,9 @@ function projectile(ctx: CanvasRenderingContext2D, fx: Extract<Fx, { kind: 'proj
       ctx.globalAlpha = 1;
       pixelLine(ctx, { x: mid.x, y: mid.y + dy }, { x: head.x, y: head.y + dy }, color, thick);
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(px(head.x) - 1, px(head.y + dy) - 1, spark, spark);
+      // The head lies on the end of its line: a head of two or three round it, a head of one on it.
+      const round = spark === 1 ? 0 : 1;
+      ctx.fillRect(px(head.x) - round, px(head.y + dy) - round, spark, spark);
     }
   }
 }
