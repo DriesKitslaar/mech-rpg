@@ -3,12 +3,12 @@ import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
-import { drawLights } from './light';
+import { drawAll } from './light';
 import { drawWord, fitTall, wordLevel, wordLights, wordTop } from './signType';
 import { drawStill, stillWeather } from './stills';
 import { Typewriter } from './typewriter';
 import { THUNDER_AFTER_MS, strokeBegan } from './weather';
-import { COLORS, LINE, charsFor, drawOutlined, drawText, wrap } from './widgets';
+import { COLORS, LINE, OVER_PICTURE, charsFor, drawOutlined, drawText, wrap } from './widgets';
 
 /** Characters of a scene's text that fit on a line, and the lines that fit on the page. */
 export const SCENE_CHARS = charsFor(LOGICAL_W - 40);
@@ -135,7 +135,7 @@ export class SceneScreen implements Screen {
     }
     const calm = this.app.settings.calm === true;
     const level = this.app.deps.fast ? 1 : wordLevel(this.clock, calm);
-    drawLights(ctx, wordLights(title, LOGICAL_W / 2, TITLE_Y, tall, 'neon', level), calm ? 0.5 : 1);
+    drawAll(ctx, wordLights(title, LOGICAL_W / 2, TITLE_Y, tall, 'neon', level), calm ? 0.5 : 1);
     drawWord(ctx, title, LOGICAL_W / 2, wordTop(TITLE_Y, tall), { tall, metal: 'neon', level });
   }
 
@@ -150,7 +150,7 @@ export class SceneScreen implements Screen {
     ctx.fillStyle = `rgba(8, 8, 20, ${(VEIL_CLEAR + (VEIL_WORDS - VEIL_CLEAR) * shade).toFixed(3)})`;
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
 
-    if (scene.heading) drawOutlined(ctx, scene.heading, LOGICAL_W / 2, 18, { align: 'center', color: COLORS.dim });
+    if (scene.heading) drawOutlined(ctx, scene.heading, LOGICAL_W / 2, 18, { align: 'center', color: OVER_PICTURE });
     this.drawTitle(ctx);
     // Not a word before the shade is up: text that is all there at once would otherwise sit on the bare picture.
     if (!this.wordsUp) return;
@@ -167,7 +167,7 @@ export class SceneScreen implements Screen {
       y += 8;
     }
     if (this.writer.done && (this.app.deps.fast || Math.floor(this.clock / 400) % 2 === 0)) {
-      drawOutlined(ctx, scene.ending ? STRINGS.ending.continue : STRINGS.scene.continue, LOGICAL_W / 2, 250, { align: 'center', color: COLORS.dim });
+      drawOutlined(ctx, scene.ending ? STRINGS.ending.continue : STRINGS.scene.continue, LOGICAL_W / 2, 250, { align: 'center', color: OVER_PICTURE });
     }
   }
 }

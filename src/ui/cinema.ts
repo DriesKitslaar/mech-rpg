@@ -357,10 +357,11 @@ export function drawDefeat(ctx: CanvasRenderingContext2D, ms: number, field: Fie
     ctx.globalCompositeOperation = blend;
     ctx.globalAlpha = alpha;
   }
-  // Where the colour cannot be taken out (it is the costliest thing a result draws) the field is simply darker.
+  // Where the colour cannot be taken out (it is the costliest thing a result draws) the field is simply darker,
+  // and the red that closes in is left out with it: it lies over the whole field.
   ctx.fillStyle = `rgba(6, 4, 10, ${((wide() ? 0.3 : 0.55) * share).toFixed(3)})`;
   ctx.fillRect(0, field.top, field.width, field.height);
-  if (!soft()) return;
+  if (!wide()) return;
   const cx = field.width / 2;
   const cy = field.top + field.height / 2;
   const reach = Math.hypot(field.width, field.height) / 2;

@@ -76,14 +76,30 @@ export function chosenLights(glows: readonly Glow[], calm = false, most = MAX_LI
 }
 
 /**
- * Adds lights that belong to a place or a thing, as a set: all of them, each at `strength`. Where
- * there is to be less light the brightest half of the set is drawn, in the order they were given.
+ * The lights of a set that are drawn: all of them, or where there is to be less light half of them
+ * (rounded up), in the order they were given. The half is the largest, and of lights of one size
+ * the ones given first. A light's size does not change as it flickers or hums, where its brightness
+ * does: so the half is the same at every moment, and no light comes and goes with its own flicker.
  */
-export function drawLights(ctx: CanvasRenderingContext2D, glows: readonly Glow[], strength = 1): void {
+export function keptLights<T extends { r: number }>(glows: readonly T[]): T[] {
   const room = lightRoom(glows.length);
-  if (room <= 0) return;
-  const kept = room >= glows.length ? null : new Set([...glows].sort((a, b) => brightness(b) - brightness(a)).slice(0, room));
-  for (const glow of glows) if (!kept || kept.has(glow)) drawGlow(ctx, glow, strength);
+  if (room >= glows.length) return [...glows];
+  const largest = glows.map((_, i) => i).sort((a, b) => glows[b].r - glows[a].r || a - b).slice(0, room);
+  const kept = new Set(largest);
+  return glows.filter((_, i) => kept.has(i));
+}
+
+/** Adds lights that belong to a place, as a set: each at `strength`, and where there is to be less light the half of them that is kept. */
+export function drawLights(ctx: CanvasRenderingContext2D, glows: readonly Glow[], strength = 1): void {
+  for (const glow of keptLights(glows)) drawGlow(ctx, glow, strength);
+}
+
+/**
+ * Adds every one of these lights, each at `strength`: for a row of lights that is thinned where it
+ * is made (a sign's, a word's), so that what is left of it is still spread evenly along it.
+ */
+export function drawAll(ctx: CanvasRenderingContext2D, glows: readonly Glow[], strength = 1): void {
+  for (const glow of glows) drawGlow(ctx, glow, strength);
 }
 
 /** Adds the lights of a moment. A calm picture has them at half strength and none that covers the field. */

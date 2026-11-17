@@ -16,12 +16,15 @@ export const slotKey = (slot: number): string => (slot === 0 ? SAVE_KEY : `${SAV
 export const SETTINGS_KEY = 'ironwage-settings';
 /** Where what the handheld last managed is kept: it is a fact about the handheld, not about a game or a choice. */
 export const PACE_KEY = 'ironwage-pace';
+/** Lost chances are not counted beyond this. */
+export const MAX_TRIES = 99;
 /**
  * What was last found out about the handheld: how much light (2 all, 1 less, 0 none) it is to start with, how
  * many sessions ago that was found, and whether it is to be `held` there without being judged: that is so where
- * giving light up was found to gain nothing. A handheld that has all of its light and is judged has no hint.
+ * giving light up was found to gain nothing. `tries` is how often it has since been given a chance at the step
+ * above and lost it. A handheld that has all of its light and is judged has no hint.
  */
-export interface PaceHint { level: 0 | 1 | 2; runs: number; held?: true }
+export interface PaceHint { level: 0 | 1 | 2; runs: number; held?: true; tries?: number }
 
 /** The part of `localStorage` the game needs; injected so saving can be tested without a browser. */
 export interface KeyValueStore {
@@ -180,10 +183,11 @@ export class SaveFile {
       if (!raw) return null;
       const value: unknown = JSON.parse(raw);
       if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-      const { level, runs, held } = value as Record<string, unknown>;
+      const { level, runs, held, tries } = value as Record<string, unknown>;
       if ((level !== 0 && level !== 1 && level !== 2) || typeof runs !== 'number' || !Number.isInteger(runs) || runs < 0 || runs > 9999) return null;
       if ((held !== undefined && held !== true) || (level === 2 && held !== true)) return null;
-      return { level, runs, ...(held ? { held } : {}) };
+      if (tries !== undefined && (typeof tries !== 'number' || !Number.isInteger(tries) || tries < 1 || tries > MAX_TRIES)) return null;
+      return { level, runs, ...(held ? { held } : {}), ...(tries ? { tries } : {}) };
     } catch {
       return null;
     }

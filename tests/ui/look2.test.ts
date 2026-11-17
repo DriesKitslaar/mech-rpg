@@ -8,6 +8,7 @@ import { FIELD_LIGHT, MAX_LIGHTS } from '../../src/ui/light';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { EMBER_LIGHTS, LIGHTNING_MS } from '../../src/ui/weather';
 import { record, type Drawn, type Glowed } from '../helpers/canvas';
+import { eyesIn } from '../helpers/eyes';
 
 /**
  * The look of the field, where it meets a whole battle: what is left of machines that went up, what
@@ -285,16 +286,20 @@ describe('how many lights a frame holds', () => {
       }
       screen.update(16);
       if (i % 3) continue;
-      const lights = page().glows.filter(isLight);
+      const drawn = page();
+      const lights = drawn.glows.filter(isLight);
       // The place's lights are drawn twice: behind what stands on the field and never again. The weather's are the embers.
       const weather = lights.filter((g) => g.r === 7).length;
       expect(weather).toBeLessThanOrEqual(EMBER_LIGHTS);
+      // The eyes of the machines are apart from the sixteen: one for each that stands.
+      const eyes = eyesIn(drawn).length;
+      expect(eyes).toBeLessThanOrEqual(4);
       most = Math.max(most, lights.length);
-      own = Math.max(own, lights.length - place - weather);
+      own = Math.max(own, lights.length - place - weather - eyes);
     }
     expect(own).toBeLessThanOrEqual(MAX_LIGHTS);
     expect(own).toBeGreaterThan(6);
-    expect(most).toBeLessThanOrEqual(MAX_LIGHTS + place + EMBER_LIGHTS);
+    expect(most).toBeLessThanOrEqual(MAX_LIGHTS + place + EMBER_LIGHTS + 4);
     // Four machines stood in four places: that is how many wrecks there can be.
     expect(screen.motion.wrecks.length).toBeLessThanOrEqual(4);
   });

@@ -8,6 +8,7 @@ import { BLINK_EVERY_MS, BLINK_MS, EYES, EYE_ALPHA, eyeLevel, eyeLight, eyeOf } 
 import { MAX_LIGHTS, setDetail } from '../../src/ui/light';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { record, type Drawn, type Glowed } from '../helpers/canvas';
+import { eyesIn } from '../helpers/eyes';
 import { readPng } from '../helpers/png';
 
 /**
@@ -87,6 +88,15 @@ describe('where each machine\'s eye is', () => {
     for (const picture of dark) expect(EYES[picture].y, picture).toBeLessThan(manifest[picture].h * 0.45);
   });
 
+  test('the eyes that open on something dark have the colours they were given: a lamp\'s, a beacon\'s red, the cold of a visor', () => {
+    // Nothing in their pictures says what colour these are: they were chosen, and are held to what was chosen.
+    const dark = ['enemy-bailiff', 'enemy-stalker', 'enemy-juggernaut', 'boss-adjuster', 'enemy-carrier', 'enemy-bomb-crawler'];
+    expect(Object.fromEntries(dark.map((picture) => [picture, EYES[picture].color]))).toEqual({
+      'enemy-bailiff': '#ffcf5a', 'enemy-stalker': '#ff9a3c', 'enemy-juggernaut': '#cfe6ff',
+      'boss-adjuster': '#ffcf5a', 'enemy-carrier': '#eb22be', 'enemy-bomb-crawler': '#ff3030',
+    });
+  });
+
   test('a great machine\'s eye throws its light further than a small one\'s', () => {
     const bosses = Object.keys(EYES).filter((picture) => picture.startsWith('boss-'));
     expect(bosses).toHaveLength(6);
@@ -120,6 +130,25 @@ describe('how open an eye is', () => {
       expect(blinks, `machine ${i}`).toBeLessThanOrEqual(14);
       expect(narrow * 10, `machine ${i}`).toBeGreaterThanOrEqual(blinks * BLINK_MS - 20 * blinks);
       expect(narrow * 10, `machine ${i}`).toBeLessThanOrEqual(blinks * BLINK_MS + 20 * blinks);
+    }
+  });
+
+  test('an eye that is awake swells and fades slowly: from one frame to the next it hardly changes, but for the blink', () => {
+    for (const i of [0, 1, 2]) {
+      // A calm picture has no blink: there the swell is all there is.
+      let most = 0;
+      let jumps = 0;
+      const seen = new Set<number>();
+      for (let ms = 16; ms < 30_000; ms += 16) {
+        most = Math.max(most, Math.abs(eyeLevel(ms, i, 'awake', true) - eyeLevel(ms - 16, i, 'awake', true)));
+        seen.add(Math.round(eyeLevel(ms, i, 'awake', true) * 50));
+        if (Math.abs(eyeLevel(ms, i, 'awake') - eyeLevel(ms - 16, i, 'awake')) > 0.01) jumps++;
+      }
+      expect(most, `machine ${i}`).toBeLessThan(0.01);
+      expect(seen.size, `machine ${i}`).toBeGreaterThanOrEqual(10);
+      // With blinks: each is two jumps, shut and open again, and there are six or seven in half a minute.
+      expect(jumps, `machine ${i}`).toBeGreaterThanOrEqual(10);
+      expect(jumps, `machine ${i}`).toBeLessThanOrEqual(16);
     }
   });
 
@@ -252,6 +281,10 @@ describe('the eyes of the machines on the field', () => {
     const awake = battle(['tank', 'gun-turret'], () => undefined, { calm: true });
     const full = strength(eyeIn(awake.page(), 'enemy-tank')!);
     const dazed = battle(['tank', 'gun-turret'], (state) => { state.units[1].staggered = 2; state.units[2].overheated = true; }, { calm: true });
+    // The screen shows how they stand once it has caught up with the rules: a frame after the banner is gone.
+    dazed.screen.update(16);
+    expect(dazed.screen.motion.stance('enemy-0').staggered).toBe(true);
+    expect(dazed.screen.motion.stance('enemy-1').overheated).toBe(true);
     // A calm picture's eyes hold: at half strength, the dazed ones at 0.35 of the brightest an eye is.
     for (const picture of ['enemy-tank', 'enemy-gun-turret']) {
       const low = strength(eyeIn(dazed.page(), picture)!);
@@ -295,7 +328,62 @@ describe('the eyes of the machines on the field', () => {
     expect(bare.page().glows).toEqual([]);
   });
 
-  test('the eyes are among the battle\'s sixteen lights, and among its eight where there is to be less light', () => {
+  test('in a calm picture the eyes on the field do not narrow, for as long as it takes a blink to come round twice and more', () => {
+    const lowest = (calm: boolean): number => {
+      const { screen, page } = battle(['tank', 'gun-turret'], () => undefined, { calm });
+      let low = Infinity;
+      for (let t = 0; t < BLINK_EVERY_MS * 2.5; t += 16) {
+        screen.update(16);
+        low = Math.min(low, strength(eyeIn(page(), 'enemy-tank')!));
+      }
+      return low;
+    };
+    // Calm: at half strength, and never under seven tenths of what an eye is at its brightest.
+    expect(lowest(true)).toBeGreaterThanOrEqual(EYE_ALPHA * 0.7 * 0.5 - 0.001);
+    // Otherwise it narrows to a fifth for a moment.
+    expect(lowest(false)).toBeLessThan(EYE_ALPHA * 0.25);
+  });
+
+  test('it sputters when the stagger is seen, not when the rules know of it: the screen can be behind the rules', () => {
+    const { flow, screen, page } = battle(['tank'], () => undefined, { calm: true });
+    const awake = strength(eyeIn(page(), 'enemy-tank')!);
+    expect(awake).toBeGreaterThanOrEqual(EYE_ALPHA * 0.7 * 0.5 - 0.001);
+    // The rules stagger it and cook it with nothing of that shown yet, as when the shot that does it is still in the air: the eye holds.
+    flow.state.units[1].staggered = 2;
+    flow.state.units[1].overheated = true;
+    expect(screen.motion.stance('enemy-0')).toMatchObject({ staggered: false, overheated: false });
+    expect(strength(eyeIn(page(), 'enemy-tank')!)).toBe(awake);
+    // Once the screen has caught up with the rules it is low.
+    screen.update(16);
+    expect(screen.motion.stance('enemy-0')).toMatchObject({ staggered: true, overheated: true });
+    expect(strength(eyeIn(page(), 'enemy-tank')!)).toBeCloseTo(EYE_ALPHA * 0.35 * 0.5, 2);
+  });
+
+  test('a flyer the rules have ended hangs still until it is seen to come apart, and its eye hangs with it', () => {
+    const { flow, screen, page } = battle(['recon-drone', 'tank']);
+    // It bobs, and its eye bobs with it.
+    const heights = new Set<number>();
+    for (let i = 0; i < 120; i++) {
+      screen.update(16);
+      const drawn = page();
+      expect(eyeIn(drawn, 'enemy-recon-drone'), `frame ${i}`).toBeDefined();
+      heights.add(drawnAt(drawn, 'enemy-recon-drone').y);
+    }
+    expect(heights.size).toBeGreaterThanOrEqual(3);
+    // Ended in the rules, not yet seen to break: it hangs where it is, and the eye is on its lens, not bobbing by itself.
+    flow.state.units[1].destroyed = true;
+    const still = new Set<number>();
+    for (let i = 0; i < 120; i++) {
+      screen.update(16);
+      const drawn = page();
+      expect(screen.motion.breaking('enemy-0')).toBeNull();
+      expect(eyeIn(drawn, 'enemy-recon-drone'), `frame ${i}`).toBeDefined();
+      still.add(drawnAt(drawn, 'enemy-recon-drone').y);
+    }
+    expect(still.size).toBe(1);
+  });
+
+  test('the eyes are apart from the battle\'s sixteen lights, and from its eight where there is to be less light: they are too small to count', () => {
     for (const [detail, most] of [[2, MAX_LIGHTS], [1, MAX_LIGHTS / 2]] as [1 | 2, number][]) {
       const { flow, screen, page } = battle(['recon-drone', 'gunship', 'hunter-drone']);
       setDetail(detail);
@@ -305,13 +393,38 @@ describe('the eyes of the machines on the field', () => {
         if (flow.phase === 'action') { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); }
         screen.update(16);
         const drawn = page();
-        peak = Math.max(peak, drawn.glows.filter(isLight).length);
-        eyesSeen = Math.max(eyesSeen, ['enemy-recon-drone', 'enemy-gunship', 'enemy-hunter-drone'].filter((picture) => drawnAt(drawn, picture) && eyeIn(drawn, picture)).length);
+        const eyes = ['enemy-recon-drone', 'enemy-gunship', 'enemy-hunter-drone'].filter((picture) => drawnAt(drawn, picture) && eyeIn(drawn, picture)).length;
+        peak = Math.max(peak, drawn.glows.filter(isLight).length - eyes);
+        eyesSeen = Math.max(eyesSeen, eyes);
       }
-      // All three flyers burn underneath and look out: six lights that stand, and what is fired on top of them.
+      // All three flyers burn underneath: three lights that stand, and what is fired on top of them. Their three eyes are not counted.
       expect(eyesSeen, `detail ${detail}`).toBe(3);
-      expect(peak, `detail ${detail}`).toBeGreaterThan(6);
+      expect(peak, `detail ${detail}`).toBeGreaterThan(3);
       expect(peak, `detail ${detail}`).toBeLessThanOrEqual(most);
+      setDetail(2);
+    }
+  });
+
+  test('three hot flyers and a hot pilot: sixteen lights at most, eight where there is to be less, the eyes apart, and what is fired still has one', () => {
+    for (const [detail, most] of [[2, MAX_LIGHTS], [1, MAX_LIGHTS / 2]] as [1 | 2, number][]) {
+      const { flow, screen, page } = battle(['recon-drone', 'gunship', 'hunter-drone']);
+      setDetail(detail);
+      let peak = 0;
+      let standing = 0;
+      for (let i = 0; i < 1500 && flow.phase !== 'result'; i++) {
+        // Everything on the field is kept close to its heat limit: each machine glows from inside.
+        for (const unit of flow.state.units) if (!unit.destroyed) unit.heat = 95;
+        if (flow.phase === 'action') { screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm'); }
+        screen.update(16);
+        const drawn = page();
+        const lights = drawn.glows.filter(isLight).length - eyesIn(drawn).length;
+        peak = Math.max(peak, lights);
+        if (i === 0) standing = lights;
+      }
+      // Three burn underneath and all four glow with heat: seven lights that stand.
+      expect(standing, `detail ${detail}`).toBe(7);
+      expect(peak, `detail ${detail}`).toBeLessThanOrEqual(most);
+      expect(peak, `detail ${detail}`).toBeGreaterThan(7);
       setDetail(2);
     }
   });

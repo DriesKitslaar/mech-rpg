@@ -56,6 +56,13 @@ export function drawText(ctx: CanvasRenderingContext2D, text: string, x: number,
 }
 
 /** Text over a picture: the same words in the dark colour one pixel off in every direction, and then the words themselves. */
+/**
+ * The colour of what is written small over a picture: a heading, the word to go on. The dim colour
+ * of the boxes will not do there: a picture can be as light as that itself (a sky at daybreak
+ * is), and the word is then only an edge with nothing in it.
+ */
+export const OVER_PICTURE = '#cbc6e8';
+
 export function drawOutlined(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, opts: TextOptions = {}, edge = '#07061a'): void {
   for (const [dx, dy] of [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]) drawText(ctx, text, x + dx, y + dy, { ...opts, color: edge });
   drawText(ctx, text, x, y, opts);

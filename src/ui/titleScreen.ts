@@ -5,7 +5,7 @@ import type { App, Screen, ScreenView, SlotView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList, type ListItem } from './menuList';
 import { playTime } from './record';
-import { drawLights } from './light';
+import { drawAll } from './light';
 import { LOGO, drawLogo, logoGleam, logoLevel, logoLights, signStrikes } from './logo';
 import { drawSearchlights, drawTitleScene } from './titleScene';
 import { THUNDER_AFTER_MS, drawWeather, drawWeatherExtras, strokeBegan } from './weather';
@@ -34,9 +34,11 @@ export class TitleScreen implements Screen {
   private mode: Mode = 'main';
   /** The slot the question on screen is about. */
   private asked = 0;
-  private clock = 0;
+  /** How long the title has been looked at this session, this visit and those before it. */
+  private clock: number;
 
   constructor(private app: App) {
+    this.clock = app.titleClock;
     this.slots = app.slots();
     this.list = this.mainMenu();
   }
@@ -99,6 +101,7 @@ export class TitleScreen implements Screen {
   update(dtMs: number): void {
     const before = this.clock;
     this.clock += dtMs;
+    this.app.titleClock = this.clock;
     // What is seen is heard: the sign striking as it comes on, and thunder a moment after each stroke of
     // lightning. A hurried game shows neither, and a calm picture neither.
     if (this.app.deps.fast) return;
@@ -171,7 +174,7 @@ export class TitleScreen implements Screen {
 
     // The sign: it comes on with a flicker, throws its own light, and a gleam crosses it now and then.
     const level = fast ? 1 : logoLevel(this.clock, calm);
-    drawLights(ctx, logoLights(SIGN.x, SIGN.y, level), calm ? 0.5 : 1);
+    drawAll(ctx, logoLights(SIGN.x, SIGN.y, level), calm ? 0.5 : 1);
     drawLogo(ctx, SIGN.x, SIGN.y, { level, gleam: fast ? null : logoGleam(this.clock) });
     ctx.save();
     ctx.translate(0, drift);

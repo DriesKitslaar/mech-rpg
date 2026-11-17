@@ -235,6 +235,11 @@ test('the slam is low and heavy: lower than a machine going up, and as loud as a
   expect(Math.max(...slam.map((tone) => tone.gain))).toBeGreaterThanOrEqual(0.7);
   // Short: the machine's own blast is heard after it.
   expect(ends('slam')).toBeLessThanOrEqual(0.5);
+  // Its thud is dull, like an iron door: after the first crack nothing of its noise is let through above 600 Hz.
+  const thud = slam.filter((tone) => tone.wave === 'noise' && tone.cut !== undefined);
+  expect(thud.length).toBeGreaterThanOrEqual(1);
+  for (const tone of thud) expect(tone.cut).toBeLessThanOrEqual(600);
+  expect(slam.filter((tone) => tone.wave === 'noise' && tone.cut === undefined).every((tone) => tone.dur <= 0.06)).toBe(true);
 });
 
 test('no burst of noise in the new sounds is longer than the noise there is', () => {

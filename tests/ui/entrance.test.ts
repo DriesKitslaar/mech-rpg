@@ -148,6 +148,17 @@ describe('the window on the boss', () => {
     expect([entranceEye(0, 0, true), entranceEye(0.25, 123, true), entranceEye(0.9, 999, true)]).toEqual([1, 1, 1]);
   });
 
+  test('the swell of the open eye is slow: once round in a second, a fortieth at most from one frame to the next', () => {
+    let most = 0;
+    const seen = new Set<number>();
+    for (let clock = 16; clock < 5000; clock += 16) {
+      most = Math.max(most, Math.abs(entranceEye(0.6, clock) - entranceEye(0.6, clock - 16)));
+      seen.add(Math.round(entranceEye(0.6, clock) * 20));
+    }
+    expect(most).toBeLessThan(0.025);
+    expect(seen.size).toBeGreaterThanOrEqual(6);
+  });
+
   test('the light of its eye sits on the eye, in the eye\'s colour, and is as strong as the eye is open', () => {
     expect(band(0.1).glows).toEqual([]);
     const page = band(0.5);
@@ -297,6 +308,24 @@ describe('a battle against a boss', () => {
     expect(strength(steady[0])).toBeCloseTo(0.3, 3);
     calm.screen.update(100);
     expect(strength(calm.page().glows.filter((g) => isLight(g) && g.r === eye.r * ENTRANCE_SCALE + 10)[0])).toBeCloseTo(0.3, 3);
+  });
+
+  test('the band is told the time: while it stands still its stripes run on, and the boss\'s eye swells', () => {
+    const { screen, page } = against('scrap-king');
+    const eye = EYES['boss-scrap-king'];
+    // From a third of the way through to two thirds the band holds: what moves then, moves by the clock.
+    screen.update(WARNING_MS * 0.35);
+    const stripes = new Set<string>();
+    const lights = new Set<number>();
+    for (let t = 0; t < WARNING_MS * 0.3; t += 16) {
+      screen.update(16);
+      const drawn = page();
+      expect(plate(drawn).x).toBe(0);
+      stripes.add(drawn.rects.filter((r) => r.w === 8 && r.h === 3).slice(0, 2).map((r) => r.x).join());
+      lights.add(strength(drawn.glows.find((g) => isLight(g) && g.r === eye.r * ENTRANCE_SCALE + 10)!));
+    }
+    expect(stripes.size).toBeGreaterThanOrEqual(8);
+    expect(lights.size).toBeGreaterThanOrEqual(4);
   });
 
   test('a boss that is a frame built from parts, like the pilot\'s own, is shown turned to face left and looked at where its head is', () => {

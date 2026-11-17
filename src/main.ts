@@ -10,7 +10,7 @@ import { SaveFile, type KeyValueStore } from './platform/storage';
 import { App } from './ui/app';
 import { fitCanvas } from './ui/display';
 import { InputDebug } from './ui/inputDebug';
-import { detail } from './ui/light';
+import { frameStep } from './ui/loop';
 import { loadSprites } from './ui/sprites';
 import { FONT } from './ui/widgets';
 
@@ -87,33 +87,17 @@ async function start(): Promise<void> {
   // not only at the next press.
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !fast) sfx.unlock(); });
 
-  let last = performance.now();
+  const began = performance.now();
   // One thing going wrong in a frame must not freeze the game: the next frame is still asked for, and what
   // went wrong is shown in the input window.
-  const step = guarded((now: number): void => {
-    // How long the frame before took tells whether the handheld is keeping up: the app turns its light down if not.
-    app.frame(now - last);
-    debug.pace(app.fps, detail());
-    const dt = Math.min(100, now - last);
-    last = now;
-    input.sample(now);
-    // The options can swap the pad's A and B; the mapper does it, to those two buttons only.
-    mapper.swapFace = app.settings.swapAB === true;
-    for (const action of mapper.poll(now)) { debug.action(action); handle(action); }
-    app.update(dt);
-    music.update();
-    ctx.imageSmoothingEnabled = false;
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    app.draw(ctx);
-    debug.draw(ctx);
-  }, (message) => debug.fault(message));
+  const step = guarded(frameStep({ app, debug, input, mapper, music, ctx, scale: () => scale, handle }, began), (message) => debug.fault(message));
   const frame = (now: number): void => {
     step(now);
     requestAnimationFrame(frame);
   };
   if (stepped) {
     // A frame at a time, sixteen milliseconds each, for as long as was asked.
-    let clock = last;
+    let clock = began;
     game.advance = (ms: number): void => {
       for (let left = ms; left > 0; left -= 16) { clock += Math.min(16, left); step(clock); }
     };

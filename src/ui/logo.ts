@@ -1,4 +1,4 @@
-import type { Glow } from './light';
+import { lightRoom, type Glow } from './light';
 import { FULL_TALL, LINE, buildWord, depthTones, metalColor, tonesOf, type Run, type Tones, type Word } from './signType';
 
 /**
@@ -176,7 +176,8 @@ export function drawLogo(ctx: CanvasRenderingContext2D, x: number, y: number, lo
 /** The light the sign throws while it is lit: cold over the steel, the game's colour over the rest. */
 export function logoLights(x: number, y: number, level: number): Glow[] {
   if (level <= 0) return [];
-  const count = 6;
+  // Six along the sign; three where there is to be less light, as evenly along it.
+  const count = lightRoom(6);
   return Array.from({ length: count }, (_, i) => {
     const gx = x + ((i + 0.5) / count) * LOGO.w;
     return { x: Math.round(gx), y: y + Math.round(LOGO.h / 2), r: 46, color: gx - x < LOGO.split ? '#7fa8ff' : '#ff5db1', alpha: 0.2 * level };

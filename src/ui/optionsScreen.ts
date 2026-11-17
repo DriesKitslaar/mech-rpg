@@ -21,12 +21,15 @@ export class OptionsScreen implements Screen {
   private list = new MenuList();
   /** True once the player has been told that leaving now loses a change that could not be saved. */
   private warned = false;
+  /** How much light there was when the rows were last written: the game can turn it down while this is open. */
+  private light = '';
 
   constructor(private app: App, private back: () => void) {
     this.refresh();
   }
 
   private refresh(): void {
+    this.light = this.app.lightNow();
     const settings = this.app.settings;
     const value = (key: keyof Settings): string =>
       key === 'difficulty' ? O.difficulties[settings.difficulty]
@@ -117,7 +120,10 @@ export class OptionsScreen implements Screen {
     this.refresh();
   }
 
-  update(): void {}
+  update(): void {
+    // The row for the light says what the light is now, not what it was when this was opened.
+    if (this.app.lightNow() !== this.light) this.refresh();
+  }
 
   onInput(action: InputAction): void {
     if (action === 'up') this.list.move(-1);

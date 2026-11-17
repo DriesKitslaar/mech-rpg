@@ -65,6 +65,7 @@ npm run dev
 |---|---|
 | `npm test` | Tests op de spelregels, de inhoud en de schermlogica |
 | `npm run e2e` | Browsertests die het spel met het toetsenbord doorspelen |
+| `SOAK=1 npm run e2e -- e2e/soak.spec.ts --workers 2` | Duurproef: vijf robotspelers spelen het spel door met alles getekend, in een echte browser, en melden alles wat het tekenvlak weigert. Duurt een kwartier (`SOAK_MINUTES` stelt de speeltijd per speler in) |
 | `npm run typecheck` | Typecontrole |
 | `npm run simulate -- --table` | Speelt elk contract honderden keren automatisch en toont de winstkans per referentiebuild (`--arena`, `--board`, `--cycle 1`, `--why`) |
 | `npm run career -- --all` | Laat een piloot hele loopbanen zelf uitspelen: elke route, elke moeilijkheid. Hij vecht alleen met Auto Turn en koopt onderdelen via de spelregels, niet via de winkelschermen |

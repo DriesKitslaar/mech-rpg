@@ -99,12 +99,19 @@ const scatter = (a: number, b: number): number => {
 };
 const wrapTo = (value: number, size: number): number => ((value % size) + size) % size;
 
-/** Where one of the falling notices is, and how it lies: flat or on its edge. They drift down slowly, swaying, and turn over as they go. */
+/** How far a notice sways to either side of the line it falls along. */
+const PAPER_SWAY = 7;
+
+/**
+ * Where one of the falling notices is, and how it lies: flat or on its edge. They drift down
+ * slowly, swaying, and turn over as they go. The line each falls along is far enough from either
+ * side for its sway to stay on the page: none goes off one side and comes back on the other.
+ */
 export function paperAt(i: number, clockMs: number, w: number, h: number): { x: number; y: number; flat: boolean; lit: boolean } {
   const t = clockMs / 1000;
   const turn = t * (0.5 + 0.4 * scatter(i, 4)) + scatter(i, 5) * 6;
   return {
-    x: Math.floor(wrapTo(scatter(i, 1) * w + Math.sin(t * 0.6 + i * 1.9) * 7, w - 3)),
+    x: Math.floor(PAPER_SWAY + scatter(i, 1) * (w - 3 - PAPER_SWAY * 2) + Math.sin(t * 0.6 + i * 1.9) * PAPER_SWAY),
     y: Math.floor(wrapTo(scatter(i, 2) * h + t * (9 + 8 * scatter(i, 3)), h - 3)),
     flat: Math.floor(turn) % 2 === 0,
     lit: Math.floor(turn * 2) % 2 === 0,

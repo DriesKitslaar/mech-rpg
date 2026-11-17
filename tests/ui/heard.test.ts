@@ -12,6 +12,7 @@ import { SIGN_STRIKES, logoLevel, signStrikes } from '../../src/ui/logo';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { LIGHTNING_MS, THUNDER_AFTER_MS, lightning, strokeBegan } from '../../src/ui/weather';
 import { done, ids, inHub, memoryStore, press, select, snap, strong } from '../helpers/app';
+import { record } from '../helpers/canvas';
 
 /**
  * What the last round made to be seen and left silent now has something to be heard by: thunder
@@ -131,6 +132,44 @@ describe('the title', () => {
     for (let i = 1; i < thunder.length; i++) expect(thunder[i].at - thunder[i - 1].at).toBeGreaterThan(3000);
   });
 
+  test('back on the title from the options: the sign is on already and says nothing, and the weather goes on from where it was', () => {
+    const { app, heard, run, named } = title();
+    run(1000);
+    expect(named('sign')).toHaveLength(2);
+    select(app, 'options');
+    run(5000);
+    expect(heard).toHaveLength(2);
+    press(app, 'cancel');
+    expect(snap(app).screen).toBe('title');
+    // The sign does not come on a second time.
+    run(1000);
+    expect(named('sign')).toHaveLength(2);
+    expect(named('thunder')).toEqual([]);
+    // The title has been looked at for two seconds in all: its first stroke falls when that is two and two thirds,
+    // which is less than a second from now, and not two and two thirds after coming back.
+    run(1000);
+    expect(named('thunder')).toHaveLength(1);
+    expect(named('thunder')[0].at).toBeLessThan(1000 + 5000 + 2000);
+  });
+
+  test('the stroke a clap belongs to is on the screen: the sky is lit in the frame the thunder is asked for, and was not in the frame before', () => {
+    const { app, heard, run } = title();
+    const lit = (): boolean => record((ctx) => app.draw(ctx)).rects.some((r) => r.blend === 'overlay');
+    let was = false;
+    let claps = 0;
+    for (let i = 0; i < 45_000 / 16; i++) {
+      const had = heard.length;
+      run(16);
+      const now = lit();
+      if (heard.slice(had).some((h) => h.name === 'thunder')) {
+        claps++;
+        expect([was, now], `clap ${claps}`).toEqual([false, true]);
+      }
+      was = now;
+    }
+    expect(claps).toBeGreaterThanOrEqual(4);
+  });
+
   test('a calm picture hears neither, and a hurried game neither', () => {
     for (const opts of [{ calm: true }, { fast: true }]) {
       const { heard, run } = title(opts);
@@ -171,10 +210,28 @@ describe('a battle in the rain', () => {
       sfx: { play: (name: string, delay = 0, ambient = false) => { heard.push({ name, delay, ambient, at: clock }); } } as never,
     });
     const run = (ms: number): void => { for (let t = 0; t < ms; t += 16) { clock += 16; screen.update(16); } };
-    return { run, thunder: () => heard.filter((h) => h.name === 'thunder') };
+    return { run, screen, heard, thunder: () => heard.filter((h) => h.name === 'thunder') };
   }
 
-  test('thunder follows the lightning that is seen there, from the banner on', () => {
+  test('the stroke a clap belongs to is on the field: lit in the frame the thunder is asked for, and not in the frame before', () => {
+    const { run, screen, heard } = battle('bg-neon-district');
+    const lit = (): boolean => record((ctx) => screen.draw(ctx)).rects.some((r) => r.blend === 'overlay');
+    let was = false;
+    let claps = 0;
+    for (let i = 0; i < 45_000 / 16; i++) {
+      const had = heard.length;
+      run(16);
+      const now = lit();
+      if (heard.slice(had).some((h) => h.name === 'thunder')) {
+        claps++;
+        expect([was, now], `clap ${claps}`).toEqual([false, true]);
+      }
+      was = now;
+    }
+    expect(claps).toBeGreaterThanOrEqual(4);
+  });
+
+  test('thunder follows the lightning that is seen there, on the clock the battle began with', () => {
     const { run, thunder } = battle('bg-neon-district');
     run(90_000);
     expect(thunder()).toHaveLength(strokes(90_000, 16));
@@ -183,8 +240,12 @@ describe('a battle in the rain', () => {
       expect(clap).toMatchObject({ delay: THUNDER_AFTER_MS, ambient: true });
       expect(lightning(clap.at)).toBe(1);
     }
-    // The first stretch's stroke can fall while the banner is still up: it is seen then, and heard.
-    expect(thunder()[0].at).toBeLessThan(LIGHTNING_MS);
+    // The weather keeps its time from the moment the battle begins, banner and all: the first clap is asked for
+    // in the frame the clock's first stroke falls in, which is a second or so after the banner has gone.
+    const first = (() => { for (let t = 0; t < LIGHTNING_MS; t++) if (lightning(t) > 0) return t; throw new Error('no stroke'); })();
+    expect(first).toBeGreaterThan(1700);
+    expect(thunder()[0].at - first).toBeGreaterThanOrEqual(0);
+    expect(thunder()[0].at - first).toBeLessThan(16);
   });
 
   test('with battles played faster the weather keeps its own time, and so does its thunder', () => {

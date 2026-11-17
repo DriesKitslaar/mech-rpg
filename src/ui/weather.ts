@@ -1,4 +1,4 @@
-import { drawGlow, soft, wide } from './light';
+import { drawGlow, lightRoom, soft, wide } from './light';
 
 /** What drifts across a battlefield. */
 export type Weather = 'rain' | 'dust' | 'embers' | 'motes' | 'none';
@@ -122,7 +122,8 @@ export function drawWeatherExtras(ctx: CanvasRenderingContext2D, kind: Weather, 
     }
   }
   if (kind === 'embers') {
-    for (let i = 0; i < EMBER_LIGHTS; i++) {
+    // Every one of these sparks has a light; where there is to be less light the first half of them have.
+    for (let i = 0; i < lightRoom(EMBER_LIGHTS); i++) {
       const { x, y } = emberAt(i * 3, t, w, h);
       drawGlow(ctx, { x, y, r: 7, color: '#ff9a3c', alpha: 0.3 + 0.2 * Math.abs(Math.sin(t * 5 + i * 5.1)) }, calm ? 0.5 : 1);
     }
