@@ -14,8 +14,10 @@
 /** How much of the soft light is drawn: all of it, less of it, or none. */
 export type Detail = 2 | 1 | 0;
 
-/** How many frames are looked at together. */
+/** How many frames are looked at together... */
 export const WINDOW = 90;
+/** ...and for how long at most: a handheld is not kept waiting longer for being slow. Ninety frames at sixty a second. */
+export const WINDOW_MS = 1500;
 /** A frame that took this long or longer was late: on a screen that shows sixty a second, it missed one. */
 export const LATE_MS = 25;
 /** A window with more than this share of late frames is a slow one. */
@@ -24,14 +26,20 @@ export const LATE_SHARE = 0.2;
 export const SLOW_WINDOWS = 3;
 /** A gap longer than this is no frame: the game was put aside, and the window it fell in starts again. */
 export const PAUSE_MS = 250;
-/** The first frames of a session are not judged: pictures are still being unpacked and everything is drawn for the first time. */
+/**
+ * The first frames of a session are not judged: pictures are still being unpacked and everything
+ * is drawn for the first time. So many frames, or so long, whichever is over first.
+ */
 export const WARM_UP = 120;
+export const WARM_UP_MS = 2000;
 /** Giving light up helped when late frames became rarer than this share of what they were... */
 export const HELPED = 0.75;
 /** ...or when frames came to take less than this share of the time they took. */
 export const SHORTER = 0.85;
 
-const NOTHING_SLOW = { windows: 0, late: 0, took: 0 };
+/** A run of slow windows: how many, the frames they had, how many of those were late, and the time they took. */
+interface Spell { windows: number; frames: number; late: number; took: number }
+const NOTHING_SLOW: Spell = { windows: 0, frames: 0, late: 0, took: 0 };
 
 export class Pace {
   /** How much light there is to be. */
@@ -39,13 +47,14 @@ export class Pace {
   /** False once there is nothing more to find out this session: what the level is then, it stays. */
   judging: boolean;
   private seen = 0;
+  private warmed = 0;
   private inWindow = 0;
   private late = 0;
   private took = 0;
-  /** The slow windows that have followed each other: how many, their late frames, and the time they took. */
+  /** The slow windows that have followed each other. */
   private slow = NOTHING_SLOW;
   /** A coming down that has not yet been seen to help: where it began, and the frames that began it. */
-  private descent: { from: Detail; late: number; took: number } | null = null;
+  private descent: { from: Detail; frames: number; late: number; took: number } | null = null;
   /** The time the last frames took, for the count of frames a second. */
   private recent: number[] = [];
 
@@ -73,13 +82,13 @@ export class Pace {
     }
     this.count(gapMs);
     if (!this.judging) return false;
-    if (this.seen < WARM_UP) { this.seen++; return false; }
+    if (this.seen < WARM_UP && this.warmed < WARM_UP_MS) { this.seen++; this.warmed += gapMs; return false; }
     this.inWindow++;
     this.took += gapMs;
     if (gapMs >= LATE_MS) this.late++;
-    if (this.inWindow < WINDOW) return false;
-    if (this.late / WINDOW > LATE_SHARE) {
-      this.slow = { windows: this.slow.windows + 1, late: this.slow.late + this.late, took: this.slow.took + this.took };
+    if (this.inWindow < WINDOW && this.took < WINDOW_MS) return false;
+    if (this.late / this.inWindow > LATE_SHARE) {
+      this.slow = { windows: this.slow.windows + 1, frames: this.slow.frames + this.inWindow, late: this.slow.late + this.late, took: this.slow.took + this.took };
     } else {
       // A window in which it kept up: where the light is now is good enough, and what was given up helped.
       this.slow = NOTHING_SLOW;
@@ -92,15 +101,20 @@ export class Pace {
     const spell = this.slow;
     this.slow = NOTHING_SLOW;
     if (this.level > 0) {
-      this.descent ??= { from: this.level, late: spell.late, took: spell.took };
+      this.descent ??= { from: this.level, frames: spell.frames, late: spell.late, took: spell.took };
       this.level = (this.level - 1) as Detail;
       return true;
     }
     // Nothing is left to give up, and it is slow still: there is no more to find out. Where it has
-    // come straight down and gained nothing by it, the light was not what it is slow at.
+    // come straight down and gained nothing by it, the light was not what it is slow at. The two
+    // spells did not have as many frames (shorter frames are more frames to a window), so it is
+    // the share of them that was late and the time one of them took that are held side by side.
     this.judging = false;
     const was = this.descent;
-    if (!was || spell.late < was.late * HELPED || spell.took < was.took * SHORTER) return false;
+    if (!was) return false;
+    const rarer = spell.late * was.frames < was.late * HELPED * spell.frames;
+    const shorter = spell.took * was.frames < was.took * SHORTER * spell.frames;
+    if (rarer || shorter) return false;
     this.level = was.from;
     return true;
   }

@@ -13,7 +13,7 @@ import { drawCutIn, drawDefeat, drawVictory } from '../../src/ui/cinema';
 import {
   MAX_LIGHTS, chosenLights, detail, discRows, drawBeam, drawCone, drawGlow, drawGlows, drawLights, drawShadow, lightRoom, setDetail, soft, wide, type Glow,
 } from '../../src/ui/light';
-import { WARM_UP, WINDOW } from '../../src/ui/pace';
+import { WARM_UP } from '../../src/ui/pace';
 import { drawRoom, drawRoomSpill } from '../../src/ui/room';
 import { LIGHTNING_MS, drawWeatherExtras, lightning, struck } from '../../src/ui/weather';
 import { COLORS, drawPanel, drawRowLight } from '../../src/ui/widgets';
@@ -281,7 +281,8 @@ describe('the game keeping pace', () => {
     const store = memoryStore(data);
     return { store, app: new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast, seed: 3 }) };
   };
-  const slowFor = (app: App, windows: number): void => { for (let i = 0; i < WINDOW * windows; i++) app.frame(34); };
+  // Frames of 34 ms: a window is a second and a half of them, forty-five frames.
+  const slowFor = (app: App, windows: number): void => { for (let i = 0; i < 45 * windows; i++) app.frame(34); };
   const warm = (app: App): void => { for (let i = 0; i < WARM_UP; i++) app.frame(16.7); };
   const note = (app: App): string | undefined => (snap(app).menu.items as { id: string; note?: string }[]).find((item) => item.id === 'detail')?.note;
 
@@ -290,7 +291,8 @@ describe('the game keeping pace', () => {
     expect(app.lightNow()).toBe('full');
     expect(detail()).toBe(2);
     warm(app);
-    for (let i = 0; i < 6000; i++) app.frame(16.7);
+    // A minute and a half of keeping up: sixty-six windows of ninety frames.
+    for (let i = 0; i < 90 * 66; i++) app.frame(16.7);
     expect(app.lightNow()).toBe('full');
     expect(store.data[PACE_KEY]).toBeUndefined();
     slowFor(app, 3);
