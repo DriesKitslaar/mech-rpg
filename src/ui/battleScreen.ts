@@ -199,8 +199,8 @@ export class BattleScreen {
     this.introTotal = opts.fast ? 0 : opts.boss ? WARNING_MS : INTRO_MS;
     this.intro = this.introTotal;
     this.place = placeFor(opts.background ?? DEFAULT_BACKGROUND);
-    // A hurried game and a calm picture have it standing at home.
-    this.camera = new Camera(this.place, !opts.fast && opts.calm !== true);
+    // A calm picture has it standing at home. A hurried game never asks it to move: nothing is staged there, no banner and no blow.
+    this.camera = new Camera(this.place, opts.calm !== true);
     this.shownAp = new ApDisplay(flow.state.units);
     const enemies = flow.state.units.filter((u) => u.side === 'enemy');
     this.places = enemies.some((u) => u.abilities.carrier)

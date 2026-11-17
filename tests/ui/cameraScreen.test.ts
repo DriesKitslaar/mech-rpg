@@ -402,6 +402,34 @@ describe('when a blow lands', () => {
   });
 });
 
+describe('a field that is shaken', () => {
+  test('has its picture drawn a little larger round where it stands, so that no edge shows: where the band with the floor is, not at the top of the screen', () => {
+    const { flow, screen, page, ready, fire } = screenOf(fight(['recon-drone', 'tank'], [0]));
+    ready();
+    fire();
+    const place = placeFor(NEON);
+    let shaken = 0;
+    for (let i = 0; i < 200 && flow.phase !== 'action'; i++) {
+      screen.update(16);
+      // The field as it stands on the stage: the camera pushes in on the same blow.
+      const picture = onStage(page(), screen.motion.view).images[0];
+      if (picture.w === 310) { expect([picture.x, picture.y]).toEqual([0, pictureTop(place)]); continue; }
+      shaken++;
+      // Twelve wider and taller, six out on every side, and thrown by the few pixels the blow throws the field.
+      expect([picture.w, picture.h]).toEqual([322, 282]);
+      expect(Math.abs(picture.x + 6)).toBeLessThanOrEqual(5);
+      expect(Math.abs(picture.y - (pictureTop(place) - 6))).toBeLessThanOrEqual(5);
+      // No edge of it shows in the field.
+      expect(picture.x).toBeLessThanOrEqual(0);
+      expect(picture.x + picture.w).toBeGreaterThanOrEqual(310);
+      expect(picture.y).toBeLessThanOrEqual(FIELD_Y);
+      expect(picture.y + picture.h).toBeGreaterThanOrEqual(PANEL_Y);
+    }
+    // A machine going up shakes the field for a good few frames.
+    expect(shaken).toBeGreaterThan(8);
+  });
+});
+
 describe('the last machine of a battle', () => {
   test('is looked at from twice as close, and that look has the picture to itself: no push is left under it or after it', () => {
     const { flow, screen, ready, fire } = screenOf(fight(['gun-turret'], [0]));

@@ -390,6 +390,43 @@ describe('a mech built from parts that is fought alone', () => {
   });
 });
 
+describe('paint', () => {
+  /** A store that says which pictures it was asked for in a paint scheme: such a picture is named with its scheme after it. */
+  const painting: SpriteStore = {
+    get: (id, fallback) => ({ ...(MANIFEST[id] ?? fallback), image: { id } as unknown as CanvasImageSource }),
+    painted: (id, paint, fallback) => ({ ...(MANIFEST[id] ?? fallback), image: { id: `${id}|${paint}` } as unknown as CanvasImageSource }),
+  };
+  const drawnBy = (enemies: string[], paint?: string): string[] => {
+    const flow = new BattleFlow(createBattle(DEMO_BUILD, enemies.map((id) => ENEMIES[id]), CATALOG, 7), CATALOG, { quiet: true });
+    const screen = new BattleScreen(flow, painting, CATALOG, { fast: true, background: 'bg-neon-district', ...(paint ? { paint } : {}) });
+    screen.update(16);
+    return record((ctx) => screen.draw(ctx)).images.map(idOf);
+  };
+
+  test('the pilot\'s mech wears its paint from behind too: every layer of its frame, and nothing it carries', () => {
+    const ids = drawnBy(['gun-turret'], 'crimson');
+    for (const layer of ['head-scout-mk1.back', 'core-hauler.back', 'legs-strider.back', 'arms-rigger.near.back', 'arms-rigger.far.back']) {
+      expect(ids, layer).toContain(`${layer}|crimson`);
+      expect(ids, layer).not.toContain(layer);
+    }
+    for (const weapon of ['rightHand', 'leftHand', 'shoulder'] as const) expect(ids).toContain(`${DEMO_BUILD[weapon]}.back`);
+    // Without a scheme it is in its factory colours.
+    expect(drawnBy(['gun-turret']).some((id) => id.includes('|'))).toBe(false);
+  });
+
+  test('a mech that is fought alone wears the paint its pilot gave it, small as it stands', () => {
+    expect(ENEMIES.bulldozer).toMatchObject({ composed: true, paint: 'steel' });
+    const ids = drawnBy(['bulldozer']);
+    const small = ids.filter((id) => id.includes('.small'));
+    expect(small.length).toBeGreaterThanOrEqual(5);
+    for (const layer of ['head', 'core', 'legs'] as const) expect(small, layer).toContain(`${ENEMIES.bulldozer.build[layer]}.small|steel`);
+    expect(small).toContain(`${ENEMIES.bulldozer.build.arms}.near.small|steel`);
+    // What it carries keeps its own colours; the pilot's own mech, which has no scheme here, is not painted by it.
+    expect(small.filter((id) => /^(wpn|shd)-/.test(id)).every((id) => !id.includes('|'))).toBe(true);
+    expect(ids.filter((id) => id.includes('.back')).every((id) => !id.includes('|'))).toBe(true);
+  });
+});
+
 describe('what is written over the field', () => {
   test('the line for a new pilot is near the top of the field: the foot of it is where the pilot\'s mech stands', () => {
     const { page } = screenOf(['gun-turret'], { coach: true });
