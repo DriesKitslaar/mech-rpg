@@ -77,7 +77,10 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Turret silenced. Three clients just asked for your number. That is how it starts.',
     battles: [battle(['gun-turret'], MINE, {
-      talk: [dispatch('start', 'That turret hits like rent day. Boost before you end a turn, or Guard if you would rather take it on the chin.')],
+      talk: [
+        dispatch('start', 'That turret hits like rent day. Boost before you end a turn, or Guard if you would rather take it on the chin.'),
+        dispatch('hurt', 'Easy. That frame has come home worse than this. Do not ask me how I know.'),
+      ],
     })],
   },
   {
@@ -89,7 +92,12 @@ export const MISSIONS: Mission[] = [
     debrief: 'Unarmed, he said. Brenn pays in full and does not mention the tank.',
     battles: [
       battle(['recon-drone', 'recon-drone', 'recon-drone'], UNDER),
-      battle(['tank', 'recon-drone'], UNDER, { talk: [brenn('start', 'That tank is stolen company property. Feel free to write it off.')] }),
+      battle(['tank', 'recon-drone'], UNDER, {
+        talk: [
+          brenn('start', 'That tank is stolen company property. Feel free to write it off.'),
+          dispatch(2, 'Unarmed squatters with a Hadron tank. The factory grease is still on its plates. Somebody delivered that.'),
+        ],
+      }),
     ],
   },
   {
@@ -103,9 +111,15 @@ export const MISSIONS: Mission[] = [
     battles: [
       battle(['recon-drone', 'bomb-crawler', 'recon-drone'], MINE, {
         objective: { type: 'protect', name: 'Ore Train', hp: 12 },
-        talk: [dispatch('start', 'Count the hostiles. That is what the train loses every round. And mind the one with the fuse.')],
+        talk: [
+          dispatch('start', 'Count the hostiles. That is what the train loses every round. And mind the one with the fuse.'),
+          dispatch('last', 'Funny. For a full ore train, those wagons ride very high on their springs.'),
+        ],
       }),
-      battle(['tank', 'bomb-crawler'], MINE, { objective: { type: 'protect', name: 'Ore Train', hp: 9 } }),
+      battle(['tank', 'bomb-crawler'], MINE, {
+        objective: { type: 'protect', name: 'Ore Train', hp: 9 },
+        talk: [brenn('start', 'The train is insured, pilot. You are not. Stand where that suggests.')],
+      }),
     ],
   },
   {
@@ -116,7 +130,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Data secured. Varga confirms the transfer in four words and closes the channel.',
     battles: [
-      battle(['gun-turret', 'recon-drone'], MINE),
+      battle(['gun-turret', 'recon-drone'], MINE, { talk: [dispatch(2, 'A survey station. Forty years of readings, and Hadron guards it like a mint. Makes you wonder what the readings say.')] }),
       battle(['tank', 'gun-turret'], MINE, { talk: [varga('start', 'The tank resists bullets and little else. Adjust accordingly.')] }),
     ],
   },
@@ -133,7 +147,7 @@ export const MISSIONS: Mission[] = [
         objective: { type: 'leader', target: 1 },
         talk: [varga('start', 'Your aim is degraded while the mast transmits. Everything else on the field is optional.')],
       }),
-      battle(['tank', 'jammer', 'lance-tower'], MINE, { objective: { type: 'leader', target: 1 } }),
+      battle(['tank', 'jammer', 'lance-tower'], MINE, { objective: { type: 'leader', target: 1 }, talk: [varga('start', 'A second mast. It carries the same maker\'s plate as our own instruments. Somebody sells to both ends of this argument.')] }),
     ],
   },
   {
@@ -145,7 +159,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The lower levels have light again. Tamsin sends what she promised, to the credit.',
     battles: [
-      battle(['recon-drone', 'recon-drone', 'recon-drone'], PLAZA),
+      battle(['recon-drone', 'recon-drone', 'recon-drone'], PLAZA, { talk: [tamsin(2, 'Three drones for one relay. They are not guarding it, pilot. They are counting us. We would rather not be counted.')] }),
       battle(['light-mech'], PLAZA, { talk: [tamsin('start', 'There it is. It dances, pilot. Dance back: Boost, and keep your guns on its core.')] }),
     ],
   },
@@ -164,7 +178,7 @@ export const MISSIONS: Mission[] = [
       }),
       battle(['heavy-mech', 'gunship'], SLUICE, {
         objective: { type: 'survive', rounds: 6 },
-        talk: [tamsin('start', 'An Enforcer. Do not trade blows with it. Just be here when it is over.')],
+        talk: [tamsin('start', 'An Enforcer. Do not trade blows with it. Just be here when it is over.'), tamsin(4, 'Last boat is loading. Forty-one. I will count them again on the far side.')],
       }),
     ],
   },
@@ -183,6 +197,7 @@ export const MISSIONS: Mission[] = [
         objective: { type: 'driveOff', target: 0, share: 0.4 },
         talk: [
           ashfall('start', 'So you are the other booking. Nothing personal. I am simply more expensive than you.'),
+          ashfall(3, 'Do you know who bought my half of this booking? Nor do I. The money was very clean. That is how I know it was not.'),
           ashfall('win', 'Enough. You have cost me half a fee and a paint job. We will do this properly some day.'),
         ],
       }),
@@ -198,7 +213,11 @@ export const MISSIONS: Mission[] = [
       'Hadron will own this city by morning. Be on the right side of the ledger.',
     ],
     debrief: 'The seam is quiet. Brenn calls it a successful restructuring.',
-    battles: [battle(['tank', 'recon-drone'], UNDER), battle(['light-mech'], UNDER), battle(['gun-turret', 'tank'], UNDER)],
+    battles: [
+      battle(['tank', 'recon-drone'], UNDER, { talk: [brenn('start', 'Nothing below Seam Nine is on any register. Keep that in mind when it starts shouting.')] }),
+      battle(['light-mech'], UNDER),
+      battle(['gun-turret', 'tank'], UNDER, { talk: [dispatch('last', 'Last one. I am logging tonight as routine. Do not thank me for it.')] }),
+    ],
   },
   {
     id: 'choice-lumen', phase: 'choice', title: 'Silent Partner', ...VARGA, reward: 2600,
@@ -208,7 +227,11 @@ export const MISSIONS: Mission[] = [
       'Their heavy frames are slow. Do not let that comfort you.',
     ],
     debrief: 'Depot removed. Varga adjusts a number on a screen you will never see.',
-    battles: [battle(['gun-turret', 'gun-turret'], MINE), battle(['heavy-mech'], MINE), battle(['heavy-mech', 'recon-drone'], MINE)],
+    battles: [
+      battle(['gun-turret', 'gun-turret'], MINE),
+      battle(['heavy-mech'], MINE, { talk: [varga('start', 'The depot\'s ledgers are to burn with it. That is a condition of the contract, not a preference.')] }),
+      battle(['heavy-mech', 'recon-drone'], MINE),
+    ],
   },
   {
     id: 'choice-undertow', phase: 'choice', title: 'Open the Gates', ...TAMSIN, reward: 2000,
@@ -218,7 +241,9 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The gates stand open. Down below, people are walking up into streets they have never seen.',
     battles: [
-      battle(['light-mech', 'recon-drone'], PLAZA), battle(['gun-turret', 'gun-turret', 'recon-drone'], MINE), battle(['heavy-mech'], MINE),
+      battle(['light-mech', 'recon-drone'], PLAZA, { talk: [tamsin('start', 'They will tell you the gates keep the water out. When we get there, look which way the bolts face.')] }),
+      battle(['gun-turret', 'gun-turret', 'recon-drone'], MINE),
+      battle(['heavy-mech'], MINE, { talk: [tamsin('win', 'Open. Forty years shut, and it took one afternoon.')] }),
     ],
   },
 
@@ -235,7 +260,7 @@ export const MISSIONS: Mission[] = [
       battle(['lance-tower', 'shield-drone', 'recon-drone'], VAULT, {
         talk: [dispatch('start', 'Shield drone. While it flies, your shots on the others do little more than half.')],
       }),
-      battle(['marksman', 'shield-drone'], VAULT),
+      battle(['marksman', 'shield-drone'], VAULT, { talk: [brenn('start', 'Whatever you read in that vault, you were paid not to. I should like that understood before it burns.')] }),
       battle(['sable'], VAULT, {
         par: 9,
         talk: [
@@ -259,7 +284,10 @@ export const MISSIONS: Mission[] = [
       }),
       battle(['leviathan'], SLUICE, {
         par: 10,
-        talk: [dispatch('start', 'There she is. Every few turns she drops a crawler. Do not let them pile up.')],
+        talk: [
+          dispatch('start', 'There she is. Every few turns she drops a crawler. Do not let them pile up.'),
+          dispatch(3, 'Her hull has a yard number older than Hadron. Somebody was building barges down there before anybody built a company.'),
+        ],
       }),
     ],
   },
@@ -272,7 +300,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The Mantis is winched onto a flatbed, still twitching. Brenn pays in full, for once without comment.',
     battles: [
-      battle(['gunship', 'tank'], UNDER),
+      battle(['gunship', 'tank'], UNDER, { talk: [dispatch('start', 'Brenn wants it whole. Ask yourself what a mining company wants with a frame that jumps. Then do not tell me.')] }),
       battle(['ripper', 'repair-drone'], UNDER, {
         objective: { type: 'disable', target: 0 },
         talk: [brenn('start', 'Legs and arms, pilot. If that core goes out, so does your fee.')],
@@ -295,7 +323,10 @@ export const MISSIONS: Mission[] = [
       }),
       battle(['strip-miner'], FOUNDRY, {
         par: 9,
-        talk: [varga('start', 'Kinetic fire is wasted on the hull and the wheel arm. Energy weapons go through all of it.')],
+        talk: [
+          varga('start', 'Kinetic fire is wasted on the hull and the wheel arm. Energy weapons go through all of it.'),
+          dispatch(3, 'Its cab is empty. That thing has been digging on its own for years. Nobody told it the seam was finished.'),
+        ],
       }),
     ],
   },
@@ -308,7 +339,9 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Rook limps home laughing. Varga files him under "unresolved" and moves on.',
     battles: [
-      battle(['bomb-crawler', 'tank', 'bomb-crawler'], UNDER, { talk: [dispatch('start', 'Two crawlers, two fuses. Kill one, Guard against the other.')] }),
+      battle(['bomb-crawler', 'tank', 'bomb-crawler'], UNDER, {
+        talk: [dispatch('start', 'Two crawlers, two fuses. Kill one, Guard against the other.'), varga('last', 'Their champion is next. Our models put a price on everybody. On him they return an error.')],
+      }),
       battle(['rook'], UNDER, {
         par: 8,
         talk: [
@@ -327,7 +360,10 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The stack hums on, intact. Varga sends a number with more digits than usual and no words.',
     battles: [
-      battle(['bomb-crawler', 'gunship', 'bomb-crawler'], VAULT, { objective: { type: 'protect', name: 'Core Stack', hp: 11 } }),
+      battle(['bomb-crawler', 'gunship', 'bomb-crawler'], VAULT, {
+        objective: { type: 'protect', name: 'Core Stack', hp: 11 },
+        talk: [varga('start', 'The stack holds every forecast we have made of this city. Yours is among them. You would not enjoy it.')],
+      }),
       battle(['tank', 'repair-drone', 'gunship'], VAULT, { objective: { type: 'protect', name: 'Core Stack', hp: 12 } }),
     ],
   },
@@ -342,7 +378,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Krell walks away from the wreck on foot. Down below, the night shift does not clock in.',
     battles: [
-      battle(['gun-turret', 'jammer', 'gun-turret'], FOUNDRY, { objective: { type: 'leader', target: 1 } }),
+      battle(['gun-turret', 'jammer', 'gun-turret'], FOUNDRY, { objective: { type: 'leader', target: 1 }, talk: [tamsin('start', 'Krell carried the valve keys once. Ask anyone old enough to be afraid of him what he did with them.')] }),
       battle(['krell'], FOUNDRY, {
         par: 9,
         talk: [
@@ -361,7 +397,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The Eye falls into the plaza fountain. For one night nobody below is being counted.',
     battles: [
-      battle(['marksman', 'shield-drone'], PLAZA),
+      battle(['marksman', 'shield-drone'], PLAZA, { talk: [dispatch('start', 'The Eye counts heads below the gates and sends the number up the tower every night. Nobody will say who reads it.')] }),
       battle(['overseer', 'shield-drone'], PLAZA, { par: 10, talk: [tamsin('start', 'That is it. Shoot the drone first, then put out the lens.')] }),
     ],
   },
@@ -374,8 +410,8 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Morning comes and the pumps are still turning. Tamsin brings you tea in a tin mug.',
     battles: [
-      battle(['juggernaut', 'carrier'], SLUICE, { objective: { type: 'survive', rounds: 6 } }),
-      battle(['stalker', 'heavy-mech', 'gunship'], SLUICE, { objective: { type: 'survive', rounds: 6 } }),
+      battle(['juggernaut', 'carrier'], SLUICE, { objective: { type: 'survive', rounds: 6 }, talk: [tamsin(3, 'Hear that? Pumps. The bottom streets have not been dry since my mother was a girl.')] }),
+      battle(['stalker', 'heavy-mech', 'gunship'], SLUICE, { objective: { type: 'survive', rounds: 6 }, talk: [tamsin(5, 'One more round. Then somebody should go down and see what the water has been keeping.')] }),
     ],
   },
 
@@ -388,7 +424,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Lumen Tower goes dark floor by floor. Brenn is already drafting the announcement.',
     battles: [
-      battle(['light-mech', 'recon-drone'], PLAZA),
+      battle(['light-mech', 'recon-drone'], PLAZA, { talk: [brenn('start', 'After tonight the insurers will want a word with somebody. Let them. We shall own the answer.')] }),
       battle(['gun-turret', 'tank'], PLAZA),
       battle(['rival-2'], PLAZA, {
         par: 8,
@@ -407,7 +443,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The pit falls silent. Somewhere a system marks Hadron Mining as an archived entity.',
     battles: [
-      battle(['heavy-mech', 'tank'], MINE),
+      battle(['heavy-mech', 'tank'], MINE, { talk: [varga('start', 'Our model of this war ends tonight. It does not say what happens tomorrow. That has not occurred before.')] }),
       battle(['gun-turret', 'gun-turret', 'tank'], MINE),
       battle(['rival-2'], MINE, {
         par: 8,
@@ -426,7 +462,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Sunrise finds the gates still open. Tamsin pays you from a collection tin. It is all there.',
     battles: [
-      battle(['heavy-mech'], NEON),
+      battle(['heavy-mech'], NEON, { talk: [tamsin('start', 'If this goes badly, there is a brass tag sewn into my coat. See that it gets back down the stairs.')] }),
       battle(['light-mech', 'recon-drone'], NEON),
       battle(['rival-2'], NEON, {
         par: 8,
@@ -449,7 +485,10 @@ export const MISSIONS: Mission[] = [
     debrief: 'The lane is clear. A polite man in black leaves a message asking when it would suit you to be seized.',
     battles: [
       battle(['lien-drone', 'lien-drone', 'lien-drone'], NEON, {
-        talk: [dispatch('start', 'Lien drones. Every hit takes energy out of your next turn. Kill them quickly or end up watching.')],
+        talk: [
+          dispatch('start', 'Lien drones. Every hit takes energy out of your next turn. Kill them quickly or end up watching.'),
+          dispatch('last', 'They are not shooting to kill. They are shooting to tag. Look at your panel: you have a number now.'),
+        ],
       }),
       battle(['bailiff', 'lien-drone'], NEON, {
         talk: [
@@ -468,7 +507,10 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The hangar is yours for another night. Dispatch comes out from under the desk and denies ever being there.',
     battles: [
-      battle(['lien-drone', 'bomb-crawler', 'lien-drone'], HANGAR, { objective: { type: 'protect', name: 'Hangar', hp: 12 } }),
+      battle(['lien-drone', 'bomb-crawler', 'lien-drone'], HANGAR, {
+        objective: { type: 'protect', name: 'Hangar', hp: 12 },
+        talk: [dispatch('start', 'Under the desk. There is a drawer down here I have not opened in eleven years. It can wait one more night.')],
+      }),
       battle(['lien-drone', 'shield-drone', 'lien-drone'], HANGAR, {
         objective: { type: 'protect', name: 'Hangar', hp: 12 },
         talk: [actuary('start', 'The lease on this building lapsed at midnight. We are merely tidying up.')],
@@ -493,6 +535,7 @@ export const MISSIONS: Mission[] = [
         support: ASHFALL_FIRE,
         talk: [
           actuary('start', 'Two debtors on one roof. Efficient. The Assessor will value you both.'),
+          ashfall('hurt', 'Stay on your feet. I have seen what happens to an escort whose partner is late. Once was enough.'),
           ashfall('win', 'Hm. We work well. Tell nobody. They want to talk to you now. So do I.'),
         ],
       }),
@@ -526,7 +569,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The Adjuster\'s scales hit the marble. Somewhere a ledger the size of a city balances to zero.',
     battles: [
-      battle(['bailiff', 'lien-drone', 'shield-drone'], CLEARING, { support: ASHFALL_ALL_IN }),
+      battle(['bailiff', 'lien-drone', 'shield-drone'], CLEARING, { support: ASHFALL_ALL_IN, talk: [ashfall('start', 'The Adjuster holds the policy. Not the people it was written for. Try to remember there is a difference.')] }),
       battle(['adjuster'], CLEARING, {
         par: 12,
         support: ASHFALL_ALL_IN,

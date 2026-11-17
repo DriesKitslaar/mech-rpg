@@ -251,7 +251,7 @@ class MissionHost implements Screen {
     // Each battle of a contract has its own song: the last one may be against a boss.
     this.app.playTrack(battleTrack(this.mission, this.index, this.app.enemies()));
     // Tests play without the talk: it is words to read, and they have nobody reading.
-    this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast });
+    this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast, cycle: this.app.game?.cycle ?? 0 });
     const battle = this.mission.battles[this.index];
     const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
     if (this.index > 0) this.app.openShutter();

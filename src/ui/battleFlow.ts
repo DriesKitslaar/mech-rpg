@@ -24,8 +24,10 @@ export interface ObjectiveView {
 }
 
 export interface FlowOptions {
-  /** Lines said at the start, at the start of a round and after a win. */
+  /** Lines said at the start, at the start of a round, when one enemy is left, when the pilot is hurt, and after a win. */
   talk?: TalkLine[];
+  /** The cycle of the game the battle is fought in: lines kept for a later cycle are said from that cycle on. The first, when absent. */
+  cycle?: number;
   /** Nothing is said at all, a boss's own lines included. Tests play this way. */
   quiet?: boolean;
 }
@@ -71,16 +73,42 @@ export class BattleFlow {
   private autoTurn = false;
   private waiting: Spoken[] = [];
   private afterTalk: () => void = () => {};
-  /** The rounds whose lines have been said. */
+  /** The rounds whose lines have been said, and the moments (`last`, `hurt`) that have had theirs. */
   private roundsSaid = new Set<number>();
+  private momentsSaid = new Set<'last' | 'hurt'>();
+  /** How many enemies the battle began with. */
+  private began: number;
 
   constructor(state: BattleState, private catalog: Catalog, private opts: FlowOptions = {}) {
     this.state = state;
+    this.began = state.units.filter((u) => u.side === 'enemy').length;
     this.say(this.lines('start'), () => { this.phase = 'animating'; });
   }
 
+  /** The lines there are to say in this telling of the story: one kept for a later cycle is not among them before it. */
+  private get talk(): TalkLine[] {
+    return (this.opts.talk ?? []).filter((line) => (line.cycle ?? 0) <= (this.opts.cycle ?? 0));
+  }
+
   private lines(at: TalkLine['at']): Spoken[] {
-    return (this.opts.talk ?? []).filter((line) => line.at === at).map(({ who, portrait, text }) => ({ who, text, ...(portrait ? { portrait } : {}) }));
+    return this.talk.filter((line) => line.at === at).map(({ who, portrait, text }) => ({ who, text, ...(portrait ? { portrait } : {}) }));
+  }
+
+  /**
+   * The lines of a moment that has come and has not had them yet: one enemy left of several, the
+   * pilot's core below half. Each moment has its say once in a battle.
+   */
+  private moments(): Spoken[] {
+    const core = this.player.parts.core;
+    const come: Record<'last' | 'hurt', boolean> = {
+      last: this.began > 1 && this.livingEnemies().length === 1,
+      hurt: !!core && core.ap > 0 && core.ap * 2 < core.maxAp,
+    };
+    return (['last', 'hurt'] as const).flatMap((moment) => {
+      if (!come[moment] || this.momentsSaid.has(moment)) return [];
+      this.momentsSaid.add(moment);
+      return this.lines(moment);
+    });
   }
 
   /** Says the lines one confirm at a time, then carries on with `then`. With nothing to say, or when quiet, at once. */
@@ -306,11 +334,11 @@ export class BattleFlow {
     }
     // The player's turn: whatever was to be said by this round and has not been is said first, once.
     // A round the pilot sat out (a turn lost to heat) keeps its line for the next turn they do get.
-    const due = [...new Set((this.opts.talk ?? []).flatMap((line) => (typeof line.at === 'number' ? [line.at] : [])))]
+    const due = [...new Set(this.talk.flatMap((line) => (typeof line.at === 'number' ? [line.at] : [])))]
       .filter((round) => round <= this.state.round && !this.roundsSaid.has(round))
       .sort((a, b) => a - b);
     for (const round of due) this.roundsSaid.add(round);
-    this.say(due.flatMap((round) => this.lines(round)), () => this.openActionMenu());
+    this.say([...due.flatMap((round) => this.lines(round)), ...this.moments()], () => this.openActionMenu());
   }
 
   private openActionMenu(): void {
