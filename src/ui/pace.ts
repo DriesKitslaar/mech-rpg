@@ -145,9 +145,12 @@ export class Pace {
     this.descent = null;
   }
 
-  /** True once it has kept up, at the light it has, for a good while on end: what a chance at more light is won by. */
+  /**
+   * True once it has kept up, at the light it has, for a good while on end: what a chance at more
+   * light is won by. Never in a session that is not judged: no window is counted in one.
+   */
   get steady(): boolean {
-    return this.judging && this.good >= STEADY;
+    return this.good >= STEADY;
   }
 
   private count(gapMs: number): void {

@@ -539,11 +539,12 @@ export class App {
       return;
     }
     const { level, judging } = this.pace;
-    // Put back: the light was not what it is slow at. Or a step given up; where that is the step a chance
-    // was at, the chance is lost, however long it had seemed kept, and that is counted.
-    const lost = this.chance !== null && level === this.chance.level - 1;
+    // Put back: the light was not what it is slow at. Or a step given up; in a session that is a chance the
+    // first step given up is the one the chance was at: it is lost, however long it had seemed kept, and
+    // that is counted.
+    const lost = this.chance;
     if (!judging) save.savePace({ level, runs: 0, held: true });
-    else save.savePace({ level, runs: 0, ...(lost ? { tries: Math.min(MAX_TRIES, this.chance!.tries + 1) } : {}) });
+    else save.savePace({ level, runs: 0, ...(lost ? { tries: Math.min(MAX_TRIES, lost.tries + 1) } : {}) });
     // The chance is over: keeping up with less light for the rest of the session wins nothing back.
     this.chance = null;
     this.applyLight();

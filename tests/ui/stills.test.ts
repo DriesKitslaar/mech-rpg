@@ -570,10 +570,23 @@ describe('a page of story on its picture', () => {
         last = now;
       }
     }
-    // They are still spread over the whole width of the page.
-    const xs = Array.from({ length: PAPERS }, (_, i) => paperAt(i, 0, 310, 270).x);
-    expect(Math.min(...xs)).toBeLessThan(60);
-    expect(Math.max(...xs)).toBeGreaterThan(250);
+    // Each sways seven pixels to either side of the line it falls along, and no more.
+    const lines: number[] = [];
+    for (let i = 0; i < PAPERS; i++) {
+      let low = Infinity;
+      let high = -Infinity;
+      for (let t = 0; t <= 60_000; t += 100) {
+        const { x } = paperAt(i, t, 310, 270);
+        low = Math.min(low, x);
+        high = Math.max(high, x);
+      }
+      expect(high - low, `notice ${i}`).toBeGreaterThanOrEqual(12);
+      expect(high - low, `notice ${i}`).toBeLessThanOrEqual(15);
+      lines.push((low + high) / 2);
+    }
+    // The lines they fall along are spread over the whole width of the page.
+    expect(Math.min(...lines)).toBeLessThan(40);
+    expect(Math.max(...lines)).toBeGreaterThan(270);
   });
 
   test('the stroke a clap belongs to is on the page, and in the place a conversation is held in: lit in the frame the thunder is asked for, not in the frame before', () => {

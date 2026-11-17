@@ -453,6 +453,14 @@ describe('giving light up has to help', () => {
     // Thirty-four became thirty-one: not fifteen in a hundred shorter, hitch or no hitch.
     expect(windows(before, 3, 31)).toBe(true);
     expect([before.level, before.judging]).toEqual([2, false]);
+    // A hitch from before a pause is not carried into the spell after it.
+    const paused = warm();
+    windows(paused, 6, 34);
+    expect(paused.level).toBe(0);
+    paused.frame(900);
+    paused.frame(PAUSE_MS + 1);
+    expect(windows(paused, 3, 34)).toBe(true);
+    expect([paused.level, paused.judging]).toEqual([2, false]);
   });
 
   test('it goes back to where it came down from, which is not always all of the light', () => {
