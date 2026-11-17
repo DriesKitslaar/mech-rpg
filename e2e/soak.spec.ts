@@ -22,6 +22,8 @@ const ASKED = !!process.env.SOAK;
 const MINUTES = Number(process.env.SOAK_MINUTES ?? 3);
 // At twice the game's own size, half the handheld's: the same drawing, a quarter of the pixels to fill, so more of the game is seen in the time.
 test.use({ viewport: { width: 620, height: 540 } });
+// Each player has a browser of its own: they play side by side where there are workers for it (--workers 5).
+test.describe.configure({ mode: 'parallel' });
 const ACT_ONE = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1'];
 const PHASE = Object.fromEntries(MISSIONS.map((m) => [m.id, m.phase as string]));
 
