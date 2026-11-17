@@ -147,6 +147,40 @@ export function drawBeam(ctx: CanvasRenderingContext2D, from: Pt, to: Pt, width:
 }
 
 /**
+ * A beam that is wider at one end than at the other: one that is fired away from the camera
+ * narrows as it goes, one fired towards it widens. A white core in a halo of its colour, added to
+ * what is there, like `drawBeam`; its ends are cut square, where a barrel's fire and a blow are.
+ */
+export function drawTaper(ctx: CanvasRenderingContext2D, from: Pt, to: Pt, widthFrom: number, widthTo: number, color: string, alpha: number): void {
+  if (alpha <= 0.01 || (widthFrom <= 0 && widthTo <= 0) || !soft()) return;
+  const length = Math.hypot(to.x - from.x, to.y - from.y);
+  if (length <= 0) return;
+  // Across the beam, at right angles to the way it points.
+  const nx = -(to.y - from.y) / length;
+  const ny = (to.x - from.x) / length;
+  const before = ctx.globalCompositeOperation;
+  ctx.globalCompositeOperation = 'lighter';
+  const [r, g, b] = rgb(color);
+  const band = (k: number, least: number, style: string): void => {
+    const a = Math.max(least, widthFrom * k) / 2;
+    const z = Math.max(least, widthTo * k) / 2;
+    ctx.fillStyle = style;
+    ctx.beginPath();
+    ctx.moveTo(from.x + nx * a, from.y + ny * a);
+    ctx.lineTo(to.x + nx * z, to.y + ny * z);
+    ctx.lineTo(to.x - nx * z, to.y - ny * z);
+    ctx.lineTo(from.x - nx * a, from.y - ny * a);
+    ctx.closePath();
+    ctx.fill();
+  };
+  band(3.2, 0, `rgba(${r}, ${g}, ${b}, ${(alpha * 0.16).toFixed(3)})`);
+  band(1.9, 0, `rgba(${r}, ${g}, ${b}, ${(alpha * 0.4).toFixed(3)})`);
+  band(1, 0, `rgba(${r}, ${g}, ${b}, ${(alpha * 0.9).toFixed(3)})`);
+  band(0.4, 1, `rgba(255, 255, 255, ${alpha.toFixed(3)})`);
+  ctx.globalCompositeOperation = before;
+}
+
+/**
  * A cone of light from a lamp: a point where it starts, `width` wide where it ends, and fading
  * away along its length. Added to what is there, in two layers so that its sides are soft.
  */

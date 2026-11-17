@@ -4,7 +4,8 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen } from '../../src/ui/battleScreen';
-import { PLAIN, pictureTop } from '../../src/ui/stage';
+import { PLAIN, depthOf, pictureTop } from '../../src/ui/stage';
+import { WRECK_SIZE, sizeAt } from '../../src/ui/battleFx';
 import {
   CUT_IN_H, CUT_IN_MS, CUT_IN_NAME_TALL, CUT_IN_NAME_W, CUT_IN_SCALE, FINISH_FIELD_MS, FINISH_HOLD_MS, FINISH_SLOW, FINISH_ZOOM, LETTERBOX, MOTES, RAYS, RESULT_IN_MS, SPEED_LINES, STAMP_FX_MS, STAMP_SPARKS,
   cutInOpen, drawCutIn, drawDefeat, drawLetterbox, drawStamp, drawVictory, endsBattle, focusOn, letterbox, lookClose,
@@ -17,7 +18,7 @@ import { SettlementScreen } from '../../src/ui/settlementScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { COLORS } from '../../src/ui/widgets';
 import { onStage, record, signCount, signIn, type Drawn, type Filled } from '../helpers/canvas';
-import { eyesIn } from '../helpers/eyes';
+import { eyesIn, generatorIn } from '../helpers/eyes';
 import { setLanguage } from '../../src/content/language';
 import { RESULT_TALL, RESULT_W, RESULT_WORD_Y } from '../../src/ui/battleScreen';
 import { fitTall, wordWidth } from '../../src/ui/signType';
@@ -602,7 +603,9 @@ describe('the staged moments in a battle', () => {
       for (let i = 0; i < 90 && screen.motion.finish; i++) {
         screen.update(16);
         const frame = page();
-        lights = Math.max(lights, frame.glows.filter((g) => g.blend === 'lighter').length);
+        // The battle's own lights: the generator on the pilot's back, far off to the left of what is looked at, is no more one of them than an eye is.
+        const own = generatorIn(onStage(frame, screen.motion.view)) ? 1 : 0;
+        lights = Math.max(lights, frame.glows.filter((g) => g.blend === 'lighter').length - own);
         close = close || background(frame).w >= 620;
       }
       return { lights, close };
@@ -691,9 +694,12 @@ describe('the staged moments in a battle', () => {
       let seenAt = -1;
       let heardAt = -1;
       let endedAt = -1;
+      const last = WRECK_SIZE * sizeAt(depthOf(screen.motion.at.floor('enemy-0') + 1));
+      expect(last).toBeLessThan(WRECK_SIZE);
       for (let ms = 16; ms <= 4000 && endedAt < 0; ms += 16) {
         screen.update(16);
-        if (seenAt < 0 && screen.motion.blasts.includes(26)) seenAt = ms;
+        // The last and largest blast, as large as the machine is far off.
+        if (seenAt < 0 && screen.motion.blasts.some((size) => Math.abs(size - last) < 1e-9)) seenAt = ms;
         if (heardAt < 0 && booms() === 1) heardAt = ms;
         if (!screen.motion.finish) endedAt = ms;
       }
@@ -814,7 +820,8 @@ describe('the staged moments in a battle', () => {
         most = Math.max(most, screen.motion.particles);
         if (i % 7 === 0) {
           const drawn = onStage(page(), screen.motion.view);
-          lights = Math.max(lights, drawn.glows.filter((g) => g.blend === 'lighter').length - eyesIn(drawn).length);
+          // The eyes of the machines and the generator on the pilot's back are apart from the sixteen.
+          lights = Math.max(lights, drawn.glows.filter((g) => g.blend === 'lighter').length - eyesIn(drawn).length - (generatorIn(drawn) ? 1 : 0));
         }
       }
       expect(flow.phase, `seed ${seed}`).toBe('result');

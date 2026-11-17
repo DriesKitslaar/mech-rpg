@@ -9,7 +9,7 @@ import { FIELD_LIGHT, MAX_LIGHTS } from '../../src/ui/light';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { EMBER_LIGHTS, LIGHTNING_MS } from '../../src/ui/weather';
 import { onStage, record, type Drawn, type Glowed } from '../helpers/canvas';
-import { eyesIn } from '../helpers/eyes';
+import { eyesIn, generatorIn } from '../helpers/eyes';
 
 /**
  * The look of the field, where it meets a whole battle: what is left of machines that went up, what
@@ -204,14 +204,21 @@ describe('a calm picture, at every place it was promised', () => {
 
   test('a beam\'s halo is at half strength and holds steady, where it flickers otherwise', () => {
     const { plain, calm } = both(() => fight(['gun-turret']));
-    /** How strong the widest of a beam's strokes is, step by step, from the first moment it is seen to the last. */
+    /**
+     * How strong the widest band of a beam is, step by step, from the first moment it is seen to the last. A beam that
+     * is fired across the floor narrows as it goes: its bands are four-cornered shapes, wider where they leave than where they land.
+     */
     const halo = (s: ReturnType<typeof screenOf>): number[] => {
       expect(s.fireAt('leftHand', 'enemy-0')).toBe(true);
       const seen: number[] = [];
       // In steps much shorter than a frame, so that every flicker is seen.
       for (let i = 0; i < 200; i++) {
         s.screen.update(3);
-        const widest = s.page().strokes.filter((k) => k.blend === 'lighter').sort((a, b) => b.width - a.width)[0];
+        const across = (k: { points: { x: number; y: number }[] }): number => Math.hypot(k.points[0].x - k.points[3].x, k.points[0].y - k.points[3].y);
+        const bands = s.page().shapes.filter((k) => k.blend === 'lighter' && k.points.length === 4);
+        const widest = [...bands].sort((a, b) => across(b) - across(a))[0];
+        // It narrows as it goes: wider at the barrel than at what it burns.
+        if (widest) expect(across(widest)).toBeGreaterThan(Math.hypot(widest.points[1].x - widest.points[2].x, widest.points[1].y - widest.points[2].y));
         seen.push(widest ? Number(/, ([\d.]+)\)$/.exec(widest.color)![1]) : 0);
       }
       const first = seen.findIndex((level) => level > 0);
@@ -299,14 +306,15 @@ describe('how many lights a frame holds', () => {
       const weather = lights.filter((g) => g.r === 7).length;
       expect(weather).toBeLessThanOrEqual(EMBER_LIGHTS);
       // The eyes of the machines are apart from the sixteen: one for each that stands.
-      const eyes = eyesIn(drawn).length;
-      expect(eyes).toBeLessThanOrEqual(4);
+      // And so is the generator on the back of the pilot's mech, while that mech stands.
+      const eyes = eyesIn(drawn).length + (generatorIn(drawn) ? 1 : 0);
+      expect(eyes).toBeLessThanOrEqual(5);
       most = Math.max(most, lights.length);
       own = Math.max(own, lights.length - place - weather - eyes);
     }
     expect(own).toBeLessThanOrEqual(MAX_LIGHTS);
     expect(own).toBeGreaterThan(6);
-    expect(most).toBeLessThanOrEqual(MAX_LIGHTS + place + EMBER_LIGHTS + 4);
+    expect(most).toBeLessThanOrEqual(MAX_LIGHTS + place + EMBER_LIGHTS + 5);
     // Four machines stood in four places: that is how many wrecks there can be.
     expect(screen.motion.wrecks.length).toBeLessThanOrEqual(4);
   });
