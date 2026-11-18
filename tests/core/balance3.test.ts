@@ -1,5 +1,5 @@
 import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
-import { cycleStrength, forCycle } from '../../src/core/campaign';
+import { cycleStrength, forCycle, type Mission } from '../../src/core/campaign';
 import { playMission } from '../../src/core/mission';
 import { tuneCap } from '../../src/core/tuning';
 import { ENEMIES } from '../../src/content/enemies';
@@ -13,7 +13,7 @@ import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
  * every perk that counts in a fight. It uses no wingman and no Overdrive, so a pilot at the controls
  * has more than this. What is asked: that a pilot who has stopped growing is not met by enemies who
  * have not. Before the strength of a cycle had a ceiling, the same player won the last contract of
- * the fourth telling 37 times in a hundred without the bench and 88 with it, and of the fifth 3 and 72.
+ * the fourth telling 35 times in a hundred without the bench and 88 with it, and of the fifth 3 and 72.
  */
 const SEEDS = 40;
 const DIFFICULTY = { standard: 1, veteran: 1.2 } as const;
@@ -23,12 +23,16 @@ const perks = Object.fromEntries(['aim', 'evasion', 'energy', 'cooling', 'repair
 const build = REFERENCE_BUILDS.tier6;
 const played = new Map<string, number>();
 
-/** How often a contract of the given cycle is won; with the bench, every part of the frame is as far along as that cycle allows. */
-function rate(id: string, cycle: number, difficulty: keyof typeof DIFFICULTY, bench: boolean): number {
-  const key = `${id}|${cycle}|${difficulty}|${bench}`;
+/**
+ * How often a contract of the given cycle is won; with the bench, every part of the frame is as far along as that cycle
+ * allows. `change` is for asking what if: the contract the cycle offers, made otherwise.
+ */
+function rate(id: string, cycle: number, difficulty: keyof typeof DIFFICULTY, bench: boolean, change?: { name: string; to: (offered: Mission, first: Mission) => Mission }): number {
+  const key = `${id}|${cycle}|${difficulty}|${bench}|${change?.name ?? ''}`;
   const known = played.get(key);
   if (known !== undefined) return known;
-  const mission = forCycle(MISSIONS.find((m) => m.id === id)!, cycle);
+  const first = MISSIONS.find((m) => m.id === id)!;
+  const mission = change ? change.to(forCycle(first, cycle), first) : forCycle(first, cycle);
   const tune = bench ? Object.fromEntries(Object.values(build).map((part) => [part, tuneCap(cycle)])) : {};
   let wins = 0;
   for (let seed = 1; seed <= SEEDS; seed++) {
@@ -58,10 +62,21 @@ test('on Standard no pilot is shut out for not using the bench: the verdicts of 
   expect(cycleStrength(6)).toBe(cycleStrength(2));
 });
 
-test('the hardest contracts of the war and the audit are still fights at the peak, not walls', () => {
+test('the two contracts with something to protect are won four times in five at the peak, with the bench or without', () => {
   for (const id of ['lumen-5', 'audit-2']) {
-    expect(rate(id, 2, 'standard', true), id).toBeGreaterThanOrEqual(0.4);
-    expect(rate(id, 6, 'standard', true), id).toBeGreaterThanOrEqual(0.4);
+    expect(MISSIONS.find((m) => m.id === id)!.battles.some((battle) => battle.objective?.type === 'protect'), id).toBe(true);
+    for (const cycle of [2, 6]) {
+      expect(rate(id, cycle, 'standard', true), `${id} in cycle ${cycle}`).toBeGreaterThanOrEqual(0.8);
+      expect(rate(id, cycle, 'standard', false), `${id} in cycle ${cycle}, no bench`).toBeGreaterThanOrEqual(0.8);
+    }
+  }
+});
+
+test('that is because what is protected grows sturdier as the enemies grow tougher: left as in the first telling it is lost far more often', () => {
+  // The contract as the third telling offers it, but for the thing to be kept alive: that as the first telling had it.
+  const frail = { name: 'frail', to: (offered: Mission, first: Mission): Mission => ({ ...offered, battles: first.battles }) };
+  for (const id of ['lumen-5', 'audit-2']) {
+    expect(rate(id, 2, 'standard', true, frail), id).toBeLessThanOrEqual(rate(id, 2, 'standard', true) - 0.1);
   }
 });
 

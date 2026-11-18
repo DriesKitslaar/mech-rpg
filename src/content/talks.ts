@@ -150,7 +150,7 @@ export const REMEMBERED: Record<string, Record<string, string>> = {
     cut: 'Dispatch still routes your contracts. Neither of you says a word that is not on the form.',
   },
   // What a pilot of a later telling did with the other side's offer for a contract.
-  seam: { stand: 'Seam Nine still has its tank. Nobody on either side will say who taught it which way to point.' },
+  seam: { stand: 'One night the tank in Seam Nine fired the other way. Nobody on either side will say who stood beside it.' },
   train: { weigh: 'The weighbridge at the Hadron yard has a new dial. What the old one read was never found.' },
   lights: { dark: 'Below the gates they remember one more dark week, and who was paid for it.' },
   frame: {

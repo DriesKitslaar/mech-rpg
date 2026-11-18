@@ -219,7 +219,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'ranks', title: 'RANKS',
-    text: 'A won contract is ranked S to D on three things: rounds taken against par, armour lost, and field repairs used. S pays 25% more and A 10% more. The archive lets you play a contract again for a better rank and a share of the pay.',
+    text: 'A won contract is ranked S to D on three things: rounds taken against par, armour lost, and field repairs used. S pays 25% more and A 10% more. The archive lets you play a contract again for a better rank and a share of the pay. A contract won for the other side is kept there as it was first offered.',
   },
   {
     id: 'money', title: 'MONEY',

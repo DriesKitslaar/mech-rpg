@@ -183,7 +183,7 @@ export const STRINGS_NL = {
     locked: 'Op slot', opensAfter: (title: string) => `na ${title}`, campaignDone: 'De oorlog is om. Het werk niet.',
     cycleLabel: (n: number) => `CYCLUS ${n + 1}`,
     cycleQuestion: (next: number): string[] => ['De oorlog opnieuw?', 'Je houdt credits, level,', 'onderdelen, perks, arenarang.',
-      ...(next <= 2 ? ['Vijanden worden taaier,', 'meer loon, werkbank verder.']
+      ...(next <= 2 ? ['Taaiere vijanden, meer loon,', 'een stap meer op de werkbank.']
         : next === 3 ? ['Vijanden blijven even taai.', 'De werkbank kan nog een stap.']
           : ['Vijanden blijven even taai,', 'en het loon blijft gelijk.'])],
     no: 'Nee', yes: 'Ja',
@@ -353,7 +353,7 @@ export const STRINGS_NL = {
     toBench: 'R1: WERKBANK', bench: 'DE WERKBANK', benchStep: (step: number, cap: number) => `Stap ${step} van ${cap}`,
     tune: (step: number) => `Naar +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `Je hebt ${credits} c`,
     benchFigures: { armour: 'Pantser', damage: 'Schade', output: 'Vermogen' },
-    benchAtLimit: 'Niet verder deze ronde', benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
+    benchAtLimit: 'Niet verder deze cyclus', benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
   },
   shop: {
     heading: 'WINKEL', buy: 'KOOP', sell: 'VERK.', credits: 'CR',
@@ -369,7 +369,7 @@ export const STRINGS_NL = {
   },
   partInfo: {
     ap: 'AP', resist: 'RES K/S/E', weight: 'GEW', drain: 'VERBR.', aim: 'TREF', capacity: 'LAST', mobility: 'MOB',
-    output: 'VERMOGEN', cooling: 'KOELING', damage: 'SCH.', accuracy: 'PREC', energy: 'EN', heat: 'HITTE', ammo: 'MUN.',
+    output: 'VERMOGEN', cooling: 'KOELING', damage: 'SCH', accuracy: 'PREC', energy: 'EN', heat: 'HITTE', ammo: 'MUN.',
     impact: 'DUW', unlimited: 'onbeperkt', perShot: '/schot',
     thrust: 'STUWING', boostCost: 'BOOSTKOSTEN', aimByType: 'TREF K/S/E', focus: 'FOCUS', uses: 'KEREN',
     guard: (blocked: number) => `DEKKING: stopt ${blocked}%`, guardShort: 'DEKKING',
@@ -385,7 +385,7 @@ export const STRINGS_NL = {
     },
     legTypes: {
       biped: '', reverse: 'OMGEKEERD: boost +8 ontwijk', quad: 'QUAD: stevig, schouder +6',
-      tank: 'RUPS: geen boost, dekking 50%', hover: 'HOVER: goedkope boost, wankel',
+      tank: 'RUPS: geen boost, dekt 50%', hover: 'HOVER: zuinige boost, wankel',
     },
     modules: {
       coolant: (p: number) => `Koelt meteen ${p} hitte.`,

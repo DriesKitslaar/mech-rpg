@@ -20,7 +20,7 @@ const question = (next: number): string[] => STRINGS.hub.cycleQuestion(next);
 
 describe('the question before the story starts over', () => {
   test('says what the cycle that would begin changes: tougher and better paid up to the third telling, a step more at the bench up to the fourth', () => {
-    expect(question(1)).toEqual(['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.', 'Enemies get tougher, pay', 'improves, the bench goes on.']);
+    expect(question(1)).toEqual(['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.', 'Tougher enemies, better pay,', 'one more step at the bench.']);
     expect(question(2)).toEqual(question(1));
     expect(question(3).slice(3)).toEqual(['Enemies are as tough as now.', 'The bench has one step left.']);
     expect(question(4).slice(3)).toEqual(['Enemies are as tough as now,', 'and the pay is the same.']);
@@ -31,7 +31,7 @@ describe('the question before the story starts over', () => {
     for (let next = 1; next <= 8; next++) {
       const said = question(next).join(' ');
       const tougher = cycleStrength(next) > cycleStrength(next - 1);
-      expect(/get tougher/.test(said), `cycle ${next}`).toBe(tougher);
+      expect(/Tougher enemies, better pay/.test(said), `cycle ${next}`).toBe(tougher);
       expect(/as tough as now/.test(said), `cycle ${next}`).toBe(!tougher);
       expect(cyclePay(next) > cyclePay(next - 1), `cycle ${next}`).toBe(tougher);
       // The bench is spoken of exactly while there is a step to come.
@@ -63,7 +63,7 @@ describe('the question before the story starts over', () => {
     };
     expect(asked(0)).toEqual(expect.arrayContaining(question(1)));
     expect(asked(2)).toEqual(expect.arrayContaining(question(3)));
-    expect(asked(2)).not.toContain('Enemies get tougher, pay');
+    expect(asked(2)).not.toContain('Tougher enemies, better pay,');
     expect(asked(5)).toEqual(expect.arrayContaining(question(6)));
   });
 

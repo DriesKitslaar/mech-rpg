@@ -3,9 +3,10 @@ import { checksHeld, papersFound } from '../core/codex';
 import { FACTORY_PAINT, type GameState } from '../core/game';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
-import { TUNE_MAX, stepOf } from '../core/tuning';
+import { TUNE_MAX, stepOf, tunable } from '../core/tuning';
 import { DRILLS } from './drills';
 import { ENEMIES } from './enemies';
+import { CATALOG } from './parts';
 
 type Progress = Medal['progress'];
 /** `need` of something that is counted. */
@@ -17,8 +18,12 @@ const did = (missionId: string): Progress => once((game) => game.completed.inclu
 /** How many of the given medals are held. */
 const held = (ids: string[]): Progress => count(ids.length, (game) => ids.filter((id) => game.medals.includes(id)).length);
 const sRanks = (game: GameState): number => Object.values(game.ranks).filter((rank) => rank === 'S').length;
-/** Every step the bench has taken, over all the pilot's parts; and the furthest it has taken any one of them. */
-const steps = (game: GameState): number[] => Object.keys(game.tuning ?? {}).map((id) => stepOf(game.tuning, id));
+/**
+ * Every step the bench has taken, over all the pilot's parts; and the furthest it has taken any one
+ * of them. Only parts there are, of a kind the bench takes: a name that is no part earns nothing.
+ */
+const steps = (game: GameState): number[] => Object.keys(game.tuning ?? {})
+  .filter((id) => Object.hasOwn(CATALOG, id) && tunable(CATALOG[id])).map((id) => stepOf(game.tuning, id));
 const benchSteps = (game: GameState): number => steps(game).reduce((sum, step) => sum + step, 0);
 const furthestStep = (game: GameState): number => Math.max(0, ...steps(game));
 const KINDS = Object.keys(ENEMIES);

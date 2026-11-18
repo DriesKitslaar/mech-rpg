@@ -200,8 +200,8 @@ export const REFERENCE_NL: Record<string, string> = {
   'Not every battle is won by destroying everything. Some ask you to outlast a number of rounds, to protect something, to take out one leader, to disable a machine without destroying it, or to drive a pilot off. The line at the top of the field says which.':
     'Niet elk gevecht win je door alles te vernietigen. Soms moet je een aantal rondes overleven, iets beschermen, een leider uitschakelen, een machine stilleggen zonder haar te vernietigen, of een piloot verjagen. De regel boven het veld zegt welke.',
   RANKS: 'RANGEN',
-  'A won contract is ranked S to D on three things: rounds taken against par, armour lost, and field repairs used. S pays 25% more and A 10% more. The archive lets you play a contract again for a better rank and a share of the pay.':
-    'Een gewonnen contract krijgt rang S tot D op drie punten: rondes tegenover de norm, verloren pantser en veldreparaties. S betaalt 25% meer, A 10% meer. In het archief speel je een contract over voor een betere rang en een deel loon.',
+  'A won contract is ranked S to D on three things: rounds taken against par, armour lost, and field repairs used. S pays 25% more and A 10% more. The archive lets you play a contract again for a better rank and a share of the pay. A contract won for the other side is kept there as it was first offered.':
+    'Een gewonnen contract krijgt rang S tot D op drie punten: rondes tegenover de norm, verloren pantser en veldreparaties. S betaalt 25% meer, A 10% meer. In het archief speel je een contract over voor een betere rang en een deel loon. Wat je voor de andere kant won, staat er zoals het eerst geboden werd.',
   MONEY: 'GELD',
   'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying, and you can owe 2000 at most: what a bill adds beyond that, Dispatch writes off.':
     'Reparaties kosten 0.8 credits per punt pantser en elk schot kost geld. Een onderdeel verkopen geeft terug wat je betaalde, dus iets uitproberen kost niets. Schuld belet kopen, nooit vliegen, en je schuld is hooguit 2000: wat een rekening daarboven toevoegt, schrijft Dispatch af.',
@@ -361,7 +361,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'Have the bench work on a part.':
     'Laat de werkbank aan een onderdeel werken.',
   'Blueprinted':
-    'Op de tekening',
+    'Volgens tekening',
   'Take a part to the fifth step at the bench.':
     'Breng een onderdeel naar stap vijf op de werkbank.',
   Stockpile: 'Voorraad',
@@ -442,7 +442,7 @@ export const REFERENCE_NL: Record<string, string> = {
   "THE BENCH":
     "DE WERKBANK",
   "In the garage, R1 on a part you own puts it on the bench. A step costs its number times the price of the part and adds a twentieth: armour to a frame part, damage to a weapon, output to a generator. The work stays with the part when it is sold. The bench goes two steps, and one further each time the story starts over, to five.":
-    "In de garage zet R1 een onderdeel van jou op de werkbank. Een stap kost zijn nummer maal de prijs en voegt een twintigste toe: pantser bij een framedeel, schade bij een wapen, vermogen bij een generator. Het werk blijft bij het onderdeel, ook na verkoop. De werkbank gaat twee stappen, en een verder bij elke nieuwe ronde, tot vijf.",
+    "In de garage zet R1 een onderdeel van jou op de werkbank. Een stap kost zijn nummer maal de prijs en voegt een twintigste toe: pantser bij een framedeel, schade bij een wapen, vermogen bij een generator. Het werk blijft bij het onderdeel, ook na verkoop. De werkbank gaat twee stappen, en een verder bij elke nieuwe cyclus, tot vijf.",
   "Some of what you do leaves something behind: a paper, a brass check. The database keeps them under FOUND, the papers by their numbers. One you have not found shows a clue in its place. Nothing found is lost when the story starts over.":
     "Soms laat wat je doet iets achter: een papier, een koperen penning. De database bewaart ze onder VONDST, de papieren op nummer. Wat je nog niet vond toont een aanwijzing. Wat gevonden is blijft als het verhaal opnieuw begint.",
   "RULE BOOK":
@@ -521,8 +521,8 @@ export const REFERENCE_NL: Record<string, string> = {
     "WEEGBON",
   "Hadron rail yard, weighbridge.":
     "Spoorterrein Hadron, weegbrug.",
-  "The yard gives it up when the trains have stopped, to whoever brought one in well. Or stop one on the scale.":
-    "Het terrein geeft hem af als de treinen stilstaan, aan wie er een goed bracht. Of weeg er zelf een.",
+  "Bring a train in well and wait for the trains to stop. Or, another time round, stop one on the scale.":
+    "Breng een trein netjes binnen en wacht tot de treinen stilstaan. Of weeg er, een volgende keer, zelf een.",
   "Ore train, Seam Nine. Declared: full. Weighed: empty. Passed. Consignee: by standing order. In another hand: it has passed like this every night for forty years.":
     "Ertstrein, Ader Negen. Opgegeven: vol. Gewogen: leeg. Doorgelaten. Ontvanger: volgens doorlopende order. In een ander handschrift: zo gaat het elke nacht, al veertig jaar.",
   "ESCORT FILE":
@@ -591,8 +591,8 @@ export const REFERENCE_NL: Record<string, string> = {
     "INKOOPORDER",
   "Desk 9.":
     "Balie 9.",
-  "Under the seat of a tank that was called stolen. Kill it cleanly and wait, or stand beside it.":
-    "Onder de stoel van een tank die gestolen heette. Sloop hem netjes en wacht, of ga ernaast staan.",
+  "Under the seat of a tank called stolen. Kill it cleanly and wait. Or, another time round, stand beside it.":
+    "Onder de stoel van een tank die gestolen heet. Win netjes en wacht. Of ga er een andere keer naast staan.",
   "One tank, Hadron pattern, from stock. Deliver to: the occupants, Seam Nine. Bill to: Hadron Mining, as stolen. One contractor to remove it afterwards. Bill to: Hadron Mining.":
     "Een tank, model Hadron, uit voorraad. Leveren aan: de bezetters, Ader Negen. Factuur aan: Hadron Mining, als gestolen. Een opdrachtnemer om hem daarna op te ruimen. Factuur aan: Hadron Mining.",
   "BOOKING SLIP":

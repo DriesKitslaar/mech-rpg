@@ -1,3 +1,4 @@
+import { impactOf } from './build';
 import type { GameState } from './game';
 import type { Catalog, FramePart, Generator, Part, Weapon } from './types';
 
@@ -61,14 +62,20 @@ export function tune(state: GameState, id: string, catalog: Catalog): GameState 
 
 /**
  * A part as the bench left it, for a list or a panel to show: the armour of a frame part, the
- * damage of a weapon (to a tenth) or the output of a generator, with the steps counted in. A
+ * damage of a weapon (to a tenth below a hundred, whole from there on: a panel has no room for
+ * more) or the output of a generator, with the steps counted in. A
  * battle does not read these: it works from the part as made and the steps (see battle.ts), so
- * that an enemy carrying the same part is not tuned with it.
+ * that an enemy carrying the same part is not tuned with it. A weapon keeps the push it was made
+ * with: where that is worked out from its damage it is written down here, so that no panel shows
+ * it grown when no battle gives it.
  */
 export function tunedPart<P extends Part>(part: P, step: number): P {
   if (step <= 0 || !tunable(part)) return part;
   const factor = 1 + TUNE_STEP * step;
-  if (part.kind === 'weapon') return { ...part, damage: Math.round(part.damage * factor * 10) / 10 };
+  if (part.kind === 'weapon') {
+    const exact = part.damage * factor;
+    return { ...part, damage: exact >= 100 ? Math.round(exact) : Math.round(exact * 10) / 10, impact: impactOf(part) };
+  }
   if (part.kind === 'generator') return { ...part, output: part.output + tunedOutput(part, step) };
   return { ...part, ap: Math.round(part.ap * factor) };
 }

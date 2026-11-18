@@ -9,6 +9,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
+import { briefingTrack } from './soundtrack';
 import { Typewriter } from './typewriter';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
 
@@ -115,8 +116,11 @@ export class BriefingScreen implements Screen {
     else if (action === 'confirm') {
       const id = this.list.selected?.id;
       if (id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay, this.wingman?.id ?? null, this.mission === this.other);
-      // The other side's offer and back: the cursor stays on the row that turns the page.
-      else if (id === 'other' && this.other) this.turnTo(this.mission === this.other ? this.first : this.other, 'other');
+      // The other side's offer and back: the cursor stays on the row that turns the page, and the song is the client's whose page it is.
+      else if (id === 'other' && this.other) {
+        this.turnTo(this.mission === this.other ? this.first : this.other, 'other');
+        this.app.playTrack(briefingTrack(this.mission));
+      }
       else this.app.closeBriefing(this.first); // back to the list the briefing was opened from
     }
   }

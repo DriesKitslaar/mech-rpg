@@ -116,7 +116,8 @@ describe('the long game', () => {
     expect(report.cycle).toBe(7);
     // Seven parts of the best frame are of a kind the bench takes; each is at its last step.
     expect(report.benchSteps).toBe(35);
-    expect(report.worst.streak).toBeLessThanOrEqual(2);
+    // No contract is lost twice running: the worst there is, is one lost and then won.
+    expect(report.worst.streak).toBeLessThanOrEqual(1);
     expect(report.grind).toBe(0);
   });
 

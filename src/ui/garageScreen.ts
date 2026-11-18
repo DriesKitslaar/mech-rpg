@@ -105,6 +105,9 @@ export class GarageScreen implements Screen {
       this.drawBench(ctx);
     } else {
       drawText(ctx, STRINGS.slots[flow.slot].toUpperCase(), LIST_X + 6, 24, { color: COLORS.dim });
+      // On a part the bench takes, the head of the list says which button puts it there: the foot of
+      // the screen may be taken up by what is wrong with the build, and that is when the bench matters.
+      if (flow.benchable) drawText(ctx, G.toBench, LOGICAL_W - 8, 25, { align: 'right', color: COLORS.dim, size: 10 });
       drawList(ctx, flow.parts, LIST_X + 6, 37, LIST_W - 18, 7);
       // The part as the pilot's garage reads it: with what the bench has done to it counted in.
       const part = flow.candidate ? flow.partOf(flow.candidate) : undefined;
@@ -176,9 +179,6 @@ export class GarageScreen implements Screen {
       // With nothing wrong, the foot of the panel says what the shoulder buttons and the D-pad do here.
       drawText(ctx, G.paint(flow.paintName), 8, STATS_Y + 61, { color: COLORS.dim, size: 10 });
       drawText(ctx, G.toLoadouts, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
-    } else if (flow.benchable) {
-      // On a part the bench takes, the foot of the panel says which button puts it there.
-      drawText(ctx, G.toBench, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
     }
   }
 }

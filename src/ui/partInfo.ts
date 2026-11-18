@@ -116,7 +116,8 @@ function facts(part: Part, fitted: Part): Fact[] {
  */
 export function compareParts(part: Part, fitted: Part): DiffChip[][] {
   const chips = facts(part, fitted).flatMap(([label, mine, theirs, moreIsBetter, unit = '']): DiffChip[] => {
-    const delta = mine - theirs;
+    // A figure with the bench's work in it may have a tenth: the difference is said to a tenth and no further.
+    const delta = Math.round((mine - theirs) * 10) / 10;
     return delta === 0 ? [] : [{ text: `${label} ${delta > 0 ? '+' : ''}${delta}${unit}`, good: delta > 0 === moreIsBetter }];
   });
   const rows: DiffChip[][] = [];

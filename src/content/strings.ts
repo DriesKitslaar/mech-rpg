@@ -201,7 +201,7 @@ export const STRINGS = {
     // What starting over keeps, and what the cycle that would begin changes: tougher enemies and better pay up to the third
     // telling, a step more at the bench up to the fourth.
     cycleQuestion: (next: number): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
-      ...(next <= 2 ? ['Enemies get tougher, pay', 'improves, the bench goes on.']
+      ...(next <= 2 ? ['Tougher enemies, better pay,', 'one more step at the bench.']
         : next === 3 ? ['Enemies are as tough as now.', 'The bench has one step left.']
           : ['Enemies are as tough as now,', 'and the pay is the same.'])],
     no: 'No', yes: 'Yes',

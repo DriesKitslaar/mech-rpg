@@ -3,6 +3,7 @@ import { openEntries } from '../../src/core/codex';
 import { newGame, type GameState } from '../../src/core/game';
 import { feeAfter, takesWingman } from '../../src/core/wingman';
 import { ALL_ENEMIES } from '../../src/content/arena';
+import { MANUAL } from '../../src/content/codex';
 import { FINDS } from '../../src/content/finds';
 import { setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
@@ -185,15 +186,20 @@ describe('what comes of the other offer', () => {
     expect(letters(weighed)).not.toContain('hadron-second');
   });
 
-  test('leaving the relay dark for Lumen\'s money costs the rhyme, Tamsin\'s thanks and her favour, and the third offer in this telling', () => {
+  test('leaving the relay dark for Lumen\'s money costs Tamsin\'s thanks and her favour, and the third offer in this telling', () => {
     const first = did(fresh(1), 'intro-1', 'intro-2', 'undertow-1');
     const dark = decide(first, 'lights', 'dark');
+    // Not the rhyme: nobody is made this offer who does not hold it already, so nothing is said to be withheld that cannot be.
     expect(found(first)).toContain('paper-rhyme');
-    expect(found(dark)).not.toContain('paper-rhyme');
+    expect(found(dark)).toContain('paper-rhyme');
     expect(letters(first)).toContain('undertow-thanks');
     expect(letters(dark)).not.toContain('undertow-thanks');
     expect(letters(dark)).toContain('undertow-dark');
     expect(MESSAGES.find((m) => m.id === 'undertow-dark')!.body.join(' ')).toMatch(/I will still hire you\..*Not this year\.$/);
+    // Her letter counts what she sent that night: the machines the pilot was paid to remove, not nobody.
+    expect(offer('undertow-1').battles.flatMap((b) => b.enemies)).toHaveLength(5);
+    expect(MESSAGES.find((m) => m.id === 'undertow-dark')!.body[0]).toMatch(/five machines/);
+    expect(MESSAGES.find((m) => m.id === 'undertow-dark')!.body.join(' ')).not.toMatch(/Nobody came/);
     // She still hires: the next contract of hers is on offer. But her favour is not asked of this pilot.
     expect(availableMissions(dark, MISSIONS).map((m) => m.id)).toContain('undertow-2');
     const kept = decide(first, 'logs', 'keep');
@@ -217,6 +223,25 @@ describe('what comes of the other offer', () => {
     expect(page.linesFor!({})).toEqual([]);
     expect(page.linesFor!({ kite: 'vouch', logs: 'keep' })).toEqual([]);
     expect(page.linesFor!({ seam: 'stand', lights: 'dark' })).toEqual([REMEMBERED.seam.stand, REMEMBERED.lights.dark]);
+  });
+
+  test('what is told is what was done that night, and holds whatever road the pilot took afterwards', () => {
+    // A pilot who stood with Seam Nine may go on to burn it out for Hadron: the page cannot say the tank is still there.
+    expect(mission('choice-hadron').briefing.join(' ')).toMatch(/Seam Nine.*Burn both out/);
+    expect(REMEMBERED.seam.stand).toMatch(/^One night /);
+    expect(REMEMBERED.seam.stand).not.toMatch(/still/);
+    // Nor does Tamsin's offer tell the pilot what they know: who paid for the tank is what taking it finds out.
+    expect(offer('hadron-1').briefing.join(' ')).not.toMatch(/You know/);
+    expect(offer('hadron-1').briefing[0]).toMatch(/You have seen what is parked in Seam Nine\. Ask who paid for it\.$/);
+  });
+
+  test('every pilot who can be made Lumen\'s offer holds the rhyme already: a first telling cannot be finished without it', () => {
+    for (const faction of ['hadron', 'lumen', 'undertow'] as const) {
+      const told = MISSIONS.filter((m) => ['intro', 'faction', 'rival', 'audit'].includes(m.phase) || (['choice', 'path', 'finale'].includes(m.phase) && m.faction === faction) || m.id === 'verdict-default');
+      expect(told.map((m) => m.id), faction).toContain('undertow-1');
+      expect(found(did(fresh(0), ...told.map((m) => m.id))), faction).toContain('paper-rhyme');
+    }
+    expect(FINDS.find((f) => f.id === 'paper-rhyme')!.after).toBe('undertow-1');
   });
 
   test('the first offer flown in a later telling is as it always was: nothing is remembered, and the thanks come', () => {
@@ -354,6 +379,24 @@ describe('the other offer in the game', () => {
     expect(savedGame(store).completed).toContain('hadron-2');
   });
 
+  test('each offer is read to its own client\'s song: turning the page changes it, and turning back changes it back', () => {
+    const songs = (game: GameState, id: string): string[] => {
+      const played: string[] = [];
+      const { app } = inHub(game, undefined, { music: { enabled: true, play: (track) => { if (track && played.at(-1) !== track) played.push(track); } } });
+      select(app, 'contracts');
+      select(app, id);
+      select(app, 'other');
+      press(app, 'confirm');
+      return played.slice(-3);
+    };
+    expect(songs(later(), 'hadron-1')).toEqual(['hadron', 'undertow', 'hadron']);
+    expect(songs(did(later(), 'hadron-1'), 'hadron-2')).toEqual(['hadron', 'undertow', 'hadron']);
+    expect(songs(later(), 'undertow-1')).toEqual(['undertow', 'lumen', 'undertow']);
+    // The offers say whose they are; the contract stays the first client's in everything else.
+    expect(offered.map((m) => [m.faction, m.other!.side])).toEqual([['hadron', 'undertow'], ['hadron', 'undertow'], ['undertow', 'lumen']]);
+    expect(offer('undertow-1')).toMatchObject({ faction: 'undertow', turned: { side: 'lumen' } });
+  });
+
   test('accepting it flies the other side\'s fight; winning it finishes the contract, is remembered, and brings what comes of it', () => {
     const { app, store } = open(later(), 'hadron-1');
     select(app, 'other');
@@ -373,6 +416,9 @@ describe('the other offer in the game', () => {
     expect(snap(app).menu.items.map((item) => item.id)).toContain('hadron-2');
     expect(snap(app).menu.items.map((item) => item.id)).not.toContain('hadron-1');
     expect(app.archive().find((m) => m.id === 'hadron-1')).toMatchObject({ client: 'Director Brenn, Hadron Mining', replay: true });
+    // The manual says so, where it speaks of the archive: the rank won on the other side's fight is the contract's.
+    expect(MANUAL.find((topic) => topic.id === 'ranks')!.text).toMatch(/A contract won for the other side is kept there as it was first offered\.$/);
+    expect(app.archive().find((m) => m.id === 'hadron-1')!.battles.map((b) => b.enemies)).toEqual(mission('hadron-1').battles.map((b) => b.enemies));
     expect(app.otherOffer(app.archive().find((m) => m.id === 'hadron-1')!)).toBeNull();
   });
 

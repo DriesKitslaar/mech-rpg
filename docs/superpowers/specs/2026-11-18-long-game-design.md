@@ -12,8 +12,9 @@ matter: the third ending can only be reached in a later cycle.
 Measured, with the automatic player that uses everything the game offers (wingmen, Overdrive,
 repairs), on Standard:
 
-- A pilot is fully grown after one cycle: level 20 (the cap, 19 of 23 perk ranks) and the best
-  frame, which costs 28,100 credits in all.
+- A pilot has stopped growing soon after one cycle: the best frame, which costs 28,100 credits in
+  all, is bought before the first ending, and the level cap of 20 (19 of 23 perk ranks) is reached
+  in the second cycle. (A pilot who flies only the story ends the first at level 17.)
 - Money has no use after that. A career ends its first cycle with 141,000 credits to spare, its
   fourth with 502,000, its fifth with 678,000.
 - Enemies gain a quarter of their strength (armour and damage both) with every cycle, without
@@ -76,7 +77,7 @@ and is remembered as an answer to a question, like the story's other decisions:
 |---|---|---|---|
 | `hadron-1` Strikebreaker | Stand with the occupants of Seam Nine against Hadron's clearance crew; their tank fires for the pilot | Tamsin | The purchase order is found at once (what is under the tank's seat). Brenn writes |
 | `hadron-2` Overburden | Hold the weighbridge while the train stands on the scale | Tamsin | The weigh ticket is found at once. Brenn writes |
-| `undertow-1` Lights Out | Leave the relay dark, for Lumen's money, and see off those who come to light it | Varga | It pays three times as much. No rhyme is found, Tamsin writes, and she makes no third offer in this cycle |
+| `undertow-1` Lights Out | Leave the relay dark, for Lumen's money, and see off those who come to light it | Varga | It pays three times as much. Tamsin writes, asks no favour of this pilot, and makes no third offer in this cycle |
 
 The two papers no longer come to a later cycle for flying the contract alone: they come as in a
 first cycle (the S, when the war is over) or by the other offer. The third offer is the

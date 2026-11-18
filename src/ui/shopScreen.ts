@@ -1,3 +1,4 @@
+import { stepOf, tunedCatalog } from '../core/tuning';
 import { SHOP_PARTS } from '../content/parts';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -82,9 +83,15 @@ export class ShopScreen implements Screen {
 
   private drawDetail(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
     drawPanel(ctx, x, y, w, h);
-    const part = this.flow.selected;
-    if (!part) return;
+    const made = this.flow.selected;
+    if (!made) return;
     const { sprites } = this.app.deps;
+    // The bench's work is in the model: a part worked on comes off the shelf as the bench left it, and what
+    // it would replace is on the mech as the bench left that. Both are shown so, with the step after the name.
+    const { tuning } = this.app.game!;
+    const mine = tunedCatalog(this.app.deps.catalog, tuning);
+    const part = Object.hasOwn(mine, made.id) ? mine[made.id] : made;
+    const named = (p: { id: string; name: string }): string => (stepOf(tuning, p.id) > 0 ? `${p.name} +${stepOf(tuning, p.id)}` : p.name);
 
     // Picture: arms show the outstretched arm; parts that sit inside the mech get an icon.
     const boxH = 72;
@@ -103,17 +110,17 @@ export class ShopScreen implements Screen {
     }
 
     let ty = y + boxH + 10;
-    drawText(ctx, part.name, x + 6, ty, { color: COLORS.accent });
+    drawText(ctx, named(part), x + 6, ty, { color: COLORS.accent });
     ty += LINE;
     if (part.vendor) { drawText(ctx, STRINGS.partInfo.vendors[part.vendor], x + 6, ty, { color: COLORS.dim }); ty += LINE; }
     for (const line of partLines(part)) { drawText(ctx, line, x + 6, ty); ty += LINE; }
 
     // How it differs from what is fitted now: green for better, red for worse.
-    const fitted = fittedFor(part, this.app.game!.build, this.app.deps.catalog);
+    const fitted = fittedFor(part, this.app.game!.build, mine);
     const rows = fitted && fitted.id !== part.id ? compareParts(part, fitted) : [];
     if (fitted && rows.length > 0 && ty + (rows.length + 1) * LINE <= y + h - 2) {
       ty += 2;
-      drawText(ctx, STRINGS.partInfo.versus(fitted.name), x + 6, ty, { color: COLORS.dim, size: 10 });
+      drawText(ctx, STRINGS.partInfo.versus(named(fitted)), x + 6, ty, { color: COLORS.dim, size: 10 });
       ty += LINE - 1;
       for (const row of rows) {
         // Placed by characters from the left edge, so rounding never adds up along a row.

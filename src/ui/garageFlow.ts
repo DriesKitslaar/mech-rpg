@@ -77,10 +77,18 @@ export class GarageFlow {
 
   /**
    * Takes the game back as it was booked: with whatever the booking added (a medal and its pay, time
-   * played). Nothing the garage shows depends on those, so the lists stay as they are.
+   * played). The lists stay as they are but for the bench's: what a medal pays can put the next step
+   * within reach, and the row for it has to say so at once.
    */
   adopt(game: GameState): void {
     this.game = game;
+    if (this.mode === 'bench' && this.benchId !== null) this.bench = this.benchList();
+  }
+
+  /** The bench's two rows as they stand now: the cursor on the next step while there is one to take, else on the way back. */
+  private benchList(): MenuList {
+    const items = this.benchItems();
+    return new MenuList(items, items.findIndex((item) => item.enabled));
   }
 
   private slotItems(): ListItem[] {
@@ -122,7 +130,7 @@ export class GarageFlow {
     const saved = this.game.loadouts[index] !== null;
     const refused = checkLoadout(this.game, index, this.catalog);
     return [
-      { id: 'load', label: G.load, enabled: refused === null, note: refused?.part ? G.missing(this.nameOf(refused.part)) : undefined },
+      { id: 'load', label: G.load, enabled: refused === null, note: refused?.part ? G.missing(this.catalog[refused.part]?.name ?? refused.part) : undefined },
       { id: 'save', label: G.save, enabled: true },
       { id: 'clear', label: G.clear, enabled: saved },
       { id: 'back', label: G.backItem, enabled: true },
@@ -264,8 +272,7 @@ export class GarageFlow {
         // R1 puts the part under the cursor on the bench, fitted or not, if it is one the bench takes.
         if (action === 'next' && this.benchable) {
           this.benchId = this.parts.selected!.id;
-          const items = this.benchItems();
-          this.bench = new MenuList(items, items.findIndex((item) => item.enabled));
+          this.bench = this.benchList();
           this.mode = 'bench';
           return 'stay';
         }
@@ -289,9 +296,7 @@ export class GarageFlow {
         this.catalog = tunedCatalog(this.factory, this.game.tuning);
         this.slots.setItems(this.slotItems());
         this.parts.setItems(this.partItems(this.slot));
-        const items = this.benchItems();
-        // The cursor stays on the next step while there is one to take; else it goes to the way back.
-        this.bench = new MenuList(items, items.findIndex((entry) => entry.enabled));
+        this.bench = this.benchList();
         return 'changed';
       }
       case 'loadouts':
