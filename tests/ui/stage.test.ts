@@ -24,7 +24,7 @@ const BARS = 7;
 
 describe('a place, looked at over the shoulder', () => {
   test('every picture a battle can be fought in front of is known, and one that is not is taken to be like most', () => {
-    expect(BACKGROUNDS).toHaveLength(12);
+    expect(BACKGROUNDS).toHaveLength(13);
     for (const id of BACKGROUNDS) expect(Object.hasOwn(PLACES, id), id).toBe(true);
     expect(placeFor('bg-nowhere')).toBe(PLAIN);
     expect(placeFor('toString')).toBe(PLAIN);

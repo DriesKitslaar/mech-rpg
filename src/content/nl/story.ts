@@ -408,4 +408,53 @@ export const STORY_NL: Record<string, string> = {
     "Je frame heeft een recorder. Die is nooit gewist. Er is hem alleen nooit iets gevraagd. Hij kent de sluis, en hij kent hem van voor jouw tijd.",
   "Fly the war again and let it listen. There are papers I can only send to a pilot who has been to the same place twice.":
     "Vlieg de oorlog opnieuw en laat hem luisteren. Sommige papieren stuur ik alleen aan wie er twee keer was.",
+  // A later telling of the story.
+  "Old paper":
+    "Oud papier",
+  "Somebody has been through the files of a desk with a nine on it. Word travels. I assume it was you.":
+    "Iemand zat in de dossiers van een balie met een negen erop. Zoiets gaat rond. Ik neem aan dat jij het was.",
+  "My first contract was one line long. I did what the line said and nothing it did not say. I was twenty.":
+    "Mijn eerste contract was een regel lang. Ik deed wat de regel zei en niets wat er niet stond. Ik was twintig.",
+  "I read every contract to the end now. It has not helped as much as you would think.":
+    "Ik lees nu elk contract tot het eind. Het helpt minder dan je zou denken.",
+  "Nine hasps":
+    "Negen grendels",
+  "I see the box is back where it started. Forty years late, which for the Society is prompt.":
+    "Ik zie dat de kist terug is waar hij begon. Veertig jaar te laat: voor de Society is dat vlot.",
+  "It has nine hasps and no key. It was never meant to have a key. Read the rule book again: the ninth rule.":
+    "Hij heeft negen grendels en geen sleutel. Die was nooit de bedoeling. Lees het reglement nog eens: regel negen.",
+  "I have nothing more to send. My desk is tidy. Yours is not, yet.":
+    "Ik heb niets meer te sturen. Mijn bureau is net. Het jouwe nog niet.",
+  "THE TAPE":
+    "DE BAND",
+  "Count the trucks. Count them again.":
+    "Tel de trucks. Tel ze nog eens.",
+  "Where did you get that. ...No. Leave it running.":
+    "Waar heb je dat vandaan. ...Nee. Laat maar lopen.",
+  "That is gate four. Eleven years back, on the night shift. The second escort stayed with the trucks. The second escort got the bill.":
+    "Dat is poort vier. Elf jaar terug, in de nachtdienst. De tweede escorte bleef bij de trucks. De tweede escorte kreeg de rekening.",
+  "Then the second escort got a desk, because a desk was all that was going.":
+    "Daarna kreeg de tweede escorte een bureau, want meer dan een bureau was er niet.",
+  "Whose frame was this?":
+    "Van wie was dit frame?",
+  "You know whose. I issued it to you myself. I wanted to see it come home, once. I am on your channel. I always was.":
+    "Dat weet je. Ik gaf het zelf aan jou uit. Ik wilde het een keer thuis zien komen. Ik zit op jouw kanaal. Altijd al.",
+  "Say nothing. Play it again.":
+    "Zeg niets. Speel het nog eens af.",
+  "...Yes. That is me. Younger. Still counting. Leave it running, would you. I never heard how it ended.":
+    "...Ja. Dat ben ik. Jonger. Nog aan het tellen. Laat het lopen, wil je. Ik heb nooit gehoord hoe het afliep.",
+  "There is a cancelled licence in a frame over the night desk now. The callsign is still cut out of it.":
+    "Boven het nachtbureau hangt nu een ingetrokken licentie in een lijst. De roepnaam is er nog uit gesneden.",
+  "Some nights channel nine carries an old recording from start to finish. Nobody on the desk turns it off.":
+    "Soms draagt kanaal negen een oude opname van begin tot eind. Niemand aan het bureau zet hem uit.",
+  "THE HANGAR":
+    "DE HANGAR",
+  "PLAYBACK":
+    "OPNAME",
+  "The frame was salvage when it came to you. Nobody asked where it had been before that.":
+    "Het frame was bergingsgoed toen het bij jou kwam. Niemand vroeg waar het daarvoor was geweest.",
+  "It has a recorder. The recorder was never wiped. It was only never played.":
+    "Het heeft een recorder. Die recorder is nooit gewist. Hij is alleen nooit afgespeeld.",
+  "It knows this city. It has been waiting to stand somewhere it remembers.":
+    "Het kent deze stad. Het wacht al lang tot het ergens staat waar het eerder was.",
 };

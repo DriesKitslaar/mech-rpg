@@ -573,6 +573,9 @@ const DRAWN: ArtJob[] = [
     'a huge salvaged amphibious war barge in the same patched teal and rust plating: a long low hull on rows of small wheels, a front ram shaped like a jaw with teeth of scrap steel, a crane arm on its back, two smokestacks and amber lamps. Ugly, heavy and patched together.'),
   boss('boss-adjuster', 'auditor',
     'a towering judge-like machine in the same glossy black armour with fine gold trim: a tall narrow body like a robed figure on a wide skirt base, a faceless mask head with a crown of gold spikes, and four long arms, two holding up a large golden balance scale and two ending in long barrels. Imposing, elegant and cold.'),
+  // The machine that casts the votes of the drowned: every disc on it is a lamp check.
+  boss('boss-proxy', 'auditor',
+    'a towering voting machine in the same glossy black armour with fine gold trim: a tall narrow body like a pulpit under a pointed black canopy, standing on a wide skirt base, its whole body hung with hundreds of small round brass discs on chains like a coat of scales, a blank gold mask for a face, one long arm raising a heavy gold gavel and the other holding out a fan of white paper slips. Solemn, heavy and cold.'),
 
   // Enemy mechs are the family drawings themselves, mirrored: no new image needed.
   { id: 'enemy-light-mech', kind: 'enemyMech', source: 'family-halo', flip: true, prompt: '' },
@@ -605,6 +608,9 @@ const DRAWN: ArtJob[] = [
   portrait('portrait-paragon', 'a proud weathered former officer in his fifties with a square greying moustache and a black eye patch, wearing a sun-yellow and orange dress uniform jacket crowded with mismatched medals'),
   portrait('portrait-notary', 'a severe pale bureaucrat with slicked silver hair and thin lips, a round brass seal lens over one eye like a monocle, wearing a glossy black high-collared robe with a heavy brass seal on a chain'),
   portrait('portrait-guild', 'a sly night-market broker of uncertain age in a hooded patchwork cloak, half of the face hidden behind a lacquered dark red trader mask, fingers heavy with mismatched rings, lit by warm lantern light'),
+  // Not a face: the recorder behind the seat of the pilot's own frame, which has a voice of a kind.
+  { id: 'portrait-recorder', kind: 'portrait',
+    prompt: '16-bit pixel art, crisp pixels, no anti-aliasing, no text, no lettering: a close-up of an old flight recorder bolted into the wall of a mecha cockpit, a scuffed orange metal box with two small tape reels behind a round glass window, one small red light glowing on it, a blank riveted brass plate under the window, thick cables running off both sides. Lit by pink and cyan neon from the sides, plain very dark blue background.' },
 
   { id: 'app-icon', kind: 'icon',
     prompt: '16-bit pixel art app icon, crisp pixels, no anti-aliasing, no text, no lettering: the head of an original Japanese anime-style mecha seen from the front, a helmet in dark charcoal armour with one curved crest and a single horizontal visor glowing hot pink, lit from the sides by pink and cyan neon, bold simple shapes, centred, filling most of the square, on a plain very dark navy background.' },
@@ -615,12 +621,14 @@ const DRAWN: ArtJob[] = [
   background('bg-rooftop', 'the rooftops of a megacity at dawn, antenna masts, water tanks and ventilation units, the sky turning orange and pink behind distant dark towers, a flat gravel roof filling the lower third.'),
   background('bg-simulator', 'the inside of a vast empty training simulator hall, the floor and far walls drawn as a dark grid of thin glowing cyan lines that fade into the distance like a hologram, a few floating wireframe practice shapes in magenta, soft haze, the gridded floor filling the lower third.'),
   background('bg-clearing', 'the inside of an immense clearing hall of an insurance company, tall black marble pillars with thin gold inlay lines, hanging gold lamps, long empty counters, a polished black floor with gold reflections filling the lower third.'),
+  background('bg-hall', 'the inside of a drowned old meeting hall deep under a megacity at night, rows of wooden benches standing in still dark water, tall arched windows blocked with rust, a faded cloth banner with abstract shapes hanging over a raised wooden platform at the far end, a wall of small brass hooks beside it, a few oil lamps and strings of teal and orange lights reflected in the water, a shallow flooded stone floor filling the lower third.'),
 
   still('still-varn', 'a wide view over an industrial megacity at night in the rain: a strip mine lit by yellow floodlights on the left, white and cyan corporate towers in the centre and a dim flooded shanty town of teal and orange lights below them, with one small mecha silhouette standing on a rooftop in the foreground looking out over it all.'),
   still('still-war', 'two giant mecha silhouettes facing each other across a burning city street at night, searchlights and streaks of tracer fire in the sky, flickering neon signs with abstract shapes, seen from a dramatic low angle.'),
   still('still-notice', 'a colossal featureless black tower with thin gold light lines rising above a dark megacity at night, far taller than everything around it, while thousands of small golden slips of paper fall like snow over the streets.'),
   still('still-dawn', 'sunrise over a megacity whose enormous floodgates stand open, warm golden light pouring into the streets, tiny crowds of people walking up broad ramps into the light, and a battered mecha kneeling at rest in the foreground.'),
   still('still-ledger', 'a cold orderly megacity at grey dawn where every tower is the same black with gold lines in perfect rows, the streets clean and empty, and a single mecha in black and gold armour standing guard in the foreground.'),
+  still('still-meeting', 'the inside of a flooded old meeting hall lit by dozens of lanterns, a crowd of people in work clothes standing knee-deep in water with their backs to the viewer, facing a wooden board on which nine small round brass discs hang in a row, an iron chest standing open on a table beneath it, and through the tall open doors at the back the silhouette of a battered mecha standing guard against a pale dawn.'),
 
   { id: 'bg-neon-district', kind: 'background',
     prompt: '16-bit pixel art background, no anti-aliasing: an industrial megacity district at night seen from street level, wet reflective ground filling the lower third, towering dark buildings, cranes and pipes, many glowing neon signs in pink, cyan and purple with abstract shapes instead of readable text, light haze and rain. No characters, no robots, no vehicles in the foreground.' },

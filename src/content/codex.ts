@@ -250,7 +250,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'ground', title: 'GROUND',
-    text: 'Seven places have a rule for both sides. Rain: all shed 4 more heat a turn. Furnace heat: 4 less. Dust: every shot 5 less likely to hit. Flood water: a boost dodges 6 less. Sealed vault: explosions do 15% less. Crosswind: kinetic hits 6 less likely. Clear air: beams 4 more likely. The briefing and the field name it.',
+    text: 'Some places have a rule for both sides. Rain: all shed 4 more heat a turn. Furnace heat: 4 less. Dust: every shot 5 less likely to hit. Flood water: a boost dodges 6 less. Sealed vault: explosions do 15% less. Crosswind: kinetic hits 6 less likely. Clear air: beams 4 more likely. The briefing and the field name it.',
   },
   {
     id: 'wingmen', title: 'WINGMEN',

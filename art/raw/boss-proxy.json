@@ -1,0 +1,11 @@
+{
+  "id": "boss-proxy",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-auditor.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Three-quarter side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw a huge war machine from a retro video game: a towering voting machine in the same glossy black armour with fine gold trim: a tall narrow body like a pulpit under a pointed black canopy, standing on a wide skirt base, its whole body hung with hundreds of small round brass discs on chains like a coat of scales, a blank gold mask for a face, one long arm raising a heavy gold gavel and the other holding out a fan of white paper slips. Solemn, heavy and cold. Show only this single machine, whole, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

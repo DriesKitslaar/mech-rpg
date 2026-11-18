@@ -29,7 +29,7 @@ export const GROUNDS: Record<string, Ground> = {
 /** Which rule holds where. A place that is not listed has none: the arena and the simulator are level ground. */
 const PLACES: Record<string, string> = {
   'bg-neon-district': 'rain', 'bg-foundry': 'furnace', 'bg-mine': 'dust', 'bg-sluice': 'flood', 'bg-vault': 'sealed',
-  'bg-rooftop': 'wind', 'bg-plaza': 'clear',
+  'bg-rooftop': 'wind', 'bg-plaza': 'clear', 'bg-hall': 'flood',
 };
 
 export const groundFor = (background: string): Ground | undefined => (Object.hasOwn(PLACES, background) ? GROUNDS[PLACES[background]] : undefined);

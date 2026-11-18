@@ -40,6 +40,10 @@ export interface CareerOptions {
   later?: { faction: Faction; verdict: Verdict }[];
   /** Stop after this many contracts, whatever has been reached. */
   maxContracts?: number;
+  /** The answer to give when a conversation asks, by the conversation's id; where none is named, the first on offer. */
+  answers?: Record<string, string>;
+  /** Contracts beside the story to fly as soon as they are on offer, before the story goes on. */
+  side?: string[];
 }
 
 export interface CareerReport {
@@ -60,6 +64,8 @@ export interface CareerReport {
   arenaLosses: number;
   /** The finales and verdicts won, in the order they were: the road actually taken, cycle by cycle. */
   endings: string[];
+  /** The contracts beside the story that were asked for and won, in the order they were won. */
+  side: string[];
   credits: number;
   level: number;
   arenaRank: number;
@@ -73,6 +79,8 @@ export interface CareerReport {
 
 type Snap = {
   screen: string; credits: number; completed: string[];
+  /** On a page of story or in a conversation: its id. */
+  scene?: string;
   menu: { items: { id: string; label: string; enabled: boolean; note?: string }[]; cursor: number };
   battle?: { phase: string; outcome: string; mission: string };
   settlement?: { won: boolean };
@@ -107,14 +115,18 @@ export function playCareer(options: CareerOptions): CareerReport {
   };
   /** Presses through anything that only wants confirming, until the hub is up. */
   const toHub = (): void => {
-    for (let i = 0; i < 40 && snap().screen !== 'hub'; i++) {
-      if (!['callsign', 'scene', 'ending', 'credits', 'settlement'].includes(snap().screen)) throw new Stuck(`cannot get to the hub from ${snap().screen}`);
-      press('confirm');
+    for (let i = 0; i < 80 && snap().screen !== 'hub'; i++) {
+      const s = snap();
+      if (!['callsign', 'scene', 'ending', 'credits', 'settlement'].includes(s.screen)) throw new Stuck(`cannot get to the hub from ${s.screen}`);
+      // A conversation that is asking has its answers for a menu: the one this pilot was told to give is given, else the first.
+      const wanted = s.screen === 'scene' ? options.answers?.[s.scene ?? ''] : undefined;
+      if (wanted !== undefined && s.menu.items.some((item) => item.id === wanted)) select(wanted);
+      else press('confirm');
     }
     if (snap().screen !== 'hub') throw new Stuck(`still on ${snap().screen}`);
   };
   const report: CareerReport = {
-    options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0, arenaLosses: 0, endings: [],
+    options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0, arenaLosses: 0, endings: [], side: [],
     credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity,
   };
   let tier = -1;
@@ -260,11 +272,14 @@ export function playCareer(options: CareerOptions): CareerReport {
         toHub();
         continue;
       }
-      const id = nextStory();
+      // What this pilot was told to fly beside the story comes first, as soon as it is on offer.
+      const extra = (options.side ?? []).find((wanted) => app.missions().some((m) => m.id === wanted));
+      const id = extra ?? nextStory();
       if (!id) throw new Stuck('no story contract on offer and the story is not over');
       const won = contract(id);
       if (won) {
         if (id.startsWith('finale-') || id.startsWith('verdict-')) report.endings.push(id);
+        if (id === extra) report.side.push(id);
         streak = 0;
         climb();
         continue;

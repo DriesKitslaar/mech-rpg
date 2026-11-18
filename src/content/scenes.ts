@@ -30,6 +30,15 @@ export const SCENES: Scene[] = [
       'You have a salvaged frame, a licence, and a debt nobody has called in yet. Start earning.',
     ],
   },
+  // Only when the story is told again: the frame has something it did not have the first time, which is somebody to hear it.
+  {
+    id: 'playback', heading: 'THE HANGAR', title: 'PLAYBACK', picture: 'still-varn', after: 'cycle:1', before: 'intro-1',
+    lines: [
+      'The frame was salvage when it came to you. Nobody asked where it had been before that.',
+      'It has a recorder. The recorder was never wiped. It was only never played.',
+      'It knows this city. It has been waiting to stand somewhere it remembers.',
+    ],
+  },
   {
     id: 'act-2', heading: 'ACT II', title: 'THE SIDE', picture: 'still-war', after: 'rival-1', before: 'finale',
     lines: [

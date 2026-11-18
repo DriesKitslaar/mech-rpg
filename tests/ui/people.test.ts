@@ -25,8 +25,10 @@ function point(app: AppOf, id: string): void {
 
 describe('the people of Varn', () => {
   test('everybody with a face has a page, and every page has a face', () => {
-    const faces = Object.keys(SPRITES).filter((id) => id.startsWith('portrait-')).sort();
+    // One face is nobody's: the recorder behind the seat of the pilot's frame has a voice and a picture, and no page.
+    const faces = Object.keys(SPRITES).filter((id) => id.startsWith('portrait-') && id !== 'portrait-recorder').sort();
     expect(PEOPLE.map((p) => p.portrait).sort()).toEqual(faces);
+    expect(Object.keys(SPRITES)).toContain('portrait-recorder');
     expect(new Set(PEOPLE.map((p) => p.id)).size).toBe(PEOPLE.length);
     expect(new Set(PEOPLE.map((p) => p.name)).size).toBe(PEOPLE.length);
     expect(PEOPLE).toHaveLength(19);

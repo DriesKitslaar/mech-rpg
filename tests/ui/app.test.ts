@@ -855,6 +855,9 @@ describe('a new cycle', () => {
     // The story starts again from its first page.
     expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'act-1' });
     press(app, 'confirm');
+    // And then, the second time round and not the first, with a page about the recorder of the frame.
+    expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'playback' });
+    press(app, 'confirm');
     expect(snap(app).medals).toContain('cycle');
     expect(snap(app)).toMatchObject({ screen: 'hub', cycle: 1, completed: [], credits: 5000 + paid(app), xp: 700, arenaRank: 2 });
     expect(JSON.parse(store.data[SAVE_KEY]).cycle).toBe(1);

@@ -82,10 +82,12 @@ describe('the ground a battle is fought on', () => {
 });
 
 describe('where each rule holds', () => {
-  test('seven places have a rule; the arena, the simulator, the hangar, the clearing house and the undercity are level ground', () => {
+  test('eight places have one of the seven rules; the arena, the simulator, the hangar, the clearing house and the undercity are level ground', () => {
     const places = Object.keys(SPRITES).filter((id) => id.startsWith('bg-'));
     const ruled = places.filter((id) => groundFor(id)).sort();
-    expect(ruled).toEqual(['bg-foundry', 'bg-mine', 'bg-neon-district', 'bg-plaza', 'bg-rooftop', 'bg-sluice', 'bg-vault']);
+    expect(ruled).toEqual(['bg-foundry', 'bg-hall', 'bg-mine', 'bg-neon-district', 'bg-plaza', 'bg-rooftop', 'bg-sluice', 'bg-vault']);
+    // The drowned hall stands in the same water the sluice does.
+    expect(groundFor('bg-hall')).toBe(groundFor('bg-sluice'));
     expect(new Set(ruled.map((id) => groundFor(id)!.id)).size).toBe(7);
     for (const drill of DRILLS) expect(groundFor(drill.battle.background), drill.id).toBeUndefined();
   });

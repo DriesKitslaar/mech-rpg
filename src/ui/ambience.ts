@@ -47,6 +47,11 @@ export const AMBIENCE: Record<string, Ambience> = {
     lights: [{ x: 107, y: 109, r: 21, color: '#26c6ff' }, { x: 205, y: 109, r: 22, color: '#26c7ff' }, { x: 10, y: 112, r: 22, color: '#ff57d2' }, { x: 290, y: 103, r: 23, color: '#ff57d2' }, { x: 34, y: 18, r: 17, color: '#ff3bc9' }, { x: 275, y: 18, r: 17, color: '#ff53c9' }],
     low: [{ x: 107, y: 191, r: 24, color: '#26b3ff' }, { x: 205, y: 191, r: 23, color: '#26aeff' }],
   },
+  'bg-hall': {
+    kind: 'lamp', haze: { color: '#2f6a66', y: 168, alpha: 0.12 },
+    lights: [{ x: 56, y: 128, r: 20, color: '#ff9a3a' }, { x: 256, y: 129, r: 20, color: '#ff963a' }, { x: 125, y: 116, r: 18, color: '#ffa040' }, { x: 186, y: 118, r: 18, color: '#ffa040' }, { x: 119, y: 24, r: 15, color: '#ff8a3a' }, { x: 190, y: 25, r: 15, color: '#ff8a3a' }],
+    low: [{ x: 122, y: 238, r: 22, color: '#ff7a26' }, { x: 188, y: 238, r: 22, color: '#ff7a26' }],
+  },
   'bg-mine': {
     kind: 'lamp', haze: { color: '#8a7440', y: 160, alpha: 0.14 },
     lights: [{ x: 288, y: 145, r: 20, color: '#ffc926' }, { x: 20, y: 146, r: 20, color: '#ffcb26' }, { x: 31, y: 24, r: 22, color: '#ffbb26' }, { x: 212, y: 148, r: 18, color: '#ffd83f' }, { x: 241, y: 19, r: 16, color: '#ffb826' }, { x: 277, y: 107, r: 16, color: '#ffd32f' }],

@@ -1,0 +1,9 @@
+{
+  "id": "bg-hall",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art background, no anti-aliasing: the inside of a drowned old meeting hall deep under a megacity at night, rows of wooden benches standing in still dark water, tall arched windows blocked with rust, a faded cloth banner with abstract shapes hanging over a raised wooden platform at the far end, a wall of small brass hooks beside it, a few oil lamps and strings of teal and orange lights reflected in the water, a shallow flooded stone floor filling the lower third. No characters, no robots, no vehicles in the foreground, no readable text."
+}

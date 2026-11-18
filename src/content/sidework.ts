@@ -72,6 +72,11 @@ const ashfall = says('Ashfall', 'portrait-rival');
 const marrow = says('Marrow', 'portrait-marrow');
 const sixty = says('Old Sixty', 'portrait-sixty');
 const dispatch = says('Dispatch', 'portrait-dispatch');
+const actuary = says('The Actuary', 'portrait-actuary');
+/** The recorder behind the seat of the pilot's frame. */
+const recorder = says('Recorder', 'portrait-recorder');
+/** A line kept for a later telling: nobody says it in the first cycle. */
+const again = (line: TalkLine): TalkLine => ({ ...line, cycle: 1 });
 
 /**
  * Contracts that come out of what the pilot decided when the story asked: somebody returning a
@@ -134,7 +139,11 @@ export const FAVOURS: Mission[] = [
     ],
     debrief: 'Every truck came out the far side. Old Sixty does not say anything for a while, and then pays in full.',
     battles: [
-      battle(['recon-drone', 'bomb-crawler', 'gunship'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 12 }, talk: [sixty('start', 'Same road. Same hour, near enough. I am on the radio and nowhere else. Bring them all through.')] }),
+      battle(['recon-drone', 'bomb-crawler', 'gunship'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 12 }, talk: [
+        sixty('start', 'Same road. Same hour, near enough. I am on the radio and nowhere else. Bring them all through.'),
+        again(recorder(2, 'Lead, where are you.')),
+        again(sixty(3, '...Whose voice is that on your radio, youngster. No. Do not tell me. I know whose.')),
+      ] }),
       battle(['heavy-mech', 'recon-drone'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 10 }, talk: [sixty('last', 'One left. That is further than I got.')] }),
     ],
   },
@@ -199,4 +208,53 @@ export const GUILD_JOBS: Mission[] = [
   },
 ];
 
-export const SIDE_WORK: Mission[] = [...BOUNTIES, ...FAVOURS, ...GUILD_JOBS];
+const UNLISTED = { client: 'Unlisted', portrait: 'portrait-recorder' } as const;
+
+/**
+ * Three contracts nobody posted, one at a time, and only in a later telling of the story: what the
+ * recorder of the pilot's own frame brings up, in the order it brings it up. The second is not
+ * offered to a pilot who sold the frame's logs: what it leads to was then found by somebody else.
+ */
+export const QUEST: Mission[] = [
+  {
+    id: 'quest-1', phase: 'side', series: 'quest', when: 'cycle:1&rival-1', title: 'Dead Channel', ...UNLISTED, reward: 900, scale: 0.8,
+    briefing: [
+      'PLAYBACK FAULT. Channel nine is carrying a live signal. Channel nine has been dead for eleven years.',
+      'Source: a relay in the freight lanes, low on the wall where nobody looks. It is listening for this frame.',
+      'There is no client. There is no fee. There is a relay.',
+    ],
+    debrief: 'The relay is dead. It held one address: a desk, and a nine. A fee arrives anyway. Nobody sent it.',
+    battles: [
+      battle(['lien-drone', 'lien-drone'], 'bg-neon-district', { talk: [dispatch('start', 'Those are not on my board. I do not know that livery. ...I do. I saw it once, eleven years ago.')] }),
+      battle(['lien-drone', 'shield-drone', 'lien-drone'], 'bg-neon-district', { talk: [dispatch('last', 'Whoever owns those has been in this city longer than the war. Tell nobody you saw them. Least of all me.')] }),
+    ],
+  },
+  {
+    id: 'quest-2', phase: 'side', series: 'quest', when: 'cycle:1&choice&chose:logs=keep&quest-1', title: 'Low Water', ...UNLISTED, reward: 1400, scale: 1,
+    briefing: [
+      'PLAYBACK. Gate four, the sluice. The plate under the seat has a mark scratched in it. The mark is a place.',
+      'The water is down as far as it goes. Both companies have machines on the gate. Neither has been told what for.',
+      'Nobody else holds a copy of this log. Keep it that way.',
+    ],
+    debrief: 'Under the mark, in the silt: an iron box with nine hasps. Too deep to lift tonight. But it is there.',
+    battles: [
+      battle(['gun-turret', 'tank'], 'bg-sluice', { talk: [recorder('start', 'The box is in the water. I can see the lid. Marking the place on the plate.')] }),
+      battle(['light-mech', 'marksman'], 'bg-sluice', { talk: [dispatch('start', 'Hadron on one side of the gate, Lumen on the other. Same standing order, same paymaster. I checked. I wish I had not.')] }),
+    ],
+  },
+  {
+    id: 'quest-3', phase: 'side', series: 'quest', when: 'cycle:1&finale&quest-2', title: 'Registered Office', ...UNLISTED, reward: 2400, scale: 1,
+    briefing: [
+      'PLAYBACK ENDS. There is nothing more on the tape. What follows is not recorded anywhere.',
+      'The pumps are running and nobody is watching them: Meridian is busy sealing the city above. The box will lift tonight or not at all.',
+      'It was on its way to be opened. Take it where it can be: down, to the door with the brass plate.',
+    ],
+    debrief: 'The box stands under the hooks in the hall. Nine hasps. It will not open for less than nine.',
+    battles: [
+      battle(['bailiff', 'lien-drone', 'lien-drone'], 'bg-sluice', { talk: [dispatch('start', 'They are sealing the gate. If the seal goes on, the box stays under it for another forty years. Break the seal crew.')] }),
+      battle(['assessor'], 'bg-hall', { par: 9, talk: [actuary('start', 'Good evening. This is the registered office. It is not open to the public. It has not been open to anybody for some time.'), actuary('win', 'I shall have to minute this. There has been nothing to minute in forty years.')] }),
+    ],
+  },
+];
+
+export const SIDE_WORK: Mission[] = [...BOUNTIES, ...FAVOURS, ...GUILD_JOBS, ...QUEST];

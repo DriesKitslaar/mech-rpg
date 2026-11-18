@@ -32,6 +32,7 @@ export const PLACES: Record<string, Place> = {
   'bg-clearing': lookingAt(193),
   'bg-foundry': lookingAt(188),
   'bg-garage': lookingAt(170),
+  'bg-hall': lookingAt(146),
   'bg-mine': lookingAt(193),
   'bg-neon-district': lookingAt(180),
   'bg-plaza': lookingAt(196),

@@ -33,7 +33,7 @@
 
 - [x] K1: Voices in a battle (branch `feat/print-voices`)
 - [x] K2: Finds (branch `feat/print-finds`)
-- [ ] K3: A later cycle (branch `feat/print-cycle`)
+- [x] K3: A later cycle (branch `feat/print-cycle`)
 - [ ] K4: The third verdict (branch `feat/print-ending`)
 - [ ] K5: Review, soak, APK, summary (branch `feat/print-review`)
 
@@ -152,14 +152,14 @@ The finds (when; what it is):
 
 **Files:** `src/content/missions.ts`, `src/content/sidework.ts` (the three contracts), `src/content/talks.ts`, `src/content/scenes.ts`, `src/content/codex.ts` (the recorder among the people), `src/content/nl/*`, `scripts/art/jobs.ts` (`portrait-recorder`), `scripts/careerBot.ts` (answers to the story's questions; the side contracts of a later cycle), tests in `tests/content/cycle.test.ts` (new), `tests/core/campaign.test.ts`, `tests/scripts/career.test.ts`.
 
-- [ ] A page before the first contract of a later cycle (`playback`: heading CHANNEL NINE, title PLAYBACK).
-- [ ] The recorder's lines (`cycle: 1`) in the battles at the sluice: `undertow-2`, `hadron-4`, `undertow-5`, `favour-sixty`; Dispatch's slips in `intro-1` and `rival-1`.
-- [ ] `quest-1` Dead Channel (`cycle:1&rival-1`), `quest-2` Low Water (`cycle:1&choice&chose:logs=keep&quest-1`), `quest-3` Registered Office (`cycle:1&finale&quest-2`); client `Unlisted`, the recorder's face. `quest-3` is fought where the third verdict is: until K4 has its picture it uses the sluice.
-- [ ] `talk-playback` (after `quest-2`, before `verdict`): the recorder played to Dispatch; the question `frame` with the answers `ask` and `quiet`; a line for each in what is remembered.
-- [ ] A letter from Ashfall after `quest-1` (gate four); one from A Tidy Desk after `quest-3` (nine hasps).
-- [ ] `cycle.test.ts`: in the first cycle none of it is on offer or shown, whatever has been done; in a later cycle each comes when its condition says and not before; with the logs sold `quest-2` never comes.
-- [ ] The career bot answers questions as told and flies the contracts without a client; a career of two cycles reaches `quest-3`.
-- [ ] All tests, screenshots, an APK.
+- [x] A page before the first contract of a later cycle (`playback`: heading THE HANGAR, title PLAYBACK).
+- [x] The recorder's lines (`cycle: 1`) in the battles at the sluice: `undertow-2`, `hadron-4`, `undertow-5`, `favour-sixty`; Dispatch's slips in `intro-1` and `rival-1`.
+- [x] `quest-1` Dead Channel (`cycle:1&rival-1`), `quest-2` Low Water (`cycle:1&choice&chose:logs=keep&quest-1`), `quest-3` Registered Office (`cycle:1&finale&quest-2`); client `Unlisted`, the recorder's face. `quest-3` begins at the sluice, where the box is lifted, and ends in the hall (`bg-hall`, made here with the other three pictures of the round: the flood's rule holds in it).
+- [x] `talk-playback` (after `quest-2`, before `verdict`): the recorder played to Dispatch; the question `frame` with the answers `ask` and `quiet`; a line for each in what is remembered.
+- [x] A letter from Ashfall after `quest-1` (gate four); one from A Tidy Desk after `quest-3` (nine hasps).
+- [x] `cycle.test.ts`: in the first cycle none of it is on offer or shown, whatever has been done; in a later cycle each comes when its condition says and not before; with the logs sold `quest-2` never comes.
+- [x] The career bot answers questions as told and flies the contracts without a client; a career of two cycles reaches `quest-3`.
+- [x] All tests, screenshots, an APK.
 
 ## K4: The third verdict
 
