@@ -125,19 +125,35 @@ describe('a volley that destroys a machine', () => {
 
 describe('what a run is held to', () => {
   test('the heat: a volley that takes the mech past its limit costs the next turn, ready or not', () => {
+    const hot: Catalog = { ...CATALOG, 'wpn-rivet-rifle': { ...rifle, damage: 900, heat: 110 } };
+    let s = field(['recon-drone', 'recon-drone', 'gun-turret'], hot);
+    s = applyAction(s, fire('rightHand', 'enemy-0'), hot, hit);
+    expect(player(s).heat).toBe(110);
+    expect(player(s).heat).toBeGreaterThan(HEAT_LIMIT);
+    expect(player(s).overheated).toBe(true);
+    // The weapon is ready all the same, and this turn is the pilot's still; the one after is not.
+    expect(checkAction(s, fire('rightHand', 'enemy-1'), hot)).toBeNull();
+    s = applyAction(s, END, hot);
+    // The two that are left take their turns, and take them again before the pilot is heard from.
+    const skipped = (): boolean => s.events.some((e) => e.type === 'turnSkipped' && e.unit === 'player');
+    for (let guard = 0; !skipped() && activeUnit(s).id !== 'player' && guard < 10; guard++) s = applyAction(s, END, hot);
+    expect(s.outcome).toBe('ongoing');
+    expect(skipped()).toBe(true);
+    expect(s.round).toBe(2);
+  });
+
+  test('a run of two that ends in an overheat is paid for only if there is a next turn: what was left has gone by then', () => {
     const hot: Catalog = { ...CATALOG, 'wpn-rivet-rifle': { ...rifle, damage: 900, heat: 60 } };
     let s = field(['recon-drone', 'recon-drone', 'gun-turret'], hot);
     s = applyAction(s, fire('rightHand', 'enemy-0'), hot, hit);
     expect(player(s).overheated).toBe(false);
     s = applyAction(s, fire('rightHand', 'enemy-1'), hot, hit);
     expect(player(s).heat).toBe(120);
-    expect(player(s).heat).toBeGreaterThan(HEAT_LIMIT);
     expect(player(s).overheated).toBe(true);
-    // The weapon is ready all the same, and this turn is the pilot's still; the one after is not.
-    expect(checkAction(s, fire('rightHand', 'enemy-2'), hot)).toBeNull();
+    // The turret saw both drones go: it leaves at its turn, and the battle is over before the lost turn comes.
     s = applyAction(s, END, hot);
-    for (let guard = 0; s.round === 1 && guard < 10; guard++) s = applyAction(s, END, hot);
-    expect(s.events.filter((e) => e.type === 'turnSkipped').map((e) => e.unit)).toContain('player');
+    expect(s.outcome).toBe('victory');
+    expect(s.events.some((e) => e.type === 'turnSkipped')).toBe(false);
   });
 
   test('the magazine: the last round of it is the last volley', () => {

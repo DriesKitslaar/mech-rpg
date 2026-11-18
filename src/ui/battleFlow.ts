@@ -274,6 +274,8 @@ export class BattleFlow {
         const unit = this.state.units.find((u) => u.id === event.unit)!;
         return STRINGS.momentum(weaponIn(unit.build, event.weapon, this.catalog)?.name ?? event.weapon, event.chain);
       }
+      case 'shaken': return STRINGS.shaken(name(event.unit));
+      case 'rout': return STRINGS.rout(name(event.unit));
       case 'boost': return STRINGS.boost(name(event.unit));
       case 'guard': return STRINGS.guard(name(event.unit));
       case 'stagger': return STRINGS.stagger(name(event.unit));

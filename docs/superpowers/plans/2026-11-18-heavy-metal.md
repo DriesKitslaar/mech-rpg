@@ -32,7 +32,7 @@
 ## Status
 
 - [x] H1: Momentum and Shatter (branch `feat/heavy-momentum`)
-- [ ] H2: They break (branch `feat/heavy-break`)
+- [x] H2: They break (branch `feat/heavy-break`)
 - [ ] H3: Swarms (branch `feat/heavy-swarm`)
 - [ ] H4: A name (branch `feat/heavy-name`)
 - [ ] H5: Weight (branch `feat/heavy-weight`)
@@ -42,29 +42,33 @@
 
 The automatic player in the best frame with every fighting perk and the bench at its limit, over the patrol and every story contract, twelve seeds each (kept as `tests/core/fantasy.test.ts`). Open battles and the rest are counted apart from H1 on: the rest are the fights the rules leave alone.
 
-| End of a first telling | Before | After H1 |
-|---|---|---|
-| All battles: rounds | 4.14 | 3.56 |
-| All battles: turns with two kills or more | 1.9% | 6.8% |
-| Open battles: rounds | 4.13 | 3.17 |
-| Open battles: volleys for each machine destroyed | 3.13 | 2.71 |
-| Open battles: turns with a kill | 52.5% | 59.3% |
-| Open battles: turns with two kills or more | 2.6% | 12.4% |
-| Open battles: turns with three | never | 1.4% |
-| Not open: rounds | 4.15 | 4.08 |
-| Not open: volleys for each machine destroyed | 5.20 | 5.17 |
-| Not open: turns with two kills | 1.0% | 1.0% |
-| Patrol: rounds | 2.67 | 2.00 |
-| Patrol: turns with both drones | 14% | 36% |
+| End of a first telling | Before | After H1 | After H2 |
+|---|---|---|---|
+| All battles: rounds | 4.14 | 3.56 | 3.53 |
+| All battles: turns with two kills or more | 1.9% | 6.8% | 7.0% |
+| Open battles: rounds | 4.13 | 3.17 | 3.12 |
+| Open battles: volleys for each machine destroyed | 3.13 | 2.71 | 2.76 |
+| Open battles: turns with a kill | 52.5% | 59.3% | 58.1% |
+| Open battles: turns with two kills or more | 2.6% | 12.4% | 13.1% |
+| Open battles: turns with three | never | 1.4% | 1.5% |
+| Open battles that end with a machine leaving | none | none | 65 of 444 |
+| Not open: rounds | 4.15 | 4.08 | 4.08 |
+| Not open: volleys for each machine destroyed | 5.20 | 5.17 | 5.17 |
+| Not open: turns with two kills | 1.0% | 1.0% | 1.0% |
+| Patrol: rounds | 2.67 | 2.00 | 2.00 |
+| Patrol: turns with both drones | 14% | 36% | 36% |
 
-| At the peak (third telling) | Before | After H1 |
-|---|---|---|
-| All battles: rounds | 5.96 | 5.48 |
-| Open battles: rounds | 5.53 | 4.69 |
-| Open battles: volleys for each machine destroyed | 4.06 | 3.70 |
-| Open battles: turns with two kills or more | 1.2% | 5.1% |
-| Not open: rounds | 6.53 | 6.52 |
-| Not open: volleys for each machine destroyed | 7.00 | 7.03 |
+| At the peak (third telling) | Before | After H1 | After H2 |
+|---|---|---|---|
+| All battles: rounds | 5.96 | 5.48 | 5.39 |
+| Open battles: rounds | 5.53 | 4.69 | 4.56 |
+| Open battles: volleys for each machine destroyed | 4.06 | 3.70 | 3.71 |
+| Open battles: turns with two kills or more | 1.2% | 5.1% | 5.4% |
+| Open battles that end with a machine leaving | none | none | 52 of 444 |
+| Not open: rounds | 6.53 | 6.52 | 6.50 |
+| Not open: volleys for each machine destroyed | 7.00 | 7.03 | 7.02 |
+
+(A machine that leaves was not destroyed, which is why H2 has a few more volleys for each machine destroyed and a few fewer turns with a kill than H1.)
 
 Of ninety battles in the story and its side work, 49 are open, 22 are against one machine and 19 have somebody who leads; of the 65 in the patrol and the story itself, 37, 19 and 9.
 
@@ -82,6 +86,8 @@ Win rates of the automatic player with no perks, 120 seeds a contract, on Standa
 | audit-2 | 91>98 | 9>95 | open, light machines, something to protect |
 
 On Veteran at the peak, with the bench: the hardest contract (verdict-quorum) is won 38 times in a hundred, as before, and 86 from the fourth telling, as before.
+
+After H2 the same table reads the same: over all 176 pairs of contract and frame the mean win rate went from 70.6 to 70.7, and no pair moved by more than a few seeds. A field holds three machines, so when two fall in a turn there is one left to lose its nerve: the break ends a battle that was already won a turn sooner, and is seen.
 
 Each part adds its column here.
 
@@ -116,10 +122,10 @@ Each part adds its column here.
 - `BattleEvent` gains `{ type: 'shaken'; unit: string }` and `{ type: 'rout'; unit: string }`.
 - When a unit's chain reaches 2, every ordinary standing enemy of it is shaken. At the start of a shaken unit's turn it leaves: `fled`, counted as gone for everything that asks who stands, and no `unitDestroyed`.
 
-- [ ] Tests first: shaken at the second kill of a turn and not at the first; not shaken by two kills in two turns; nobody is shaken in a fight that is not open (the nine fights of H1 still come to what they came to); a shaken machine leaves at its own turn and not before, and can be destroyed until then; a machine that left is not a kill (stats, medals); the battle is won when the last one leaves, whatever the objective; the line for the last enemy is still said.
-- [ ] The rule and its events.
-- [ ] The screen: the machine is marked as shaken, is seen to leave, and the log says so. Dutch.
-- [ ] The measurements again; the hard fights again. All tests, an APK.
+- [x] Tests first (`tests/core/rout.test.ts`): shaken at the second kill of a turn and not at the first; not shaken by two kills in two turns; by one salvo that takes two; nobody is shaken in a fight that is not open (the nine fights of H1 still come to what they came to); a shaken machine leaves at its own turn and not before, and can be destroyed until then; a machine that left is not a kill (the record counts two, not three); the battle is won when the last one leaves, whatever the objective; a bomb leaves unexploded and a carrier launches no more.
+- [x] The rule and its events. A machine that left is `destroyed` and `fled`: everything that asks who stands needs no telling.
+- [x] The screen (`tests/ui/rout.test.ts`): the log says that it loses its nerve and that it breaks off; the word SHAKEN over it as it happens and as a tag in the panel, in place of what it was about to do; its eye low; it goes back the way it came, faster as it goes, fading, and leaves no wreck. The line for the last enemy is still said. A manual topic and the guide. Dutch.
+- [x] The measurements again; the hard fights again (above). 30 small faults in the new code: found by the tests. All tests, both browser halves, an APK.
 
 ## H3: Swarms
 

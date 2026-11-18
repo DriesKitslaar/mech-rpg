@@ -114,6 +114,8 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
     case 'partDestroyed': return now('partDestroyed');
     case 'unitDestroyed': return now('unitDestroyed');
     case 'momentum': return now('ready');
+    case 'shaken': return now('stagger');
+    case 'rout': return now('boost');
     case 'boost': return now('boost');
     case 'guard': return now('guard');
     case 'stagger': return now('stagger');

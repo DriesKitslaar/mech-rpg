@@ -135,6 +135,13 @@ export interface UnitState {
    * field goes on through it.
    */
   chain: number;
+  /**
+   * Saw two machines of its side destroyed in one turn: it breaks off when its own turn comes,
+   * instead of taking it. Until then it stands, and can be shot at, like any other.
+   */
+  shaken?: true;
+  /** Broke off and left the field. It is `destroyed` for everything that asks who stands, and it is nobody's kill. */
+  fled?: true;
   repairsLeft: number;
   destroyed: boolean;
   mods: UnitMods;
@@ -209,6 +216,10 @@ export type BattleEvent =
    * `chain` is how many that makes this turn.
    */
   | { type: 'momentum'; unit: string; weapon: WeaponSlot; chain: number }
+  /** `unit` has seen two machines of its side destroyed in one turn, and will break off when its own turn comes. */
+  | { type: 'shaken'; unit: string }
+  /** `unit`, shaken, has left the field in place of taking its turn. It was not destroyed. */
+  | { type: 'rout'; unit: string }
   | { type: 'boost'; unit: string }
   | { type: 'guard'; unit: string }
   | { type: 'cool'; unit: string; amount: number }
@@ -400,6 +411,18 @@ export function ordinary(state: BattleState, unit: UnitState): boolean {
   return state.open && unit.side === 'enemy';
 }
 
+/**
+ * They break, in an open battle: every machine still standing against `by` loses its nerve. It
+ * stands until its own turn comes and leaves then; a machine already shaken is not shaken again.
+ */
+function shake(state: BattleState, by: UnitState): void {
+  for (const other of state.units) {
+    if (other.side === by.side || other.destroyed || other.shaken) continue;
+    other.shaken = true;
+    state.events.push({ type: 'shaken', unit: other.id });
+  }
+}
+
 /** The enemy an objective names, if it names one. */
 export function objectiveTarget(state: BattleState): UnitState | undefined {
   return 'target' in state.objective ? findUnit(state, `enemy-${state.objective.target}`) : undefined;
@@ -575,6 +598,15 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     if (state.turn >= state.order.length && !beginRound(state, catalog)) return;
     const unit = activeUnit(state);
     if (unit.destroyed) { state.turn += 1; continue; }
+    // A shaken machine does not take its turn: it breaks off, with whatever it carried, and is gone.
+    // The turn passes over it from here on as it does over a wreck.
+    if (unit.shaken) {
+      unit.destroyed = true;
+      unit.fled = true;
+      state.events.push({ type: 'rout', unit: unit.id });
+      checkOutcome(state);
+      continue;
+    }
     // What lasted "until the unit's next turn" ends here, whether or not the turn is then lost.
     unit.boosted = false;
     unit.guarding = false;
@@ -1000,7 +1032,11 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       checkOutcome(state);
       if (state.outcome !== 'ongoing') break;
       // Said while there is something left to turn the weapon on: the volley that ends a battle readies it for nothing.
-      if (target.destroyed && state.open) state.events.push({ type: 'momentum', unit: unit.id, weapon: action.weapon, chain: unit.chain });
+      if (target.destroyed && state.open) {
+        state.events.push({ type: 'momentum', unit: unit.id, weapon: action.weapon, chain: unit.chain });
+        // The second of a turn is seen by whatever still stands against the one who did it.
+        if (unit.chain === 2) shake(state, unit);
+      }
     }
     if (state.outcome !== 'ongoing') break;
   }

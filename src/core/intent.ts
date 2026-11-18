@@ -71,6 +71,8 @@ export function intentOf(state: BattleState, unit: UnitState, catalog: Catalog):
 }
 
 function work(state: BattleState, unit: UnitState, catalog: Catalog): Intent | null {
+  // A shaken machine is lining up on nothing: it leaves when its turn comes.
+  if (unit.shaken) return null;
   if (unit.fuse !== undefined) return { kind: 'fuse', turns: unit.fuse };
   if (unit.staggered > 0) return { kind: 'reeling' };
   // Heat that has tripped costs the next turn whole.

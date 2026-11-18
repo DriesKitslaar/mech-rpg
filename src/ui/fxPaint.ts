@@ -315,6 +315,7 @@ export function paintFx(ctx: CanvasRenderingContext2D, fx: Fx, p: number, calm =
     case 'sparks': sparks(ctx, fx.at, fx.color, p); break;
     case 'steam': steam(ctx, fx.at, p); break;
     case 'lunge': streaks(ctx, fx.from, fx.aim, p); break;
+    case 'leave': streaks(ctx, fx.from, fx.aim, p); break;
     case 'slash': slash(ctx, fx.at, fx.dir, fx.color, p); break;
     case 'shield': shield(ctx, fx.at, fx.aim, p); break;
     case 'gather': gather(ctx, fx.at, fx.color, p); break;
@@ -365,6 +366,8 @@ export function lightsOf(fx: Fx, p: number): Glow[] {
     case 'slash': return [{ x: fx.at.x, y: fx.at.y, r: 34, color: fx.color, alpha: 0.8 * (1 - p) }];
     case 'shield': return [{ x: fx.at.x + fx.aim.x * 26, y: fx.at.y + fx.aim.y * 26, r: 46, color: COLORS.armor, alpha: 0.4 * Math.sin(Math.PI * Math.min(1, p * 1.2)) }];
     case 'gather': return [{ x: fx.at.x, y: fx.at.y, r: 10 + 18 * p, color: fx.color, alpha: 0.25 + 0.55 * p }];
+    // The jet behind a unit that leaves: it burns brightest as it goes.
+    case 'leave': return [{ x: fx.from.x - fx.aim.x * 30, y: fx.from.y - fx.aim.y * 30 + 6, r: 40, color: COLORS.energy, alpha: 0.75 * (1 - p) }];
     // The jet behind a unit that lunges.
     case 'lunge': return [{ x: fx.from.x - fx.aim.x * 30, y: fx.from.y - fx.aim.y * 30 + 6, r: 40, color: COLORS.energy, alpha: 0.75 * Math.sin(Math.PI * p) }];
     default: return [];

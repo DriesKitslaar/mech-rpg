@@ -28,8 +28,8 @@ const perks = Object.fromEntries(['aim', 'evasion', 'energy', 'cooling', 'repair
 const build = REFERENCE_BUILDS.tier6;
 const STORY = MISSIONS.filter((m) => ['patrol', 'intro', 'faction', 'rival', 'choice', 'path', 'finale', 'audit', 'verdict'].includes(m.phase));
 
-interface Tally { battles: number; rounds: number; kills: number; turns: number; withKill: number; withTwo: number; withThree: number; best: number; volleys: number }
-const blank = (): Tally => ({ battles: 0, rounds: 0, kills: 0, turns: 0, withKill: 0, withTwo: 0, withThree: 0, best: 0, volleys: 0 });
+interface Tally { battles: number; rounds: number; kills: number; turns: number; withKill: number; withTwo: number; withThree: number; best: number; volleys: number; left: number }
+const blank = (): Tally => ({ battles: 0, rounds: 0, kills: 0, turns: 0, withKill: 0, withTwo: 0, withThree: 0, best: 0, volleys: 0, left: 0 });
 const measured = new Map<number, Record<'open' | 'other' | 'patrol', Tally>>();
 
 /** Every battle of the story as the given cycle offers it, played out; what happened in the pilot's turns, by kind of battle. */
@@ -66,7 +66,8 @@ function measure(cycle: number): Record<'open' | 'other' | 'patrol', Tally> {
           }
         }
         close();
-        for (const t of into) t.rounds += state.round;
+        const left = state.events.filter((event) => event.type === 'rout').length;
+        for (const t of into) { t.rounds += state.round; t.left += left; }
       }
     }
   }
@@ -93,6 +94,17 @@ describe('at the end of a first telling', () => {
     expect(open.best).toBe(3);
     expect(open.withThree).toBeGreaterThanOrEqual(10);
     expect(volleysPerKill(open)).toBeLessThanOrEqual(2.9);
+  });
+
+  test('machines break off: where two fall in a turn and a third stands, it leaves', () => {
+    const { open, other } = measure(0);
+    // One open battle in seven ends with a machine leaving (65 of 444); no other fight ever does.
+    expect(open.left).toBeGreaterThanOrEqual(50);
+    expect(open.left).toBeLessThanOrEqual(open.withTwo);
+    expect(other.left).toBe(0);
+    // At the peak it is one in eight or nine (52 of 444).
+    expect(measure(2).other.left).toBe(0);
+    expect(measure(2).open.left).toBeGreaterThanOrEqual(40);
   });
 
   test('the patrol is two rounds\' work, and one turn in three takes both drones', () => {

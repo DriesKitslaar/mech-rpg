@@ -35,7 +35,7 @@ export const STRINGS = {
   tags: {
     boost: 'BOOST', guard: 'GUARD', stagger: 'STAGGER', charged: 'CHARGED', charging: 'CHARGING', painted: 'PAINTED',
     barrier: (n: number) => `BARRIER ${n}`, chaff: 'CHAFF', stability: 'STAB',
-    fuse: (n: number) => `FUSE ${n}`, aegis: 'AEGIS', jammer: 'JAMMER', mender: 'MENDER', carrier: 'CARRIER',
+    fuse: (n: number) => `FUSE ${n}`, aegis: 'AEGIS', jammer: 'JAMMER', mender: 'MENDER', carrier: 'CARRIER', shaken: 'SHAKEN',
     covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`, ironSkin: 'IRON SKIN', deadeye: 'DEADEYE',
     // What sets an elite enemy apart.
     marks: { armoured: 'ARMOURED', overclocked: 'OVERCLOCKED', swift: 'SWIFT', shielded: 'SHIELDED' } as Record<string, string>,
@@ -70,6 +70,9 @@ export const STRINGS = {
   unitDestroyed: (unit: string) => does(unit, 'destroyed', 'are destroyed'),
   // A volley that destroyed something: its weapon may fire again this turn. From the second in a turn the run is counted.
   momentum: (weapon: string, chain: number) => (chain > 1 ? `CHAIN x${chain} - ${weapon} ready again` : `${weapon} ready again`),
+  // Two machines down in one turn: what still stands will leave when its turn comes, and then does.
+  shaken: (unit: string) => `${unit} loses its nerve`,
+  rout: (unit: string) => `${unit} breaks off`,
   boost: (unit: string) => does(unit, 'boosts', 'boost'),
   guard: (unit: string) => does(unit, 'braces', 'brace'),
   stagger: (unit: string) => does(unit, 'is STAGGERED', 'are STAGGERED'),
@@ -432,7 +435,7 @@ export const STRINGS = {
     vendors: { undertow: 'The Undertow', lumen: 'Lumen Systems', hadron: 'Hadron Mining', freelance: 'Freelance' },
   },
   fx: {
-    miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', block: (n: number) => `BLOCK ${n}`,
+    miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', shaken: 'SHAKEN', block: (n: number) => `BLOCK ${n}`,
     phase: (n: number) => `PHASE ${n}`,
     modules: {
       coolant: 'COOLANT', barrier: 'BARRIER', overclock: 'OVERCLOCK', painter: 'PAINTED', nanites: 'NANITES', shock: 'SHOCK',

@@ -178,6 +178,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'In the same fights, one blow that takes half of a machine\'s core, as it stood at full strength, finishes it: a heavy weapon goes through a light machine. The aiming line says DESTROYS when a hit would do it. It is never done to you.',
   },
   {
+    id: 'rout', title: 'THEY BREAK',
+    text: 'Destroy two machines in one turn of the same fights and whatever still stands against you loses its nerve. It is marked SHAKEN, and when its turn comes it breaks off and leaves the field without firing. A machine that leaves is not a kill: destroy it before its turn comes if you want it counted.',
+  },
+  {
     id: 'aim', title: 'AIMING',
     text: 'Pick a target and a part. The core is the easiest to hit; legs are 5 harder, arms 10, the head 20. Destroy the core and the unit is gone. A part that is already destroyed passes half of any further damage on to the core.',
   },

@@ -106,6 +106,26 @@ describe('how a unit is shown standing', () => {
     expect(shown.of('player').staggered).toBe(false);
   });
 
+  test('a machine that loses its nerve looks it from the moment that is said, and not before', () => {
+    const shown = new ShownStance();
+    // The rules shook it with the shot; the screen is still showing the shot.
+    shown.onEvent({ type: 'shot', unit: 'player' });
+    shown.onEvent({ type: 'momentum', unit: 'player' });
+    expect(shown.of('enemy-2').shaken).toBe(false);
+    shown.onEvent({ type: 'shaken', unit: 'enemy-2' });
+    expect(shown.of('enemy-2').shaken).toBe(true);
+    expect(shown.of('enemy-1').shaken).toBe(false);
+    // With everything shown the rules are taken at their word, here too.
+    const turret = { id: 'enemy-2', destroyed: false, guarding: false, staggered: 0, overheated: false };
+    shown.sync([{ ...turret, shaken: true as const }]);
+    expect(shown.of('enemy-2').shaken).toBe(true);
+    shown.sync([turret]);
+    expect(shown.of('enemy-2').shaken).toBe(false);
+    const late = new ShownStance();
+    late.sync([{ ...turret, shaken: true as const }]);
+    expect(late.of('enemy-2').shaken).toBe(true);
+  });
+
   test('with everything shown the rules are taken at their word, except for a wreck', () => {
     const shown = new ShownStance();
     shown.onEvent({ type: 'guard', unit: 'player' });

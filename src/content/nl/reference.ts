@@ -170,6 +170,10 @@ export const REFERENCE_NL: Record<string, string> = {
     'In dezelfde gevechten maakt een klap die de helft van de kern van een machine wegslaat, gemeten op volle sterkte, haar af: een zwaar wapen gaat door een lichte machine. De richtregel zegt dan VERNIETIGT. Jou overkomt het nooit.',
   'SHATTER':
     'VERMORZELEN',
+  'THEY BREAK':
+    'ZE VLUCHTEN',
+  'Destroy two machines in one turn of the same fights and whatever still stands against you loses its nerve. It is marked SHAKEN, and when its turn comes it breaks off and leaves the field without firing. A machine that leaves is not a kill: destroy it before its turn comes if you want it counted.':
+    'Vernietig in dezelfde gevechten twee machines in een beurt en wat er nog staat raakt in paniek. Het krijgt het label PANIEK en vlucht van het veld zodra het aan de beurt is, zonder te vuren. Een machine die vlucht telt niet als vernietigd: schakel haar eerder uit als je haar wilt meetellen.',
   'MOMENTUM':
     'DOORSTOTEN',
   AIMING: 'RICHTEN',

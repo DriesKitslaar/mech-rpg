@@ -159,6 +159,10 @@ hundred to 99 for a full Ronin, and from 21 to 86 in the heaviest frame, which u
 worst at it; the second audit contract (lien drones at a hangar) from 91 to 98, and from 9 to 95.
 The balance test that held the first of those under 98 now says so in its own words.
 
+The break (the second part) moved no win rate: a field holds three machines, so when two fall in
+a turn there is one left to lose its nerve, and the battle it leaves was won already. It ends one
+open battle in seven a turn sooner at the end of a first telling, and is there to be seen.
+
 ## Left to the builder
 
 The exact wording on the screen, the sound of a chain, how a machine is seen to leave, the ladder

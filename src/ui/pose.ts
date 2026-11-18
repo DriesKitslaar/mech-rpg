@@ -12,7 +12,7 @@ export type LayerOffset = { dx: number; dy: number };
 export type Pose = Partial<Record<SpriteSlot, LayerOffset>>;
 export type ActionName = 'fireNear' | 'fireFar' | 'fireShoulder' | 'hit' | 'boost' | 'strike' | 'destroyed';
 /** What a unit is in the middle of, as far as its stance shows it. */
-export interface Stance { guarding?: boolean; staggered?: boolean; overheated?: boolean }
+export interface Stance { guarding?: boolean; staggered?: boolean; overheated?: boolean; shaken?: boolean }
 
 export const POSE_MS: Record<ActionName, number> = {
   fireNear: 220, fireFar: 220, fireShoulder: 300, hit: 260, boost: 420, strike: 320, destroyed: 550,
@@ -177,7 +177,7 @@ export class Puppet {
 
 /** The events that change how a unit stands. */
 type StanceEvent = { type: string; unit?: string };
-interface StanceSource { id: string; destroyed: boolean; guarding: boolean; staggered: number; overheated: boolean }
+interface StanceSource { id: string; destroyed: boolean; guarding: boolean; staggered: number; overheated: boolean; shaken?: true }
 
 /**
  * How each unit stands as far as the screen has shown: the rules are always a few messages ahead of
@@ -189,7 +189,7 @@ export class ShownStance {
 
   private entry(id: string): Required<Stance> {
     let s = this.shown.get(id);
-    if (!s) { s = { guarding: false, staggered: false, overheated: false }; this.shown.set(id, s); }
+    if (!s) { s = { guarding: false, staggered: false, overheated: false, shaken: false }; this.shown.set(id, s); }
     return s;
   }
 
@@ -202,6 +202,8 @@ export class ShownStance {
       case 'stagger': s.staggered = true; break;
       case 'recover': s.staggered = false; break;
       case 'overheat': s.overheated = true; break;
+      // A machine that has lost its nerve looks it from the moment that is said until it has gone.
+      case 'shaken': s.shaken = true; break;
       // A turn that is taken starts upright; one that is lost to heat is spent hanging.
       case 'turnStart': s.guarding = false; s.overheated = false; break;
       case 'turnSkipped': s.guarding = false; break;
@@ -216,6 +218,7 @@ export class ShownStance {
       const s = this.entry(u.id);
       s.guarding = u.guarding;
       s.staggered = u.staggered > 0;
+      s.shaken = u.shaken === true;
       // Heat that cost the turn just shown keeps the mech hanging until its next turn starts.
       if (u.overheated) s.overheated = true;
     }

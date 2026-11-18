@@ -1132,7 +1132,7 @@ export class BattleScreen {
           const t = this.fx.transform(enemy.id);
           // Dazed as far as has been shown: the rules can be a shot ahead of the screen.
           const stance = this.stances.of(enemy.id);
-          const dazed = stance.staggered || stance.overheated;
+          const dazed = stance.staggered || stance.overheated || stance.shaken;
           // Where its picture is drawn: one that the rules have ended hangs still until it is seen to come apart.
           const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + t.lift + (enemy.destroyed ? 0 : hover) + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);
           if (eye) drawGlow(ctx, eye, this.opts.calm ? 0.5 : 1);
@@ -1203,6 +1203,7 @@ export class BattleScreen {
     const jammed = unit.side === 'player' ? jamOn(state, unit) : 0;
     const intent = intentText(intentOf(state, unit, this.catalog));
     return [
+      ...(unit.shaken ? [{ text: T.shaken, color: COLORS.accent, rank: 9 }] : []),
       ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger, rank: 9 }] : []),
       ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy, rank: 2 }] : []),
       ...(unit.abilities.jam !== undefined ? [{ text: T.jammer, color: COLORS.heat, rank: 2 }] : []),
