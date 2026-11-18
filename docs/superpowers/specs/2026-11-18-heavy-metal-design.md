@@ -30,6 +30,9 @@ not make for being overwhelming.
 - **Momentum.** Destroying a machine pays the pilot back at once: the weapon that did it is ready
   again. A pilot who outguns the field goes through it in one turn; a machine that takes more than
   one volley stops the run.
+- **Shatter.** A heavy weapon goes through a light machine: one blow that takes half of its core
+  finishes it. Momentum alone moved the figures above by almost nothing (a machine that takes two
+  volleys never starts a run); this is what makes a kill a matter of one volley.
 - **They break.** A pilot who destroys two machines in one turn is seen doing it: whatever ordinary
   machine is left breaks off rather than face the next turn.
 - **Swarms.** Contracts made for it: more light machines than the field holds, arriving as others fall.
@@ -48,13 +51,15 @@ not make for being overwhelming.
 
 ## What would make it a failure
 
-- A hard fight that is no longer hard. A boss, a named pilot, a duel or the last contracts of a
-  war must be won as often as before, within a few seeds. The feeling has to come from the fights
-  a pilot has outgrown, not from the ones that are the point.
+- A hard fight that is no longer hard. A fight against a boss, a named pilot, an elite, an
+  objective's target or one machine must be the fight it was. The feeling has to come from the
+  fights a pilot has outgrown, not from the ones that are the point.
 - A rule the player cannot see coming: a weapon that fires again, or a machine that leaves, without
   the screen saying why.
-- A first hour that plays differently. A new pilot in the starter frame cannot destroy anything in
-  one volley, and must not need to.
+- A first hour that is harder, or that a new pilot cannot follow. (As first written this said the
+  first hour must not play differently at all. It does: the starter's rifle goes through a recon
+  drone, so the first battle teaches the rule. What is held to is that the first act is won as
+  often as it was, and that the screen says what happened.)
 - Lines of the story lost. What is said when one enemy is left is sometimes a clue; a rule that
   ends a battle the moment two machines fall would skip it.
 - Noise. On a handheld, a counter, a word and a heavier bang; nothing that covers the field or
@@ -62,20 +67,33 @@ not make for being overwhelming.
 
 ## How it works
 
-**Momentum.** When a volley destroys a unit, the weapon that fired it is ready again in the same
-turn and the energy it took is given back. Heat is not given back and the round is spent, so a run
-ends in an overheat or an empty magazine if nothing else stops it: pushing on is a choice. A
-charged weapon has to be charged again. Each unit counts the units its volleys have destroyed this
-turn (its *chain*); the battle says so in an event the screen and the sound can use. The rule is
-the same for every unit; only a pilot has more than one thing to shoot at.
+**Open battles.** A battle is *open* when it begins against more than one machine and none of
+them *leads*. A machine leads if it has phases (a boss), a name and a face, the mark of an elite,
+if the objective names it (a leader, one to disable, one to drive off), or if it is a Bailiff, the
+one machine that commands others without being any of those. Whether a battle is open is settled
+when it begins and does not change. The enemies of an open battle are *ordinary*, those that join
+later included. Everything this round adds to a battle is a rule of an open battle and of no
+other: a fight that is not open is, shot for shot, the fight it was before.
 
-**They break.** When a unit's chain reaches two, every *ordinary* enemy still standing is shaken.
+**Momentum.** In an open battle, when a volley destroys a unit, the weapon that fired it is ready
+again in the same turn and the energy it took is given back. Heat is not given back and the round
+is spent, so a run ends in an overheat or an empty magazine if nothing else stops it: pushing on
+is a choice. A charged weapon has to be charged again. Each unit counts the units its volleys have
+destroyed this turn (its *chain*); the battle says so in an event the screen and the sound can
+use, unless the volley ended the battle. The rule is the same for every unit; only a pilot has
+more than one thing to shoot at.
+
+**Shatter.** In an open battle, a hit that takes at least half of an ordinary machine's core, as
+that core stood at full strength, takes all that is left of it. It is measured on what arrives:
+after the armour's resistance, a brace, a stagger. The aiming line says DESTROYS in place of the
+figure wherever one hit would finish the machine, by shattering it or by being enough. The pilot's
+own mech is never shattered.
+
+**They break.** When a unit's chain reaches two, every ordinary enemy still standing is shaken.
 A shaken machine breaks off when its own turn comes, instead of acting: it leaves the field, and
 the battle goes on without it (or is won, if nothing else stands). Until then it can still be shot.
-Ordinary means none of: a boss or a machine with phases; a named pilot; an elite; the machine an
-objective names (a leader, one to disable, one to drive off). A machine that left is not a kill.
-Breaking off at its own turn, not at once, is what keeps the line that is said when one enemy is
-left.
+A machine that left is not a kill. Breaking off at its own turn, not at once, is what keeps the
+line that is said when one enemy is left.
 
 **Swarms.** A battle can have a reserve: machines that are not on the field yet. At the start of
 each round, while fewer than three enemies stand and the reserve is not empty, the next comes on.
@@ -98,9 +116,9 @@ under the calm setting and none of it holds the turn up.
 
 ## Approaches considered
 
-1. **Rules that pay for kills (chosen).** Momentum and the break turn a pilot's strength into a
-   different kind of turn, not only a shorter one, and need no new thing to manage. They do nothing
-   in a fight against one strong machine, so the hard fights stay as they are.
+1. **Rules that pay for kills (chosen).** Momentum, Shatter and the break turn a pilot's strength
+   into a different kind of turn, not only a shorter one, and need no new thing to manage. They
+   are rules of open battles, so the hard fights stay as they are.
 2. **More raw power for the pilot** (bigger bench steps, weaker later cycles). Rejected: it is the
    balance the last round measured its way to, it would make the hard fights easy, and a bigger
    number is not a feeling.
@@ -115,10 +133,31 @@ under the calm setting and none of it holds the turn up.
 - A saved game from before this round loads and stays valid; nothing new is saved for the name.
 - Every new English text has its Dutch, inside the room its kind has.
 - Balance tests of the story are measured again and reported; where a hard fight moved by more
-  than a few seeds, the rule is changed, not the test.
+  than a few seeds, the rule is changed, not the test. (This is what happened: see below.)
 - No image is generated unless a part of the round cannot do without one; low quality only, and
   the ledger's ceiling stands.
 - Nothing is merged without the user's word.
+
+## What was measured, and what it changed
+
+The first rule built was Momentum everywhere and Shatter for every machine that did not itself
+lead. Played over 120 seeds a contract, that left every fight against one machine exactly as it
+was, and made the late contracts with escorts much easier: the third audit contract went from 81
+wins in a hundred to 97 for a full Ronin, the second verdict from 76 to 90, and the hardest
+contract of the game on Veteran at the peak from 38 to 71. Momentum alone accounted for most of
+that: a clerk destroyed beside a Bailiff gave the volley back to be put into the Bailiff. Two
+answers were tried and dropped: tougher enemies in those contracts (it holds the win rate of a
+heavy build and breaks a light one, which gets no benefit to pay for it), and machines that hold
+only while their leader stands (the fight still changes when the leader falls first).
+
+What was kept is the rule above: open battles, settled as a battle begins. With it, over the same
+seeds, every verdict and the third audit contract are won exactly as often as before, to the
+seed, and the finales (two open battles and a duel) within a few seeds; nine fights that are not
+open are kept in the tests by what they come to. What moved is what the round is for. A contract fought against light machines only is won more often by a pilot
+who outguns them: the last contract of the Lumen war (bomb crawlers at a core stack) from 92 in a
+hundred to 99 for a full Ronin, and from 21 to 86 in the heaviest frame, which used to be the
+worst at it; the second audit contract (lien drones at a hangar) from 91 to 98, and from 9 to 95.
+The balance test that held the first of those under 98 now says so in its own words.
 
 ## Left to the builder
 

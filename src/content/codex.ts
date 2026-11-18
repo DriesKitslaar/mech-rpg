@@ -170,6 +170,14 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'Each turn your generator gives you energy. Spend it on firing each weapon once, on Boost, Guard or Vent, then end the turn. Your module costs none. The more mobile unit acts first each round. Auto Turn plays one turn for you.',
   },
   {
+    id: 'momentum', title: 'MOMENTUM',
+    text: 'In a fight against ordinary machines, a volley that destroys one pays for itself: its weapon is ready again that turn and its energy comes back. Heat and ammunition stay spent; a charged weapon has to be charged again. Not where a boss, a named pilot, an elite, a Bailiff or an objective\'s target fights, nor against one machine.',
+  },
+  {
+    id: 'shatter', title: 'SHATTER',
+    text: 'In the same fights, one blow that takes half of a machine\'s core, as it stood at full strength, finishes it: a heavy weapon goes through a light machine. The aiming line says DESTROYS when a hit would do it. It is never done to you.',
+  },
+  {
     id: 'aim', title: 'AIMING',
     text: 'Pick a target and a part. The core is the easiest to hit; legs are 5 harder, arms 10, the head 20. Destroy the core and the unit is gone. A part that is already destroyed passes half of any further damage on to the core.',
   },

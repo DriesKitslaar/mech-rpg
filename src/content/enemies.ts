@@ -314,7 +314,8 @@ export const ENEMIES: Record<string, EnemyDef> = {
   // Meridian Mutual, Collections Division.
   'lien-drone': LIEN_DRONE,
   bailiff: {
-    id: 'bailiff', name: 'Bailiff', ai: 'gunner', sprite: 'enemy-bailiff', composed: true,
+    // It serves the writ and the clerks follow it: a fight with a Bailiff in it is fought to the last plate.
+    id: 'bailiff', name: 'Bailiff', ai: 'gunner', sprite: 'enemy-bailiff', composed: true, leader: true,
     build: { ...AUDITOR, generator: 'gen-prism', rightHand: 'wpn-enemy-writ', leftHand: 'wpn-enemy-seizer' },
   },
   assessor: {

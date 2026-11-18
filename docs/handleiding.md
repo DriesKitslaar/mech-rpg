@@ -70,6 +70,22 @@ Elke beurt krijg je energie van je generator. Daarmee kun je:
 - **Auto Turn**: de computer speelt deze beurt voor je.
 - **Retreat**: het contract opgeven. Je betaalt wel de kosten.
 
+**Doorstoten en vermorzelen.** In een gevecht tegen *gewone machines* ben je sterker dan vroeger.
+Dat is elk gevecht tegen twee of meer machines waar geen baas, geen piloot met een naam, geen elite,
+geen Bailiff en geen doelwit van de opdracht aan meedoet. Tegen een baas, in een duel en in al die
+andere zware gevechten verandert er niets: die zijn precies zo zwaar als ze waren.
+
+- **Doorstoten.** Een wapen waarmee je een machine vernietigt, is in dezelfde beurt meteen weer
+  klaar, en de energie van dat schot krijg je terug. Zo ruim je met één zwaar wapen een heel veld
+  lichte machines op in één beurt. De hitte en de munitie krijg je niet terug: wie doorgaat tot
+  boven de 100 hitte, verliest zijn volgende beurt. Een wapen dat eerst moet laden, moet opnieuw
+  laden.
+- **Vermorzelen.** Eén klap die de helft van de kern van een machine wegslaat (gemeten op volle
+  sterkte), maakt haar meteen af. Een zwaar wapen gaat dus dwars door een lichte machine heen; met
+  een licht wapen moet je haar afbreken. Bij het mikken staat er **DESTROYS** (Nederlands:
+  **VERNIETIGT**) als een treffer de machine vernietigt. Hoe beter je wapen (ook door de
+  werkbank), hoe zwaardere machines je in één klap vernietigt. Jou kan het niet overkomen.
+
 Onder de pantserbalk van elke mecha staat een dunne balk: het evenwicht. Is die leeg, dan wankelt
 de mecha een beurt: hij kan niet ontwijken en krijgt 30% meer schade. Zware wapens duwen het hardst.
 

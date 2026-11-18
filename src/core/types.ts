@@ -233,6 +233,11 @@ export interface EnemyDef {
   partNames?: Partial<Record<FrameSlot, string>>;
   /** Sprite id of the face shown when it talks. */
   portrait?: string;
+  /**
+   * True of a machine that commands the ones beside it without being a boss or having a name: a
+   * fight it is in is fought as a fight against a boss is (see `BattleState.open`).
+   */
+  leader?: true;
   /** Bench work it comes with, by part id: the copy of the pilot's mech that a mirror match fields is tuned as the pilot's is. */
   tune?: Record<string, number>;
 }

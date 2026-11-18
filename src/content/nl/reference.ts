@@ -164,6 +164,14 @@ export const REFERENCE_NL: Record<string, string> = {
   'YOUR TURN': 'JOUW BEURT',
   'Each turn your generator gives you energy. Spend it on firing each weapon once, on Boost, Guard or Vent, then end the turn. Your module costs none. The more mobile unit acts first each round. Auto Turn plays one turn for you.':
     'Elke beurt geeft je generator energie. Besteed die aan een keer vuren per wapen, aan Boost, Dekking of Koelen, en eindig dan de beurt. Je module kost niets. De mobielste eenheid handelt elke ronde eerst. Auto-beurt speelt een beurt voor je.',
+  'In a fight against ordinary machines, a volley that destroys one pays for itself: its weapon is ready again that turn and its energy comes back. Heat and ammunition stay spent; a charged weapon has to be charged again. Not where a boss, a named pilot, an elite, a Bailiff or an objective\'s target fights, nor against one machine.':
+    'Tegen gewone machines verdient een salvo dat er een vernietigt zichzelf terug: het wapen is die beurt weer klaar en de energie komt terug. Hitte en munitie ben je kwijt; een geladen wapen moet opnieuw laden. Niet waar een baas, een piloot met een naam, een elite, een Bailiff of een doelwit meevecht, of tegen een machine alleen.',
+  'In the same fights, one blow that takes half of a machine\'s core, as it stood at full strength, finishes it: a heavy weapon goes through a light machine. The aiming line says DESTROYS when a hit would do it. It is never done to you.':
+    'In dezelfde gevechten maakt een klap die de helft van de kern van een machine wegslaat, gemeten op volle sterkte, haar af: een zwaar wapen gaat door een lichte machine. De richtregel zegt dan VERNIETIGT. Jou overkomt het nooit.',
+  'SHATTER':
+    'VERMORZELEN',
+  'MOMENTUM':
+    'DOORSTOTEN',
   AIMING: 'RICHTEN',
   'Pick a target and a part. The core is the easiest to hit; legs are 5 harder, arms 10, the head 20. Destroy the core and the unit is gone. A part that is already destroyed passes half of any further damage on to the core.':
     'Kies doelwit en onderdeel. De kern raak je het makkelijkst; benen 5 lastiger, armen 10, het hoofd 20. Zonder kern is de eenheid weg. Een vernietigd onderdeel geeft de helft van verdere schade door aan de kern.',

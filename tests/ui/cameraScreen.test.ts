@@ -30,6 +30,13 @@ function fight(enemies: string[], frail: number[] = [], opts: BattleOptions = {}
   for (const i of frail) for (const part of Object.values(state.units[i + 1].parts)) if (part) part.ap = 1;
   return state;
 }
+/** The first machine with a shell that holds: for a blow that lands on a machine and leaves it standing (a rifle goes through a drone among others). */
+function standing(state: BattleState): BattleState {
+  const core = state.units[1].parts.core!;
+  core.maxAp *= 4;
+  core.ap = core.maxAp;
+  return state;
+}
 function screenOf(state: BattleState, opts: { fast?: boolean; calm?: boolean; background?: string; boss?: string } = {}) {
   const flow = new BattleFlow(state, CATALOG, { quiet: true });
   const screen = new BattleScreen(flow, sprites, CATALOG, {
@@ -206,7 +213,7 @@ describe('when a blow lands', () => {
   }
 
   test('the camera pushes in towards the enemy that was hit, as the shot lands, and is home again, exactly, soon after', () => {
-    const { flow, screen, page, ready, fire } = screenOf(fight(['recon-drone', 'tank', 'gun-turret']));
+    const { flow, screen, page, ready, fire } = screenOf(standing(fight(['recon-drone', 'tank', 'gun-turret'])));
     ready();
     expect(screen.motion.view).toBe(HOME);
     const before = page();
@@ -347,7 +354,7 @@ describe('when a blow lands', () => {
     expect(white.y + white.h).toBeGreaterThanOrEqual(PANEL_Y - 1e-6);
     whole(onStage(flash, held.screen.motion.view).rects[at]);
     // A stroke of lightning that falls while a shot lands.
-    const storm = screenOf(fight(['recon-drone', 'tank', 'gun-turret']));
+    const storm = screenOf(standing(fight(['recon-drone', 'tank', 'gun-turret'])));
     storm.ready();
     const clock = (): number => (storm.screen as unknown as { clock: number }).clock;
     // The first stroke that is still far enough off for the shot to be fired into it.
@@ -394,7 +401,7 @@ describe('when a blow lands', () => {
 
   test('the push is on the field\'s own clock: with battles played faster it is over sooner', () => {
     const run = (speed: number): number => {
-      const flow = new BattleFlow(fight(['recon-drone', 'tank', 'gun-turret']), CATALOG, { quiet: true });
+      const flow = new BattleFlow(standing(fight(['recon-drone', 'tank', 'gun-turret'])), CATALOG, { quiet: true });
       const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, background: NEON, speed });
       for (let i = 0; i < 4000 && (flow.phase !== 'action' || screen.banner); i++) screen.update(16);
       screen.onInput('confirm'); screen.onInput('confirm'); screen.onInput('confirm');

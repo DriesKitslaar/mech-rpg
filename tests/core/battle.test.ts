@@ -60,19 +60,20 @@ describe('shot preview', () => {
   const p = (attacker: string, weapon: any, target: string, part: any) => previewShot(s, attacker, weapon, target, part, CATALOG);
 
   test('rifle against the drone', () => {
-    expect(p('player', 'rightHand', 'enemy-1', 'core')).toEqual({ hitChance: 57, damage: 38, shots: 1, salvo: false });
+    // Thirty-eight in one hit is more than half of a drone's shell of fifty: the hit goes through it, and takes all fifty.
+    expect(p('player', 'rightHand', 'enemy-1', 'core')).toEqual({ hitChance: 57, damage: 50, shots: 1, salvo: false, shatter: true, kills: true });
     expect(p('player', 'rightHand', 'enemy-1', 'legs').hitChance).toBe(52);
   });
 
   test('weapons against the turret use its resistances', () => {
-    expect(p('player', 'rightHand', 'enemy-0', 'core')).toEqual({ hitChance: 90, damage: 23, shots: 1, salvo: false });
-    expect(p('player', 'shoulder', 'enemy-0', 'core')).toEqual({ hitChance: 70, damage: 63, shots: 1, salvo: false });
+    expect(p('player', 'rightHand', 'enemy-0', 'core')).toEqual({ hitChance: 90, damage: 23, shots: 1, salvo: false, shatter: false, kills: false });
+    expect(p('player', 'shoulder', 'enemy-0', 'core')).toEqual({ hitChance: 70, damage: 63, shots: 1, salvo: false, shatter: false, kills: false });
     expect(p('player', 'leftHand', 'enemy-0', 'core').damage).toBe(24);
   });
 
   test('enemy weapons against the player', () => {
-    expect(p('enemy-1', 'shoulder', 'player', 'core')).toEqual({ hitChance: 55, damage: 10, shots: 1, salvo: false });
-    expect(p('enemy-0', 'shoulder', 'player', 'core')).toEqual({ hitChance: 60, damage: 38, shots: 1, salvo: false });
+    expect(p('enemy-1', 'shoulder', 'player', 'core')).toEqual({ hitChance: 55, damage: 10, shots: 1, salvo: false, shatter: false, kills: false });
+    expect(p('enemy-0', 'shoulder', 'player', 'core')).toEqual({ hitChance: 60, damage: 38, shots: 1, salvo: false, shatter: false, kills: false });
   });
 
   test('hit chance is clamped between 10 and 95', () => {
@@ -331,7 +332,8 @@ describe('state handling', () => {
   });
 
   function script(seed: number): BattleState {
-    let s = demo(['recon-drone', 'recon-drone'], seed);
+    // A turret among them: something that takes more than one hit, so that the dice have a say for a while.
+    let s = demo(['recon-drone', 'gun-turret', 'recon-drone'], seed);
     for (let i = 0; i < 40 && s.outcome === 'ongoing'; i++) {
       const me = activeUnit(s);
       const target = me.side === 'player' ? s.units.find((u) => u.side === 'enemy' && !u.destroyed)!.id : 'player';
