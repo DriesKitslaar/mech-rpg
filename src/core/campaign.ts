@@ -88,7 +88,7 @@ export interface Mission {
   /** What the other side offers for the same contract, in a later telling of the story. */
   other?: OtherOffer;
   /** Set on a contract flown as the other side offered it: what winning it is remembered as. */
-  turned?: { question: string; answer: string };
+  turned?: { question: string; answer: string; side: Faction };
 }
 
 /**
@@ -102,6 +102,8 @@ export interface OtherOffer {
   when: Condition;
   question: string;
   answer: string;
+  /** Whose offer it is: its page is read to their song. The contract stays the first client's in everything else. */
+  side: Faction;
   client: string;
   portrait?: string;
   reward: number;
@@ -356,9 +358,9 @@ export function forCycle(mission: Mission, cycle: number): Mission {
 export function otherOffer(state: GameState, mission: Mission, missions: Mission[]): Mission | null {
   const other = mission.other;
   if (!other || mission.replay || state.completed.includes(mission.id) || !reached(state, other.when, missions)) return null;
-  const { when: _when, question, answer, ...terms } = other;
+  const { when: _when, question, answer, side, ...terms } = other;
   const { other: _other, ...first } = mission;
-  return { ...first, ...terms, scale: terms.scale ?? 1, turned: { question, answer } };
+  return { ...first, ...terms, scale: terms.scale ?? 1, turned: { question, answer, side } };
 }
 
 /** Starts the story again. Credits, parts, pilot level, perks, arena rank and the best ranks all stay. */

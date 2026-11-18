@@ -108,7 +108,8 @@ Het verhaal heeft drie bedrijven en duurt ongeveer achttien contracten. In het e
 je voor drie opdrachtgevers. Daarna kies je er één (de andere twee trekken hun aanbod in) en vecht
 je hun oorlog uit. Wat daarna komt, verklap ik niet. Het einde hangt af van je keuzes. Na het einde
 kun je met **New Cycle** opnieuw beginnen met alles wat je hebt, tegen sterkere vijanden en voor
-meer loon, en een andere opdrachtgever kiezen.
+meer loon, en een andere opdrachtgever kiezen. Zo'n nieuwe doorgang heet in het spel een cyclus
+(een ronde is een beurtwissel in een gevecht).
 
 Tussen de contracten door stellen mensen je soms een vraag. Wat je antwoordt wordt onthouden: het
 bepaalt wie er later iets voor je doet, en wat er aan het eind over je geschreven staat.
@@ -126,11 +127,12 @@ Je vindt ze terug in de **Database** op de pagina **Found**.
 - Luister ook naar wat er tijdens een gevecht gezegd wordt. Het gaat niet altijd over het gevecht.
 - Wat je gevonden hebt, blijf je houden als je met **New Cycle** opnieuw begint.
 - Een tweede keer is het verhaal niet hetzelfde als de eerste keer. Meer zeg ik er niet over.
-- In een latere ronde ligt er bij een paar contracten een tweede bod, van de andere kant. Op de
+- In een latere cyclus ligt er bij een paar contracten een tweede bod, van de andere kant. Op de
   briefing staat dan de regel **Other offer**: daarmee blader je tussen de twee biedingen. Je kunt
   er maar één vliegen. Het andere bod is een ander gevecht voor ander loon, en wie het aanneemt en
-  wint, krijgt daar later iets voor terug, of juist niet. Verliezen of weglopen telt niet.
-- De tweede en de derde ronde zijn elk zwaarder dan de vorige (en betalen beter); daarna blijft
+  wint, krijgt daar later iets voor terug, of juist niet. Verliezen of weglopen telt niet. In het
+  archief staat zo'n contract zoals het eerst geboden werd.
+- De tweede en de derde cyclus zijn elk zwaarder dan de vorige (en betalen beter); daarna blijft
   het gelijk. Wordt het te zwaar, gebruik dan de werkbank in de Garage, of zet onder **Options**
   de moeilijkheid lager: het verhaal en wat er te vinden is blijven hetzelfde.
 
@@ -156,7 +158,9 @@ onderdeel staan en druk op **R1**: het ligt op de werkbank.
 - Een stap kost zijn nummer maal de prijs van het onderdeel: de tweede stap kost dus twee keer de
   prijs.
 - Het werk hoort bij het onderdeel. Verkoop je het en koop je het later terug, dan is het er nog.
-- In de eerste ronde gaat de werkbank twee stappen. Elke keer dat je met **New Cycle** opnieuw
+  De winkel laat dat zien: de stap staat achter de naam, en de vergelijking gaat uit van wat je
+  draagt zoals het nu is.
+- In de eerste cyclus gaat de werkbank twee stappen. Elke keer dat je met **New Cycle** opnieuw
   begint, kan er één stap bij, tot vijf. Achter de naam staat hoe ver een onderdeel is: `+2`.
 
 ## Moeilijkheid

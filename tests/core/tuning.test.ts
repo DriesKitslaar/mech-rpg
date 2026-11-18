@@ -1,5 +1,5 @@
 import { activeUnit, applyAction, createBattle, previewShot, turnEnergyOf, type BattleState } from '../../src/core/battle';
-import { computeBuildStats } from '../../src/core/build';
+import { computeBuildStats, impactOf } from '../../src/core/build';
 import { startNewCycle } from '../../src/core/campaign';
 import { buy, isValidState, newGame, sell, type GameState } from '../../src/core/game';
 import { awardMedals } from '../../src/core/medals';
@@ -115,7 +115,10 @@ describe('a part as the bench left it', () => {
     expect(tunedPart(generator, 4).output).toBe(generator.output + Math.round(generator.output * 0.2));
     // And nothing else about it changes.
     expect({ ...tunedPart(core, 2), ap: core.ap }).toEqual(core);
-    expect({ ...tunedPart(rifle, 3), damage: rifle.damage }).toEqual(rifle);
+    // A weapon's push is worked out from its damage where it is not given: it is written down as it was, so that it does not grow with it.
+    expect(rifle.impact).toBeUndefined();
+    expect({ ...tunedPart(rifle, 3), damage: rifle.damage }).toEqual({ ...rifle, impact: impactOf(rifle) });
+    expect(impactOf(tunedPart(rifle, 5))).toBe(impactOf(rifle));
     expect({ ...tunedPart(generator, 4), output: generator.output }).toEqual(generator);
   });
 
@@ -191,9 +194,20 @@ describe('in a battle', () => {
     expect(turnEnergyOf(state.units[1], CATALOG)).toBe(computeBuildStats(DEMO_BUILD, CATALOG).turnEnergy);
   });
 
-  test('unless it is given the work as well: the copy a mirror match fields', () => {
-    const copy = { ...turret, id: 'copy', build: { ...DEMO_BUILD }, tune: { 'core-hauler': 5 } };
-    expect(createBattle(DEMO_BUILD, [copy], CATALOG, 7).units[1].parts.core!.maxAp).toBe(Math.round(core.ap * 1.25));
+  test('unless it is given the work as well: the copy a mirror match fields, in its armour, its weapons and its energy', () => {
+    const copy = (tuneOf?: Record<string, number>) => ({ ...turret, id: 'copy', build: { ...DEMO_BUILD }, ...(tuneOf ? { tune: tuneOf } : {}) });
+    const plain = createBattle(DEMO_BUILD, [copy()], CATALOG, 7);
+    const tuned = createBattle(DEMO_BUILD, [copy({ 'core-hauler': 5, 'wpn-rivet-rifle': 4, 'gen-kd1': 3 })], CATALOG, 7);
+    expect(tuned.units[1].parts.core!.maxAp).toBe(Math.round(core.ap * 1.25));
+    expect(turnEnergyOf(tuned.units[1], CATALOG)).toBe(turnEnergyOf(plain.units[1], CATALOG) + Math.round(generator.output * 0.15));
+    /** What a hit of the copy's rifle on the pilot's core would take off it. */
+    const hit = (state: BattleState): number => previewShot(state, state.units[1].id, 'rightHand', 'player', 'core', CATALOG).damage;
+    expect(hit(plain)).toBeGreaterThan(0);
+    expect(hit(tuned)).toBeGreaterThan(hit(plain));
+    expect(Math.abs(hit(tuned) - hit(plain) * 1.2)).toBeLessThanOrEqual(1);
+    // The pilot who faces it is not tuned by it.
+    expect(tuned.units[0].parts.core!.maxAp).toBe(core.ap);
+    expect(turnEnergyOf(tuned.units[0], CATALOG)).toBe(turnEnergyOf(plain.units[0], CATALOG));
   });
 });
 
@@ -206,9 +220,16 @@ describe('a saved game', () => {
     expect(isValidState(old, CATALOG)).toBe(true);
   });
 
-  test('holds bench work as whole steps from one to five against plain ids', () => {
+  test('holds bench work as whole steps against plain ids, as far as the bench goes in the telling it is in', () => {
     expect(isValidState(saved({}), CATALOG)).toBe(true);
-    expect(isValidState(saved({ 'core-hauler': 1, 'wpn-rivet-rifle': 5 }), CATALOG)).toBe(true);
+    expect(isValidState(saved({ 'core-hauler': 1, 'wpn-rivet-rifle': 2 }), CATALOG)).toBe(true);
+    // A step nobody could have taken yet is no step: the bench goes two in a first telling and one further in each after it.
+    const inCycle = (cycle: number, tuning: unknown): unknown => JSON.parse(JSON.stringify({ ...fresh(), cycle, tuning }));
+    for (let cycle = 0; cycle <= 5; cycle++) {
+      for (let step = 1; step <= 5; step++) {
+        expect(isValidState(inCycle(cycle, { 'core-hauler': step }), CATALOG), `step ${step} in cycle ${cycle}`).toBe(step <= Math.min(5, 2 + cycle));
+      }
+    }
     // A part this version does not know is no reason to refuse the whole game: it is simply never fitted.
     expect(isValidState(saved({ 'core-of-a-later-version': 2 }), CATALOG)).toBe(true);
   });
@@ -237,6 +258,14 @@ describe('medals for the bench', () => {
     expect(earned(fresh({ tuning: { 'core-hauler': 1 } }))).toEqual(['bench-1']);
     expect(earned(fresh({ tuning: { 'core-hauler': 4, 'wpn-rivet-rifle': 4 } }))).toEqual(['bench-1']);
     expect(earned(fresh({ tuning: { 'core-hauler': 2, 'wpn-rivet-rifle': 5 } }))).toEqual(['bench-1', 'bench-5']);
+  });
+
+  test('count the work on parts there are and that the bench takes: a name that is no part earns nothing', () => {
+    expect(earned(fresh({ tuning: { 'no-such-part': 5 } }))).toEqual([]);
+    expect(earned(fresh({ tuning: { 'bst-stock': 5 } }))).toEqual([]);
+    expect(earned(fresh({ tuning: { 'no-such-part': 5, 'core-hauler': 1 } }))).toEqual(['bench-1']);
+    const medal = (id: string) => MEDALS.find((m) => m.id === id)!;
+    expect(medal('bench-5').progress(fresh({ tuning: { 'no-such-part': 5, 'core-hauler': 2 } }))).toEqual({ have: 2, need: 5 });
   });
 
   test('show how far along a pilot is', () => {

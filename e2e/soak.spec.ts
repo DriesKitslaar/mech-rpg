@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { completeMission } from '../src/core/campaign';
 import { buy, equip, newGame, type GameState } from '../src/core/game';
+import { tunable } from '../src/core/tuning';
+import { FINDS } from '../src/content/finds';
 import { MISSIONS } from '../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
 import { REFERENCE_BUILDS } from '../src/content/referenceBuilds';
@@ -27,7 +29,7 @@ test.describe.configure({ mode: 'parallel' });
 const ACT_ONE = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1'];
 const PHASE = Object.fromEntries(MISSIONS.map((m) => [m.id, m.phase as string]));
 
-type Seen = Snap & { list?: string; busy?: boolean; gauntlet?: { floor: number | null; drafting: boolean } };
+type Seen = Snap & { list?: string; busy?: boolean; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean } };
 
 /** A pilot with the best gear there is who has done these contracts and has read nothing of the story yet. */
 function pilot(done: string[]): GameState {
@@ -39,6 +41,17 @@ function pilot(done: string[]): GameState {
     g = equip(g, slot as keyof GameState['build'], id, CATALOG);
   }
   return { ...g, credits: 9000, scenes: [] };
+}
+
+/**
+ * The same pilot telling the story a second time: every part of the frame the bench takes at the
+ * furthest the bench goes there, and everything there is to find found, so that each find's page
+ * has its picture.
+ */
+function again(done: string[]): GameState {
+  const g = pilot(done);
+  const worked = Object.values(g.build).filter((id): id is string => !!id && tunable(CATALOG[id]));
+  return { ...g, cycle: 1, tuning: Object.fromEntries(worked.map((id) => [id, 3])), codex: FINDS.map((find) => find.id) };
 }
 
 const adv = (page: Page, ms: number): Promise<void> => page.evaluate((n) => (window as any).__game.advance(n), ms);
@@ -95,9 +108,10 @@ interface Played { missions: string[]; screens: string[]; battles: number; floor
 /**
  * Plays: the story as far as it goes (of contracts on offer together, the one whose name holds
  * one of `prefer`), then the Gauntlet for a few floors, then a look into every room. Battles are
- * left to Auto Turn. It stops when all of that is done or its time is up.
+ * left to Auto Turn. With `other`, a contract the other side has made an offer for is flown for
+ * the other side. It stops when all of that is done or its time is up.
  */
-async function play(page: Page, prefer: string[], minutes: number): Promise<Played> {
+async function play(page: Page, prefer: string[], minutes: number, other = false): Promise<Played> {
   const tried = new Map<string, number>();
   const screens = new Set<string>();
   const rooms = ['gauntlet', 'training', 'arena', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'];
@@ -123,7 +137,8 @@ async function play(page: Page, prefer: string[], minutes: number): Promise<Play
       await tap(page, 'Enter');
       await step(320);
     } else if (s.screen === 'briefing') {
-      await go('accept');
+      // A player told to reads the other side's offer where there is one, and takes it.
+      await go(other && has('other') && !s.briefing?.turned ? 'other' : 'accept');
     } else if (s.screen === 'battle') {
       const b = s.battle!;
       if (`${b.mission}/${b.index}/${b.round > 1}` !== last && b.round === 1) { battles++; last = `${b.mission}/${b.index}/false`; }
@@ -149,7 +164,8 @@ async function play(page: Page, prefer: string[], minutes: number): Promise<Play
       await step(160);
     } else {
       // A room: a look round it, touching nothing that is bought, sold or set, and out again.
-      for (const key of ['ArrowDown', 'ArrowDown', 'KeyE', 'ArrowDown', 'KeyE', 'KeyQ', 'ArrowUp']) { await tap(page, key); await step(240); }
+      // In the database that ends on the page of what was found, three rows down it.
+      for (const key of ['ArrowDown', 'ArrowDown', 'KeyE', 'ArrowDown', 'KeyE', 'KeyQ', 'ArrowUp', 'KeyE', 'KeyE', 'ArrowDown', 'ArrowDown', 'ArrowDown']) { await tap(page, key); await step(240); }
       for (let i = 0; i < 8 && (await snap(page)).screen !== 'hub'; i++) { await tap(page, 'Escape'); await step(240); }
       rooms.shift();
     }
@@ -158,11 +174,12 @@ async function play(page: Page, prefer: string[], minutes: number): Promise<Play
   return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames };
 }
 
-const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown> }[] = [
+const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean }[] = [
   { name: 'from the first contract, in English, with all of the light', done: [], prefer: ['hadron'], settings: {} },
   { name: 'with Hadron through the war and the audit, enforcing', done: ACT_ONE, prefer: ['hadron', 'enforce'], settings: {} },
   { name: 'with Lumen, in Dutch, in a calm picture, defaulting', done: ACT_ONE, prefer: ['lumen', 'default'], settings: { language: 'nl', calm: true } },
   { name: 'with the Undertow, with less light and battles played faster', done: ACT_ONE, prefer: ['undertow', 'enforce'], settings: { detail: 'lean', fastBattles: true } },
+  { name: 'a later telling in a frame the bench has worked on, taking the other side\'s offers', done: [], prefer: ['hadron'], settings: {}, later: true },
   { name: 'the Gauntlet and every room, after the war, with no soft light', done: [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'], prefer: [], settings: { detail: 'bare' } },
 ];
 
@@ -170,12 +187,19 @@ for (const player of PLAYERS) {
   test(`soak: ${player.name}`, async ({ page }) => {
     test.skip(!ASKED, 'a long look: run with SOAK=1');
     test.setTimeout((MINUTES + 2) * 60_000);
-    const errors = await open(page, pilot(player.done), player.settings);
-    const played = await play(page, player.prefer, MINUTES);
+    const errors = await open(page, player.later ? again(player.done) : pilot(player.done), player.settings);
+    const played = await play(page, player.prefer, MINUTES, player.later);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
     console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
     expect(errors).toEqual([]);
     expect(played.frames).toBeGreaterThan(1000);
+    if (player.later) {
+      // It did fly for the other side: each of those contracts it finished is remembered as that.
+      const kept = await page.evaluate(() => (JSON.parse(window.localStorage.getItem('ironwage-save')!) as { choices?: Record<string, string> }).choices ?? {});
+      const taken: Record<string, [string, string]> = { 'hadron-1': ['seam', 'stand'], 'hadron-2': ['train', 'weigh'], 'undertow-1': ['lights', 'dark'] };
+      expect(played.missions).toContain('hadron-1');
+      for (const [id, [question, answer]] of Object.entries(taken)) if (played.missions.includes(id)) expect(kept[question], id).toBe(answer);
+    }
   });
 }

@@ -205,3 +205,27 @@ test('what is found has a picture: a paper its own, a check the bare brass with 
   await page.screenshot({ path: shot('database-find-check-drowned') });
   expect(errors).toEqual([]);
 });
+
+test('the shop holds a part against what is worn as the bench left it, and the garage says R1 over its list of parts', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // A pilot of the fourth telling in the best frame, its legs at the last step and a pair of treads worked on once and sold.
+  const base = again({ cycle: 3, credits: 200_000 });
+  await load(page, awardMedals({ ...base, tuning: { [base.build.legs!]: 5, 'legs-crawler': 3 } }, MEDALS).game);
+  await enterHub(page);
+  await choose(page, 'shop');
+  await waitForScreen(page, 'shop');
+  type Shop = { shop: { tab: string; selected: string | null } };
+  for (let i = 0; i < 12 && (await snap(page) as unknown as Shop).shop.tab !== 'legs'; i++) await press(page, 'e');
+  for (let i = 0; i < 40 && (await snap(page) as unknown as Shop).shop.selected !== 'legs-crawler'; i++) await press(page, 'ArrowDown');
+  expect((await snap(page) as unknown as Shop).shop).toMatchObject({ tab: 'legs', selected: 'legs-crawler' });
+  await quiet(page);
+  await page.screenshot({ path: shot('shop-against-tuned') });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  await choose(page, 'garage');
+  await waitForScreen(page, 'garage');
+  await choose(page, 'legs');
+  await page.screenshot({ path: shot('garage-parts-hint') });
+  expect(errors).toEqual([]);
+});

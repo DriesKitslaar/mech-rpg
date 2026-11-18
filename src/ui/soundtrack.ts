@@ -13,9 +13,12 @@ export function isBossBattle(battle: Battle | undefined, enemies: Record<string,
 /** The licensed pilot who keeps turning up, in whatever machine: a battle against them is a duel, and has their song. */
 const RIVALS = ['rival', 'rival-2', 'ashfall-unbound'];
 
-/** The song a briefing is read to: the client's own where the contract has a client, the plain one otherwise. */
+/**
+ * The song a briefing is read to: the client's own where the contract has a client, the plain one
+ * otherwise. The other side's offer for a contract is read to the other side's song.
+ */
 export function briefingTrack(mission: Mission): TrackName {
-  return mission.faction ?? 'briefing';
+  return mission.turned?.side ?? mission.faction ?? 'briefing';
 }
 
 /** The song a battle is fought to. */

@@ -109,9 +109,9 @@ export const MISSIONS: Mission[] = [
     ],
     // In a later telling: the same night from the other side of the fence, with the tank firing for the pilot.
     other: {
-      when: 'cycle:1', question: 'seam', answer: 'stand', client: TAMSIN.client, portrait: TAMSIN.portrait, reward: 900,
+      when: 'cycle:1', question: 'seam', answer: 'stand', side: 'undertow', client: TAMSIN.client, portrait: TAMSIN.portrait, reward: 900,
       briefing: [
-        'Brenn will have told you they are unarmed. You know what is parked in Seam Nine, and who paid for it to be there.',
+        'Brenn will have told you they are unarmed. You have seen what is parked in Seam Nine. Ask who paid for it.',
         'His clearance crew goes in behind whoever makes the noise. Tonight that could be you, facing the other way.',
         'The tank is ours for one night and will fire for you. What is under its seat is yours to keep.',
       ],
@@ -154,7 +154,7 @@ export const MISSIONS: Mission[] = [
     ],
     // In a later telling: the train is stopped on the weighbridge, and its guards kept busy while the dial is read.
     other: {
-      when: 'cycle:1', question: 'train', answer: 'weigh', client: TAMSIN.client, portrait: TAMSIN.portrait, reward: 1100, scale: 2,
+      when: 'cycle:1', question: 'train', answer: 'weigh', side: 'undertow', client: TAMSIN.client, portrait: TAMSIN.portrait, reward: 1100, scale: 2,
       briefing: [
         'The ore train out of Seam Nine stops for nothing. Tonight it stops on the weighbridge, for as long as you keep its guards busy.',
         'We do not want the wagons. We want to read the dial.',
@@ -215,7 +215,7 @@ export const MISSIONS: Mission[] = [
     ],
     // In a later telling: Lumen pays three times as much for the relay to stay as it is. What that costs is said afterwards.
     other: {
-      when: 'cycle:1', question: 'lights', answer: 'dark', client: VARGA.client, portrait: VARGA.portrait, reward: 3900,
+      when: 'cycle:1', question: 'lights', answer: 'dark', side: 'lumen', client: VARGA.client, portrait: VARGA.portrait, reward: 3900,
       briefing: [
         'You will have been asked to restore power to the lower levels. Lumen would prefer the relay stayed as it is.',
         'Somebody below has hired machines to take it back tonight. Remove them. The relay itself is not to be touched.',
@@ -913,7 +913,7 @@ export const MESSAGES: Message[] = [
   {
     id: 'undertow-dark', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'The dark', after: 'chose:lights=dark',
     body: [
-      'We sat in the dark and counted who came to put the lights on. Nobody came. Somebody came to stop it.',
+      'We hired five machines by the day to put the lights back on, out of the tin. None of them came back. We know the frame that stopped them.',
       'I will still hire you. We cannot afford to choose. But I will ask you for nothing that is not on a contract. Not this year.',
     ],
   },

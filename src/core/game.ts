@@ -2,7 +2,7 @@ import { OVERDRIVES, type OverdriveId } from './battle';
 import type { Run } from './gauntlet';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
-import { MAX_TUNED, TUNE_MAX, type Tuning } from './tuning';
+import { MAX_TUNED, tuneCap, type Tuning } from './tuning';
 
 /** How well a contract was done, best first. */
 export type Rank = 'S' | 'A' | 'B' | 'C' | 'D';
@@ -324,10 +324,12 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (value.elites !== undefined && !(isWholeNonNegative(value.elites) && value.elites <= 1_000_000)) return false;
   // More than there are relics today, so that a relic added later does not make an old best unreadable.
   if (value.relicsHeld !== undefined && !(isWholeNonNegative(value.relicsHeld) && value.relicsHeld <= 99)) return false;
-  // Bench work: whole steps against plain ids. A part this version does not know is kept: it is simply never fitted.
+  // Bench work: whole steps against plain ids, no further than the bench goes in this telling. A part
+  // this version does not know is kept: it is simply never fitted.
   const { tuning } = value;
+  const furthest = tuneCap(value.cycle);
   if (tuning !== undefined && (!isRecord(tuning) || Object.keys(tuning).length > MAX_TUNED
-    || !Object.entries(tuning).every(([id, step]) => /^[a-z0-9-]{1,64}$/.test(id) && isWholeNonNegative(step) && step >= 1 && step <= TUNE_MAX))) return false;
+    || !Object.entries(tuning).every(([id, step]) => /^[a-z0-9-]{1,64}$/.test(id) && isWholeNonNegative(step) && step >= 1 && step <= furthest))) return false;
   const { choices } = value;
   if (choices !== undefined && (!isRecord(choices) || Object.keys(choices).length > 64
     || !Object.entries(choices).every(([k, v]) => /^[a-z-]{1,24}$/.test(k) && typeof v === 'string' && /^[a-z-]{1,24}$/.test(v)))) return false;

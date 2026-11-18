@@ -447,12 +447,12 @@ export const STORY_NL: Record<string, string> = {
     "Een weegbon is licht om te dragen, piloot. Het is zwaar om ermee gevonden te worden.",
   "The dark":
     "Het donker",
-  "We sat in the dark and counted who came to put the lights on. Nobody came. Somebody came to stop it.":
-    "We zaten in het donker en telden wie het licht kwam aandoen. Niemand. Er kwam wel iemand om dat te beletten.",
+  "We hired five machines by the day to put the lights back on, out of the tin. None of them came back. We know the frame that stopped them.":
+    "We huurden uit de collectebus vijf machines per dag om het licht weer aan te doen. Geen ervan kwam terug. We kennen het frame dat ze tegenhield.",
   "I will still hire you. We cannot afford to choose. But I will ask you for nothing that is not on a contract. Not this year.":
     "Ik huur je nog steeds. Kiezen kunnen wij ons niet veroorloven. Maar ik vraag je niets wat niet op een contract staat. Niet dit jaar.",
-  "Seam Nine still has its tank. Nobody on either side will say who taught it which way to point.":
-    "Ader Negen heeft zijn tank nog. Niemand zegt wie hem leerde welke kant hij op moest wijzen.",
+  "One night the tank in Seam Nine fired the other way. Nobody on either side will say who stood beside it.":
+    "Een nacht vuurde de tank van Ader Negen de andere kant op. Geen van beide kanten zegt wie ernaast stond.",
   "The weighbridge at the Hadron yard has a new dial. What the old one read was never found.":
     "De weegbrug van Hadron heeft een nieuwe wijzer. Wat de oude aangaf is nooit teruggevonden.",
   "Below the gates they remember one more dark week, and who was paid for it.":
