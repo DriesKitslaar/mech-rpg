@@ -6,7 +6,8 @@
  *
  * What it is, so that nobody reads more into it than there is:
  * - It gets to its contracts and through them by pressing buttons: the title, the hub's lists, the
- *   briefing, the battle, the settlement, pages of story, the arena, the question before a new cycle.
+ *   briefing (and, when told to take the other side's offers, the row that turns to one), the battle,
+ *   the settlement, pages of story, the arena, the question before a new cycle.
  * - In a battle it only ever presses Auto Turn, so it plays as well as the game's own automatic
  *   player and no better.
  * - It runs the game in its fast mode: no banners, no lines of talk, no hold-offs, and nothing is drawn.
@@ -47,6 +48,8 @@ export interface CareerOptions {
   side?: string[];
   /** Whether the pilot spends what is left on the bench once the best frame is fitted; they do, unless told not to. */
   bench?: boolean;
+  /** Whether the pilot takes the other side's offer wherever a briefing has one; they fly the first offer, unless told to. */
+  offers?: boolean;
 }
 
 export interface CareerReport {
@@ -69,6 +72,8 @@ export interface CareerReport {
   endings: string[];
   /** The contracts beside the story that were asked for and won, in the order they were won. */
   side: string[];
+  /** The contracts won as the other side offered them, in the order they were won. */
+  offers: string[];
   credits: number;
   level: number;
   arenaRank: number;
@@ -133,7 +138,7 @@ export function playCareer(options: CareerOptions): CareerReport {
     if (snap().screen !== 'hub') throw new Stuck(`still on ${snap().screen}`);
   };
   const report: CareerReport = {
-    options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0, arenaLosses: 0, endings: [], side: [],
+    options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0, arenaLosses: 0, endings: [], side: [], offers: [],
     credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity, benchSteps: 0,
   };
   let tier = -1;
@@ -164,11 +169,15 @@ export function playCareer(options: CareerOptions): CareerReport {
   const fly = (open: () => void, id: string): boolean => {
     open();
     if (snap().screen !== 'briefing') throw new Stuck(`no briefing for ${id}`);
+    // A briefing with two offers has a row that turns the page to the other one.
+    const other = options.offers === true && snap().menu.items.some((item) => item.id === 'other');
+    if (other) select('other');
     select('accept');
     if (snap().screen !== 'battle') throw new Stuck(`${id} did not start: ${snap().screen}`);
     const won = fight();
     report.contracts += 1;
     if (won) report.won += 1;
+    if (won && other) report.offers.push(id);
     checkSave();
     toHub();
     return won;
@@ -360,6 +369,6 @@ export function careerLine(r: CareerReport): string {
     r.finished ? 'finished' : `STOPPED (${r.stopped})`,
     `contracts ${r.contracts} (won ${r.won})`, `grind ${r.grind}`, `level ${r.level}`, `arena ${r.arenaRank}`, `${r.tier}`, `bench ${r.benchSteps}`,
     `credits ${r.credits} (low ${r.lowestCredits})`, `medals ${r.medals}`, lost ? `lost: ${lost}` : 'lost no contract',
-    `arena fights lost ${r.arenaLosses}`,
+    `arena fights lost ${r.arenaLosses}`, ...(r.offers.length > 0 ? [`other offers taken: ${r.offers.join(', ')}`] : []),
   ].join('  ');
 }

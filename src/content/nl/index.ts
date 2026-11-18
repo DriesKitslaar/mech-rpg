@@ -23,12 +23,17 @@ import { STRINGS_NL } from './strings';
  * machines, parts and places are not here: they are the same in every language.
  */
 function contentTexts(): TextSlot[] {
-  const battles = [...MISSIONS.flatMap((m) => m.battles), ...DRILLS.map((d) => d.battle)];
+  // What the other side offers for a contract has its own client, words and battles.
+  const offers = MISSIONS.flatMap((m) => (m.other ? [m.other] : []));
+  const battles = [...MISSIONS.flatMap((m) => m.battles), ...offers.flatMap((o) => o.battles), ...DRILLS.map((d) => d.battle)];
   const endings = [...Object.values(ENDINGS), ...Object.values(EPILOGUES).flatMap((byFaction) => Object.values(byFaction))];
   const choices = SCENES.flatMap((s) => (s.choice ? s.choice.options : []));
   return [
     ...textsOf('missions', MISSIONS, { title: 'mission.title', client: 'client', briefing: 'briefing', debrief: 'debrief' }),
+    ...textsOf('missions', offers, { client: 'client', briefing: 'briefing', debrief: 'debrief' }),
     ...textsOf('missions', battles.flatMap((b) => b.talk ?? []), { text: 'battle.talk', who: 'who' }),
+    // Whoever fires in support of a battle is named in the briefing and on the field: a name stays, a thing is translated.
+    ...textsOf('missions', battles.flatMap((b) => (b.support ? [b.support] : [])), { name: 'who' }),
     ...textsOf('missions', battles.flatMap((b) => (b.objective && 'name' in b.objective ? [b.objective] : [])), { name: 'asset' }),
     ...textsOf('story', endings, { title: 'scene.title', body: 'scene.lines' }),
     ...textsOf('story', MESSAGES, { from: 'who', subject: 'message.subject', body: 'briefing' }),

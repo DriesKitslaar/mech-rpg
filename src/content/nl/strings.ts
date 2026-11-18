@@ -305,6 +305,9 @@ export const STRINGS_NL = {
     wingmanTerms: (damage: number, percent: number) => `Tot ${damage} per ronde vanaf ronde 2. Pakt ${percent}% van loon en XP.`,
     lentNote: 'Je eigen mech kan zo niet uitrukken, dus Dispatch leent je hiervoor een standaardframe. Breng de jouwe in de Garage op orde; tot dan is dit het werk dat er is.',
     support: (name: string) => `Vuursteun: ${name}`,
+    otherOffer: 'Ander bod', firstOffer: 'Eerste bod',
+    twoOffers: 'TWEE BIEDINGEN: dezelfde nacht, van beide kanten. Kies er een.',
+    otherTag: 'HET ANDERE BOD: dit wordt onthouden.',
   },
   mission: {
     engagement: (i: number, n: number) => `GEVECHT ${i}/${n}`,

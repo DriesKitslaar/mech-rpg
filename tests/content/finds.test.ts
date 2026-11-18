@@ -11,13 +11,14 @@ import { SCENES } from '../../src/content/scenes';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { FIND_CLUE_LINES, FIND_TEXT_LINES, PAGE_CHARS, findLabel } from '../../src/ui/databaseScreen';
 import { wrap } from '../../src/ui/widgets';
-import { questions, unknownTerms } from '../helpers/conditions';
+import { storyQuestions, unknownTerms } from '../helpers/conditions';
 
 const papers = FINDS.filter((find) => find.kind === 'paper');
 const checks = FINDS.filter((find) => find.kind === 'check');
 const fresh = (): GameState => newGame(CATALOG, STARTER_BUILD);
 const found = (game: GameState): string[] => openEntries(game, FINDS, MISSIONS).opened.map((find) => find.id);
-const asked = questions();
+/** The questions a conversation asks: what a pilot answers without having looked for a second offer. */
+const asked = storyQuestions();
 const flown = (...ids: string[]): GameState => ids.reduce((game, id) => completeMission(game, id, MISSIONS), fresh());
 /** The same game with the best rank there is on these contracts. */
 const withS = (game: GameState, ...ids: string[]): GameState => ({ ...game, ranks: { ...game.ranks, ...Object.fromEntries(ids.map((id) => [id, 'S' as const])) } });
@@ -164,9 +165,13 @@ describe('what a pilot finds', () => {
   test('the second telling hears the recorder in the water of the dock', () => {
     expect(found(road('lumen', 0))).not.toContain('paper-playback-1');
     expect(found(road('lumen', 1))).toContain('paper-playback-1');
-    // And is handed what the first had to earn.
-    expect(found(road('lumen', 0))).not.toContain('paper-order');
-    expect(found(road('lumen', 1))).toEqual(expect.arrayContaining(['paper-order', 'paper-ticket', 'paper-book']));
+    // And is shown what the first only showed to the Undertow's own pilot.
+    expect(found(road('lumen', 0))).not.toContain('paper-book');
+    expect(found(road('lumen', 1))).toContain('paper-book');
+    // The two papers of Seam Nine are not handed over for flying the contract again: they come, as in a first
+    // telling, when the war is over and to an S, or at once by taking the other side's offer.
+    expect(found(road('lumen', 1)).filter((id) => ['paper-order', 'paper-ticket'].includes(id))).toEqual([]);
+    expect(found(decide(decide(road('lumen', 1), 'seam', 'stand'), 'train', 'weigh'))).toEqual(expect.arrayContaining(['paper-order', 'paper-ticket']));
   });
 
   test('what answers a hint of the first act comes when the war is over, to a pilot who flew that contract as well as it can be flown', () => {
@@ -179,10 +184,13 @@ describe('what a pilot finds', () => {
     expect(one).toContain('paper-ticket');
     expect(one).not.toContain('paper-order');
     expect(found(war(flown(...ACT_ONE))).filter((id) => ['paper-ticket', 'paper-order'].includes(id))).toEqual([]);
-    // A later telling knows where to look: the contract is enough, with the war still on.
+    // A later telling knows where to look, and can act on it: standing with those the tank was given to finds
+    // what is under its seat, with the war still on. Flying the contract as it was first offered does not.
     const later: GameState = { ...flown('intro-1', 'intro-2', 'hadron-1'), cycle: 1 };
-    expect(found(later)).toContain('paper-order');
-    expect(found(later)).not.toContain('paper-ticket');
+    expect(found(later)).not.toContain('paper-order');
+    expect(found(decide(later, 'seam', 'stand'))).toContain('paper-order');
+    expect(found(decide(later, 'seam', 'stand'))).not.toContain('paper-ticket');
+    expect(found(decide(later, 'train', 'weigh'))).toContain('paper-ticket');
     // The ticket says the train weighed nothing and that it passed. It does not say for whom.
     const ticket = FINDS.find((f) => f.id === 'paper-ticket')!;
     expect(ticket.text).toMatch(/Weighed: empty\. Passed\. Consignee: by standing order\./);

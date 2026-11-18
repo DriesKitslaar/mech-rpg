@@ -51,27 +51,45 @@ export const BRIEFING_ROWS = 10;
 export const briefingRows = (mission: Mission): number => BRIEFING_ROWS - objectiveLines(mission).length - groundLines(mission).length;
 export const BRIEFING_CHARS = charsFor(LOGICAL_W - 24);
 
-/** A contract's briefing: who is asking, what they say, what to expect, and whether to take it. */
+/**
+ * A contract's briefing: who is asking, what they say, what to expect, and whether to take it.
+ * Where the other side has made an offer for the same contract, a row of the menu turns the page
+ * to it and back: the client, the words, the fight and the pay are then theirs.
+ */
 export class BriefingScreen implements Screen {
-  private list: MenuList;
+  private list!: MenuList;
   /** Who can be hired for this contract, and which of them is: -1 is nobody. */
-  private hires: Wingman[];
+  private hires!: Wingman[];
   private hired = -1;
 
   /** The briefing writes itself out; the menu does not wait for it. */
-  private rows: string[][];
-  private writer: Typewriter;
+  private rows!: string[][];
+  private writer!: Typewriter;
+  /** The offer that is showing: the contract as it was opened, or as the other side offers it. */
+  private mission!: Mission;
+  /** What the other side offers for this contract, when they do. */
+  private other: Mission | null;
 
-  constructor(private app: App, private mission: Mission) {
+  constructor(private app: App, private first: Mission) {
+    this.other = app.otherOffer(first);
+    this.turnTo(first);
+  }
+
+  /** Shows an offer: its words write themselves out afresh, and the menu is the one that goes with it. */
+  private turnTo(mission: Mission, cursor = 'accept'): void {
+    this.mission = mission;
     this.rows = mission.briefing.map((paragraph) => wrap(paragraph, BRIEFING_CHARS));
-    const typing = app.typing();
+    const typing = this.app.typing();
     this.writer = new Typewriter(this.rows.flat(), 150 * typing.factor, typing.instant);
-    this.hires = takesWingman(mission) ? app.wingmen(mission) : [];
-    this.list = new MenuList([
+    this.hires = takesWingman(mission) ? this.app.wingmen(mission) : [];
+    this.hired = -1;
+    const items = [
       { id: 'accept', label: B.accept, enabled: true },
       ...(this.hires.length > 0 ? [{ id: 'wingman', label: B.wingman, enabled: true }] : []),
+      ...(this.other ? [{ id: 'other', label: mission === this.other ? B.firstOffer : B.otherOffer, enabled: true }] : []),
       { id: 'back', label: B.back, enabled: true },
-    ]);
+    ];
+    this.list = new MenuList(items, Math.max(0, items.findIndex((item) => item.id === cursor)));
   }
 
   private get wingman(): Wingman | undefined { return this.hires[this.hired]; }
@@ -92,11 +110,14 @@ export class BriefingScreen implements Screen {
   onInput(action: InputAction): void {
     if (action === 'up') this.list.move(-1);
     else if (action === 'down') this.list.move(1);
-    else if (action === 'cancel') this.app.closeBriefing(this.mission);
+    else if (action === 'cancel') this.app.closeBriefing(this.first);
     else if (this.list.selected?.id === 'wingman' && (action === 'left' || action === 'right' || action === 'confirm')) this.choose(action === 'left' ? -1 : 1);
     else if (action === 'confirm') {
-      if (this.list.selected?.id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay, this.wingman?.id ?? null);
-      else this.app.closeBriefing(this.mission); // back to the list the briefing was opened from
+      const id = this.list.selected?.id;
+      if (id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay, this.wingman?.id ?? null, this.mission === this.other);
+      // The other side's offer and back: the cursor stays on the row that turns the page.
+      else if (id === 'other' && this.other) this.turnTo(this.mission === this.other ? this.first : this.other, 'other');
+      else this.app.closeBriefing(this.first); // back to the list the briefing was opened from
     }
   }
 
@@ -110,6 +131,8 @@ export class BriefingScreen implements Screen {
         wingman: this.hires.length === 0 ? null
           : { id: this.wingman?.id ?? null, name: this.wingman?.name ?? B.alone, share: Math.round((this.wingman?.share ?? 0) * 100), open: this.hires.length },
         lent: !isDrill(this.mission) && this.mission.loaner !== undefined,
+        // How many offers there are for this contract, the client of the one showing, and whether that is the other side's.
+        offers: this.other ? 2 : 1, client: this.mission.client, turned: this.mission === this.other,
       },
     };
   }
@@ -137,7 +160,8 @@ export class BriefingScreen implements Screen {
       : mission.replay ? B.replay
       : mission.id.startsWith('open-') ? (mission.elite ? B.openElite : B.open)
       : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict
-      : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable : '';
+      : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable
+      : this.other ? (mission === this.other ? B.otherTag : B.twoOffers) : '';
     wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
       drawText(ctx, line, 72, 40 + i * 11, { color: decisive ? COLORS.danger : COLORS.dim }));
 
@@ -184,6 +208,8 @@ export class BriefingScreen implements Screen {
     }
     drawText(ctx, B.hostiles, 104, 203, { color: COLORS.dim });
     hostiles(mission).slice(0, 5).forEach((line, i) => drawText(ctx, line, 104, 213 + i * 10));
-    drawList(ctx, this.list, 236, this.hires.length > 0 ? 210 : 216, 56, 3);
+    // Three rows as a rule; a contract with somebody for hire and a second offer has four, and room for them.
+    const rows = this.list.items.length;
+    drawList(ctx, this.list, 236, rows >= 4 ? 204 : rows >= 3 ? 210 : 216, 56, Math.max(3, rows));
   }
 }

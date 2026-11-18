@@ -329,6 +329,10 @@ export const STRINGS = {
     wingmanTerms: (damage: number, percent: number) => `Up to ${damage} a round from round 2. Takes ${percent}% of fee and XP.`,
     lentNote: 'Your own mech cannot deploy as it stands, so Dispatch lends you a stock frame for this one. Put yours right in the Garage; until then this is the work there is.',
     support: (name: string) => `Fire support: ${name}`,
+    // In a later telling some contracts can be flown for the other side: the row in the menu, and the line under the client.
+    otherOffer: 'Other offer', firstOffer: 'First offer',
+    twoOffers: 'TWO OFFERS: the same night, from both sides. You can fly one.',
+    otherTag: 'THE OTHER OFFER: taking it is remembered.',
   },
   mission: {
     engagement: (i: number, n: number) => `ENGAGEMENT ${i}/${n}`,

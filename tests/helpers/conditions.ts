@@ -5,9 +5,19 @@ import { SCENES } from '../../src/content/scenes';
 /** The single things a condition is made of: what stands between its `|` and `&`, without a `!`. */
 export const termsOf = (condition: string): string[] => condition.split(/[|&]/).map((term) => term.replace(/^!/, ''));
 
-/** The questions the story asks, by id, with the answers each can be given. */
+/** The questions the story asks in a conversation, by id, with the answers each can be given. */
+export const storyQuestions = (): Map<string, string[]> =>
+  new Map(SCENES.flatMap((scene) => (scene.choice ? [[scene.choice.id, scene.choice.options.map((o) => o.id)] as [string, string[]]] : [])));
+
+/**
+ * Everything a pilot's decisions are remembered under: the story's questions, and the contracts
+ * that can be flown as the other side offers them (each is remembered as the one answer it has).
+ */
 export const questions = (): Map<string, string[]> =>
-  new Map(SCENES.flatMap((scene) => (scene.choice ? [[scene.choice.id, scene.choice.options.map((o) => o.id)] as const] : [])));
+  new Map([
+    ...storyQuestions(),
+    ...MISSIONS.flatMap((mission) => (mission.other ? [[mission.other.question, [mission.other.answer]] as [string, string[]]] : [])),
+  ]);
 
 /**
  * The terms of a condition that name nothing there is: a contract that is not in the game, an

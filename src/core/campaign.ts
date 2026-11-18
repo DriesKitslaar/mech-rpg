@@ -85,6 +85,31 @@ export interface Mission {
   loaner?: Build;
   /** Set on a drill that teaches the Overdrive: the one it is flown with, and what its meter starts at. */
   overdrive?: { kind: OverdriveId; drive: number };
+  /** What the other side offers for the same contract, in a later telling of the story. */
+  other?: OtherOffer;
+  /** Set on a contract flown as the other side offered it: what winning it is remembered as. */
+  turned?: { question: string; answer: string };
+}
+
+/**
+ * A contract as the other side offers it: another client, another briefing, another fight, under
+ * the same contract. It is a decision inside the contract, not a second contract: winning it
+ * finishes the contract, so the story goes on as it would, and it is remembered as an answer to a
+ * question, like the story's other decisions (so whatever comes of it waits for `chose:question=answer`).
+ */
+export interface OtherOffer {
+  /** When the other side makes it; see `Condition`. */
+  when: Condition;
+  question: string;
+  answer: string;
+  client: string;
+  portrait?: string;
+  reward: number;
+  briefing: string[];
+  debrief: string;
+  battles: Battle[];
+  /** Multiplies enemy armour and damage, like a contract's own; 1 when absent. */
+  scale?: number;
 }
 
 export interface Message {
@@ -311,13 +336,29 @@ export const cyclePay = (cycle: number): number => 1 + CYCLE_PAY * counted(cycle
 export function forCycle(mission: Mission, cycle: number): Mission {
   if (cycle <= 0 || mission.phase === 'patrol') return mission;
   const tougher = cycleStrength(cycle);
-  return {
-    ...mission,
-    reward: Math.round(mission.reward * cyclePay(cycle)),
-    scale: Math.round((mission.scale ?? 1) * tougher * 100) / 100,
-    battles: mission.battles.map((battle) =>
+  const grown = <T extends { reward: number; scale?: number; battles: Battle[] }>(terms: T): T => ({
+    ...terms,
+    reward: Math.round(terms.reward * cyclePay(cycle)),
+    scale: Math.round((terms.scale ?? 1) * tougher * 100) / 100,
+    battles: terms.battles.map((battle) =>
       (battle.objective?.type === 'protect' ? { ...battle, objective: { ...battle.objective, hp: Math.ceil(battle.objective.hp * tougher) } } : battle)),
-  };
+  });
+  // What the other side offers for it grows with the cycle as the contract itself does.
+  return { ...grown(mission), ...(mission.other ? { other: grown(mission.other) } : {}) };
+}
+
+/**
+ * The contract as the other side offers it: the same contract (its id, its place in the story)
+ * with their client, briefing, pay and fight, marked with what winning it will be remembered as.
+ * Null when no such offer stands: the contract has none, its time has not come, the contract is
+ * done, or it is being played again from the archive (where the first offer is what was flown).
+ */
+export function otherOffer(state: GameState, mission: Mission, missions: Mission[]): Mission | null {
+  const other = mission.other;
+  if (!other || mission.replay || state.completed.includes(mission.id) || !reached(state, other.when, missions)) return null;
+  const { when: _when, question, answer, ...terms } = other;
+  const { other: _other, ...first } = mission;
+  return { ...first, ...terms, scale: terms.scale ?? 1, turned: { question, answer } };
 }
 
 /** Starts the story again. Credits, parts, pilot level, perks, arena rank and the best ranks all stay. */
