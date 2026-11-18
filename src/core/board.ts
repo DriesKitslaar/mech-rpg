@@ -1,4 +1,4 @@
-import { MARKS, type EnemyMark } from './battle';
+import { MARKS, MAX_ENEMIES, type EnemyMark } from './battle';
 import type { Mission } from './campaign';
 import { nextRandom } from './rng';
 
@@ -68,7 +68,29 @@ export interface BoardText {
   battles: (count: number) => string;
   /** Keyed by mark: a line saying that an elite is there and what sets it apart. */
   elite: Record<EnemyMark, string>;
+  /** What a swarm contract can be called, and the line of its briefing that says what a swarm is. */
+  swarmTitles: string[];
+  swarm: string;
 }
+
+/** What the id of the swarm on offer ends with, where the board's own three end with their place on it. */
+export const SWARM = 'swarm';
+/** True of the swarm that is on offer beside the board. It is an open contract like the board's own. */
+export const isSwarm = (mission: Pick<Mission, 'id'>): boolean => mission.id.startsWith('open-') && mission.id.endsWith(`-${SWARM}`);
+/** A swarm is this many machines, of which the field holds three at a time. */
+export const SWARM_MIN = 6;
+export const SWARM_MAX = 9;
+/** What a swarm pays for each machine in it. */
+export const PAY_PER_HEAD = 160;
+/**
+ * What a swarm is made of, by how far the board has grown: light machines only, the heavier of
+ * them as the board grows. Each entry holds from its tier until the next one's.
+ */
+export const SWARM_KINDS: { from: number; kinds: string[] }[] = [
+  { from: 0, kinds: ['recon-drone'] },
+  { from: 3, kinds: ['recon-drone', 'recon-drone', 'bomb-crawler'] },
+  { from: 6, kinds: ['recon-drone', 'gunship'] },
+];
 
 /** How far the board has grown: one tier per five battles won, two per cycle. */
 export function boardTier(battlesWon: number, cycle: number): number {
@@ -162,4 +184,25 @@ export function generateBoard(battlesWon: number, cycle: number, text: BoardText
     heaviest.briefing = [...heaviest.briefing, text.elite[mark]];
   }
   return board;
+}
+
+/**
+ * The swarm on offer beside the board: one battle against six to nine light machines, three on the
+ * field and the rest coming on as they fall, paid by the head. Like the board it is a pure function
+ * of the pilot's progress, on dice of its own: the same swarm after a reload, a new one after every
+ * battle won, and the board beside it exactly the board it always was.
+ */
+export function swarmContract(battlesWon: number, cycle: number, text: BoardText): Mission {
+  const dice = new Dice(((battlesWon + 1) * 15485863 + cycle * 32452843 + 7) | 0);
+  const tier = boardTier(battlesWon, cycle);
+  const kinds = [...SWARM_KINDS].reverse().find((entry) => tier >= entry.from)!.kinds;
+  const total = SWARM_MIN + dice.roll(SWARM_MAX - SWARM_MIN + 1);
+  const machines = Array.from({ length: total }, () => dice.pick(kinds));
+  const place = dice.roll(text.backgrounds.length);
+  return {
+    id: `open-${cycle}-${battlesWon}-${SWARM}`, phase: 'patrol', title: dice.pick(text.swarmTitles), client: dice.pick(text.clients),
+    briefing: [text.places[place], text.swarm], debrief: dice.pick(text.debriefs),
+    reward: PAY_PER_HEAD * total, scale: scaleFor(tier),
+    battles: [{ enemies: machines.slice(0, MAX_ENEMIES), reserve: machines.slice(MAX_ENEMIES), background: text.backgrounds[place] }],
+  };
 }

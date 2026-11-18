@@ -367,6 +367,10 @@ export class BattleFx {
         this.add(200, 320, { kind: 'burst', at, size: 16, color: COLORS.heat, style: 'ring' });
         break;
       }
+      case 'arrive':
+        // It is there all at once, in a ring of its own light: nobody on the field sent it.
+        this.add(0, 320, { kind: 'burst', at: s.centre(event.unit), size: 16, color: COLORS.heat, style: 'ring' });
+        break;
       case 'phase': {
         const at = s.centre(event.unit);
         this.jolt(0, 4, 500);

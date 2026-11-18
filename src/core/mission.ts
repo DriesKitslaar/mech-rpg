@@ -42,15 +42,17 @@ export function startMissionBattle(
 ): BattleState {
   const battle = mission.battles[index];
   if (!battle) throw new Error(`mission ${mission.id} has no battle ${index}`);
-  const defs = battle.enemies.map((id) => {
+  const known = (id: string): EnemyDef => {
     if (!Object.hasOwn(enemies, id)) throw new Error(`unknown enemy: ${id}`);
     return enemies[id];
-  });
+  };
+  const defs = battle.enemies.map(known);
   const state = createBattle(build, defs, catalog, seed + index, {
     // What an earlier battle of this contract left is carried; failing that, what the caller says the mech arrives with.
     ...opts, carry: previous ? carryFrom(previous) : opts.carry,
     ...(battle.objective ? { objective: battle.objective } : {}),
     ...(battle.marks ? { marks: battle.marks } : {}),
+    ...(battle.reserve ? { reserve: battle.reserve.map(known) } : {}),
     // A wingman keeps the order they were given through the battles of one contract.
     ...(battle.support ? { support: battle.support.orders && previous?.support?.order ? { ...battle.support, order: previous.support.order } : battle.support } : {}),
     // The place has its say, the same for both sides.

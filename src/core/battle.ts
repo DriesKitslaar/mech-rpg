@@ -54,6 +54,8 @@ export interface BattleOptions {
   marks?: Partial<Record<number, EnemyMark>>;
   /** What the meter starts at, when nothing is carried: a drill hands the pilot a full one. */
   drive?: number;
+  /** Machines that are not on the field yet: they come on in this order, at the start of a round, as room has been made. */
+  reserve?: EnemyDef[];
 }
 
 /** An ally who is not on the field: at every new round they hit the strongest enemy for `damage`. */
@@ -220,6 +222,8 @@ export type BattleEvent =
   | { type: 'shaken'; unit: string }
   /** `unit`, shaken, has left the field in place of taking its turn. It was not destroyed. */
   | { type: 'rout'; unit: string }
+  /** `unit` has come on from the reserve as a round began; `left` are still to come after it. */
+  | { type: 'arrive'; unit: string; left: number }
   | { type: 'boost'; unit: string }
   | { type: 'guard'; unit: string }
   | { type: 'cool'; unit: string; amount: number }
@@ -277,6 +281,11 @@ export interface BattleState {
    * machine, is fought as it always was, by every machine in it, to its end.
    */
   open: boolean;
+  /**
+   * Machines still to come, in the order they come in: at the start of each round as many as there
+   * is room for on the field. The battle is not won while any are left. Empty where there never were any.
+   */
+  reserve: EnemyDef[];
   /** Set when the battle ended because the pilot walked away from it. */
   retreated?: boolean;
 }
@@ -403,6 +412,9 @@ export function leads(unit: UnitState, objective: Objective): boolean {
     || ('target' in objective && unit.id === `enemy-${objective.target}`);
 }
 
+/** The same of a machine that is not on the field yet: it carries no mark and no objective names it. */
+const willLead = (def: EnemyDef): boolean => (def.phases?.length ?? 0) > 0 || !!def.portrait || !!def.leader;
+
 /**
  * True of a machine that is one of many: an enemy in an open battle, whether it stood there from
  * the start or joined later. What a pilot outguns happens to these and to nobody else.
@@ -527,7 +539,8 @@ function checkOutcome(state: BattleState): void {
     const core = target.parts.core!;
     if (core.ap <= objective.share * core.maxAp) return setOutcome(state, 'victory');
   }
-  if (standing(state, 'enemy').length === 0) setOutcome(state, 'victory');
+  // A field that is empty is not a battle that is won while there are machines still to come.
+  if (standing(state, 'enemy').length === 0 && state.reserve.length === 0) setOutcome(state, 'victory');
 }
 
 /**
@@ -560,6 +573,7 @@ function beginRound(state: BattleState, catalog: Catalog): boolean {
     state.events.push({ type: 'asset', hp: state.asset.hp, lost });
     if (state.asset.hp <= 0) { setOutcome(state, 'defeat'); return false; }
   }
+  arrive(state, catalog);
   state.order = roundOrder(state, catalog);
   state.turn = 0;
   return true;
@@ -582,14 +596,31 @@ function detonate(state: BattleState, unit: UnitState, catalog: Catalog): void {
 function launch(state: BattleState, unit: UnitState, catalog: Catalog): void {
   const { unit: def, every } = unit.abilities.carrier!;
   unit.launchIn = Math.max(0, (unit.launchIn ?? every) - 1);
+  if (unit.launchIn > 0 || standing(state, 'enemy').length >= MAX_ENEMIES) return;
+  const id = join(state, def, catalog);
+  unit.launchIn = every;
+  state.events.push({ type: 'launch', unit: unit.id, spawned: id });
+}
+
+/**
+ * Puts a machine on the field in the first place that is free, with the next number and the next
+ * letter of its kind. There has to be room. Returns its id.
+ */
+function join(state: BattleState, def: EnemyDef, catalog: Catalog): string {
   const enemies = standing(state, 'enemy');
-  if (unit.launchIn > 0 || enemies.length >= MAX_ENEMIES) return;
   const slot = Array.from({ length: MAX_ENEMIES }, (_, i) => i).find((i) => !enemies.some((u) => u.slot === i)) ?? 0;
   const sameKind = state.units.filter((u) => u.kind === def.id).length;
   const id = `enemy-${state.units.length - 1}`;
   state.units.push(createEnemy(def, id, `${def.name} ${String.fromCharCode(65 + sameKind)}`, slot, state.enemyScale, catalog));
-  unit.launchIn = every;
-  state.events.push({ type: 'launch', unit: unit.id, spawned: id });
+  return id;
+}
+
+/** The reserve comes on: as many as there is room for, in order. Called as a round begins, after what stood has been counted. */
+function arrive(state: BattleState, catalog: Catalog): void {
+  while (state.reserve.length > 0 && standing(state, 'enemy').length < MAX_ENEMIES) {
+    const id = join(state, state.reserve.shift()!, catalog);
+    state.events.push({ type: 'arrive', unit: id, left: state.reserve.length });
+  }
 }
 
 /** Starts turns until a unit can actually act (overheated units lose theirs), or the battle ends. */
@@ -742,10 +773,13 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
   if (playerUnit.overdrive && opts.drive !== undefined) playerUnit.drive = Math.max(0, Math.min(DRIVE_MAX, opts.drive));
   if (opts.carry) applyCarry(playerUnit, opts.carry);
   const enemyScale = opts.enemyScale ?? 1;
+  // (An action is applied to a copy of the battle, so what comes on leaves the copy's list and never the one given here.)
+  const reserve = opts.reserve ?? [];
   const units = [playerUnit, ...enemies.map((e, i) => createEnemy(e, `enemy-${i}`, enemyName(enemies, i), i, enemyScale, catalog, opts.marks?.[i]))];
   const state: BattleState = {
     units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing', objective, enemyScale,
-    open: enemies.length > 1 && !units.some((unit) => unit.side === 'enemy' && leads(unit, objective)),
+    open: enemies.length + reserve.length > 1 && !units.some((unit) => unit.side === 'enemy' && leads(unit, objective)) && !reserve.some(willLead),
+    reserve,
     ...(objective.type === 'protect' ? { asset: { name: objective.name, hp: objective.hp, maxHp: objective.hp } } : {}),
     ...(opts.support ? { support: { ...opts.support } } : {}),
     ...(opts.ground ? { ground: opts.ground } : {}),

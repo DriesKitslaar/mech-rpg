@@ -46,6 +46,7 @@ export const STRINGS_NL = {
     disable: (name: string) => `LEG LAM: ${name.toUpperCase()}`,
     driveOff: (name: string) => `VERJAAG: ${name.toUpperCase()}`,
     mark: 'DOELWIT',
+    reserve: (n: number) => `NOG ${n} OP KOMST`, more: (n: number) => `+${n}`,
     won: {
       survive: 'Je hield stand.', protect: (name: string) => `${name}: veilig.`, leader: 'Hun leider ligt neer.',
       disable: 'Lamgelegd, in een stuk.', driveOff: (name: string) => `${name} druipt af.`,
@@ -55,6 +56,7 @@ export const STRINGS_NL = {
       destroy: 'Vernietig elke vijand', survive: (rounds: number) => `Houd ${rounds} rondes vol`,
       protect: (name: string) => `Bescherm: ${name}`, leader: (name: string) => `Vernietig: ${name}`,
       disable: (name: string) => `Leg lam, vernietig niet: ${name}`, driveOff: (name: string) => `Verjaag: ${name}`,
+      reserve: (more: number) => `Nog ${more} volgen als er vallen`,
     },
   },
   battleIntro: { warning: 'ALARM', destroy: 'VERNIETIG ELKE VIJAND' },
@@ -65,6 +67,7 @@ export const STRINGS_NL = {
   partDestroyed: (unit: string, part: string) => `${subj(unit)}: ${part} vernietigd`,
   unitDestroyed: (unit: string) => does(unit, 'vernietigd', 'bent vernietigd'),
   momentum: (weapon: string, chain: number) => (chain > 1 ? `REEKS x${chain} - ${weapon} weer klaar` : `${weapon} weer klaar`),
+  arrive: (unit: string, left: number) => (left > 0 ? `${unit} komt erbij - nog ${left} erachter` : `${unit} komt erbij - de laatste`),
   shaken: (unit: string) => does(unit, 'raakt in paniek'),
   rout: (unit: string) => does(unit, 'vlucht'),
   boost: (unit: string) => does(unit, 'boost'),
@@ -299,7 +302,7 @@ export const STRINGS_NL = {
   briefing: {
     accept: 'Aannemen', back: 'Terug', reward: 'LOON', engagements: (n: number) => (n === 1 ? '1 GEVECHT' : `${n} GEVECHTEN`),
     hostiles: 'VERWACHT', exclusive: 'EXCLUSIEF: de andere twee klanten trekken hun aanbod in.',
-    finale: 'LAATSTE ZET VAN DE OORLOG', repeatable: 'DOORLOPEND CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: EEN ELITE',
+    finale: 'LAATSTE ZET VAN DE OORLOG', repeatable: 'DOORLOPEND CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: EEN ELITE', swarm: 'OPEN CONTRACT: EEN ZWERM',
     verdict: 'VONNIS: je antwoord eindigt het verhaal. Elk ander aanbod vervalt.',
     replay: 'ARCHIEF: minder loon. Het verhaal verandert niet.',
     lent: 'LEENMECH: de jouwe kan niet mee. Rekening blijft van jou.',

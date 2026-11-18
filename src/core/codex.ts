@@ -71,7 +71,7 @@ export function openEntries(game: GameState, entries: Entry[], missions: Mission
  */
 export function metByRecord(game: GameState, missions: Mission[], ladder: { rank: number; enemy: string }[]): string[] {
   const finished = new Set([...game.completed, ...Object.keys(game.ranks)]);
-  const fought = missions.filter((mission) => finished.has(mission.id)).flatMap((mission) => mission.battles.flatMap((battle) => battle.enemies));
+  const fought = missions.filter((mission) => finished.has(mission.id)).flatMap((mission) => mission.battles.flatMap((battle) => [...battle.enemies, ...(battle.reserve ?? [])]));
   const beaten = ladder.filter((opponent) => opponent.rank <= game.arenaRank).map((opponent) => opponent.enemy);
   return [...new Set([...game.met, ...fought, ...beaten])];
 }

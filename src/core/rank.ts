@@ -24,10 +24,13 @@ export interface Performance {
   repairs: number;
 }
 
-/** Rounds a good pilot needs for a battle: what it says, else the time it has to be outlasted, else 3 plus 2 an enemy. */
+/**
+ * Rounds a good pilot needs for a battle: what it says, else the time it has to be outlasted, else 3 plus 2 an
+ * enemy on the field and 1 for each that comes on later (those are light, and come three at a time).
+ */
 export function parOf(battle: Battle): number {
   if (battle.par !== undefined) return battle.par;
-  return battle.objective?.type === 'survive' ? battle.objective.rounds : 3 + 2 * battle.enemies.length;
+  return battle.objective?.type === 'survive' ? battle.objective.rounds : 3 + 2 * battle.enemies.length + (battle.reserve?.length ?? 0);
 }
 
 export function missionPar(mission: Pick<Mission, 'battles'>): number {

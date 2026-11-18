@@ -89,6 +89,11 @@ andere zware gevechten verandert er niets: die zijn precies zo zwaar als ze ware
   (label **SHAKEN**, Nederlands **PANIEK**). Zodra die machine aan de beurt is, vlucht ze van het
   veld zonder te vuren. Een machine die vlucht telt niet als vernietigd: wil je haar meetellen,
   schakel haar dan uit vóór ze aan de beurt is.
+- **Zwermen.** Sommige gevechten hebben meer machines dan er op het veld passen. Er staan er
+  drie tegelijk; bij het begin van elke ronde komen de volgende erbij op de plek van wie viel of
+  vluchtte. Linksboven staat hoeveel er nog komen (**3 MORE TO COME**, Nederlands **NOG 3 OP
+  KOMST**), en pas als dat nul is, is het gevecht gewonnen. Bij de open contracten staat steeds
+  één zwerm: zes tot negen lichte machines, betaald per stuk. Dé plek om door te stoten.
 
 Onder de pantserbalk van elke mecha staat een dunne balk: het evenwicht. Is die leeg, dan wankelt
 de mecha een beurt: hij kan niet ontwijken en krijgt 30% meer schade. Zware wapens duwen het hardst.

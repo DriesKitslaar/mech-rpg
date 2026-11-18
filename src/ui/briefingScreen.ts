@@ -1,3 +1,4 @@
+import { isSwarm } from '../core/board';
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
 import { groundFor } from '../core/ground';
@@ -18,7 +19,7 @@ const B = STRINGS.briefing;
 /** One line per kind of enemy across all of a contract's battles: "Recon Drone x3". */
 export function hostiles(mission: Mission): string[] {
   const counts = new Map<string, number>();
-  for (const battle of mission.battles) for (const id of battle.enemies) counts.set(id, (counts.get(id) ?? 0) + 1);
+  for (const battle of mission.battles) for (const id of [...battle.enemies, ...(battle.reserve ?? [])]) counts.set(id, (counts.get(id) ?? 0) + 1);
   return [...counts].map(([id, n]) => `${id === 'mirror' ? STRINGS.arena.mirror.name : ALL_ENEMIES[id]?.name ?? id}${n > 1 ? ` x${n}` : ''}`);
 }
 
@@ -36,7 +37,8 @@ export function objectiveLines(mission: Mission): string[] {
     const asked = !o || o.type === 'destroy' ? []
       : [o.type === 'survive' ? BO.survive(o.rounds) : o.type === 'protect' ? BO.protect(o.name)
         : o.type === 'leader' ? BO.leader(name) : o.type === 'disable' ? BO.disable(name) : BO.driveOff(name)];
-    const lines = [...asked, ...(battle.support ? [B.support(battle.support.name)] : [])];
+    const more = battle.reserve?.length ? [BO.reserve(battle.reserve.length)] : [];
+    const lines = [...asked, ...more, ...(battle.support ? [B.support(battle.support.name)] : [])];
     return lines.map((text) => (numbered ? `${i + 1}: ${text}` : text));
   });
 }
@@ -162,6 +164,7 @@ export class BriefingScreen implements Screen {
       : mission.id.startsWith('cup-') ? STRINGS.arena.cups.tag
       : mission.arenaRank !== undefined || mission.id === MIRROR_ID ? STRINGS.arena.fight
       : mission.replay ? B.replay
+      : isSwarm(mission) ? B.swarm
       : mission.id.startsWith('open-') ? (mission.elite ? B.openElite : B.open)
       : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict
       : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable

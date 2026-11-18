@@ -49,6 +49,8 @@ export const STRINGS = {
     disable: (name: string) => `DISABLE: ${name.toUpperCase()}`,
     driveOff: (name: string) => `DRIVE OFF: ${name.toUpperCase()}`,
     mark: 'TARGET',
+    // Machines that are not on the field yet: on their own, and after whatever else the battle asks for.
+    reserve: (n: number) => `${n} MORE TO COME`, more: (n: number) => `+${n}`,
     won: {
       survive: 'You held the line.', protect: (name: string) => `${name}: safe.`, leader: 'Their leader is down.',
       disable: 'Disabled, in one piece.', driveOff: (name: string) => `${name} breaks off.`,
@@ -58,6 +60,7 @@ export const STRINGS = {
       destroy: 'Destroy all hostiles', survive: (rounds: number) => `Hold out for ${rounds} rounds`,
       protect: (name: string) => `Protect: ${name}`, leader: (name: string) => `Destroy: ${name}`,
       disable: (name: string) => `Disable, do not destroy: ${name}`, driveOff: (name: string) => `Drive off: ${name}`,
+      reserve: (more: number) => `${more} more come on as they fall`,
     },
   },
   battleIntro: { warning: 'WARNING', destroy: 'DESTROY ALL HOSTILES' },
@@ -71,6 +74,8 @@ export const STRINGS = {
   // A volley that destroyed something: its weapon may fire again this turn. From the second in a turn the run is counted.
   momentum: (weapon: string, chain: number) => (chain > 1 ? `CHAIN x${chain} - ${weapon} ready again` : `${weapon} ready again`),
   // Two machines down in one turn: what still stands will leave when its turn comes, and then does.
+  // A machine of the reserve comes on as a round begins; the last of them says so.
+  arrive: (unit: string, left: number) => (left > 0 ? `${unit} comes on - ${left} more behind it` : `${unit} comes on - the last of them`),
   shaken: (unit: string) => `${unit} loses its nerve`,
   rout: (unit: string) => `${unit} breaks off`,
   boost: (unit: string) => does(unit, 'boosts', 'boost'),
@@ -325,7 +330,7 @@ export const STRINGS = {
   briefing: {
     accept: 'Accept', back: 'Back', reward: 'PAYS', engagements: (n: number) => (n === 1 ? '1 ENGAGEMENT' : `${n} ENGAGEMENTS`),
     hostiles: 'EXPECTED', exclusive: 'EXCLUSIVE: the other two clients will withdraw their offers.',
-    finale: 'THE LAST MOVE OF THE WAR', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: AN ELITE',
+    finale: 'THE LAST MOVE OF THE WAR', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: AN ELITE', swarm: 'OPEN CONTRACT: A SWARM',
     verdict: 'VERDICT: your answer ends the story. Every other offer is withdrawn.',
     replay: 'ARCHIVE: pays less. Nothing in the story changes.',
     lent: 'LENT MECH: yours cannot deploy. The bill is still yours.',

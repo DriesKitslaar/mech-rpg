@@ -597,4 +597,5 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Among them: an overclocked elite, hitting hard. Pays extra.`]: `Daartussen: een overklokte elite, slaat harder. Extra loon.`,
   [`Among them: a swift elite, much harder to hit. Pays extra.`]: `Daartussen: een snelle elite, lastig te raken. Extra loon.`,
   [`Among them: an elite behind a renewing barrier. Pays extra.`]: `Daartussen: een elite, barriere komt terug. Extra loon.`,
+  [`A nest has woken up: light machines, far more of them than a field holds. As one falls the next comes on. The client pays by the head, for every one of them.`]: `Er is een nest wakker geworden: lichte machines, veel meer dan er op een veld passen. Valt er een, dan komt de volgende. De klant betaalt per stuk, voor elk ervan.`,
 };

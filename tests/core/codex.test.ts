@@ -74,6 +74,12 @@ describe('the kinds a pilot must have met', () => {
     expect(met).toContain('rival');
   });
 
+  test('and the machines that came on later in those battles, where a contract has more than its field holds', () => {
+    const wave = { ...MISSIONS.find((m) => m.id === 'intro-1')!, id: 'wave', battles: [{ enemies: ['recon-drone'], reserve: ['gunship', 'bomb-crawler'], background: 'bg-mine' }] };
+    const g = { ...fresh(), completed: ['wave'] };
+    expect(metByRecord(g, [wave], ladder).sort()).toEqual(['bomb-crawler', 'gunship', 'recon-drone']);
+  });
+
   test('and the arena opponents they have beaten', () => {
     expect(metByRecord({ ...fresh(), arenaRank: 2 }, MISSIONS, ladder)).toEqual(['arena-a', 'arena-b']);
   });

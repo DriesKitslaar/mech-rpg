@@ -172,6 +172,10 @@ export const REFERENCE_NL: Record<string, string> = {
     'VERMORZELEN',
   'THEY BREAK':
     'ZE VLUCHTEN',
+  'SWARMS':
+    'ZWERMEN',
+  'Some contracts field more machines than a field holds. Three stand at a time; as a round begins the next come on where others fell or left. The strip under the message bar says how many are still to come, and the battle is not won until that is none. The swarm on the open board pays by the head.':
+    'Sommige contracten hebben meer machines dan er op een veld passen. Er staan er drie tegelijk; bij het begin van een ronde komen de volgende erbij waar er een viel of vluchtte. De strook onder de meldingsbalk zegt hoeveel er nog komen; pas bij nul is het gevecht gewonnen. De zwerm bij de open contracten betaalt per stuk.',
   'Destroy two machines in one turn of the same fights and whatever still stands against you loses its nerve. It is marked SHAKEN, and when its turn comes it breaks off and leaves the field without firing. A machine that leaves is not a kill: destroy it before its turn comes if you want it counted.':
     'Vernietig in dezelfde gevechten twee machines in een beurt en wat er nog staat raakt in paniek. Het krijgt het label PANIEK en vlucht van het veld zodra het aan de beurt is, zonder te vuren. Een machine die vlucht telt niet als vernietigd: schakel haar eerder uit als je haar wilt meetellen.',
   'MOMENTUM':
