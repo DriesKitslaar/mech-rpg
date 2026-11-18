@@ -37,11 +37,15 @@ export const drillPassed = (game: GameState, drillId: string): boolean => game.d
 export const drillOpen = (game: GameState, drill: Drill, missions: Mission[]): boolean =>
   game.cycle > 0 || drillPassed(game, drill.id) || reached(game, drill.after, missions);
 
-/** A drill in the shape of a contract, so it is briefed, fought and settled like one. It pays only until it has been passed. */
+/**
+ * A drill in the shape of a contract, so it is briefed, fought and settled like one. It pays only until it has been passed.
+ * Its battle is never an open one: a drill is about one thing, in a mech and against machines picked so that doing
+ * that thing wins it, and a lent weapon that went through them, or machines that lost their nerve, would win it instead.
+ */
 export function drillMission(game: GameState, drill: Drill, client: string): Mission {
   return {
     id: drill.id, phase: 'patrol', title: drill.title, client, briefing: drill.briefing, debrief: drill.debrief,
-    reward: drillPassed(game, drill.id) ? 0 : DRILL_PAY, battles: [drill.battle], scale: drill.scale ?? 1, loaner: drill.build,
+    reward: drillPassed(game, drill.id) ? 0 : DRILL_PAY, battles: [{ ...drill.battle, closed: true }], scale: drill.scale ?? 1, loaner: drill.build,
     ...(drill.overdrive ? { overdrive: drill.overdrive } : {}),
   };
 }

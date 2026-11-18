@@ -73,15 +73,20 @@ if the objective names it (a leader, one to disable, one to drive off), or if it
 one machine that commands others without being any of those. Whether a battle is open is settled
 when it begins and does not change. The enemies of an open battle are *ordinary*, those that join
 later included. Everything this round adds to a battle is a rule of an open battle and of no
-other: a fight that is not open is, shot for shot, the fight it was before.
+other: a fight that is not open is, shot for shot, the fight it was before. A drill is never an
+open battle, whatever is in it: it teaches one thing, in a mech and against machines picked so
+that doing that thing wins it.
 
 **Momentum.** In an open battle, when a volley destroys a unit, the weapon that fired it is ready
 again in the same turn and the energy it took is given back. Heat is not given back and the round
 is spent, so a run ends in an overheat or an empty magazine if nothing else stops it: pushing on
 is a choice. A charged weapon has to be charged again. Each unit counts the units its volleys have
 destroyed this turn (its *chain*); the battle says so in an event the screen and the sound can
-use, unless the volley ended the battle. The rule is the same for every unit; only a pilot has
-more than one thing to shoot at.
+use, once for a volley, when all of it has landed, and not at all if the volley ended the battle.
+The rule is the same for every unit; only a pilot has more than one thing to shoot at. The screen
+says of the weapon what is true of it (ready again; can charge again; empty; a blade that needs
+Boost again; nothing left standing to turn it on), and says it as the pilot is handed the turn
+again, not before: nothing waits for it.
 
 **Shatter.** In an open battle, a hit that takes at least half of an ordinary machine's core, as
 that core stood at full strength, takes all that is left of it. It is measured on what arrives:
@@ -90,17 +95,22 @@ figure wherever one hit would finish the machine, by shattering it or by being e
 own mech is never shattered.
 
 **They break.** When a unit's chain reaches two, every ordinary enemy still standing is shaken.
-A shaken machine breaks off when its own turn comes, instead of acting: it leaves the field, and
-the battle goes on without it (or is won, if nothing else stands). Until then it can still be shot.
-A machine that left is not a kill. Breaking off at its own turn, not at once, is what keeps the
-line that is said when one enemy is left.
+(The chain counts what volleys destroy: a module's blast and an ally's fire are not in it.) A
+shaken machine is out of the fight when its own turn comes, instead of acting: one that can move
+leaves the field, one that cannot (a turret, a pylon, a mast) shuts down where it stands, and the
+battle goes on without it (or is won, if nothing else stands). Until then it can still be shot,
+and it says SHAKEN over its head and nothing else: a bomb that has lost its nerve leaves with its
+fuse unlit. A machine that left is not a kill. Breaking off at its own turn, not at once, is what
+keeps the line that is said when one enemy is left.
 
 **Swarms.** A battle can have a reserve: machines that are not on the field yet. At the start of
 each round, after what stood has been counted against anything that is being protected, as many
 of them come on as there is room for, in order. The battle is won when nothing stands and nothing
-is left to come. The briefing and the field say how many are still to come. One swarm is on offer
-beside the open board at all times, a new one after every battle won: light machines only, six to
-nine in all, three on the field and the rest behind them, paid by the head. (As first written
+is left to come. The briefing and the field say how many are still to come, the field as far as
+the message bar has said it; machines that come on together are said in one line. One swarm is on
+offer beside the open board at all times, a new one after every battle won: light machines only
+(never more than two gunships), six to nine in all, three on the field and the rest behind them,
+paid by the head. (As first written
 there were to be swarm contracts on the board and a standing job in the side work. One contract
 that is always there and always new is both.)
 
@@ -131,9 +141,11 @@ battle is left as it was.
 finishing blow on a worn machine was one, and no kill in a swarm ever was, which is the wrong way
 round. Measured against the whole core at twice, it was hardly ever seen: of the frames the shop
 sells only the fifth ever did it, in two kills of a hundred. At one and a half times the whole core
-nothing the first three frames carry is one, and from the fourth it is up to one kill in twelve of
-the story and from one in ten to nearly half of the kills in a swarm. At once the core it was
-three kills in four, and more, of a grown pilot's swarm, which is no longer a thing to remark on.)
+nothing the first three frames carry is one as the automatic player flies them (an Overdrive can
+make one sooner: an early mortar under Deadeye, on a drone), and from the fourth it is up to one
+kill in twelve of the story and from one in ten to two in three of the kills in a swarm. At once
+the core it was three kills in four, and more, of a grown pilot's swarm, which is no longer a thing
+to remark on. It is said of the other side only: the pilot's own end is never called one.)
 
 ## Approaches considered
 
@@ -189,9 +201,57 @@ twenty rounds and a contract lost one time in three. More crawlers in the last c
 Lumen war were tried too: a full Ronin still won it 99 times in a hundred, and the frame before
 it lost it more often on Veteran, so that contract is as it was.
 
-The break (the second part) moved no win rate: a field holds three machines, so when two fall in
-a turn there is one left to lose its nerve, and the battle it leaves was won already. It ends one
-open battle in seven a turn sooner at the end of a first telling, and is there to be seen.
+The break (the second part) moved no win rate of the story: a field holds three machines, so when
+two fall in a turn there is one left to lose its nerve, and the battle it leaves was won already.
+It ends one open battle in seven a turn sooner at the end of a first telling, and is there to be
+seen. (On the open board it does move one thing, which the review measured: a frame far too light
+for its contract wins a battle of one heavy machine and two light ones more often, 27 times in a
+hundred where Momentum and Shatter alone made it 14 and the game before made it 6, because the
+heavy one leaves. With the frames of the stage it is 0.4 of a point.)
+
+## What the review found, and what it changed
+
+Two reviewers who had not seen the work read the round against this document and the plan: one the
+rules, one the screens and the text. The rules held: nearly 58,000 battles played on the version
+before and on this one, by the automatic player and by a player who presses at random, came to the
+same event, the same die and the same state in every fight that is not open (25,509 of them). What they
+found was balance the plan had not measured, sentences that said more than the rules, and things on
+the screen that ran ahead of each other.
+
+- **Swarms with gunships.** From the sixth tier a swarm could be seven gunships of nine. On Veteran
+  half a gunship's core is more than a lance carries, and the heaviest frame took forty rounds at
+  it and lost one battle in five to the clock. A swarm now has two gunships at most. Measured on
+  every swarm of that stretch, both difficulties, three tellings: no frame of the stage ever meets
+  the clock; a grown pilot takes five to eight rounds; the heaviest frame as it is sold is still
+  slow on Veteran (fifteen rounds: it is hot and misses what flies, gunships or no) and wins.
+- **Drills.** The drill on bracing was passed without bracing 121 times in 200 (6 before): the
+  lent lance went through the bombs and the marksman lost its nerve. A drill is never open now,
+  and all eleven play to their last event as they did before.
+- **The Gauntlet.** More than half its floors are open battles. A run gets about a floor further
+  (9.6 for 8.6 with a second life, 7.9 for 7.35 without), and with a second life the tenth floor
+  is reached by half the runs where it was three in eight. That is kept, and pinned in the tests:
+  what a pilot who outguns the field can do is true wherever ordinary machines are met.
+- **A boss met after an open battle.** The fight is the fight it was from the same state. The
+  pilot more often arrives with more left in the magazine, and the contract is won more often:
+  the Leviathan's by the second frame 71 times in 120 for 54, by the sixth 119 for 110; the fourth
+  Undertow contract by the sixth 106 for 93; the first audit by the fourth 114 for 107 (the
+  review's figures, 120 seeds). That is the round working as meant, and is said where the guide
+  used to say nothing changed.
+- **What the screen said.** "Ready again" was said of a weapon whose last round the kill had been,
+  of one that has to charge, with nothing left standing, and twice in the middle of a salvo; and a
+  kill handed the turn back six tenths of a second later than in a fight that is not open. It is
+  said once now, as it is, and waits for nothing. The strip ran a message ahead of the bar; a
+  shaken machine lost its bars a second before it left; a turret "broke off" and slid from the
+  field; a word could lie on another word, or behind a blast, or past the edge. All of that is
+  as it should be now, and each has its test.
+- **Text.** One swarm title was a story contract's title, and none had Dutch. The manual's
+  sentences on these rules are each held against the rules in `tests/content/claims.test.ts`.
+- **Left as they were, with a reason.** The aiming line says DESTROYS without the word for a
+  salvo or the count of a burst: the Dutch line has no room for both, and the promise is the more
+  useful of the two. A shaken machine is lit, calmly, in a calm picture, as a staggered one is:
+  that is what the calm setting does with a unit that changes state. The strip's "+4" beside an
+  objective is reached by no contract of the game and is kept: the rules allow a reserve beside
+  something to protect, and the strip must not be silent the day a contract asks for both.
 
 ## Left to the builder
 

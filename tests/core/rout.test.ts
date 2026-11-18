@@ -32,6 +32,11 @@ function field(enemyIds: string[], opts: BattleOptions = {}, catalog: Catalog = 
 }
 const of = <T extends BattleEvent['type']>(s: BattleState, type: T): Extract<BattleEvent, { type: T }>[] =>
   s.events.filter((e): e is Extract<BattleEvent, { type: T }> => e.type === type);
+const edit = (s: BattleState, change: (draft: BattleState) => void): BattleState => {
+  const copy = structuredClone(s);
+  change(copy);
+  return copy;
+};
 /** Two drones down in one turn, the turret behind them still standing. */
 const broken = (opts: BattleOptions = {}): BattleState => {
   let s = field(['recon-drone', 'recon-drone', 'gun-turret'], opts);
@@ -50,8 +55,9 @@ describe('two machines destroyed in one turn of an open battle', () => {
     expect(player(s).chain).toBe(2);
     expect(unit(s, 'enemy-2').shaken).toBe(true);
     expect(of(s, 'shaken')).toEqual([{ type: 'shaken', unit: 'enemy-2' }]);
-    // It is said after the machine has gone and the weapon is back: that is the order it happened in.
-    expect(s.events.slice(-3).map((e) => e.type)).toEqual(['unitDestroyed', 'momentum', 'shaken']);
+    // It is said after the machine has gone, and before what the kill gave back: that is the last word of a volley,
+    // the one that is still in the message bar when the pilot is handed the turn again.
+    expect(s.events.slice(-3).map((e) => e.type)).toEqual(['unitDestroyed', 'shaken', 'momentum']);
     // Nothing has left yet, and it is still the pilot's turn.
     expect(unit(s, 'enemy-2').destroyed).toBe(false);
     expect(activeUnit(s).id).toBe('player');
@@ -122,11 +128,14 @@ describe('a shaken machine', () => {
     const s = broken();
     const left = applyAction(s, END, HEAVY);
     const turret = unit(left, 'enemy-2');
-    expect(turret.fled).toBe(true);
+    // It no longer stands, for everything that asks who does; and what was said of it is that it is out of the
+    // fight, not that it was destroyed.
     expect(turret.destroyed).toBe(true);
-    // Its armour is what it was: it left, it was not taken apart.
+    expect(of(left, 'unitDestroyed').map((e) => e.unit)).toEqual(['enemy-0', 'enemy-1']);
+    // Its armour is what it was: it was not taken apart.
     expect(turret.parts.core!.ap).toBe(unit(s, 'enemy-2').parts.core!.ap);
-    expect(of(left, 'rout')).toEqual([{ type: 'rout', unit: 'enemy-2' }]);
+    // A turret cannot move: it shuts down where it stands, and the battle says that of it.
+    expect(of(left, 'rout')).toEqual([{ type: 'rout', unit: 'enemy-2', fixed: true }]);
     expect(of(left, 'unitDestroyed').map((e) => e.unit)).toEqual(['enemy-0', 'enemy-1']);
     // It fired nothing on the way out.
     expect(left.events.slice(s.events.length).some((e) => e.type === 'shot')).toBe(false);
@@ -136,8 +145,21 @@ describe('a shaken machine', () => {
   test('that was the last one standing ends the battle as a win', () => {
     const left = applyAction(broken(), END, HEAVY);
     expect(left.outcome).toBe('victory');
-    expect(left.events.slice(-2)).toEqual([{ type: 'rout', unit: 'enemy-2' }, { type: 'outcome', outcome: 'victory' }]);
+    expect(left.events.slice(-2)).toEqual([{ type: 'rout', unit: 'enemy-2', fixed: true }, { type: 'outcome', outcome: 'victory' }]);
     expect(checkAction(left, END, HEAVY)).toBe('battleOver');
+  });
+
+  test('that can move leaves the field; one that cannot shuts down where it stands, and the battle says which', () => {
+    // What a machine stands on says whether it can move: a turret, a pylon, a mast, a nest and a tower are bolted down.
+    const routed = (kind: string) => {
+      const s = applyAction(field(['recon-drone', 'recon-drone', kind]), fire('enemy-0'), HEAVY, hit);
+      const left = applyAction(applyAction(s, fire('enemy-1'), HEAVY, hit), END, HEAVY);
+      expect(unit(left, 'enemy-2').destroyed, kind).toBe(true);
+      return of(left, 'rout');
+    };
+    for (const kind of ['gun-turret', 'arc-pylon', 'jammer', 'mortar-nest', 'lance-tower']) expect(routed(kind), kind).toEqual([{ type: 'rout', unit: 'enemy-2', fixed: true }]);
+    for (const kind of ['recon-drone', 'light-mech', 'tank', 'bomb-crawler', 'gunship']) expect(routed(kind), kind).toEqual([{ type: 'rout', unit: 'enemy-2' }]);
+    // Either way it is out of the fight and nobody's kill: the rule is one rule.
   });
 
   test('ends a battle that only had to be outlasted, and one with something to protect, the same way', () => {
@@ -149,11 +171,41 @@ describe('a shaken machine', () => {
     }
   });
 
+  test('is still a hostile standing while it stands: what is protected is worn down by it as a round begins', () => {
+    // Drones move before the pilot does. Two fall in the pilot's turn; the third has had its turn in this round, so it
+    // is still there, shaken, as the next round begins, and is counted against the train before it leaves.
+    const objective = { type: 'protect', name: 'Ore Train', hp: 12 } as const;
+    let s = field(['recon-drone', 'recon-drone', 'recon-drone'], { objective });
+    const round = s.round;
+    const hp = s.asset!.hp;
+    s = applyAction(s, fire('enemy-0'), HEAVY, hit);
+    s = applyAction(s, fire('enemy-1'), HEAVY, hit);
+    expect(unit(s, 'enemy-2')).toMatchObject({ shaken: true, destroyed: false });
+    expect(s.asset!.hp).toBe(hp);
+    s = applyAction(s, END, HEAVY);
+    // One point for the one hostile that stood as the round began; then its turn came and it left, and the battle is won.
+    expect(s.round).toBe(round + 1);
+    expect(s.asset!.hp).toBe(hp - 1);
+    expect(of(s, 'rout')).toEqual([{ type: 'rout', unit: 'enemy-2' }]);
+    expect(s.outcome).toBe('victory');
+  });
+
+  test('leaves when its turn comes whatever else is the matter with it: overheated, it does not sit a round out first', () => {
+    const hot = edit(broken(), (draft) => { unit(draft, 'enemy-2').overheated = true; unit(draft, 'enemy-2').heat = 140; });
+    const left = applyAction(hot, END, HEAVY);
+    expect(of(left, 'rout').map((e) => e.unit)).toEqual(['enemy-2']);
+    expect(left.events.some((e) => e.type === 'turnSkipped' && e.unit === 'enemy-2')).toBe(false);
+    expect(left.outcome).toBe('victory');
+    expect(left.round).toBe(hot.round);
+    // Staggered, the same.
+    const reeling = edit(broken(), (draft) => { unit(draft, 'enemy-2').staggered = 1; });
+    expect(of(applyAction(reeling, END, HEAVY), 'rout').map((e) => e.unit)).toEqual(['enemy-2']);
+  });
+
   test('can be destroyed before its turn comes, and is then a machine destroyed like any other', () => {
     let s = broken();
     s = applyAction(s, fire('enemy-2'), HEAVY, hit);
     expect(s.outcome).toBe('victory');
-    expect(unit(s, 'enemy-2').fled).toBeUndefined();
     expect(of(s, 'rout')).toEqual([]);
     expect(of(s, 'unitDestroyed').map((e) => e.unit)).toEqual(['enemy-0', 'enemy-1', 'enemy-2']);
     expect(player(s).chain).toBe(3);
@@ -234,7 +286,7 @@ describe('a fight that is not open', () => {
     const fell = end.events.filter((e) => e.type === 'unitDestroyed' && e.unit !== 'player').length;
     expect([end.outcome, end.round, end.events.length, end.units[0].parts.core!.ap, end.rng, fell]).toEqual(was);
     expect(end.events.some((e) => e.type === 'shaken' || e.type === 'rout')).toBe(false);
-    expect(end.units.some((u) => u.shaken || u.fled)).toBe(false);
+    expect(end.units.some((u) => u.shaken)).toBe(false);
   });
 });
 

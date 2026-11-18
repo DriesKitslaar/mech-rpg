@@ -3,6 +3,7 @@ import { checkAction, createBattle, previewShot, type Action, type BattleState }
 import { validatePlayerBuild, weaponIn } from '../../src/core/build';
 import { completeMission, lentPatrol } from '../../src/core/campaign';
 import { newGame, type GameState } from '../../src/core/game';
+import { startMissionBattle } from '../../src/core/mission';
 import { DRILL_PAY, drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill } from '../../src/core/training';
 import { WEAPON_SLOTS, type Catalog, type WeaponSlot } from '../../src/core/types';
 import { ALL_ENEMIES } from '../../src/content/arena';
@@ -22,7 +23,8 @@ describe('a drill', () => {
   test('is a contract of one battle in a lent mech, which pays once', () => {
     const mission = drillMission(fresh(), AIM, 'Training Simulator');
     expect(mission).toMatchObject({ id: 'drill-aim', title: AIM.title, client: 'Training Simulator', reward: DRILL_PAY, scale: 0.8, phase: 'patrol' });
-    expect(mission.battles).toEqual([AIM.battle]);
+    // Its battle is the drill's, marked as one that is never open: see below.
+    expect(mission.battles).toEqual([{ ...AIM.battle, closed: true }]);
     expect(mission.loaner).toEqual(AIM.build);
     expect(isDrill(mission)).toBe(true);
     expect(isDrill(MISSIONS[0])).toBe(false);
@@ -204,5 +206,85 @@ describe('the patrol in a lent mech', () => {
       }).outcome === 'victory') wins += 1;
     }
     expect(wins).toBeGreaterThanOrEqual(57);
+  });
+});
+
+/**
+ * Every drill from three seeds, flown by the automatic player on the version before there were open
+ * battles: how it ended, in which round, after how many events, with how much of the lent core, and
+ * where the dice were left.
+ */
+const AS_IT_WAS: [string, number, string, number, number, number, number][] = [
+  ['drill-aim', 1, 'victory', 3, 19, 220, 1767624617],
+  ['drill-aim', 2, 'victory', 3, 18, 220, -63941195],
+  ['drill-aim', 3, 'victory', 3, 18, 220, -63941194],
+  ['drill-heat', 1, 'victory', 8, 56, 150, -191823590],
+  ['drill-heat', 2, 'victory', 8, 58, 115, -823659259],
+  ['drill-heat', 3, 'victory', 8, 56, 92, -191823588],
+  ['drill-boost', 1, 'victory', 5, 48, 190, -2023389403],
+  ['drill-boost', 2, 'victory', 5, 47, 108, -2023389402],
+  ['drill-boost', 3, 'victory', 5, 50, 125, -2023389401],
+  ['drill-guard', 1, 'victory', 7, 61, 162, 1703683420],
+  ['drill-guard', 2, 'victory', 11, 80, 136, -823659259],
+  ['drill-guard', 3, 'victory', 6, 54, 226, 503953279],
+  ['drill-types', 1, 'victory', 7, 56, 151, -823659260],
+  ['drill-types', 2, 'victory', 7, 56, 197, -823659259],
+  ['drill-types', 3, 'victory', 29, 190, 220, -1967024504],
+  ['drill-stagger', 1, 'victory', 7, 58, 228, 1639742223],
+  ['drill-stagger', 2, 'victory', 8, 63, 207, -1455494929],
+  ['drill-stagger', 3, 'victory', 9, 71, 151, 1575801028],
+  ['drill-helpers', 1, 'victory', 7, 60, 276, -2087330600],
+  ['drill-helpers', 2, 'victory', 7, 57, 313, 1007906554],
+  ['drill-helpers', 3, 'victory', 6, 51, 297, -191823588],
+  ['drill-blade', 1, 'victory', 9, 82, 118, -887600457],
+  ['drill-blade', 2, 'victory', 7, 59, 159, -2023389402],
+  ['drill-blade', 3, 'victory', 11, 90, 75, 943965358],
+  ['drill-module', 1, 'victory', 5, 41, 320, -1391553733],
+  ['drill-module', 2, 'victory', 2, 17, 320, -63941195],
+  ['drill-module', 3, 'victory', 2, 17, 320, -63941194],
+  ['drill-protect', 1, 'victory', 4, 49, 184, 1639742223],
+  ['drill-protect', 2, 'defeat', 7, 71, 184, 943965357],
+  ['drill-protect', 3, 'victory', 4, 46, 210, -191823588],
+  ['drill-overdrive', 1, 'victory', 7, 52, 150, 1639742223],
+  ['drill-overdrive', 2, 'victory', 7, 55, 150, -823659259],
+  ['drill-overdrive', 3, 'victory', 6, 50, 150, -2023389401],
+];
+
+describe('a drill is never an open battle', () => {
+  const started = (id: string, seed: number): BattleState => {
+    const mission = drillMission(fresh(), DRILLS.find((drill) => drill.id === id)!, 'Training Simulator');
+    return startMissionBattle(mission.loaner!, mission, 0, ALL_ENEMIES, CATALOG, seed, undefined, {
+      enemyScale: mission.scale ?? 1, ...(mission.overdrive ? { overdrive: mission.overdrive.kind, drive: mission.overdrive.drive } : {}),
+    });
+  };
+
+  test('every drill there is has its three lines above', () => {
+    expect([...new Set(AS_IT_WAS.map(([id]) => id))]).toEqual(DRILLS.map((drill) => drill.id));
+  });
+
+  test.each(AS_IT_WAS)('%s from seed %i plays to its last event as it did before', (id, seed, outcome, round, events, core, rng) => {
+    const start = started(id, seed);
+    expect(start.open).toBe(false);
+    const end = runBattle(start, CATALOG, chooseAutoPlayerAction);
+    expect([end.outcome, end.round, end.events.length, end.units[0].parts.core!.ap, end.rng]).toEqual([outcome, round, events, core, rng]);
+    // Nothing of what a pilot who outguns the field does happens in it.
+    expect(end.events.some((e) => (e.type === 'shot' && e.shatter) || ['momentum', 'shaken', 'rout', 'arrive'].includes(e.type))).toBe(false);
+  });
+
+  test('it is the simulator that makes it so: the same machines met on a contract are an open battle', () => {
+    // The drill on bracing: two bomb crawlers and a marksman, none of which leads anybody.
+    const guard = DRILLS.find((drill) => drill.id === 'drill-guard')!;
+    expect(guard.battle.enemies.length).toBeGreaterThan(1);
+    const outside = createBattle(guard.build, guard.battle.enemies.map((id) => ALL_ENEMIES[id]), CATALOG, 1, { enemyScale: guard.scale ?? 1 });
+    expect(outside.open).toBe(true);
+    expect(started('drill-guard', 1).open).toBe(false);
+    // What is lent there would go through a crawler on a contract. In the drill it does not: the lesson is to brace.
+    const shot = (state: BattleState) => {
+      const slot = WEAPON_SLOTS.map((s) => s).sort((a, b) => (weaponIn(guard.build, b, CATALOG)?.damage ?? 0) - (weaponIn(guard.build, a, CATALOG)?.damage ?? 0))[0];
+      const crawler = state.units.find((u) => u.fuse !== undefined)!;
+      return previewShot(state, 'player', slot, crawler.id, 'core', CATALOG);
+    };
+    expect(shot(outside)).toMatchObject({ shatter: true, kills: true });
+    expect(shot(started('drill-guard', 1))).toMatchObject({ shatter: false, kills: false });
   });
 });

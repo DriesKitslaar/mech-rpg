@@ -73,12 +73,23 @@ export const STRINGS = {
   partDestroyed: (unit: string, part: string) => `${unit}: ${part} destroyed`,
   unitDestroyed: (unit: string) => does(unit, 'destroyed', 'are destroyed'),
   // A volley that destroyed something: its weapon may fire again this turn. From the second in a turn the run is counted.
-  momentum: (weapon: string, chain: number) => (chain > 1 ? `CHAIN x${chain} - ${weapon} ready again` : `${weapon} ready again`),
+  // What a kill gave back, as it is of use to the pilot: fired again, charged again, or not at all (the last round
+  // went with it, a blade wants another Boost, nothing is left standing). `run` puts the count of the turn before it.
+  momentum: {
+    ready: (weapon: string) => `${weapon} ready again`, charge: (weapon: string) => `${weapon} can charge again`,
+    empty: (weapon: string) => `${weapon} is empty`, boost: (weapon: string) => `${weapon} needs Boost again`,
+    clear: 'Field clear',
+    run: (chain: number, what: string) => (what ? `CHAIN x${chain} - ${what}` : `CHAIN x${chain}`),
+  },
   // Two machines down in one turn: what still stands will leave when its turn comes, and then does.
   // A machine of the reserve comes on as a round begins; the last of them says so.
   arrive: (unit: string, left: number) => (left > 0 ? `${unit} comes on - ${left} more behind it` : `${unit} comes on - the last of them`),
+  // Machines that come on together are said in one line.
+  arriveMany: (count: number, left: number) => (left > 0 ? `${count} machines come on - ${left} more behind them` : `${count} machines come on - the last of them`),
   shaken: (unit: string) => `${unit} loses its nerve`,
   rout: (unit: string) => `${unit} breaks off`,
+  // Of a machine that cannot move: it does not leave, it goes dark where it stands.
+  shutdown: (unit: string) => `${unit} shuts down`,
   boost: (unit: string) => does(unit, 'boosts', 'boost'),
   guard: (unit: string) => does(unit, 'braces', 'brace'),
   stagger: (unit: string) => does(unit, 'is STAGGERED', 'are STAGGERED'),
@@ -458,7 +469,7 @@ export const STRINGS = {
   fx: {
     miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', shaken: 'SHAKEN', block: (n: number) => `BLOCK ${n}`,
     // Over a machine that went up to far more than was needed, over the pilot as a run goes on, over a machine that leaves.
-    overkill: 'OVERKILL', chain: (n: number) => `CHAIN x${n}`, rout: 'ROUT',
+    overkill: 'OVERKILL', chain: (n: number) => `CHAIN x${n}`, rout: 'ROUT', offline: 'OFFLINE',
     phase: (n: number) => `PHASE ${n}`,
     modules: {
       coolant: 'COOLANT', barrier: 'BARRIER', overclock: 'OVERCLOCK', painter: 'PAINTED', nanites: 'NANITES', shock: 'SHOCK',

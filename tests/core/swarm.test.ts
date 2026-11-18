@@ -3,8 +3,10 @@ import {
   MAX_ENEMIES, activeUnit, applyAction, createBattle, ordinary,
   type Action, type BattleEvent, type BattleOptions, type BattleState, type UnitState,
 } from '../../src/core/battle';
+import { swarmContract } from '../../src/core/board';
 import { tallyBattle } from '../../src/core/stats';
 import type { Catalog, EnemyDef, FramePart, Weapon } from '../../src/core/types';
+import { BOARD_TEXT } from '../../src/content/board';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
@@ -140,6 +142,37 @@ describe('a machine that comes on', () => {
     expect(new Set(standing(s).map((u) => u.slot)).size).toBe(3);
   });
 
+  test('and what it joins has a letter from the start where another of its kind is still to come: none stands unlettered beside a "B"', () => {
+    // One crawler on the field, another behind it: the first is A before the second is ever seen.
+    let s = swarm(0, { reserve: defs('bomb-crawler', 'recon-drone') }, defs('recon-drone', 'bomb-crawler', 'recon-drone'));
+    expect(standing(s).map((u) => u.name)).toEqual(['Recon Drone A', 'Bomb Crawler A', 'Recon Drone B']);
+    s = applyAction(s, fire('enemy-0'), HEAVY, hit);
+    s = applyAction(s, fire('enemy-2'), HEAVY, hit);
+    s = nextTurn(s);
+    expect(s.units.filter((u) => u.side === 'enemy').map((u) => u.name)).toEqual(['Recon Drone A', 'Bomb Crawler A', 'Recon Drone B', 'Bomb Crawler B', 'Recon Drone C']);
+    // A kind there is only one of, in all of it, has no letter; and with nothing to come the field is named as it always was.
+    const lone = swarm(0, { reserve: defs('recon-drone') }, defs('recon-drone', 'gun-turret', 'recon-drone'));
+    expect(standing(lone).map((u) => u.name)).toEqual(['Recon Drone A', 'Gun Turret', 'Recon Drone B']);
+    expect(standing(swarm(0, {}, defs('recon-drone', 'bomb-crawler', 'gun-turret'))).map((u) => u.name)).toEqual(['Recon Drone', 'Bomb Crawler', 'Gun Turret']);
+    // Every swarm the board deals: every machine of a kind there are two of has a letter, and no two machines share a name.
+    for (let wins = 0; wins < 60; wins++) {
+      const [battle] = swarmContract(wins, 0, BOARD_TEXT).battles;
+      let all = createBattle(DEMO_BUILD, defs(...battle.enemies), HEAVY, 1, { reserve: defs(...battle.reserve!) });
+      for (let guard = 0; all.reserve.length > 0 && guard < 40; guard++) {
+        for (const enemy of standing(all)) all.units.find((u) => u.id === enemy.id)!.destroyed = true;
+        all = applyAction(toPlayer(all), END, HEAVY);
+      }
+      const names = all.units.filter((u) => u.side === 'enemy').map((u) => u.name);
+      expect(new Set(names).size, `after ${wins} wins`).toBe(names.length);
+      const kinds = [...battle.enemies, ...battle.reserve!];
+      for (const name of names) {
+        const kind = kinds.find((id) => name.startsWith(ENEMIES[id].name))!;
+        const several = kinds.filter((id) => id === kind).length > 1;
+        expect(/ [A-Z]$/.test(name), `${name} after ${wins} wins`).toBe(several);
+      }
+    }
+  });
+
   test('is as tough as the battle makes its machines', () => {
     const shell = (CATALOG['core-drone'] as FramePart).ap;
     let s = swarm(1, { enemyScale: 1.5 });
@@ -176,6 +209,16 @@ describe('whether a battle with a reserve is open', () => {
     expect(s.open).toBe(true);
   });
 
+  test('a machine the objective names leads though it stands alone with others to come; one the objective does not name does not', () => {
+    const turret = ENEMIES['gun-turret'];
+    // The turret is the target: the fight is about it, and the drones that come on after it are not ordinary.
+    expect(createBattle(DEMO_BUILD, [turret], HEAVY, 1, { reserve: [drone, drone], objective: { type: 'leader', target: 0 } }).open).toBe(false);
+    // The same field where the contract only wants it outlasted is an open battle.
+    expect(createBattle(DEMO_BUILD, [turret], HEAVY, 1, { reserve: [drone, drone], objective: { type: 'survive', rounds: 6 } }).open).toBe(true);
+    // Of two on the field it is the one named that leads, whichever place it has: the battle is not open either way.
+    for (const target of [0, 1]) expect(createBattle(DEMO_BUILD, [turret, drone], HEAVY, 1, { objective: { type: 'leader', target } }).open).toBe(false);
+  });
+
   test('a leader among those still to come makes it a fight that is not open, from the first shot', () => {
     for (const id of ['magpie', 'strip-miner', 'bailiff']) {
       const s = createBattle(DEMO_BUILD, [drone, drone], HEAVY, 1, { reserve: defs('recon-drone', id) });
@@ -191,7 +234,9 @@ describe('beside the other rules', () => {
     s = applyAction(s, fire('enemy-1'), HEAVY, hit);
     expect(unit(s, 'enemy-2').shaken).toBe(true);
     s = nextTurn(s);
-    expect(unit(s, 'enemy-2').fled).toBe(true);
+    expect(unit(s, 'enemy-2').destroyed).toBe(true);
+    // A drone flies: it left, it did not shut down where it stood.
+    expect(s.events.filter((e) => e.type === 'rout')).toEqual([{ type: 'rout', unit: 'enemy-2' }]);
     expect(s.outcome).toBe('ongoing');
     // It held its place until its turn came: two came on round it, and the third comes on where it stood.
     expect(standing(s).map((u) => u.id)).toEqual(['enemy-3', 'enemy-4']);

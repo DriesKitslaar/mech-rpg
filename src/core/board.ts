@@ -91,6 +91,14 @@ export const SWARM_KINDS: { from: number; kinds: string[] }[] = [
   { from: 3, kinds: ['recon-drone', 'recon-drone', 'bomb-crawler'] },
   { from: 6, kinds: ['recon-drone', 'gunship'] },
 ];
+/**
+ * No swarm has more gunships than this: the rest of what was dealt as one is a drone. A gunship is
+ * the one machine of a swarm that a late weapon does not always go through (not on Veteran, where
+ * half its core is more than a lance carries), and a swarm of seven of them was forty rounds for the
+ * heaviest frame there, one battle in five lost to the clock. With two, no frame of that stage ever
+ * meets the clock, on either difficulty, in any telling.
+ */
+export const SWARM_GUNSHIPS = 2;
 
 /** How far the board has grown: one tier per five battles won, two per cycle. */
 export function boardTier(battlesWon: number, cycle: number): number {
@@ -197,7 +205,8 @@ export function swarmContract(battlesWon: number, cycle: number, text: BoardText
   const tier = boardTier(battlesWon, cycle);
   const kinds = [...SWARM_KINDS].reverse().find((entry) => tier >= entry.from)!.kinds;
   const total = SWARM_MIN + dice.roll(SWARM_MAX - SWARM_MIN + 1);
-  const machines = Array.from({ length: total }, () => dice.pick(kinds));
+  let gunships = 0;
+  const machines = Array.from({ length: total }, () => dice.pick(kinds)).map((id) => (id === 'gunship' && ++gunships > SWARM_GUNSHIPS ? 'recon-drone' : id));
   const place = dice.roll(text.backgrounds.length);
   return {
     id: `open-${cycle}-${battlesWon}-${SWARM}`, phase: 'patrol', title: dice.pick(text.swarmTitles), client: dice.pick(text.clients),

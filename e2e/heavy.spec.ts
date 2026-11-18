@@ -33,10 +33,16 @@ async function load(page: Page, save: GameState): Promise<void> {
   await choose(page, 'continue');
 }
 const heard = (page: Page): Promise<string[]> => page.evaluate(() => (window as unknown as { __said: string[] }).__said);
-/** Waits until nothing is announced over the screen and the screen has finished coming in: a picture of it is then a picture of it. */
+/**
+ * Waits until nothing is announced over the screen and the screen has finished coming in: a picture of it is then a
+ * picture of it. Announcements come one after another, so it is still once none has been up for forty-five frames running.
+ */
 async function still(page: Page): Promise<void> {
-  await page.waitForFunction(() => !(window as unknown as { __game: { snapshot(): { toast?: string | null } } }).__game.snapshot().toast);
-  for (let frame = 0; frame < 45; frame++) await nextFrame(page);
+  for (let quiet = 0; quiet < 45;) {
+    const up = await page.evaluate(() => !!(window as unknown as { __game: { snapshot(): { toast?: string | null } } }).__game.snapshot().toast);
+    quiet = up ? 0 : quiet + 1;
+    await nextFrame(page);
+  }
 }
 const saved = (page: Page): Promise<GameState> => page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as GameState);
 
@@ -51,7 +57,7 @@ function ronin(): GameState {
   return { ...game, credits: 2000 };
 }
 
-test('a swarm: the briefing counts it, the field says how many are still to come, kills ready the weapon, and machines come on and leave', async ({ page }) => {
+test('a swarm: the briefing counts it, the field says how many are still to come, kills ready the weapon, machines come on, and every one of them is destroyed or leaves', async ({ page }) => {
   test.setTimeout(240_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -98,16 +104,19 @@ test('a swarm: the briefing counts it, the field says how many are still to come
   expect(lines.some((line) => /SHATTERS Recon Drone/.test(line))).toBe(true);
   expect(lines.some((line) => /ready again$/.test(line))).toBe(true);
   expect(lines.some((line) => /^CHAIN x\d - /.test(line))).toBe(true);
-  expect(lines.some((line) => /comes on - (\d more behind it|the last of them)$/.test(line))).toBe(true);
-  // Every machine that was not on the field at the start was said to come on.
-  expect(lines.filter((line) => / comes on - /.test(line))).toHaveLength(total - 3);
+  // Every machine that was not on the field at the start was said to come on: one by its name, several in one line by their number.
+  const came = lines.map((line) => /^(\d) machines come on - (\d more behind them|the last of them)$/.exec(line)?.[1] ?? (/ comes on - (\d more behind it|the last of them)$/.test(line) ? '1' : '0'));
+  expect(came.reduce((sum, n) => sum + Number(n), 0)).toBe(total - 3);
+  // A weapon is never called ready in the same breath as the field is called clear.
+  expect(lines.some((line) => /ready again/.test(line) && /clear/.test(line))).toBe(false);
   await press(page, 'Enter');
   await waitForScreen(page, 'settlement');
   expect((await snap(page)).settlement).toMatchObject({ won: true });
   const after = await saved(page);
-  // Every machine of it was destroyed or left, and the record counts the ones destroyed.
-  expect(after.stats.kills).toBeGreaterThanOrEqual(total - 3);
-  expect(after.stats.kills).toBeLessThanOrEqual(total);
+  // Every machine of it was destroyed or left: the record counts the ones destroyed, and each that left was said to.
+  const left = lines.filter((line) => / (breaks off|shuts down)$/.test(line)).length;
+  expect(after.stats.kills - game.stats.kills + left).toBe(total);
+  expect(after.stats.kills - game.stats.kills).toBeGreaterThanOrEqual(total - 3);
   expect(after.battlesWon).toBe(game.battlesWon + 1);
   expect(errors).toEqual([]);
 });

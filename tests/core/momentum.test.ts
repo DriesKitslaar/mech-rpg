@@ -198,19 +198,74 @@ describe('what a run is held to', () => {
 });
 
 describe('a salvo that destroys two machines at once', () => {
-  test('is paid back once, counts two, and says so twice', () => {
-    const salvo = CATALOG['wpn-micro-salvo'] as Weapon;
-    const catalog: Catalog = { ...CATALOG, 'wpn-micro-salvo': { ...salvo, damage: 60 } };
-    const build: Build = { ...DEMO_BUILD, shoulder: 'wpn-micro-salvo' };
+  const salvo = CATALOG['wpn-micro-salvo'] as Weapon;
+  const catalog: Catalog = { ...CATALOG, 'wpn-micro-salvo': { ...salvo, damage: 60 } };
+  const build: Build = { ...DEMO_BUILD, shoulder: 'wpn-micro-salvo' };
+  /** What was said of the volley, in order, by kind and by whom it was about. */
+  const told = (s: BattleState, from: number): string[] =>
+    s.events.slice(from).flatMap((e) => (e.type === 'shot' ? [`shot ${e.target}`] : e.type === 'unitDestroyed' || e.type === 'shaken' ? [`${e.type} ${e.unit}`] : e.type === 'momentum' ? [`momentum ${e.chain}`] : []));
+
+  test('is paid back once, counts two, and says so once: when the whole of it has landed', () => {
     let s = field(['recon-drone', 'gun-turret', 'recon-drone'], catalog, {}, build);
     const had = player(s).energy;
+    const from = s.events.length;
     s = applyAction(s, fire('shoulder', 'enemy-1'), catalog, hit);
     expect(s.units.filter((u) => u.side === 'enemy').map((u) => u.destroyed)).toEqual([true, false, true]);
     // The energy of one volley, not of two.
     expect(player(s).energy).toBe(had);
     expect(player(s).chain).toBe(2);
-    expect(momentum(s).map((e) => [e.weapon, e.chain])).toEqual([['shoulder', 1], ['shoulder', 2]]);
+    expect(momentum(s).map((e) => [e.weapon, e.chain])).toEqual([['shoulder', 2]]);
     expect(checkAction(s, fire('shoulder', 'enemy-1'), catalog)).toBeNull();
+    // Nothing is said of the run, or of anybody's nerve, while the volley is still landing: the turret, which was
+    // fired at first and stands, loses its nerve after the last of it.
+    expect(told(s, from)).toEqual([
+      'shot enemy-1', 'shot enemy-0', 'unitDestroyed enemy-0', 'shot enemy-2', 'unitDestroyed enemy-2',
+      'shaken enemy-1', 'momentum 2',
+    ]);
+    expect(unit(s, 'enemy-1').shaken).toBe(true);
+  });
+
+  test('that clears the field with more to come: one word for the three of them, and nobody is left to lose their nerve', () => {
+    const drone = ENEMIES['recon-drone'];
+    let s = field(['recon-drone', 'recon-drone', 'recon-drone'], catalog, { reserve: [drone, drone] }, build);
+    const from = s.events.length;
+    s = applyAction(s, fire('shoulder', 'enemy-0'), catalog, hit);
+    expect(s.outcome).toBe('ongoing');
+    expect(s.units.filter((u) => u.side === 'enemy').map((u) => u.destroyed)).toEqual([true, true, true]);
+    expect(told(s, from)).toEqual([
+      'shot enemy-0', 'unitDestroyed enemy-0', 'shot enemy-1', 'unitDestroyed enemy-1', 'shot enemy-2', 'unitDestroyed enemy-2',
+      'momentum 3',
+    ]);
+    // What was destroyed by the same volley was never said to have lost its nerve, and those that come on have seen nothing.
+    expect(s.units.some((u) => u.shaken)).toBe(false);
+    s = toPlayer(applyAction(s, END, catalog), catalog);
+    expect(s.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => !!u.shaken)).toEqual([false, false]);
+  });
+
+  test('whose last kill ends the battle says nothing of a run and nothing of anybody\'s nerve, from its first kill on', () => {
+    let s = field(['recon-drone', 'recon-drone', 'recon-drone'], catalog, {}, build);
+    const from = s.events.length;
+    s = applyAction(s, fire('shoulder', 'enemy-0'), catalog, hit);
+    expect(s.outcome).toBe('victory');
+    expect(told(s, from)).toEqual(['shot enemy-0', 'unitDestroyed enemy-0', 'shot enemy-1', 'unitDestroyed enemy-1', 'shot enemy-2', 'unitDestroyed enemy-2']);
+    expect(s.units.some((u) => u.shaken)).toBe(false);
+    // The weapon was paid back all the same: it is the saying of it that there is no use for.
+    expect(player(s).chain).toBe(3);
+  });
+
+  test('that takes the second machine of a turn after a rifle took the first: the one left standing loses its nerve once', () => {
+    const both: Catalog = { ...catalog, 'wpn-rivet-rifle': { ...rifle, damage: 900 } };
+    let s = field(['recon-drone', 'recon-drone', 'gun-turret'], both, {}, build);
+    s = applyAction(s, fire('rightHand', 'enemy-0'), both, hit);
+    expect(momentum(s).map((e) => e.chain)).toEqual([1]);
+    const from = s.events.length;
+    s = applyAction(s, fire('shoulder', 'enemy-2'), both, hit);
+    expect(unit(s, 'enemy-1').destroyed).toBe(true);
+    expect(told(s, from).slice(-2)).toEqual(['shaken enemy-2', 'momentum 2']);
+    // A third volley, at the turret that stands: nothing more is said of its nerve.
+    const later = s.events.length;
+    s = applyAction(s, fire('leftHand', 'enemy-2'), both, miss);
+    expect(told(s, later).filter((line) => line.startsWith('shaken'))).toEqual([]);
   });
 });
 
@@ -237,7 +292,8 @@ describe('what does not make a run', () => {
       if (event.type !== 'momentum') return;
       // Back to the volley's first shot: everything between is that volley's doing.
       const volley = s.events.slice(0, at).reverse();
-      const since = volley.findIndex((e) => e.type !== 'shot' && e.type !== 'unitDestroyed' && e.type !== 'partDestroyed' && e.type !== 'stagger' && e.type !== 'phase');
+      // (Whatever lost its nerve at that volley is said to just before the run is.)
+      const since = volley.findIndex((e) => !['shot', 'unitDestroyed', 'partDestroyed', 'stagger', 'phase', 'shaken'].includes(e.type));
       const own = volley.slice(0, since < 0 ? volley.length : since);
       expect(own.some((e) => e.type === 'shot' && e.unit === event.unit && e.weapon === event.weapon)).toBe(true);
       expect(own.some((e) => e.type === 'unitDestroyed')).toBe(true);
@@ -256,6 +312,20 @@ describe('the Overdrive beside a run', () => {
     expect(player(s).chain).toBe(1);
     s = applyAction(s, fire('rightHand', 'enemy-1'), HEAVY, hit);
     expect(player(s).chain).toBe(2);
+  });
+
+  test('a Second Wind has nothing to give back after a volley that paid for itself, and is refused then as at the start of a turn', () => {
+    let s = field(['recon-drone', 'gun-turret', 'gun-turret'], HEAVY, { overdrive: 'second-wind', drive: 100 });
+    expect(checkAction(s, { type: 'overdrive' }, HEAVY)).toBe('nothingSpent');
+    s = applyAction(s, fire('rightHand', 'enemy-0'), HEAVY, hit);
+    // The weapon is ready and its energy is back: what is spent is heat and a round, which a turn started over would not give back.
+    expect(player(s).chain).toBe(1);
+    expect(player(s).fired).toEqual([]);
+    expect(checkAction(s, { type: 'overdrive' }, HEAVY)).toBe('nothingSpent');
+    // A volley that destroys nothing is something spent, after a run as before one.
+    s = applyAction(s, fire('leftHand', 'enemy-1'), HEAVY, miss);
+    expect(player(s).fired).toEqual(['leftHand']);
+    expect(checkAction(s, { type: 'overdrive' }, HEAVY)).toBeNull();
   });
 
   test('under Deadeye every volley hits, so a run is only as long as the heat and the magazine allow', () => {

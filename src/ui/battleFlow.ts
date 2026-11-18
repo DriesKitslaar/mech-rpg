@@ -71,6 +71,10 @@ export class BattleFlow {
   private weapon: WeaponSlot | null = null;
   /** The row of the action menu to come back to, after something that leaves the turn going. */
   private keepCursor: number | null = null;
+  /** The weapon the pilot's last kill readied, while the run it belongs to goes on: the weapon menu opens on it. */
+  private chained: WeaponSlot | null = null;
+  /** The events, by their place in the battle's list, at which a kill readied a weapon for nothing: see `readiedForNothing`. */
+  private idle = new Set<number>();
   /** Set by Auto Turn: the automatic player acts until this turn is over. */
   private autoTurn = false;
   private waiting: Spoken[] = [];
@@ -165,10 +169,13 @@ export class BattleFlow {
   /**
    * What the battle asks for, as the strip under the message bar says it. Machines still to come are
    * counted with it, or in its place where the battle asks for nothing but everything destroyed.
+   * They are counted as far as has been said: the rules bring on all a round has room for at once,
+   * and a machine is still to come until the message bar has said it is here.
    */
   get objective(): ObjectiveView | null {
     const asked = this.asked;
-    const more = this.state.reserve.length;
+    let more = this.state.reserve.length;
+    for (let i = this.shown; i < this.state.events.length; i++) if (this.state.events[i].type === 'arrive') more++;
     if (more === 0) return asked;
     return asked ? { ...asked, text: `${asked.text}  ${O.more(more)}` } : { text: O.reserve(more) };
   }
@@ -264,7 +271,31 @@ export class BattleFlow {
     return FRAME_SLOTS.filter((part) => this.can({ type: 'repair', part }));
   }
 
-  private describe(event: BattleEvent): string | null {
+  /**
+   * What the weapon a kill readied is good for, as the battle stands: to fire again, to charge again, or
+   * nothing (its last round went with the kill, a blade wants another Boost, nothing is left standing to
+   * fire at, or something else stops it).
+   */
+  readied(slot: WeaponSlot): 'ready' | 'charge' | 'empty' | 'boost' | 'clear' | 'none' {
+    if (this.livingEnemies().length === 0) return 'clear';
+    const refusal = this.weaponRefusal(slot);
+    if (refusal === 'noAmmo') return 'empty';
+    if (refusal === 'needsBoost') return 'boost';
+    if (refusal !== null) return 'none';
+    const weapon = weaponIn(this.player.build, slot, this.catalog);
+    return weapon?.charge && !this.player.charged.includes(slot) ? 'charge' : 'ready';
+  }
+
+  /** True of a `momentum` event, by its place in the battle's list, that readied a weapon the pilot could not fire or charge: as it stood when it was said. */
+  readiedForNothing(index: number): boolean {
+    return this.idle.has(index);
+  }
+
+  /**
+   * What the message bar says of an event. `group` is how many events of its kind came together and are
+   * said in the one line, and `last` is the last of them.
+   */
+  private describe(event: BattleEvent, group = 1, last: BattleEvent = event): string | null {
     const name = (id: string) => this.unitName(id);
     const part = (id: string, slot: FrameSlot) => {
       const unit = this.state.units.find((u) => u.id === id);
@@ -285,12 +316,16 @@ export class BattleFlow {
         return event.part === 'core' ? null : STRINGS.partDestroyed(name(event.unit), part(event.unit, event.part));
       case 'unitDestroyed': return STRINGS.unitDestroyed(name(event.unit));
       case 'momentum': {
-        const unit = this.state.units.find((u) => u.id === event.unit)!;
-        return STRINGS.momentum(weaponIn(unit.build, event.weapon, this.catalog)?.name ?? event.weapon, event.chain);
+        const M = STRINGS.momentum;
+        const weapon = weaponIn(this.player.build, event.weapon, this.catalog)?.name ?? event.weapon;
+        // Said as it is of use: a weapon is not called ready that the pilot cannot fire.
+        const of = this.readied(event.weapon);
+        const what = of === 'clear' ? M.clear : of === 'none' ? '' : M[of](weapon);
+        return event.chain > 1 ? M.run(event.chain, what) : what || null;
       }
-      case 'arrive': return STRINGS.arrive(name(event.unit), event.left);
+      case 'arrive': return group > 1 ? STRINGS.arriveMany(group, last.type === 'arrive' ? last.left : 0) : STRINGS.arrive(name(event.unit), event.left);
       case 'shaken': return STRINGS.shaken(name(event.unit));
-      case 'rout': return STRINGS.rout(name(event.unit));
+      case 'rout': return event.fixed ? STRINGS.shutdown(name(event.unit)) : STRINGS.rout(name(event.unit));
       case 'boost': return STRINGS.boost(name(event.unit));
       case 'guard': return STRINGS.guard(name(event.unit));
       case 'stagger': return STRINGS.stagger(name(event.unit));
@@ -323,9 +358,27 @@ export class BattleFlow {
   /** Shows the next queued event; with none left, runs the next enemy action or hands over to the player. */
   advance(): void {
     if (this.phase !== 'animating') return;
+    // What a kill gave back, where that is the last thing this step has to say: it is said as the pilot is handed
+    // the turn again by this very step, in place of the turn's own line. A step that goes on to something else
+    // (the automatic player's next action) says nothing of it: the word over the mech and the sound have.
+    let standing: string | null = null;
     while (this.shown < this.state.events.length) {
       const event = this.state.events[this.shown++];
-      const text = this.describe(event);
+      // Machines that come on together are said in one line and shown at once. (A field holds three: after two
+      // have fallen in a turn there is one left to lose its nerve, so that is always one line as it is.)
+      let group = 1;
+      if (event.type === 'arrive') {
+        for (; this.shown < this.state.events.length && this.state.events[this.shown].type === 'arrive'; this.shown++) group++;
+      }
+      const text = this.describe(event, group, this.state.events[this.shown - 1]);
+      if (event.type === 'momentum' && event.unit === this.player.id) {
+        this.chained = event.weapon;
+        // Whether the weapon was of any use is settled here, as it is said: a step later the automatic player may have fired it again.
+        if (!['ready', 'charge'].includes(this.readied(event.weapon))) this.idle.add(this.shown - 1);
+        // What a kill gave back is the last thing a volley says. Nothing waits for it: it is said as the turn is
+        // handed back, and stands in the bar while the pilot chooses what to do with it.
+        if (this.shown === this.state.events.length && this.state.outcome === 'ongoing') { standing = text; continue; }
+      }
       if (text !== null) {
         this.message = text;
         this.lastEvent = event;
@@ -365,10 +418,11 @@ export class BattleFlow {
       .filter((round) => round <= this.state.round && !this.roundsSaid.has(round))
       .sort((a, b) => a - b);
     for (const round of due) this.roundsSaid.add(round);
-    this.say([...due.flatMap((round) => this.lines(round)), ...this.moments()], () => this.openActionMenu());
+    this.say([...due.flatMap((round) => this.lines(round)), ...this.moments()], () => this.openActionMenu(standing));
   }
 
-  private openActionMenu(): void {
+  /** Hands the pilot the menu. `standing` is what the bar says in place of the turn's own line, where the step that got here had something to say. */
+  private openActionMenu(standing: string | null = null): void {
     const module = moduleOf(this.player.build, this.catalog);
     const fire = this.fittedWeapons().some((slot) => this.weaponRefusal(slot) === null);
     // The painter needs someone to mark; every other module is checked by the rules as it is.
@@ -394,7 +448,9 @@ export class BattleFlow {
     const kept = this.keepCursor !== null && items[this.keepCursor] ? this.keepCursor : null;
     this.keepCursor = null;
     this.menu = { items, cursor: kept ?? items.findIndex((i) => i.enabled) };
-    this.message = STRINGS.yourTurn(this.state.round);
+    this.message = standing ?? STRINGS.yourTurn(this.state.round);
+    // A run is over with the turn it was made in.
+    if (this.player.chain === 0) this.chained = null;
     this.weapon = null;
     this.targetId = null;
     this.targetPart = null;
@@ -420,7 +476,9 @@ export class BattleFlow {
   private openWeaponMenu(): void {
     const items = this.fittedWeapons().map((slot) => this.weaponItem(slot));
     this.phase = 'weapon';
-    this.menu = { items, cursor: Math.max(0, items.findIndex((i) => i.enabled)) };
+    // On the weapon the last kill readied, while it can be fired: a run is one button pressed again.
+    const again = items.findIndex((i) => i.id === this.chained && i.enabled);
+    this.menu = { items, cursor: again >= 0 ? again : Math.max(0, items.findIndex((i) => i.enabled)) };
     this.targetId = null;
     this.targetPart = null;
     this.preview = null;

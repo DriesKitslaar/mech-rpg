@@ -646,7 +646,7 @@ describe('what the camera moves', () => {
     expect(end.outcome).toBe('victory');
     // Somebody was shattered, and somebody left: both were on the field while the camera was away from home.
     expect(end.events.some((e) => e.type === 'shot' && e.shatter)).toBe(true);
-    expect(end.units.filter((u) => u.fled).length).toBe(1);
+    expect(end.events.filter((e) => e.type === 'rout')).toHaveLength(1);
     expect(seen.away).toBeGreaterThan(seen.opening + 100);
     expect(seen.lights).toBeGreaterThan(100);
   });

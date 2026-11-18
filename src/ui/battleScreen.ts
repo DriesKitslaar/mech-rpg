@@ -333,6 +333,9 @@ export class BattleScreen {
       this.flow.advance();
       // A line of talk may have come up with that step: it gets its writer before anything is drawn.
       this.syncTalk();
+      // What a kill gave back is said as the turn is handed back: its word and its sound begin with the menu, in
+      // this frame and not the next, and what the screen shows of each machine has caught up with the rules by then.
+      if (this.handedBack()) this.spawnEffects();
     }
   }
 
@@ -362,6 +365,11 @@ export class BattleScreen {
       this.opts.sfx?.play('type');
       this.typeTick = 70;
     }
+  }
+
+  /** True while the pilot has the menu. (Asked through a method: a step of the flow changes its phase behind the type checker's back.) */
+  private handedBack(): boolean {
+    return this.flow.phase === 'action';
   }
 
   /** Starts an effect for every event the flow has shown since the last frame, so none is ever skipped. */
@@ -397,6 +405,9 @@ export class BattleScreen {
       if (event.type === 'outcome' && this.opts.jingle?.(event.outcome === 'victory')) continue;
       // The blow that ends it is a slam, as the field is held; the machine is heard to go up when it is seen to, in the close look.
       if (staged) { this.opts.sfx?.play('slam'); continue; }
+      // A weapon that a first kill readied for nothing (its last round went with it, or nothing is left to fire at)
+      // is not heard to be ready. From the second kill on what is heard is the run, which is real whatever the weapon.
+      if (event.type === 'momentum' && event.chain < 2 && this.flow.readiedForNothing(i)) continue;
       for (const sound of soundsForEvent(event, dtype, flight)) this.opts.sfx?.play(sound.name, sound.delayMs);
     }
     this.fxDone = shown;
@@ -766,7 +777,9 @@ export class BattleScreen {
       const r = this.enemyRect(enemy);
       // On the floor under it: what hangs over the floor throws a smaller, fainter one than what stands on it.
       const lifted = r.ground - (r.y + r.h) > 2;
-      drawShadow(ctx, r.x + r.w / 2, r.ground - 1, r.w * (lifted ? 0.7 : 0.9), Math.max(5, r.w * (lifted ? 0.12 : 0.16)), lifted ? 0.35 : 0.45);
+      // It goes where the machine goes and thins as the machine does: one that leaves takes its shadow with it.
+      const t = this.fx.transform(enemy.id);
+      drawShadow(ctx, r.x + r.w / 2 + t.dx, r.ground - 1, r.w * (lifted ? 0.7 : 0.9), Math.max(5, r.w * (lifted ? 0.12 : 0.16)), (lifted ? 0.35 : 0.45) * t.alpha);
     }
   }
 
@@ -942,7 +955,7 @@ export class BattleScreen {
       this.particles.emit('smoke', c, 1, 380);
       // A machine that went up to far more than was needed goes up harder, and throws more. Not in a calm picture: there
       // the word says it. And not the one the battle ends with: that one is looked at from close by, which is more.
-      if (event.overkill && event.unit !== 'player' && !this.opts.calm && !staged) {
+      if (event.overkill && !this.opts.calm && !staged) {
         this.fx.harder(event.unit);
         this.particles.emit('debris', c, 1, 300, ground(event.unit));
         this.particles.emit('embers', c, 1, 300);
@@ -1107,10 +1120,11 @@ export class BattleScreen {
       // Flying units bob; anything that stands on the ground stays put.
       const flies = FLYERS.has(enemy.sprite ?? '');
       const hover = flies ? Math.round(2 * Math.sin(this.clock / 380 + i * 2)) : 0;
-      // What flies burns underneath to stay up.
+      // What flies burns underneath to stay up: under it wherever it is, and no brighter than it is there to be seen.
       if (flies && !this.opts.fast && !this.duel()) {
         this.standing++;
-        drawGlow(ctx, { x: r.x + r.w / 2, y: r.y + r.h - 4 + hover, r: 9 + r.w * 0.22, color: '#ff7ab8', alpha: 0.3 + 0.1 * Math.sin(this.clock / 90 + i) }, this.opts.calm ? 0.5 : 1);
+        const t = this.fx.transform(enemy.id);
+        drawGlow(ctx, { x: r.x + r.w / 2 + t.dx, y: r.y + r.h - 4 + hover + t.lift, r: 9 + r.w * 0.22, color: '#ff7ab8', alpha: (0.3 + 0.1 * Math.sin(this.clock / 90 + i)) * t.alpha }, this.opts.calm ? 0.5 : 1);
       }
       if (this.duel()) {
         const parts = this.duelSprites(enemy);
@@ -1155,7 +1169,8 @@ export class BattleScreen {
           const dazed = stance.staggered || stance.overheated || stance.shaken;
           // Where its picture is drawn: one that the rules have ended hangs still until it is seen to come apart.
           const eye = eyeLight(enemy.sprite ?? enemy.id, r.x + t.dx - body.dx, r.y + t.dy + t.lift + (enemy.destroyed ? 0 : hover) + body.dy, this.clock, i, dazed ? 'dazed' : 'awake', this.opts.calm === true);
-          if (eye) drawGlow(ctx, eye, this.opts.calm ? 0.5 : 1);
+          // It dims with the machine: one that leaves is lost to sight, eye and all.
+          if (eye) drawGlow(ctx, eye, (this.opts.calm ? 0.5 : 1) * t.alpha);
         }
       }
     });
@@ -1166,10 +1181,11 @@ export class BattleScreen {
     const enemies = this.flow.state.units.slice(1).filter((enemy) => !this.hidden(enemy));
     const marked = this.flow.objective?.target;
     // Each machine's bars are under it; where machines stand so close that their bars would lie on one another, they are stacked.
-    const standing = enemies.filter((enemy) => !enemy.destroyed);
+    // A machine has them until it has been seen to go: the rules can be a turn ahead of the screen.
+    const standing = enemies.filter((enemy) => !this.fallen(enemy));
     const bars = placeBars(standing.map((enemy) => this.enemyRect(enemy)));
     for (const enemy of enemies) {
-      if (enemy.destroyed) continue;
+      if (this.fallen(enemy)) continue;
       const r = this.enemyRect(enemy);
       const core = enemy.parts.core!;
       const bar = bars[standing.indexOf(enemy)];
@@ -1194,10 +1210,27 @@ export class BattleScreen {
     }
   }
 
-  /** The one state worth flagging over an enemy's head: a bomb about to go off comes first, then a charge about to land. */
+  /** True once a unit's destruction, or its leaving, has been shown: until then it is on the field for all the screen knows. */
+  private fallen(unit: UnitState): boolean {
+    if (!unit.destroyed) return false;
+    const events = this.flow.state.events;
+    for (let i = this.fxDone; i < events.length; i++) {
+      const event = events[i];
+      if ((event.type === 'unitDestroyed' || event.type === 'rout') && event.unit === unit.id) return false;
+    }
+    return true;
+  }
+
+  /**
+   * The one state worth flagging over an enemy's head. A machine that has lost its nerve says so and nothing
+   * else: it will leave, and whatever it was about to do (a bomb's fuse, a charge) it will not do. Then a bomb
+   * about to go off, then a charge about to land.
+   */
   private fieldMark(unit: UnitState): { text: string; color: string } | null {
     const T = STRINGS.tags;
     const blink = Math.floor(this.clock / 260) % 2 === 0;
+    // As far as has been shown: the rules know it from the moment of the second kill, the screen from when it is said.
+    if (this.stances.of(unit.id).shaken) return { text: T.shaken, color: COLORS.accent };
     if (unit.fuse !== undefined) return { text: T.fuse(unit.fuse), color: unit.fuse <= 1 && blink ? COLORS.danger : COLORS.heat };
     if (unit.charged.length > 0) return { text: T.charging, color: blink ? COLORS.danger : COLORS.heat };
     if (unit.staggered > 0) return { text: T.stagger, color: blink ? COLORS.heat : COLORS.text };
@@ -1224,7 +1257,8 @@ export class BattleScreen {
     const intent = intentText(intentOf(state, unit, this.catalog));
     return [
       ...(unit.shaken ? [{ text: T.shaken, color: COLORS.accent, rank: 9 }] : []),
-      ...(unit.fuse !== undefined ? [{ text: T.fuse(unit.fuse), color: COLORS.danger, rank: 9 }] : []),
+      // A bomb that has lost its nerve leaves with its fuse unlit: it is not counted down to.
+      ...(unit.fuse !== undefined && !unit.shaken ? [{ text: T.fuse(unit.fuse), color: COLORS.danger, rank: 9 }] : []),
       ...(unit.abilities.aegis !== undefined ? [{ text: T.aegis, color: COLORS.energy, rank: 2 }] : []),
       ...(unit.abilities.jam !== undefined ? [{ text: T.jammer, color: COLORS.heat, rank: 2 }] : []),
       ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor, rank: 2 }] : []),

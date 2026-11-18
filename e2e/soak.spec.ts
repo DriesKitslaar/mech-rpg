@@ -103,13 +103,14 @@ async function open(page: Page, save: GameState, settings: Record<string, unknow
   return errors;
 }
 
-interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number }
+interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number }
 
 /**
- * Plays: the story as far as it goes (of contracts on offer together, the one whose name holds
- * one of `prefer`), then the Gauntlet for a few floors, then a look into every room. Battles are
- * left to Auto Turn. With `other`, a contract the other side has made an offer for is flown for
- * the other side. It stops when all of that is done or its time is up.
+ * Plays: the first swarm that is on offer beside the board (more machines than the field holds,
+ * coming on as others fall), the story as far as it goes (of contracts on offer together, the one
+ * whose name holds one of `prefer`), then the Gauntlet for a few floors, then a look into every
+ * room. Battles are left to Auto Turn. With `other`, a contract the other side has made an offer
+ * for is flown for the other side. It stops when all of that is done or its time is up.
  */
 async function play(page: Page, prefer: string[], minutes: number, other = false): Promise<Played> {
   const tried = new Map<string, number>();
@@ -120,6 +121,7 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let battles = 0;
   let floors = 0;
   let runs = 0;
+  let swarms = 0;
   let last = '';
   let frames = 0;
   const step = async (ms: number): Promise<void> => { frames += Math.ceil(ms / 16); await adv(page, ms); };
@@ -148,8 +150,14 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
       else await step(160);
     } else if (s.screen === 'hub' && s.list && s.list !== 'main') {
       const story = items.filter((item) => PHASE[item.id] && !['patrol', 'side'].includes(PHASE[item.id]) && (tried.get(item.id) ?? 0) < 3);
-      const pick = story.find((item) => prefer.some((word) => item.id.includes(word))) ?? story[0];
-      if (!pick) { storyOver = true; await tap(page, 'Escape'); } else if (cur === pick.id) { tried.set(pick.id, (tried.get(pick.id) ?? 0) + 1); await tap(page, 'Enter'); } else await tap(page, 'ArrowDown');
+      const swarm = swarms < 1 ? items.find((item) => item.id.endsWith('-swarm') && item.enabled) : undefined;
+      const pick = swarm ?? story.find((item) => prefer.some((word) => item.id.includes(word))) ?? story[0];
+      if (!pick) { storyOver = true; await tap(page, 'Escape'); }
+      else if (cur !== pick.id) await tap(page, 'ArrowDown');
+      else {
+        if (pick === swarm) swarms++; else tried.set(pick.id, (tried.get(pick.id) ?? 0) + 1);
+        await tap(page, 'Enter');
+      }
     } else if (s.screen === 'hub') {
       while (rooms.length > 0 && !has(rooms[0])) rooms.shift();
       if (!storyOver) await go('contracts');
@@ -171,7 +179,7 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     }
   }
   const end = await snap(page);
-  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames };
+  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms };
 }
 
 const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean }[] = [
@@ -190,10 +198,12 @@ for (const player of PLAYERS) {
     const errors = await open(page, player.later ? again(player.done) : pilot(player.done), player.settings);
     const played = await play(page, player.prefer, MINUTES, player.later);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
-    console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
+    console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.swarms} swarm, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
     expect(errors).toEqual([]);
     expect(played.frames).toBeGreaterThan(1000);
+    // Every one of them flew a swarm: the machines that come on later were on the screen.
+    expect(played.swarms).toBe(1);
     if (player.later) {
       // It did fly for the other side: each of those contracts it finished is remembered as that.
       const kept = await page.evaluate(() => (JSON.parse(window.localStorage.getItem('ironwage-save')!) as { choices?: Record<string, string> }).choices ?? {});

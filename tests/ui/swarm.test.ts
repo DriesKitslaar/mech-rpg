@@ -80,6 +80,51 @@ describe('the strip under the message bar', () => {
     expect(plain.page().texts.some((t) => /MORE TO COME/.test(t.text))).toBe(false);
   });
 
+  test('counts down as the machines are said to come on, and not before: the rules have them on the field a message sooner', () => {
+    // Turrets, which move after the pilot does. Two fall in one turn, with four behind them; the third has lost its
+    // nerve and leaves when its turn comes, at the end of the round; and as the next round begins three come on.
+    const turret = ENEMIES['gun-turret'];
+    let m: Made | undefined;
+    for (let seed = 1; seed <= 400 && !m; seed++) {
+      const tried = made(createBattle(DEMO_BUILD, [turret, turret, turret], HEAVY, seed, { reserve: [turret, turret, turret, turret] }), false);
+      tried.settle();
+      if (tried.flow.state.round !== 1) continue;
+      tried.shoot();
+      if (tried.down() !== 1) continue;
+      tried.shoot();
+      if (tried.down() === 2) m = tried;
+    }
+    expect(m).toBeDefined();
+    const { flow, screen } = m!;
+    expect(flow.objective).toEqual({ text: '4 MORE TO COME' });
+    m!.choose('endTurn');
+    // By the rules the third has left and three more are on the field already, with one left behind them.
+    expect(flow.state.reserve).toHaveLength(1);
+    expect(flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed)).toHaveLength(3);
+    /** What the strip said, and what was drawn of it, for every frame the message bar said each thing. */
+    const strips = new Map<string, Set<string>>();
+    const drawn = new Map<string, Set<string>>();
+    for (let i = 0; i < 20000 && flow.phase !== 'action' && flow.phase !== 'result'; i++) {
+      const bar = flow.message;
+      if (!strips.has(bar)) { strips.set(bar, new Set()); drawn.set(bar, new Set()); }
+      strips.get(bar)!.add(flow.objective?.text ?? '');
+      for (const t of m!.page().texts) if (/MORE TO COME$/.test(t.text)) drawn.get(bar)!.add(t.text);
+      screen.update(16);
+    }
+    const bars = [...strips.keys()];
+    // The one that lost its nerve is said to give out first; then the three are said to come on, in one line.
+    expect(bars.slice(0, 2)).toEqual(['Gun Turret C shuts down', '3 machines come on - 1 more behind them']);
+    expect(bars.some((bar) => /Gun Turret [DEF] comes on/.test(bar))).toBe(false);
+    // While it leaves the strip still says four are to come: nothing has been said of them. From then on, one.
+    expect([...strips.get('Gun Turret C shuts down')!]).toEqual(['4 MORE TO COME']);
+    expect([...drawn.get('Gun Turret C shuts down')!]).toEqual(['4 MORE TO COME']);
+    for (const bar of bars.slice(1)) {
+      expect([...strips.get(bar)!], bar).toEqual(['1 MORE TO COME']);
+      expect([...drawn.get(bar)!], bar).toEqual(['1 MORE TO COME']);
+    }
+    expect(flow.objective).toEqual({ text: '1 MORE TO COME' });
+  });
+
   test('says it after what the battle asks for, where it asks for something', () => {
     const m = made(swarmOf(4, 1, { objective: { type: 'protect', name: 'Ore Train', hp: 12 } }));
     m.settle();
@@ -142,6 +187,9 @@ describe('a machine that comes on', () => {
 
   test('comes on in a ring of light where it stands', () => {
     const m = firstBlood(1, false);
+    // The pilot has the menu while the machine they destroyed is still going up: this one lets that play out,
+    // so that the camera is back where it stands before anything else happens.
+    for (let i = 0; i < 120; i++) m.screen.update(16);
     m.choose('endTurn');
     for (let i = 0; i < 4000 && !/comes on/.test(m.flow.message); i++) m.screen.update(16);
     expect(m.flow.message).toBe('Recon Drone D comes on - the last of them');
@@ -180,6 +228,29 @@ describe('the swarm beside the board', () => {
     const early = inHub(done('intro-1'));
     select(early.app, 'contracts');
     expect(ids(early.app).some((id) => id.startsWith('open-'))).toBe(false);
+  });
+
+  test('in Dutch its row in the list has a Dutch name, which is no other row\'s, and so has its briefing', () => {
+    const { app } = ready();
+    const game = app.game!;
+    const english = swarmContract(game.battlesWon, game.cycle, BOARD_TEXT).title;
+    setLanguage('nl');
+    select(app, 'contracts');
+    const swarm = swarmContract(game.battlesWon, game.cycle, BOARD_TEXT);
+    const rows = snap(app).menu.items;
+    const row = rows.find((item) => item.id === swarm.id)!;
+    expect(row.label).toBe(swarm.title);
+    expect(row.label).not.toBe(english);
+    expect(/^[\x20-\x7e]+$/.test(row.label)).toBe(true);
+    expect(rows.filter((item) => item.label === row.label)).toHaveLength(1);
+    // Drawn as the list draws it.
+    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain(row.label);
+    select(app, swarm.id);
+    const said = record((ctx) => app.draw(ctx)).texts.map((t) => t.text);
+    expect(said).toContain('OPEN CONTRACT: EEN ZWERM');
+    expect(said).toContain(row.label.toUpperCase());
+    const total = swarm.battles[0].enemies.length + swarm.battles[0].reserve!.length;
+    expect(snap(app).briefing).toMatchObject({ objectives: [`Nog ${total - 3} volgen als er een valt`] });
   });
 
   test('its briefing says what it is, how many machines, and that more come on', () => {

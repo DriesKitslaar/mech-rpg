@@ -53,6 +53,7 @@ export function startMissionBattle(
     ...(battle.objective ? { objective: battle.objective } : {}),
     ...(battle.marks ? { marks: battle.marks } : {}),
     ...(battle.reserve ? { reserve: battle.reserve.map(known) } : {}),
+    ...(battle.closed ? { closed: true as const } : {}),
     // A wingman keeps the order they were given through the battles of one contract.
     ...(battle.support ? { support: battle.support.orders && previous?.support?.order ? { ...battle.support, order: previous.support.order } : battle.support } : {}),
     // The place has its say, the same for both sides.

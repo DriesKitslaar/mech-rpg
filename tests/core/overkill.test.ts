@@ -100,7 +100,7 @@ describe('where it is said', () => {
     expect(after.events.some((e) => e.type === 'momentum')).toBe(false);
   });
 
-  test('of the pilot too, when it is the pilot who is destroyed that way', () => {
+  test('never of the pilot: it is a thing the pilot does, and their own end is not called one however hard the blow', () => {
     const turret = CATALOG[ENEMIES['gun-turret'].build.rightHand ?? ENEMIES['gun-turret'].build.shoulder!] as Weapon;
     const cruel: Catalog = { ...CATALOG, [turret.id]: { ...turret, damage: 5000 } };
     let s = createBattle(DEMO_BUILD, [ENEMIES['gun-turret']], cruel, 1);
@@ -108,15 +108,37 @@ describe('where it is said', () => {
       s = applyAction(s, activeUnit(s).side === 'player' ? END : { type: 'fire', weapon: ENEMIES['gun-turret'].build.rightHand ? 'rightHand' : 'shoulder', target: 'player', part: 'core' }, cruel, hit);
     }
     expect(s.outcome).toBe('defeat');
-    expect(fell(s)).toEqual([{ type: 'unitDestroyed', unit: 'player', overkill: true }]);
+    // Five thousand in one hit is many times the pilot's whole core.
+    const shots = s.events.filter((e) => e.type === 'shot' && e.target === 'player' && e.hit);
+    expect(shots.length).toBeGreaterThan(0);
+    expect(fell(s)).toEqual([{ type: 'unitDestroyed', unit: 'player' }]);
   });
 
-  test('not of a machine that a bomb, an ally or its own fuse destroyed: only a volley is a blow', () => {
+  test('not of a machine that an ally destroyed: only a volley of the pilot\'s is a blow', () => {
     let s = field(['recon-drone', 'recon-drone'], doing(1), { support: { name: 'Ashfall', damage: 999 } });
     s = applyAction(s, END, doing(1));
     for (let guard = 0; activeUnit(s).id !== 'player' && s.outcome === 'ongoing' && guard < 20; guard++) s = applyAction(s, END, doing(1));
+    // Nine hundred and ninety-nine on a drone's fifty is twenty drones.
+    expect(s.events.some((e) => e.type === 'support' && e.damage >= OVERKILL * 50)).toBe(true);
     expect(fell(s).length).toBeGreaterThan(0);
     expect(fell(s).some((e) => e.overkill)).toBe(false);
+  });
+
+  test('not of a bomb that goes off, which destroys itself, nor of a machine a module destroyed', () => {
+    // A crawler counts down and goes up against the pilot: it is gone, and nothing calls that an overkill.
+    let s = field(['bomb-crawler', 'gun-turret'], doing(1));
+    for (let guard = 0; s.outcome === 'ongoing' && !s.events.some((e) => e.type === 'blast') && guard < 60; guard++) s = applyAction(s, END, doing(1));
+    expect(s.events.some((e) => e.type === 'blast' && e.unit === 'enemy-0')).toBe(true);
+    expect(unit(s, 'enemy-0').destroyed).toBe(true);
+    expect(fell(s).filter((e) => e.unit === 'enemy-0')).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0' }]);
+    // A Shock Pulse on a machine with a point of core left does fifteen times what it had, and is no volley.
+    const pulse = edit(createBattle({ ...DEMO_BUILD, module: 'mod-shock' }, [ENEMIES['recon-drone'], ENEMIES['gun-turret']], CATALOG, 1), (draft) => {
+      unit(draft, 'enemy-0').parts.core!.ap = 1;
+    });
+    let t = pulse;
+    for (let guard = 0; activeUnit(t).id !== 'player' && guard < 20; guard++) t = applyAction(t, END, CATALOG);
+    t = applyAction(t, { type: 'module' }, CATALOG);
+    expect(fell(t)).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0' }]);
   });
 
   test('played out over many battles: a heavy gun overkills light machines again and again, a light one hardly ever, and nothing else is marked', () => {
@@ -163,13 +185,30 @@ describe('how often it is seen, with the frames the shop sells, in the swarms a 
     return { kills, share: overkills / kills };
   };
 
-  test.each([['starter', [0, 3]], ['tier2', [5, 8]], ['tier3', [13, 15]]] as [string, number[]][])('never by the %s frame: nothing it carries is a machine and a half', (frame, wins) => {
+  test.each([['starter', [0, 3]], ['tier2', [5, 8]], ['tier3', [13, 15]]] as [string, number[]][])('never by the %s frame as the automatic player flies it: nothing it carries is a machine and a half as it comes', (frame, wins) => {
     const seen = share(frame, wins);
     expect(seen.kills).toBeGreaterThan(40);
     expect(seen.share).toBe(0);
   });
 
-  test.each([['tier4', [20, 25], 0.2, 0.65], ['tier5', [30, 35], 0.15, 0.6], ['tier6', [40, 45], 0.03, 0.3]] as [string, number[], number, number][])(
+  test('a pilot who spends an Overdrive on it sees one sooner: the mortar of the introductions, under Deadeye, on a drone', () => {
+    // The automatic player fires no Overdrive, so the shares above have none in them. Deadeye makes a shot half as
+    // hard again, and the mortar pod a pilot can carry from the second contract is then a drone and a half and more.
+    const mortar = CATALOG['wpn-mortar-pod'] as Weapon;
+    expect(DEMO_BUILD.shoulder).toBe('wpn-mortar-pod');
+    const plain = field(['recon-drone', 'gun-turret'], CATALOG);
+    const as_it_comes = previewShot(plain, 'player', 'shoulder', 'enemy-0', 'core', CATALOG).damage;
+    expect(as_it_comes).toBeLessThan(OVERKILL * 50);
+    const driven = applyAction(field(['recon-drone', 'gun-turret'], CATALOG, { overdrive: 'deadeye', drive: 100 }), { type: 'overdrive' }, CATALOG);
+    const under = previewShot(driven, 'player', 'shoulder', 'enemy-0', 'core', CATALOG).damage;
+    expect(under).toBeGreaterThanOrEqual(OVERKILL * 50);
+    expect(under).toBeGreaterThan(as_it_comes);
+    const after = applyAction(driven, { type: 'fire', weapon: 'shoulder', target: 'enemy-0', part: 'core' }, CATALOG, hit);
+    expect(fell(after)).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }]);
+    expect(mortar.damage).toBeLessThan(OVERKILL * 50);
+  });
+
+  test.each([['tier4', [20, 25], 0.3, 0.6], ['tier5', [30, 35], 0.5, 0.8], ['tier6', [40, 45], 0.03, 0.2]] as [string, number[], number, number][])(
     'by the %s frame it is: often enough to be seen, and not so often as to be every kill', (frame, wins, least, most) => {
       const seen = share(frame, wins);
       expect(seen.kills).toBeGreaterThan(40);

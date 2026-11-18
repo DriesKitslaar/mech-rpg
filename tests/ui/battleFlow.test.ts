@@ -1,4 +1,5 @@
 import { createBattle, previewShot, type BattleState } from '../../src/core/battle';
+import type { Catalog, Weapon } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { BattleFlow } from '../../src/ui/battleFlow';
@@ -97,13 +98,113 @@ test('a shot that goes through a light machine says so, and the weapon is offere
   expect(flow.message).toBe('Rivet Rifle SHATTERS Recon Drone A');
   const said: string[] = [];
   for (let guard = 0; flow.phase === 'animating' && guard < 500; guard++) { flow.advance(); said.push(flow.message); }
-  // What is said, in the order it happened: the machine goes, and then the weapon is back.
-  expect(said.filter((line, i) => line !== said[i - 1])).toEqual(['Recon Drone A destroyed', 'Rivet Rifle ready again', 'Round 1 - your move']);
+  // What is said, in the order it happened: the machine goes, and then the weapon is back. Nothing waits for that
+  // last line: it is said as the pilot is handed the turn again, and stands in the bar in place of the turn's own.
+  expect(said.filter((line, i) => line !== said[i - 1])).toEqual(['Recon Drone A destroyed', 'Rivet Rifle ready again']);
+  expect(said.filter((line) => line === 'Rivet Rifle ready again')).toHaveLength(1);
   expect(flow.phase).toBe('action');
+  expect(flow.message).toBe('Rivet Rifle ready again');
   press(flow, 'confirm');
   // The round is spent and the rifle is ready all the same.
   expect(flow.menu.items.filter((i) => i.enabled).map((i) => i.id)).toEqual(['rightHand', 'leftHand', 'shoulder']);
   expect(flow.state.units[0].chain).toBe(1);
+  // Aiming, the bar says what it always says there.
+  press(flow, 'confirm');
+  expect(flow.phase).toBe('target');
+  expect(flow.message).toBe('Round 1 - your move');
+});
+
+test('after a kill with any weapon the weapon menu opens on that weapon, for as long as the run lasts', () => {
+  const drone = ENEMIES['recon-drone'];
+  // The pistol in the left hand takes a drone at a blow here; the rifle is the first weapon in the menu.
+  const pistol = CATALOG[DEMO_BUILD.leftHand!] as Weapon;
+  const heavy: Catalog = { ...CATALOG, [pistol.id]: { ...pistol, damage: 900 } };
+  const cursor = (flow: BattleFlow): string => flow.menu.items[flow.menu.cursor].id;
+  // Seed by seed the dice are the game's own: the first battle in which the pistol's first shot lands.
+  let flow: BattleFlow | undefined;
+  for (let seed = 1; seed <= 200 && !flow; seed++) {
+    const tried = settle(new BattleFlow(createBattle(DEMO_BUILD, [drone, drone, drone], heavy, seed), heavy, { quiet: true }));
+    press(tried, 'confirm');
+    // Before any kill the menu opens on the first weapon that can fire.
+    expect(cursor(tried)).toBe('rightHand');
+    toItem(tried, 'leftHand');
+    press(tried, 'confirm', 'confirm');
+    settle(tried);
+    if (tried.phase === 'action' && tried.state.units.filter((u) => u.destroyed).length === 1) flow = tried;
+  }
+  expect(flow).toBeDefined();
+  expect(flow!.message).toBe(`${pistol.name} ready again`);
+  press(flow!, 'confirm');
+  expect(cursor(flow!)).toBe('leftHand');
+  // A new turn forgets it: the run was that turn's.
+  press(flow!, 'cancel');
+  toItem(flow!, 'endTurn');
+  press(flow!, 'confirm');
+  for (let guard = 0; flow!.phase !== 'action' && flow!.phase !== 'result' && guard < 4000; guard++) flow!.advance();
+  expect(flow!.phase).toBe('action');
+  expect(flow!.state.units[0].chain).toBe(0);
+  press(flow!, 'confirm');
+  expect(cursor(flow!)).toBe('rightHand');
+});
+
+test('what a kill gave back is the line of the step that hands the turn back, and of no later one: Auto Turn does not bring it up a turn late', () => {
+  const drone = ENEMIES['recon-drone'];
+  const heavy: Catalog = { ...CATALOG, 'wpn-rivet-rifle': { ...(CATALOG['wpn-rivet-rifle'] as Weapon), damage: 900 } };
+  // Three drones with more behind them: the automatic player takes some in its turn, and the battle goes on.
+  let flow: BattleFlow | undefined;
+  const said: string[] = [];
+  for (let seed = 1; seed <= 200 && !flow; seed++) {
+    const tried = settle(new BattleFlow(createBattle(DEMO_BUILD, [drone, drone, drone], heavy, seed, { reserve: [drone, drone, drone, drone] }), heavy, { quiet: true }));
+    said.length = 0;
+    toItem(tried, 'auto');
+    press(tried, 'confirm');
+    for (let guard = 0; tried.phase !== 'action' && tried.phase !== 'result' && guard < 4000; guard++) { tried.advance(); said.push(tried.message); }
+    const kills = tried.state.events.filter((e) => e.type === 'momentum').length;
+    if (tried.phase === 'action' && kills > 0 && tried.state.round > 1) flow = tried;
+  }
+  expect(flow).toBeDefined();
+  // The turn it has now is a new one: nothing was readied in it, and the bar says whose move it is.
+  expect(flow!.state.units[0].chain).toBe(0);
+  expect(flow!.message).toBe(`Round ${flow!.state.round} - your move`);
+  // And while the automatic player was at it, the line never stood in the bar over a menu that was not there.
+  expect(said.filter((line) => /ready again|Field clear|is empty/.test(line))).toEqual([]);
+});
+
+test('whether a kill readied a weapon for nothing is settled as it is said, not by what was done with the weapon afterwards', () => {
+  const drone = ENEMIES['recon-drone'];
+  const heavy: Catalog = { ...CATALOG, 'wpn-rivet-rifle': { ...(CATALOG['wpn-rivet-rifle'] as Weapon), damage: 900 } };
+  // The first battle, by seed, in which the rifle takes a drone and then misses the next: it has fired, and is no longer ready.
+  let found: { flow: BattleFlow; at: number } | undefined;
+  for (let seed = 1; seed <= 400 && !found; seed++) {
+    const flow = settle(new BattleFlow(createBattle(DEMO_BUILD, [drone, drone, drone], heavy, seed), heavy, { quiet: true }));
+    press(flow, 'confirm', 'confirm', 'confirm');
+    settle(flow);
+    const at = flow.state.events.findIndex((e) => e.type === 'momentum');
+    if (flow.phase !== 'action' || at < 0) continue;
+    expect(flow.readied('rightHand')).toBe('ready');
+    expect(flow.readiedForNothing(at)).toBe(false);
+    press(flow, 'confirm', 'confirm', 'confirm');
+    settle(flow);
+    if (flow.phase === 'action' && flow.state.units.filter((u) => u.destroyed).length === 1 && flow.state.units[0].fired.includes('rightHand')) found = { flow, at };
+  }
+  expect(found).toBeDefined();
+  expect(found!.flow.readied('rightHand')).toBe('none');
+  expect(found!.flow.readiedForNothing(found!.at)).toBe(false);
+  // And one that was readied for nothing stays so: the last round went with the kill.
+  for (let seed = 1; seed <= 400; seed++) {
+    const state = createBattle(DEMO_BUILD, [drone, drone, drone], heavy, seed);
+    state.units[0].ammo.rightHand = 1;
+    const flow = settle(new BattleFlow(state, heavy, { quiet: true }));
+    press(flow, 'confirm', 'confirm', 'confirm');
+    settle(flow);
+    const at = flow.state.events.findIndex((e) => e.type === 'momentum');
+    if (at < 0) continue;
+    expect(flow.readied('rightHand')).toBe('empty');
+    expect(flow.readiedForNothing(at)).toBe(true);
+    expect(flow.readiedForNothing(at - 1)).toBe(false);
+    return;
+  }
+  throw new Error('no seed gave the kill');
 });
 
 test('a disabled menu item does nothing and ending the turn passes play', () => {

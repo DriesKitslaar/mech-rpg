@@ -29,7 +29,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
    een opslagplek.)
 2. In het hoofdkwartier kies je **Contracts**. De cursor staat al op **Shakedown Run**, het eerste
    contract van het verhaal; de patrouille erboven is er voor als je geld nodig hebt.
-3. In het gevecht kies je **Fire**, een wapen en een onderdeel van de vijand. De romp (Core) is
+3. In het gevecht kies je **Fire**, een wapen en een onderdeel van de vijand. De kern (Core) is
    het makkelijkst te raken en de enige die een vijand uitschakelt. Staan er meer vijanden, dan
    wissel je met L1/R1 van doelwit; het spel mikt vanzelf op het doel van de opdracht, of op wie je
    het laatst beschoot.
@@ -42,9 +42,9 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 
 | Menu | Wat je er doet |
 |---|---|
-| Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld) en drie wisselende losse contracten. Onderaan staat het archief. |
+| Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld), drie wisselende losse contracten en één zwerm. Onderaan staat het archief. |
 | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
-| Training | Tien oefeningen in een geleende mecha. |
+| Training | Elf oefeningen in een geleende mecha. |
 | The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
 | Garage | Onderdelen wisselen, verf kiezen (L1/R1), drie builds bewaren (links/rechts). |
 | Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
@@ -70,44 +70,57 @@ Elke beurt krijg je energie van je generator. Daarmee kun je:
 - **Auto Turn**: de computer speelt deze beurt voor je.
 - **Retreat**: het contract opgeven. Je betaalt wel de kosten.
 
-**Doorstoten en vermorzelen.** In een gevecht tegen *gewone machines* ben je sterker dan vroeger.
-Dat is elk gevecht tegen twee of meer machines waar geen baas, geen piloot met een naam, geen elite,
-geen Bailiff en geen doelwit van de opdracht aan meedoet. Tegen een baas, in een duel en in al die
-andere zware gevechten verandert er niets: die zijn precies zo zwaar als ze waren.
+**Doorstoten en vermorzelen.** In een gevecht tegen *gewone machines* gelden een paar regels in
+jouw voordeel. Dat is elk gevecht tegen twee of meer machines waar geen baas, geen piloot met een
+naam, geen elite, geen Bailiff en geen doelwit van de opdracht aan meedoet. Je herkent zo'n
+gevecht aan het woord **MOMENTUM** (Nederlands: **DOORSTOTEN**) rechts op de banner waarmee het
+gevecht begint. Tegen een baas, in een duel en in al die andere zware gevechten verandert er niets
+aan het gevecht zelf. Wel kom je er soms frisser aan, als het gevecht ervoor in hetzelfde contract
+tegen gewone machines was. In de oefeningen (Training) gelden deze regels niet: daar leer je één
+ding tegelijk. In de Gauntlet gelden ze wel.
 
 - **Doorstoten.** Een wapen waarmee je een machine vernietigt, is in dezelfde beurt meteen weer
   klaar, en de energie van dat schot krijg je terug. Zo ruim je met één zwaar wapen een heel veld
-  lichte machines op in één beurt. De hitte en de munitie krijg je niet terug: wie doorgaat tot
-  boven de 100 hitte, verliest zijn volgende beurt. Een wapen dat eerst moet laden, moet opnieuw
-  laden.
-- **Vermorzelen.** Eén klap die de helft van de kern van een machine wegslaat (gemeten op volle
-  sterkte), maakt haar meteen af. Een zwaar wapen gaat dus dwars door een lichte machine heen; met
-  een licht wapen moet je haar afbreken. Bij het mikken staat er **DESTROYS** (Nederlands:
-  **VERNIETIGT**) als een treffer de machine vernietigt. Hoe beter je wapen (ook door de
-  werkbank), hoe zwaardere machines je in één klap vernietigt. Jou kan het niet overkomen.
-- **Overkill.** Draagt één klap minstens anderhalf keer de hele kern van een machine (gemeten op
-  volle sterkte) en vernietigt die klap haar, dan staat er **OVERKILL** boven: ze ontploft harder
-  dan de rest en je hoort een extra dreun. Het verandert niets aan het gevecht en het geldt in
-  elk gevecht. Een machine afmaken die al bijna kapot was, telt niet: het gaat om wat je wapen is
-  tegenover die machine. Met de wapens uit het begin van het spel zie je het nog niet; met de
-  zware wapens van later wel, en het vaakst in een zwerm.
-- **Ze vluchten.** Vernietig je twee machines in één beurt, dan raakt wat er nog staat in paniek
-  (label **SHAKEN**, Nederlands **PANIEK**). Zodra die machine aan de beurt is, vlucht ze van het
-  veld zonder te vuren. Een machine die vlucht telt niet als vernietigd: wil je haar meetellen,
-  schakel haar dan uit vóór ze aan de beurt is.
+  lichte machines op in één beurt. Het wapenmenu opent op het wapen dat weer klaar is, dus je kunt
+  blijven drukken. Vanaf de tweede machine in één beurt telt het spel mee: **CHAIN x2**, **x3**
+  (Nederlands **REEKS**), met een toontje dat steeds hoger wordt. De hitte en de munitie krijg je
+  niet terug: wie doorgaat tot boven de 100 hitte, verliest zijn volgende beurt, en een leeg wapen
+  blijft leeg (de meldingsbalk zegt dat dan ook). Een wapen dat eerst moet laden, moet opnieuw
+  laden. Een salvo dat er meerdere tegelijk vernietigt, telt ze allemaal mee.
+- **Vermorzelen.** Eén treffer van jou die de helft van de kern van een machine wegslaat (gemeten
+  op volle sterkte), maakt haar meteen af. Een zwaar wapen gaat dus dwars door een lichte machine
+  heen; met een licht wapen moet je haar afbreken. Bij het mikken staat er **DESTROYS**
+  (Nederlands: **VERNIETIGT**) als een treffer de machine vernietigt. Hoe beter je wapen (ook door
+  de werkbank), hoe zwaardere machines je in één klap vernietigt. Jou kan het niet overkomen, en
+  het schot van een wingman doet het ook niet.
+- **Overkill.** Is één treffer van jou minstens anderhalf keer zo zwaar als de hele kern van een
+  machine (gemeten op volle sterkte) en vernietigt die treffer haar, dan staat er **OVERKILL**
+  boven: ze ontploft harder dan de rest en je hoort een extra dreun. Het verandert niets aan het
+  gevecht en het kan in elk gevecht. Hoe versleten de machine al was, maakt niet uit: het gaat om
+  hoe zwaar je wapen is naast die machine. Met de wapens uit het begin van het spel zie je het
+  zelden; met de zware wapens van later vaker, en het vaakst in een zwerm.
+- **Ze vluchten.** Vernietig je met je wapens twee machines in één beurt, dan raakt wat er nog
+  staat in paniek. Boven zo'n machine staat **SHAKEN** (Nederlands **PANIEK**). Zodra ze aan de
+  beurt is, doet ze niet meer mee, zonder te vuren: ze vlucht van het veld (**ROUT**, Nederlands
+  **VLUCHT**), of ze valt uit als ze niet kan bewegen, zoals een geschuttoren (**OFFLINE**,
+  Nederlands **UIT**). Een bom die in paniek raakt, gaat niet meer af. Zo'n machine telt niet als
+  vernietigd: wil je haar meetellen, vernietig haar dan vóór ze aan de beurt is.
 - **Zwermen.** Sommige gevechten hebben meer machines dan er op het veld passen. Er staan er
   drie tegelijk; bij het begin van elke ronde komen de volgende erbij op de plek van wie viel of
   vluchtte. Linksboven staat hoeveel er nog komen (**3 MORE TO COME**, Nederlands **NOG 3 OP
-  KOMST**), en pas als dat nul is, is het gevecht gewonnen. Bij de open contracten staat steeds
-  één zwerm: zes tot negen lichte machines, betaald per stuk. Dé plek om door te stoten.
+  KOMST**); zolang dat er staat, is het gevecht niet gewonnen. Bij de open contracten staat steeds
+  één zwerm: zes tot negen lichte machines (drones, later ook bomkruipers en hooguit twee
+  gunships), betaald per stuk. Dé plek om door te stoten.
 
-**Je naam.** Wat je vernietigt, levert je een naam op. Elke vernietigde machine telt voor 1, een
-verslagen baas voor 8, een arenarang voor 4 en elke keer dat je het verhaal uitspeelt voor 40. Er
-zijn vijf namen: **Line Item** (Kostenpost) vanaf 20, **Write-Off** (Afboeking) vanaf 60, **Total
-Loss** vanaf 150, **Act of God** (Overmacht) vanaf 320 en **The Last Invoice** (De Eindafrekening)
-vanaf 600. Je naam staat onderaan het blad RECORD van je piloot, met wat je nodig hebt voor de
-volgende. Zodra je er een hebt, staat hij onder de banner aan het begin van elk gevecht, en tegen
-gewone machines opent de meldingsbalk ermee: zij weten wie er komt. Een naam raak je nooit kwijt.
+**Je naam.** Wat je op contracten vernietigt, levert je een naam op. Elke vernietigde machine telt
+voor 1, een verslagen baas voor 8, een arenarang voor 4 en elke keer dat je het verhaal uitspeelt
+voor 40. (Oefeningen en de Gauntlet tellen niet mee.) Er zijn vijf namen: **Line Item**
+(Kostenpost) vanaf 20, **Write-Off** (Afboeking) vanaf 60, **Total Loss** vanaf 150, **Act of God**
+(Overmacht) vanaf 320 en **The Last Invoice** (De Eindafrekening) vanaf 600. Je naam staat onderaan
+het blad RECORD van je piloot, met wat je nodig hebt voor de volgende. Zodra je er een hebt, staat
+hij onder de banner aan het begin van elk gevecht van een contract (behalve als er een baas
+aankomt), en tegen gewone machines opent de meldingsbalk ermee: zij weten wie er komt. Een naam
+raak je nooit kwijt.
 
 Onder de pantserbalk van elke mecha staat een dunne balk: het evenwicht. Is die leeg, dan wankelt
 de mecha een beurt: hij kan niet ontwijken en krijgt 30% meer schade. Zware wapens duwen het hardst.
@@ -125,8 +138,8 @@ Niet elk gevecht win je door alles te vernietigen. Boven het veld staat wat er g
 - **Hold out**: een aantal rondes overleven.
 - **Protect**: iets beschermen. Het verliest elke ronde één punt per vijand die nog staat.
 - **Destroy**: één aangewezen vijand uitschakelen.
-- **Disable**: een machine uitschakelen zonder hem te vernietigen: benen en armen eraf, romp heel laten.
-- **Drive off**: een piloot verjagen door zijn romp ver genoeg te beschadigen.
+- **Disable**: een machine uitschakelen zonder hem te vernietigen: benen en armen eraf, kern heel laten.
+- **Drive off**: een piloot verjagen door zijn kern ver genoeg te beschadigen.
 
 ## Geld, rang en schuld
 
