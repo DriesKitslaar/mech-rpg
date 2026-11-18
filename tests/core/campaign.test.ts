@@ -1,5 +1,5 @@
 import {
-  availableMissions, campaignComplete, chosenFaction, completeMission, forCycle, loyalty, markRead, startNewCycle, stockFor,
+  CYCLE_PEAK, availableMissions, campaignComplete, chosenFaction, completeMission, cyclePay, cycleStrength, forCycle, loyalty, markRead, startNewCycle, stockFor,
   unreadMessages,
   type Message, type Mission,
 } from '../../src/core/campaign';
@@ -159,6 +159,22 @@ describe('a new cycle', () => {
     expect(forCycle(MISSIONS[0], 3)).toBe(MISSIONS[0]); // the patrol stays a patrol
   });
 
+  test('up to the third telling, and no further: what that telling fields and pays, every later telling does', () => {
+    expect([0, 1, 2, 3, 4, 9].map(cycleStrength)).toEqual([1, 1.25, 1.5, 1.5, 1.5, 1.5]);
+    expect([0, 1, 2, 3, 4, 9].map(cyclePay)).toEqual([1, 1.5, 2, 2, 2, 2]);
+    expect(CYCLE_PEAK).toBe(2);
+    // A cycle that is no cycle counts as the first.
+    expect(cycleStrength(-3)).toBe(1);
+    expect(cyclePay(-3)).toBe(1);
+    for (const mission of MISSIONS.filter((m) => m.phase !== 'patrol')) {
+      expect(forCycle(mission, 3), mission.id).toEqual(forCycle(mission, 2));
+      expect(forCycle(mission, 7), mission.id).toEqual(forCycle(mission, 2));
+      // And the third telling is tougher than the second: the peak is not reached a cycle early.
+      expect(forCycle(mission, 2).scale, mission.id).toBeGreaterThan(forCycle(mission, 1).scale!);
+      expect(forCycle(mission, 2).reward, mission.id).toBeGreaterThanOrEqual(forCycle(mission, 1).reward);
+    }
+  });
+
   test('what has to be protected is as much sturdier as the enemies are tougher, so there is still time to save it', () => {
     const guarded: Mission = {
       ...MISSIONS.find((x) => x.id === 'hadron-1')!,
@@ -171,6 +187,8 @@ describe('a new cycle', () => {
     const later = forCycle(guarded, 1);
     expect(later.battles[0].objective).toEqual({ type: 'protect', name: 'Convoy', hp: 13 });
     expect(forCycle(guarded, 2).battles[0].objective).toEqual({ type: 'protect', name: 'Convoy', hp: 15 });
+    // What is protected stops growing sturdier where the enemies stop growing tougher.
+    expect(forCycle(guarded, 6).battles[0].objective).toEqual({ type: 'protect', name: 'Convoy', hp: 15 });
     // Nothing else about the battles changes, and the contract it was made from is left as it was.
     expect(later.battles[1]).toEqual(guarded.battles[1]);
     expect(later.battles[2]).toBe(guarded.battles[2]);

@@ -124,8 +124,9 @@ Je vindt ze terug in de **Database** op de pagina **Found**.
 - Luister ook naar wat er tijdens een gevecht gezegd wordt. Het gaat niet altijd over het gevecht.
 - Wat je gevonden hebt, blijf je houden als je met **New Cycle** opnieuw begint.
 - Een tweede keer is het verhaal niet hetzelfde als de eerste keer. Meer zeg ik er niet over.
-- Elke nieuwe ronde is zwaarder dan de vorige. Wordt het te zwaar, zet dan onder **Options** de
-  moeilijkheid lager: het verhaal en wat er te vinden is blijven hetzelfde.
+- De tweede en de derde ronde zijn elk zwaarder dan de vorige (en betalen beter); daarna blijft
+  het gelijk. Wordt het te zwaar, gebruik dan de werkbank in de Garage, of zet onder **Options**
+  de moeilijkheid lager: het verhaal en wat er te vinden is blijven hetzelfde.
 
 ## Arena
 

@@ -182,7 +182,10 @@ export const STRINGS_NL = {
     unread: (n: number) => `${n} nieuw`, points: (n: number) => (n === 1 ? '1 punt' : `${n} punten`),
     locked: 'Op slot', opensAfter: (title: string) => `na ${title}`, campaignDone: 'De oorlog is om. Het werk niet.',
     cycleLabel: (n: number) => `CYCLUS ${n + 1}`,
-    cycleQuestion: ['De oorlog opnieuw?', 'Je houdt credits, level,', 'onderdelen, perks, arenarang.', 'Vijanden worden taaier en', 'je loon stijgt.'],
+    cycleQuestion: (next: number): string[] => ['De oorlog opnieuw?', 'Je houdt credits, level,', 'onderdelen, perks, arenarang.',
+      ...(next <= 2 ? ['Vijanden worden taaier,', 'meer loon, werkbank verder.']
+        : next === 3 ? ['Vijanden blijven even taai.', 'De werkbank kan nog een stap.']
+          : ['Vijanden blijven even taai,', 'en het loon blijft gelijk.'])],
     no: 'Nee', yes: 'Ja',
   },
   arena: {

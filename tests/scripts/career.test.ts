@@ -108,3 +108,33 @@ test('arena fights that were lost are counted, apart from contracts', () => {
   expect(careerLine(report)).toContain(`arena fights lost ${report.arenaLosses}`);
   expect(Object.keys(report.losses).some((id) => id.startsWith('arena'))).toBe(false);
 });
+
+describe('the long game', () => {
+  test('a career of eight cycles finishes on Standard: no contract is a wall, and what was left over went to the bench', () => {
+    const report = playCareer({ faction: 'lumen', verdict: 'default', difficulty: 'standard', seed: 2, cycles: 8 });
+    expect(report.finished, report.stopped).toBe(true);
+    expect(report.cycle).toBe(7);
+    // Seven parts of the best frame are of a kind the bench takes; each is at its last step.
+    expect(report.benchSteps).toBe(35);
+    expect(report.worst.streak).toBeLessThanOrEqual(2);
+    expect(report.grind).toBe(0);
+  });
+
+  test('on Standard the bench is help and not a toll: the same pilot gets through six cycles without it', () => {
+    const report = playCareer({ faction: 'lumen', verdict: 'default', difficulty: 'standard', seed: 2, cycles: 6, bench: false });
+    expect(report.finished, report.stopped).toBe(true);
+    expect(report.benchSteps).toBe(0);
+  });
+
+  test('on Veteran five cycles finish, by another road and to the other verdict', () => {
+    const report = playCareer({ faction: 'hadron', verdict: 'enforce', difficulty: 'veteran', seed: 3, cycles: 5 });
+    expect(report.finished, report.stopped).toBe(true);
+    expect(report.benchSteps).toBe(35);
+  });
+
+  test('a pilot in a first cycle who has not reached the best frame keeps their money for the frame', () => {
+    const report = playCareer({ faction: 'hadron', verdict: 'default', difficulty: 'standard', seed: 1, maxContracts: 12 });
+    expect(report.tier).not.toBe('tier6');
+    expect(report.benchSteps).toBe(0);
+  });
+});

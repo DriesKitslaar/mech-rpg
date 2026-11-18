@@ -198,7 +198,12 @@ export const STRINGS = {
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
     locked: 'Locked', opensAfter: (title: string) => `after ${title}`, campaignDone: 'The war is over. The work is not.',
     cycleLabel: (n: number) => `CYCLE ${n + 1}`,
-    cycleQuestion: ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.', 'Enemies get tougher and', 'pay improves.'],
+    // What starting over keeps, and what the cycle that would begin changes: tougher enemies and better pay up to the third
+    // telling, a step more at the bench up to the fourth.
+    cycleQuestion: (next: number): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
+      ...(next <= 2 ? ['Enemies get tougher, pay', 'improves, the bench goes on.']
+        : next === 3 ? ['Enemies are as tough as now.', 'The bench has one step left.']
+          : ['Enemies are as tough as now,', 'and the pay is the same.'])],
     no: 'No', yes: 'Yes',
   },
   arena: {

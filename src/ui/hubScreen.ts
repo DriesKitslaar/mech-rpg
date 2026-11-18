@@ -26,6 +26,10 @@ export class HubScreen implements Screen {
   /** The contract list, the archive or the new-cycle question, while one is open. */
   private sub: MenuList | null = null;
   private asking = false;
+  /** The cycle that starting over would begin. */
+  private get nextCycle(): number {
+    return (this.app.game?.cycle ?? 0) + 1;
+  }
   /** True while the list showing is the archive of contracts already done. */
   private inArchive = false;
   private clock = 0;
@@ -123,7 +127,7 @@ export class HubScreen implements Screen {
   }
 
   view(): ScreenView {
-    const message = this.app.saveFailed ? STRINGS.saveFailed : this.asking ? H.cycleQuestion[0] : '';
+    const message = this.app.saveFailed ? STRINGS.saveFailed : this.asking ? H.cycleQuestion(this.nextCycle)[0] : '';
     return { menu: { items: this.list.items, cursor: this.list.cursor }, message, list: this.inArchive ? 'archive' : this.sub && !this.asking ? 'contracts' : 'main' };
   }
 
@@ -162,8 +166,9 @@ export class HubScreen implements Screen {
 
     drawPanel(ctx, x, 78, w, 24 + ROWS * LINE);
     if (this.asking) {
-      H.cycleQuestion.forEach((row, i) => drawText(ctx, row, x + 6, 83 + i * LINE, { color: i === 0 ? COLORS.accent : COLORS.text }));
-      drawList(ctx, this.list, x + 6, 96 + H.cycleQuestion.length * LINE, w - 16, 2);
+      const question = H.cycleQuestion(this.nextCycle);
+      question.forEach((row, i) => drawText(ctx, row, x + 6, 83 + i * LINE, { color: i === 0 ? COLORS.accent : COLORS.text }));
+      drawList(ctx, this.list, x + 6, 96 + question.length * LINE, w - 16, 2);
     } else {
       const heading = this.inArchive ? `${H.archive.toUpperCase()} - ${H.bestRank}` : this.sub ? `${H.contracts} - ${H.reward}` : H.heading;
       drawText(ctx, heading, x + 6, 83, { color: COLORS.dim, size: 10 });
