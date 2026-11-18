@@ -133,6 +133,27 @@ describe('behind a barrier', () => {
     expect(after.events.find((e) => e.type === 'shot')).toMatchObject({ damage: 50, absorbed: 10, shatter: true });
   });
 
+  test('nothing is promised of the machine a contract wants driven off: no hit destroys it, and the aiming line does not say one would', () => {
+    // A turret to be driven off, with a drone beside it, worn to its last fifty: nine hundred is more than enough.
+    const heavy = doing(900);
+    const driven = edit(field(['gun-turret', 'recon-drone'], heavy, { objective: { type: 'driveOff', target: 0, share: 0.4 } }), (draft) => {
+      unit(draft, 'enemy-0').parts.core!.ap = 50;
+    });
+    expect(shot(driven, heavy, 'enemy-0')).toMatchObject({ shatter: false, kills: false });
+    const after = applyAction(driven, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' }, heavy, () => 0);
+    // It breaks away with a point of its core, and the contract is met.
+    expect(unit(after, 'enemy-0')).toMatchObject({ destroyed: false });
+    expect(unit(after, 'enemy-0').parts.core!.ap).toBe(1);
+    expect(after.outcome).toBe('victory');
+    // The drone beside it is a machine like any other in a fight that is not open: a hit that is enough destroys it, and says so.
+    expect(shot(driven, heavy, 'enemy-1')).toMatchObject({ shatter: false, kills: true });
+    // And the same turret where the contract wants it destroyed is promised what the hit will do.
+    const wanted = edit(field(['gun-turret', 'recon-drone'], heavy, { objective: { type: 'leader', target: 0 } }), (draft) => {
+      unit(draft, 'enemy-0').parts.core!.ap = 50;
+    });
+    expect(shot(wanted, heavy, 'enemy-0')).toMatchObject({ shatter: false, kills: true });
+  });
+
   test('a hit that is simply enough has to be enough for the barrier too', () => {
     const catalog = doing(100);
     // A turret worn down to fifty: sixty arrive at a bare housing, and forty behind a barrier of twenty.
@@ -200,21 +221,24 @@ describe('who is not ordinary', () => {
   ];
 
   test('what makes a leader: a name and a face, phases, the mark of an elite, command, an objective that names it', () => {
-    const [named, boss, elite, bailiff] = LED.map(([, s]) => unit(s, 'enemy-0'));
-    expect(named.portrait).toBeDefined();
-    expect(boss.phases.length).toBeGreaterThan(0);
-    expect(elite.mark).toBe('armoured');
-    expect(bailiff.leader).toBe(true);
+    expect(ENEMIES.magpie.portrait).toBeDefined();
+    expect(ENEMIES['strip-miner'].phases!.length).toBeGreaterThan(0);
+    expect(ENEMIES.bailiff.leader).toBe(true);
     // The Bailiff is the one machine that commands without being a boss or having a name.
     expect(Object.values(ENEMIES).filter((def) => def.leader).map((def) => def.id)).toEqual(['bailiff']);
-    for (const [what, s] of LED) {
-      expect(leads(unit(s, 'enemy-0'), s.objective), what).toBe(true);
-      expect(leads(unit(s, 'enemy-1'), s.objective), what).toBe(false);
-    }
+    for (const id of ['magpie', 'strip-miner', 'bailiff']) expect(leads(ENEMIES[id]), id).toBe(true);
+    // A turret is nobody, until it is given the mark of an elite or a contract names it.
+    expect(leads(ENEMIES['gun-turret'])).toBe(false);
+    expect(leads(ENEMIES['gun-turret'], 'armoured')).toBe(true);
+    expect(leads(ENEMIES['gun-turret'], undefined, true)).toBe(true);
+    expect(leads(ENEMIES['recon-drone'])).toBe(false);
+    // It is the battle that is settled by it, once: in each of these the first machine leads and the drone beside it does not.
+    for (const [what, s] of LED) expect(s.open, what).toBe(false);
     // A plain field has nobody who does.
     const plain = field(['gun-turret', 'recon-drone'], heavy);
-    expect(plain.units.filter((u) => u.side === 'enemy').some((u) => leads(u, plain.objective))).toBe(false);
     expect(plain.open).toBe(true);
+    // Nor has one whose mark, or whose objective, is on a machine that is not there to carry it.
+    expect(field(['gun-turret', 'recon-drone'], heavy, { marks: {} }).open).toBe(true);
     // An objective that names nobody makes nobody a leader: something to protect, a time to last.
     for (const objective of [{ type: 'protect', name: 'Ore Train', hp: 12 }, { type: 'survive', rounds: 6 }] as const) {
       expect(field(['gun-turret', 'recon-drone'], heavy, { objective }).open, objective.type).toBe(true);

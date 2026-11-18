@@ -2,6 +2,7 @@ import type { BattleEvent } from '../core/battle';
 import type { DamageType, FrameSlot, WeaponSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import { TYPE_COLOR, lightsOf, paintFx } from './fxPaint';
+import { LOGICAL_W } from './display';
 import type { Glow, Pt } from './light';
 import { COLORS } from './widgets';
 
@@ -109,6 +110,10 @@ export const WRECK_SIZE = 26;
  */
 export const OVERKILL_SIZE = 1.5;
 export const OVERKILL_UP = 24;
+/** How far apart two words stand that are written over one unit at one moment: the word for a blocked hit over its figure, the count of a run over whatever else is said of the pilot. */
+export const WORD_GAP = 12;
+/** How large a word is as it lands, before it settles (see `paintFx`): a letter is four tenths of its size wide. */
+const LANDING = 24;
 /** How far a gun kicks its mech back, how far a lunge carries one, and how far behind it each of its after-images stands. */
 export const RECOIL_PX = 3;
 export const LUNGE_PX = 9;
@@ -140,7 +145,7 @@ export type Fx = Timed & (
   | { kind: 'sparks'; at: Pt; color: string }
   | { kind: 'steam'; at: Pt }
   /** A figure or a word. One that is `over` the field is written where the screen has it, not on the stage: it belongs to what is written along the field's top. */
-  | { kind: 'text'; at: Pt; text: string; color: string; over?: true }
+  | { kind: 'text'; at: Pt; text: string; color: string; over?: true; run?: true }
   | { kind: 'slash'; at: Pt; dir: number; color: string }
   | { kind: 'shield'; at: Pt; aim: Pt }
   | { kind: 'gather'; at: Pt; color: string }
@@ -170,6 +175,8 @@ export class BattleFx {
   private now = 0;
   private effects: Fx[] = [];
   private gone = new Set<string>();
+  /** The unit a barrier last took part of a hit for, and when the word for that came up. */
+  private blocked: { unit: string; at: number } | null = null;
   /** Jolts to the whole field: when each lands, how long it lasts, how far it throws things, and whether it has been felt. */
   private jolts: { start: number; dur: number; amount: number; felt: boolean }[] = [];
 
@@ -179,8 +186,15 @@ export class BattleFx {
     this.effects.push({ ...fx, start: this.now + delay, dur } as Fx);
   }
 
-  private say(delay: number, at: Pt, text: string, color: string, over = false): void {
-    this.add(delay, TEXT_MS, { kind: 'text', at: { x: at.x, y: at.y - 10 }, text, color, ...(over ? { over: true as const } : {}) });
+  /**
+   * Writes a word or a figure that floats up from `at`. One on the stage is kept inside it at the size
+   * it lands at, so that a word over a machine at the edge of the field is not cut by the edge, from
+   * the camera's home or from close by.
+   */
+  private say(delay: number, at: Pt, text: string, color: string, how: { over?: true; run?: true } = {}): void {
+    const half = (text.length * LANDING * 0.4) / 2 + 2;
+    const x = how.over ? at.x : Math.max(half, Math.min(LOGICAL_W - half, at.x));
+    this.add(delay, TEXT_MS, { kind: 'text', at: { x, y: at.y - 10 }, text, color, ...how });
   }
 
   /** Shakes the whole field by up to `amount` pixels for `dur`, starting after `delay`: never by more than the hardest jolt there is. */
@@ -261,7 +275,10 @@ export class BattleFx {
           // A shell goes up where it lands; anything else strikes.
           if (dtype === 'explosive') this.add(flight, HIT_MS + 120, { kind: 'burst', at: target, size: 14 * far, color: TYPE_COLOR[dtype], style: 'fire' });
           else this.add(flight, HIT_MS, { kind: 'burst', at: target, size: 8 * far, color: TYPE_COLOR[dtype], style: 'impact' });
-          if (event.absorbed) this.say(flight, { x: target.x, y: target.y - 12 }, STRINGS.fx.block(event.absorbed), COLORS.energy);
+          if (event.absorbed) {
+            this.say(flight, { x: target.x, y: target.y - WORD_GAP }, STRINGS.fx.block(event.absorbed), COLORS.energy);
+            this.blocked = { unit: event.target, at: this.now + flight };
+          }
           if (event.damage > 0 || !event.absorbed) this.say(flight, target, `-${event.damage}`, '#ffffff');
         } else {
           this.say(flight, target, STRINGS.fx.miss, '#c9c6e8');
@@ -289,14 +306,21 @@ export class BattleFx {
         this.jolt(WRECK_AT, 4, 300);
         // Far more than was needed: the word for it, over the machine and clear of the figure of the hit that did it,
         // which was written where its core is hit and has begun to rise.
-        if (event.overkill && event.unit !== 'player') {
-          this.say(0, { x: at.x, y: s.hitPoint(event.unit, 'core').y - OVERKILL_UP }, STRINGS.fx.overkill, COLORS.accent);
+        if (event.overkill) {
+          // Where a barrier took part of that hit, the word for that is over the figure still: this one goes over both.
+          const over = this.blocked?.unit === event.unit && this.now - this.blocked.at < TEXT_MS ? WORD_GAP : 0;
+          this.say(0, { x: at.x, y: s.hitPoint(event.unit, 'core').y - OVERKILL_UP - over }, STRINGS.fx.overkill, COLORS.accent);
         }
         break;
       }
       case 'momentum':
-        // From the second machine of a turn the run is counted, over the one who is on it.
-        if (event.chain >= 2) this.say(0, s.centre(event.unit), STRINGS.fx.chain(event.chain), COLORS.accent);
+        // From the second machine of a turn the run is counted, over the one who is on it: above whatever else is
+        // said of them just then (a run can end in an overheat), and one count at a time, the last making way for the next.
+        if (event.chain >= 2) {
+          this.effects = this.effects.filter((fx) => !(fx.kind === 'text' && fx.run));
+          const at = s.centre(event.unit);
+          this.say(0, { x: at.x, y: at.y - WORD_GAP }, STRINGS.fx.chain(event.chain), COLORS.accent, { run: true });
+        }
         break;
       case 'boost': {
         const from = s.centre(event.unit);
@@ -308,10 +332,12 @@ export class BattleFx {
         this.say(0, s.centre(event.unit), STRINGS.fx.shaken, COLORS.accent);
         break;
       case 'rout': {
-        // It goes back the way it came: away from what it was facing.
+        // It goes back the way it came: away from what it was facing. One that cannot move goes nowhere: it
+        // goes dark where it stands, and is lost to sight there.
         const heading = this.headingOf(event.unit);
-        this.add(0, LEAVE_MS, { kind: 'leave', unit: event.unit, from: s.centre(event.unit), aim: { x: -heading.x || 0, y: -heading.y || 0 } });
-        this.say(0, s.centre(event.unit), STRINGS.fx.rout, COLORS.accent);
+        const aim = event.fixed ? { x: 0, y: 0 } : { x: -heading.x || 0, y: -heading.y || 0 };
+        this.add(0, LEAVE_MS, { kind: 'leave', unit: event.unit, from: s.centre(event.unit), aim });
+        this.say(0, s.centre(event.unit), event.fixed ? STRINGS.fx.offline : STRINGS.fx.rout, COLORS.accent);
         break;
       }
       case 'cool':
@@ -410,7 +436,7 @@ export class BattleFx {
       }
       case 'asset':
         // What is being guarded is no machine on the field: what it loses is written under the strip that names it, on the screen.
-        if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger, true);
+        if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger, { over: true });
         break;
       case 'recover':
       case 'turnStart':

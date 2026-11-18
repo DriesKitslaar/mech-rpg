@@ -1,16 +1,21 @@
 import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
-import { MAX_ENEMIES } from '../../src/core/battle';
+import { MAX_ENEMIES, ROUND_LIMIT } from '../../src/core/battle';
 import {
-  ENEMY_COST, PAY_PER_HEAD, STORY_ENEMIES, SWARM_KINDS, SWARM_MAX, SWARM_MIN, boardTier, generateBoard, isSwarm, scaleFor, swarmContract,
+  ENEMY_COST, PAY_PER_HEAD, STORY_ENEMIES, SWARM_GUNSHIPS, SWARM_KINDS, SWARM_MAX, SWARM_MIN, boardTier, generateBoard, isSwarm, scaleFor, swarmContract,
 } from '../../src/core/board';
 import { settle } from '../../src/core/economy';
+import { DIFFICULTY_SCALE } from '../../src/core/game';
 import { playMission, startMissionBattle } from '../../src/core/mission';
 import { missionPar, parOf } from '../../src/core/rank';
+import { tuneCap } from '../../src/core/tuning';
 import type { FramePart } from '../../src/core/types';
 import { BOARD_TEXT } from '../../src/content/board';
+import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
-import { setLanguage } from '../../src/content/language';
+import { dictionaryOf, setLanguage } from '../../src/content/language';
+import { MISSIONS } from '../../src/content/missions';
 import '../../src/content/nl';
+import { SIDE_WORK } from '../../src/content/sidework';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 import SPRITES from '../../src/content/sprites.json';
@@ -81,6 +86,51 @@ test('what a swarm is made of is light: nothing that leads, nothing of the story
   for (const wins of [0, 3, 5, 8, 10, 13]) expect(new Set(all(wins))).toEqual(new Set(['recon-drone']));
 });
 
+test('a swarm is called something nothing else is called, and something Dutch in Dutch', () => {
+  const nl = dictionaryOf('nl');
+  const others = [...MISSIONS, ...SIDE_WORK, ...DRILLS].map((m) => m.title);
+  expect(BOARD_TEXT.swarmTitles).toHaveLength(8);
+  expect(new Set(BOARD_TEXT.swarmTitles).size).toBe(8);
+  for (const title of BOARD_TEXT.swarmTitles) {
+    // Not a contract of the story, the side work or the simulator: a pilot on Lumen's path once had two rows called Scrap Tide.
+    expect(others, title).not.toContain(title);
+    // Not what the open board can deal either: its titles are one of its adjectives and one of its nouns.
+    const [first, ...rest] = title.split(' ');
+    expect(BOARD_TEXT.adjectives.includes(first) && BOARD_TEXT.nouns.includes(rest.join(' ')), title).toBe(false);
+    // And it has a Dutch name of its own, which is no other contract's Dutch name.
+    expect(Object.hasOwn(nl, title), title).toBe(true);
+    expect(nl[title], title).not.toBe(title);
+    expect(nl[title].length, title).toBeLessThanOrEqual(18);
+    expect(others.map((other) => nl[other] ?? other), title).not.toContain(nl[title]);
+  }
+  const dutch = new Set(BOARD_TEXT.swarmTitles.map((title) => nl[title]));
+  expect(dutch.size).toBe(8);
+  // As the list of contracts shows it, in Dutch: the titles themselves are read in the language that is set.
+  expect(swarm(15).title).toBe('Rust Tide');
+  setLanguage('nl');
+  expect(swarm(15).title).toBe('Roesttij');
+  expect(new Set(Array.from({ length: 120 }, (_, wins) => swarm(wins).title))).toEqual(dutch);
+});
+
+test('no swarm has more than two gunships, at any stage of any telling: the rest of it is drones', () => {
+  expect(SWARM_GUNSHIPS).toBe(2);
+  let most = 0;
+  let withTwo = 0;
+  for (const cycle of [0, 1, 2, 5]) {
+    for (let wins = 0; wins < 80; wins++) {
+      const machines = all(wins, cycle);
+      const gunships = machines.filter((id) => id === 'gunship').length;
+      expect(gunships, `after ${wins} wins in cycle ${cycle}`).toBeLessThanOrEqual(SWARM_GUNSHIPS);
+      most = Math.max(most, gunships);
+      if (gunships === SWARM_GUNSHIPS) withTwo++;
+      // What would have been a third is a drone: the swarm is as many machines as it was dealt.
+      if (gunships > 0) expect(machines.filter((id) => id !== 'gunship').every((id) => id === 'recon-drone')).toBe(true);
+    }
+  }
+  expect(most).toBe(SWARM_GUNSHIPS);
+  expect(withTwo).toBeGreaterThan(100);
+});
+
 test('every size and every kind turns up over a career', () => {
   const sizes = new Set<number>();
   const kinds = new Set<string>();
@@ -123,7 +173,7 @@ describe('the briefing of a swarm', () => {
         const total = all(wins, cycle).length;
         const counted = hostiles(mission).map((line) => Number(/ x(\d+)$/.exec(line)?.[1] ?? 1)).reduce((a, b) => a + b, 0);
         expect(counted, `${language} ${wins}`).toBe(total);
-        const more = language === 'en' ? `${total - 3} more come on as they fall` : `Nog ${total - 3} volgen als er vallen`;
+        const more = language === 'en' ? `${total - 3} more come on as they fall` : `Nog ${total - 3} volgen als er een valt`;
         expect(objectiveLines(mission)).toEqual([more]);
         const lines = mission.briefing.flatMap((paragraph) => wrap(paragraph, BRIEFING_CHARS));
         // Paragraphs stand a little apart: each gap is counted as the screen lays it out, in fifths of a row.
@@ -160,5 +210,60 @@ describe('who wins a swarm', () => {
       // A fight, not a slog: the slowest frame at it takes a dozen rounds at most.
       expect(rounds / SEEDS, frame).toBeLessThanOrEqual(12);
     }
+  });
+});
+
+describe('the swarms with gunships in them (thirty to thirty-nine wins of a first telling), on both difficulties', () => {
+  const PERKS = { aim: 12, evasion: 12, energy: 60, cooling: 15, repairs: 2, armour: 0.18 };
+  /** Every swarm of that stretch, six seeds each: how many were won, the mean rounds, the slowest swarm's mean, and how many met the round limit. */
+  const flown = (frame: string, difficulty: number, grown: boolean) => {
+    const tally = { battles: 0, won: 0, rounds: 0, slowest: 0, limit: 0, gunships: 0 };
+    for (let wins = 30; wins < 40; wins++) {
+      const mission = swarm(wins);
+      tally.gunships += all(wins).filter((id) => id === 'gunship').length;
+      let rounds = 0;
+      for (let seed = 1; seed <= 6; seed++) {
+        const build = REFERENCE_BUILDS[frame];
+        const mods = grown ? { ...PERKS, tune: Object.fromEntries(Object.values(build).map((part) => [part, tuneCap(0)])) } : undefined;
+        const end = playMission(build, mission, ENEMIES, CATALOG, seed * 7919, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction), { enemyScale: (mission.scale ?? 1) * difficulty, ...(mods ? { mods } : {}) });
+        tally.battles++;
+        if (end.outcome === 'victory') tally.won++;
+        if (end.round >= ROUND_LIMIT) tally.limit++;
+        rounds += end.round;
+      }
+      tally.rounds += rounds;
+      tally.slowest = Math.max(tally.slowest, rounds / 6);
+    }
+    return { ...tally, rounds: tally.rounds / tally.battles };
+  };
+
+  test('there are gunships in them', () => {
+    expect(flown('tier5', 1, false).gunships).toBeGreaterThanOrEqual(15);
+  });
+
+  test.each([['standard', DIFFICULTY_SCALE.standard], ['veteran', DIFFICULTY_SCALE.veteran]] as [string, number][])('on %s: every frame of that stage wins them, and none ever meets the clock', (_name, difficulty) => {
+    for (const [frame, grown] of [['tier5', false], ['tier6', false], ['tier6', true]] as [string, boolean][]) {
+      const seen = flown(frame, difficulty, grown);
+      expect(seen.won / seen.battles, `${frame}${grown ? ' grown' : ''}`).toBeGreaterThanOrEqual(0.97);
+      expect(seen.limit, `${frame}${grown ? ' grown' : ''}`).toBe(0);
+    }
+  });
+
+  test('a grown pilot runs through them on Veteran as on Standard: under ten rounds, the slowest swarm under twelve', () => {
+    for (const difficulty of [DIFFICULTY_SCALE.standard, DIFFICULTY_SCALE.veteran]) {
+      const grown = flown('tier6', difficulty, true);
+      expect(grown.rounds, `x${difficulty}`).toBeLessThan(10);
+      expect(grown.slowest, `x${difficulty}`).toBeLessThan(12);
+      const quick = flown('tier5', difficulty, false);
+      expect(quick.rounds, `x${difficulty}`).toBeLessThan(5);
+    }
+  });
+
+  test('the heaviest frame as it is sold is slow at them and says why: it is hot and it misses what flies, gunships or no', () => {
+    // On Standard ten rounds; on Veteran, where a gunship no longer falls to one hit of its lance, under twenty.
+    expect(flown('tier6', DIFFICULTY_SCALE.standard, false).rounds).toBeLessThan(12);
+    const veteran = flown('tier6', DIFFICULTY_SCALE.veteran, false);
+    expect(veteran.rounds).toBeLessThan(18);
+    expect(veteran.slowest).toBeLessThan(24);
   });
 });

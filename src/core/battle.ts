@@ -56,6 +56,11 @@ export interface BattleOptions {
   drive?: number;
   /** Machines that are not on the field yet: they come on in this order, at the start of a round, as room has been made. */
   reserve?: EnemyDef[];
+  /**
+   * Never an open battle, whatever is in it: it is fought by the rules a fight against one machine is
+   * fought by. A drill is one, so that what it teaches is what wins it.
+   */
+  closed?: true;
 }
 
 /** An ally who is not on the field: at every new round they hit the strongest enemy for `damage`. */
@@ -108,12 +113,13 @@ export const SHATTER = 0.5;
 /**
  * Overkill: a machine destroyed by a blow that carried at least this many times its whole core, as
  * that stood at full strength. Like a shattering it is measured against the machine as it was made,
- * so finishing a machine that has been worn down is no overkill. It changes nothing: the battle
- * says so, for the screen to make something of.
+ * so how worn the machine already was makes no difference either way. It changes nothing: the battle
+ * says so, of a machine of the other side, for the screen to make something of.
  *
- * One and a half is where it is seen and stays worth seeing. Played out with the frames the shop
- * sells, nothing the first three carry is a machine and a half; from the fourth it is seen, in up
- * to one kill in twelve of the story and from one in ten to nearly half of the kills in a swarm.
+ * One and a half is where it is seen and stays worth seeing. Played out by the automatic player
+ * (which fires no Overdrive) with the frames the shop sells, nothing the first three carry is a
+ * machine and a half; from the fourth it is seen, in up to one kill in twelve of the story and from
+ * one in ten to two in three of the kills in a swarm. (Under Deadeye an early mortar is one, on a drone.)
  * At twice the core it was hardly ever seen; at once the core it was three kills in four, and
  * more, of a grown pilot's swarm, which is no longer a thing to remark on.
  */
@@ -152,11 +158,11 @@ export interface UnitState {
   chain: number;
   /**
    * Saw two machines of its side destroyed in one turn: it breaks off when its own turn comes,
-   * instead of taking it. Until then it stands, and can be shot at, like any other.
+   * instead of taking it. Until then it stands, and can be shot at, like any other. Once it has left
+   * it is `destroyed` for everything that asks who stands, and nobody's kill: what was said of it
+   * is `rout`, not `unitDestroyed`.
    */
   shaken?: true;
-  /** Broke off and left the field. It is `destroyed` for everything that asks who stands, and it is nobody's kill. */
-  fled?: true;
   repairsLeft: number;
   destroyed: boolean;
   mods: UnitMods;
@@ -211,8 +217,6 @@ export interface UnitState {
   /** See `EnemyDef.partNames` and `EnemyDef.portrait`. Only the screen reads them. */
   partNames?: Partial<Record<FrameSlot, string>>;
   portrait?: string;
-  /** Commands the machines beside it: see `EnemyDef.leader`. */
-  leader?: true;
 }
 
 export type BattleEvent =
@@ -225,17 +229,20 @@ export type BattleEvent =
    */
   | { type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; appliedTo: FrameSlot; hit: boolean; damage: number; absorbed?: number; shatter?: true }
   | { type: 'partDestroyed'; unit: string; part: FrameSlot }
-  /** `overkill` marks a machine destroyed by a volley that carried `OVERKILL` times its core at full strength. */
+  /** `overkill` marks a machine of the other side destroyed by a hit of `OVERKILL` times its core at full strength. */
   | { type: 'unitDestroyed'; unit: string; overkill?: true }
   /**
    * A volley of `unit`'s destroyed something and the battle goes on: `weapon` is ready again, and
-   * `chain` is how many that makes this turn.
+   * `chain` is how many that makes this turn. Once for a volley, after all of it has landed.
    */
   | { type: 'momentum'; unit: string; weapon: WeaponSlot; chain: number }
   /** `unit` has seen two machines of its side destroyed in one turn, and will break off when its own turn comes. */
   | { type: 'shaken'; unit: string }
-  /** `unit`, shaken, has left the field in place of taking its turn. It was not destroyed. */
-  | { type: 'rout'; unit: string }
+  /**
+   * `unit`, shaken, is out of the fight in place of taking its turn. It was not destroyed. One that can
+   * move has left the field; `fixed` marks one that cannot, which shuts down where it stands.
+   */
+  | { type: 'rout'; unit: string; fixed?: true }
   /** `unit` has come on from the reserve as a round began; `left` are still to come after it. */
   | { type: 'arrive'; unit: string; left: number }
   | { type: 'boost'; unit: string }
@@ -400,7 +407,6 @@ function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scal
     ...(def.paint ? { paint: def.paint } : {}),
     ...(def.partNames ? { partNames: def.partNames } : {}),
     ...(def.portrait ? { portrait: def.portrait } : {}),
-    ...(def.leader ? { leader: true as const } : {}),
     ...(abilities.bomb ? { fuse: abilities.bomb.fuse } : {}),
     ...(abilities.carrier ? { launchIn: abilities.carrier.every } : {}),
     ...(mark ? { mark } : {}),
@@ -419,15 +425,13 @@ const standing = (state: BattleState, side: UnitState['side']): UnitState[] => s
 
 /**
  * True of a machine a fight is about: one with phases to go through (a boss), with a name and a
- * face, with the mark of an elite, one that commands the others, or the one the objective names.
+ * face, one that commands the others, one given the mark of an elite, or the one the objective
+ * names. Asked of what a battle is made from, once, as it is made: a machine still to come carries
+ * no mark and no objective names it.
  */
-export function leads(unit: UnitState, objective: Objective): boolean {
-  return unit.phases.length > 0 || !!unit.portrait || !!unit.mark || !!unit.leader
-    || ('target' in objective && unit.id === `enemy-${objective.target}`);
+export function leads(def: EnemyDef, mark?: EnemyMark, named = false): boolean {
+  return (def.phases?.length ?? 0) > 0 || !!def.portrait || !!def.leader || !!mark || named;
 }
-
-/** The same of a machine that is not on the field yet: it carries no mark and no objective names it. */
-const willLead = (def: EnemyDef): boolean => (def.phases?.length ?? 0) > 0 || !!def.portrait || !!def.leader;
 
 /**
  * True of a machine that is one of many: an enemy in an open battle, whether it stood there from
@@ -617,22 +621,25 @@ function launch(state: BattleState, unit: UnitState, catalog: Catalog): void {
 }
 
 /**
- * Puts a machine on the field in the first place that is free, with the next number and the next
- * letter of its kind. There has to be room. Returns its id.
+ * Puts a machine on the field in the first place that is free, with the next number and, where it is
+ * `lettered`, the next letter of its kind. There has to be room. Returns its id.
  */
-function join(state: BattleState, def: EnemyDef, catalog: Catalog): string {
+function join(state: BattleState, def: EnemyDef, catalog: Catalog, lettered = true): string {
   const enemies = standing(state, 'enemy');
   const slot = Array.from({ length: MAX_ENEMIES }, (_, i) => i).find((i) => !enemies.some((u) => u.slot === i)) ?? 0;
   const sameKind = state.units.filter((u) => u.kind === def.id).length;
   const id = `enemy-${state.units.length - 1}`;
-  state.units.push(createEnemy(def, id, `${def.name} ${String.fromCharCode(65 + sameKind)}`, slot, state.enemyScale, catalog));
+  state.units.push(createEnemy(def, id, lettered ? `${def.name} ${String.fromCharCode(65 + sameKind)}` : def.name, slot, state.enemyScale, catalog));
   return id;
 }
 
 /** The reserve comes on: as many as there is room for, in order. Called as a round begins, after what stood has been counted. */
 function arrive(state: BattleState, catalog: Catalog): void {
   while (state.reserve.length > 0 && standing(state, 'enemy').length < MAX_ENEMIES) {
-    const id = join(state, state.reserve.shift()!, catalog);
+    const def = state.reserve.shift()!;
+    // It has a letter where the battle has, had or will have another of its kind: as those on the field were named.
+    const several = state.units.some((u) => u.kind === def.id) || state.reserve.some((other) => other.id === def.id);
+    const id = join(state, def, catalog, several);
     state.events.push({ type: 'arrive', unit: id, left: state.reserve.length });
   }
 }
@@ -647,8 +654,7 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     // The turn passes over it from here on as it does over a wreck.
     if (unit.shaken) {
       unit.destroyed = true;
-      unit.fled = true;
-      state.events.push({ type: 'rout', unit: unit.id });
+      state.events.push({ type: 'rout', unit: unit.id, ...(currentMobility(unit, catalog) > 0 ? {} : { fixed: true as const }) });
       checkOutcome(state);
       continue;
     }
@@ -789,10 +795,14 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
   const enemyScale = opts.enemyScale ?? 1;
   // (An action is applied to a copy of the battle, so what comes on leaves the copy's list and never the one given here.)
   const reserve = opts.reserve ?? [];
-  const units = [playerUnit, ...enemies.map((e, i) => createEnemy(e, `enemy-${i}`, enemyName(enemies, i), i, enemyScale, catalog, opts.marks?.[i]))];
+  // A machine has a letter where there is another of its kind, on the field or still to come: the one that comes
+  // on later takes the next letter, and is not "B" beside one that has none.
+  const all = [...enemies, ...reserve];
+  const units = [playerUnit, ...enemies.map((e, i) => createEnemy(e, `enemy-${i}`, enemyName(all, i), i, enemyScale, catalog, opts.marks?.[i]))];
+  const named = (i: number): boolean => 'target' in objective && objective.target === i;
   const state: BattleState = {
     units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing', objective, enemyScale,
-    open: enemies.length + reserve.length > 1 && !units.some((unit) => unit.side === 'enemy' && leads(unit, objective)) && !reserve.some(willLead),
+    open: !opts.closed && all.length > 1 && !enemies.some((def, i) => leads(def, opts.marks?.[i], named(i))) && !reserve.some((def) => leads(def)),
     reserve,
     ...(objective.type === 'protect' ? { asset: { name: objective.name, hp: objective.hp, maxHp: objective.hp } } : {}),
     ...(opts.support ? { support: { ...opts.support } } : {}),
@@ -878,7 +888,8 @@ export function previewShot(
     hitChance: attacker.deadeye ? 100 : Math.min(95, Math.max(10, raw)),
     damage: shatter ? Math.max(dealt, core.ap + target.barrier) : dealt,
     shatter,
-    kills: atCore && (shatter || arrives >= core.ap),
+    // (Not of the one a contract wants driven off: no hit destroys that machine.)
+    kills: atCore && !spared(state, target) && (shatter || arrives >= core.ap),
     shots: shotsOf(weapon),
     salvo: weapon.trait === 'salvo',
   };
@@ -963,12 +974,15 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
   }
 }
 
+/** True of the pilot a contract wants driven off: they break away before the blow that would finish them, and their core keeps a point. */
+function spared(state: BattleState, target: UnitState): boolean {
+  return state.objective.type === 'driveOff' && objectiveTarget(state)?.id === target.id;
+}
+
 function damagePart(state: BattleState, target: UnitState, slot: FrameSlot, amount: number, overkill = false): void {
   const part = target.parts[slot]!;
   const before = part.ap;
-  // A pilot who is being driven off breaks away before the blow that would finish them: the core keeps a point.
-  const spared = slot === 'core' && state.objective.type === 'driveOff' && objectiveTarget(state)?.id === target.id;
-  part.ap = Math.max(spared ? Math.min(1, before) : 0, part.ap - amount);
+  part.ap = Math.max(slot === 'core' && spared(state, target) ? Math.min(1, before) : 0, part.ap - amount);
   if (before > 0 && part.ap === 0) {
     state.events.push({ type: 'partDestroyed', unit: target.id, part: slot });
     // Without arms the hand weapons are finished, and whatever charge they held goes with them.
@@ -1044,6 +1058,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   // The heat and the round stay spent, so a run ends in an overheat or an empty magazine if nothing
   // else stops it; and a weapon that was charged has to be charged again.
   let repaid = false;
+  const chainBefore = unit.chain;
   for (const target of [primary, ...others]) {
     const aimed: FrameSlot = target === primary ? action.part : 'core';
     // Each shot is rolled and previewed on its own, because an earlier one may have destroyed
@@ -1063,8 +1078,9 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       if (!hit) continue;
       struck.add(target);
       // What the blow did past any barrier, against the core at full strength: an overkill, if it is the end of the machine.
-      // (A shattering takes all that is left of a core and no more, so it is never one for that alone.)
-      const overkill = damage - absorbed >= OVERKILL * target.parts.core!.maxAp;
+      // (A shattering takes all that is left of a core and no more, so it is never one for that alone.) It is a
+      // thing the pilot does: of the pilot's own end it is not said.
+      const overkill = target.side === 'enemy' && damage - absorbed >= OVERKILL * target.parts.core!.maxAp;
       target.barrier -= absorbed;
       if (damage > absorbed) damagePart(state, target, appliedTo, damage - absorbed, overkill);
       if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
@@ -1082,14 +1098,16 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       // The objective may be met (or lost) by this very shot: the rest of the volley stays in the barrel.
       checkOutcome(state);
       if (state.outcome !== 'ongoing') break;
-      // Said while there is something left to turn the weapon on: the volley that ends a battle readies it for nothing.
-      if (target.destroyed && state.open) {
-        state.events.push({ type: 'momentum', unit: unit.id, weapon: action.weapon, chain: unit.chain });
-        // The second of a turn is seen by whatever still stands against the one who did it.
-        if (unit.chain === 2) shake(state, unit);
-      }
     }
     if (state.outcome !== 'ongoing') break;
+  }
+  // Said once, when the whole of the volley has landed, however many it destroyed, and only while the battle
+  // goes on: the volley that ends a battle readies the weapon for nothing.
+  if (unit.chain > chainBefore && state.outcome === 'ongoing') {
+    // The second of a turn is seen by whatever still stands against the one who did it: what the same volley
+    // went on to destroy saw nothing.
+    if (chainBefore < 2 && unit.chain >= 2) shake(state, unit);
+    state.events.push({ type: 'momentum', unit: unit.id, weapon: action.weapon, chain: unit.chain });
   }
 
   if (struck.size > 0) addDrive(unit, DRIVE_GAIN.landed);

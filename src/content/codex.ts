@@ -171,27 +171,27 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'momentum', title: 'MOMENTUM',
-    text: 'In a fight against ordinary machines, a volley that destroys one pays for itself: its weapon is ready again that turn and its energy comes back. Heat and ammunition stay spent; a charged weapon has to be charged again. Not where a boss, a named pilot, an elite, a Bailiff or an objective\'s target fights, nor against one machine.',
+    text: 'Where the banner says MOMENTUM (two or more machines, none of them a boss, a named pilot, an elite, a Bailiff or an objective\'s target), a volley that destroys one pays for itself: the weapon is ready again, its energy comes back, and the run is counted (CHAIN x2). Heat and rounds stay spent; a charged weapon must charge again.',
   },
   {
     id: 'shatter', title: 'SHATTER',
-    text: 'In the same fights, one blow that takes half of a machine\'s core, as it stood at full strength, finishes it: a heavy weapon goes through a light machine. The aiming line says DESTROYS when a hit would do it. It is never done to you.',
+    text: 'In the same fights, one hit of yours that takes half of a machine\'s core, as it stood at full strength, finishes it: a heavy weapon goes through a light machine. The aiming line says DESTROYS when a hit would do it. It is never done to you, and a wingman\'s fire does not do it.',
   },
   {
     id: 'overkill', title: 'OVERKILL',
-    text: 'One blow that carries at least one and a half times a machine\'s whole core, as it stood at full strength, and destroys it is an OVERKILL: the machine goes up harder and the word is over it. It is said in any fight and changes nothing. Finishing a machine that was already worn down is not one.',
+    text: 'One hit of yours that destroys a machine and does at least one and a half times its whole core, as it stood at full strength, is an OVERKILL: the machine goes up harder and the word is over it. It is said in any fight and changes nothing. How worn the machine already was makes no difference.',
   },
   {
     id: 'rout', title: 'THEY BREAK',
-    text: 'Destroy two machines in one turn of the same fights and whatever still stands against you loses its nerve. It is marked SHAKEN, and when its turn comes it breaks off and leaves the field without firing. A machine that leaves is not a kill: destroy it before its turn comes if you want it counted.',
+    text: 'Destroy two machines with your weapons in one turn of the same fights and whatever still stands against you loses its nerve. It is marked SHAKEN and is out of the fight when its turn comes, without firing: it leaves (ROUT), or shuts down if it cannot move (OFFLINE). That is not a kill: destroy it first if you want it counted.',
   },
   {
     id: 'swarm', title: 'SWARMS',
-    text: 'Some contracts field more machines than a field holds. Three stand at a time; as a round begins the next come on where others fell or left. The strip under the message bar says how many are still to come, and the battle is not won until that is none. The swarm on the open board pays by the head.',
+    text: 'Some contracts field more machines than a field holds. Three stand at a time; as a round begins the next come on where others fell or left. The line at the top of the field says how many are still to come, and the battle is not won until that is none. The swarm on the open board pays by the head.',
   },
   {
     id: 'renown', title: 'A NAME',
-    text: 'What you destroy earns you a name. Every machine counts one, a boss eight, a rank of the arena four, a telling of the story forty. There are five names; your record says which is yours and what the next asks. The banner of a battle carries it, and ordinary machines are told who is coming.',
+    text: 'What you destroy on contracts earns you a name. Every machine counts one, a boss eight, a rank of the arena four, a telling of the story forty. There are five names; your record says which is yours and what the next asks. A contract\'s banner carries it, unless a boss is coming in, and ordinary machines are told who is coming.',
   },
   {
     id: 'aim', title: 'AIMING',

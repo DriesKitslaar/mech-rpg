@@ -46,6 +46,8 @@ export interface Battle {
   talk?: TalkLine[];
   /** Elite enemies, by their place in `enemies`: which mark each one carries. */
   marks?: Partial<Record<number, EnemyMark>>;
+  /** Never an open battle, whatever is in it: see `BattleOptions.closed`. */
+  closed?: true;
 }
 
 export interface Mission {

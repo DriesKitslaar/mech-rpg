@@ -1,12 +1,16 @@
 import { chooseEnemyAction } from '../../src/core/ai';
 import {
-  HEAT_LIMIT, MAX_ENEMIES, OVERKILL, SHATTER, activeUnit, applyAction, createBattle, guardFactor, previewShot, type BattleState,
+  HEAT_LIMIT, MAX_ENEMIES, OVERKILL, SHATTER, activeUnit, applyAction, checkAction, createBattle, guardFactor, previewShot, type BattleState,
 } from '../../src/core/battle';
+import { PAY_PER_HEAD, swarmContract } from '../../src/core/board';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { newGame } from '../../src/core/game';
-import { NAME_AT, RENOWN } from '../../src/core/renown';
+import { NAME_AT, RENOWN, renownOf } from '../../src/core/renown';
+import { tallyBattle } from '../../src/core/stats';
+import { drillMission, drillSettlement, recordDrill } from '../../src/core/training';
 import type { Catalog, Weapon } from '../../src/core/types';
 import { ARENA, ARENA_ENEMIES } from '../../src/content/arena';
+import { BOARD_TEXT } from '../../src/content/board';
 import { MANUAL, UNITS, WORLD } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
@@ -83,69 +87,256 @@ describe('the manual on a pilot who outguns the field', () => {
   const word = (n: number): string => { expect(WORD[n], String(n)).toBeDefined(); return WORD[n]; };
   const rifle = CATALOG['wpn-rivet-rifle'] as Weapon;
   const doing = (damage: number): Catalog => ({ ...CATALOG, 'wpn-rivet-rifle': { ...rifle, damage } });
+  const HEAVY = doing(900);
+  const drone = ENEMIES['recon-drone'];
+  const turret = ENEMIES['gun-turret'];
   const shoot = (s: BattleState, target: string, catalog: Catalog): BattleState =>
     applyAction(s, { type: 'fire', weapon: 'rightHand', target, part: 'core' }, catalog, () => 0);
+  const felled = (s: BattleState): unknown[] => s.events.filter((e) => e.type === 'unitDestroyed');
+  const said = (s: BattleState, type: string): number => s.events.filter((e) => e.type === type).length;
 
-  test('a blow that takes half of a core finishes the machine, and the manual says half', () => {
-    expect(topic('shatter')).toContain(`one blow that takes ${word(SHATTER)} of a machine's core, as it stood at full strength, finishes it`);
-    // A drone's shell is fifty: twenty-five goes through it, twenty-four does not.
-    const through = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['recon-drone'], ENEMIES['gun-turret']], doing(25), 2));
-    expect(previewShot(through, 'player', 'rightHand', 'enemy-0', 'core', doing(25))).toMatchObject({ shatter: true, kills: true });
-    expect(previewShot(through, 'player', 'rightHand', 'enemy-0', 'core', doing(24))).toMatchObject({ shatter: false, kills: false });
-    // "The aiming line says DESTROYS", and it is never done to the pilot.
-    expect(topic('shatter')).toContain(`The aiming line says ${STRINGS.preview.kills}`);
-    const turret = weaponIn(ENEMIES['gun-turret'].build, 'rightHand', CATALOG) ?? weaponIn(ENEMIES['gun-turret'].build, 'shoulder', CATALOG)!;
-    const cruel: Catalog = { ...CATALOG, [turret.id]: { ...turret, damage: 5000 } };
-    const mine = createBattle(DEMO_BUILD, [ENEMIES['gun-turret'], ENEMIES['gun-turret']], cruel, 2);
-    const slot = Object.entries(ENEMIES['gun-turret'].build).find(([, id]) => id === turret.id)![0] as 'rightHand';
-    expect(previewShot(mine, 'enemy-0', slot, 'player', 'core', cruel).shatter).toBe(false);
-    expect(topic('shatter')).toMatch(/It is never done to you\.$/);
+  describe('Momentum', () => {
+    test('holds where the banner says so: two or more machines, none of which a fight is about', () => {
+      expect(topic('momentum')).toMatch(new RegExp(`^Where the banner says ${STRINGS.battleIntro.open} \\(two or more machines, none of them a boss, a named pilot, an elite, a Bailiff or an objective's target\\)`));
+      const open = (enemies: string[], opts: Parameters<typeof createBattle>[4] = {}): boolean => createBattle(DEMO_BUILD, enemies.map((id) => ENEMIES[id]), CATALOG, 2, opts).open;
+      expect(open(['recon-drone', 'gun-turret'])).toBe(true);
+      // Not against one machine; with more to come behind it, it is not one machine.
+      expect(open(['gun-turret'])).toBe(false);
+      expect(open(['gun-turret'], { reserve: [drone] })).toBe(true);
+      // A boss, a named pilot, an elite, a Bailiff, an objective's target: each beside a drone.
+      expect(open(['strip-miner', 'recon-drone'])).toBe(false);
+      expect(open(['magpie', 'recon-drone'])).toBe(false);
+      expect(open(['gun-turret', 'recon-drone'], { marks: { 0: 'swift' } })).toBe(false);
+      expect(open(['bailiff', 'recon-drone'])).toBe(false);
+      for (const objective of [{ type: 'leader', target: 0 }, { type: 'disable', target: 0 }, { type: 'driveOff', target: 0, share: 0.4 }] as const) {
+        expect(open(['light-mech', 'recon-drone'], { objective }), objective.type).toBe(false);
+      }
+    });
+
+    test('a volley that destroys one pays for itself: the weapon is ready again and its energy comes back; heat and rounds stay spent', () => {
+      expect(topic('momentum')).toContain('a volley that destroys one pays for itself: the weapon is ready again, its energy comes back, and the run is counted');
+      expect(topic('momentum')).toContain('Heat and rounds stay spent');
+      const before = toPlayer(createBattle(DEMO_BUILD, [drone, drone, turret], HEAVY, 2));
+      const had = before.units[0];
+      const after = shoot(before, 'enemy-0', HEAVY);
+      const have = after.units[0];
+      expect(after.units[1].destroyed).toBe(true);
+      expect(have.fired).not.toContain('rightHand');
+      expect(have.energy).toBe(had.energy);
+      expect(have.heat).toBe(had.heat + rifle.heat);
+      expect(have.ammo.rightHand).toBe(had.ammo.rightHand! - 1);
+      // A volley that destroys nothing pays for nothing.
+      const missed = applyAction(before, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' }, HEAVY, () => 0.999);
+      expect(missed.units[0].fired).toContain('rightHand');
+      expect(missed.units[0].energy).toBe(had.energy - rifle.energy);
+    });
+
+    test('the run is counted as the screen counts it, from the second machine of a turn', () => {
+      expect(topic('momentum')).toContain(`the run is counted (${STRINGS.fx.chain(2)})`);
+      let s = toPlayer(createBattle(DEMO_BUILD, [drone, drone, turret], HEAVY, 2));
+      s = shoot(s, 'enemy-0', HEAVY);
+      expect(s.units[0].chain).toBe(1);
+      s = shoot(s, 'enemy-1', HEAVY);
+      expect(s.units[0].chain).toBe(2);
+      expect(s.events.filter((e) => e.type === 'momentum').map((e) => (e.type === 'momentum' ? e.chain : 0))).toEqual([1, 2]);
+    });
+
+    test('a charged weapon must charge again: the kill gives back the firing of it, not the charge', () => {
+      expect(topic('momentum')).toMatch(/a charged weapon must charge again\.$/);
+      const gauss = CATALOG['wpn-gauss'] as Weapon;
+      expect(gauss.charge).toBe(true);
+      const catalog: Catalog = { ...CATALOG, 'wpn-gauss': { ...gauss, damage: 900 } };
+      const state = structuredClone(toPlayer(createBattle({ ...DEMO_BUILD, shoulder: 'wpn-gauss' }, [drone, drone, turret], catalog, 2)));
+      state.units[0].charged = ['shoulder'];
+      const after = applyAction(state, { type: 'fire', weapon: 'shoulder', target: 'enemy-0', part: 'core' }, catalog, () => 0);
+      expect(after.units[1].destroyed).toBe(true);
+      expect(after.units[0].charged).toEqual([]);
+      expect(checkAction(after, { type: 'fire', weapon: 'shoulder', target: 'enemy-1', part: 'core' }, catalog)).toBe('notCharged');
+      expect(checkAction(after, { type: 'charge', weapon: 'shoulder' }, catalog)).toBeNull();
+    });
   });
 
-  test('an overkill is one and a half times the whole core in one blow, in any fight, and the manual says so', () => {
-    expect(topic('overkill')).toContain(`at least ${word(OVERKILL)} times a machine's whole core, as it stood at full strength`);
-    const felled = (s: BattleState): unknown[] => s.events.filter((e) => e.type === 'unitDestroyed');
-    const open = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['recon-drone'], ENEMIES['gun-turret']], doing(75), 2));
-    expect(felled(shoot(open, 'enemy-0', doing(75)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }]);
-    expect(felled(shoot(open, 'enemy-0', doing(74)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0' }]);
-    // "It is said in any fight": of one machine too, where nothing else of this holds.
-    const duel = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], doing(75), 2));
-    expect(duel.open).toBe(false);
-    expect(felled(shoot(duel, 'enemy-0', doing(75)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }]);
-    // "Finishing a machine that was already worn down is not one."
-    const worn = structuredClone(open);
-    worn.units.find((u) => u.id === 'enemy-0')!.parts.core!.ap = 1;
-    expect(felled(shoot(worn, 'enemy-0', doing(74)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0' }]);
-    expect(topic('overkill')).toMatch(/Finishing a machine that was already worn down is not one\.$/);
-    // The word the manual gives is the word on the screen.
-    expect(topic('overkill')).toContain(`is an ${STRINGS.fx.overkill}:`);
+  describe('Shatter', () => {
+    test('one hit of the pilot\'s that takes half of a core finishes the machine, and the manual says half', () => {
+      expect(topic('shatter')).toContain(`one hit of yours that takes ${word(SHATTER)} of a machine's core, as it stood at full strength, finishes it`);
+      // A drone's shell is fifty: twenty-five goes through it, twenty-four does not.
+      const through = toPlayer(createBattle(DEMO_BUILD, [drone, turret], doing(25), 2));
+      expect(previewShot(through, 'player', 'rightHand', 'enemy-0', 'core', doing(25))).toMatchObject({ shatter: true, kills: true });
+      expect(previewShot(through, 'player', 'rightHand', 'enemy-0', 'core', doing(24))).toMatchObject({ shatter: false, kills: false });
+      // "As it stood at full strength": of a drone with ten left, twenty-four is enough, and is no shattering.
+      const worn = structuredClone(through);
+      worn.units[1].parts.core!.ap = 10;
+      expect(previewShot(worn, 'player', 'rightHand', 'enemy-0', 'core', doing(24))).toMatchObject({ shatter: false, kills: true });
+      expect(topic('shatter')).toContain(`The aiming line says ${STRINGS.preview.kills}`);
+    });
+
+    test('it is never done to the pilot, and a wingman\'s fire does not do it', () => {
+      expect(topic('shatter')).toMatch(/It is never done to you, and a wingman's fire does not do it\.$/);
+      const gun = weaponIn(turret.build, 'rightHand', CATALOG) ?? weaponIn(turret.build, 'shoulder', CATALOG)!;
+      const cruel: Catalog = { ...CATALOG, [gun.id]: { ...gun, damage: 5000 } };
+      const mine = createBattle(DEMO_BUILD, [turret, turret], cruel, 2);
+      const slot = Object.entries(turret.build).find(([, id]) => id === gun.id)![0] as 'rightHand';
+      expect(previewShot(mine, 'enemy-0', slot, 'player', 'core', cruel).shatter).toBe(false);
+      // The ally fires as a round begins, from the second: forty of a drone's fifty is four fifths of it, and the drone stands.
+      let s = toPlayer(createBattle(DEMO_BUILD, [drone, drone], doing(1), 2, { support: { name: 'Old Sixty', damage: 40 } }));
+      s = toPlayer(applyAction(s, { type: 'endTurn' }, doing(1)));
+      const struck = s.events.filter((e) => e.type === 'support');
+      expect(struck).toHaveLength(1);
+      expect(s.units.filter((u) => u.side === 'enemy').map((u) => [u.destroyed, u.parts.core!.ap]).sort((x, y) => Number(x[1]) - Number(y[1]))).toEqual([[false, 10], [false, 50]]);
+    });
   });
 
-  test('what still stands loses its nerve at the second machine destroyed in a turn, not the first, and the manual says two', () => {
-    expect(topic('rout')).toMatch(new RegExp(`^Destroy ${word(2)} machines in one turn of the same fights`));
-    const drone = ENEMIES['recon-drone'];
-    let s = toPlayer(createBattle(DEMO_BUILD, [drone, drone, ENEMIES['gun-turret']], doing(900), 2));
-    s = shoot(s, 'enemy-0', doing(900));
-    expect(s.units.some((u) => u.shaken)).toBe(false);
-    s = shoot(s, 'enemy-1', doing(900));
-    expect(s.units.filter((u) => u.shaken).map((u) => u.id)).toEqual(['enemy-2']);
-    // "It is marked SHAKEN", and it leaves "without firing": its turn is the end of it.
-    expect(topic('rout')).toContain(`It is marked ${STRINGS.tags.shaken}`);
-    s = applyAction(s, { type: 'endTurn' }, doing(900));
-    expect(s.units.find((u) => u.id === 'enemy-2')).toMatchObject({ fled: true, destroyed: true });
-    expect(s.events.some((e) => e.type === 'shot' && e.unit === 'enemy-2')).toBe(false);
+  describe('Overkill', () => {
+    test('one and a half times the whole core in one hit, in any fight, and the manual says so', () => {
+      expect(topic('overkill')).toContain(`does at least ${word(OVERKILL)} times its whole core, as it stood at full strength, is an ${STRINGS.fx.overkill}:`);
+      const open = toPlayer(createBattle(DEMO_BUILD, [drone, turret], doing(75), 2));
+      expect(felled(shoot(open, 'enemy-0', doing(75)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }]);
+      expect(felled(shoot(open, 'enemy-0', doing(74)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0' }]);
+      // "It is said in any fight": of one machine too, where nothing else of this holds.
+      expect(topic('overkill')).toContain('It is said in any fight and changes nothing.');
+      const duel = toPlayer(createBattle(DEMO_BUILD, [drone], doing(75), 2));
+      expect(duel.open).toBe(false);
+      expect(felled(shoot(duel, 'enemy-0', doing(75)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }]);
+    });
+
+    test('how worn the machine already was makes no difference, either way', () => {
+      expect(topic('overkill')).toMatch(/How worn the machine already was makes no difference\.$/);
+      const open = toPlayer(createBattle(DEMO_BUILD, [drone, turret], doing(75), 2));
+      for (const left of [50, 20, 1]) {
+        const worn = structuredClone(open);
+        worn.units[1].parts.core!.ap = left;
+        // Seventy-five is a drone and a half whatever is left of the drone; seventy-four is not, whatever is left of it.
+        expect(felled(shoot(worn, 'enemy-0', doing(75))), `75 on ${left}`).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }]);
+        expect(felled(shoot(worn, 'enemy-0', doing(74))), `74 on ${left}`).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0' }]);
+      }
+    });
   });
 
-  test('a field holds three, and the manual says three stand at a time', () => {
-    expect(topic('swarm')).toContain(`${word(MAX_ENEMIES)[0].toUpperCase()}${word(MAX_ENEMIES).slice(1)} stand at a time`);
+  describe('They Break', () => {
+    test('what still stands loses its nerve at the second machine destroyed with the pilot\'s weapons in a turn, not the first', () => {
+      expect(topic('rout')).toMatch(new RegExp(`^Destroy ${word(2)} machines with your weapons in one turn of the same fights`));
+      let s = toPlayer(createBattle(DEMO_BUILD, [drone, drone, turret], HEAVY, 2));
+      s = shoot(s, 'enemy-0', HEAVY);
+      expect(s.units.some((u) => u.shaken)).toBe(false);
+      s = shoot(s, 'enemy-1', HEAVY);
+      expect(s.units.filter((u) => u.shaken).map((u) => u.id)).toEqual(['enemy-2']);
+      expect(topic('rout')).toContain(`It is marked ${STRINGS.tags.shaken}`);
+    });
+
+    test('"with your weapons": what a module destroys, however many, shakes nobody and readies nothing', () => {
+      // A Shock Pulse over three machines, two of which have a point of core left.
+      const start = structuredClone(toPlayer(createBattle({ ...DEMO_BUILD, module: 'mod-shock' }, [drone, drone, turret], CATALOG, 2)));
+      start.units[1].parts.core!.ap = 1;
+      start.units[2].parts.core!.ap = 1;
+      const after = applyAction(start, { type: 'module' }, CATALOG);
+      expect(after.units.filter((u) => u.side === 'enemy').map((u) => u.destroyed)).toEqual([true, true, false]);
+      expect(after.units[0].chain).toBe(0);
+      expect(said(after, 'momentum') + said(after, 'shaken')).toBe(0);
+      // One by the pulse and then one by the rifle is one with a weapon: nobody loses their nerve.
+      const mixed = structuredClone(toPlayer(createBattle({ ...DEMO_BUILD, module: 'mod-shock' }, [drone, drone, turret], HEAVY, 2)));
+      mixed.units[1].parts.core!.ap = 1;
+      const one = shoot(applyAction(mixed, { type: 'module' }, HEAVY), 'enemy-1', HEAVY);
+      expect(one.units.filter((u) => u.side === 'enemy').map((u) => u.destroyed)).toEqual([true, true, false]);
+      expect(one.units[0].chain).toBe(1);
+      expect(said(one, 'shaken')).toBe(0);
+    });
+
+    test('it is out of the fight when its turn comes, without firing: it leaves, or shuts down if it cannot move, under the words the manual gives', () => {
+      expect(topic('rout')).toContain(`is out of the fight when its turn comes, without firing: it leaves (${STRINGS.fx.rout}), or shuts down if it cannot move (${STRINGS.fx.offline})`);
+      const shots = (s: BattleState): number => s.events.filter((e) => e.type === 'shot' && e.unit === 'enemy-2').length;
+      for (const [third, fixed] of [['light-mech', false], ['gun-turret', true]] as const) {
+        const shaken = shoot(shoot(toPlayer(createBattle(DEMO_BUILD, [drone, drone, ENEMIES[third]], HEAVY, 2)), 'enemy-0', HEAVY), 'enemy-1', HEAVY);
+        const s = applyAction(shaken, { type: 'endTurn' }, HEAVY);
+        expect(s.units.find((u) => u.id === 'enemy-2')).toMatchObject({ destroyed: true });
+        expect(s.events.filter((e) => e.type === 'rout')).toEqual([{ type: 'rout', unit: 'enemy-2', ...(fixed ? { fixed: true } : {}) }]);
+        // Whatever it fired before it lost its nerve, it fires nothing after.
+        expect(shots(s), third).toBe(shots(shaken));
+      }
+    });
+
+    test('"that is not a kill": the record counts what was destroyed, and a machine that left is not among it', () => {
+      expect(topic('rout')).toMatch(/That is not a kill: destroy it first if you want it counted\.$/);
+      let s = toPlayer(createBattle(DEMO_BUILD, [drone, drone, turret], HEAVY, 2));
+      s = shoot(shoot(s, 'enemy-0', HEAVY), 'enemy-1', HEAVY);
+      const left = applyAction(s, { type: 'endTurn' }, HEAVY);
+      expect(left.outcome).toBe('victory');
+      expect(tallyBattle(left).kills).toBe(2);
+      // Destroyed first, it is counted.
+      const taken = shoot(s, 'enemy-2', HEAVY);
+      expect(taken.outcome).toBe('victory');
+      expect(tallyBattle(taken).kills).toBe(3);
+    });
   });
 
-  test('a name is earned at the rates the manual gives, and there are as many names as it says', () => {
-    expect(topic('renown')).toContain(
-      `Every machine counts ${word(RENOWN.kill)}, a boss ${word(RENOWN.boss)}, a rank of the arena ${word(RENOWN.arena)}, a telling of the story ${word(RENOWN.cycle)}.`,
-    );
-    expect(topic('renown')).toContain(`There are ${word(NAME_AT.length)} names`);
-    expect(STRINGS.renown.names).toHaveLength(NAME_AT.length);
+  describe('Swarms', () => {
+    const swarm = (more: number): BattleState => toPlayer(createBattle(DEMO_BUILD, [drone, drone, drone], HEAVY, 2, { reserve: Array.from({ length: more }, () => drone) }));
+    const standing = (s: BattleState): number => s.units.filter((u) => u.side === 'enemy' && !u.destroyed).length;
+
+    test('a field holds three, and the manual says three stand at a time', () => {
+      expect(topic('swarm')).toContain(`${word(MAX_ENEMIES)[0].toUpperCase()}${word(MAX_ENEMIES).slice(1)} stand at a time`);
+      expect(standing(swarm(4))).toBe(MAX_ENEMIES);
+    });
+
+    test('the next come on as a round begins, and not before', () => {
+      expect(topic('swarm')).toContain('as a round begins the next come on where others fell or left');
+      let s = swarm(4);
+      const round = s.round;
+      s = shoot(s, 'enemy-0', HEAVY);
+      // The pilot's turn goes on with two standing and four behind them.
+      expect([s.round, standing(s), s.reserve.length, said(s, 'arrive')]).toEqual([round, 2, 4, 0]);
+      s = toPlayer(applyAction(s, { type: 'endTurn' }, HEAVY));
+      expect([s.round, standing(s), s.reserve.length, said(s, 'arrive')]).toEqual([round + 1, 3, 3, 1]);
+    });
+
+    test('the battle is not won until none are still to come', () => {
+      expect(topic('swarm')).toContain('the battle is not won until that is none');
+      let s = swarm(1);
+      for (const id of ['enemy-0', 'enemy-1', 'enemy-2']) s = shoot(s, id, HEAVY);
+      expect([standing(s), s.reserve.length, s.outcome]).toEqual([0, 1, 'ongoing']);
+      s = toPlayer(applyAction(s, { type: 'endTurn' }, HEAVY));
+      expect([standing(s), s.reserve.length, s.outcome]).toEqual([1, 0, 'ongoing']);
+      expect(shoot(s, 'enemy-3', HEAVY).outcome).toBe('victory');
+    });
+
+    test('the swarm on the open board pays by the head', () => {
+      expect(topic('swarm')).toMatch(/The swarm on the open board pays by the head\.$/);
+      const pays = new Set<number>();
+      for (let wins = 0; wins < 40; wins++) {
+        const mission = swarmContract(wins, 0, BOARD_TEXT);
+        const heads = mission.battles[0].enemies.length + mission.battles[0].reserve!.length;
+        expect(mission.reward).toBe(PAY_PER_HEAD * heads);
+        pays.add(mission.reward);
+      }
+      // Six heads and nine heads do not pay the same.
+      expect(pays.size).toBeGreaterThan(2);
+    });
+  });
+
+  describe('A Name', () => {
+    test('a name is earned at the rates the manual gives, and there are as many names as it says', () => {
+      expect(topic('renown')).toContain(
+        `Every machine counts ${word(RENOWN.kill)}, a boss ${word(RENOWN.boss)}, a rank of the arena ${word(RENOWN.arena)}, a telling of the story ${word(RENOWN.cycle)}.`,
+      );
+      expect(topic('renown')).toContain(`There are ${word(NAME_AT.length)} names`);
+      expect(STRINGS.renown.names).toHaveLength(NAME_AT.length);
+      const game = newGame(CATALOG, STARTER_BUILD, 'VANTA');
+      const with_ = (change: Partial<typeof game.stats>, more: Partial<typeof game> = {}) => renownOf({ ...game, ...more, stats: { ...game.stats, ...change } });
+      expect(renownOf(game)).toBe(0);
+      expect(with_({ kills: 7 })).toBe(7 * RENOWN.kill);
+      expect(with_({ bosses: 2 })).toBe(2 * RENOWN.boss);
+      expect(with_({}, { arenaRank: 3 })).toBe(3 * RENOWN.arena);
+      expect(with_({}, { cycle: 2 })).toBe(2 * RENOWN.cycle);
+    });
+
+    test('"on contracts": it is the record of contract work that is read, which the simulator and the Gauntlet do not write in', () => {
+      expect(topic('renown')).toMatch(/^What you destroy on contracts earns you a name\./);
+      // A drill passed changes the drills passed and what was paid for it, and nothing of the record.
+      const game = newGame(CATALOG, STARTER_BUILD, 'VANTA');
+      const drill = drillMission(game, DRILLS[0], 'Simulator');
+      const passed = recordDrill(game, drillSettlement(true, drill), drill);
+      expect(passed.stats).toEqual(game.stats);
+      expect(renownOf(passed)).toBe(renownOf(game));
+    });
   });
 });
 

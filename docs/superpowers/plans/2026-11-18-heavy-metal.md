@@ -14,7 +14,7 @@
 
 - A saved game from before this round loads and stays valid; nothing new is saved.
 - A fight that is not open (against one machine, or with a boss, a named pilot, an elite, a Bailiff or an objective's target in it) plays exactly as before, seed for seed, to its last event.
-- A hard fight stays hard: where a fight against a boss or a named pilot is won more often by more than a few seeds, the rule is changed, not the test.
+- A hard fight stays hard: where a fight against a boss or a named pilot is won more often by more than a few seeds, the rule is changed, not the test. (As the review measured it, this holds of the fight from the state it is entered in, which is seed for seed what it was. A boss met after an open battle of the same contract is met with more left, and that contract is won more often: see H6.)
 - Every new English text has its Dutch inside the room its kind has (`tests/content/dutch.test.ts`).
 - Under the calm setting nothing new flashes or shakes; nothing new holds a turn up.
 - No image is generated unless a part cannot do without; low quality only; the proxy's address and key are never committed.
@@ -36,7 +36,7 @@
 - [x] H3: Swarms (branch `feat/heavy-swarm`)
 - [x] H4: A name (branch `feat/heavy-name`)
 - [x] H5: Weight (branch `feat/heavy-weight`)
-- [ ] H6: Review, soak, APK, summary (branch `feat/heavy-review`)
+- [x] H6: Review, soak, APK, summary (branch `feat/heavy-review`)
 
 ## The measurements
 
@@ -181,6 +181,36 @@ Each part adds its column here.
 
 ## H6: Review, soak, APK, summary
 
-- [ ] A fresh reviewer reads the round against the spec and the Review Focus.
-- [ ] The faults a reviewer names are answered one by one; small faults put into the new code are found by the tests.
-- [ ] The whole suite, both halves of the browser tests, the soak, the last APK, the measurements before and after for the user.
+Two fresh reviewers, in parallel: the rules (with a differential check against the version before), and the screens, the text and the Dutch. Their findings and what was done with each are in the spec, under "What the review found, and what it changed". As built:
+
+**Rules** (`src/core/battle.ts`, `board.ts`, `mission.ts`, `campaign.ts`, `training.ts`)
+- [x] `momentum` is said once for a volley, when all of it has landed, after whatever lost its nerve at it; never when the volley ends the battle (a salvo used to say it for each kill, and to shake a machine it destroyed a moment later).
+- [x] `{ type: 'rout'; unit; fixed?: true }`: a machine that cannot move shuts down where it stands. `UnitState.fled` is gone (nothing read it): what was said of a machine is how it ended.
+- [x] `leads(def, mark?, named?)`: one function over what a battle is made from. `UnitState.leader` is gone.
+- [x] `BattleOptions.closed` / `Battle.closed`: never an open battle. `drillMission` sets it. Every drill, three seeds each, plays to its last event as on the version before (`tests/core/training.test.ts`).
+- [x] `ShotPreview.kills` is false of the machine a contract wants driven off: no hit destroys it.
+- [x] `overkill` is marked on machines of the other side only.
+- [x] A machine has a letter where the battle has, had or will have another of its kind, on the field or still to come.
+- [x] `SWARM_GUNSHIPS = 2`. Measured on the swarms of thirty to thirty-nine wins, six seeds each, Standard and Veteran: won 97 in a hundred or more by the fifth and sixth frames, none at the round limit; a grown pilot under ten rounds, the heaviest frame as sold under eighteen on Veteran (`tests/core/board3.test.ts`).
+- [x] The Gauntlet's depth is pinned (`tests/core/gauntlet.test.ts`): 7.9 floors over forty runs without a second life, 7.35 before the round.
+
+**Screens** (`src/ui/battleFlow.ts`, `battleScreen.ts`, `battleFx.ts`, `fxPaint.ts`, `src/platform/audio.ts`)
+- [x] What a kill gave back is said as it is of use (`STRINGS.momentum`: ready, charge, empty, boost, clear), stands in the bar as the turn is handed back and holds nothing up: a kill in an open fight hands the turn back in as many frames as in one that is led. The weapon menu opens on the weapon the kill readied. A weapon readied for nothing is not heard to be ready.
+- [x] Machines that come on together, or lose their nerve together, are said in one line (`arriveMany`, `shakenMany`).
+- [x] The strip counts machines still to come as far as the bar has said. A machine has its bars until it is seen to go. SHAKEN is the mark over a shaken machine's head, from when it is said, and a shaken bomb says nothing of its fuse.
+- [x] A machine that leaves takes its shadow, the light under it and the light of its eye with it. One that shuts down fades where it stands, under OFFLINE, to a hiss.
+- [x] What is written is clear of what else is written over the same unit (`WORD_GAP`): OVERKILL over BLOCK over the figure; the count of a run over OVERHEAT; one count at a time. A word is kept inside the field at the size it lands at.
+- [x] Not changed, with the reason in the spec: the aiming line's DESTROYS without ALL or xN; the calm pulse of a shaken machine; the strip's "+N" beside an objective.
+
+**Text** (`src/content/codex.ts`, `board.ts`, `nl/`, `docs/handleiding.md`)
+- [x] Swarm titles: "Rust Tide" for the one that was a story contract's, and a Dutch title for each of the eight.
+- [x] The six manual topics rewritten so that every sentence is true of the rules, each sentence held against them in `tests/content/claims.test.ts` (39 tests): where Momentum holds and what it gives back, half a core, one and a half times and "how worn makes no difference", two in a turn with the pilot's weapons, out of the fight without firing, not a kill, three at a time, as a round begins, not won until none are to come, paid by the head, what a name is earned by and where.
+- [x] The guide: the rule as it is, the banner's word, drills and the Gauntlet, a boss met fresher, OVERKILL in the reviewer's plainer Dutch, eleven drills, "kern" as the game calls it.
+
+**Tests and checks**
+- [x] The rules the review found unpinned: a bomb that goes off and a module's kill are no overkill; an ally's fire does not shatter; a module's kill is no link in a chain; a shaken machine is counted against what is protected while it stands, and leaves at its turn though overheated or staggered; a Second Wind is refused after a volley that paid for itself.
+- [x] The browser test of a swarm accounts for every machine (destroyed, on the record; or said to leave) and waits for a screen with no announcement on it. The soak flies a swarm in each of its six runs.
+- [x] Small faults put into the changes one at a time: the count is in the pull request.
+- [x] The whole suite, both halves of the browser tests, the soak, the last APK, the measurements before and after for the user.
+
+**After the review, measured again** (frames of the shop, automatic player): an overkill is 45, 65 and 9 kills in a hundred of the swarms of the fourth, fifth and sixth frames (with two gunships at most there are more drones in them), 15 to 55 for a grown pilot; 8, 8 and 1 in a hundred of the story.

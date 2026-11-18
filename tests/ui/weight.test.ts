@@ -9,7 +9,7 @@ import { SIDE_WORK } from '../../src/content/sidework';
 import { STRINGS } from '../../src/content/strings';
 import { SOUNDS, soundsForEvent } from '../../src/platform/audio';
 import { BattleFlow } from '../../src/ui/battleFlow';
-import { BattleFx, HARDEST_JOLT, OVERKILL_SIZE, OVERKILL_UP, WRECK_AT, WRECK_MS, WRECK_SIZE, sizeAt, type Scene } from '../../src/ui/battleFx';
+import { BattleFx, HARDEST_JOLT, OVERKILL_SIZE, OVERKILL_UP, WORD_GAP, WRECK_AT, WRECK_MS, WRECK_SIZE, sizeAt, type Scene } from '../../src/ui/battleFx';
 import { BattleScreen, INTRO_MS } from '../../src/ui/battleScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { COLORS } from '../../src/ui/widgets';
@@ -63,7 +63,7 @@ function made(state: BattleState, catalog: Catalog, opts: { calm?: boolean } = {
   };
   /** Fires the rifle at the first machine standing and lets it play out. Says how many frames that took. */
   const shoot = (): number => { const before = seen.frames; choose('fire'); choose('rightHand'); screen.onInput('confirm'); settle(); return seen.frames - before; };
-  const down = (): number => flow.state.units.filter((u) => u.side === 'enemy' && u.destroyed && !u.fled).length;
+  const down = (): number => flow.state.events.filter((e) => e.type === 'unitDestroyed' && e.unit !== 'player').length;
   /** Goes on looking for this many frames more, whatever the battle is doing. */
   const watch = (frames: number): void => { for (let i = 0; i < frames; i++) { screen.update(16); seen.frames++; look(); } };
   return { flow, screen, heard, seen, settle, choose, shoot, down, watch };
@@ -102,6 +102,8 @@ describe('an overkill', () => {
   test('the word stands clear of the figure of the hit that did it: the two are never written into each other', () => {
     const m = firstKill(doing(200));
     // Both were on the screen at once, at the size they settle to, for several frames: the figure was there first.
+    // (For the seven frames in which the word lands it is half as large again and lies over the top of the figure,
+    // which is fading by then and is drawn under it: see the last test of the next group but one.)
     expect(m.seen.gaps.length).toBeGreaterThanOrEqual(5);
     // As clear of it as the word for a blocked hit stands of its figure, which is twelve; and no further off than it
     // was put, for it is the word of that machine.
@@ -162,7 +164,7 @@ describe('an overkill', () => {
     expect(plain.frames).toBeGreaterThan(20);
   });
 
-  test('is not written over the pilot\'s own mech when it is the pilot who goes up that way', () => {
+  test('is never the pilot\'s own end, however hard the blow: no word over their mech, no slam, no harder blast', () => {
     const turret = CATALOG[ENEMIES['gun-turret'].build.rightHand ?? ENEMIES['gun-turret'].build.shoulder!] as Weapon;
     const cruel: Catalog = { ...CATALOG, [turret.id]: { ...turret, damage: 5000 } };
     const m = lucky((seed) => {
@@ -171,12 +173,13 @@ describe('an overkill', () => {
       for (let turn = 0; turn < 6 && made1.flow.phase === 'action'; turn++) { made1.choose('endTurn'); made1.settle(); }
       return made1.flow.state.outcome === 'defeat' ? made1 : null;
     });
-    expect(m.flow.state.events.some((e) => e.type === 'unitDestroyed' && e.unit === 'player' && e.overkill)).toBe(true);
+    // The battle does not call it one: five thousand in a hit is many times the pilot's core, and nothing says so.
+    expect(m.flow.state.events.filter((e) => e.type === 'unitDestroyed')).toEqual([{ type: 'unitDestroyed', unit: 'player' }]);
     expect(m.seen.words.has('OVERKILL')).toBe(false);
     // Nor does the pilot's mech go up any harder for it: its last blast is the one any mech of its size has.
     const largest = [...m.seen.blasts].sort((a, b) => a - b).at(-1)!;
     expect(largest).toBeCloseTo(WRECK_SIZE * sizeAt(m.screen.motion.at.depth('player')), 1);
-    expect(soundsForEvent({ type: 'unitDestroyed', unit: 'player', overkill: true }, 'kinetic', 0).map((s) => s.name)).toEqual(['unitDestroyed']);
+    // What is heard of an overkill is the bang and, under it, the slam.
     expect(soundsForEvent({ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }, 'kinetic', 0).map((s) => s.name)).toEqual(['unitDestroyed', 'slam']);
     expect(soundsForEvent({ type: 'unitDestroyed', unit: 'enemy-0' }, 'kinetic', 0).map((s) => s.name)).toEqual(['unitDestroyed']);
   });
@@ -213,7 +216,7 @@ describe('an overkill that ends the battle', () => {
     expect(over.heard).toEqual(plain.heard);
   });
 
-  test('of the pilot, with a press that has gone on to the result before it is seen: the pilot\'s mech goes up as any does, no harder', () => {
+  test('the pilot destroyed by such a blow, with a press that has gone on to the result before it is seen: their mech goes up as any does', () => {
     const turret = CATALOG[ENEMIES['gun-turret'].build.rightHand ?? ENEMIES['gun-turret'].build.shoulder!] as Weapon;
     const cruel: Catalog = { ...CATALOG, [turret.id]: { ...turret, damage: 5000 } };
     const m = lucky((seed) => {
@@ -227,7 +230,7 @@ describe('an overkill that ends the battle', () => {
       for (let i = 0; i < 6 && tried.flow.phase !== 'result'; i++) tried.screen.onInput('confirm');
       return tried.flow.phase === 'result' ? tried : null;
     });
-    expect(m.flow.state.events.some((e) => e.type === 'unitDestroyed' && e.unit === 'player' && e.overkill)).toBe(true);
+    expect(m.flow.state.events.filter((e) => e.type === 'unitDestroyed')).toEqual([{ type: 'unitDestroyed', unit: 'player' }]);
     m.seen.blasts.clear();
     for (let i = 0; i < 90; i++) {
       m.watch(1);
@@ -318,10 +321,162 @@ describe('what the effects make of an overkill, a piece at a time', () => {
     expect(first).toBeGreaterThan(3);
     expect(page.order.slice(first).every((step) => step.kind === 'text')).toBe(true);
     expect(page.texts.filter((t) => t.color !== EDGE).map((t) => t.text).sort()).toEqual(['-200', 'OVERKILL']);
+    // And of the two the word, which came later, is written last: where it lands over the figure it is the word that is read.
+    const names = page.texts.map((t) => t.text);
+    expect(names.lastIndexOf('-200')).toBeLessThan(names.indexOf('OVERKILL'));
+    const landing = new BattleFx(scene());
+    landing.onEvent({ type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit: true, damage: 200 });
+    landing.update(160 + 450);
+    landing.onEvent(over);
+    landing.update(16);
+    const early = record((ctx) => landing.draw(ctx)).texts;
+    expect(early.find((t) => t.text === 'OVERKILL')!.size).toBeGreaterThan(16);
+    expect(early.map((t) => t.text).lastIndexOf('-200')).toBeLessThan(early.map((t) => t.text).indexOf('OVERKILL'));
     // The word is that far above where a figure is written, on the machine's own middle.
     const word = page.texts.find((t) => t.text === 'OVERKILL' && t.color !== EDGE)!;
     expect(word.x).toBe(240);
     expect(OVERKILL_UP).toBe(24);
+  });
+});
+
+describe('words that are written over one unit at one moment stand clear of each other', () => {
+  const scene = (enemyX = 240): Scene => ({
+    muzzle: (id) => (id === 'player' ? { x: 100, y: 50 } : { x: enemyX - 20, y: 60 }),
+    hitPoint: (id) => (id === 'player' ? { x: 80, y: 70 } : { x: enemyX, y: 60 }),
+    centre: (id) => (id === 'player' ? { x: 80, y: 80 } : { x: enemyX, y: 60 }),
+    facing: (id) => (id === 'player' ? 1 : -1),
+    damageType: () => 'kinetic',
+    isMelee: () => false,
+  });
+  /** Where each word that is playing is written, top row first: its own colour, not its dark edge. */
+  const written = (fx: BattleFx) => record((ctx) => fx.draw(ctx)).texts.filter((t) => t.color !== EDGE).sort((a, b) => a.y - b.y);
+
+  test('an overkill through a barrier: the word is over BLOCK, which is over the figure', () => {
+    expect(WORD_GAP).toBe(12);
+    const fx = new BattleFx(scene());
+    fx.onEvent({ type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit: true, damage: 192, absorbed: 8 });
+    // The figure and the word for the barrier land with the shot; the machine goes up a little later.
+    fx.update(160 + 300);
+    fx.onEvent({ type: 'unitDestroyed', unit: 'enemy-0', overkill: true });
+    // Once the word has settled to its size: three rows, a row apart or more.
+    fx.update(140);
+    const rows = written(fx);
+    expect(rows.map((t) => t.text)).toEqual(['OVERKILL', 'BLOCK 8', '-192']);
+    expect(rows.every((t) => t.size === 16)).toBe(true);
+    expect(rows[1].y - rows[0].y).toBeGreaterThanOrEqual(WORD_GAP);
+    expect(rows[2].y - rows[1].y).toBe(WORD_GAP);
+    // Without a barrier there is nothing to go over, and the word is where it always is.
+    const bare = new BattleFx(scene());
+    bare.onEvent({ type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit: true, damage: 200 });
+    bare.update(160 + 300);
+    bare.onEvent({ type: 'unitDestroyed', unit: 'enemy-0', overkill: true });
+    bare.update(140);
+    expect(written(bare)[0].y - rows[0].y).toBe(WORD_GAP);
+    // Nor for a barrier that took part of a hit on somebody else, or long before.
+    const other = new BattleFx(scene());
+    other.onEvent({ type: 'shot', unit: 'enemy-0', weapon: 'rightHand', target: 'player', part: 'core', appliedTo: 'core', hit: true, damage: 5, absorbed: 8 });
+    other.update(160 + 300);
+    other.onEvent({ type: 'unitDestroyed', unit: 'enemy-0', overkill: true });
+    other.update(140);
+    expect(written(other).find((t) => t.text === 'OVERKILL')!.y).toBe(written(bare)[0].y);
+    const old = new BattleFx(scene());
+    old.onEvent({ type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit: true, damage: 192, absorbed: 8 });
+    old.update(160 + 900);
+    old.onEvent({ type: 'unitDestroyed', unit: 'enemy-0', overkill: true });
+    old.update(140);
+    expect(written(old).map((t) => [t.text, t.y])).toEqual([['OVERKILL', written(bare)[0].y]]);
+  });
+
+  test('a run that ends in an overheat: the count stands over the word for the heat', () => {
+    const fx = new BattleFx(scene());
+    fx.onEvent({ type: 'momentum', unit: 'player', weapon: 'rightHand', chain: 3 });
+    fx.onEvent({ type: 'overheat', unit: 'player' });
+    fx.update(140);
+    const rows = written(fx);
+    expect(rows.map((t) => t.text)).toEqual(['CHAIN x3', 'OVERHEAT']);
+    expect(rows[1].y - rows[0].y).toBe(WORD_GAP);
+    expect(rows[0].x).toBe(rows[1].x);
+  });
+
+  test('a pilot who presses on: one count at a time, the last making way for the next', () => {
+    const fx = new BattleFx(scene());
+    fx.onEvent({ type: 'momentum', unit: 'player', weapon: 'rightHand', chain: 2 });
+    fx.update(60);
+    expect(fx.texts()).toEqual(['CHAIN x2']);
+    fx.onEvent({ type: 'momentum', unit: 'player', weapon: 'rightHand', chain: 3 });
+    fx.update(1);
+    expect(fx.texts()).toEqual(['CHAIN x3']);
+    // Nothing else that is written is taken away by it.
+    fx.onEvent({ type: 'overheat', unit: 'player' });
+    fx.onEvent({ type: 'momentum', unit: 'player', weapon: 'rightHand', chain: 4 });
+    fx.update(1);
+    expect(fx.texts().sort()).toEqual(['CHAIN x4', 'OVERHEAT']);
+  });
+
+  test('a word over a machine at the edge of the field is kept inside it, as wide as it lands: from the camera\'s home and from twice as close', () => {
+    // At the size a word lands at a letter is 9.6 wide: OVERKILL is 76.8, and with two pixels to spare its middle is 40.4 from an edge.
+    for (const [enemyX, wanted] of [[300, 310 - 40.4], [8, 40.4], [200, 200]] as const) {
+      const fx = new BattleFx(scene(enemyX));
+      fx.onEvent({ type: 'unitDestroyed', unit: 'enemy-0', overkill: true });
+      fx.update(1);
+      const [word] = written(fx);
+      expect(word.text).toBe('OVERKILL');
+      expect(word.size).toBe(24);
+      expect(word.x).toBeCloseTo(wanted, 0);
+      expect(word.left).toBeGreaterThanOrEqual(0);
+      expect(word.right).toBeLessThanOrEqual(310);
+      // From twice as close, with the view against the edge the machine is at (it shows half the field), it is still inside.
+      const viewLeft = enemyX > 155 ? 155 : 0;
+      expect((word.left - viewLeft) * 2).toBeGreaterThanOrEqual(0);
+      expect((word.right - viewLeft) * 2).toBeLessThanOrEqual(310);
+    }
+    // A figure is narrow and stays where it was written unless it is all but on the edge.
+    const fx = new BattleFx(scene(300));
+    fx.onEvent({ type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit: true, damage: 7 });
+    fx.update(170);
+    // (Two letters are 19.2 wide as they land: with the two pixels, its middle is 11.6 from the edge, drawn on the whole pixel.)
+    expect(written(fx).map((t) => [t.text, t.x])).toEqual([['-7', 298]]);
+    const inside = new BattleFx(scene(280));
+    inside.onEvent({ type: 'shot', unit: 'player', weapon: 'rightHand', target: 'enemy-0', part: 'core', appliedTo: 'core', hit: true, damage: 7 });
+    inside.update(170);
+    expect(written(inside).map((t) => [t.text, t.x])).toEqual([['-7', 280]]);
+  });
+});
+
+describe('what the effects make of a machine that is out of the fight', () => {
+  const scene: Scene = {
+    muzzle: (id) => (id === 'player' ? { x: 100, y: 50 } : { x: 220, y: 60 }),
+    hitPoint: (id) => (id === 'player' ? { x: 80, y: 70 } : { x: 240, y: 60 }),
+    centre: (id) => (id === 'player' ? { x: 80, y: 80 } : { x: 240, y: 60 }),
+    facing: (id) => (id === 'player' ? 1 : -1),
+    damageType: () => 'kinetic',
+    isMelee: () => false,
+  };
+  const playing = (event: BattleEvent, ms: number) => {
+    const fx = new BattleFx(scene);
+    fx.onEvent(event);
+    fx.update(ms);
+    return { fx, page: record((ctx) => fx.draw(ctx)) };
+  };
+
+  test('one that leaves goes on a jet, which is drawn behind it and lights the field; one that shuts down has neither', () => {
+    const leaves = playing({ type: 'rout', unit: 'enemy-0' }, 200);
+    // The jet and the lines it leaves are drawn, and then the word.
+    expect(leaves.page.order.filter((step) => step.kind !== 'text').length).toBeGreaterThan(5);
+    expect(leaves.fx.lights()).toHaveLength(1);
+    expect(leaves.fx.lights()[0].color).toBe(COLORS.energy);
+    expect(leaves.fx.texts()).toEqual(['ROUT']);
+    // It moves, away from the pilot.
+    expect(leaves.fx.transform('enemy-0').dx).toBeGreaterThan(0);
+    const dark = playing({ type: 'rout', unit: 'enemy-0', fixed: true }, 200);
+    // Nothing but the word is drawn for it, nothing lights the field, and it does not stir: it only thins.
+    expect(dark.page.order.every((step) => step.kind === 'text')).toBe(true);
+    expect(dark.page.order.length).toBeGreaterThan(0);
+    expect(dark.fx.lights()).toEqual([]);
+    expect(dark.fx.texts()).toEqual(['OFFLINE']);
+    expect(dark.fx.transform('enemy-0')).toMatchObject({ dx: 0, lift: 0, trail: 0, trailY: 0 });
+    expect(dark.fx.transform('enemy-0').alpha).toBeLessThan(1);
+    expect(dark.fx.transform('enemy-0').alpha).toBeCloseTo(leaves.fx.transform('enemy-0').alpha, 5);
   });
 });
 
@@ -367,9 +522,10 @@ describe('a run of kills', () => {
 });
 
 describe('a machine that leaves', () => {
-  const routed = () => lucky((seed) => {
+  /** Two drones fall in one turn; what is left loses its nerve, and the turn is ended. */
+  const routed = (third: string) => lucky((seed) => {
     const catalog = doing(900);
-    const m = made(battle(['recon-drone', 'recon-drone', 'gun-turret'], catalog, seed), catalog);
+    const m = made(battle(['recon-drone', 'recon-drone', third], catalog, seed), catalog);
     m.settle();
     for (let n = 1; n <= 2; n++) { m.shoot(); if (m.down() !== n) return null; }
     m.seen.words.clear();
@@ -379,15 +535,25 @@ describe('a machine that leaves', () => {
   });
 
   test('has the word over it as it goes', () => {
-    const m = routed();
-    expect(m.flow.state.units[3].fled).toBe(true);
+    const m = routed('light-mech');
+    expect(m.flow.state.events.filter((e) => e.type === 'rout')).toEqual([{ type: 'rout', unit: 'enemy-2' }]);
     expect(m.seen.words.get('ROUT')).toMatchObject({ color: COLORS.accent });
     expect(m.seen.words.get('ROUT')!.x).toBeGreaterThan(180);
+    expect(m.seen.words.has('OFFLINE')).toBe(false);
+  });
+
+  test('one that cannot move has another word over it: it has not run anywhere', () => {
+    const m = routed('gun-turret');
+    expect(m.flow.state.events.filter((e) => e.type === 'rout')).toEqual([{ type: 'rout', unit: 'enemy-2', fixed: true }]);
+    expect(m.seen.words.get('OFFLINE')).toMatchObject({ color: COLORS.accent });
+    expect(m.seen.words.get('OFFLINE')!.x).toBeGreaterThan(180);
+    expect(m.seen.words.has('ROUT')).toBe(false);
   });
 
   test('in Dutch', () => {
     setLanguage('nl');
-    expect(routed().seen.words.has('VLUCHT')).toBe(true);
+    expect(routed('light-mech').seen.words.has('VLUCHT')).toBe(true);
+    expect(routed('gun-turret').seen.words.has('UIT')).toBe(true);
   });
 });
 

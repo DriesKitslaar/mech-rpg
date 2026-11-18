@@ -259,6 +259,23 @@ describe('what a run pays and how far it gets', () => {
     expect(depths[6]).toBeGreaterThanOrEqual(4);
     expect(depths[11]).toBeLessThan(30);
   });
+
+  test('how far that is, pinned: a little further than before a kill readied the weapon, and no more than that', () => {
+    // More than half the floors of a run are fights against ordinary machines, where a kill readies the weapon and a
+    // heavy hit goes through a light machine. Over these forty runs, with no second life, the run before those rules
+    // cleared 7.35 floors on average and eleven reached the tenth; with them it clears 7.9 and fourteen do. (A player
+    // who takes the second life gets about a floor further than before: 9.6 for 8.6.) The floors with a warden or an
+    // elite on them are the fights they were.
+    const depths = Array.from({ length: 40 }, (_, i) => floorsCleared(play((i + 1) * 7919 + 1, 60)));
+    const mean = depths.reduce((sum, depth) => sum + depth, 0) / depths.length;
+    expect(mean).toBeGreaterThan(7.4);
+    expect(mean).toBeLessThan(8.5);
+    // The deep floors stay rare: ten is reached by fewer than half, twenty by nobody here.
+    const tenth = depths.filter((depth) => depth >= 10).length;
+    expect(tenth).toBeGreaterThanOrEqual(11);
+    expect(tenth).toBeLessThanOrEqual(17);
+    expect(depths.filter((depth) => depth >= 20).length).toBe(0);
+  });
 });
 
 describe('a run kept in a save', () => {

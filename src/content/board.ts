@@ -52,7 +52,8 @@ export const BOARD_TEXT: BoardText = {
   ],
   // Read where it is used, so that it is in whatever language is set then.
   battles: (count) => STRINGS.board.battles(count),
-  swarmTitles: ['Drone Season', 'Locust Hour', 'Nest Clearance', 'Scrap Tide', 'Flush Order', 'Pest Notice', 'Night Hatch', 'Loose Stock'],
+  // No contract of the story or the side work is called any of these: two rows of one name in a list are one too many.
+  swarmTitles: ['Drone Season', 'Locust Hour', 'Nest Clearance', 'Rust Tide', 'Flush Order', 'Pest Notice', 'Night Hatch', 'Loose Stock'],
   swarm: 'A nest has woken up: light machines, far more of them than a field holds. As one falls the next comes on. The client pays by the head, for every one of them.',
   elite: {
     armoured: 'Among them: an armoured elite, far thicker. Pays extra.',

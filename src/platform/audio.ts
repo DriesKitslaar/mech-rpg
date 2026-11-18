@@ -116,11 +116,12 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
     case 'shot': return [{ name: SHOT[damageType], delayMs: 0 }, { name: event.hit ? 'hit' : 'miss', delayMs: flightMs }];
     case 'partDestroyed': return now('partDestroyed');
     // A machine that went up to far more than was needed is heard to: the slam of a blow that ends things, under the blast.
-    case 'unitDestroyed': return event.overkill && event.unit !== 'player' ? [...now('unitDestroyed'), ...now('slam')] : now('unitDestroyed');
+    case 'unitDestroyed': return event.overkill ? [...now('unitDestroyed'), ...now('slam')] : now('unitDestroyed');
     case 'momentum': return now(event.chain >= 3 ? 'chain3' : event.chain === 2 ? 'chain2' : 'ready');
     case 'arrive': return now('launch');
     case 'shaken': return now('stagger');
-    case 'rout': return now('boost');
+    // One that leaves is heard to go; one that cannot move is heard to go quiet.
+    case 'rout': return now(event.fixed ? 'cool' : 'boost');
     case 'boost': return now('boost');
     case 'guard': return now('guard');
     case 'stagger': return now('stagger');
