@@ -683,6 +683,8 @@ const epilogue = (verdict: Verdict, faction: Faction): Message => ({
 
 /** Letters from the arena office: no face, only letterhead. */
 const OFFICE = { from: 'Arena Office' };
+/** Letters from a clerk who retired from the licensing board and kept copies: no face, and no name either. */
+const DESK = { from: 'A Tidy Desk' };
 
 export const MESSAGES: Message[] = [
   {
@@ -772,6 +774,14 @@ export const MESSAGES: Message[] = [
   },
   ...FACTIONS.map(warWon),
   {
+    ...DESK, id: 'tidy-desk', subject: 'Enclosed', after: 'chose:sixty=keep|chose:sixty=file',
+    body: [
+      'I filed things for the board for forty years. Mostly where I was told to. Once where I was paid to, and you have that file now.',
+      'I am retired. I kept copies. I will send a pilot what that pilot has been near, and no more than that. I like a tidy desk.',
+      'What you find, your database keeps under FOUND. Some of it you will have picked up yourself before you ever heard from me.',
+    ],
+  },
+  {
     id: 'notice', from: 'Meridian Mutual', portrait: 'portrait-actuary', subject: 'NOTICE OF DEFAULT', after: 'finale',
     body: [
       'This notice concerns policy VRN-1, War and Civil Disturbance, held jointly by Hadron Mining, Lumen Systems and the association known as the Undertow.',
@@ -794,6 +804,14 @@ export const MESSAGES: Message[] = [
     ],
   },
   ...VERDICTS.flatMap((verdict) => FACTIONS.map((faction) => epilogue(verdict, faction))),
+  {
+    ...DESK, id: 'tidy-desk-again', subject: 'One more file', after: 'verdict',
+    body: [
+      'So it is decided. I had hoped to be out of envelopes by now.',
+      'Your frame has a recorder. It was never wiped. It was only never asked anything. It knows the sluice, and it knows it from before your time.',
+      'Fly the war again and let it listen. There are papers I can only send to a pilot who has been to the same place twice.',
+    ],
+  },
   {
     ...OFFICE, id: 'mirror-match', subject: 'A proposal', after: 'arena:3',
     body: [

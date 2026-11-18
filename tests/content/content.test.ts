@@ -11,6 +11,7 @@ import { TALK_CHARS, TALK_LINES } from '../../src/ui/battleScreen';
 import { BRIEFING_CHARS, briefingRows, objectiveLines } from '../../src/ui/briefingScreen';
 import { SCENE_LINES, sceneRows } from '../../src/ui/sceneScreen';
 import { charsFor, wrap } from '../../src/ui/widgets';
+import { unknownTerms } from '../helpers/conditions';
 
 /** What may sit in each slot: a shield goes where a left-hand weapon would. */
 const SLOT_KINDS: Record<keyof Build, string[]> = {
@@ -388,7 +389,7 @@ describe('campaign content', () => {
   test('messages have unique ids and wait for events that exist', () => {
     expect(new Set(MESSAGES.map((m) => m.id)).size).toBe(MESSAGES.length);
     for (const message of MESSAGES) {
-      expect(isKeyword(message.after) || MISSIONS.some((m) => m.id === message.after), message.id).toBe(true);
+      expect(unknownTerms(message.after), message.id).toEqual([]);
       if (message.portrait) expect(message.portrait in SPRITES, message.portrait).toBe(true);
       // The body panel of the inbox holds fourteen lines.
       const rows = message.body.reduce((sum, paragraph) => sum + wrap(paragraph, BRIEFING_CHARS).length, 0) + (message.body.length - 1) * 0.5;

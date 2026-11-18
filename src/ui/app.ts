@@ -9,7 +9,7 @@ import {
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
-import { metByRecord, openEntries, type Entry } from '../core/codex';
+import { isFind, metByRecord, openEntries, type Entry, type Find } from '../core/codex';
 import { applySettlement, debtRelief, settle, type Settlement } from '../core/economy';
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import {
@@ -28,6 +28,7 @@ import type { BuildError, Catalog, EnemyDef, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
 import { WORLD } from '../content/codex';
+import { FINDS } from '../content/finds';
 import { DRILLS } from '../content/drills';
 import { MEDALS } from '../content/medals';
 import { MESSAGES, MISSIONS } from '../content/missions';
@@ -182,6 +183,17 @@ function entryToasts(opened: Entry[]): Toast[] {
   if (opened.length === 1) return [{ id: `entry:${opened[0].id}`, heading: D.toast, title: opened[0].title, sound: 'entry' }];
   return [{ id: `entries:${opened.length}`, heading: D.toast, title: D.newEntries(opened.length), sound: 'entry' }];
 }
+
+/** One announcement for a find, by its name, or one for all of them when there are several. */
+function findToasts(found: Find[]): Toast[] {
+  const D = STRINGS.database;
+  if (found.length === 0) return [];
+  if (found.length === 1) return [{ id: `find:${found[0].id}`, heading: D.findToast, title: found[0].title, sound: 'entry' }];
+  return [{ id: `finds:${found.length}`, heading: D.findToast, title: D.newFinds(found.length), sound: 'entry' }];
+}
+
+/** Everything the database opens as the story goes: what comes to light about the world, and what is found. */
+const CODEX: Entry[] = [...WORLD, ...FINDS];
 
 /** The part of the music player the app steers. */
 export interface MusicControl {
@@ -655,14 +667,14 @@ export class App {
     // The database does not run ahead of the story: while a page of story is waiting to be shown,
     // nothing opens, so what that page is about to reveal is not announced before it.
     const waiting = dueScenes(awarded, SCENES, MISSIONS).length > 0;
-    const { game, opened } = waiting ? { game: awarded, opened: [] } : openEntries(awarded, WORLD, MISSIONS);
+    const { game, opened } = waiting ? { game: awarded, opened: [] } : openEntries(awarded, CODEX, MISSIONS);
     // An Overdrive that the pilot's level has just opened is said once, so the page it is fitted on gets looked at.
     const before = this.game;
     const drives = before ? OVERDRIVES.filter((id) => overdriveOpen(game, id) && !overdriveOpen(before, id)) : [];
     // Several at once (a pilot who jumps levels) are one announcement, like several medals are.
     const driveToasts: Toast[] = drives.length === 0 ? []
       : [{ id: `overdrive:${drives.join('+')}`, heading: STRINGS.overdrive.opened, title: drives.map((id) => STRINGS.overdrive.names[id]).join(', '), sound: 'entry' }];
-    this.toasts.push(...medalToasts(earned), ...entryToasts(opened), ...driveToasts);
+    this.toasts.push(...medalToasts(earned), ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
     this.game = game;
     this.saveFailed = !this.file.save(game);
     // Options that could not be stored when they were changed go with the next thing that can be.

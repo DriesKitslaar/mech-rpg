@@ -237,6 +237,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and your arena rank. Enemies get tougher and contracts pay better each time.',
   },
   {
+    id: 'finds', title: 'WHAT IS FOUND',
+    text: 'Some of what you do leaves something behind: a paper, a brass check. The database keeps them under FOUND, the papers by their numbers. One you have not found shows a clue in its place. Nothing found is lost when the story starts over.',
+  },
+  {
     id: 'difficulty', title: 'DIFFICULTY',
     text: 'Story takes a fifth off enemy armour and firepower; Veteran adds a fifth. Change it in the options whenever you like. Fast battles play everything at two and a half times the speed.',
   },

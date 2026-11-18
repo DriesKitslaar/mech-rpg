@@ -1,6 +1,8 @@
 import { reached } from '../core/campaign';
+import { checksHeld, type Find } from '../core/codex';
 import type { GameState } from '../core/game';
 import { JUKEBOX, MANUAL, PEOPLE, UNITS, WORLD, type Person } from '../content/codex';
+import { FINDS } from '../content/finds';
 import { MISSIONS } from '../content/missions';
 import { SONGS, type SongName } from '../content/songs';
 import { songSeconds, type TrackName } from '../platform/music';
@@ -14,8 +16,17 @@ import { unitPage } from './unitPage';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawTabs, drawText, wrap } from './widgets';
 
 const D = STRINGS.database;
-export type DatabasePage = 'units' | 'people' | 'world' | 'manual' | 'music';
-const PAGES: DatabasePage[] = ['units', 'people', 'world', 'manual', 'music'];
+export type DatabasePage = 'units' | 'people' | 'world' | 'finds' | 'manual' | 'music';
+const PAGES: DatabasePage[] = ['units', 'people', 'world', 'finds', 'manual', 'music'];
+
+/**
+ * A find's row in the list: a paper by its number and its name, a check by what is stamped on it.
+ * One that is not found keeps its name to itself; a paper still shows its number, so the gaps can be seen.
+ */
+export function findLabel(find: Find, found: boolean): string {
+  if (find.kind === 'check') return found ? titleCase(find.title) : `${D.check} ${D.unknown}`;
+  return `${String(find.no).padStart(2, '0')} ${found ? titleCase(find.title) : D.unknown}`;
+}
 
 /**
  * Whether somebody's page has opened: the story has got as far as them, or they have been met in
@@ -35,6 +46,9 @@ export const PAGE_CHARS = charsFor(PAGE.w - 12);
 const PICTURE_H = 106;
 /** A face is drawn at the size it was painted. */
 const PORTRAIT = 56;
+/** The most lines a find's text may take on its page, and its clue: both stand under a name and a line about where it comes from. */
+export const FIND_TEXT_LINES = 14;
+export const FIND_CLUE_LINES = 4;
 
 /** What the page on the right shows, as words: tests read it, and the screen draws it. */
 interface Detail {
@@ -46,12 +60,14 @@ interface Detail {
   /** Somebody's face, and whom they work for, written beside it. */
   portrait?: string;
   role?: string;
+  /** Where a find comes from, written small under its name. */
+  source?: string;
 }
 
 /**
  * The database: every kind of enemy met, with what it is weak to and how to fight it; what has come
- * to light about Varn so far; how the game works; and the songs heard so far, to be played again.
- * Nothing here changes anything: it is for reading, and for listening.
+ * to light about Varn so far; what has been found; how the game works; and the songs heard so far,
+ * to be played again. Nothing here changes anything: it is for reading, and for listening.
  */
 export class DatabaseScreen implements Screen {
   private page: DatabasePage = 'units';
@@ -70,6 +86,11 @@ export class DatabaseScreen implements Screen {
       units: new MenuList(UNITS.map((unit) => ({ id: unit.id, label: met(unit.id) ? this.unitTitle(unit.id) : D.unknown, enabled: met(unit.id) }))),
       // What has not come to light is not listed at all: a title would give it away.
       world: new MenuList(WORLD.filter((entry) => game.codex.includes(entry.id)).map((entry) => ({ id: entry.id, label: titleCase(entry.title), enabled: true }))),
+      // Every find has its row from the start, a paper under its number: what is missing can be seen, and read about.
+      finds: new MenuList(FINDS.map((find) => {
+        const found = game.codex.includes(find.id);
+        return { id: find.id, label: findLabel(find, found), enabled: found };
+      })),
       manual: new MenuList(MANUAL.map((topic) => ({ id: topic.id, label: titleCase(topic.title), enabled: true }))),
       // Everybody has a row, like every unit: somebody not come across yet keeps their name.
       people: new MenuList(PEOPLE.map((person) => {
@@ -99,6 +120,7 @@ export class DatabaseScreen implements Screen {
   private count(): string {
     if (this.page === 'units') return D.met(this.lists.units.items.filter((item) => item.enabled).length, UNITS.length);
     if (this.page === 'world') return D.entries(this.lists.world.items.length, WORLD.length);
+    if (this.page === 'finds') return `${D.found(this.lists.finds.items.filter((item) => item.enabled).length, FINDS.length)}   ${D.checks(checksHeld(this.app.game!))}`;
     if (this.page === 'music') return D.heard(this.lists.music.items.filter((item) => item.enabled).length, JUKEBOX.length);
     if (this.page === 'people') return D.known(this.lists.people.items.filter((item) => item.enabled).length, PEOPLE.length);
     return D.topics(MANUAL.length);
@@ -138,6 +160,13 @@ export class DatabaseScreen implements Screen {
           ...(this.app.settings.music ? (on ? [D.playing, D.stop] : [D.play]) : wrap(D.musicOff, PAGE_CHARS)),
         ],
       };
+    }
+    if (this.page === 'finds') {
+      const find = FINDS.find((f) => f.id === selected.id);
+      if (!find) return null;
+      // One that is not found says where it is, after its fashion, and nothing of what it is.
+      if (!selected.enabled) return { title: D.unknown, source: D.notFound, lines: wrap(find.clue, PAGE_CHARS) };
+      return { title: find.title, source: find.source, lines: wrap(find.text, PAGE_CHARS) };
     }
     const entry = this.page === 'world' ? WORLD.find((e) => e.id === selected.id) : MANUAL.find((t) => t.id === selected.id);
     return entry ? { title: entry.title, lines: wrap(entry.text, PAGE_CHARS) } : null;
@@ -211,6 +240,10 @@ export class DatabaseScreen implements Screen {
     let y = PAGE.y + 4;
     drawText(ctx, detail.title, x, y, { color: COLORS.accent });
     y += LINE + 2;
+    if (detail.source) {
+      drawText(ctx, detail.source, x, y, { color: COLORS.dim });
+      y += LINE + 4;
+    }
     if (detail.sprite && detail.stats) {
       // The unit stands at the right of its box, its figures beside it. One too tall for the box is drawn smaller.
       const w = PAGE.w - 12;
