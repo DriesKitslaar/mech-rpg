@@ -124,6 +124,10 @@ Je vindt ze terug in de **Database** op de pagina **Found**.
 - Luister ook naar wat er tijdens een gevecht gezegd wordt. Het gaat niet altijd over het gevecht.
 - Wat je gevonden hebt, blijf je houden als je met **New Cycle** opnieuw begint.
 - Een tweede keer is het verhaal niet hetzelfde als de eerste keer. Meer zeg ik er niet over.
+- In een latere ronde ligt er bij een paar contracten een tweede bod, van de andere kant. Op de
+  briefing staat dan de regel **Other offer**: daarmee blader je tussen de twee biedingen. Je kunt
+  er maar één vliegen. Het andere bod is een ander gevecht voor ander loon, en wie het aanneemt en
+  wint, krijgt daar later iets voor terug, of juist niet. Verliezen of weglopen telt niet.
 - De tweede en de derde ronde zijn elk zwaarder dan de vorige (en betalen beter); daarna blijft
   het gelijk. Wordt het te zwaar, gebruik dan de werkbank in de Garage, of zet onder **Options**
   de moeilijkheid lager: het verhaal en wat er te vinden is blijven hetzelfde.

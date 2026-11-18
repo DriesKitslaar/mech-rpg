@@ -4,7 +4,7 @@ import { standing, wingmanFor } from '../../src/core/wingman';
 import { MISSIONS } from '../../src/content/missions';
 import { SCENES } from '../../src/content/scenes';
 import SPRITES from '../../src/content/sprites.json';
-import { AFTERMATH, TALKS, TALK_PAY } from '../../src/content/talks';
+import { AFTERMATH, REMEMBERED, TALKS, TALK_PAY } from '../../src/content/talks';
 import { WINGMEN } from '../../src/content/wingmen';
 import { isValidState } from '../../src/core/game';
 import { CATALOG } from '../../src/content/parts';
@@ -76,10 +76,16 @@ describe('bonds', () => {
 });
 
 describe('what became of them', () => {
-  test('a line for each thing decided, on two pages that fit; nothing for a pilot who decided nothing', () => {
-    for (const answers of [all(0), all(1)]) {
+  test('a line for each thing decided, on pages that fit; nothing for a pilot who decided nothing', () => {
+    // The third page is for what a pilot of a later telling did with the other side's offers.
+    const turned = { seam: 'stand', train: 'weigh', lights: 'dark' };
+    expect(AFTERMATH.map((page) => page.id)).toEqual(['left-1', 'left-2', 'left-3']);
+    expect(AFTERMATH[2].linesFor!(all(0))).toEqual([]);
+    expect(AFTERMATH[2].linesFor!(turned)).toHaveLength(3);
+    expect(AFTERMATH[2].linesFor!({ train: 'weigh' })).toEqual([REMEMBERED.train.weigh]);
+    for (const answers of [{ ...all(0), ...turned }, { ...all(1), ...turned }]) {
       const pages = AFTERMATH.map((page) => page.linesFor!(answers));
-      expect(pages.map((p) => p.length)).toEqual([3, 4]);
+      expect(pages.map((p) => p.length)).toEqual([3, 4, 3]);
       for (const lines of pages) {
         const rows = lines.reduce((sum, l) => sum + wrap(l, SCENE_CHARS).length, 0) + (lines.length - 1) * 0.75;
         expect(rows).toBeLessThanOrEqual(SCENE_LINES);

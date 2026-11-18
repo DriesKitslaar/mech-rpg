@@ -84,16 +84,18 @@ describe('the bounty board', () => {
 describe('favours', () => {
   test('come of what the pilot decided: one for each answer that leaves somebody in the pilot\'s debt', () => {
     expect(FAVOURS.map((m) => m.when)).toEqual([
-      'chose:kite=vouch', 'chose:logs=keep', 'chose:logs=sell', 'chose:rival=pull', 'chose:marrow=cover', 'chose:sixty=keep', 'chose:dispatch=forgive',
+      // Tamsin's is not asked of a pilot who took Lumen's money to keep her people in the dark in this telling.
+      'chose:kite=vouch', 'chose:logs=keep&!chose:lights=dark', 'chose:logs=sell', 'chose:rival=pull', 'chose:marrow=cover', 'chose:sixty=keep', 'chose:dispatch=forgive',
     ]);
     // Every one hangs on a question the story really asks, and an answer it really offers.
     for (const m of FAVOURS) {
-      const [question, answer] = m.when!.slice(6).split('=');
+      const [question, answer] = m.when!.split('&')[0].slice(6).split('=');
       const choice = TALKS.find((t) => t.choice?.id === question)?.choice;
       expect(choice?.options.map((o) => o.id), m.id).toContain(answer);
     }
     expect(side({ ...fresh(), choices: { kite: 'vouch', logs: 'sell' } })).toEqual(['favour-kite', 'favour-lumen']);
     expect(side({ ...fresh(), choices: { kite: 'pass', logs: 'keep', rival: 'leave' } })).toEqual(['favour-undertow']);
+    expect(side({ ...fresh(), choices: { kite: 'pass', logs: 'keep', rival: 'leave', lights: 'dark' } })).toEqual([]);
     expect(side(completeMission({ ...fresh(), choices: { kite: 'vouch' } }, 'favour-kite', MISSIONS))).toEqual([]);
   });
 });

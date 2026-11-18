@@ -138,3 +138,52 @@ describe('the long game', () => {
     expect(report.benchSteps).toBe(0);
   });
 });
+
+describe('the other offers', () => {
+  const OFFERS = ['hadron-1', 'hadron-2', 'undertow-1'];
+
+  test('a second cycle that takes every one of them finishes, by a road and to a verdict still open to it', () => {
+    const report = playCareer({
+      faction: 'lumen', verdict: 'default', later: [{ faction: 'hadron', verdict: 'enforce' }], difficulty: 'standard', seed: 2, cycles: 2, offers: true,
+    });
+    expect(report.finished, careerLine(report)).toBe(true);
+    expect(report.offers).toEqual(OFFERS);
+    expect(report.endings).toEqual(['finale-lumen', 'verdict-default', 'finale-hadron', 'verdict-enforce']);
+    expect(careerLine(report)).toContain('other offers taken: hadron-1, hadron-2, undertow-1');
+  });
+
+  test('on Veteran they are taken in the second cycle and again in the third, and the career finishes', () => {
+    const report = playCareer({
+      faction: 'hadron', verdict: 'enforce', difficulty: 'veteran', seed: 3, cycles: 3, offers: true,
+      later: [{ faction: 'undertow', verdict: 'default' }, { faction: 'lumen', verdict: 'enforce' }],
+    });
+    expect(report.finished, careerLine(report)).toBe(true);
+    expect(report.offers).toEqual([...OFFERS, ...OFFERS]);
+    expect(report.worst.streak).toBeLessThanOrEqual(LIMITS.veteran.streak);
+  });
+
+  test('a first cycle has none to take: the pilot told to take them has the career of the pilot who was not', () => {
+    const told = playCareer({ faction: 'lumen', verdict: 'default', difficulty: 'standard', seed: 2, offers: true });
+    const plain = playCareer({ faction: 'lumen', verdict: 'default', difficulty: 'standard', seed: 2 });
+    expect(told.offers).toEqual([]);
+    expect(careerLine(told)).toBe(careerLine(plain));
+    expect(careerLine(told)).not.toContain('other offers');
+  });
+
+  test('the pilot who left the relay dark for Lumen\'s money is not offered the third verdict: the career that was going there stops before it', () => {
+    // The career of the test above that reaches the third verdict, in every way but one.
+    const side = [
+      'quest-1', 'quest-2', 'quest-3', 'favour-kite', 'favour-undertow', 'favour-ashfall', 'favour-marrow', 'favour-sixty', 'favour-dispatch',
+      'bounty-1', 'guild-1', 'guild-2', 'guild-3',
+    ];
+    const report = playCareer({
+      faction: 'lumen', verdict: 'default', later: [{ faction: 'undertow', verdict: 'quorum' }], difficulty: 'standard', seed: 2, cycles: 2,
+      answers: { 'talk-logs': 'keep' }, side, offers: true,
+    });
+    expect(report.offers).toEqual(OFFERS);
+    expect(report.side).toEqual(expect.arrayContaining(['quest-1', 'quest-2', 'quest-3']));
+    expect(report.endings).toEqual(['finale-lumen', 'verdict-default', 'finale-undertow']);
+    expect(report.finished).toBe(false);
+    expect(report.stopped).toBe('no story contract on offer and the story is not over');
+  });
+});

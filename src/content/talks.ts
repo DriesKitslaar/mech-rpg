@@ -149,6 +149,10 @@ export const REMEMBERED: Record<string, Record<string, string>> = {
     forgive: 'Dispatch is still on the night shift. Yours is the one channel that is never muted.',
     cut: 'Dispatch still routes your contracts. Neither of you says a word that is not on the form.',
   },
+  // What a pilot of a later telling did with the other side's offer for a contract.
+  seam: { stand: 'Seam Nine still has its tank. Nobody on either side will say who taught it which way to point.' },
+  train: { weigh: 'The weighbridge at the Hadron yard has a new dial. What the old one read was never found.' },
+  lights: { dark: 'Below the gates they remember one more dark week, and who was paid for it.' },
   frame: {
     ask: 'There is a cancelled licence behind glass over the night desk now. The callsign is still cut out of it.',
     quiet: 'Some nights channel nine carries an old recording from start to finish. Nobody on the desk turns it off.',
@@ -162,4 +166,5 @@ const remembered = (questions: string[]) => (choices: Record<string, string>): s
 export const AFTERMATH: Scene[] = [
   { id: 'left-1', heading: 'AFTERWARDS', title: 'WHO WAS LEFT', picture: 'still-varn', after: 'verdict', lines: [], linesFor: remembered(['kite', 'logs', 'rival']) },
   { id: 'left-2', heading: 'AFTERWARDS', title: 'WHO WAS LEFT', picture: 'still-varn', after: 'verdict', lines: [], linesFor: remembered(['marrow', 'sixty', 'dispatch', 'frame']) },
+  { id: 'left-3', heading: 'AFTERWARDS', title: 'WHO WAS LEFT', picture: 'still-varn', after: 'verdict', lines: [], linesFor: remembered(['seam', 'train', 'lights']) },
 ];

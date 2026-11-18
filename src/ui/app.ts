@@ -5,7 +5,7 @@ import {
 import { generateBoard } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
-  archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, markRead,
+  archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, otherOffer, markRead,
   markSceneSeen, startNewCycle, stockFor, unreadMessages,
   type Mission, type Scene,
 } from '../core/campaign';
@@ -947,9 +947,18 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
-  /** Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends no mech of its own. */
-  startMission(missionId: string, replay = false, wingmanId: string | null = null): void {
-    const offered = this.offered(missionId, replay);
+  /** The contract as the other side offers it, when they do: only in a later telling, and until the contract is done. */
+  otherOffer(mission: Mission): Mission | null {
+    return this.game ? otherOffer(this.game, mission, MISSIONS) : null;
+  }
+
+  /**
+   * Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends
+   * no mech of its own. With `other` it is flown as the other side offers it, if they do.
+   */
+  startMission(missionId: string, replay = false, wingmanId: string | null = null, other = false): void {
+    const first = this.offered(missionId, replay);
+    const offered = other && first ? this.otherOffer(first) ?? undefined : first;
     if (!offered || (offered.loaner === undefined && this.buildErrors().length > 0)) return;
     // A second pilot comes along when one was hired who takes calls: their fire, and their share of the fee.
     const wingman = this.wingmen(offered).find((w) => w.id === wingmanId);
@@ -1029,6 +1038,8 @@ export class App {
       else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);
       else if (isCup(mission)) next = recordCupWin(next, mission.id);
       else if (MISSIONS.some((m) => m.id === mission.id)) {
+        // Flown for the other side, it is remembered as that: an answer, like the story's other decisions.
+        if (mission.turned && !mission.replay) next = decide(next, mission.turned.question, mission.turned.answer);
         // Winning a contract again from the archive completes nothing new; its rank can still improve.
         next = completeMission(next, mission.id, MISSIONS);
         if (mission.phase !== 'patrol' && settlement.rank) next = recordRank(next, mission.id, settlement.rank);

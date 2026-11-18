@@ -215,8 +215,8 @@ export const REFERENCE_NL: Record<string, string> = {
   'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.':
     'Gewonnen contracten zijn ervaring. Elk level geeft een perkpunt; perks koop je op het pilotenscherm en hou je voorgoed. Medailles verdien je met wat je doet, ze betalen een beetje, en staan daar ook.',
   'A NEW CYCLE': 'EEN NIEUWE CYCLUS',
-  'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and your arena rank. Enemies get tougher and contracts pay better the first two times; after that both stay as they are. The bench goes one step further each time, up to five.':
-    'Als het verhaal uit is kun je opnieuw beginnen. Je houdt credits, onderdelen, level, perks, medailles, de database en je arenarang. De eerste twee keer worden vijanden taaier en stijgt het loon; daarna blijft dat gelijk. De werkbank gaat elke keer een stap verder, tot vijf.',
+  'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and arena rank. Enemies get tougher and pay gets better the first two times, then both stay as they are. The bench goes a step further each time, up to five. Some contracts then have a second offer, from the other side.':
+    'Als het verhaal uit is kun je opnieuw beginnen. Je houdt credits, onderdelen, level, perks, medailles, de database en je arenarang. De eerste twee keer worden vijanden taaier en stijgt het loon; daarna blijft dat gelijk. De werkbank gaat elke keer een stap verder, tot vijf. Soms ligt er dan een tweede bod, van de andere kant.',
   DIFFICULTY: 'MOEILIJKHEID',
   'Story takes a fifth off enemy armour and firepower; Veteran adds a fifth. Change it in the options whenever you like. Fast battles play everything at two and a half times the speed.':
     'Verhaal: een vijfde minder pantser en vuurkracht voor vijanden; Veteraan: een vijfde meer. Altijd te wijzigen in de opties. Snelle gevechten: alles tweeenhalf keer zo snel.',
@@ -521,8 +521,8 @@ export const REFERENCE_NL: Record<string, string> = {
     "WEEGBON",
   "Hadron rail yard, weighbridge.":
     "Spoorterrein Hadron, weegbrug.",
-  "The yard gives it up once the trains have stopped, to a pilot who brought one in as well as it can be done.":
-    "Het spoorterrein geeft hem af als de treinen stilstaan, aan wie er een zo goed mogelijk binnenbracht.",
+  "The yard gives it up when the trains have stopped, to whoever brought one in well. Or stop one on the scale.":
+    "Het terrein geeft hem af als de treinen stilstaan, aan wie er een goed bracht. Of weeg er zelf een.",
   "Ore train, Seam Nine. Declared: full. Weighed: empty. Passed. Consignee: by standing order. In another hand: it has passed like this every night for forty years.":
     "Ertstrein, Ader Negen. Opgegeven: vol. Gewogen: leeg. Doorgelaten. Ontvanger: volgens doorlopende order. In een ander handschrift: zo gaat het elke nacht, al veertig jaar.",
   "ESCORT FILE":
@@ -591,8 +591,8 @@ export const REFERENCE_NL: Record<string, string> = {
     "INKOOPORDER",
   "Desk 9.":
     "Balie 9.",
-  "Under the seat of a tank that was called stolen. Kill it cleanly. Wrecks are searched when a war ends.":
-    "Onder de stoel van een tank die gestolen heette. Sloop hem netjes. Na een oorlog zoekt men in wrakken.",
+  "Under the seat of a tank that was called stolen. Kill it cleanly and wait, or stand beside it.":
+    "Onder de stoel van een tank die gestolen heette. Sloop hem netjes en wacht, of ga ernaast staan.",
   "One tank, Hadron pattern, from stock. Deliver to: the occupants, Seam Nine. Bill to: Hadron Mining, as stolen. One contractor to remove it afterwards. Bill to: Hadron Mining.":
     "Een tank, model Hadron, uit voorraad. Leveren aan: de bezetters, Ader Negen. Factuur aan: Hadron Mining, als gestolen. Een opdrachtnemer om hem daarna op te ruimen. Factuur aan: Hadron Mining.",
   "BOOKING SLIP":

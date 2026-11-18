@@ -96,7 +96,7 @@ export const FAVOURS: Mission[] = [
     })],
   },
   {
-    id: 'favour-undertow', phase: 'side', when: 'chose:logs=keep', title: 'What Gets Around', client: 'Tamsin, The Undertow', portrait: 'portrait-undertow', reward: 1500, scale: 2.4,
+    id: 'favour-undertow', phase: 'side', when: 'chose:logs=keep&!chose:lights=dark', title: 'What Gets Around', client: 'Tamsin, The Undertow', portrait: 'portrait-undertow', reward: 1500, scale: 2.4,
     briefing: [
       'Somebody sold Lumen a map of the east gate anyway. Not you. We know who doesn\'t talk.',
       'Their machines are at the gate now. Hold it until the pumps are sealed. Six rounds. Nobody has to win, they just have to not get in.',

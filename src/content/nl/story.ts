@@ -433,6 +433,30 @@ export const STORY_NL: Record<string, string> = {
     "Maar die recorder gaat verder terug dan het dok. Wat er nog meer op staat: Lumen heeft nu een kopie, en Lumen stuurt machines om te gaan kijken.",
   "If there is a place on that tape, it is not only yours any more. Not this year.":
     "Staat er een plek op die band, dan is die niet meer alleen van jou. Niet dit jaar.",
+  "Seam Nine":
+    "Ader Negen",
+  "Seam Nine reports a contractor on the wrong side of its fence. I have had the report corrected: no contractor was present.":
+    "Ader Negen meldt een opdrachtnemer aan de verkeerde kant van het hek. Ik heb de melding laten verbeteren: er was geen opdrachtnemer.",
+  "Hadron remembers its friends. It remembers the others in more detail. My next contract is waiting, at the same rate: I prefer to know where you are.":
+    "Hadron onthoudt zijn vrienden. De anderen onthoudt het nauwkeuriger. Mijn volgende contract ligt klaar, voor hetzelfde tarief: ik weet graag waar je bent.",
+  "Train 9":
+    "Trein 9",
+  "Train 9 arrived eleven minutes late and was weighed on the way. I am told the dial was read. I have had the dial replaced.":
+    "Trein 9 kwam elf minuten te laat aan en is onderweg gewogen. Ik hoor dat de wijzer is afgelezen. Ik heb de wijzer laten vervangen.",
+  "A weigh ticket is a small thing to carry, pilot. It is a heavy thing to be found with.":
+    "Een weegbon is licht om te dragen, piloot. Het is zwaar om ermee gevonden te worden.",
+  "The dark":
+    "Het donker",
+  "We sat in the dark and counted who came to put the lights on. Nobody came. Somebody came to stop it.":
+    "We zaten in het donker en telden wie het licht kwam aandoen. Niemand. Er kwam wel iemand om dat te beletten.",
+  "I will still hire you. We cannot afford to choose. But I will ask you for nothing that is not on a contract. Not this year.":
+    "Ik huur je nog steeds. Kiezen kunnen wij ons niet veroorloven. Maar ik vraag je niets wat niet op een contract staat. Niet dit jaar.",
+  "Seam Nine still has its tank. Nobody on either side will say who taught it which way to point.":
+    "Ader Negen heeft zijn tank nog. Niemand zegt wie hem leerde welke kant hij op moest wijzen.",
+  "The weighbridge at the Hadron yard has a new dial. What the old one read was never found.":
+    "De weegbrug van Hadron heeft een nieuwe wijzer. Wat de oude aangaf is nooit teruggevonden.",
+  "Below the gates they remember one more dark week, and who was paid for it.":
+    "Onder de poorten herinneren ze zich een donkere week extra, en wie ervoor betaald werd.",
   "THE TAPE":
     "DE BAND",
   "Count the trucks. Count them again.":

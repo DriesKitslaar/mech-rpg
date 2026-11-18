@@ -247,8 +247,8 @@ describe('campaign content', () => {
     }
     expect(of('verdict').map((m) => m.verdict).sort()).toEqual(['default', 'enforce', 'quorum']);
     // Two are offered to everybody. The third waits: for the box brought home, which only a later telling can do, and for nine checks.
-    expect(of('verdict').map((m) => m.when)).toEqual([undefined, undefined, 'quest-3&checks:9']);
-    expect(unknownTerms('quest-3&checks:9')).toEqual([]);
+    expect(of('verdict').map((m) => m.when)).toEqual([undefined, undefined, 'quest-3&checks:9&!chose:lights=dark']);
+    expect(unknownTerms('quest-3&checks:9&!chose:lights=dark')).toEqual([]);
     // Only the contracts that belong to a client name one.
     for (const m of [...of('intro'), ...of('rival'), ...of('audit'), ...of('verdict')]) expect(m.faction, m.id).toBeUndefined();
   });

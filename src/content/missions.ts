@@ -37,6 +37,8 @@ const again = (line: TalkLine): TalkLine => ({ ...line, cycle: 1 });
 
 /** Ashfall on the next roof: one shot a round at the strongest enemy standing. */
 const ASHFALL_FIRE: Support = { name: 'Ashfall', damage: 30 };
+/** The tank in Seam Nine, on the one night it fires for the pilot: when the pilot stands with those it was given to. */
+const SEAM_TANK: Support = { name: 'The tank', damage: 30 };
 /** Ashfall at the pilot's back in the clearing house, with nothing left to save ammunition for. */
 const ASHFALL_ALL_IN: Support = { name: 'Ashfall', damage: 45 };
 const battle = (enemies: string[], background: string, extra: Partial<Battle> = {}): Battle => ({ enemies, background, ...extra });
@@ -105,6 +107,29 @@ export const MISSIONS: Mission[] = [
         ],
       }),
     ],
+    // In a later telling: the same night from the other side of the fence, with the tank firing for the pilot.
+    other: {
+      when: 'cycle:1', question: 'seam', answer: 'stand', client: TAMSIN.client, portrait: TAMSIN.portrait, reward: 900,
+      briefing: [
+        'Brenn will have told you they are unarmed. You know what is parked in Seam Nine, and who paid for it to be there.',
+        'His clearance crew goes in behind whoever makes the noise. Tonight that could be you, facing the other way.',
+        'The tank is ours for one night and will fire for you. What is under its seat is yours to keep.',
+      ],
+      debrief: 'The crew backs out of Seam Nine. Somebody lifts the seat of the tank and hands you what was under it.',
+      battles: [
+        battle(['gun-turret', 'recon-drone', 'recon-drone'], UNDER, {
+          support: SEAM_TANK,
+          talk: [tamsin('start', 'They send the drones in first, to count us. Count them back.')],
+        }),
+        battle(['bulldozer', 'gun-turret'], UNDER, {
+          support: SEAM_TANK,
+          talk: [
+            brenn('start', 'Pilot. You are standing on the wrong side of my fence. I will remember where you stood.'),
+            tamsin('win', 'He will send you a bill for that. Send it down to us. We keep a drawer for his bills.'),
+          ],
+        }),
+      ],
+    },
   },
   {
     id: 'hadron-2', phase: 'faction', after: 'hadron-1', title: 'Overburden', ...BRENN, reward: 2000,
@@ -127,6 +152,26 @@ export const MISSIONS: Mission[] = [
         talk: [brenn('start', 'The train is insured, pilot. You are not. Stand where that suggests.')],
       }),
     ],
+    // In a later telling: the train is stopped on the weighbridge, and its guards kept busy while the dial is read.
+    other: {
+      when: 'cycle:1', question: 'train', answer: 'weigh', client: TAMSIN.client, portrait: TAMSIN.portrait, reward: 1100, scale: 2,
+      briefing: [
+        'The ore train out of Seam Nine stops for nothing. Tonight it stops on the weighbridge, for as long as you keep its guards busy.',
+        'We do not want the wagons. We want to read the dial.',
+        'Its guard is heavier than the yard lets on. You do not have to break it. Hold it five rounds: that is how long it takes to read a dial twice.',
+      ],
+      debrief: 'The dial is read twice and written down once. The train rolls on. The ticket comes to you, folded small.',
+      battles: [
+        battle(['heavy-mech', 'tank', 'gun-turret'], MINE, {
+          objective: { type: 'survive', rounds: 5 },
+          talk: [
+            tamsin('start', 'Keep them looking at you and not at the scale. We need the dial, not the wagons.'),
+            tamsin(5, 'It is on the dial. Somebody is writing it down. One more round.'),
+            brenn('win', 'That train was late. My trains are not late. I will find out what that cost me. Then I will find out who.'),
+          ],
+        }),
+      ],
+    },
   },
   {
     id: 'lumen-1', phase: 'faction', title: 'Clean Extraction', ...VARGA, reward: 1500,
@@ -168,6 +213,30 @@ export const MISSIONS: Mission[] = [
       battle(['recon-drone', 'recon-drone', 'recon-drone'], PLAZA, { talk: [tamsin(2, 'Three drones for one relay. They are not guarding it, pilot. They are counting us. We would rather not be counted.')] }),
       battle(['light-mech'], PLAZA, { talk: [tamsin('start', 'There it is. It dances, pilot. Dance back: Boost, and keep your guns on its core.')] }),
     ],
+    // In a later telling: Lumen pays three times as much for the relay to stay as it is. What that costs is said afterwards.
+    other: {
+      when: 'cycle:1', question: 'lights', answer: 'dark', client: VARGA.client, portrait: VARGA.portrait, reward: 3900,
+      briefing: [
+        'You will have been asked to restore power to the lower levels. Lumen would prefer the relay stayed as it is.',
+        'Somebody below has hired machines to take it back tonight. Remove them. The relay itself is not to be touched.',
+        'The fee is three times the other offer, which we understand comes out of a collection tin.',
+      ],
+      debrief: 'The relay stays dark. Varga confirms the transfer. Below the gates somebody counts who came, and who did not.',
+      battles: [
+        battle(['recon-drone', 'bomb-crawler', 'recon-drone'], PLAZA, {
+          talk: [
+            varga('start', 'Three machines, hired by the day. The models priced this at a morning\'s work.'),
+            tamsin(2, 'Pilot. We know that frame. We were told it would be on our side of the relay.'),
+          ],
+        }),
+        battle(['gunship', 'bomb-crawler'], PLAZA, {
+          talk: [
+            tamsin('start', 'Then it stays dark. We will count who came tonight. I am sorry that it is you I am counting.'),
+            varga('win', 'Concluded. For the record: nobody asked you what the dark is for. That is why you were asked.'),
+          ],
+        }),
+      ],
+    },
   },
   {
     id: 'undertow-2', phase: 'faction', after: 'undertow-1', scale: 2, title: 'Dry Dock', ...TAMSIN, reward: 1800,
@@ -601,7 +670,7 @@ export const MISSIONS: Mission[] = [
   },
   // The third verdict: only in a later telling, for a pilot who has brought the box home and holds nine checks.
   {
-    id: 'verdict-quorum', phase: 'verdict', verdict: 'quorum', when: 'quest-3&checks:9', scale: 1.25, title: 'Any Other Business', client: 'Tamsin, for the Society',
+    id: 'verdict-quorum', phase: 'verdict', verdict: 'quorum', when: 'quest-3&checks:9&!chose:lights=dark', scale: 1.25, title: 'Any Other Business', client: 'Tamsin, for the Society',
     portrait: 'portrait-undertow', reward: 6000,
     briefing: [
       'Nine in brass opened the box. The roll was inside. A meeting can be held, with the door shut.',
@@ -810,21 +879,42 @@ export const MESSAGES: Message[] = [
     body: ['Your vendor clearance for Lumen equipment is active. Halo frames reward precision. Do not waste them.'],
   },
   {
-    id: 'undertow-thanks', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'Thank you', after: 'undertow-1',
+    id: 'undertow-thanks', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'Thank you', after: 'undertow-1&!chose:lights=dark',
     body: [
       'The lights are on down here because of you. We do not forget that.',
       'Our people have put something on the shelf for you. It is ugly and it works.',
     ],
   },
   {
-    id: 'hadron-thanks', from: 'Director Brenn', portrait: 'portrait-hadron', subject: 'A productive start', after: 'hadron-1',
+    id: 'hadron-thanks', from: 'Director Brenn', portrait: 'portrait-hadron', subject: 'A productive start', after: 'hadron-1&!chose:seam=stand',
     body: ['Hadron equipment is now available to you. It is heavy because it is meant to survive. So are our friends.'],
   },
   {
-    id: 'hadron-second', from: 'Director Brenn', portrait: 'portrait-hadron', subject: 'Punctuality', after: 'hadron-2',
+    id: 'hadron-second', from: 'Director Brenn', portrait: 'portrait-hadron', subject: 'Punctuality', after: 'hadron-2&!chose:train=weigh',
     body: [
       'The train arrived. In this city that makes you management material.',
       'I will remember it when the time comes to choose. See that you do too.',
+    ],
+  },
+  {
+    id: 'brenn-seam', from: 'Director Brenn', portrait: 'portrait-hadron', subject: 'Seam Nine', after: 'chose:seam=stand',
+    body: [
+      'Seam Nine reports a contractor on the wrong side of its fence. I have had the report corrected: no contractor was present.',
+      'Hadron remembers its friends. It remembers the others in more detail. My next contract is waiting, at the same rate: I prefer to know where you are.',
+    ],
+  },
+  {
+    id: 'brenn-train', from: 'Director Brenn', portrait: 'portrait-hadron', subject: 'Train 9', after: 'chose:train=weigh',
+    body: [
+      'Train 9 arrived eleven minutes late and was weighed on the way. I am told the dial was read. I have had the dial replaced.',
+      'A weigh ticket is a small thing to carry, pilot. It is a heavy thing to be found with.',
+    ],
+  },
+  {
+    id: 'undertow-dark', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'The dark', after: 'chose:lights=dark',
+    body: [
+      'We sat in the dark and counted who came to put the lights on. Nobody came. Somebody came to stop it.',
+      'I will still hire you. We cannot afford to choose. But I will ask you for nothing that is not on a contract. Not this year.',
     ],
   },
   {
@@ -908,7 +998,7 @@ export const MESSAGES: Message[] = [
     ],
   },
   {
-    id: 'third-offer', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'A third offer', after: 'audit-3&quest-3&checks:9&!verdict',
+    id: 'third-offer', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'A third offer', after: 'audit-3&quest-3&checks:9&!verdict&!chose:lights=dark',
     body: [
       'I hear you have two offers. Here is a third. It pays out of a collection tin, which you will be used to from me.',
       'You brought the box home. You hold nine in brass. By the rules of a society older than either company, that is enough to call a meeting.',
@@ -916,7 +1006,7 @@ export const MESSAGES: Message[] = [
     ],
   },
   {
-    id: 'short-of-nine', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'Short of nine', after: 'audit-3&quest-3&!checks:9&!verdict',
+    id: 'short-of-nine', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'Short of nine', after: 'audit-3&quest-3&!checks:9&!verdict&!chose:lights=dark',
     body: [
       'The box is in the hall and it will not open. Nine hasps, and you hold fewer than nine in brass.',
       'People in this city carry those and do not know what they are. Some would hand theirs to a pilot they trusted. That is all I can tell you.',
