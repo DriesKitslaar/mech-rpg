@@ -15,9 +15,14 @@ export type Verdict = 'enforce' | 'default';
 /** The story's phases in the order they are played. */
 const STAGES: MissionPhase[] = ['intro', 'faction', 'rival', 'choice', 'path', 'finale', 'audit', 'verdict'];
 
-/** Something said over a battle: when it opens, when a round begins, or when it is won. */
+/**
+ * Something said over a battle: when it opens, when a round begins, when it is won; when one enemy
+ * is left of several (`last`); or when the pilot's core is below half its armour (`hurt`).
+ */
 export interface TalkLine {
-  at: 'start' | 'win' | number;
+  at: 'start' | 'win' | 'last' | 'hurt' | number;
+  /** Said only in a game whose cycle is at least this. Cycles count from 0: a line with 1 is kept for the second telling. */
+  cycle?: number;
   who: string;
   /** Sprite id of the speaker's face, if they have one. */
   portrait?: string;

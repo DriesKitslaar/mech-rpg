@@ -298,7 +298,7 @@ describe('campaign content', () => {
       for (const line of battle.talk ?? []) {
         expect(wrap(line.text, TALK_CHARS).length, line.text).toBeLessThanOrEqual(TALK_LINES);
         expect(line.who.length).toBeGreaterThan(0);
-        expect(line.at === 'start' || line.at === 'win' || (Number.isInteger(line.at) && (line.at as number) >= 1), String(line.at)).toBe(true);
+        expect(['start', 'win', 'last', 'hurt'].includes(line.at as string) || (Number.isInteger(line.at) && (line.at as number) >= 1), String(line.at)).toBe(true);
         if (line.portrait) expect(line.portrait in SPRITES, line.portrait).toBe(true);
       }
     }

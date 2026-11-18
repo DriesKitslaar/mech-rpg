@@ -65,9 +65,17 @@ export const BOUNTIES: Mission[] = [
   ], 'You are in default, pilot. This frame is the notice.', 'This is irregular. My clients will hear of... no. I suppose they will not.'),
 ];
 
+const kite = says('Kite', 'portrait-kite');
+const tamsin = says('Tamsin', 'portrait-undertow');
+const varga = says('Analyst Varga', 'portrait-lumen');
+const ashfall = says('Ashfall', 'portrait-rival');
+const marrow = says('Marrow', 'portrait-marrow');
+const sixty = says('Old Sixty', 'portrait-sixty');
+const dispatch = says('Dispatch', 'portrait-dispatch');
+
 /**
  * Contracts that come out of what the pilot decided when the story asked: somebody returning a
- * favour, or collecting on one.
+ * favour, or collecting on one. Whoever asked is on the radio while it is flown.
  */
 export const FAVOURS: Mission[] = [
   {
@@ -77,7 +85,10 @@ export const FAVOURS: Mission[] = [
       'I vouched for myself on this one, so. If you could keep them off my frame until recovery gets here, I\'d owe you twice.',
     ],
     debrief: 'Kite\'s frame is on a flatbed and Kite is on the radio thanking everyone, including the flatbed.',
-    battles: [battle(['recon-drone', 'gunship', 'recon-drone'], 'bg-neon-district', { objective: { type: 'protect', name: 'Kite\'s Frame', hp: 10 } })],
+    battles: [battle(['recon-drone', 'gunship', 'recon-drone'], 'bg-neon-district', {
+      objective: { type: 'protect', name: 'Kite\'s Frame', hp: 10 },
+      talk: [kite('start', 'They\'re circling. I can\'t turn the left leg. Sorry. I really did think it was easy money.'), kite('win', 'Recovery\'s here. I owe you twice. I\'m writing it down so I don\'t forget.')],
+    })],
   },
   {
     id: 'favour-undertow', phase: 'side', when: 'chose:logs=keep', title: 'What Gets Around', client: 'Tamsin, The Undertow', portrait: 'portrait-undertow', reward: 1500, scale: 2.4,
@@ -86,7 +97,7 @@ export const FAVOURS: Mission[] = [
       'Their machines are at the gate now. Hold it until the pumps are sealed. Six rounds. Nobody has to win, they just have to not get in.',
     ],
     debrief: 'The pumps are sealed and the gate held. Tamsin sends the fee in small notes, which is how the Undertow says thank you.',
-    battles: [battle(['heavy-mech', 'light-mech', 'gunship'], 'bg-sluice', { objective: { type: 'survive', rounds: 6 } })],
+    battles: [battle(['heavy-mech', 'light-mech', 'gunship'], 'bg-sluice', { objective: { type: 'survive', rounds: 6 }, talk: [tamsin('start', 'Six rounds until the pumps are sealed. Somebody sold them a map of this gate. It was a good map.')] })],
   },
   {
     id: 'favour-lumen', phase: 'side', when: 'chose:logs=sell', title: 'Preferred Supplier', client: 'Analyst Varga, Lumen Systems', portrait: 'portrait-lumen', reward: 2300, scale: 1.7,
@@ -95,7 +106,7 @@ export const FAVOURS: Mission[] = [
       'One turret is the relay. The rest are there to keep it standing. Remove the relay and they will stop caring.',
     ],
     debrief: 'The relay is off the air. Varga has filed you under "reliable", which at Lumen is a pay grade.',
-    battles: [battle(['gun-turret', 'tank', 'recon-drone'], 'bg-mine', { objective: { type: 'leader', target: 0 } })],
+    battles: [battle(['gun-turret', 'tank', 'recon-drone'], 'bg-mine', { objective: { type: 'leader', target: 0 }, talk: [varga('start', 'The first turret is the relay. Your logs found it for us. We find that we like your logs.')] })],
   },
   {
     id: 'favour-ashfall', phase: 'side', when: 'chose:rival=pull', title: 'Owed', client: 'Ashfall', portrait: 'portrait-rival', reward: 2600, scale: 1,
@@ -104,7 +115,7 @@ export const FAVOURS: Mission[] = [
       'A stalker and its spotter on the rooftops. The stalker aims for the head. I\'d take its legs first, but I would, wouldn\'t I.',
     ],
     debrief: 'Done. Ashfall forwards the whole fee, less nothing, with the note: "Now we\'re even. Almost."',
-    battles: [battle(['stalker', 'recon-drone'], 'bg-rooftop')],
+    battles: [battle(['stalker', 'recon-drone'], 'bg-rooftop', { talk: [ashfall('start', 'I am watching the feed from a hospital bed. Do not make me shout advice. It hurts to shout.')] })],
   },
   {
     id: 'favour-marrow', phase: 'side', when: 'chose:marrow=cover', busy: ['marrow'], title: 'Paid in Ordnance', client: 'Marrow', portrait: 'portrait-marrow', reward: 3000, scale: 1,
@@ -113,7 +124,7 @@ export const FAVOURS: Mission[] = [
       'I want the Bulldozer\'s frame afterwards: take its legs and arms and leave the core standing. The fee is real. The gun stays missing.',
     ],
     debrief: 'One Bulldozer, lightly used, no limbs. Marrow says she will have it walking by spring, on her side this time.',
-    battles: [battle(['bulldozer', 'tank'], 'bg-mine', { objective: { type: 'disable', target: 0 } })],
+    battles: [battle(['bulldozer', 'tank'], 'bg-mine', { objective: { type: 'disable', target: 0 }, talk: [marrow('start', 'Legs and arms. Leave the core. I\'m three streets off with the gun cold, being dead.')] })],
   },
   {
     id: 'favour-sixty', phase: 'side', when: 'chose:sixty=keep', busy: ['sixty'], title: 'The Sixty-First', client: 'Old Sixty', portrait: 'portrait-sixty', reward: 3400, scale: 1.1,
@@ -123,8 +134,8 @@ export const FAVOURS: Mission[] = [
     ],
     debrief: 'Every truck came out the far side. Old Sixty does not say anything for a while, and then pays in full.',
     battles: [
-      battle(['recon-drone', 'bomb-crawler', 'gunship'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 12 } }),
-      battle(['heavy-mech', 'recon-drone'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 10 } }),
+      battle(['recon-drone', 'bomb-crawler', 'gunship'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 12 }, talk: [sixty('start', 'Same road. Same hour, near enough. I am on the radio and nowhere else. Bring them all through.')] }),
+      battle(['heavy-mech', 'recon-drone'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 10 }, talk: [sixty('last', 'One left. That is further than I got.')] }),
     ],
   },
   {
@@ -134,7 +145,7 @@ export const FAVOURS: Mission[] = [
       'This one isn\'t on my board and you were never there. A Bailiff and its drones. Leave nothing that can file a report.',
     ],
     debrief: 'There is no paper any more. Dispatch logs the night as "quiet" and, for once, sounds rested.',
-    battles: [battle(['bailiff', 'lien-drone', 'lien-drone'], 'bg-vault')],
+    battles: [battle(['bailiff', 'lien-drone', 'lien-drone'], 'bg-vault', { talk: [dispatch('start', 'The paper is in the third cabinet. Do not read it. I mean that kindly.')] })],
   },
 ];
 
