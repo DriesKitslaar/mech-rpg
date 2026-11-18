@@ -85,6 +85,12 @@ andere zware gevechten verandert er niets: die zijn precies zo zwaar als ze ware
   een licht wapen moet je haar afbreken. Bij het mikken staat er **DESTROYS** (Nederlands:
   **VERNIETIGT**) als een treffer de machine vernietigt. Hoe beter je wapen (ook door de
   werkbank), hoe zwaardere machines je in één klap vernietigt. Jou kan het niet overkomen.
+- **Overkill.** Draagt één klap minstens anderhalf keer de hele kern van een machine (gemeten op
+  volle sterkte) en vernietigt die klap haar, dan staat er **OVERKILL** boven: ze ontploft harder
+  dan de rest en je hoort een extra dreun. Het verandert niets aan het gevecht en het geldt in
+  elk gevecht. Een machine afmaken die al bijna kapot was, telt niet: het gaat om wat je wapen is
+  tegenover die machine. Met de wapens uit het begin van het spel zie je het nog niet; met de
+  zware wapens van later wel, en het vaakst in een zwerm.
 - **Ze vluchten.** Vernietig je twee machines in één beurt, dan raakt wat er nog staat in paniek
   (label **SHAKEN**, Nederlands **PANIEK**). Zodra die machine aan de beurt is, vlucht ze van het
   veld zonder te vuren. Een machine die vlucht telt niet als vernietigd: wil je haar meetellen,

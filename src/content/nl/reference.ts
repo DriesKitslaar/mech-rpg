@@ -168,6 +168,8 @@ export const REFERENCE_NL: Record<string, string> = {
     'Tegen gewone machines verdient een salvo dat er een vernietigt zichzelf terug: het wapen is die beurt weer klaar en de energie komt terug. Hitte en munitie ben je kwijt; een geladen wapen moet opnieuw laden. Niet waar een baas, een piloot met een naam, een elite, een Bailiff of een doelwit meevecht, of tegen een machine alleen.',
   'In the same fights, one blow that takes half of a machine\'s core, as it stood at full strength, finishes it: a heavy weapon goes through a light machine. The aiming line says DESTROYS when a hit would do it. It is never done to you.':
     'In dezelfde gevechten maakt een klap die de helft van de kern van een machine wegslaat, gemeten op volle sterkte, haar af: een zwaar wapen gaat door een lichte machine. De richtregel zegt dan VERNIETIGT. Jou overkomt het nooit.',
+  'One blow that carries at least one and a half times a machine\'s whole core, as it stood at full strength, and destroys it is an OVERKILL: the machine goes up harder and the word is over it. It is said in any fight and changes nothing. Finishing a machine that was already worn down is not one.':
+    'Een klap die minstens anderhalf keer de hele kern van een machine draagt, gemeten op volle sterkte, en haar vernietigt is een OVERKILL: de machine ontploft harder en het woord staat erboven. Dat geldt in elk gevecht en verandert niets. Een versleten machine afmaken is er geen.',
   'SHATTER':
     'VERMORZELEN',
   'THEY BREAK':

@@ -115,11 +115,25 @@ callsign and the name on a band under it, and where the battle is open the messa
 the name and its line: ordinary machines are the ones who have heard it. (As first written it was
 to be said where the machines were far below the pilot. Open battles are that.)
 
-**Weight.** A volley that destroys a machine with at least twice what was left of it is an
-*overkill*: the event says so, the machine goes up harder, and the word is on the screen for a
-moment. A chain of two or more is counted on the screen ("CHAIN x2") with a rising note. A machine
-that breaks off is seen to leave, and the word for that is on the screen too. All of it is quieter
-under the calm setting and none of it holds the turn up.
+**Weight.** A machine destroyed by one blow that carried, past any barrier, at least one and a
+half times its whole core as that stood at full strength is an *overkill*: the event says so, the
+machine goes up harder (a last blast half as large again, the hardest jolt there is, more thrown
+into the air, a slam under the bang), and the word is over it for a moment, clear of the figure of
+the hit and drawn over the fire. It is said in every fight and changes nothing. A chain of two or
+more is counted over the pilot's mech ("CHAIN x2") with a note that rises with it. A machine that
+breaks off leaves under the word for it ("ROUT"). The banner of an open battle names the rule that
+holds there ("MOMENTUM") at the end of the line that says what the battle asks, so that a pilot
+knows before the first shot which rules the fight is fought by. Under the calm setting the words
+are there and the rest is not; none of it holds a turn up; the close look at the last machine of a
+battle is left as it was.
+
+(As first written an overkill was twice what was left of the core. Measured that way every
+finishing blow on a worn machine was one, and no kill in a swarm ever was, which is the wrong way
+round. Measured against the whole core at twice, it was hardly ever seen: of the frames the shop
+sells only the fifth ever did it, in two kills of a hundred. At one and a half times the whole core
+nothing the first three frames carry is one, and from the fourth it is up to one kill in twelve of
+the story and from one in ten to nearly half of the kills in a swarm. At once the core it was
+three kills in four, and more, of a grown pilot's swarm, which is no longer a thing to remark on.)
 
 ## Approaches considered
 

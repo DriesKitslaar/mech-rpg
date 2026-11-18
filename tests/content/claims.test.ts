@@ -1,7 +1,11 @@
 import { chooseEnemyAction } from '../../src/core/ai';
-import { HEAT_LIMIT, activeUnit, applyAction, createBattle, guardFactor, previewShot, type BattleState } from '../../src/core/battle';
+import {
+  HEAT_LIMIT, MAX_ENEMIES, OVERKILL, SHATTER, activeUnit, applyAction, createBattle, guardFactor, previewShot, type BattleState,
+} from '../../src/core/battle';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { newGame } from '../../src/core/game';
+import { NAME_AT, RENOWN } from '../../src/core/renown';
+import type { Catalog, Weapon } from '../../src/core/types';
 import { ARENA, ARENA_ENEMIES } from '../../src/content/arena';
 import { MANUAL, UNITS, WORLD } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
@@ -70,6 +74,78 @@ describe('the manual', () => {
     expect(topic('parts')).toMatch(/cannot fire what it holds/);
     expect(topic('parts')).toMatch(/shield/);
     expect(topic('parts')).not.toMatch(/cannot use what it holds/);
+  });
+});
+
+describe('the manual on a pilot who outguns the field', () => {
+  /** The words the manual writes its small numbers in. */
+  const WORD: Record<number, string> = { 0.5: 'half', 1: 'one', 1.5: 'one and a half', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 8: 'eight', 40: 'forty' };
+  const word = (n: number): string => { expect(WORD[n], String(n)).toBeDefined(); return WORD[n]; };
+  const rifle = CATALOG['wpn-rivet-rifle'] as Weapon;
+  const doing = (damage: number): Catalog => ({ ...CATALOG, 'wpn-rivet-rifle': { ...rifle, damage } });
+  const shoot = (s: BattleState, target: string, catalog: Catalog): BattleState =>
+    applyAction(s, { type: 'fire', weapon: 'rightHand', target, part: 'core' }, catalog, () => 0);
+
+  test('a blow that takes half of a core finishes the machine, and the manual says half', () => {
+    expect(topic('shatter')).toContain(`one blow that takes ${word(SHATTER)} of a machine's core, as it stood at full strength, finishes it`);
+    // A drone's shell is fifty: twenty-five goes through it, twenty-four does not.
+    const through = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['recon-drone'], ENEMIES['gun-turret']], doing(25), 2));
+    expect(previewShot(through, 'player', 'rightHand', 'enemy-0', 'core', doing(25))).toMatchObject({ shatter: true, kills: true });
+    expect(previewShot(through, 'player', 'rightHand', 'enemy-0', 'core', doing(24))).toMatchObject({ shatter: false, kills: false });
+    // "The aiming line says DESTROYS", and it is never done to the pilot.
+    expect(topic('shatter')).toContain(`The aiming line says ${STRINGS.preview.kills}`);
+    const turret = weaponIn(ENEMIES['gun-turret'].build, 'rightHand', CATALOG) ?? weaponIn(ENEMIES['gun-turret'].build, 'shoulder', CATALOG)!;
+    const cruel: Catalog = { ...CATALOG, [turret.id]: { ...turret, damage: 5000 } };
+    const mine = createBattle(DEMO_BUILD, [ENEMIES['gun-turret'], ENEMIES['gun-turret']], cruel, 2);
+    const slot = Object.entries(ENEMIES['gun-turret'].build).find(([, id]) => id === turret.id)![0] as 'rightHand';
+    expect(previewShot(mine, 'enemy-0', slot, 'player', 'core', cruel).shatter).toBe(false);
+    expect(topic('shatter')).toMatch(/It is never done to you\.$/);
+  });
+
+  test('an overkill is one and a half times the whole core in one blow, in any fight, and the manual says so', () => {
+    expect(topic('overkill')).toContain(`at least ${word(OVERKILL)} times a machine's whole core, as it stood at full strength`);
+    const felled = (s: BattleState): unknown[] => s.events.filter((e) => e.type === 'unitDestroyed');
+    const open = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['recon-drone'], ENEMIES['gun-turret']], doing(75), 2));
+    expect(felled(shoot(open, 'enemy-0', doing(75)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }]);
+    expect(felled(shoot(open, 'enemy-0', doing(74)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0' }]);
+    // "It is said in any fight": of one machine too, where nothing else of this holds.
+    const duel = toPlayer(createBattle(DEMO_BUILD, [ENEMIES['recon-drone']], doing(75), 2));
+    expect(duel.open).toBe(false);
+    expect(felled(shoot(duel, 'enemy-0', doing(75)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0', overkill: true }]);
+    // "Finishing a machine that was already worn down is not one."
+    const worn = structuredClone(open);
+    worn.units.find((u) => u.id === 'enemy-0')!.parts.core!.ap = 1;
+    expect(felled(shoot(worn, 'enemy-0', doing(74)))).toEqual([{ type: 'unitDestroyed', unit: 'enemy-0' }]);
+    expect(topic('overkill')).toMatch(/Finishing a machine that was already worn down is not one\.$/);
+    // The word the manual gives is the word on the screen.
+    expect(topic('overkill')).toContain(`is an ${STRINGS.fx.overkill}:`);
+  });
+
+  test('what still stands loses its nerve at the second machine destroyed in a turn, not the first, and the manual says two', () => {
+    expect(topic('rout')).toMatch(new RegExp(`^Destroy ${word(2)} machines in one turn of the same fights`));
+    const drone = ENEMIES['recon-drone'];
+    let s = toPlayer(createBattle(DEMO_BUILD, [drone, drone, ENEMIES['gun-turret']], doing(900), 2));
+    s = shoot(s, 'enemy-0', doing(900));
+    expect(s.units.some((u) => u.shaken)).toBe(false);
+    s = shoot(s, 'enemy-1', doing(900));
+    expect(s.units.filter((u) => u.shaken).map((u) => u.id)).toEqual(['enemy-2']);
+    // "It is marked SHAKEN", and it leaves "without firing": its turn is the end of it.
+    expect(topic('rout')).toContain(`It is marked ${STRINGS.tags.shaken}`);
+    s = applyAction(s, { type: 'endTurn' }, doing(900));
+    expect(s.units.find((u) => u.id === 'enemy-2')).toMatchObject({ fled: true, destroyed: true });
+    expect(s.events.some((e) => e.type === 'shot' && e.unit === 'enemy-2')).toBe(false);
+  });
+
+  test('a field holds three, and the manual says three stand at a time', () => {
+    expect(topic('swarm')).toContain(`${word(MAX_ENEMIES)[0].toUpperCase()}${word(MAX_ENEMIES).slice(1)} stand at a time`);
+  });
+
+  test('a name is earned at the rates the manual gives, and there are as many names as it says', () => {
+    expect(topic('renown')).toContain(
+      `Every machine counts ${word(RENOWN.kill)}, a boss ${word(RENOWN.boss)}, a rank of the arena ${word(RENOWN.arena)}, a telling of the story ${word(RENOWN.cycle)}.`,
+    );
+    expect(topic('renown')).toContain(`There are ${word(NAME_AT.length)} names`);
+    expect(STRINGS.renown.names).toHaveLength(NAME_AT.length);
   });
 });
 

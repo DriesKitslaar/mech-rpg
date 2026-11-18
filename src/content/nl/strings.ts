@@ -59,7 +59,7 @@ export const STRINGS_NL = {
       reserve: (more: number) => `Nog ${more} volgen als er vallen`,
     },
   },
-  battleIntro: { warning: 'ALARM', destroy: 'VERNIETIG ELKE VIJAND' },
+  battleIntro: { warning: 'ALARM', destroy: 'VERNIETIG ELKE VIJAND', open: 'DOORSTOTEN' },
   yourTurn: (round: number) => `Ronde ${round} - jouw zet`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} raakt ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} mist ${obj(target)}`,
@@ -422,6 +422,7 @@ export const STRINGS_NL = {
   },
   fx: {
     miss: 'MIS', overheat: 'OVERVERHIT', stagger: 'WANKELT', shaken: 'PANIEK', block: (n: number) => `BLOK ${n}`,
+    overkill: 'OVERKILL', chain: (n: number) => `REEKS x${n}`, rout: 'VLUCHT',
     phase: (n: number) => `FASE ${n}`,
     modules: {
       coolant: 'KOELING', barrier: 'BARRIERE', overclock: 'OVERKLOK', painter: 'GEMERKT', nanites: 'NANITES', shock: 'SCHOK',

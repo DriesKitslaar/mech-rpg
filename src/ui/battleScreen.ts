@@ -706,6 +706,8 @@ export class BattleScreen {
     const title = this.opts.title ?? this.opts.label ?? '';
     drawText(ctx, title, x + LOGICAL_W / 2, y + 7, { size: 16, align: 'center', color: COLORS.accent });
     drawText(ctx, this.instruction(), x + LOGICAL_W / 2, y + 27, { align: 'center', color: COLORS.heat });
+    // A battle against ordinary machines says so before the first shot: the rule that holds there, at the end of that line.
+    if (this.flow.state.open) drawText(ctx, STRINGS.battleIntro.open, x + LOGICAL_W - 8, y + 27, { align: 'right', color: COLORS.accent });
     // Who is flying it, once that is somebody: on a band of its own under the banner, coming and going with it.
     if (this.opts.pilot) {
       ctx.fillStyle = 'rgba(8, 8, 20, 0.92)';
@@ -938,6 +940,13 @@ export class BattleScreen {
       this.particles.emit('fire', c, 1, 300);
       this.particles.emit('embers', c, 1, 320);
       this.particles.emit('smoke', c, 1, 380);
+      // A machine that went up to far more than was needed goes up harder, and throws more. Not in a calm picture: there
+      // the word says it. And not the one the battle ends with: that one is looked at from close by, which is more.
+      if (event.overkill && event.unit !== 'player' && !this.opts.calm && !staged) {
+        this.fx.harder(event.unit);
+        this.particles.emit('debris', c, 1, 300, ground(event.unit));
+        this.particles.emit('embers', c, 1, 300);
+      }
       if (event.unit !== 'player') this.leaveWreck(this.wreckSpot(event.unit));
     }
     if (event.type === 'blast') {

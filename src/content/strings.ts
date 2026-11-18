@@ -63,7 +63,8 @@ export const STRINGS = {
       reserve: (more: number) => `${more} more come on as they fall`,
     },
   },
-  battleIntro: { warning: 'WARNING', destroy: 'DESTROY ALL HOSTILES' },
+  // `open` is on the banner of a battle against ordinary machines: the rule that holds there, by the name the manual has it under.
+  battleIntro: { warning: 'WARNING', destroy: 'DESTROY ALL HOSTILES', open: 'MOMENTUM' },
   yourTurn: (round: number) => `Round ${round} - your move`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} misses ${obj(target)}`,
@@ -456,6 +457,8 @@ export const STRINGS = {
   },
   fx: {
     miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', shaken: 'SHAKEN', block: (n: number) => `BLOCK ${n}`,
+    // Over a machine that went up to far more than was needed, over the pilot as a run goes on, over a machine that leaves.
+    overkill: 'OVERKILL', chain: (n: number) => `CHAIN x${n}`, rout: 'ROUT',
     phase: (n: number) => `PHASE ${n}`,
     modules: {
       coolant: 'COOLANT', barrier: 'BARRIER', overclock: 'OVERCLOCK', painter: 'PAINTED', nanites: 'NANITES', shock: 'SHOCK',

@@ -8,7 +8,7 @@ export type SoundName =
   | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat'
   | 'guard' | 'stagger' | 'charge' | 'module'
   | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive' | 'radio' | 'relic'
-  | 'thunder' | 'sign' | 'slam' | 'ready';
+  | 'thunder' | 'sign' | 'slam' | 'ready' | 'chain2' | 'chain3';
 
 /** One synthesised note or burst. Times are in seconds, frequencies in hertz. */
 export interface Tone {
@@ -98,6 +98,9 @@ export const SOUNDS: Record<SoundName, Tone[]> = {
   repair: [t('triangle', 520, 0, 0.08, 0.35), t('triangle', 780, 0.09, 0.12, 0.35)],
   // A weapon ready again after a kill: a breech closing, and a note up a fifth.
   ready: [t('noise', 0, 0, 0.02, 0.3), t('square', 740, 0.02, 0.04, 0.22), t('square', 1110, 0.065, 0.08, 0.22)],
+  // The second of a turn, and the third and after: the same breech, each a step higher than the last, the third with a note more.
+  chain2: [t('noise', 0, 0, 0.02, 0.3), t('square', 880, 0.02, 0.04, 0.22), t('square', 1320, 0.065, 0.08, 0.22)],
+  chain3: [t('noise', 0, 0, 0.02, 0.3), t('square', 1047, 0.02, 0.04, 0.22), t('square', 1568, 0.065, 0.05, 0.22), t('square', 2093, 0.12, 0.08, 0.2)],
   overheat: [t('square', 520, 0, 0.1, 0.35), t('square', 390, 0.16, 0.1, 0.35), t('square', 520, 0.32, 0.1, 0.35)],
   victory: [t('square', 523, 0, 0.12, 0.3), t('square', 659, 0.13, 0.12, 0.3), t('square', 784, 0.26, 0.12, 0.3), t('square', 1047, 0.39, 0.3, 0.3)],
   defeat: [t('sawtooth', 392, 0, 0.2, 0.3), t('sawtooth', 311, 0.22, 0.2, 0.3), t('sawtooth', 233, 0.44, 0.45, 0.3)],
@@ -112,8 +115,9 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
   switch (event.type) {
     case 'shot': return [{ name: SHOT[damageType], delayMs: 0 }, { name: event.hit ? 'hit' : 'miss', delayMs: flightMs }];
     case 'partDestroyed': return now('partDestroyed');
-    case 'unitDestroyed': return now('unitDestroyed');
-    case 'momentum': return now('ready');
+    // A machine that went up to far more than was needed is heard to: the slam of a blow that ends things, under the blast.
+    case 'unitDestroyed': return event.overkill && event.unit !== 'player' ? [...now('unitDestroyed'), ...now('slam')] : now('unitDestroyed');
+    case 'momentum': return now(event.chain >= 3 ? 'chain3' : event.chain === 2 ? 'chain2' : 'ready');
     case 'arrive': return now('launch');
     case 'shaken': return now('stagger');
     case 'rout': return now('boost');

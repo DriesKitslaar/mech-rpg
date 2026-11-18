@@ -146,7 +146,8 @@ describe('a kill that readies the weapon', () => {
 
   test('is heard: once for each, and not for the one that ends the battle', () => {
     const m = run();
-    expect(m.heard.filter((name) => name === 'ready')).toHaveLength(2);
+    // The first is the weapon back; the second, a step higher, is the run going on.
+    expect(m.heard.filter((name) => ['ready', 'chain2', 'chain3'].includes(name))).toEqual(['ready', 'chain2']);
     // The machine is heard to go before the weapon is heard to be back.
     expect(m.heard.indexOf('ready')).toBeGreaterThan(m.heard.indexOf('unitDestroyed'));
     expect(soundsForEvent({ type: 'momentum', unit: 'player', weapon: 'rightHand', chain: 1 }, 'kinetic', 90)).toEqual([{ name: 'ready', delayMs: 0 }]);

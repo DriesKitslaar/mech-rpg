@@ -35,7 +35,7 @@
 - [x] H2: They break (branch `feat/heavy-break`)
 - [x] H3: Swarms (branch `feat/heavy-swarm`)
 - [x] H4: A name (branch `feat/heavy-name`)
-- [ ] H5: Weight (branch `feat/heavy-weight`)
+- [x] H5: Weight (branch `feat/heavy-weight`)
 - [ ] H6: Review, soak, APK, summary (branch `feat/heavy-review`)
 
 ## The measurements
@@ -164,12 +164,20 @@ Each part adds its column here.
 
 ## H5: Weight
 
-**Files:** `src/core/battle.ts` (`overkill` on the event), `src/ui/battleScreen.ts`, `src/ui/effects*.ts`, `src/platform/audio.ts`, strings; tests in `tests/ui/weight.test.ts` (new), `tests/platform/audio.test.ts`.
+**Files:** `src/core/battle.ts` (`OVERKILL`, `overkill` on the event), `src/ui/battleFx.ts` (the words, `harder`, what is written drawn over what burns), `src/ui/battleScreen.ts` (the harder blast and what is thrown, the banner's tag), `src/platform/audio.ts` (the slam, `chain2`, `chain3`), strings, `src/content/codex.ts` (a manual topic), guide; tests in `tests/core/overkill.test.ts`, `tests/ui/weight.test.ts` (new), `tests/content/claims.test.ts`.
 
-- [ ] `unitDestroyed` says `overkill: true` when the hit that did it carried at least twice what was left of the core.
-- [ ] The word and the harder burst for an overkill; the counter and the rising note for a chain; the word for a rout. Calm setting: words only. Nothing holds a turn up (test: the same number of frames to the next choice with and without).
-- [ ] An open battle says that it is one as it opens (the banner), so that a pilot knows before the first shot which rules the fight is fought by.
-- [ ] All tests, the soak for the new effects, an APK.
+**Interfaces:**
+- `OVERKILL = 1.5`; `{ type: 'unitDestroyed'; unit; overkill?: true }`.
+- `BattleFx.harder(unitId)`; `OVERKILL_SIZE = 1.5`, `OVERKILL_UP = 24`; `WRECK_MS` exported; sounds `chain2`, `chain3`.
+- Strings `fx.overkill`, `fx.chain(n)`, `fx.rout`, `battleIntro.open` ('MOMENTUM' / 'DOORSTOTEN').
+
+- [x] Tests first (`overkill.test.ts`): `unitDestroyed` says `overkill: true` when one hit did, past any barrier, at least one and a half times the core at full strength; one point less is not one; through a lost limb it is the half that passes on that is measured; a shattering is never one for that alone; in every fight, open or not, and of the pilot too; never of what a bomb, an ally or a fuse destroyed; nothing else in a battle changes.
+- [x] The plan had twice what was left of the core. Measured (frames of the shop, the contracts and swarms of their stage): against what was left, 6 to 25 kills in a hundred of the story were one (every finishing blow on a worn machine) and none in a swarm; against the whole core at twice, none but two in a hundred for the fifth frame; at one and a half, none for the first three frames, 8, 8 and 1 in a hundred of the story for the fourth, fifth and sixth, and 45, 34 and 9 in a hundred of their swarms (a pilot with the bench at its limit: 16 to 57); at once the core, 74 to 88 in a hundred of a grown pilot's swarm. One and a half times the whole core it is, and `overkill.test.ts` keeps the swarm figures.
+- [x] The word and the harder burst for an overkill; the counter and the rising note for a chain; the word for a rout. Calm setting: words only. Nothing holds a turn up (test: the same number of frames to the next choice with and without). Not for the pilot's own mech, and not in the close look at the last machine, which has its own staging.
+- [x] Looked at in a browser: the word was lost behind the blast that came after it, and was written into the figure of the hit. What is written is now drawn over what burns (figures too), and the word stands 24 above where the figure was written.
+- [x] An open battle says that it is one as it opens (the banner), so that a pilot knows before the first shot which rules the fight is fought by; it never runs into what the battle asks, in either language.
+- [x] A manual topic (OVERKILL) and the guide. The manual's topics of this round are held against the rules themselves (`claims.test.ts`): half a core, one and a half times, two in a turn, three at a time, what a name is earned by.
+- [x] 73 small faults put into the new code and the manual, one at a time: 72 found by the tests. The one that is not is no fault (the core at full strength of "the part that was hit": a machine is only ever destroyed through its core). All tests, the soak, an APK.
 
 ## H6: Review, soak, APK, summary
 
