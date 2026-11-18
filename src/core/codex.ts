@@ -1,10 +1,11 @@
 import { framePart, weaponIn } from './build';
 import { reached, type Condition, type Mission } from './campaign';
+import type { GameState } from './game';
+import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog, type DamageType, type EnemyDef } from './types';
+
 export { checksHeld } from './campaign';
 /** How many of the papers there are to find the pilot has found. */
 export const papersFound = (game: GameState): number => game.codex.filter((id) => id.startsWith('paper-')).length;
-import type { GameState } from './game';
-import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog, type DamageType, type EnemyDef } from './types';
 
 /** A few lines about the world, which open at some point in the story and stay open. */
 export interface Entry {
@@ -34,11 +35,28 @@ export interface Find extends Entry {
 export const isFind = (entry: Entry): entry is Find => 'kind' in entry;
 
 /**
+ * A game as its record has it, for a game that has found nothing yet: everything it has a rank for
+ * counts as done, as in a first telling. A game kept before there was anything to find may be
+ * several tellings old; what its earlier tellings did is gone but for the ranks, and by those it is
+ * judged, once. Answers given in an earlier telling were not kept, so what an answer finds is not
+ * made good; nor is what only a later telling finds, which nobody had heard then. Null for a game
+ * that holds a find: what it did, it was given at the time.
+ */
+function earlierRecord(game: GameState, entries: Entry[]): GameState | null {
+  if (entries.some((entry) => isFind(entry) && game.codex.includes(entry.id))) return null;
+  return { ...game, completed: [...new Set([...game.completed, ...Object.keys(game.ranks)])], cycle: 0 };
+}
+
+/**
  * Opens every entry whose time has come and that is not open yet, in list order. An open entry
- * stays open through later cycles. The state is returned unchanged when nothing opens.
+ * stays open through later cycles. The state is returned unchanged when nothing opens. A game that
+ * has found nothing yet is also given the finds its record has earned (see `earlierRecord`).
  */
 export function openEntries(game: GameState, entries: Entry[], missions: Mission[]): { game: GameState; opened: Entry[] } {
-  const opened = entries.filter((entry) => !game.codex.includes(entry.id) && reached(game, entry.after, missions));
+  const record = earlierRecord(game, entries);
+  const due = (entry: Entry): boolean =>
+    reached(game, entry.after, missions) || (record !== null && isFind(entry) && reached(record, entry.after, missions));
+  const opened = entries.filter((entry) => !game.codex.includes(entry.id) && due(entry));
   if (opened.length === 0) return { game, opened };
   return { game: { ...game, codex: [...game.codex, ...opened.map((entry) => entry.id)] }, opened };
 }

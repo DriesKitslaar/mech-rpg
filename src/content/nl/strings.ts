@@ -227,7 +227,7 @@ export const STRINGS_NL = {
   },
   database: {
     heading: 'DATABASE', pages: { units: 'EENHEID', people: 'MENSEN', world: 'WERELD', finds: 'VONDST', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
-    found: (n: number, of: number) => `VONDST ${n}/${of}`, checks: (n: number) => `PENNINGEN ${n}`, check: 'Penning', notFound: 'Niet gevonden.',
+    found: (n: number, of: number) => `VONDST ${n}/${of}`, checks: (n: number) => `PENNINGEN ${n}`, check: 'Penning', notFound: 'Nog zoek.',
     findToast: 'VONDST', newFinds: (n: number) => `${n} vondsten`,
     known: (n: number, of: number) => `BEKEND ${n}/${of}`, broughtIn: 'Ingerekend',
     heard: (n: number, of: number) => `GEHOORD ${n}/${of}`, notHeard: 'Nog niet gehoord.', play: 'A: speel', stop: 'A: stop', playing: 'SPEELT NU',
@@ -293,7 +293,7 @@ export const STRINGS_NL = {
     accept: 'Aannemen', back: 'Terug', reward: 'LOON', engagements: (n: number) => (n === 1 ? '1 GEVECHT' : `${n} GEVECHTEN`),
     hostiles: 'VERWACHT', exclusive: 'EXCLUSIEF: de andere twee klanten trekken hun aanbod in.',
     finale: 'LAATSTE ZET VAN DE OORLOG', repeatable: 'DOORLOPEND CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: EEN ELITE',
-    verdict: 'VONNIS: je antwoord eindigt het verhaal. Het andere aanbod vervalt.',
+    verdict: 'VONNIS: je antwoord eindigt het verhaal. Elk ander aanbod vervalt.',
     replay: 'ARCHIEF: minder loon. Het verhaal verandert niet.',
     lent: 'LEENMECH: de jouwe kan niet mee. Rekening blijft van jou.',
     wingman: 'Wingman', alone: 'Geen', wingmanShare: (percent: number) => `-${percent}% loon`,

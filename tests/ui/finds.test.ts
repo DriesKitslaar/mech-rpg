@@ -1,4 +1,6 @@
 import { FINDS } from '../../src/content/finds';
+import { SCENES } from '../../src/content/scenes';
+import { findLabel } from '../../src/ui/databaseScreen';
 import { setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
 import { TOAST_MS } from '../../src/ui/app';
@@ -56,14 +58,28 @@ describe('the page of what has been found', () => {
     const { app, store } = onFinds(done('intro-1', 'intro-2', 'undertow-1', 'undertow-2'));
     expect(savedGame(store).codex).toEqual(expect.arrayContaining(['paper-rhyme', 'check-dock']));
     expect(labels(app)[2]).toBe('03 Counting Rhyme');
-    expect(labels(app)[24]).toBe('Check 117');
+    expect(labels(app)[24]).toBe('Check 114');
     expect(snap(app).menu.items.filter((item) => item.enabled).map((item) => item.id)).toEqual(['paper-rhyme', 'check-dock']);
     expect(snap(app).count).toBe('FOUND 2/40   LAMP CHECKS 1');
     press(app, 'down', 'down');
     expect(detail(app)).toMatchObject({ title: 'COUNTING RHYME', source: 'Sung to children below the gates.' });
     expect(detail(app).lines.join(' ')).toBe(FINDS[2].text);
     for (let i = 0; i < 22; i++) press(app, 'down');
-    expect(detail(app)).toMatchObject({ title: 'CHECK 117', source: 'Tied to your frame\'s left foot.' });
+    expect(detail(app)).toMatchObject({ title: 'CHECK 114', source: 'Tied to your frame\'s left foot.' });
+  });
+
+  test('a name in the list is written small but for a number in it, which stays as stamped', () => {
+    const paper = (id: string) => FINDS.find((f) => f.id === id)!;
+    expect(findLabel(paper('paper-policy'), true)).toBe('02 Policy VRN-1');
+    expect(findLabel(paper('paper-book'), true)).toBe('18 Tamsin\'s Book');
+    expect(findLabel(paper('paper-schedule'), true)).toBe('22 Schedule C');
+    try {
+      setLanguage('nl');
+      expect(findLabel(paper('paper-policy'), true)).toBe('02 Polis VRN-1');
+      expect(findLabel(paper('paper-retainer'), true)).toBe('16 Vast Contract');
+    } finally {
+      setLanguage('en');
+    }
   });
 
   test('is drawn with where a find comes from in a dimmer letter, under its name', () => {
@@ -90,7 +106,7 @@ describe('the page of what has been found', () => {
       const base = done('intro-1', 'intro-2', 'undertow-1', 'undertow-2');
       const { app } = onFinds({ ...base, settings: { ...base.settings, language: 'nl' } });
       expect(labels(app)[2]).toBe('03 Aftelrijm');
-      expect(labels(app)[24]).toBe('Penning 117');
+      expect(labels(app)[24]).toBe('Penning 114');
       expect(labels(app)[25]).toBe('Penning ? ? ?');
       expect(snap(app).count).toBe('VONDST 2/40   PENNINGEN 1');
       press(app, 'down', 'down');
@@ -134,6 +150,21 @@ describe('a find is announced', () => {
     const { app, store } = inHub({ ...done('intro-1', 'intro-2', 'undertow-1', 'undertow-2', 'lumen-1'), scenes: ['act-1', 'talk-kite'] });
     expect(savedGame(store).codex).toEqual(expect.arrayContaining(['paper-rhyme', 'paper-survey', 'check-dock']));
     app.update(16);
+    expect(snap(app).toasts.concat(snap(app).toast ?? []).filter((id) => id.startsWith('find'))).toEqual(['finds:3']);
+  });
+
+  test('one that has since started the story over is given what its earlier telling earned, in one announcement, once', () => {
+    // Nothing done yet in the second telling. Of the first, the ranks are what is left.
+    const earlier = ['intro-1', 'intro-2', 'undertow-1', 'undertow-2', 'lumen-1'];
+    const old = { ...fresh(), cycle: 1, ranks: Object.fromEntries(earlier.map((id) => [id, 'B' as const])), scenes: SCENES.filter((scene) => !scene.ending).map((scene) => scene.id) };
+    const finds = (ids: string[]) => ids.filter((id) => id.startsWith('paper-') || id.startsWith('check-')).sort();
+    const { app, store } = inHub(old);
+    expect(finds(savedGame(store).codex)).toEqual(['check-dock', 'paper-rhyme', 'paper-survey']);
+    app.update(16);
+    expect(snap(app).toasts.concat(snap(app).toast ?? []).filter((id) => id.startsWith('find'))).toEqual(['finds:3']);
+    // Once: the next thing saved finds nothing more.
+    app.commit({ ...app.game! });
+    expect(finds(savedGame(store).codex)).toEqual(['check-dock', 'paper-rhyme', 'paper-survey']);
     expect(snap(app).toasts.concat(snap(app).toast ?? []).filter((id) => id.startsWith('find'))).toEqual(['finds:3']);
   });
 });

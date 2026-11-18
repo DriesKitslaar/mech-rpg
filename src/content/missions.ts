@@ -136,7 +136,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Data secured. Varga confirms the transfer in four words and closes the channel.',
     battles: [
-      battle(['gun-turret', 'recon-drone'], MINE, { talk: [dispatch(2, 'A survey station. Forty years of readings, and Hadron guards it like a mint. Makes you wonder what the readings say.')] }),
+      battle(['gun-turret', 'recon-drone'], MINE, { talk: [dispatch(2, 'A survey station. Lumen does not dig, and it is paying a pilot for forty years of somebody else\'s rock.')] }),
       battle(['tank', 'gun-turret'], MINE, { talk: [varga('start', 'The tank resists bullets and little else. Adjust accordingly.')] }),
     ],
   },
@@ -295,7 +295,7 @@ export const MISSIONS: Mission[] = [
       battle(['tank', 'repair-drone', 'tank'], SLUICE, {
         talk: [
           dispatch('start', 'Repair drone. Whatever you break, it mends. You know what to shoot first.'),
-          again(recorder(2, 'The water is higher than it was. The mark will be under it now.')),
+          again(recorder(2, 'Water is coming up fast. Another hour and the lid is gone.')),
         ],
       }),
       battle(['leviathan'], SLUICE, {
@@ -316,7 +316,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The Mantis is winched onto a flatbed, still twitching. Brenn pays in full, for once without comment.',
     battles: [
-      battle(['gunship', 'tank'], UNDER, { talk: [dispatch('start', 'Brenn wants it whole. Ask yourself what a mining company wants with a frame that jumps. Then do not tell me.')] }),
+      battle(['gunship', 'tank'], UNDER, { talk: [dispatch('start', 'Brenn wants it whole. Somebody below built a frame that could clear a floodgate. I doubt it is the frame he is after.')] }),
       battle(['ripper', 'repair-drone'], UNDER, {
         objective: { type: 'disable', target: 0 },
         talk: [brenn('start', 'Legs and arms, pilot. If that core goes out, so does your fee.')],
@@ -341,7 +341,7 @@ export const MISSIONS: Mission[] = [
         par: 9,
         talk: [
           varga('start', 'Kinetic fire is wasted on the hull and the wheel arm. Energy weapons go through all of it.'),
-          dispatch(3, 'Its cab is empty. That thing has been digging on its own for years. Nobody told it the seam was finished.'),
+          dispatch(3, 'Its cab is empty. That thing has been digging on its own for years. Nobody has told it to stop.'),
         ],
       }),
     ],
@@ -413,7 +413,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'The Eye falls into the plaza fountain. For one night nobody below is being counted.',
     battles: [
-      battle(['marksman', 'shield-drone'], PLAZA, { talk: [dispatch('start', 'The Eye counts heads below the gates and sends the number up the tower every night. Nobody will say who reads it.')] }),
+      battle(['marksman', 'shield-drone'], PLAZA, { talk: [tamsin('start', 'It does not watch us, pilot. It counts. A number goes up that tower every night. I have never seen one come down.')] }),
       battle(['overseer', 'shield-drone'], PLAZA, { par: 10, talk: [tamsin('start', 'That is it. Shoot the drone first, then put out the lens.')] }),
     ],
   },
@@ -426,7 +426,7 @@ export const MISSIONS: Mission[] = [
     ],
     debrief: 'Morning comes and the pumps are still turning. Tamsin brings you tea in a tin mug.',
     battles: [
-      battle(['juggernaut', 'carrier'], SLUICE, { objective: { type: 'survive', rounds: 6 }, talk: [tamsin(3, 'Hear that? Pumps. The bottom streets have not been dry since my mother was a girl.'), again(recorder(4, 'The water is going down. This is as low as it stood that night.'))] }),
+      battle(['juggernaut', 'carrier'], SLUICE, { objective: { type: 'survive', rounds: 6 }, talk: [tamsin(3, 'Hear that? Pumps. The bottom streets have not been dry since my mother was a girl.'), again(recorder(4, 'Water is down. Lowest I have seen it. That is why they sent the trucks tonight.'))] }),
       battle(['stalker', 'heavy-mech', 'gunship'], SLUICE, { objective: { type: 'survive', rounds: 6 }, talk: [tamsin(5, 'One more round. Then somebody should go down and see what the water has been keeping.')] }),
     ],
   },
@@ -540,7 +540,7 @@ export const MISSIONS: Mission[] = [
     id: 'audit-3', phase: 'audit', scale: 1.2, title: 'Unlikely Terms', client: 'Ashfall', portrait: 'portrait-rival', reward: 6500,
     briefing: [
       'It is me. Do not hang up. Meridian has put a lien on my frame too, and I dislike owing people.',
-      'Their Assessor is walking the rooftops, pricing the city. I will shoot from the next roof. You stand in front of it.',
+      'One of their Assessors walks the rooftops, pricing the city. I shoot from the next roof. You stand in front of it.',
       'I fire at whatever is strongest, once a round. Try to deserve it.',
     ],
     debrief: 'The Assessor goes off the roof in two pieces. Ashfall says "we", once, and then corrects it.',
@@ -602,11 +602,11 @@ export const MISSIONS: Mission[] = [
   // The third verdict: only in a later telling, for a pilot who has brought the box home and holds nine checks.
   {
     id: 'verdict-quorum', phase: 'verdict', verdict: 'quorum', when: 'quest-3&checks:9', scale: 1.25, title: 'Any Other Business', client: 'Tamsin, for the Society',
-    portrait: 'portrait-undertow', reward: 9000,
+    portrait: 'portrait-undertow', reward: 6000,
     briefing: [
-      'You have the box and nine in brass. That makes a meeting, if it is held in the hall with the door shut.',
-      'Meridian will come to stop the count. Its Secretary votes for everybody who ever drowned.',
-      'Stand in the door while they are hung. Six rounds.',
+      'Nine in brass opened the box. The roll was inside. A meeting can be held, with the door shut.',
+      'Meridian will come to stop the count. Its Secretary has a great many votes.',
+      'Stand in the door while the brass is hung. Six rounds.',
     ],
     debrief: 'The Proxy goes down in the water it was built to keep. Behind you, somebody calls the next item.',
     battles: [
@@ -618,8 +618,8 @@ export const MISSIONS: Mission[] = [
           dispatch(2, 'I am reading the roll on channel nine. It is a long roll. Most of it does not answer.'),
           tamsin(3, 'Four. Five. Six. Keep them off the door, pilot.'),
           ashfall(4, 'I am on the stair. Nothing gets behind you. I owe a convoy that much.'),
-          tamsin(5, 'Seven. Eight. Eight on the board. That is every hook we have a living hand for.'),
-          tamsin(6, 'The ninth is tied to your left foot. It has been there since the dock. Stay where you are. That makes nine.'),
+          tamsin(5, 'Seven. Eight. Eight on the board. The ninth hook is yours, pilot, and you are in the door.'),
+          tamsin('win', 'The ninth is tied to your left foot. It has been there since the dock. Stay where you are. That makes nine.'),
           actuary('win', 'A quorum. How irregular. Then I must vote the absent. The Proxy, please.'),
         ],
       }),
@@ -726,7 +726,7 @@ export const EPILOGUES: Record<Verdict, Record<Faction, { title: string; body: s
       title: 'IN ARREARS',
       body: [
         'Hadron Mining is called to a meeting for the first time in forty years. Director Brenn attends in person, and is asked to wait outside.',
-        'The pits open in the spring under new owners, who are the old owners. Nobody is sure what to dig for. Somebody suggests the truth.',
+        'The pits open in the spring under new owners, who are the old owners. Nobody is sure what to dig for.',
         'Your debt is on the agenda. It is moved, seconded and struck out. You are thanked from the chair, which nobody has done before.',
       ],
     },
@@ -839,6 +839,14 @@ export const MESSAGES: Message[] = [
     ],
   },
   {
+    id: 'logs-sold', from: 'Dispatch', portrait: 'portrait-dispatch', subject: 'About the logs', after: 'cycle:1&chose:logs=sell',
+    body: [
+      'You sold Lumen what the frame has seen. I am not judging. I have sold worse.',
+      'But that recorder goes back further than the dock. Whatever else is on it, Lumen has a copy now, and Lumen sends machines to look at things.',
+      'If there is a place on that tape, it is not only yours any more. Not this year.',
+    ],
+  },
+  {
     id: 'rival-after', from: 'Ashfall', portrait: 'portrait-rival', subject: 'About tonight', after: 'rival-1',
     body: [
       'You fight better than your equipment. That is rarer than the other way round.',
@@ -852,15 +860,23 @@ export const MESSAGES: Message[] = [
       'Nothing personal. My old frame is on the open market now, if you want to meet me on even terms.',
     ],
   },
-  ...FACTIONS.map(warWon),
+  {
+    id: 'ashfall-paper', from: 'Ashfall', portrait: 'portrait-rival', subject: 'Old paper', after: 'quest-1',
+    body: [
+      'Somebody has been through the files of a desk with a nine on it. Word travels. I assume it was you.',
+      'My first contract was one line long. I did what the line said and nothing it did not say. I was twenty.',
+      'I read every contract to the end now. It has not helped as much as you would think.',
+    ],
+  },
   {
     ...DESK, id: 'tidy-desk', subject: 'Enclosed', after: 'chose:sixty=keep|chose:sixty=file',
     body: [
       'I filed things for the board for forty years. Mostly where I was told to. Once where I was paid to, and you have that file now.',
       'I am retired. I kept copies. I will send a pilot what that pilot has been near, and no more than that. I like a tidy desk.',
-      'What you find, your database keeps under FOUND. Some of it you will have picked up yourself before you ever heard from me.',
+      'Keep what you find in one place. Some of it you will have picked up yourself before you ever heard from me.',
     ],
   },
+  ...FACTIONS.map(warWon),
   {
     id: 'notice', from: 'Meridian Mutual', portrait: 'portrait-actuary', subject: 'NOTICE OF DEFAULT', after: 'finale',
     body: [
@@ -884,23 +900,23 @@ export const MESSAGES: Message[] = [
     ],
   },
   {
-    id: 'ashfall-paper', from: 'Ashfall', portrait: 'portrait-rival', subject: 'Old paper', after: 'quest-1',
+    ...DESK, id: 'tidy-desk-box', subject: 'Nine hasps', after: 'quest-3',
     body: [
-      'Somebody has been through the files of a desk with a nine on it. Word travels. I assume it was you.',
-      'My first contract was one line long. I did what the line said and nothing it did not say. I was twenty.',
-      'I read every contract to the end now. It has not helped as much as you would think.',
+      'I see the box is back where it started. Forty years late, which for the Society is prompt.',
+      'It has nine hasps and no key. It was never meant to have a key.',
+      'I have nothing more to send. My desk is tidy. Yours is not, yet.',
     ],
   },
   {
-    id: 'third-offer', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'A third offer', after: 'audit-3&quest-3&checks:9',
+    id: 'third-offer', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'A third offer', after: 'audit-3&quest-3&checks:9&!verdict',
     body: [
-      'I hear you have two offers. Here is a third. It pays nothing, which you will be used to from me.',
+      'I hear you have two offers. Here is a third. It pays out of a collection tin, which you will be used to from me.',
       'You brought the box home. You hold nine in brass. By the rules of a society older than either company, that is enough to call a meeting.',
       'Meridian will not want it held. Come down to the hall. Bring the frame. It has a seat.',
     ],
   },
   {
-    id: 'short-of-nine', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'Short of nine', after: 'audit-3&quest-3&!checks:9',
+    id: 'short-of-nine', from: 'Tamsin', portrait: 'portrait-undertow', subject: 'Short of nine', after: 'audit-3&quest-3&!checks:9&!verdict',
     body: [
       'The box is in the hall and it will not open. Nine hasps, and you hold fewer than nine in brass.',
       'People in this city carry those and do not know what they are. Some would hand theirs to a pilot they trusted. That is all I can tell you.',
@@ -915,17 +931,9 @@ export const MESSAGES: Message[] = [
       'I am on your channel. It is not an order any more. It is only where I am.',
     ],
   },
-  {
-    ...DESK, id: 'tidy-desk-box', subject: 'Nine hasps', after: 'quest-3',
-    body: [
-      'I see the box is back where it started. Forty years late, which for the Society is prompt.',
-      'It has nine hasps and no key. It was never meant to have a key. Read the rule book again: the ninth rule.',
-      'I have nothing more to send. My desk is tidy. Yours is not, yet.',
-    ],
-  },
   ...VERDICTS.flatMap((verdict) => FACTIONS.map((faction) => epilogue(verdict, faction))),
   {
-    ...DESK, id: 'tidy-desk-again', subject: 'One more file', after: 'verdict&!verdict-quorum',
+    ...DESK, id: 'tidy-desk-again', subject: 'One more file', after: 'verdict&!cycle:1',
     body: [
       'So it is decided. I had hoped to be out of envelopes by now.',
       'Your frame has a recorder. It was never wiped. It was only never asked anything. It knows the sluice, and it knows it from before your time.',

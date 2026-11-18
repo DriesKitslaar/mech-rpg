@@ -108,9 +108,10 @@ test('the third verdict: the door of the hall, the Proxy, and the meeting', asyn
   await waitForScreen(page, 'briefing');
   await page.screenshot({ path: shot('briefing-quorum') });
 
-  // Play it out, as many times as it takes: what is being looked at is what it leads to.
+  // Play it out. This pilot (the best frame, every fighting perk) wins it nearly every time; a second and
+  // a third try are allowed for the dice, and no more: more would hide a Proxy that had grown too strong.
   let won = false;
-  for (let attempt = 0; attempt < 8 && !won; attempt++) {
+  for (let attempt = 0; attempt < 3 && !won; attempt++) {
     await choose(page, 'accept');
     await waitForPhase(page, 'action');
     expect((await snap(page)).battle).toMatchObject({ mission: 'verdict-quorum', index: 0, objective: expect.stringContaining('1/6') });

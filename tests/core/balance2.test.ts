@@ -40,6 +40,10 @@ test('the best gear there is wins every verdict more often than not', () => {
   for (const id of ids('verdict')) expect(play(id, 'tier6').winRate, id).toBeGreaterThanOrEqual(0.6);
 });
 
+// What these play is the contract as it is written, with no perks: gear against gear. The third verdict
+// is only ever offered from the second telling on, where a contract is a quarter tougher on Standard
+// (and as written on Story), and where a pilot has a telling's worth of perks. That a whole career
+// reaches it and wins it, on every difficulty, is what tests/scripts/career.test.ts plays.
 test('the third verdict is the hardest contract of the story: it is not for the gear the story sells, and no verdict is tougher', () => {
   expect(offeredToAll).toEqual(['verdict-enforce', 'verdict-default']);
   // A full Ronin, which wins the other two about as often as not, does not win this one.

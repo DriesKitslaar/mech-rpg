@@ -64,8 +64,8 @@ hints at it agrees.
    above: they keep the people of the bottom levels (the Undertow, the members' children and
    grandchildren) in, and uncounted. The Secretary holds a proxy for every member who drowned.
 4. **The convoy, eleven years ago.** In a dry year the hall could be reached. The Undertow brought
-   the box up and sent it, with members, in four trucks by the sluice, to be opened at the board
-   office. Escort: Old Sixty in the lead, and a second pilot in the frame that is now the pilot's.
+   the box up and sent it, with members, in four trucks by the sluice, to be opened at the
+   licensing office, the one counter in the city that neither company owns. Escort: Old Sixty in the lead, and a second pilot in the frame that is now the pilot's.
    Meridian's Desk 9 bought a new licence, aged twenty, to "stop a freight convoy at the sluice"
    without opening the trucks: Ashfall. Sixty was not where he should have been. The second escort
    stayed, saw the box go into the water at gate four, marked the place on the frame's plate, and
@@ -129,19 +129,32 @@ its text: a few words about where it is, in the game's own voice. A find has a t
 cycles. A toast says when one is found. Under the list: how many are found, and how many checks
 are held.
 
+A clue says where a thing is, never what it is: it does not quote the find, name a person or a
+contract, or give an answer to one of the story's questions. The clue of a find that the story
+hands out by itself says nothing of what is to come, since every clue can be read from the first
+minute. The clue of a find that only a later cycle can reach says so after its fashion; that is
+how a first cycle learns there is a second.
+
+What a voice hints at in the first act is not answered by a paper in the same breath. The papers
+that answer (the weigh ticket, the purchase order) come when the war is over; nothing found while
+the war is on names the insurer.
+
 **The tally.** Nine checks make a meeting. There are sixteen to be had, some of them only by one
 answer to a question of the story or on one client's road, so nobody can hold all of them in one
-cycle, and a first cycle played without side work ends with three or four. Checks are finds, so
+cycle, and a first cycle played without side work ends with two or three. Checks are finds, so
 they are kept through the cycles.
 
 **A later cycle.** From the second cycle on: a page before the first contract (PLAYBACK); the
 recorder's lines; three contracts with no client (`quest-1` to `quest-3`), one at a time: a relay
 in the freight lanes that listens for the frame, guarded by machines in a livery nobody should
 know yet; gate four at low water, if the frame's logs were not sold; the hall, once the war is
-over. After the second, a conversation in which the pilot plays the recorder to Dispatch.
+over. After the second, a conversation in which the pilot plays the recorder to Dispatch. None of
+the three is flown once a verdict is given. A pilot of a later cycle who sells the frame's logs is
+told by Dispatch, in a letter, that more went with them than the dock.
 
 **The third verdict.** After the audit, a pilot who has brought up the box and holds nine checks
-is made a third offer, by Tamsin: Any Other Business. Two battles in the drowned hall: the door,
+is made a third offer, by Tamsin: Any Other Business. It pays least of the three, so nobody takes
+it for the fee. Two battles in the drowned hall: the door,
 held for six rounds while the checks are hung up and counted; then the Proxy. Three new pages of
 epilogue, one for each client the war was fought for.
 
@@ -162,6 +175,9 @@ asked anything; fly the war again and let it listen.
 ## Constraints
 
 - A saved game from before loads, and finds whose time has come are found at once, in one toast.
+  One that is already in a later cycle is given what its record shows it earned (every contract it
+  has a rank for counts as flown, as in a first cycle); answers given in earlier cycles were not
+  kept and are not made good.
 - Every new English text has its Dutch, inside the room its kind has.
 - Image spend: 5.18 of 14 dollars were spent before this round. This round may spend up to 1 dollar,
   at low quality: a face for the recorder, the hall, a still for the third ending, the Proxy.

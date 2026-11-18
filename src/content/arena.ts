@@ -42,7 +42,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Mirage', ai: 'skirmisher', scale: 0.8, paint: 'rose',
+    name: 'Shimmer', ai: 'skirmisher', scale: 0.8, paint: 'rose',
     style: 'A full Halo frame with a marksman rifle and chaff. Very hard to hit while her legs work.',
     taunt: 'You will be shooting at where I was.',
     build: {
@@ -70,7 +70,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Cinder', ai: 'gunner', scale: 1.1, paint: 'sunburst',
+    name: 'Clinker', ai: 'gunner', scale: 1.1, paint: 'sunburst',
     style: 'A Ronin on four legs with thermal weapons. Every hit heats you up, so vent early or shut down.',
     taunt: 'Let us see how you fight with your cockpit on fire.',
     build: {
@@ -119,7 +119,7 @@ const LADDER: Entry[] = [
     },
   },
   {
-    name: 'Vesper', ai: 'skirmisher', scale: 1.3, paint: 'toxic',
+    name: 'Nightjar', ai: 'skirmisher', scale: 1.3, paint: 'toxic',
     style: 'A Wraith on Halo legs that never stops moving. A disruptor and a null beam: every hit comes out of your next turn.',
     taunt: 'You will run dry long before I do.',
     build: {

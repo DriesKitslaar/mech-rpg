@@ -2,7 +2,8 @@
 
 Een beurtgebaseerde mech-RPG voor de Retroid Pocket Classic. Je bent een huurling in de neonstad
 Varn. Je bouwt een mecha uit losse onderdelen, neemt contracten aan en betaalt munitie en
-reparaties uit je eigen loon. De tekst in het spel is Engels; deze handleiding is Nederlands.
+reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies dat onder
+**Options**, bij **Language**); deze handleiding gebruikt de Engelse namen van de menu's.
 
 ## Installeren
 
@@ -44,11 +45,12 @@ reparaties uit je eigen loon. De tekst in het spel is Engels; deze handleiding i
 | Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld) en drie wisselende losse contracten. Onderaan staat het archief. |
 | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
 | Training | Tien oefeningen in een geleende mecha. |
+| The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
 | Garage | Onderdelen wisselen, verf kiezen (L1/R1), drie builds bewaren (links/rechts). |
 | Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
 | Pilot | Niveau en vaardigheden, medailles, en een logboek van alles wat je gedaan hebt. |
 | Messages | Berichten van je opdrachtgevers. |
-| Database | Fiches van elke vijand die je bent tegengekomen, achtergrond over de stad, en de spelregels. |
+| Database | Fiches van elke vijand die je bent tegengekomen, de mensen van Varn, achtergrond over de stad, wat je gevonden hebt (**Found**), de spelregels en de muziek. |
 | Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid, A en B omwisselen, de aftiteling opnieuw bekijken, terug naar het titelscherm. De opties gelden voor alle drie de opslagplekken. |
 
 ## Een gevecht
@@ -104,9 +106,26 @@ Niet elk gevecht win je door alles te vernietigen. Boven het veld staat wat er g
 
 Het verhaal heeft drie bedrijven en duurt ongeveer achttien contracten. In het eerste bedrijf werk
 je voor drie opdrachtgevers. Daarna kies je er één (de andere twee trekken hun aanbod in) en vecht
-je hun oorlog uit. Wat daarna komt, verklap ik niet. Het einde hangt af van je keuzes: er zijn zes
-slotteksten. Na het einde kun je met **New Cycle** opnieuw beginnen met alles wat je hebt, tegen
-sterkere vijanden en voor meer loon, en een andere opdrachtgever kiezen.
+je hun oorlog uit. Wat daarna komt, verklap ik niet. Het einde hangt af van je keuzes. Na het einde
+kun je met **New Cycle** opnieuw beginnen met alles wat je hebt, tegen sterkere vijanden en voor
+meer loon, en een andere opdrachtgever kiezen.
+
+Tussen de contracten door stellen mensen je soms een vraag. Wat je antwoordt wordt onthouden: het
+bepaalt wie er later iets voor je doet, en wat er aan het eind over je geschreven staat.
+
+## Wat je vindt
+
+Het spel vertelt niet alles. Soms laat wat je doet iets achter: een papier, of een koperen penning.
+Je vindt ze terug in de **Database** op de pagina **Found**.
+
+- De papieren staan op nummer. Een nummer zonder naam heb je nog niet; op die pagina staat dan een
+  aanwijzing waar het ligt. Die aanwijzingen zijn met opzet niet letterlijk.
+- Geen enkel stuk legt een ander uit. Wat ze samen betekenen, moet je zelf aan elkaar leggen.
+- Luister ook naar wat er tijdens een gevecht gezegd wordt. Het gaat niet altijd over het gevecht.
+- Wat je gevonden hebt, blijf je houden als je met **New Cycle** opnieuw begint.
+- Een tweede keer is het verhaal niet hetzelfde als de eerste keer. Meer zeg ik er niet over.
+- Elke nieuwe ronde is zwaarder dan de vorige. Wordt het te zwaar, zet dan onder **Options** de
+  moeilijkheid lager: het verhaal en wat er te vinden is blijven hetzelfde.
 
 ## Arena
 

@@ -35,7 +35,7 @@
 - [x] K2: Finds (branch `feat/print-finds`)
 - [x] K3: A later cycle (branch `feat/print-cycle`)
 - [x] K4: The third verdict (branch `feat/print-ending`)
-- [ ] K5: Review, soak, APK, summary (branch `feat/print-review`)
+- [x] K5: Review, soak, APK, summary (branch `feat/print-review`)
 
 ## K1: Voices in a battle
 
@@ -44,7 +44,7 @@
 **Interfaces:**
 - `TalkLine.at: 'start' | 'win' | 'last' | 'hurt' | number`; `TalkLine.cycle?: number` (said only when the game's cycle is at least this; cycles count from 0).
 - `FlowOptions.cycle?: number` (0 when absent). `BattleFlow` says a line only when `(line.cycle ?? 0) <= (opts.cycle ?? 0)`.
-- `last`: at the start of the pilot's turn, once, when exactly one enemy stands and the battle began with more than one. `hurt`: at the start of the pilot's turn, once, when the pilot's core is below half its armour. Both are said after the lines of the round, in the order `last`, `hurt`.
+- `last`: once, when exactly one enemy stands and the battle began with more than one. `hurt`: once, when the pilot's core is below half its armour. Both are said whenever the pilot is about to be handed the menu (at the start of a turn, or in the middle of one after an action that leaves it going), after the lines of the round, in the order `last`, `hurt`; never once the battle is over.
 
 - [x] Tests first (`battleFlow5.test.ts`): a `last` line is said once when one of two enemies is left, never in a battle that began with one enemy, never after the battle is over; a `hurt` line is said once when the core is below half and not at exactly half; a line with `cycle: 1` is not said with no cycle given and is said with `cycle: 1`; the lines of a round still come first; `quiet` says none of it.
 - [x] `BattleFlow`: the two moments and the cycle; the app hands the game's cycle to every battle of a contract.
@@ -60,7 +60,7 @@ Lines added in K1 (first cycle; who, when):
 | hadron-1, 2 | round 2 | Dispatch | factory grease on a squatters' tank |
 | hadron-2, 1 | last | Dispatch | the wagons ride high |
 | hadron-2, 2 | start | Brenn | the train is insured |
-| lumen-1, 1 | round 2 | Dispatch | forty years of readings, guarded like a mint |
+| lumen-1, 1 | round 2 | Dispatch | a company that does not dig is paying for forty years of rock |
 | lumen-2, 2 | start | Varga | a second mast: somebody buys in pairs |
 | undertow-1, 1 | round 2 | Tamsin | they count us |
 | undertow-2, 2 | round 4 | Tamsin | forty-one, counted again |
@@ -70,12 +70,12 @@ Lines added in K1 (first cycle; who, when):
 | choice-undertow, 1 and 3 | start, win | Tamsin | which way the bolts face; forty years, one afternoon |
 | hadron-3, 2 | start | Brenn | paid not to read |
 | hadron-4, 2 | round 3 | Dispatch | a yard number older than Hadron |
-| hadron-5, 1 | start | Dispatch | what a mining company wants with a frame that jumps |
-| lumen-3, 2 | round 3 | Dispatch | the cab is empty |
+| hadron-5, 1 | start | Dispatch | a frame that could clear a floodgate |
+| lumen-3, 2 | round 3 | Dispatch | the cab is empty; nobody has told it to stop |
 | lumen-4, 1 | last | Varga | their champion's price |
 | lumen-5, 1 | start | Varga | the forecasts, yours included |
 | undertow-3, 1 | start | Tamsin | Krell kept the valve keys |
-| undertow-4, 1 | start | Dispatch | the Eye counts heads |
+| undertow-4, 1 | start | Tamsin | it does not watch, it counts |
 | undertow-5, 1 and 2 | round 3, round 5 | Tamsin | the pumps; what the water was hiding |
 | finale-*, 1 | start | the client | what comes after tonight |
 | audit-1, 1 | last | Dispatch | shooting to tag |
@@ -96,7 +96,7 @@ Lines added in K1 (first cycle; who, when):
 - [x] Tests first for `reached`: each new form alone, the three joined, a condition of the old kind still read as before (a contract id with a dash, `chose:x=y`, `arena:N`).
 - [x] `Find`, `FINDS` (the forty of the table below), opened with the world's entries wherever those are opened, announced apart from them: one find by its title, several as a count.
 - [x] The page FOUND, its count line (`FOUND n/40   CHECKS n`), Dutch.
-- [x] Two letters: from A Tidy Desk after the talk with Old Sixty (what he sends and why), and after any verdict (the frame has a recorder; fly the war again).
+- [x] Two letters: from A Tidy Desk after the talk with Old Sixty (what he sends and why), and after a verdict of a first telling (the frame has a recorder; fly the war again).
 - [x] `finds.test.ts`: every condition names contracts, questions and answers that exist; numbers run 1 to 24 without a gap; every text, source, clue and title fits its room; no clue contains the title of a contract or a person's name; a career through each client's road in the first cycle finds between eight and twenty and holds fewer than nine checks without side work.
 - [x] All tests, screenshots of the page (found, not found, a check), an APK.
 
@@ -108,21 +108,21 @@ The finds (when; what it is):
 | 2 | POLICY VRN-1 | `audit-2` | written for the Society, by the Society; passes to the Mutual, for its members |
 | 3 | COUNTING RHYME | `undertow-1` | brass for the owner, iron for the digger, water for the floor |
 | 4 | SURVEY REPORT | `lumen-1` | every seam worked out, forty years ago; not to be circulated |
-| 5 | BOARD MINUTE | `hadron-3\|lumen-5\|undertow-4` | a fund that cannot meet cannot object; the pumps are uneconomic |
+| 5 | BOARD MINUTE | `hadron-3\|lumen-5\|undertow-4` | the report stays in the room; the box is noted; the pumps are uneconomic |
 | 6 | SHIFT LOG | `floor:15` | water at the nine level; we are hanging our checks on the board |
 | 7 | MINUTE BOOK | `quest-3` | adjourned for want of a quorum; forty years in one hand |
 | 8 | PROXY FORM | `bounty-6\|quest-3` | the Secretary to vote for me, for ever; all signed in one hand |
 | 9 | LETTERHEAD | `audit-1` | owned by its members; registered office: Society Hall, bottom level |
-| 10 | WEIGH TICKET | `s:hadron-2\|cycle:1&hadron-2` | declared full, weighed empty, for forty years |
+| 10 | WEIGH TICKET | `s:hadron-2&finale\|cycle:1&hadron-2` | declared full, weighed empty, for forty years |
 | 11 | ESCORT FILE | `chose:sixty=keep\|chose:sixty=file` | four trucks, an iron box; the second callsign cut out |
 | 12 | STOP ORDER | `quest-1` | stop a convoy, do not open the trucks; a new licence, aged twenty |
 | 13 | PLAYBACK ONE | `cycle:1&undertow-2` | gate four; lead, answer; count the trucks |
 | 14 | PLAYBACK TWO | `quest-2` | the box is in the water; they will take the frame for this |
 | 15 | OLD LICENCE | `chose:frame=ask\|chose:frame=quiet` | cancelled eleven years ago; the frame number is yours |
 | 16 | RETAINER | `favour-ashfall` | payer left blank; renewed eleven times |
-| 17 | MODEL NOTE | `chose:logs=keep\|chose:logs=sell` | heads below the gates; years until no meeting can be had |
+| 17 | MODEL NOTE | `undertow-2&chose:logs=keep\|undertow-2&chose:logs=sell` | heads below the gates; years of quorum remaining |
 | 18 | TAMSIN'S BOOK | `finale-undertow\|cycle:1&finale` | nine with their brass and we can sit |
-| 19 | PURCHASE ORDER | `s:hadron-1\|cycle:1&hadron-1` | one tank, to the occupants of Seam Nine; bill Hadron, as stolen |
+| 19 | PURCHASE ORDER | `s:hadron-1&finale\|cycle:1&hadron-1` | one tank, to the occupants of Seam Nine; bill Hadron, as stolen |
 | 20 | BOOKING SLIP | `chose:rival=pull\|chose:rival=leave` | second buyer: Desk 9; do not tell either pilot |
 | 21 | THREE RECEIPTS | `audit-3` | the Society: paid in full, forty years in advance |
 | 22 | SCHEDULE C | `finale` | item 1: one salvage frame, with its recorder |
@@ -131,7 +131,7 @@ The finds (when; what it is):
 
 | Check | When |
 |---|---|
-| 117 (the dock) | `undertow-2` |
+| 114 (the dock) | `undertow-2` |
 | 302 (Kite) | `favour-kite` |
 | 58 (Marrow) | `favour-marrow` |
 | 61 (the lead truck) | `favour-sixty` |
@@ -150,11 +150,11 @@ The finds (when; what it is):
 
 ## K3: A later cycle
 
-**Files:** `src/content/missions.ts`, `src/content/sidework.ts` (the three contracts), `src/content/talks.ts`, `src/content/scenes.ts`, `src/content/codex.ts` (the recorder among the people), `src/content/nl/*`, `scripts/art/jobs.ts` (`portrait-recorder`), `scripts/careerBot.ts` (answers to the story's questions; the side contracts of a later cycle), tests in `tests/content/cycle.test.ts` (new), `tests/core/campaign.test.ts`, `tests/scripts/career.test.ts`.
+**Files:** `src/content/missions.ts`, `src/content/sidework.ts` (the three contracts), `src/content/talks.ts`, `src/content/scenes.ts`, `src/content/codex.ts` (nothing, in the end: the recorder has a face and a voice and no page among the people), `src/content/nl/*`, `scripts/art/jobs.ts` (`portrait-recorder`), `scripts/careerBot.ts` (answers to the story's questions; the side contracts of a later cycle), tests in `tests/content/cycle.test.ts` (new), `tests/core/campaign.test.ts`, `tests/scripts/career.test.ts`.
 
 - [x] A page before the first contract of a later cycle (`playback`: heading THE HANGAR, title PLAYBACK).
 - [x] The recorder's lines (`cycle: 1`) in the battles at the sluice: `undertow-2`, `hadron-4`, `undertow-5`, `favour-sixty`; Dispatch's slips in `intro-1` and `rival-1`.
-- [x] `quest-1` Dead Channel (`cycle:1&rival-1`), `quest-2` Low Water (`cycle:1&choice&chose:logs=keep&quest-1`), `quest-3` Registered Office (`cycle:1&finale&quest-2`); client `Unlisted`, the recorder's face. `quest-3` begins at the sluice, where the box is lifted, and ends in the hall (`bg-hall`, made here with the other three pictures of the round: the flood's rule holds in it).
+- [x] `quest-1` Dead Channel (`cycle:1&rival-1`), `quest-2` Low Water (`cycle:1&choice&chose:logs=keep&quest-1`), `quest-3` Registered Office (`cycle:1&finale&quest-2`), each also `&!verdict` since K5; client `Unlisted`, the recorder's face. `quest-3` begins at the sluice, where the box is lifted, and ends in the hall (`bg-hall`, made here with the other three pictures of the round: the flood's rule holds in it).
 - [x] `talk-playback` (after `quest-2`, before `verdict`): the recorder played to Dispatch; the question `frame` with the answers `ask` and `quiet`; a line for each in what is remembered.
 - [x] A letter from Ashfall after `quest-1` (gate four); one from A Tidy Desk after `quest-3` (nine hasps).
 - [x] `cycle.test.ts`: in the first cycle none of it is on offer or shown, whatever has been done; in a later cycle each comes when its condition says and not before; with the logs sold `quest-2` never comes.
@@ -187,7 +187,47 @@ Notes on what K4 became:
 
 ## K5: Review, soak, APK, summary
 
-- [ ] A fresh reviewer reads the round against the spec: the hidden layer stated nowhere, no contradiction with a line that was there, every clue fair; and the code against the Review Focus.
-- [ ] The faults a reviewer names are answered one by one; the mutation runner over the new code (`campaign.ts`, `codex.ts`, `battleFlow.ts`, the database page).
-- [ ] `docs/handleiding.md` brought up to date (without giving the hidden layer away).
-- [ ] The whole suite, both halves of the browser tests, the soak, the last APK, a short summary for the user.
+- [x] A fresh reviewer reads the round against the spec: the hidden layer stated nowhere, no contradiction with a line that was there, every clue fair; and the code against the Review Focus.
+- [x] The faults a reviewer names are answered one by one; the mutation runner over the new code (`campaign.ts`, `codex.ts`, `battleFlow.ts`, the database page).
+- [x] `docs/handleiding.md` brought up to date (without giving the hidden layer away).
+- [x] The whole suite, both halves of the browser tests, the soak, the last APK, a short summary for the user.
+
+Notes on K5:
+
+- **Faults.** 57 small faults were put into the new code one at a time (conditions joined and read, the verdict that waits, the two moments and the cycle of a battle's lines, what is found and how it is announced, the page of the database, and the conditions the content hangs on). 54 were found by the tests as they stood. The other three: a check that a pilot with no core is not spoken to, which could never be reached and was removed; the game handing its cycle to a battle, which only the flow's own tests covered and now has a test that plays the dock in the game itself, first telling and second; and the letter with a check in it, which was only tested after the war and is now tested before it too. All 58 (one more for the line that was simplified) are found now.
+- **Soak.** Five minutes each of five ways of playing in a real browser, two at a time, while a reviewer was reading the repository: 5 passed, 257,440 frames, 84 battles.
+- **The guide.** `docs/handleiding.md` says that there is a page of things found, that clues are not literal, that what is said in a battle is worth hearing, and that a second telling is not the first one again. It says nothing of what any of it means.
+- **The independent review.** One fresh reader went through the whole round against the spec and this plan and found no high-severity defect: nothing crashes, nothing blocks the story, no single text explains the hidden layer. The weak points were in the telling. What was done with each point:
+
+| Point | What it was | What was done |
+|---|---|---|
+| W1 | A first-act paper named the insurer; three papers answered the question their own battle had just asked | The weigh ticket names no consignee. It and the purchase order now come when the war is over (to a pilot with the S; a later telling still finds them on the spot), so hint and answer are an act apart. At the survey station the paper stays, as the find that shows what a find is, and Dispatch asks another question: why a company that does not dig pays for rock |
+| W2 | All forty clues can be read from a new game; four outlined the third act | The clues of what the story hands out say nothing of what is to come (papers 2, 9, 11, 20, 21, 22), and none tells the pilot what to do to somebody (15). Clues for what only a later telling finds stay: they are how a first telling learns there is one. Tests keep the third act's words out of those clues, and keep any clue from quoting its own find or an answer |
+| W3 | Dispatch stated two hidden facts | "Nobody has told it to stop"; the count that goes up the tower is Tamsin's to see, and she says it |
+| W4 | The third offer "pays nothing" and paid more than Ashfall's | It "pays out of a collection tin" and pays least of the three (6000) |
+| W5 | Burning the file did not burn it; "only two people know" had become false | What is remembered is what Old Sixty believes; the file's source owns up to the copy |
+| W6 | Two lines of the recorder were about tonight | Both are things said that night. A test |
+| W7 | Nine on the board against eight and one; the box never opened in words | The world's entry says nine counted. The briefing says what opened the box, the minutes that it was opened and the roll read. Nobody claims a living hand for every hook: the ninth hook is the frame's |
+| W8 | "Another forty years"; "nothing to minute in forty years" | "For good"; "nothing I did not do myself" |
+| W9 | Three papers copied the spec too plainly | The model note is in a forecast desk's words; the board no longer minutes its motive; the escort file does not say gate four |
+| W10 | The contracts nobody posted said things untrue when flown late | They are not flown once a verdict is given, and their lines hold whenever they are flown. There is more than one Assessor |
+| W11 | Two strings spoke of two verdicts | Both changed |
+| W12 | The third ending can be walked into with one answer that is not the first | Left, and here is why. It takes a second telling, the logs kept, three contracts nobody posted, nine checks (six or seven of them from work beside the story) and the offer that pays least. A question with one right answer would shut out the pilot who cannot guess it, which the spec counts the worse failure. Two things were added on the side of being findable: a pilot of a later telling who sells the logs hears from Dispatch what went with them, and nobody now takes the third offer for its fee |
+| Craft | Ten small points | 1, 2, 3, 5, 7, 9, 10 as proposed; 4 by the new clue; 6 became a hint with something behind it (a frame that could clear a floodgate); 8: the clerk no longer names a screen |
+| Clues | Thirteen to adjust | All of them; and one the new test found (check 276 quoted its own find) |
+| Dutch | Twenty-five corrections | All of them, some reworded to fit. "Not found yet." is "Nog zoek.": the proposal was four letters longer than the English, and an interface word may be two |
+| Originality | Nothing taken; faint echoes | The check on the frame's foot is 114. Three callsigns in the arena that another series of games also uses were renamed (Shimmer, Clinker, Nightjar). The nine is this game's own and older than the round |
+| K1 | The third offer could come after a verdict | `&!verdict` on the three contracts and on Tamsin's two letters |
+| K2 | A save from before the round, in a later cycle, was credited with nothing from its earlier cycles | A game that holds no find is judged once by its record (`earlierRecord`, `core/codex.ts`): what it has a rank for counts as flown, as in a first telling. Answers of earlier tellings were not kept and are not made good |
+| K3 | "One more file" came in every cycle | `verdict&!cycle:1` |
+| K4 | Four faults the tests did not notice | Tests for all four: the cycle handed to a battle (already there); moments never said once the battle is over, won or lost; the ten later-telling lines pinned by contract, battle, moment and speaker; a condition that begins with `!` |
+| K5 | "That makes nine" was lost with a turn lost to heat | The ninth is counted at the win, before the Actuary answers it |
+| K6 | `last` is said in the middle of a turn | Kept: it is said as soon as the pilot is handed the menu. The interface above says so now, and a test plays it |
+| K7 | "Policy Vrn-1" in the list | A word with a figure in it stays as written |
+| K8 | A letter could be taken back out of the inbox | A letter that has been read stays (`arrivedMessages`) |
+| K9 | Letters out of the order they arrive in | Reordered |
+| K10 | The balance test plays the third verdict at a strength only Story meets | Said in the test; the careers test is what plays it as a pilot meets it |
+| K11 | Small things | The test of the recorder plays to the round the recorder speaks in; the exception for a later part of the round is gone; the limits are the spec's twelve lines and three; three tries in the browser, not eight; the imports; the spec's count of checks. Left: counting finds by the head of their id (a find that is renamed needs a migration either way) |
+
+- **After the review.** The whole suite passes: 3142 tests in 141 files. Twenty-five more small faults were put into what the review changed (the record of an old save, the letter that stays, the name with a figure in it, each condition that was tightened, the ninth counted at the win, a moment said after the battle, a later-telling line said early, the insurer's name back on the ticket): twenty-four were found by the tests as written, and the twenty-fifth (who it is that speaks under the Eye) has a test now. Both halves of the browser tests pass (46; the third verdict in at most three tries). The soak was run again with nothing else touching the repository: 5 passed, 286,808 frames, 90 battles.
+
