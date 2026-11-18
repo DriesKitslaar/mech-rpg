@@ -3,6 +3,7 @@ import { checksHeld, papersFound } from '../core/codex';
 import { FACTORY_PAINT, type GameState } from '../core/game';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
+import { TUNE_MAX, stepOf } from '../core/tuning';
 import { DRILLS } from './drills';
 import { ENEMIES } from './enemies';
 
@@ -16,6 +17,10 @@ const did = (missionId: string): Progress => once((game) => game.completed.inclu
 /** How many of the given medals are held. */
 const held = (ids: string[]): Progress => count(ids.length, (game) => ids.filter((id) => game.medals.includes(id)).length);
 const sRanks = (game: GameState): number => Object.values(game.ranks).filter((rank) => rank === 'S').length;
+/** Every step the bench has taken, over all the pilot's parts; and the furthest it has taken any one of them. */
+const steps = (game: GameState): number[] => Object.keys(game.tuning ?? {}).map((id) => stepOf(game.tuning, id));
+const benchSteps = (game: GameState): number => steps(game).reduce((sum, step) => sum + step, 0);
+const furthestStep = (game: GameState): number => Math.max(0, ...steps(game));
 const KINDS = Object.keys(ENEMIES);
 const kindsMet = (game: GameState): number => KINDS.filter((id) => game.met.includes(id)).length;
 
@@ -80,6 +85,8 @@ const EARNED: Medal[] = [
   // The hangar.
   { id: 'painted', name: 'Company Colours', text: 'Repaint your mech.', tier: 1, progress: once((g) => g.paint !== FACTORY_PAINT) },
   { id: 'loadout', name: 'Spare Suit', text: 'Save a build in the garage.', tier: 1, progress: once((g) => g.loadouts.some((build) => build !== null)) },
+  { id: 'bench-1', name: 'Off the Jig', text: 'Have the bench work on a part.', tier: 1, progress: count(1, benchSteps) },
+  { id: 'bench-5', name: 'Blueprinted', text: 'Take a part to the fifth step at the bench.', tier: 3, progress: count(TUNE_MAX, furthestStep) },
   { id: 'parts-40', name: 'Stockpile', text: 'Own 40 different parts.', tier: 2, progress: count(40, (g) => Object.keys(g.inventory).length) },
   { id: 'met-20', name: 'Field Guide', text: 'Meet 20 kinds of enemy.', tier: 2, progress: count(20, kindsMet) },
   { id: 'met-all', name: 'Know Your Enemy', text: 'Meet every kind of enemy there is.', tier: 3, progress: count(KINDS.length, kindsMet) },

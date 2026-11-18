@@ -356,6 +356,14 @@ export const REFERENCE_NL: Record<string, string> = {
   'Repaint your mech.': 'Spuit je mech over.',
   'Spare Suit': 'Reservepak',
   'Save a build in the garage.': 'Bewaar een build in de garage.',
+  'Off the Jig':
+    'Van de mal',
+  'Have the bench work on a part.':
+    'Laat de werkbank aan een onderdeel werken.',
+  'Blueprinted':
+    'Op de tekening',
+  'Take a part to the fifth step at the bench.':
+    'Breng een onderdeel naar stap vijf op de werkbank.',
   Stockpile: 'Voorraad',
   'Own 40 different parts.': 'Bezit 40 verschillende onderdelen.',
   'Field Guide': 'Veldgids',
@@ -431,6 +439,10 @@ export const REFERENCE_NL: Record<string, string> = {
   'The Undertow': 'De Undertow',
   // --- Database: what has been found ---
   "WHAT IS FOUND": "WAT GEVONDEN IS",
+  "THE BENCH":
+    "DE WERKBANK",
+  "In the garage, R1 on a part you own puts it on the bench. A step costs its number times the price of the part and adds a twentieth: armour to a frame part, damage to a weapon, output to a generator. The work stays with the part when it is sold. The bench goes two steps, and one further each time the story starts over, to five.":
+    "In de garage zet R1 een onderdeel van jou op de werkbank. Een stap kost zijn nummer maal de prijs en voegt een twintigste toe: pantser bij een framedeel, schade bij een wapen, vermogen bij een generator. Het werk blijft bij het onderdeel, ook na verkoop. De werkbank gaat twee stappen, en een verder bij elke nieuwe ronde, tot vijf.",
   "Some of what you do leaves something behind: a paper, a brass check. The database keeps them under FOUND, the papers by their numbers. One you have not found shows a clue in its place. Nothing found is lost when the story starts over.":
     "Soms laat wat je doet iets achter: een papier, een koperen penning. De database bewaart ze onder VONDST, de papieren op nummer. Wat je nog niet vond toont een aanwijzing. Wat gevonden is blijft als het verhaal opnieuw begint.",
   "RULE BOOK":

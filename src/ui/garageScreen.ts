@@ -9,7 +9,7 @@ import { drawMech, mechSprites } from './mechView';
 import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { idlePose } from './pose';
 import { partLines } from './partInfo';
-import { COLORS, LINE, drawList, drawPanel, drawRowLight, drawText } from './widgets';
+import { CHAR_W, COLORS, LINE, drawList, drawPanel, drawRowLight, drawText } from './widgets';
 
 const G = STRINGS.garage;
 const LIST_X = 162;
@@ -40,16 +40,17 @@ export class GarageScreen implements Screen {
 
   view(): ScreenView {
     const { flow } = this;
-    const list = { slots: flow.slots, parts: flow.parts, loadouts: flow.loadouts, loadoutMenu: flow.loadoutMenu }[flow.mode];
+    const list = { slots: flow.slots, parts: flow.parts, loadouts: flow.loadouts, loadoutMenu: flow.loadoutMenu, bench: flow.bench }[flow.mode];
+    const bench = flow.benchInfo;
     return {
       menu: { items: list.items, cursor: list.cursor },
-      garage: { mode: flow.mode, slot: flow.slot, candidate: flow.candidate, errors: flow.errors, paint: flow.game.paint },
+      garage: { mode: flow.mode, slot: flow.slot, candidate: flow.candidate, errors: flow.errors, paint: flow.game.paint, ...(bench ? { bench } : {}) },
     };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
     const { flow } = this;
-    const { sprites, catalog } = this.app.deps;
+    const { sprites } = this.app.deps;
     const bg = sprites.get('bg-garage', { w: LOGICAL_W, h: LOGICAL_H, label: '' });
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
@@ -100,10 +101,13 @@ export class GarageScreen implements Screen {
         const missing = flow.loadoutMenu.items[0].note;
         if (missing) drawText(ctx, missing, LIST_X + 6, 146, { color: COLORS.danger });
       }
+    } else if (flow.mode === 'bench') {
+      this.drawBench(ctx);
     } else {
       drawText(ctx, STRINGS.slots[flow.slot].toUpperCase(), LIST_X + 6, 24, { color: COLORS.dim });
       drawList(ctx, flow.parts, LIST_X + 6, 37, LIST_W - 18, 7);
-      const part = flow.candidate ? catalog[flow.candidate] : undefined;
+      // The part as the pilot's garage reads it: with what the bench has done to it counted in.
+      const part = flow.candidate ? flow.partOf(flow.candidate) : undefined;
       if (part) {
         ctx.fillStyle = COLORS.border;
         ctx.fillRect(LIST_X + 6, 119, LIST_W - 12, 1);
@@ -112,6 +116,28 @@ export class GarageScreen implements Screen {
     }
 
     this.drawStats(ctx);
+  }
+
+  /** The bench: the part on it, where it stands, what the next step would make of it, and the choice. */
+  private drawBench(ctx: CanvasRenderingContext2D): void {
+    const { flow } = this;
+    const bench = flow.benchInfo;
+    if (!bench) return;
+    const x = LIST_X + 6;
+    drawText(ctx, G.bench, x, 24, { color: COLORS.dim });
+    drawText(ctx, bench.name, x, 40, { color: COLORS.accent });
+    drawText(ctx, G.benchStep(bench.step, bench.cap), x, 40 + LINE);
+    // What the bench works on: as it is and, while there is a step to take, as that step would leave it.
+    const figure = `${G.benchFigures[bench.figure]} ${bench.now}`;
+    drawText(ctx, figure, x, 40 + 2 * LINE + 2);
+    if (bench.refusal !== 'limit') {
+      drawText(ctx, `> ${bench.next}`, x + (figure.length + 1) * CHAR_W, 40 + 2 * LINE + 2, { color: COLORS.armor });
+    }
+    ctx.fillStyle = COLORS.border;
+    ctx.fillRect(x, 84, LIST_W - 12, 1);
+    drawList(ctx, flow.bench, x, 90, LIST_W - 18, 2);
+    drawText(ctx, G.benchCredits(flow.game.credits), x, 90 + 2 * LINE + 6, { color: COLORS.dim });
+    if (bench.refusal === 'credits') drawText(ctx, G.benchShort, x, 90 + 3 * LINE + 6, { color: COLORS.danger });
   }
 
   private drawStats(ctx: CanvasRenderingContext2D): void {
@@ -150,6 +176,9 @@ export class GarageScreen implements Screen {
       // With nothing wrong, the foot of the panel says what the shoulder buttons and the D-pad do here.
       drawText(ctx, G.paint(flow.paintName), 8, STATS_Y + 61, { color: COLORS.dim, size: 10 });
       drawText(ctx, G.toLoadouts, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
+    } else if (flow.benchable) {
+      // On a part the bench takes, the foot of the panel says which button puts it there.
+      drawText(ctx, G.toBench, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
     }
   }
 }

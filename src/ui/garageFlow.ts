@@ -4,7 +4,8 @@ import {
   saveLoadout, setPaint, spareCount,
   type BuildSlot, type GameState,
 } from '../core/game';
-import { FRAME_SLOTS, WEAPON_SLOTS, type Build, type BuildError, type BuildStats, type Catalog } from '../core/types';
+import { TUNE_MAX, checkTune, stepOf, tunable, tune, tuneCap, tuneCost, tunedCatalog, tunedPart, type TuneRefusal } from '../core/tuning';
+import { FRAME_SLOTS, WEAPON_SLOTS, type Build, type BuildError, type BuildStats, type Catalog, type Part } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { MenuList, type ListItem } from './menuList';
@@ -15,27 +16,63 @@ const NONE = '(none)';
 /** Factory colours first, then every scheme: the order L1 and R1 step through. */
 const PAINT_ORDER = [FACTORY_PAINT, ...PAINTS.map((p) => p.id)];
 
+/** What the bench has to say about the part on it: where it stands, what the next step would make of it, and what that costs. */
+export interface BenchInfo {
+  id: string;
+  name: string;
+  step: number;
+  /** How far the bench goes in this cycle. */
+  cap: number;
+  /** What a step works on, and that figure as it is and as the next step would leave it. */
+  figure: 'armour' | 'damage' | 'output';
+  now: number;
+  next: number;
+  /** The price of the next step. */
+  cost: number;
+  refusal: TuneRefusal | null;
+}
+
+/** The figure the bench works on, for a part it takes. */
+function figureOf(part: Part): { figure: BenchInfo['figure']; value: number } {
+  if (part.kind === 'weapon') return { figure: 'damage', value: part.damage };
+  if (part.kind === 'generator') return { figure: 'output', value: part.output };
+  return { figure: 'armour', value: 'ap' in part ? part.ap : 0 };
+}
+
 /**
  * The garage without any drawing: pick a slot, pick a part for it, and see what the change
- * would do before confirming; step through paint schemes; keep and recall saved builds.
- * The game it is given is never changed; `game` holds the result.
+ * would do before confirming; step through paint schemes; keep and recall saved builds; put a
+ * part on the bench. The game it is given is never changed; `game` holds the result.
  */
 export class GarageFlow {
   game: GameState;
-  mode: 'slots' | 'parts' | 'loadouts' | 'loadoutMenu' = 'slots';
+  mode: 'slots' | 'parts' | 'loadouts' | 'loadoutMenu' | 'bench' = 'slots';
   slots: MenuList;
   parts = new MenuList();
   loadouts = new MenuList();
   loadoutMenu = new MenuList();
+  bench = new MenuList();
+  /** The part on the bench. */
+  private benchId: string | null = null;
+  /** The catalogue as the pilot reads it: the same parts, with the bench's work counted into their figures. */
+  private catalog: Catalog;
 
-  constructor(game: GameState, private catalog: Catalog) {
+  constructor(game: GameState, private factory: Catalog) {
     this.game = game;
+    this.catalog = tunedCatalog(factory, game.tuning);
     this.slots = new MenuList(this.slotItems());
     this.loadouts = new MenuList(this.loadoutItems());
   }
 
+  /** A part's name, with the step the bench has taken it to. */
   private nameOf(id: string): string {
-    return this.catalog[id]?.name ?? id;
+    const step = stepOf(this.game.tuning, id);
+    return `${this.catalog[id]?.name ?? id}${step > 0 ? ` +${step}` : ''}`;
+  }
+
+  /** A part as the pilot's garage reads it: with the bench's work counted in. */
+  partOf(id: string): Part | undefined {
+    return Object.hasOwn(this.catalog, id) ? this.catalog[id] : undefined;
   }
 
   /**
@@ -62,9 +99,12 @@ export class GarageFlow {
         const spare = spareCount(this.game, part.id);
         // A part whose every copy is fitted elsewhere cannot be moved here without freeing it first.
         const usable = here || spare > 0;
+        // The step the bench has taken it to stands beside it, before how many are spare.
+        const step = stepOf(this.game.tuning, part.id);
+        const marks = [...(step > 0 ? [`+${step}`] : []), ...(spare > 0 ? [`x${spare}`] : [])].join(' ');
         return {
           id: part.id, label: here ? `${part.name} ${G.fitted}` : part.name, enabled: usable,
-          note: !usable ? G.inUse : spare > 0 ? `x${spare}` : undefined,
+          note: !usable ? G.inUse : marks || undefined,
         };
       });
     return [...(OPTIONAL_SLOTS.includes(slot) ? [{ id: NONE, label: G.none, enabled: true }] : []), ...owned];
@@ -92,6 +132,38 @@ export class GarageFlow {
   /** The slot under the cursor. */
   get slot(): BuildSlot {
     return this.slots.selected!.id as BuildSlot;
+  }
+
+  /** Whether the part under the cursor is one the bench takes: the foot of the panel says so. */
+  get benchable(): boolean {
+    const item = this.parts.selected;
+    return this.mode === 'parts' && !!item && item.id !== NONE && Object.hasOwn(this.factory, item.id) && tunable(this.factory[item.id]);
+  }
+
+  /** What the bench says about the part on it; null when nothing is. */
+  get benchInfo(): BenchInfo | null {
+    const id = this.benchId;
+    if (this.mode !== 'bench' || id === null || !Object.hasOwn(this.factory, id)) return null;
+    const part = this.factory[id];
+    const step = stepOf(this.game.tuning, id);
+    const { figure, value: now } = figureOf(tunedPart(part, step));
+    return {
+      id, name: this.nameOf(id), step, cap: tuneCap(this.game.cycle), figure, now,
+      next: figureOf(tunedPart(part, step + 1)).value, cost: tuneCost(part, step + 1), refusal: checkTune(this.game, id, this.factory),
+    };
+  }
+
+  private benchItems(): ListItem[] {
+    const id = this.benchId!;
+    const step = stepOf(this.game.tuning, id);
+    const refusal = checkTune(this.game, id, this.factory);
+    return [
+      // At the limit the row says so: the last step of all, or the last this cycle allows.
+      refusal === 'limit'
+        ? { id: 'tune', label: step >= TUNE_MAX ? G.benchAtEnd : G.benchAtLimit, enabled: false }
+        : { id: 'tune', label: G.tune(step + 1), enabled: refusal === null, note: G.benchCost(tuneCost(this.factory[id], step + 1)) },
+      { id: 'back', label: G.backItem, enabled: true },
+    ];
   }
 
   /** The saved build under the cursor, while saved builds are showing. */
@@ -172,7 +244,7 @@ export class GarageFlow {
   }
 
   onInput(action: InputAction): 'stay' | 'changed' | 'exit' {
-    const list = { slots: this.slots, parts: this.parts, loadouts: this.loadouts, loadoutMenu: this.loadoutMenu }[this.mode];
+    const list = { slots: this.slots, parts: this.parts, loadouts: this.loadouts, loadoutMenu: this.loadoutMenu, bench: this.bench }[this.mode];
     if (action === 'up') { list.move(-1); return 'stay'; }
     if (action === 'down') { list.move(1); return 'stay'; }
     switch (this.mode) {
@@ -189,6 +261,14 @@ export class GarageFlow {
         return 'stay';
       case 'parts': {
         if (action === 'cancel') { this.mode = 'slots'; return 'stay'; }
+        // R1 puts the part under the cursor on the bench, fitted or not, if it is one the bench takes.
+        if (action === 'next' && this.benchable) {
+          this.benchId = this.parts.selected!.id;
+          const items = this.benchItems();
+          this.bench = new MenuList(items, items.findIndex((item) => item.enabled));
+          this.mode = 'bench';
+          return 'stay';
+        }
         if (action !== 'confirm') return 'stay';
         const item = this.parts.selected;
         if (!item?.enabled) return 'stay';
@@ -197,6 +277,21 @@ export class GarageFlow {
         this.game = equip(this.game, this.slot, partId, this.catalog);
         this.slots.setItems(this.slotItems());
         this.mode = 'slots';
+        return 'changed';
+      }
+      case 'bench': {
+        if (action === 'cancel') { this.mode = 'parts'; return 'stay'; }
+        const item = this.bench.selected;
+        if (action !== 'confirm' || !item?.enabled) return 'stay';
+        if (item.id === 'back') { this.mode = 'parts'; return 'stay'; }
+        this.game = tune(this.game, this.benchId!, this.factory);
+        // Every figure and every name that showed the part now shows it as the bench left it.
+        this.catalog = tunedCatalog(this.factory, this.game.tuning);
+        this.slots.setItems(this.slotItems());
+        this.parts.setItems(this.partItems(this.slot));
+        const items = this.benchItems();
+        // The cursor stays on the next step while there is one to take; else it goes to the way back.
+        this.bench = new MenuList(items, items.findIndex((entry) => entry.enabled));
         return 'changed';
       }
       case 'loadouts':

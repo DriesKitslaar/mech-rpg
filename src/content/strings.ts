@@ -367,6 +367,11 @@ export const STRINGS = {
       head: 'HEAD', core: 'CORE', arms: 'ARMS', legs: 'LEGS', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
       rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SHLDR',
     },
+    // The bench: a part made a step better for credits.
+    toBench: 'R1: THE BENCH', bench: 'THE BENCH', benchStep: (step: number, cap: number) => `Step ${step} of ${cap}`,
+    tune: (step: number) => `Tune to +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `You have ${credits} c`,
+    benchFigures: { armour: 'Armour', damage: 'Damage', output: 'Output' },
+    benchAtLimit: 'No further this cycle', benchAtEnd: 'As far as it goes', benchShort: 'Not enough credits',
   },
   shop: {
     heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'CR',
