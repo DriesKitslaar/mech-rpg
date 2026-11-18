@@ -100,8 +100,15 @@ const MODULE_COLOR: Record<string, string> = {
 const MUZZLE_MS = 90;
 /** The last and largest blast of a machine going up: when it comes, how long it burns, and how large it is at life size. */
 export const WRECK_AT = 300;
-const WRECK_MS = 480;
+export const WRECK_MS = 480;
 export const WRECK_SIZE = 26;
+/**
+ * How many times as large the last blast of an overkill is, and how far above where the figure of the hit was written
+ * its word is. The figure has been rising for a while by then, and the word is to stand as clear of it as the word for
+ * a blocked hit stands of its figure.
+ */
+export const OVERKILL_SIZE = 1.5;
+export const OVERKILL_UP = 24;
 /** How far a gun kicks its mech back, how far a lunge carries one, and how far behind it each of its after-images stands. */
 export const RECOIL_PX = 3;
 export const LUNGE_PX = 9;
@@ -280,8 +287,17 @@ export class BattleFx {
         }
         this.add(WRECK_AT, WRECK_MS, { kind: 'burst', at, size: WRECK_SIZE * size, color: '#ff8a3c', style: 'fire' });
         this.jolt(WRECK_AT, 4, 300);
+        // Far more than was needed: the word for it, over the machine and clear of the figure of the hit that did it,
+        // which was written where its core is hit and has begun to rise.
+        if (event.overkill && event.unit !== 'player') {
+          this.say(0, { x: at.x, y: s.hitPoint(event.unit, 'core').y - OVERKILL_UP }, STRINGS.fx.overkill, COLORS.accent);
+        }
         break;
       }
+      case 'momentum':
+        // From the second machine of a turn the run is counted, over the one who is on it.
+        if (event.chain >= 2) this.say(0, s.centre(event.unit), STRINGS.fx.chain(event.chain), COLORS.accent);
+        break;
       case 'boost': {
         const from = s.centre(event.unit);
         this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from, aim: this.headingOf(event.unit) });
@@ -295,6 +311,7 @@ export class BattleFx {
         // It goes back the way it came: away from what it was facing.
         const heading = this.headingOf(event.unit);
         this.add(0, LEAVE_MS, { kind: 'leave', unit: event.unit, from: s.centre(event.unit), aim: { x: -heading.x || 0, y: -heading.y || 0 } });
+        this.say(0, s.centre(event.unit), STRINGS.fx.rout, COLORS.accent);
         break;
       }
       case 'cool':
@@ -423,6 +440,16 @@ export class BattleFx {
     return this.effects.length > 0;
   }
 
+  /**
+   * What an overkill adds to a machine going up, where the picture is not a calm one: its last blast
+   * half as large again, and the hardest jolt there is. It lasts no longer than the blast it is laid over.
+   */
+  harder(unitId: string): void {
+    const at = this.scene.centre(unitId);
+    this.add(WRECK_AT, WRECK_MS, { kind: 'burst', at, size: WRECK_SIZE * OVERKILL_SIZE * this.sizeOf(unitId), color: '#ffd27f', style: 'fire' });
+    this.jolt(WRECK_AT, HARDEST_JOLT, 300);
+  }
+
   /** A unit whose destruction, or whose leaving, has finished playing; the screen stops drawing it. */
   isGone(unitId: string): boolean {
     return this.gone.has(unitId);
@@ -476,7 +503,10 @@ export class BattleFx {
    * smoke, figures. Without a layer, what is on the stage.
    */
   draw(ctx: CanvasRenderingContext2D, calm = false, layer: FxLayer = 'stage'): void {
-    for (const { fx, p } of this.active()) if (layerOf(fx) === layer) paintFx(ctx, fx, p, calm);
+    const playing = this.active().filter(({ fx }) => layerOf(fx) === layer);
+    // What is written goes over what burns: a figure or a word is not lost behind a blast that went off after it.
+    for (const { fx, p } of playing) if (fx.kind !== 'text') paintFx(ctx, fx, p, calm);
+    for (const { fx, p } of playing) if (fx.kind === 'text') paintFx(ctx, fx, p, calm);
   }
 
   /**

@@ -105,6 +105,19 @@ export const MAX_ENEMIES = 3;
  * has to wear it down.
  */
 export const SHATTER = 0.5;
+/**
+ * Overkill: a machine destroyed by a blow that carried at least this many times its whole core, as
+ * that stood at full strength. Like a shattering it is measured against the machine as it was made,
+ * so finishing a machine that has been worn down is no overkill. It changes nothing: the battle
+ * says so, for the screen to make something of.
+ *
+ * One and a half is where it is seen and stays worth seeing. Played out with the frames the shop
+ * sells, nothing the first three carry is a machine and a half; from the fourth it is seen, in up
+ * to one kill in twelve of the story and from one in ten to nearly half of the kills in a swarm.
+ * At twice the core it was hardly ever seen; at once the core it was three kills in four, and
+ * more, of a grown pilot's swarm, which is no longer a thing to remark on.
+ */
+export const OVERKILL = 1.5;
 
 export interface UnitState {
   id: string;
@@ -212,7 +225,8 @@ export type BattleEvent =
    */
   | { type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; appliedTo: FrameSlot; hit: boolean; damage: number; absorbed?: number; shatter?: true }
   | { type: 'partDestroyed'; unit: string; part: FrameSlot }
-  | { type: 'unitDestroyed'; unit: string }
+  /** `overkill` marks a machine destroyed by a volley that carried `OVERKILL` times its core at full strength. */
+  | { type: 'unitDestroyed'; unit: string; overkill?: true }
   /**
    * A volley of `unit`'s destroyed something and the battle goes on: `weapon` is ready again, and
    * `chain` is how many that makes this turn.
@@ -949,7 +963,7 @@ export function checkAction(state: BattleState, action: Action, catalog: Catalog
   }
 }
 
-function damagePart(state: BattleState, target: UnitState, slot: FrameSlot, amount: number): void {
+function damagePart(state: BattleState, target: UnitState, slot: FrameSlot, amount: number, overkill = false): void {
   const part = target.parts[slot]!;
   const before = part.ap;
   // A pilot who is being driven off breaks away before the blow that would finish them: the core keeps a point.
@@ -962,7 +976,7 @@ function damagePart(state: BattleState, target: UnitState, slot: FrameSlot, amou
   }
   if (slot === 'core' && part.ap === 0 && !target.destroyed) {
     target.destroyed = true;
-    state.events.push({ type: 'unitDestroyed', unit: target.id });
+    state.events.push({ type: 'unitDestroyed', unit: target.id, ...(overkill ? { overkill: true as const } : {}) });
   }
 }
 
@@ -1048,8 +1062,11 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       });
       if (!hit) continue;
       struck.add(target);
+      // What the blow did past any barrier, against the core at full strength: an overkill, if it is the end of the machine.
+      // (A shattering takes all that is left of a core and no more, so it is never one for that alone.)
+      const overkill = damage - absorbed >= OVERKILL * target.parts.core!.maxAp;
       target.barrier -= absorbed;
-      if (damage > absorbed) damagePart(state, target, appliedTo, damage - absorbed);
+      if (damage > absorbed) damagePart(state, target, appliedTo, damage - absorbed, overkill);
       if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
       if (weapon.trait === 'drain') target.energyDebt += weapon.traitPower ?? 0;
       addImpact(state, target, Math.round(impactOf(weapon) * (target.guarding ? GUARD_IMPACT : 1)));

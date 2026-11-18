@@ -178,6 +178,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'In the same fights, one blow that takes half of a machine\'s core, as it stood at full strength, finishes it: a heavy weapon goes through a light machine. The aiming line says DESTROYS when a hit would do it. It is never done to you.',
   },
   {
+    id: 'overkill', title: 'OVERKILL',
+    text: 'One blow that carries at least one and a half times a machine\'s whole core, as it stood at full strength, and destroys it is an OVERKILL: the machine goes up harder and the word is over it. It is said in any fight and changes nothing. Finishing a machine that was already worn down is not one.',
+  },
+  {
     id: 'rout', title: 'THEY BREAK',
     text: 'Destroy two machines in one turn of the same fights and whatever still stands against you loses its nerve. It is marked SHAKEN, and when its turn comes it breaks off and leaves the field without firing. A machine that leaves is not a kill: destroy it before its turn comes if you want it counted.',
   },

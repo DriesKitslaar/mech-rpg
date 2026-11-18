@@ -87,9 +87,9 @@ describe('Dutch: the content', () => {
 });
 
 describe('Dutch: titles in the database', () => {
-  test('every chapter of the manual has a Dutch title, but for the three words that are the same in both', () => {
+  test('every chapter of the manual has a Dutch title, but for the four words that are the same in both', () => {
     // A page may keep its name, which is why the kind is let off above; a chapter of the manual is not a name.
-    const same = ['MODULES', 'OVERDRIVE', 'WINGMEN'];
+    const same = ['MODULES', 'OVERDRIVE', 'OVERKILL', 'WINGMEN'];
     expect(MANUAL.filter((topic) => !Object.hasOwn(nl, topic.title)).map((topic) => topic.title).sort()).toEqual(same);
   });
 
