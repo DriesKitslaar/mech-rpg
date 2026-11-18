@@ -671,7 +671,7 @@ describe('the screens the pilot\'s record added', () => {
     press(app, 'down', 'down', 'down', 'down', 'down');
     const unit = page();
     expect(unit.said).toEqual(expect.arrayContaining([
-      'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'SEEN 2/44', '? ? ?',
+      'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'SEEN 2/45', '? ? ?',
     ]));
     expect(unit.calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'enemy-gun-turret')).toBe(true);
     press(app, 'next');

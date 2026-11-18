@@ -62,6 +62,21 @@ export const STILLS: Record<string, Still> = {
       { x: 95, y: 102, r: 14, color: '#d7b25f', kind: 'steady' },
     ],
   },
+  // The meeting: lanterns down both walls and one on the table, and the morning coming in at the door past the frame that stands in it.
+  'still-meeting': {
+    weather: 'motes', haze: { color: '#5a6a70', y: 205, alpha: 0.1 },
+    sun: { x: 224, y: 58, color: '#ffe2a8', rays: [{ to: { x: 196, y: 250 }, width: 26 }, { to: { x: 224, y: 256 }, width: 32 }, { to: { x: 256, y: 250 }, width: 30 }] },
+    lights: [
+      { x: 224, y: 58, r: 40, color: '#f8cf85', kind: 'lamp' },
+      { x: 40, y: 16, r: 18, color: '#f8c76f', kind: 'lamp' },
+      { x: 15, y: 35, r: 15, color: '#f5bf64', kind: 'lamp' },
+      { x: 57, y: 46, r: 16, color: '#f9c265', kind: 'lamp' },
+      { x: 98, y: 50, r: 14, color: '#fad77b', kind: 'lamp' },
+      { x: 302, y: 11, r: 18, color: '#f7c874', kind: 'lamp' },
+      { x: 284, y: 30, r: 14, color: '#f8c86c', kind: 'lamp' },
+      { x: 197, y: 118, r: 16, color: '#fcd983', kind: 'lamp' },
+    ],
+  },
   // The gates open at daybreak: the sun between them, its light coming down the road in shafts.
   'still-dawn': {
     weather: 'motes', haze: { color: '#c08040', y: 185, alpha: 0.1 },

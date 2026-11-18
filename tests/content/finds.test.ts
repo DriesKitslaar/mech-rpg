@@ -112,7 +112,8 @@ describe('what a pilot finds', () => {
   test('some papers are for a later telling only, whatever the first one does', () => {
     // Everything there is to do, done, in the first cycle: every contract, an S on each, the arena won, the Gauntlet to its depths.
     let all: GameState = { ...fresh(), arenaRank: ARENA.length, gauntletBest: 99 };
-    const offered = MISSIONS.filter((mission) => mission.phase !== 'patrol' && !(mission.when ?? '').includes('cycle:'));
+    // (Not the contracts nobody posted, nor the verdict that waits for the last of them: those are a later telling's.)
+    const offered = MISSIONS.filter((mission) => mission.phase !== 'patrol' && !/cycle:|quest-/.test(mission.when ?? ''));
     for (const m of offered) all = completeMission(all, m.id, MISSIONS);
     all = { ...all, ranks: Object.fromEntries(all.completed.map((id) => [id, 'S' as const])) };
     for (const [question, answers] of asked) if (question !== 'frame') all = decide(all, question, answers[0]);

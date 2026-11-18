@@ -1,3 +1,4 @@
+import { MISSIONS } from '../../src/content/missions';
 import { ids, play } from '../helpers/balance';
 
 /** The second act's wars and the third act: the contracts a pilot plays with a full Ronin or better. */
@@ -24,13 +25,26 @@ test.each(ids('audit'))('audit contract %s is winnable with a full Ronin, pays i
   expect(play(id, 'tier1').winRate).toBeLessThanOrEqual(0.3);
 });
 
-test.each(ids('verdict'))('verdict %s can be won with what the story sells, is no gift, and is beyond mid-game gear', (id) => {
+/** The two verdicts every telling of the story offers. The third is only offered in a later one: see below. */
+const offeredToAll = ids('verdict').filter((id) => MISSIONS.find((m) => m.id === id)!.when === undefined);
+
+test.each(offeredToAll)('verdict %s can be won with what the story sells, is no gift, and is beyond mid-game gear', (id) => {
   const { winRate } = play(id, 'tier4');
   expect(winRate).toBeGreaterThanOrEqual(0.25);
   expect(winRate).toBeLessThanOrEqual(0.9);
   expect(play(id, 'tier2').winRate).toBeLessThanOrEqual(0.45);
 });
 
-test('the best gear there is wins both verdicts more often than not', () => {
+test('the best gear there is wins every verdict more often than not', () => {
+  expect(ids('verdict')).toEqual(['verdict-enforce', 'verdict-default', 'verdict-quorum']);
   for (const id of ids('verdict')) expect(play(id, 'tier6').winRate, id).toBeGreaterThanOrEqual(0.6);
+});
+
+test('the third verdict is the hardest contract of the story: it is not for the gear the story sells, and no verdict is tougher', () => {
+  expect(offeredToAll).toEqual(['verdict-enforce', 'verdict-default']);
+  // A full Ronin, which wins the other two about as often as not, does not win this one.
+  expect(play('verdict-quorum', 'tier4').winRate).toBeLessThanOrEqual(0.15);
+  for (const id of offeredToAll) expect(play('verdict-quorum', 'tier4').winRate, id).toBeLessThan(play(id, 'tier4').winRate);
+  const scale = (id: string): number => MISSIONS.find((m) => m.id === id)!.scale ?? 1;
+  for (const id of offeredToAll) expect(scale('verdict-quorum'), id).toBeGreaterThan(scale(id));
 });

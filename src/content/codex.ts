@@ -42,6 +42,7 @@ export const UNITS: UnitPage[] = [
   { id: 'bailiff', note: 'Meridian\'s Auditor frame: a piercing rifle and a coil that drains your energy. Armoured alike all round.' },
   { id: 'assessor', note: 'A Bailiff with a barrier and a decree that charges for a turn. It refits itself when it starts losing.' },
   { id: 'adjuster', note: 'Meridian\'s claim on the city, on tracks. A barrier, lien drones every fourth turn, three ways of fighting.' },
+  { id: 'proxy', title: 'The Proxy', note: 'Meridian\'s vote for everybody who cannot attend. A barrier, a gavel that knocks you off balance, lien drones every fifth turn, three ways of fighting.' },
   { id: 'mortar-nest', note: 'A mortar in a ring of plate. It cannot move and often misses, but what lands takes a quarter of a core. Beams go through the ring.' },
   { id: 'hunter-drone', note: 'A dart with twin needles, aimed at your head. Very hard to hit. Anything that lands on it is nearly enough.' },
   { id: 'flak-walker', note: 'A gun on two legs. Each volley is three small blasts over the whole mech. Its legs are easier to break than its housing.' },
@@ -151,6 +152,10 @@ export const WORLD: Entry[] = [
   {
     id: 'adjuster', title: 'THE ADJUSTER', after: 'verdict-default',
     text: 'Meridian\'s claim on Varn lived in one machine in its clearing house. With the Adjuster broken the policy is void. Nobody owns the city. Nobody owes it either, which is new.',
+  },
+  {
+    id: 'society', title: 'THE SOCIETY', after: 'verdict-quorum',
+    text: 'The Meridian Pit Mutual Aid Society met in its hall for the first time in forty years, with nine checks on the board. The Secretary took the minutes. Nobody owns the city now but the people in it, and they own a good deal more than the city.',
   },
 ];
 

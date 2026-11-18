@@ -65,6 +65,28 @@ describe('the story in three acts', () => {
     expect(campaignComplete(done, STORY)).toBe(true);
   });
 
+  test('a verdict that waits for something is offered only once that has happened, and is a verdict like the others', () => {
+    // A third verdict, for a pilot who holds nine checks in a later telling of the story.
+    const third = m('verdict-quorum', 'verdict', { verdict: 'quorum', when: 'cycle:1&checks:9' });
+    const story = [...STORY, third];
+    const offers = (g: GameState) => availableMissions(g, story).map((x) => x.id);
+    const audited = after(...ACT_ONE, ...ACT_TWO, ...ACT_THREE);
+    const checks = Array.from({ length: 9 }, (_, i) => `check-${i}`);
+    expect(offers(audited)).toEqual(['patrol', 'verdict-enforce', 'verdict-default']);
+    expect(offers({ ...audited, codex: checks })).toEqual(['patrol', 'verdict-enforce', 'verdict-default']);
+    expect(offers({ ...audited, cycle: 1, codex: checks.slice(1) })).toEqual(['patrol', 'verdict-enforce', 'verdict-default']);
+    const ready = { ...audited, cycle: 1, codex: checks };
+    expect(offers(ready)).toEqual(['patrol', 'verdict-enforce', 'verdict-default', 'verdict-quorum']);
+    // Before the audit is over it is not on offer, whatever the pilot holds.
+    expect(offers({ ...after(...ACT_ONE, ...ACT_TWO, 'audit-1'), cycle: 1, codex: checks })).toEqual(['patrol', 'audit-2']);
+    const held = completeMission(ready, 'verdict-quorum', story);
+    expect(offers(held)).toEqual(['patrol']);
+    expect(chosenVerdict(held, story)).toBe('quorum');
+    expect(campaignComplete(held, story)).toBe(true);
+    // And one of the other two given, the third is not on offer any more either.
+    expect(offers(completeMission(ready, 'verdict-enforce', story))).toEqual(['patrol']);
+  });
+
   test('a story with verdicts is not complete at its finale', () => {
     expect(campaignComplete(after(...ACT_ONE, ...ACT_TWO), STORY)).toBe(false);
   });

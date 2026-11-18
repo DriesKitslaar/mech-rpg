@@ -457,4 +457,57 @@ export const STORY_NL: Record<string, string> = {
     "Het heeft een recorder. Die recorder is nooit gewist. Hij is alleen nooit afgespeeld.",
   "It knows this city. It has been waiting to stand somewhere it remembers.":
     "Het kent deze stad. Het wacht al lang tot het ergens staat waar het eerder was.",
+  // The third verdict: what the Proxy says, how it ends, and the letters about it.
+  "The absent have voted. They are unanimous. They always are.":
+    "De afwezigen hebben gestemd. Unaniem. Dat zijn ze altijd.",
+  "Then I move the closure. There will be no further business.":
+    "Dan stel ik sluiting voor. Er komen geen verdere punten.",
+  "IN ARREARS":
+    "ACHTERSTALLIG",
+  "Hadron Mining is called to a meeting for the first time in forty years. Director Brenn attends in person, and is asked to wait outside.":
+    "Hadron Mining wordt voor het eerst in veertig jaar op een vergadering ontboden. Director Brenn komt zelf, en mag buiten wachten.",
+  "The pits open in the spring under new owners, who are the old owners. Nobody is sure what to dig for. Somebody suggests the truth.":
+    "De putten gaan in het voorjaar open onder nieuwe eigenaren, en dat zijn de oude. Niemand weet waarnaar te graven. Iemand oppert de waarheid.",
+  "Your debt is on the agenda. It is moved, seconded and struck out. You are thanked from the chair, which nobody has done before.":
+    "Je schuld staat op de agenda. Voorgesteld, gesteund en geschrapt. De voorzitter bedankt je, en dat deed nog nooit iemand.",
+  "RECOUNT":
+    "HERTELLING",
+  "Lumen's models are asked a new question: who is here. They answer it correctly the first time. That worries Analyst Varga more than anything has.":
+    "De modellen van Lumen krijgen een nieuwe vraag: wie is er. Ze antwoorden meteen goed. Dat verontrust Analyst Varga meer dan wat ook.",
+  "The towers stay lit. The count that went up them every night now comes down again, and is read out below.":
+    "De torens blijven aan. De telling die elke nacht omhoog ging komt nu omlaag en wordt beneden voorgelezen.",
+  "Your debt is on the agenda. It is moved, seconded and struck out. The minute is four words long. You keep a copy.":
+    "Je schuld staat op de agenda. Voorgesteld, gesteund, geschrapt. De notule telt vier woorden. Bewaar de kopie.",
+  "MUTUAL":
+    "ONDERLING",
+  "The gates stay open, and now there is a hall to walk down to. Tamsin chairs. She still counts twice, and now it is called a division.":
+    "De poorten blijven open, en nu is er een zaal om naar af te dalen. Tamsin zit voor. Ze telt nog altijd twee keer, en nu heet dat stemmen.",
+  "The Society owns an insurer with liens on eleven other cities. It has not decided what to do about that. It has asked what you would charge.":
+    "De Society bezit een verzekeraar met beslag op elf andere steden. Wat ze daarmee doet is nog niet besloten. Ze vroeg wat jij zou rekenen.",
+  "Your check hangs on the board with the others. Nobody will say whose it was. They have stopped pretending not to know whose it is.":
+    "Jouw penning hangt op het bord bij de andere. Niemand zegt van wie hij was. Ze doen niet meer alsof ze niet weten van wie hij is.",
+  "A third offer":
+    "Een derde aanbod",
+  "I hear you have two offers. Here is a third. It pays nothing, which you will be used to from me.":
+    "Ik hoor dat je twee aanbiedingen hebt. Hier is een derde. Het betaalt niets, en dat ben je van mij gewend.",
+  "You brought the box home. You hold nine in brass. By the rules of a society older than either company, that is enough to call a meeting.":
+    "Jij bracht de kist thuis. Je hebt negen in koper. Volgens de regels van een vereniging ouder dan beide bedrijven is dat genoeg voor een vergadering.",
+  "Meridian will not want it held. Come down to the hall. Bring the frame. It has a seat.":
+    "Meridian wil niet dat ze gehouden wordt. Kom naar de zaal. Neem het frame mee. Het heeft een zetel.",
+  "Short of nine":
+    "Minder dan negen",
+  "The box is in the hall and it will not open. Nine hasps, and you hold fewer than nine in brass.":
+    "De kist staat in de zaal en gaat niet open. Negen grendels, en jij hebt minder dan negen in koper.",
+  "People in this city carry those and do not know what they are. Some would hand theirs to a pilot they trusted. That is all I can tell you.":
+    "Mensen in deze stad dragen ze bij zich zonder te weten wat het zijn. Sommigen geven de hunne aan een piloot die ze vertrouwen. Meer kan ik niet zeggen.",
+  "There will be other years. The box has waited forty.":
+    "Er komen andere jaren. De kist heeft er veertig gewacht.",
+  "Channel nine":
+    "Kanaal negen",
+  "The roll is read and the count is closed. Sixty-one answered to their names, counting one frame. I counted twice.":
+    "De lijst is voorgelezen en de telling gesloten. Eenenzestig gaven antwoord op hun naam, een frame meegeteld. Ik telde twee keer.",
+  "Somebody moved that the night desk be kept on. I abstained. It was carried anyway.":
+    "Iemand stelde voor het nachtbureau aan te houden. Ik onthield me. Het werd toch aangenomen.",
+  "I am on your channel. It is not an order any more. It is only where I am.":
+    "Ik zit op jouw kanaal. Het is geen opdracht meer. Het is gewoon waar ik ben.",
 };

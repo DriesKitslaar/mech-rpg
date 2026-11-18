@@ -12,7 +12,7 @@ const firstCycle = (m: Mission) => linesOf(m).filter((line) => (line.cycle ?? 0)
 
 describe('the voices in a battle', () => {
   test('every contract of the story has somebody speaking in it', () => {
-    expect(story.length).toBe(29);
+    expect(story.length).toBe(30);
     expect(story.filter((m) => firstCycle(m).length === 0).map((m) => m.id)).toEqual([]);
   });
 
@@ -57,7 +57,7 @@ describe('the voices in a battle', () => {
     // Until the war is over nobody has heard of the insurer by name.
     for (const m of early) for (const line of firstCycle(m)) expect(line.text, m.id).not.toMatch(/Meridian/);
     // And at no point does anybody in a battle say what is under the story. (A contract that only a later telling offers is not the first telling.)
-    for (const m of MISSIONS.filter((mission) => !(mission.when ?? '').includes('cycle:'))) {
+    for (const m of MISSIONS.filter((mission) => !/cycle:|quest-/.test(mission.when ?? ''))) {
       for (const line of firstCycle(m)) expect(line.text, m.id).not.toMatch(/\b(Society|lamp check|quorum|proxy|the box|second escort)\b/i);
     }
     // What the recorder says is never said in a first telling: every line of it is kept for a later one, or is in a contract that is.

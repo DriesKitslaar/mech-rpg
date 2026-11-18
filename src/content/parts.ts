@@ -313,6 +313,16 @@ const ENEMY_PARTS: Part[] = [
   weapon('wpn-adjuster-lien', 'Garnishment', 'hand', 'energy', 20, 82, 100, 18, null, 0, 200, 0, undefined, 'drain', 30),
   weapon('wpn-adjuster-decree', 'Foreclosure', 'shoulder', 'energy', 70, 88, 180, 40, null, 0, 400, 0, undefined, 'drain', 30, { charge: true }),
   weapon('wpn-adjuster-liquidation', 'Liquidation', 'hand', 'kinetic', 12, 78, 100, 20, null, 0, 300, 0, undefined, 'burst', 3),
+  // The Proxy: the vote of everybody who cannot attend, cast through one machine.
+  frame('core-proxy', 'Ballot Urn', 'core', 620, r(0.35, 0.35, 0.3), 1500, 0, 0, undefined),
+  frame('legs-proxy', 'Dais', 'legs', 300, r(0.35, 0.3, 0.3), 800, 0, 0, undefined, { capacity: 9000, mobility: 6, legType: 'tank' }),
+  frame('arms-proxy', 'Gavel Arm', 'arms', 250, r(0.3, 0.3, 0.25), 400, 0, 0, undefined, { aim: 8 }),
+  frame('head-proxy', 'Mask of the Chair', 'head', 150, r(0.25, 0.3, 0.2), 120, 0, 0, undefined, { aim: 12 }),
+  generator('gen-proxy', 'Standing Orders', 430, 36, 600, 0),
+  weapon('wpn-proxy-gavel', 'Point of Order', 'hand', 'kinetic', 34, 84, 120, 22, null, 0, 300, 0, undefined, undefined, undefined, { impact: 70 }),
+  weapon('wpn-proxy-ballot', 'Block Vote', 'hand', 'kinetic', 9, 80, 100, 18, null, 0, 200, 0, undefined, 'burst', 3),
+  weapon('wpn-proxy-motion', 'Motion to Dissolve', 'shoulder', 'energy', 62, 88, 180, 40, null, 0, 400, 0, undefined, 'drain', 30, { charge: true }),
+  weapon('wpn-proxy-closure', 'Closure', 'hand', 'energy', 20, 82, 100, 18, null, 0, 200, 0, undefined, 'drain', 35),
 ];
 
 /** The contract (or 'choice' for any exclusive contract) that puts a part in the shop. Unlisted parts are always in stock. */

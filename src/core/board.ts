@@ -10,7 +10,7 @@ export const ENEMY_COST: Record<string, number> = {
   'lien-drone': 2, bailiff: 6,
   'mortar-nest': 3, 'hunter-drone': 2, 'flak-walker': 3, breacher: 4, 'arc-pylon': 3, longshot: 3, 'scrap-king': 9, 'night-train': 9,
   magpie: 5, dredge: 6, lark: 6, hollow: 6, paragon: 7, notary: 9,
-  sable: 7, rook: 7, krell: 8, 'rival-2': 7, assessor: 9, 'strip-miner': 9, overseer: 9, leviathan: 9, 'ashfall-unbound': 10, adjuster: 12,
+  sable: 7, rook: 7, krell: 8, 'rival-2': 7, assessor: 9, 'strip-miner': 9, overseer: 9, leviathan: 9, 'ashfall-unbound': 10, adjuster: 12, proxy: 12,
 };
 /** At most one of these per battle. */
 export const MECH_ENEMIES = [
@@ -21,7 +21,7 @@ export const MECH_ENEMIES = [
 /** Enemies that belong to the story: the named pilots, the great machines, and everything of Meridian's. */
 export const STORY_ENEMIES = [
   'rival', 'rival-2', 'ashfall-unbound', 'sable', 'rook', 'krell', 'strip-miner', 'overseer', 'leviathan',
-  'lien-drone', 'bailiff', 'assessor', 'adjuster',
+  'lien-drone', 'bailiff', 'assessor', 'adjuster', 'proxy',
   'scrap-king', 'night-train',
   // The wanted are met on their own notices.
   'magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary',

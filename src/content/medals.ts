@@ -1,4 +1,5 @@
 import { ARENA_RANKS, CHAMPION_RANK } from '../core/arena';
+import { checksHeld, papersFound } from '../core/codex';
 import { FACTORY_PAINT, type GameState } from '../core/game';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
@@ -53,6 +54,7 @@ const EARNED: Medal[] = [
   { id: 'verdict-enforce', name: 'Paid in Full', text: 'Enforce the policy.', tier: 3, secret: true, progress: did('verdict-enforce') },
   { id: 'verdict-default', name: 'Defaulted', text: 'Default on the policy.', tier: 3, secret: true, progress: did('verdict-default') },
   { id: 'both-verdicts', name: 'Both Columns', text: 'Give both verdicts.', tier: 3, secret: true, progress: held(['verdict-enforce', 'verdict-default']) },
+  { id: 'verdict-quorum', name: 'Any Other Business', text: 'Hold the meeting.', tier: 3, secret: true, progress: did('verdict-quorum') },
   { id: 'cycle', name: 'Renewal', text: 'Start the war again.', tier: 2, progress: count(1, (g) => g.cycle) },
   // The arena.
   { id: 'first-arena', name: 'On the Ladder', text: 'Win an arena fight.', tier: 1, progress: count(1, (g) => g.arenaRank) },
@@ -81,6 +83,10 @@ const EARNED: Medal[] = [
   { id: 'parts-40', name: 'Stockpile', text: 'Own 40 different parts.', tier: 2, progress: count(40, (g) => Object.keys(g.inventory).length) },
   { id: 'met-20', name: 'Field Guide', text: 'Meet 20 kinds of enemy.', tier: 2, progress: count(20, kindsMet) },
   { id: 'met-all', name: 'Know Your Enemy', text: 'Meet every kind of enemy there is.', tier: 3, progress: count(KINDS.length, kindsMet) },
+  // What is found.
+  { id: 'papers-12', name: 'Paper Trail', text: 'Find 12 papers.', tier: 2, progress: count(12, papersFound) },
+  { id: 'papers-all', name: 'The Small Print', text: 'Find all 24 papers.', tier: 3, progress: count(24, papersFound) },
+  { id: 'checks-9', name: 'Nine on the Board', text: 'Hold nine lamp checks.', tier: 3, progress: count(9, checksHeld) },
 ];
 
 /** Every medal there is, in the order the pilot screen lists them. The last asks for all the others. */

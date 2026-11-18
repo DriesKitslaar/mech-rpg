@@ -227,14 +227,14 @@ describe('campaign content', () => {
   const story = MISSIONS.filter((m) => m.phase !== 'patrol' && m.phase !== 'side');
   const of = (phase: Mission['phase']) => MISSIONS.filter((m) => m.phase === phase);
 
-  test('there are twenty-nine story contracts and one patrol, with unique ids, none of them called like the archive', () => {
-    expect(story).toHaveLength(29);
+  test('there are thirty story contracts and one patrol, with unique ids, none of them called like the archive', () => {
+    expect(story).toHaveLength(30);
     expect(of('patrol')).toHaveLength(1);
     expect(new Set(MISSIONS.map((m) => m.id)).size).toBe(MISSIONS.length);
     expect(MISSIONS.some((m) => m.id === 'archive')).toBe(false);
   });
 
-  test('the story has its shape: two introductions, two contracts a client, the rival, the choice, three a client, the finales, the audit, two verdicts', () => {
+  test('the story has its shape: two introductions, two contracts a client, the rival, the choice, three a client, the finales, the audit, three verdicts', () => {
     expect(of('intro')).toHaveLength(2);
     expect(of('rival')).toHaveLength(1);
     expect(of('audit')).toHaveLength(3);
@@ -245,7 +245,10 @@ describe('campaign content', () => {
       expect(mine('path').map((m) => m.id)).toEqual([3, 4, 5].map((n) => `${faction}-${n}`));
       expect(mine('finale').map((m) => m.id)).toEqual([`finale-${faction}`]);
     }
-    expect(of('verdict').map((m) => m.verdict).sort()).toEqual(['default', 'enforce']);
+    expect(of('verdict').map((m) => m.verdict).sort()).toEqual(['default', 'enforce', 'quorum']);
+    // Two are offered to everybody. The third waits: for the box brought home, which only a later telling can do, and for nine checks.
+    expect(of('verdict').map((m) => m.when)).toEqual([undefined, undefined, 'quest-3&checks:9']);
+    expect(unknownTerms('quest-3&checks:9')).toEqual([]);
     // Only the contracts that belong to a client name one.
     for (const m of [...of('intro'), ...of('rival'), ...of('audit'), ...of('verdict')]) expect(m.faction, m.id).toBeUndefined();
   });
@@ -311,7 +314,7 @@ describe('campaign content', () => {
       for (const id of Object.values(enemy.build)) expect(CATALOG[id], `${enemy.id}: ${id}`).toBeDefined();
       if (enemy.portrait) expect(enemy.portrait in SPRITES, enemy.portrait).toBe(true);
     }
-    expect(Object.keys(ENEMIES)).toHaveLength(44);
+    expect(Object.keys(ENEMIES)).toHaveLength(45);
   });
 
   test('every enemy appears in the story', () => {
@@ -364,10 +367,10 @@ describe('campaign content', () => {
 
   test('every client has an end to their war, and every verdict an epilogue for every client', () => {
     expect(Object.keys(ENDINGS).sort()).toEqual(['hadron', 'lumen', 'undertow']);
-    expect(Object.keys(EPILOGUES).sort()).toEqual(['default', 'enforce']);
-    for (const verdict of ['enforce', 'default'] as const) expect(Object.keys(EPILOGUES[verdict]).sort()).toEqual(['hadron', 'lumen', 'undertow']);
+    expect(Object.keys(EPILOGUES).sort()).toEqual(['default', 'enforce', 'quorum']);
+    for (const verdict of ['enforce', 'default', 'quorum'] as const) expect(Object.keys(EPILOGUES[verdict]).sort()).toEqual(['hadron', 'lumen', 'undertow']);
     const titles = [...Object.values(ENDINGS), ...Object.values(EPILOGUES).flatMap((e) => Object.values(e))].map((e) => e.title);
-    expect(new Set(titles).size).toBe(9);
+    expect(new Set(titles).size).toBe(12);
   });
 
   test('scenes: unique ids, real conditions and pictures, text that fits the page, and an ending for every way the story can end', () => {
@@ -384,7 +387,7 @@ describe('campaign content', () => {
     expect(SCENES.filter((s) => !s.ending && !s.faction && !s.talk && !s.linesFor).map((s) => s.id)).toEqual(['act-1', 'playback', 'act-2', 'act-3']);
     const endings = SCENES.filter((s) => s.ending);
     expect(endings.map((s) => `${s.after}|${s.faction}`).sort()).toEqual(
-      ['enforce', 'default'].flatMap((v) => FACTIONS.map((f) => `verdict-${v}|${f}`)).sort());
+      ['enforce', 'default', 'quorum'].flatMap((v) => FACTIONS.map((f) => `verdict-${v}|${f}`)).sort());
   });
 
   test('messages have unique ids and wait for events that exist', () => {
