@@ -210,8 +210,10 @@ export class BattleScreen {
     this.camera = new Camera(this.place, opts.calm !== true);
     this.shownAp = new ApDisplay(flow.state.units);
     const enemies = flow.state.units.filter((u) => u.side === 'enemy');
-    this.places = enemies.some((u) => u.abilities.carrier)
+    // Where machines can join, from a carrier or from a reserve, every place of the field is kept for them.
+    this.places = enemies.some((u) => u.abilities.carrier) || flow.state.reserve.length > 0
       ? MAX_ENEMIES : Math.min(MAX_ENEMIES, Math.max(1, ...enemies.map((u) => (u.slot ?? 0) + 1)));
+    // (A machine of the reserve comes on as a later round begins: by then the screen is there to show it.)
     const unseen = flow.state.events.slice(flow.eventsShown).flatMap((e) => (e.type === 'launch' ? [e.spawned] : []));
     this.arrived = new Set(flow.state.units.map((u) => u.id).filter((id) => !unseen.includes(id)));
   }
@@ -375,11 +377,12 @@ export class BattleScreen {
       // A module changes armour without a shot or a repair to say so; the state already holds the result.
       if (event.type === 'module') this.shownAp.refresh(this.flow.state.units);
       // A unit that joins the battle is shown as it arrives.
-      if (event.type === 'launch') {
+      if (event.type === 'launch' || event.type === 'arrive') {
+        const joined = event.type === 'launch' ? event.spawned : event.unit;
         this.shownAp.adopt(this.flow.state.units);
-        this.arrived.add(event.spawned);
+        this.arrived.add(joined);
         // Whatever was left of the machine that stood there before is gone: something else stands there now.
-        this.clearWreck(this.wreckSpot(event.spawned));
+        this.clearWreck(this.wreckSpot(joined));
       }
       this.radio?.hear(event, this.flow.state);
       if (this.opts.fast) continue;

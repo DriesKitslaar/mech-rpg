@@ -52,7 +52,7 @@ function contentTexts(): TextSlot[] {
     ...textsOf('reference', PERKS, { name: 'perk.name', description: 'perk.text' }),
     ...textsOf('reference', MEDALS, { name: 'medal.name', text: 'medal.text' }),
     ...textsOf('story', ARENA, { style: 'arena.style', taunt: 'arena.taunt' }),
-    ...textsOf('missions', [BOARD_TEXT], { adjectives: 'board.word', nouns: 'board.word', clients: 'client', places: 'briefing', debriefs: 'debrief' }),
+    ...textsOf('missions', [BOARD_TEXT], { adjectives: 'board.word', nouns: 'board.word', clients: 'client', places: 'briefing', debriefs: 'debrief', swarmTitles: 'mission.title', swarm: 'briefing' }),
     ...textsOf('missions', [BOARD_TEXT.threats], Object.fromEntries(Object.keys(BOARD_TEXT.threats).map((id) => [id, 'briefing']))),
     ...textsOf('missions', [BOARD_TEXT.elite], Object.fromEntries(Object.keys(BOARD_TEXT.elite).map((mark) => [mark, 'briefing']))),
     ...textsOf('missions', WINGMEN, { text: 'briefing' }),

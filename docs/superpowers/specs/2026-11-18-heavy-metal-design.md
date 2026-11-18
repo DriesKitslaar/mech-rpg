@@ -96,11 +96,13 @@ A machine that left is not a kill. Breaking off at its own turn, not at once, is
 line that is said when one enemy is left.
 
 **Swarms.** A battle can have a reserve: machines that are not on the field yet. At the start of
-each round, while fewer than three enemies stand and the reserve is not empty, the next comes on.
-The battle is won when nothing stands and nothing is left to come. The briefing and the field say
-how many are still to come. Swarm contracts appear on the open board: light machines only, six to
-nine in all, paid by the head. One enters the story's side work as a standing job once the first
-war is over.
+each round, after what stood has been counted against anything that is being protected, as many
+of them come on as there is room for, in order. The battle is won when nothing stands and nothing
+is left to come. The briefing and the field say how many are still to come. One swarm is on offer
+beside the open board at all times, a new one after every battle won: light machines only, six to
+nine in all, three on the field and the rest behind them, paid by the head. (As first written
+there were to be swarm contracts on the board and a standing job in the side work. One contract
+that is always there and always new is both.)
 
 **A name.** The record a game already keeps (machines destroyed, the arena, the tellings) is read
 as renown, and renown as one of a short ladder of names. No new saved state: the name is worked
@@ -158,6 +160,15 @@ who outguns them: the last contract of the Lumen war (bomb crawlers at a core st
 hundred to 99 for a full Ronin, and from 21 to 86 in the heaviest frame, which used to be the
 worst at it; the second audit contract (lien drones at a hangar) from 91 to 98, and from 9 to 95.
 The balance test that held the first of those under 98 now says so in its own words.
+
+Swarms (the third part) are where the figures of the first table turn over. In the swarm of their
+stage a full Ronin destroys a machine in nine turns of ten, two or more in six and the whole
+field in three; a new pilot in the starter frame, two or more in three turns of ten. Before the
+round the best pilot there could be did the first in four turns of ten and the second in one of
+fifty. Hunter drones were tried in them and taken out: hard to hit, they made a swarm a slog of
+twenty rounds and a contract lost one time in three. More crawlers in the last contract of the
+Lumen war were tried too: a full Ronin still won it 99 times in a hundred, and the frame before
+it lost it more often on Veteran, so that contract is as it was.
 
 The break (the second part) moved no win rate: a field holds three machines, so when two fall in
 a turn there is one left to lose its nerve, and the battle it leaves was won already. It ends one

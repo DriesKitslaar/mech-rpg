@@ -1,8 +1,10 @@
 import { chooseAutoPlayerAction, chooseEnemyAction } from '../../src/core/ai';
 import { activeUnit, applyAction, type BattleState } from '../../src/core/battle';
-import { forCycle } from '../../src/core/campaign';
+import { swarmContract } from '../../src/core/board';
+import { forCycle, type Mission } from '../../src/core/campaign';
 import { startMissionBattle } from '../../src/core/mission';
 import { tuneCap } from '../../src/core/tuning';
+import { BOARD_TEXT } from '../../src/content/board';
 import { ENEMIES } from '../../src/content/enemies';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG } from '../../src/content/parts';
@@ -139,5 +141,73 @@ describe('at the peak, against enemies half again as tough', () => {
     expect(rounds(other)).toBeGreaterThanOrEqual(6.3);
     expect(volleysPerKill(other)).toBeGreaterThanOrEqual(6.8);
     expect(share(other.withTwo, other)).toBeLessThanOrEqual(0.005);
+  });
+});
+
+describe('a swarm: six to nine light machines, three at a time', () => {
+  /**
+   * The swarms a pilot is offered over a stretch of battles won, six seeds each, in the frame of
+   * that stretch: what happens in the pilot's turns. Before these rules a turn with two kills was
+   * one in fifty, and a turn with three did not exist.
+   */
+  function swarms(frame: string, from: number, to: number, grown = false): Tally & { won: number } {
+    const flown = REFERENCE_BUILDS[frame];
+    const t = { ...blank(), won: 0 };
+    const mods = grown ? { ...perks, tune: Object.fromEntries(Object.values(flown).map((part) => [part, tuneCap(0)])) } : {};
+    for (let wins = from; wins < to; wins++) {
+      const mission: Mission = swarmContract(wins, 0, BOARD_TEXT);
+      for (let seed = 1; seed <= 6; seed++) {
+        let state = startMissionBattle(flown, mission, 0, ENEMIES, CATALOG, seed * 7919, undefined, { enemyScale: mission.scale ?? 1, mods });
+        t.battles++;
+        let seen = state.events.length;
+        let inTurn = 0;
+        let mine = false;
+        const close = (): void => {
+          if (mine) { t.turns++; if (inTurn > 0) t.withKill++; if (inTurn > 1) t.withTwo++; if (inTurn > 2) t.withThree++; t.best = Math.max(t.best, inTurn); }
+          inTurn = 0;
+        };
+        while (state.outcome === 'ongoing') {
+          const player = activeUnit(state).side === 'player';
+          if (player !== mine) { close(); mine = player; }
+          state = applyAction(state, (player ? chooseAutoPlayerAction : chooseEnemyAction)(state, CATALOG), CATALOG);
+          const fresh = state.events.slice(seen);
+          seen = state.events.length;
+          if (player) for (const event of fresh) if (event.type === 'unitDestroyed' && event.unit !== 'player') { t.kills++; inTurn++; }
+        }
+        close();
+        t.rounds += state.round;
+        t.left += state.events.filter((event) => event.type === 'rout').length;
+        if (state.outcome === 'victory') t.won++;
+      }
+    }
+    return t;
+  }
+
+  test('a new pilot in the starter frame: two machines in three turns of ten, three in two', () => {
+    const t = swarms('starter', 0, 8);
+    expect(t.won).toBe(t.battles);
+    expect(share(t.withKill, t)).toBeGreaterThanOrEqual(0.45);
+    expect(share(t.withTwo, t)).toBeGreaterThanOrEqual(0.2);
+    expect(share(t.withThree, t)).toBeGreaterThanOrEqual(0.1);
+    expect(rounds(t)).toBeLessThanOrEqual(9);
+  });
+
+  test('a full Ronin: a kill in nine turns of ten, two or more in six, the whole field in three', () => {
+    const t = swarms('tier4', 20, 30);
+    expect(t.won).toBe(t.battles);
+    expect(share(t.withKill, t)).toBeGreaterThanOrEqual(0.8);
+    expect(share(t.withTwo, t)).toBeGreaterThanOrEqual(0.5);
+    expect(share(t.withThree, t)).toBeGreaterThanOrEqual(0.25);
+    expect(t.best).toBe(3);
+    expect(rounds(t)).toBeLessThanOrEqual(5);
+  });
+
+  test('the heaviest frame, slow as it is: two or more in four turns of ten, and more than one machine a battle leaves', () => {
+    const t = swarms('tier6', 30, 42, true);
+    expect(t.won).toBe(t.battles);
+    expect(share(t.withKill, t)).toBeGreaterThanOrEqual(0.65);
+    expect(share(t.withTwo, t)).toBeGreaterThanOrEqual(0.35);
+    expect(t.left / t.battles).toBeGreaterThanOrEqual(1);
+    expect(rounds(t)).toBeLessThanOrEqual(7);
   });
 });

@@ -141,7 +141,7 @@ export class BattleFlow {
   }
 
   /** The objective as the screen shows it; null for a plain fight to the end. */
-  get objective(): ObjectiveView | null {
+  private get asked(): ObjectiveView | null {
     const { objective, asset, round } = this.state;
     const target = objectiveTarget(this.state);
     switch (objective.type) {
@@ -157,6 +157,17 @@ export class BattleFlow {
         return { text: O.driveOff(target.name), target: target.id, meter: { value: Math.max(0, core.ap - floor), max: core.maxAp - floor } };
       }
     }
+  }
+
+  /**
+   * What the battle asks for, as the strip under the message bar says it. Machines still to come are
+   * counted with it, or in its place where the battle asks for nothing but everything destroyed.
+   */
+  get objective(): ObjectiveView | null {
+    const asked = this.asked;
+    const more = this.state.reserve.length;
+    if (more === 0) return asked;
+    return asked ? { ...asked, text: `${asked.text}  ${O.more(more)}` } : { text: O.reserve(more) };
   }
 
   /** Why the battle ended as it did, where the objective decided it. */
@@ -274,6 +285,7 @@ export class BattleFlow {
         const unit = this.state.units.find((u) => u.id === event.unit)!;
         return STRINGS.momentum(weaponIn(unit.build, event.weapon, this.catalog)?.name ?? event.weapon, event.chain);
       }
+      case 'arrive': return STRINGS.arrive(name(event.unit), event.left);
       case 'shaken': return STRINGS.shaken(name(event.unit));
       case 'rout': return STRINGS.rout(name(event.unit));
       case 'boost': return STRINGS.boost(name(event.unit));

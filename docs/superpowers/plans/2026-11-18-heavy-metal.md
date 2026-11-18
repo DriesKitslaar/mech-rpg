@@ -33,7 +33,7 @@
 
 - [x] H1: Momentum and Shatter (branch `feat/heavy-momentum`)
 - [x] H2: They break (branch `feat/heavy-break`)
-- [ ] H3: Swarms (branch `feat/heavy-swarm`)
+- [x] H3: Swarms (branch `feat/heavy-swarm`)
 - [ ] H4: A name (branch `feat/heavy-name`)
 - [ ] H5: Weight (branch `feat/heavy-weight`)
 - [ ] H6: Review, soak, APK, summary (branch `feat/heavy-review`)
@@ -129,18 +129,22 @@ Each part adds its column here.
 
 ## H3: Swarms
 
-**Files:** `src/core/battle.ts` (the reserve), `src/core/campaign.ts` (`Battle.reserve`), `src/core/mission.ts`, `src/core/board.ts` and `src/content/board.ts` (swarm contracts), `src/content/sidework.ts` (the standing job), `src/ui/briefingScreen.ts`, `src/ui/battleScreen.ts`, strings; tests in `tests/core/swarm.test.ts` (new), `tests/core/board*.test.ts`, `tests/ui/swarm.test.ts` (new).
+**Files:** `src/core/battle.ts` (the reserve), `src/core/campaign.ts` (`Battle.reserve`), `src/core/mission.ts`, `src/core/rank.ts` (par), `src/core/codex.ts` (machines met), `src/core/board.ts` and `src/content/board.ts` (the swarm beside the board), `src/ui/app.ts` (the contracts on offer), `src/ui/briefingScreen.ts`, `src/ui/battleFlow.ts`, `src/ui/battleScreen.ts`, `src/ui/battleFx.ts`, `src/platform/audio.ts`, strings, `src/content/codex.ts` (a manual topic), guide; tests in `tests/core/swarm.test.ts`, `tests/core/board3.test.ts`, `tests/ui/swarm.test.ts`, `e2e/heavy.spec.ts` (all new), `tests/core/fantasy.test.ts`.
 
 **Interfaces:**
-- `Battle.reserve?: string[]`: enemy ids that come on as room is made. `BattleState.reserve: string[]`.
-- `BattleEvent` gains `{ type: 'arrive'; unit: string }`. At the start of a round, while fewer than `MAX_ENEMIES` enemies stand and the reserve is not empty, the next one comes on.
-- A battle with a reserve is won when nothing stands and nothing is left to come.
+- `BattleOptions.reserve?: EnemyDef[]`; `BattleState.reserve: EnemyDef[]` (still to come, in order; empty where there never were any). `Battle.reserve?: string[]` on a contract's battle.
+- `BattleEvent` gains `{ type: 'arrive'; unit: string; left: number }`. As a round begins, after the ally's fire and after what stood has been counted against what is protected, as many of the reserve come on as there is room for (`MAX_ENEMIES`), each in the first free place.
+- A battle is won when nothing stands and nothing is left to come. `open` is asked of the field and the reserve together.
+- `swarmContract(battlesWon, cycle, text): Mission`, id `open-<cycle>-<won>-swarm`, `isSwarm(mission)`; `SWARM_MIN = 6`, `SWARM_MAX = 9`, `PAY_PER_HEAD = 160`, `SWARM_KINDS` by the board's tier.
+- `parOf`: one round more for each machine of the reserve.
 
-- [ ] Tests first: the field is topped up at the start of a round and never past three; nothing arrives in the middle of a turn; the battle is not won while the reserve holds anything; a carrier's drones and the reserve share the three places; machines that break off make room like any other.
-- [ ] The rule; the briefing's line and the field's counter.
-- [ ] Swarm contracts on the open board and one standing job; what they pay; the automatic player's win rate and rounds on them by frame.
-- [ ] The last contract of the Lumen war (lumen-5), which a full Ronin now outguns: more crawlers to come in its first battle, so that keeping the stack is a race again; `balance2.test.ts` holds it under 98 in a hundred again, or says why not.
-- [ ] Dutch, all tests, a browser test with screenshots, an APK.
+- [x] Tests first (`swarm.test.ts`): the field is topped up as a round begins and never past three; nothing arrives in the middle of a turn; as many as there is room for at once; the battle is not won while the reserve holds anything; the order given is the order they come in; a machine that comes on has the next name, number and place, the battle's scale, and a turn in that round; a carrier's drones and the reserve share the three places; a machine that breaks off holds its place until it leaves, and what comes on after it has seen nothing; what is protected is counted before the new ones; a battle to be outlasted is won at its time.
+- [x] The rule; the briefing's line and the count of the machines; the strip on the field (`4 MORE TO COME`, or `+4` after what else the battle asks); a machine that comes on is said, heard and seen in a ring of light, and stands where the last one fell.
+- [x] The swarm beside the board (`board3.test.ts`): always on offer once the open board is, a new one after every battle won, on dice of its own so that the board is the board it always was. Recon drones up to the third tier, with bomb crawlers from there, with gunships from the sixth. Measured, 40 seeds a frame: won 98 to 100 times in a hundred by the frames of each stage in 2 to 11 rounds, net 670 to 1360. Hunter drones were tried first: 45 to 75 in a hundred and 13 to 36 rounds, so they are not in it.
+- [x] No standing job beside it: the swarm is always there and always new, which is what a standing job would have been.
+- [x] The last contract of the Lumen war, measured with one to three more crawlers to come and a sturdier stack: a full Ronin still wins 99 in a hundred, and the frame before it falls from 23 to 2 on Veteran. Left as it was; `balance2.test.ts` says why.
+- [x] What a swarm is like (`fantasy.test.ts`): starter frame, a kill in 54 turns of a hundred, two or more in 30, three in 19; a full Ronin, 90, 61 and 33; the heaviest frame with every perk, 72, 42 and 4, and 1.3 machines a battle leave.
+- [x] A manual topic, the guide, Dutch. 38 small faults in the new code: found by the tests. A browser test with screenshots. All tests, an APK.
 
 ## H4: A name
 

@@ -34,6 +34,8 @@ export interface TalkLine {
 
 export interface Battle {
   enemies: string[];
+  /** Machines that are not on the field at the start: they come on in this order as room is made. See `BattleState.reserve`. */
+  reserve?: string[];
   background: string;
   /** What the battle asks for: every enemy destroyed, when absent. */
   objective?: Objective;

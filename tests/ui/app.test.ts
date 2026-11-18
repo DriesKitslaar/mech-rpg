@@ -807,13 +807,13 @@ describe('the arena', () => {
 });
 
 describe('open contracts', () => {
-  test('three appear once the introductions are done, and not before', () => {
+  test('three appear once the introductions are done, with the swarm beside them, and not before', () => {
     const early = inHub().app;
     select(early, 'contracts');
     expect(open(early)).toEqual([]);
     const { app } = inHub(done('intro-1', 'intro-2'));
     select(app, 'contracts');
-    expect(open(app)).toHaveLength(3);
+    expect(open(app)).toEqual(['open-0-0-0', 'open-0-0-1', 'open-0-0-2', 'open-0-0-swarm']);
   });
 
   test('winning one is never recorded and brings a new board', () => {
@@ -827,8 +827,9 @@ describe('open contracts', () => {
     expect(snap(app).completed).toEqual(['intro-1', 'intro-2']);
     press(app, 'confirm');
     select(app, 'contracts');
-    expect(open(app)).toHaveLength(3);
-    expect(open(app)).not.toEqual(board);
+    // Three of the board and the swarm, and not one of them is one that was there before.
+    expect(open(app)).toHaveLength(4);
+    for (const id of open(app)) expect(board).not.toContain(id);
   });
 });
 
@@ -864,7 +865,7 @@ describe('a new cycle', () => {
     expect(ids(app)).not.toContain('cycle');
     select(app, 'contracts');
     expect(story(app)).toEqual(['patrol', 'intro-1']);
-    expect(open(app)).toHaveLength(3);
+    expect(open(app)).toEqual(['open-1-0-0', 'open-1-0-1', 'open-1-0-2', 'open-1-0-swarm']);
     expect(snap(app).menu.items.find((i) => i.id === 'intro-1')!.note).toBe('900');
     expect(snap(app).menu.items.find((i) => i.id === 'patrol')!.note).toBe('400');
   });

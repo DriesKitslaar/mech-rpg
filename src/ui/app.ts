@@ -2,7 +2,7 @@ import { adviceAfter, type Advice } from '../core/advice';
 import {
   CUPS, MIRROR_ID, arenaMission, checkChallenge, cupMission, cupOpen, isCup, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordCupWin, recordMirrorWin,
 } from '../core/arena';
-import { generateBoard } from '../core/board';
+import { generateBoard, swarmContract } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
   archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, otherOffer, markRead,
@@ -703,7 +703,7 @@ export class App {
       return MISSIONS.filter((m) => m.id === 'patrol').map((m) => lentPatrol(m, STARTER_BUILD, STRINGS.briefing.lentNote));
     }
     const story = availableMissions(game, MISSIONS).map((m) => forCycle(m, game.cycle));
-    return this.sideWorkOpen() ? [...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT)] : story;
+    return this.sideWorkOpen() ? [...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT), swarmContract(game.battlesWon, game.cycle, BOARD_TEXT)] : story;
   }
 
   /** True once the arena and the open contracts are available. */
