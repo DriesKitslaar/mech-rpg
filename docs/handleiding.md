@@ -95,6 +95,14 @@ andere zware gevechten verandert er niets: die zijn precies zo zwaar als ze ware
   KOMST**), en pas als dat nul is, is het gevecht gewonnen. Bij de open contracten staat steeds
   één zwerm: zes tot negen lichte machines, betaald per stuk. Dé plek om door te stoten.
 
+**Je naam.** Wat je vernietigt, levert je een naam op. Elke vernietigde machine telt voor 1, een
+verslagen baas voor 8, een arenarang voor 4 en elke keer dat je het verhaal uitspeelt voor 40. Er
+zijn vijf namen: **Line Item** (Kostenpost) vanaf 20, **Write-Off** (Afboeking) vanaf 60, **Total
+Loss** vanaf 150, **Act of God** (Overmacht) vanaf 320 en **The Last Invoice** (De Eindafrekening)
+vanaf 600. Je naam staat onderaan het blad RECORD van je piloot, met wat je nodig hebt voor de
+volgende. Zodra je er een hebt, staat hij onder de banner aan het begin van elk gevecht, en tegen
+gewone machines opent de meldingsbalk ermee: zij weten wie er komt. Een naam raak je nooit kwijt.
+
 Onder de pantserbalk van elke mecha staat een dunne balk: het evenwicht. Is die leeg, dan wankelt
 de mecha een beurt: hij kan niet ontwijken en krijgt 30% meer schade. Zware wapens duwen het hardst.
 

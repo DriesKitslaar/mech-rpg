@@ -21,6 +21,7 @@ import { WINGMEN } from '../content/wingmen';
 import { intentOf } from '../core/intent';
 import { intentText } from './tags';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
+import { nameRank } from '../core/renown';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
 import { drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill, type Drill } from '../core/training';
@@ -266,7 +267,13 @@ class MissionHost implements Screen {
     // Each battle of a contract has its own song: the last one may be against a boss.
     this.app.playTrack(battleTrack(this.mission, this.index, this.app.enemies()));
     // Tests play without the talk: it is words to read, and they have nobody reading.
-    this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast, cycle: this.app.game?.cycle ?? 0 });
+    // A pilot with a name flies under it: on the banner of every battle that is not a drill, and in the
+    // message bar as a battle against ordinary machines opens. They are the ones who have heard it.
+    const game = this.app.game;
+    const rank = game && !drill ? nameRank(game) : 0;
+    const known = rank > 0 ? STRINGS.renown.names[rank - 1].toUpperCase() : null;
+    const opening = known && state.open ? STRINGS.renown.opening(known, STRINGS.renown.notes[rank - 1]) : undefined;
+    this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast, cycle: this.app.game?.cycle ?? 0, ...(opening ? { opening } : {}) });
     const battle = this.mission.battles[this.index];
     const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
     if (this.index > 0) this.app.openShutter();
@@ -274,6 +281,7 @@ class MissionHost implements Screen {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: drill ? undefined : this.app.game!.paint,
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
       ...(boss ? { boss: boss.name } : {}),
+      ...(known && game?.callsign ? { pilot: STRINGS.renown.banner(game.callsign, known) } : {}),
       coach: this.coach,
       typing: this.app.typing(), calm: this.app.settings.calm === true,
       ...(this.radio() ? { radio: this.radio()! } : {}),
@@ -677,7 +685,11 @@ export class App {
     // Several at once (a pilot who jumps levels) are one announcement, like several medals are.
     const driveToasts: Toast[] = drives.length === 0 ? []
       : [{ id: `overdrive:${drives.join('+')}`, heading: STRINGS.overdrive.opened, title: drives.map((id) => STRINGS.overdrive.names[id]).join(', '), sound: 'entry' }];
-    this.toasts.push(...medalToasts(earned), ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
+    // A name the record has just earned is said once, as it is earned. A game that is loaded with one has it without ceremony.
+    const named = before && nameRank(game) > nameRank(before) ? nameRank(game) : 0;
+    const nameToasts: Toast[] = named === 0 ? []
+      : [{ id: `name:${named}`, heading: STRINGS.renown.earned, title: STRINGS.renown.names[named - 1], sound: 'medal' }];
+    this.toasts.push(...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
     this.game = game;
     this.saveFailed = !this.file.save(game);
     // Options that could not be stored when they were changed go with the next thing that can be.

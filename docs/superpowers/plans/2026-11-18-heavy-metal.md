@@ -34,7 +34,7 @@
 - [x] H1: Momentum and Shatter (branch `feat/heavy-momentum`)
 - [x] H2: They break (branch `feat/heavy-break`)
 - [x] H3: Swarms (branch `feat/heavy-swarm`)
-- [ ] H4: A name (branch `feat/heavy-name`)
+- [x] H4: A name (branch `feat/heavy-name`)
 - [ ] H5: Weight (branch `feat/heavy-weight`)
 - [ ] H6: Review, soak, APK, summary (branch `feat/heavy-review`)
 
@@ -148,15 +148,19 @@ Each part adds its column here.
 
 ## H4: A name
 
-**Files:** `src/core/renown.ts` (new), `src/ui/pilotScreen.ts`, `src/ui/battleScreen.ts` (the opening banner), `src/ui/app.ts` (the announcement), `src/ui/battleFlow.ts` (the opening line), strings; tests in `tests/core/renown.test.ts` (new), `tests/ui/renown.test.ts` (new).
+**Files:** `src/core/renown.ts` (new), `src/ui/pilotScreen.ts`, `src/ui/battleScreen.ts` (the band under the banner), `src/ui/battleFlow.ts` (what the bar opens with), `src/ui/app.ts` (the announcement; what a battle is opened with), strings, `src/content/codex.ts` (a manual topic), guide; tests in `tests/core/renown.test.ts`, `tests/ui/renown.test.ts` (new), `e2e/heavy.spec.ts`.
 
 **Interfaces:**
-- `renownOf(game): number` from the record; `nameOf(game): { id: string; rank: number } | null` on a ladder of five.
-- No field in the saved game: a new name is announced when a booking raises the rank.
+- `RENOWN = { kill: 1, boss: 8, arena: 4, cycle: 40 }`, `NAME_AT = [20, 60, 150, 320, 600]`.
+- `renownOf(game): number`; `nameRank(game): number` (0 for none, then 1 to 5); `nextNameAt(game): number | null`.
+- `FlowOptions.opening?: string`: what stands in the message bar as the battle opens. `BattleScreen` option `pilot?: string`: the band under the banner.
+- No field in the saved game. A name is announced when a save raises the rank of the game in memory.
 
-- [ ] Tests first: the ladder; a new game has no name; the name never goes down; an old save gets the name its record earns, announced once.
-- [ ] The pilot's page, the banner, the announcement, the line said when ordinary machines face a pilot far above them. Dutch.
-- [ ] All tests, screenshots, an APK.
+- [x] Tests first (`renown.test.ts`): what counts and what does not; the ladder, each name at its mark and not one short; a new game has no name; the name never goes down; where a career reaches each (measured with the career bot, story and arena only: 33 after eight contracts won, 64 after fifteen, 185 at the end of a first telling, 334 after two, 482 after three, so the last name takes work beside the story).
+- [x] The pilot's record: the name, its line, and the renown against the next mark, in a panel under the ranks held.
+- [x] The announcement, once, as it is earned; two marks passed at once are the higher name; a game loaded with a name is told nothing. (The plan had an old save announced once. With nothing saved there is nothing to say it was, so it is not announced at all.)
+- [x] The banner's band (not in a drill, not under a boss's warning) and the message bar's opening line in an open battle. Dutch: Kostenpost, Afboeking, Total Loss, Overmacht, De Eindafrekening.
+- [x] A manual topic and the guide. 25 small faults in the new code: found by the tests. A browser test with screenshots. All tests, an APK.
 
 ## H5: Weight
 

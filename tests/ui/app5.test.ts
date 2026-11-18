@@ -322,7 +322,8 @@ describe('the database', () => {
     app.commit({ ...app.game!, arenaRank: 10, xp: xpForLevel(10), stats: { ...NO_STATS, contracts: 30, kills: 60 } });
     expect(app.game!.medals.length).toBeGreaterThan(3);
     app.update(16);
-    // The medals are one announcement; the Overdrives that ten levels opened at once are one more, after it.
-    expect(snap(app)).toMatchObject({ toast: `medals:${app.game!.medals.length}`, toasts: ['overdrive:second-wind+iron-skin+deadeye'] });
+    // The medals are one announcement; the name such a record has earned is the next (sixty machines and ten ranks of the
+    // arena pass two marks at once, and it is the higher that is said); the Overdrives that ten levels opened are one more.
+    expect(snap(app)).toMatchObject({ toast: `medals:${app.game!.medals.length}`, toasts: ['name:2', 'overdrive:second-wind+iron-skin+deadeye'] });
   });
 });

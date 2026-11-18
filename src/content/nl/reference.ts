@@ -174,6 +174,10 @@ export const REFERENCE_NL: Record<string, string> = {
     'ZE VLUCHTEN',
   'SWARMS':
     'ZWERMEN',
+  'A NAME':
+    'EEN NAAM',
+  'What you destroy earns you a name. Every machine counts one, a boss eight, a rank of the arena four, a telling of the story forty. There are five names; your record says which is yours and what the next asks. The banner of a battle carries it, and ordinary machines are told who is coming.':
+    'Wat je vernietigt, levert je een naam op. Elke machine telt voor een, een baas voor acht, een arenarang voor vier, een keer het verhaal voor veertig. Er zijn vijf namen; je staat van dienst zegt welke je hebt en wat de volgende vraagt. De banner van een gevecht draagt hem, en gewone machines horen wie er komt.',
   'Some contracts field more machines than a field holds. Three stand at a time; as a round begins the next come on where others fell or left. The strip under the message bar says how many are still to come, and the battle is not won until that is none. The swarm on the open board pays by the head.':
     'Sommige contracten hebben meer machines dan er op een veld passen. Er staan er drie tegelijk; bij het begin van een ronde komen de volgende erbij waar er een viel of vluchtte. De strook onder de meldingsbalk zegt hoeveel er nog komen; pas bij nul is het gevecht gewonnen. De zwerm bij de open contracten betaalt per stuk.',
   'Destroy two machines in one turn of the same fights and whatever still stands against you loses its nerve. It is marked SHAKEN, and when its turn comes it breaks off and leaves the field without firing. A machine that leaves is not a kill: destroy it before its turn comes if you want it counted.':

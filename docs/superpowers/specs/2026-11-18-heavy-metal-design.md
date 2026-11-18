@@ -104,11 +104,16 @@ nine in all, three on the field and the rest behind them, paid by the head. (As 
 there were to be swarm contracts on the board and a standing job in the side work. One contract
 that is always there and always new is both.)
 
-**A name.** The record a game already keeps (machines destroyed, the arena, the tellings) is read
-as renown, and renown as one of a short ladder of names. No new saved state: the name is worked
-out from the record. A new name is announced as a medal is. The pilot's page shows it; a battle's
-opening banner carries it under the callsign once there is one; and when ordinary machines face a
-pilot far above them, the opening line of the battle says they know who it is.
+**A name.** The record a game already keeps is read as renown: one for every machine destroyed,
+eight for a boss beaten, four for a rank of the arena, forty for a telling of the story. Renown is
+read as one of five names, at 20, 60, 150, 320 and 600: Line Item, Write-Off, Total Loss, Act of
+God, The Last Invoice, each with a line that says what it means to the other side. No new saved
+state: the name is worked out from the record, and nothing on the record ever goes down. A name is
+announced as it is earned, as a medal is; a game loaded with one has it without ceremony. The
+pilot's record shows it, with what the next asks. The banner that opens a battle carries the
+callsign and the name on a band under it, and where the battle is open the message bar opens with
+the name and its line: ordinary machines are the ones who have heard it. (As first written it was
+to be said where the machines were far below the pilot. Open battles are that.)
 
 **Weight.** A volley that destroys a machine with at least twice what was left of it is an
 *overkill*: the event says so, the machine goes up harder, and the word is on the screen for a

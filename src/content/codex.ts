@@ -186,6 +186,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'Some contracts field more machines than a field holds. Three stand at a time; as a round begins the next come on where others fell or left. The strip under the message bar says how many are still to come, and the battle is not won until that is none. The swarm on the open board pays by the head.',
   },
   {
+    id: 'renown', title: 'A NAME',
+    text: 'What you destroy earns you a name. Every machine counts one, a boss eight, a rank of the arena four, a telling of the story forty. There are five names; your record says which is yours and what the next asks. The banner of a battle carries it, and ordinary machines are told who is coming.',
+  },
+  {
     id: 'aim', title: 'AIMING',
     text: 'Pick a target and a part. The core is the easiest to hit; legs are 5 harder, arms 10, the head 20. Destroy the core and the unit is gone. A part that is already destroyed passes half of any further damage on to the core.',
   },

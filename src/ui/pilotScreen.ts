@@ -8,6 +8,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
+import { nameRank, nextNameAt, renownOf } from '../core/renown';
 import { RECORD_ROWS, rankTally, recordLines } from './record';
 import { CHAR_W, COLORS, LINE, MEDAL_COLORS, charsFor, drawList, drawMedal, drawMeter, drawPanel, drawRowLight, drawTabs, drawText, wrap } from './widgets';
 
@@ -109,7 +110,7 @@ export class PilotScreen implements Screen {
       medalCount: { earned: MEDALS.filter((m) => game.medals.includes(m.id)).length, of: MEDALS.length },
       ...(this.page === 'medals' ? { detail: this.detail() } : {}),
       ...(this.page === 'drive' ? { overdrive: fittedOverdrive(game) ?? null } : {}),
-      ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length) } : {}),
+      ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length), known: { rank: nameRank(game), renown: renownOf(game), next: nextNameAt(game) } } : {}),
     };
   }
 
@@ -247,5 +248,16 @@ export class PilotScreen implements Screen {
       drawText(ctx, rank, x, top + 17, { size: 16, color: count > 0 ? COLORS.accent : COLORS.dim });
       drawText(ctx, String(count), x + 14, top + 20, { color: count > 0 ? COLORS.text : COLORS.dim });
     });
+
+    // The name the record has earned, what it means to the other side, and how far off the next one is.
+    const N = STRINGS.renown;
+    const known = top + 44;
+    const rank = nameRank(game);
+    const next = nextNameAt(game);
+    drawPanel(ctx, 4, known, LOGICAL_W - 8, 40);
+    drawText(ctx, N.label, 12, known + 4, { color: COLORS.dim });
+    drawText(ctx, next === null ? N.renown(renownOf(game)) : N.towards(renownOf(game), next), LOGICAL_W - 12, known + 4, { align: 'right', color: COLORS.dim });
+    drawText(ctx, rank > 0 ? N.names[rank - 1].toUpperCase() : N.none, 12, known + 15, { color: rank > 0 ? COLORS.accent : COLORS.dim });
+    if (rank > 0) drawText(ctx, N.notes[rank - 1], 12, known + 26);
   }
 }
