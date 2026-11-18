@@ -259,6 +259,21 @@ export const STRINGS = {
     damage: 'ARMOUR SHOT OFF', taken: 'ARMOUR LOST', overheats: 'TURNS LOST TO HEAT', rounds: 'ROUNDS FOUGHT',
     earned: 'CREDITS EARNED', medals: 'MEDALS', cycle: 'CYCLE', time: 'TIME PLAYED', none: '-', ranksHeld: 'RANKS HELD',
   },
+  // The name a pilot's record has earned: five of them, each with what it means to the other side.
+  renown: {
+    names: ['Line Item', 'Write-Off', 'Total Loss', 'Act of God', 'The Last Invoice'],
+    notes: [
+      'Somebody has a row for you in a budget.',
+      'They enter as lost whatever they send at you.',
+      'Nobody quotes for a site you are near.',
+      'Meridian files you under weather.',
+      'Nobody sends the next one.',
+    ],
+    label: 'KNOWN AS', none: 'no name yet', earned: 'YOU HAVE A NAME',
+    renown: (have: number) => `RENOWN ${have}`, towards: (have: number, next: number) => `RENOWN ${have}/${next}`,
+    // Under the contract's name as a battle opens, and in the message bar where the machines are ordinary ones.
+    banner: (callsign: string, name: string) => `${callsign}, ${name}`, opening: (name: string, note: string) => `${name}. ${note}`,
+  },
   database: {
     heading: 'DATABASE', pages: { units: 'UNITS', people: 'PEOPLE', world: 'WORLD', finds: 'FOUND', manual: 'MANUAL', music: 'MUSIC' }, hint: 'L1/R1: page   B: back',
     // What has been found: papers and brass lamp checks. One not found has a clue where its text will be.

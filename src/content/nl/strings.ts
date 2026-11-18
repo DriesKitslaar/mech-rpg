@@ -235,6 +235,19 @@ export const STRINGS_NL = {
     damage: 'PANTSER VERNIELD', taken: 'PANTSER KWIJT', overheats: 'BEURTEN OVERVERHIT', rounds: 'RONDES GESPEELD',
     earned: 'CREDITS VERDIEND', medals: 'MEDAILLE', cycle: 'CYCLUS', time: 'SPEELTIJD', none: '-', ranksHeld: 'RANGEN',
   },
+  renown: {
+    names: ['Kostenpost', 'Afboeking', 'Total Loss', 'Overmacht', 'De Eindafrekening'],
+    notes: [
+      'Je staat bij iemand op de begroting.',
+      'Wat ze op je af sturen, boeken ze meteen af.',
+      'Bij jou in de buurt verzekert niemand.',
+      'Meridian boekt je onder het weer.',
+      'Niemand stuurt de volgende.',
+    ],
+    label: 'BEKEND ALS', none: 'nog geen naam', earned: 'JE HEBT EEN NAAM',
+    renown: (have: number) => `FAAM ${have}`, towards: (have: number, next: number) => `FAAM ${have}/${next}`,
+    banner: (callsign: string, name: string) => `${callsign}, ${name}`, opening: (name: string, note: string) => `${name}. ${note}`,
+  },
   database: {
     heading: 'DATABASE', pages: { units: 'EENHEID', people: 'MENSEN', world: 'WERELD', finds: 'VONDST', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
     found: (n: number, of: number) => `VONDST ${n}/${of}`, checks: (n: number) => `PENNINGEN ${n}`, check: 'Penning', notFound: 'Nog zoek.',

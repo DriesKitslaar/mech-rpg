@@ -111,3 +111,33 @@ test('a swarm: the briefing counts it, the field says how many are still to come
   expect(after.battlesWon).toBe(game.battlesWon + 1);
   expect(errors).toEqual([]);
 });
+
+test('a name: the record shows the one the pilot has earned, and a battle against ordinary machines opens under it', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const base = ronin();
+  // Eighty-five machines, five bosses and the top of the arena: what a first telling of the story leaves on the record.
+  await load(page, { ...base, arenaRank: 15, stats: { ...base.stats, kills: 85, bosses: 5, contracts: 33 } });
+  await enterHub(page);
+  await choose(page, 'pilot');
+  await waitForScreen(page, 'pilot');
+  for (let i = 0; i < 4 && (await snap(page)).page !== 'record'; i++) await press(page, 'e');
+  expect((await snap(page)).page).toBe('record');
+  expect((await snap(page) as unknown as { known: object }).known).toEqual({ rank: 3, renown: 185, next: 320 });
+  await still(page);
+  await page.screenshot({ path: shot('pilot-name') });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+
+  await choose(page, 'contracts');
+  await choose(page, 'patrol');
+  await waitForScreen(page, 'briefing');
+  await choose(page, 'accept');
+  await waitForScreen(page, 'battle');
+  // The banner is up for a second: half-way through it the band under it is there to be seen.
+  for (let frame = 0; frame < 24; frame++) await nextFrame(page);
+  expect((await snap(page)).message).toBe('TOTAL LOSS. Nobody quotes for a site you are near.');
+  await page.screenshot({ path: shot('battle-name') });
+  expect(errors).toEqual([]);
+});

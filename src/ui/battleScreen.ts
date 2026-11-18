@@ -178,6 +178,8 @@ export class BattleScreen {
       fast: boolean; sfx?: Sfx; background?: string; label?: string; resultHint?: string; speed?: number;
       /** The paint scheme of the player's mech. */
       paint?: string;
+      /** The pilot as the banner names them, once the record has earned them a name: the callsign and the name. */
+      pilot?: string;
       /** The contract's name, for the banner that opens the battle. */
       title?: string;
       /** The boss the battle is against, if it is against one: the banner becomes a warning. */
@@ -704,6 +706,12 @@ export class BattleScreen {
     const title = this.opts.title ?? this.opts.label ?? '';
     drawText(ctx, title, x + LOGICAL_W / 2, y + 7, { size: 16, align: 'center', color: COLORS.accent });
     drawText(ctx, this.instruction(), x + LOGICAL_W / 2, y + 27, { align: 'center', color: COLORS.heat });
+    // Who is flying it, once that is somebody: on a band of its own under the banner, coming and going with it.
+    if (this.opts.pilot) {
+      ctx.fillStyle = 'rgba(8, 8, 20, 0.92)';
+      ctx.fillRect(x, y + h + 2, LOGICAL_W, 15);
+      drawText(ctx, this.opts.pilot, x + LOGICAL_W / 2, y + h + 4, { align: 'center' });
+    }
   }
 
   /**

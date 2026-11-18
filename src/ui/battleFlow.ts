@@ -30,6 +30,8 @@ export interface FlowOptions {
   cycle?: number;
   /** Nothing is said at all, a boss's own lines included. Tests play this way. */
   quiet?: boolean;
+  /** What stands in the message bar as the battle opens, before anything has happened. */
+  opening?: string;
 }
 
 const O = STRINGS.objectives;
@@ -82,6 +84,7 @@ export class BattleFlow {
   constructor(state: BattleState, private catalog: Catalog, private opts: FlowOptions = {}) {
     this.state = state;
     this.began = state.units.filter((u) => u.side === 'enemy').length;
+    if (opts.opening) this.message = opts.opening;
     this.say(this.lines('start'), () => { this.phase = 'animating'; });
   }
 
