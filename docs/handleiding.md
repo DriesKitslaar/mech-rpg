@@ -85,6 +85,10 @@ andere zware gevechten verandert er niets: die zijn precies zo zwaar als ze ware
   een licht wapen moet je haar afbreken. Bij het mikken staat er **DESTROYS** (Nederlands:
   **VERNIETIGT**) als een treffer de machine vernietigt. Hoe beter je wapen (ook door de
   werkbank), hoe zwaardere machines je in één klap vernietigt. Jou kan het niet overkomen.
+- **Ze vluchten.** Vernietig je twee machines in één beurt, dan raakt wat er nog staat in paniek
+  (label **SHAKEN**, Nederlands **PANIEK**). Zodra die machine aan de beurt is, vlucht ze van het
+  veld zonder te vuren. Een machine die vlucht telt niet als vernietigd: wil je haar meetellen,
+  schakel haar dan uit vóór ze aan de beurt is.
 
 Onder de pantserbalk van elke mecha staat een dunne balk: het evenwicht. Is die leeg, dan wankelt
 de mecha een beurt: hij kan niet ontwijken en krijgt 30% meer schade. Zware wapens duwen het hardst.

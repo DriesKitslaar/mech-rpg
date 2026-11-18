@@ -34,7 +34,7 @@ export const STRINGS_NL = {
   tags: {
     boost: 'BOOST', guard: 'DEKKING', stagger: 'WANKELT', charged: 'GELADEN', charging: 'LAADT OP', painted: 'GEMERKT',
     barrier: (n: number) => `BARRIERE ${n}`, chaff: 'CHAFF', stability: 'STAB',
-    fuse: (n: number) => `LONT ${n}`, aegis: 'AEGIS', jammer: 'STOORDER', mender: 'HERSTEL', carrier: 'DRAGER',
+    fuse: (n: number) => `LONT ${n}`, aegis: 'AEGIS', jammer: 'STOORDER', mender: 'HERSTEL', carrier: 'DRAGER', shaken: 'PANIEK',
     covered: 'GEDEKT', jammed: (n: number) => `GESTOORD -${n}`, ironSkin: 'IJZERHUID', deadeye: 'SCHERPOOG',
     marks: { armoured: 'GEPANTSERD', overclocked: 'OVERKLOKT', swift: 'SNEL', shielded: 'SCHILD' } as Record<string, string>,
   },
@@ -65,6 +65,8 @@ export const STRINGS_NL = {
   partDestroyed: (unit: string, part: string) => `${subj(unit)}: ${part} vernietigd`,
   unitDestroyed: (unit: string) => does(unit, 'vernietigd', 'bent vernietigd'),
   momentum: (weapon: string, chain: number) => (chain > 1 ? `REEKS x${chain} - ${weapon} weer klaar` : `${weapon} weer klaar`),
+  shaken: (unit: string) => does(unit, 'raakt in paniek'),
+  rout: (unit: string) => does(unit, 'vlucht'),
   boost: (unit: string) => does(unit, 'boost'),
   guard: (unit: string) => `${subj(unit)}: schrap`,
   stagger: (unit: string) => does(unit, 'WANKELT'),
@@ -403,7 +405,7 @@ export const STRINGS_NL = {
     vendors: { undertow: 'De Undertow', lumen: 'Lumen Systems', hadron: 'Hadron Mining', freelance: 'Freelance' },
   },
   fx: {
-    miss: 'MIS', overheat: 'OVERVERHIT', stagger: 'WANKELT', block: (n: number) => `BLOK ${n}`,
+    miss: 'MIS', overheat: 'OVERVERHIT', stagger: 'WANKELT', shaken: 'PANIEK', block: (n: number) => `BLOK ${n}`,
     phase: (n: number) => `FASE ${n}`,
     modules: {
       coolant: 'KOELING', barrier: 'BARRIERE', overclock: 'OVERKLOK', painter: 'GEMERKT', nanites: 'NANITES', shock: 'SCHOK',

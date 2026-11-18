@@ -532,10 +532,14 @@ describe('what the camera moves', () => {
   /** A drawing without the darker edges of the field: those are laid round what the camera has in view, which is the one thing that is not on the stage. */
   const plain = (drawn: Drawn): Drawn => ({ ...drawn, glows: drawn.glows.filter((g) => !isVignette(g)) });
 
-  test('is everything that stands or happens on the field, and nothing else: a frame from a camera that is away from home, put back on the stage, is the frame a camera at home draws', () => {
-    // Two battles played alike, frame for frame and press for press. One is looked at through a camera that never leaves home.
+  /**
+   * Two battles played alike, frame for frame and press for press, one of them looked at through a camera that never
+   * leaves home. Every frame of the other, put back on the stage, has to be the frame the camera at home draws. Says
+   * what was seen on the way, and how the battle stood at its end.
+   */
+  function filmed(battle: () => BattleState) {
     const play = (still: boolean) => {
-      const made = screenOf(fight(['recon-drone', 'tank', 'gun-turret'], [1], { overdrive: 'iron-skin', drive: 100 }), { background: 'bg-nowhere' });
+      const made = screenOf(battle(), { background: 'bg-nowhere' });
       if (still) (made.screen as unknown as { camera: Camera }).camera = new Camera(placeFor('bg-nowhere'), false);
       return made;
     };
@@ -619,6 +623,13 @@ describe('what the camera moves', () => {
       }
     }
     expect(moving.flow.phase).toBe('result');
+    return { seen, named, end: moving.flow.state };
+  }
+
+  test('is everything that stands or happens on the field, and nothing else: a frame from a camera that is away from home, put back on the stage, is the frame a camera at home draws', () => {
+    // An elite among them, so that the battle is fought to the last machine, many blows long, and ends in the close look.
+    const { seen, named, end } = filmed(() => fight(['recon-drone', 'tank', 'gun-turret'], [1], { overdrive: 'iron-skin', drive: 100, marks: { 0: 'armoured' } }));
+    expect(end.open).toBe(false);
     // It was away as the battle opened, through many blows, while the field was thrown, and with all of that on the field.
     expect(seen.opening).toBeGreaterThan(30);
     expect(seen.away).toBeGreaterThan(seen.opening + 300);
@@ -627,6 +638,17 @@ describe('what the camera moves', () => {
     for (const kind of ['figures', 'bars', 'lights', 'lines'] as const) expect(seen[kind], kind).toBeGreaterThan(100);
     // Each of the things named was there to be checked, many times over.
     for (const [kind, count] of Object.entries(named)) expect(count, kind).toBeGreaterThan(500);
+  });
+
+  test('and so is an open battle: a machine that is shattered, a weapon that is ready again, and the last machine leaving', () => {
+    const { seen, end } = filmed(() => fight(['recon-drone', 'tank', 'gun-turret'], [1], { overdrive: 'iron-skin', drive: 100 }));
+    expect(end.open).toBe(true);
+    expect(end.outcome).toBe('victory');
+    // Somebody was shattered, and somebody left: both were on the field while the camera was away from home.
+    expect(end.events.some((e) => e.type === 'shot' && e.shatter)).toBe(true);
+    expect(end.units.filter((u) => u.fled).length).toBe(1);
+    expect(seen.away).toBeGreaterThan(seen.opening + 100);
+    expect(seen.lights).toBeGreaterThan(100);
   });
 });
 

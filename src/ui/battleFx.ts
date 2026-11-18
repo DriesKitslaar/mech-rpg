@@ -79,6 +79,9 @@ export const HIT_MS = 220;
 export const flightFor = (dtype: DamageType): number => (dtype === 'explosive' ? SHELL_MS : PROJECTILE_MS);
 export const TEXT_MS = 650;
 export const DEATH_MS = 550;
+/** How long a machine that breaks off takes to be gone, and how far it has gone by then. */
+export const LEAVE_MS = 520;
+export const LEAVE_PX = 64;
 const RECOIL_MS = 140;
 const LUNGE_MS = 320;
 const STEAM_MS = 520;
@@ -124,6 +127,8 @@ export type Fx = Timed & (
   | { kind: 'pulse'; unit: string }
   | { kind: 'lunge'; unit: string; from: Pt; aim: Pt }
   | { kind: 'death'; unit: string; at: Pt }
+  /** A machine that breaks off: it goes out the way `aim` points, faster as it goes, and is gone at the end. */
+  | { kind: 'leave'; unit: string; from: Pt; aim: Pt }
   | { kind: 'burst'; at: Pt; size: number; color: string; style: BurstStyle }
   | { kind: 'sparks'; at: Pt; color: string }
   | { kind: 'steam'; at: Pt }
@@ -282,6 +287,16 @@ export class BattleFx {
         this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from, aim: this.headingOf(event.unit) });
         break;
       }
+      case 'shaken':
+        this.add(0, 420, { kind: 'pulse', unit: event.unit });
+        this.say(0, s.centre(event.unit), STRINGS.fx.shaken, COLORS.accent);
+        break;
+      case 'rout': {
+        // It goes back the way it came: away from what it was facing.
+        const heading = this.headingOf(event.unit);
+        this.add(0, LEAVE_MS, { kind: 'leave', unit: event.unit, from: s.centre(event.unit), aim: { x: -heading.x || 0, y: -heading.y || 0 } });
+        break;
+      }
       case 'cool':
         this.add(0, STEAM_MS, { kind: 'steam', at: s.centre(event.unit) });
         break;
@@ -387,7 +402,7 @@ export class BattleFx {
     this.now += dtMs;
     this.effects = this.effects.filter((fx) => {
       const done = this.now >= fx.start + fx.dur;
-      if (done && fx.kind === 'death') this.gone.add(fx.unit);
+      if (done && (fx.kind === 'death' || fx.kind === 'leave')) this.gone.add(fx.unit);
       return !done;
     });
     this.jolts = this.jolts.filter((j) => this.now < j.start + j.dur || !j.felt);
@@ -404,7 +419,7 @@ export class BattleFx {
     return this.effects.length > 0;
   }
 
-  /** A unit whose destruction has finished playing; the screen stops drawing it. */
+  /** A unit whose destruction, or whose leaving, has finished playing; the screen stops drawing it. */
   isGone(unitId: string): boolean {
     return this.gone.has(unitId);
   }
@@ -440,6 +455,14 @@ export class BattleFx {
       else if (fx.kind === 'pulse') flash ||= Math.floor(p * 4) % 2 === 0;
       // A wreck is seen coming apart before it fades: whole for the first half, gone at the end.
       else if (fx.kind === 'death') { alpha = Math.min(alpha, Math.min(1, 2 * (1 - p))); dy += 8 * p; flash ||= p < 0.25; }
+      // A machine that breaks off gathers speed as it goes and is lost to sight on the way.
+      else if (fx.kind === 'leave') {
+        dx += fx.aim.x * LEAVE_PX * p * p;
+        lift += fx.aim.y * LEAVE_PX * p * p;
+        alpha = Math.min(alpha, 1 - p);
+        trail = fx.aim.x * TRAIL_PX * p;
+        trailY = fx.aim.y * TRAIL_PX * p;
+      }
     }
     return { dx: px(dx), dy: px(dy), lift: px(lift), flash, alpha, glare, trail: px(trail), trailY: px(trailY) };
   }
