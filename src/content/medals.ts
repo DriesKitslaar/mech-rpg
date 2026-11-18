@@ -53,7 +53,7 @@ const EARNED: Medal[] = [
   { id: 'audit', name: 'Audited', text: 'See Meridian\'s audit through.', tier: 2, secret: true, progress: did('audit-3') },
   { id: 'verdict-enforce', name: 'Paid in Full', text: 'Enforce the policy.', tier: 3, secret: true, progress: did('verdict-enforce') },
   { id: 'verdict-default', name: 'Defaulted', text: 'Default on the policy.', tier: 3, secret: true, progress: did('verdict-default') },
-  { id: 'both-verdicts', name: 'Both Columns', text: 'Give both verdicts.', tier: 3, secret: true, progress: held(['verdict-enforce', 'verdict-default']) },
+  { id: 'both-verdicts', name: 'Both Columns', text: 'Enforce the policy, and default on it.', tier: 3, secret: true, progress: held(['verdict-enforce', 'verdict-default']) },
   { id: 'verdict-quorum', name: 'Any Other Business', text: 'Hold the meeting.', tier: 3, secret: true, progress: did('verdict-quorum') },
   { id: 'cycle', name: 'Renewal', text: 'Start the war again.', tier: 2, progress: count(1, (g) => g.cycle) },
   // The arena.

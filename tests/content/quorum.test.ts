@@ -57,10 +57,11 @@ describe('the third verdict', () => {
     expect('bg-hall' in SPRITES).toBe(true);
     expect(quorum.battles.map((b) => b.support)).toEqual([{ name: 'Ashfall', damage: 45 }, { name: 'Ashfall', damage: 45 }]);
     expect(takesWingman(quorum)).toBe(false);
-    // It pays less than Meridian offers and more than Ashfall does.
+    // It pays least of the three, as the letter that offers it says: nobody takes it for the fee.
     const reward = (id: string): number => MISSIONS.find((m) => m.id === id)!.reward;
-    expect(reward('verdict-default')).toBeLessThan(quorum.reward);
-    expect(quorum.reward).toBeLessThan(reward('verdict-enforce'));
+    expect(quorum.reward).toBeLessThan(reward('verdict-default'));
+    expect(reward('verdict-default')).toBeLessThan(reward('verdict-enforce'));
+    expect(MESSAGES.find((m) => m.id === 'third-offer')!.body[0]).toMatch(/Here is a third\. It pays out of a collection tin/);
   });
 
   test('the door is held for six rounds while the checks are counted aloud, a round at a time, to nine', () => {
@@ -69,13 +70,16 @@ describe('the third verdict', () => {
     const said = (at: 'start' | 'win' | number): string => door.talk!.filter((line) => line.at === at).map((line) => `${line.who}: ${line.text}`).join(' ');
     expect(said('start')).toMatch(/^Tamsin: .*One\. Two\. Three\.$/);
     expect(said(3)).toMatch(/Four\. Five\. Six\./);
-    expect(said(5)).toMatch(/Seven\. Eight\. Eight on the board\./);
-    // The ninth is the one that was tied to the frame at the dock, in the first act of every telling.
-    expect(said(6)).toMatch(/The ninth is tied to your left foot\. .*the dock\. .*That makes nine\./);
+    // Eight are hung from the bag, however many the pilot holds: the ninth hook is the frame's own.
+    expect(said(5)).toMatch(/Seven\. Eight\. Eight on the board\. The ninth hook is yours, pilot/);
+    // The ninth is the one that was tied to the frame at the dock, in the first act of every telling. It is
+    // counted when the door has been held, before the Actuary answers it: a line kept for a round is lost
+    // with a turn lost to heat when no turn follows, and the last round of a door has none after it.
+    expect(said(6)).toBe('');
+    expect(said('win')).toMatch(/^Tamsin: The ninth is tied to your left foot\. .*the dock\. .*That makes nine\. The Actuary: A quorum\./);
     expect(FINDS.find((f) => f.id === 'check-dock')!.source).toBe('Tied to your frame\'s left foot.');
-    expect(said('win')).toMatch(/^The Actuary: A quorum\./);
-    // Every round of it has somebody speaking, and nobody speaks after the count is done.
-    expect([...new Set(door.talk!.map((line) => line.at))]).toEqual(['start', 2, 3, 4, 5, 6, 'win']);
+    // Every round but the last has somebody speaking, and nobody speaks after the count is done.
+    expect([...new Set(door.talk!.map((line) => line.at))]).toEqual(['start', 2, 3, 4, 5, 'win']);
   });
 
   test('then the Proxy: Meridian\'s own machine, with three ways of fighting, a barrier, and clerks that keep arriving', () => {
@@ -132,12 +136,68 @@ describe('how the third verdict ends', () => {
     expect(openEntries(game, WORLD, MISSIONS).opened.map((e) => e.id)).toContain('society');
     expect(letters(game)).toContain('count-closed');
     expect(letters(game)).not.toContain('tidy-desk-again');
-    // After either of the other verdicts the clerk does write, and Dispatch has no count to close.
-    const other = did(fresh(1), ...WAR, ...AUDIT, 'verdict-default');
-    expect(letters(other)).toContain('tidy-desk-again');
-    expect(letters(other)).not.toContain('count-closed');
-    // The minutes say what the count said: eight on the board, and the ninth on the frame.
-    expect(FINDS.find((f) => f.id === 'paper-minutes')!.text).toMatch(/eight checks on the board.*a ninth, tied to the foot of a frame in the door/);
+    // After a verdict in a first telling the clerk writes once more: fly the war again and let the frame listen.
+    expect(letters(did(fresh(0), ...WAR, ...AUDIT, 'verdict-default'))).toContain('tidy-desk-again');
+    expect(letters(did(fresh(0), ...WAR, ...AUDIT, 'verdict-enforce'))).toContain('tidy-desk-again');
+    // In a later telling the frame has listened all the way, and he does not say it again; Dispatch has no count to close.
+    for (const cycle of [1, 2]) {
+      const other = did(fresh(cycle), ...WAR, ...AUDIT, 'verdict-default');
+      expect(letters(other), `cycle ${cycle}`).not.toContain('tidy-desk-again');
+      expect(letters(other)).not.toContain('count-closed');
+    }
+    // The minutes say what the count said: eight on the board, and the ninth on the frame. And that the box was opened.
+    const minutes = FINDS.find((f) => f.id === 'paper-minutes')!.text;
+    expect(minutes).toMatch(/eight checks on the board; a ninth, tied to the foot of a frame in the door/);
+    expect(minutes).toMatch(/The box was opened and the roll read\./);
+    // The world's entry counts the same way: nine counted, not nine on the board.
+    expect(WORLD.find((e) => e.id === 'society')!.text).toMatch(/with nine checks counted\./);
+    expect(quorum.briefing[0]).toMatch(/^Nine in brass opened the box\. The roll was inside\./);
+  });
+
+  test('no letter about the hall comes once a verdict is given, and none that was read is taken back', () => {
+    // The box brought home with eight checks: Tamsin writes that it will not open.
+    const eight = audited(8);
+    expect(letters(eight)).toContain('short-of-nine');
+    expect(letters(eight)).not.toContain('third-offer');
+    // A ninth is found before a verdict. The letter about eight has been read: it stays, and the offer comes.
+    const read = { ...eight, read: ['short-of-nine'] };
+    expect(letters({ ...read, codex: checks(9) })).toEqual(expect.arrayContaining(['short-of-nine', 'third-offer']));
+    // One that was never opened says nothing true any more, and goes.
+    expect(letters({ ...eight, codex: checks(9) })).not.toContain('short-of-nine');
+    // A verdict is given with eight. A ninth found afterwards brings no offer: there is nothing left to offer.
+    const decided = did(eight, 'verdict-default');
+    expect(letters({ ...decided, codex: checks(9) })).not.toContain('third-offer');
+    expect(letters(decided)).not.toContain('short-of-nine');
+    // The offer was read and another verdict given: the letter is still in the inbox.
+    const offered = { ...audited(9), read: ['third-offer'] };
+    expect(letters(did(offered, 'verdict-enforce'))).toContain('third-offer');
+    // What was read is forgotten when the story starts over, like everything else in the inbox.
+    expect(letters({ ...fresh(2), read: [] })).not.toContain('third-offer');
+  });
+
+  test('the three contracts nobody posted are not flown once a verdict is given', () => {
+    const offered = (game: GameState): string[] => availableMissions(game, MISSIONS).map((m) => m.id).filter((id) => id.startsWith('quest-'));
+    const war = decide(did(fresh(1), ...WAR), 'logs', 'keep');
+    expect(offered(war)).toEqual(['quest-1']);
+    expect(offered(did(war, 'quest-1'))).toEqual(['quest-2']);
+    expect(offered(did(war, 'quest-1', 'quest-2', ...AUDIT))).toEqual(['quest-3']);
+    for (const verdict of ['verdict-default', 'verdict-enforce']) {
+      expect(offered(did(war, ...AUDIT, verdict)), verdict).toEqual([]);
+      expect(offered(did(war, 'quest-1', ...AUDIT, verdict)), verdict).toEqual([]);
+      expect(offered(did(war, 'quest-1', 'quest-2', ...AUDIT, verdict)), verdict).toEqual([]);
+    }
+    // So the letter the first of them brings cannot come from a pilot whose frame has gone dark on a roof.
+    expect(letters(did(war, ...AUDIT, 'verdict-enforce'))).not.toContain('ashfall-paper');
+  });
+
+  test('a pilot of a later telling who sells the logs is told what went with them', () => {
+    const sold = decide(did(fresh(1), 'intro-1', 'intro-2', 'lumen-1', 'lumen-2'), 'logs', 'sell');
+    expect(letters(sold)).toContain('logs-sold');
+    expect(MESSAGES.find((m) => m.id === 'logs-sold')).toMatchObject({ from: 'Dispatch', subject: 'About the logs' });
+    expect(MESSAGES.find((m) => m.id === 'logs-sold')!.body.join(' ')).toMatch(/Not this year\.$/);
+    // Kept, there is nothing to tell; and in a first telling there was nothing else on the tape to sell.
+    expect(letters(decide(did(fresh(1), 'intro-1', 'intro-2', 'lumen-1', 'lumen-2'), 'logs', 'keep'))).not.toContain('logs-sold');
+    expect(letters(decide(did(fresh(0), 'intro-1', 'intro-2', 'lumen-1', 'lumen-2'), 'logs', 'sell'))).not.toContain('logs-sold');
   });
 
   test('medals: one for the meeting, one for nine checks, two for the papers', () => {

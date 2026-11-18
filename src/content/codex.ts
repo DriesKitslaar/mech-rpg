@@ -155,7 +155,7 @@ export const WORLD: Entry[] = [
   },
   {
     id: 'society', title: 'THE SOCIETY', after: 'verdict-quorum',
-    text: 'The Meridian Pit Mutual Aid Society met in its hall for the first time in forty years, with nine checks on the board. The Secretary took the minutes. Nobody owns the city now but the people in it, and they own a good deal more than the city.',
+    text: 'The Meridian Pit Mutual Aid Society met in its hall for the first time in forty years, with nine checks counted. The Secretary took the minutes. Nobody owns the city now but the people in it, and they own a good deal more than the city.',
   },
 ];
 

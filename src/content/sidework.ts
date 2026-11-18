@@ -214,10 +214,13 @@ const UNLISTED = { client: 'Unlisted', portrait: 'portrait-recorder' } as const;
  * Three contracts nobody posted, one at a time, and only in a later telling of the story: what the
  * recorder of the pilot's own frame brings up, in the order it brings it up. The second is not
  * offered to a pilot who sold the frame's logs: what it leads to was then found by somebody else.
+ * None of them is flown once a verdict is given: the story is over then, and what they lead to is
+ * closed. Their lines hold whenever in the telling they are flown: before the audit or in it,
+ * before the war is over or after.
  */
 export const QUEST: Mission[] = [
   {
-    id: 'quest-1', phase: 'side', series: 'quest', when: 'cycle:1&rival-1', title: 'Dead Channel', ...UNLISTED, reward: 900, scale: 0.8,
+    id: 'quest-1', phase: 'side', series: 'quest', when: 'cycle:1&rival-1&!verdict', title: 'Dead Channel', ...UNLISTED, reward: 900, scale: 0.8,
     briefing: [
       'PLAYBACK FAULT. Channel nine is carrying a live signal. Channel nine has been dead for eleven years.',
       'Source: a relay in the freight lanes, low on the wall where nobody looks. It is listening for this frame.',
@@ -225,15 +228,15 @@ export const QUEST: Mission[] = [
     ],
     debrief: 'The relay is dead. It held one address: a desk, and a nine. A fee arrives anyway. Nobody sent it.',
     battles: [
-      battle(['lien-drone', 'lien-drone'], 'bg-neon-district', { talk: [dispatch('start', 'Those are not on my board. I do not know that livery. ...I do. I saw it once, eleven years ago.')] }),
+      battle(['lien-drone', 'lien-drone'], 'bg-neon-district', { talk: [dispatch('start', 'Those are not on my board. ...I know that livery. I knew it eleven years ago.')] }),
       battle(['lien-drone', 'shield-drone', 'lien-drone'], 'bg-neon-district', { talk: [dispatch('last', 'Whoever owns those has been in this city longer than the war. Tell nobody you saw them. Least of all me.')] }),
     ],
   },
   {
-    id: 'quest-2', phase: 'side', series: 'quest', when: 'cycle:1&choice&chose:logs=keep&quest-1', title: 'Low Water', ...UNLISTED, reward: 1400, scale: 1,
+    id: 'quest-2', phase: 'side', series: 'quest', when: 'cycle:1&choice&chose:logs=keep&quest-1&!verdict', title: 'Low Water', ...UNLISTED, reward: 1400, scale: 1,
     briefing: [
       'PLAYBACK. Gate four, the sluice. The plate under the seat has a mark scratched in it. The mark is a place.',
-      'The water is down as far as it goes. Both companies have machines on the gate. Neither has been told what for.',
+      'The water is down as far as it goes. Machines in two liveries hold the gate. Neither has been told what for.',
       'Nobody else holds a copy of this log. Keep it that way.',
     ],
     debrief: 'Under the mark, in the silt: an iron box with nine hasps. Too deep to lift tonight. But it is there.',
@@ -243,7 +246,7 @@ export const QUEST: Mission[] = [
     ],
   },
   {
-    id: 'quest-3', phase: 'side', series: 'quest', when: 'cycle:1&finale&quest-2', title: 'Registered Office', ...UNLISTED, reward: 2400, scale: 1,
+    id: 'quest-3', phase: 'side', series: 'quest', when: 'cycle:1&finale&quest-2&!verdict', title: 'Registered Office', ...UNLISTED, reward: 2400, scale: 1,
     briefing: [
       'PLAYBACK ENDS. There is nothing more on the tape. What follows is not recorded anywhere.',
       'The pumps are running and nobody is watching them: Meridian is busy sealing the city above. The box will lift tonight or not at all.',
@@ -251,8 +254,8 @@ export const QUEST: Mission[] = [
     ],
     debrief: 'The box stands under the hooks in the hall. Nine hasps. It will not open for less than nine.',
     battles: [
-      battle(['bailiff', 'lien-drone', 'lien-drone'], 'bg-sluice', { talk: [dispatch('start', 'They are sealing the gate. If the seal goes on, the box stays under it for another forty years. Break the seal crew.')] }),
-      battle(['assessor'], 'bg-hall', { par: 9, talk: [actuary('start', 'Good evening. This is the registered office. It is not open to the public. It has not been open to anybody for some time.'), actuary('win', 'I shall have to minute this. There has been nothing to minute in forty years.')] }),
+      battle(['bailiff', 'lien-drone', 'lien-drone'], 'bg-sluice', { talk: [dispatch('start', 'They are sealing the gate. If the seal goes on, the box stays under it for good. Break the seal crew.')] }),
+      battle(['assessor'], 'bg-hall', { par: 9, talk: [actuary('start', 'Good evening. This is the registered office. It is not open to the public. It has not been open to anybody for some time.'), actuary('win', 'I shall have to minute this. In forty years I have minuted nothing I did not do myself.')] }),
     ],
   },
 ];

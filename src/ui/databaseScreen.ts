@@ -47,8 +47,8 @@ const PICTURE_H = 106;
 /** A face is drawn at the size it was painted. */
 const PORTRAIT = 56;
 /** The most lines a find's text may take on its page, and its clue: both stand under a name and a line about where it comes from. */
-export const FIND_TEXT_LINES = 14;
-export const FIND_CLUE_LINES = 4;
+export const FIND_TEXT_LINES = 12;
+export const FIND_CLUE_LINES = 3;
 
 /** What the page on the right shows, as words: tests read it, and the screen draws it. */
 interface Detail {
@@ -271,7 +271,9 @@ export class DatabaseScreen implements Screen {
   }
 }
 
-/** "THE FLOODGATES" as it reads in a list: "The Floodgates". */
+/** "THE FLOODGATES" as it reads in a list: "The Floodgates". A word with a figure in it is a number of its own and stays as written: "Policy VRN-1". */
 function titleCase(title: string): string {
-  return title.toLowerCase().replace(/(^|[\s-])([a-z])/g, (_, gap: string, letter: string) => gap + letter.toUpperCase());
+  return title.split(' ')
+    .map((word) => (/\d/.test(word) ? word : word.toLowerCase().replace(/(^|-)([a-z])/g, (_, gap: string, letter: string) => gap + letter.toUpperCase())))
+    .join(' ');
 }

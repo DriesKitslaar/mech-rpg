@@ -142,7 +142,7 @@ export const REMEMBERED: Record<string, Record<string, string>> = {
     sell: 'Marrow\'s gun went back to Hadron. Marrow did not.',
   },
   sixty: {
-    keep: 'Old Sixty retired at sixty-one. Only two people know the count was right.',
+    keep: 'Old Sixty retired at sixty-one, sure that only two people knew the count was right.',
     file: 'The board corrected a record eleven years late. Some families got a letter.',
   },
   dispatch: {
@@ -150,7 +150,7 @@ export const REMEMBERED: Record<string, Record<string, string>> = {
     cut: 'Dispatch still routes your contracts. Neither of you says a word that is not on the form.',
   },
   frame: {
-    ask: 'There is a cancelled licence in a frame over the night desk now. The callsign is still cut out of it.',
+    ask: 'There is a cancelled licence behind glass over the night desk now. The callsign is still cut out of it.',
     quiet: 'Some nights channel nine carries an old recording from start to finish. Nobody on the desk turns it off.',
   },
 };

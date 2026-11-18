@@ -145,8 +145,8 @@ export const STORY_NL: Record<string, string> = {
   'Hadron still lists one siege frame as missing. It is very well maintained.':
     'Bij Hadron staat nog steeds een belegframe als vermist te boek. Het wordt uitstekend onderhouden.',
   "Marrow's gun went back to Hadron. Marrow did not.": 'Marrows kanon ging terug naar Hadron. Marrow niet.',
-  'Old Sixty retired at sixty-one. Only two people know the count was right.':
-    'Old Sixty stopte bij eenenzestig. Maar twee mensen weten dat de telling klopte.',
+  'Old Sixty retired at sixty-one, sure that only two people knew the count was right.':
+    'Old Sixty stopte bij eenenzestig, zeker dat maar twee mensen wisten dat de telling klopte.',
   'The board corrected a record eleven years late. Some families got a letter.':
     'De commissie verbeterde een staat van dienst, elf jaar te laat. Enkele families kregen een brief.',
   'Dispatch is still on the night shift. Yours is the one channel that is never muted.':
@@ -400,8 +400,8 @@ export const STORY_NL: Record<string, string> = {
     "Ik borg veertig jaar dingen op voor de commissie. Meestal waar het moest. Een keer waar ik voor betaald werd, en dat dossier heb jij nu.",
   "I am retired. I kept copies. I will send a pilot what that pilot has been near, and no more than that. I like a tidy desk.":
     "Ik ben met pensioen. Ik hield kopieen. Ik stuur een piloot wat die piloot van dichtbij zag, en niet meer. Ik hou van een net bureau.",
-  "What you find, your database keeps under FOUND. Some of it you will have picked up yourself before you ever heard from me.":
-    "Wat je vindt, bewaart je database onder VONDST. Een deel raapte je zelf al op voor je ooit van mij hoorde.",
+  "Keep what you find in one place. Some of it you will have picked up yourself before you ever heard from me.":
+    "Bewaar wat je vindt bij elkaar. Een deel raapte je zelf al op voor je ooit van mij hoorde.",
   "So it is decided. I had hoped to be out of envelopes by now.":
     "Het is dus beslist. Ik had gehoopt dat mijn enveloppen nu op waren.",
   "Your frame has a recorder. It was never wiped. It was only never asked anything. It knows the sluice, and it knows it from before your time.":
@@ -418,19 +418,27 @@ export const STORY_NL: Record<string, string> = {
   "I read every contract to the end now. It has not helped as much as you would think.":
     "Ik lees nu elk contract tot het eind. Het helpt minder dan je zou denken.",
   "Nine hasps":
-    "Negen grendels",
+    "Negen sluitingen",
   "I see the box is back where it started. Forty years late, which for the Society is prompt.":
     "Ik zie dat de kist terug is waar hij begon. Veertig jaar te laat: voor de Society is dat vlot.",
-  "It has nine hasps and no key. It was never meant to have a key. Read the rule book again: the ninth rule.":
-    "Hij heeft negen grendels en geen sleutel. Die was nooit de bedoeling. Lees het reglement nog eens: regel negen.",
+  "It has nine hasps and no key. It was never meant to have a key.":
+    "Hij heeft negen sluitingen en geen sleutel. Die was nooit de bedoeling.",
   "I have nothing more to send. My desk is tidy. Yours is not, yet.":
     "Ik heb niets meer te sturen. Mijn bureau is net. Het jouwe nog niet.",
+  "About the logs":
+    "Over de logs",
+  "You sold Lumen what the frame has seen. I am not judging. I have sold worse.":
+    "Je verkocht Lumen wat het frame zag. Ik oordeel niet. Ik heb erger verkocht.",
+  "But that recorder goes back further than the dock. Whatever else is on it, Lumen has a copy now, and Lumen sends machines to look at things.":
+    "Maar die recorder gaat verder terug dan het dok. Wat er nog meer op staat: Lumen heeft nu een kopie, en Lumen stuurt machines om te gaan kijken.",
+  "If there is a place on that tape, it is not only yours any more. Not this year.":
+    "Staat er een plek op die band, dan is die niet meer alleen van jou. Niet dit jaar.",
   "THE TAPE":
     "DE BAND",
   "Count the trucks. Count them again.":
     "Tel de trucks. Tel ze nog eens.",
   "Where did you get that. ...No. Leave it running.":
-    "Waar heb je dat vandaan. ...Nee. Laat maar lopen.",
+    "Waar heb je dat vandaan. ...Nee. Laat het aanstaan.",
   "That is gate four. Eleven years back, on the night shift. The second escort stayed with the trucks. The second escort got the bill.":
     "Dat is poort vier. Elf jaar terug, in de nachtdienst. De tweede escorte bleef bij de trucks. De tweede escorte kreeg de rekening.",
   "Then the second escort got a desk, because a desk was all that was going.":
@@ -443,10 +451,10 @@ export const STORY_NL: Record<string, string> = {
     "Zeg niets. Speel het nog eens af.",
   "...Yes. That is me. Younger. Still counting. Leave it running, would you. I never heard how it ended.":
     "...Ja. Dat ben ik. Jonger. Nog aan het tellen. Laat het lopen, wil je. Ik heb nooit gehoord hoe het afliep.",
-  "There is a cancelled licence in a frame over the night desk now. The callsign is still cut out of it.":
-    "Boven het nachtbureau hangt nu een ingetrokken licentie in een lijst. De roepnaam is er nog uit gesneden.",
+  "There is a cancelled licence behind glass over the night desk now. The callsign is still cut out of it.":
+    "Boven het nachtbureau hangt nu een ingetrokken licentie achter glas. De roepnaam is er nog uit gesneden.",
   "Some nights channel nine carries an old recording from start to finish. Nobody on the desk turns it off.":
-    "Soms draagt kanaal negen een oude opname van begin tot eind. Niemand aan het bureau zet hem uit.",
+    "Soms klinkt op kanaal negen een oude opname van begin tot eind. Niemand aan het bureau zet hem uit.",
   "THE HANGAR":
     "DE HANGAR",
   "PLAYBACK":
@@ -466,8 +474,8 @@ export const STORY_NL: Record<string, string> = {
     "ACHTERSTALLIG",
   "Hadron Mining is called to a meeting for the first time in forty years. Director Brenn attends in person, and is asked to wait outside.":
     "Hadron Mining wordt voor het eerst in veertig jaar op een vergadering ontboden. Director Brenn komt zelf, en mag buiten wachten.",
-  "The pits open in the spring under new owners, who are the old owners. Nobody is sure what to dig for. Somebody suggests the truth.":
-    "De putten gaan in het voorjaar open onder nieuwe eigenaren, en dat zijn de oude. Niemand weet waarnaar te graven. Iemand oppert de waarheid.",
+  "The pits open in the spring under new owners, who are the old owners. Nobody is sure what to dig for.":
+    "De putten openen in het voorjaar onder nieuwe eigenaren: de oude. Niemand weet waarnaar te graven.",
   "Your debt is on the agenda. It is moved, seconded and struck out. You are thanked from the chair, which nobody has done before.":
     "Je schuld staat op de agenda. Voorgesteld, gesteund en geschrapt. De voorzitter bedankt je, en dat deed nog nooit iemand.",
   "RECOUNT":
@@ -477,19 +485,19 @@ export const STORY_NL: Record<string, string> = {
   "The towers stay lit. The count that went up them every night now comes down again, and is read out below.":
     "De torens blijven aan. De telling die elke nacht omhoog ging komt nu omlaag en wordt beneden voorgelezen.",
   "Your debt is on the agenda. It is moved, seconded and struck out. The minute is four words long. You keep a copy.":
-    "Je schuld staat op de agenda. Voorgesteld, gesteund, geschrapt. De notule telt vier woorden. Bewaar de kopie.",
+    "Je schuld staat op de agenda. Voorgesteld, gesteund, geschrapt. De notule telt drie woorden. Je houdt een kopie.",
   "MUTUAL":
     "ONDERLING",
   "The gates stay open, and now there is a hall to walk down to. Tamsin chairs. She still counts twice, and now it is called a division.":
-    "De poorten blijven open, en nu is er een zaal om naar af te dalen. Tamsin zit voor. Ze telt nog altijd twee keer, en nu heet dat stemmen.",
+    "De poorten blijven open, en nu is er een zaal om naar af te dalen. Tamsin zit voor. Ze telt nog altijd twee keer, en nu heet dat een hoofdelijke stemming.",
   "The Society owns an insurer with liens on eleven other cities. It has not decided what to do about that. It has asked what you would charge.":
     "De Society bezit een verzekeraar met beslag op elf andere steden. Wat ze daarmee doet is nog niet besloten. Ze vroeg wat jij zou rekenen.",
   "Your check hangs on the board with the others. Nobody will say whose it was. They have stopped pretending not to know whose it is.":
     "Jouw penning hangt op het bord bij de andere. Niemand zegt van wie hij was. Ze doen niet meer alsof ze niet weten van wie hij is.",
   "A third offer":
     "Een derde aanbod",
-  "I hear you have two offers. Here is a third. It pays nothing, which you will be used to from me.":
-    "Ik hoor dat je twee aanbiedingen hebt. Hier is een derde. Het betaalt niets, en dat ben je van mij gewend.",
+  "I hear you have two offers. Here is a third. It pays out of a collection tin, which you will be used to from me.":
+    "Ik hoor dat je twee aanbiedingen hebt. Hier is een derde. Betaald uit een collectebus, zoals je van mij gewend bent.",
   "You brought the box home. You hold nine in brass. By the rules of a society older than either company, that is enough to call a meeting.":
     "Jij bracht de kist thuis. Je hebt negen in koper. Volgens de regels van een vereniging ouder dan beide bedrijven is dat genoeg voor een vergadering.",
   "Meridian will not want it held. Come down to the hall. Bring the frame. It has a seat.":
@@ -497,9 +505,9 @@ export const STORY_NL: Record<string, string> = {
   "Short of nine":
     "Minder dan negen",
   "The box is in the hall and it will not open. Nine hasps, and you hold fewer than nine in brass.":
-    "De kist staat in de zaal en gaat niet open. Negen grendels, en jij hebt minder dan negen in koper.",
+    "De kist staat in de zaal en gaat niet open. Negen sluitingen, en jij hebt minder dan negen in koper.",
   "People in this city carry those and do not know what they are. Some would hand theirs to a pilot they trusted. That is all I can tell you.":
-    "Mensen in deze stad dragen ze bij zich zonder te weten wat het zijn. Sommigen geven de hunne aan een piloot die ze vertrouwen. Meer kan ik niet zeggen.",
+    "Mensen in deze stad dragen ze bij zich zonder te weten wat het zijn. Sommigen zouden de hunne geven aan een piloot die ze vertrouwen. Meer kan ik niet zeggen.",
   "There will be other years. The box has waited forty.":
     "Er komen andere jaren. De kist heeft er veertig gewacht.",
   "Channel nine":

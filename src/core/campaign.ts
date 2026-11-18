@@ -358,10 +358,15 @@ export function stockFor(state: GameState, parts: Part[], unlocks: Record<string
   return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || kept(unlocks[part.id]) || reached(state, unlocks[part.id], missions));
 }
 
-/** Messages that have arrived, oldest first. */
+/**
+ * Messages that have arrived, oldest first. A letter that has been read stays where it is, whatever
+ * has changed since: one that waits for something not to have happened yet (a ninth check, a
+ * verdict) is not taken back out of the inbox when it happens. What was read is forgotten with the
+ * rest when the story starts over.
+ */
 export function arrivedMessages(state: GameState, messages: Message[], missions: Mission[]): Message[] {
   const chosen = chosenFaction(state, missions);
-  return messages.filter((m) => reached(state, m.after, missions) && (!m.faction || m.faction === chosen));
+  return messages.filter((m) => (state.read.includes(m.id) || reached(state, m.after, missions)) && (!m.faction || m.faction === chosen));
 }
 
 /** The scenes the pilot should be shown now, in list order: reached, not passed, not seen. */

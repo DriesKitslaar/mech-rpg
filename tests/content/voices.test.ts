@@ -64,5 +64,31 @@ describe('the voices in a battle', () => {
     for (const m of MISSIONS) {
       for (const line of linesOf(m).filter((l) => l.who === 'Recorder')) expect((line.cycle ?? 0) >= 1 || (m.when ?? '').includes('cycle:1'), `${m.id}: ${line.text}`).toBe(true);
     }
+    // Dispatch says what an operator can see. That the seam is finished, and what the Eye counts for, are not things seen from a desk.
+    for (const m of story) for (const line of firstCycle(m)) expect(line.text, m.id).not.toMatch(/seam (was|is) finished|counts heads/i);
+    // What goes up the tower every night is Tamsin's to say: she lives under it.
+    const underTheEye = MISSIONS.find((m) => m.id === 'undertow-4')!.battles[0].talk!;
+    expect(underTheEye.map((line) => `${line.who}: ${line.text.slice(0, 28)}`)).toEqual(['Tamsin: It does not watch us, pilot.']);
+  });
+
+  test('what is kept for a later telling is the recorder and what those who hear it say: these lines, and no others', () => {
+    const later = MISSIONS.flatMap((m) => linesOf(m).filter((line) => (line.cycle ?? 0) > 0).map((line) => `${m.id}/${line.index} ${String(line.at)} ${line.who}`));
+    expect(later).toEqual([
+      'intro-1/0 2 Dispatch', 'undertow-2/0 2 Recorder', 'undertow-2/0 3 Dispatch', 'undertow-2/1 2 Recorder', 'rival-1/1 hurt Dispatch',
+      'hadron-4/0 2 Recorder', 'undertow-5/0 4 Recorder', 'audit-2/0 2 Dispatch', 'favour-sixty/0 2 Recorder', 'favour-sixty/0 3 Old Sixty',
+    ]);
+    // Each of Dispatch's speaks of the frame's past or its recorder, which Dispatch does not own up to the first time round.
+    const dispatch = MISSIONS.flatMap((m) => linesOf(m)).filter((line) => (line.cycle ?? 0) > 0 && line.who === 'Dispatch').map((line) => line.text);
+    expect(dispatch.map((text) => /the file says|dead channel|been left|the recorder/.test(text))).toEqual([true, true, true, true]);
+    // And the same words are in no line of the first telling, in a contract every telling has.
+    for (const m of MISSIONS.filter((mission) => !/cycle:|quest-/.test(mission.when ?? ''))) {
+      for (const line of firstCycle(m)) expect(line.text, m.id).not.toMatch(/the file says|dead channel|the recorder/);
+    }
+  });
+
+  test('the recorder is a tape: it says what was said that night, and nothing about tonight', () => {
+    const tape = MISSIONS.flatMap((m) => linesOf(m)).filter((line) => line.who === 'Recorder').map((line) => line.text);
+    expect(tape.length).toBe(6);
+    for (const text of tape) expect(text).not.toMatch(/that night|than it was|\bnow\b|eleven years/);
   });
 });

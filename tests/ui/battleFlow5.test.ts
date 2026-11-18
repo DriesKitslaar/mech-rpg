@@ -72,6 +72,47 @@ describe('a line for when one enemy is left', () => {
   });
 });
 
+describe('a moment is said as soon as the pilot can act again', () => {
+  test('in the middle of a turn, when what left one enemy standing did not end the turn', () => {
+    const flow = new BattleFlow(battle([turret, turret]), ALL, { talk: [line('last', 'One left.')] });
+    expect(heard(flow)).toEqual([]);
+    const round = flow.state.round;
+    flow.state = edit(flow.state, (d) => { d.units[2].destroyed = true; });
+    // Guarding leaves the turn going: the menu comes back, and the line comes with it rather than a round later.
+    pick(flow, 'guard');
+    expect(heard(flow)).toEqual(['One left.']);
+    expect(flow.phase).toBe('action');
+    expect(flow.state.round).toBe(round);
+    // Said once: the end of the turn and the next one say nothing more.
+    pick(flow, 'endTurn');
+    expect(heard(flow)).toEqual([]);
+  });
+});
+
+describe('once the battle is over', () => {
+  const talk = [line('last', 'One left.'), line('hurt', 'You are leaking.'), line('win', 'Done.')];
+  /** Two turrets of which one is down, and the pilot's core nearly gone: both moments have come, and neither has been said. */
+  const both = (): BattleState => edit(coreAt(() => 1, [turret, turret]), (d) => { d.units[2].destroyed = true; });
+
+  test('(both moments would have their say at the pilot\'s turn)', () => {
+    expect(heard(new BattleFlow(both(), ALL, { talk }))).toEqual(['One left.', 'You are leaking.']);
+  });
+
+  test('a battle won with an enemy still standing says what is said of a win, and nothing of a last enemy or of a hurt pilot', () => {
+    // As when the name on a notice is brought down and the rest go home, or a door has been held for its rounds.
+    const flow = new BattleFlow(edit(both(), (d) => { d.outcome = 'victory'; }), ALL, { talk });
+    expect(heard(flow)).toEqual(['Done.']);
+    expect(flow.phase).toBe('result');
+  });
+
+  test('a battle that is lost says nothing at all: nobody says "you are leaking" over a core with no armour left', () => {
+    const lost = edit(both(), (d) => { d.units[0].parts.core!.ap = 0; d.units[0].destroyed = true; d.outcome = 'defeat'; });
+    const flow = new BattleFlow(lost, ALL, { talk });
+    expect(heard(flow)).toEqual([]);
+    expect(flow.phase).toBe('result');
+  });
+});
+
 describe('a line for when the pilot is hurt', () => {
   const talk = [line('hurt', 'You are leaking.')];
 

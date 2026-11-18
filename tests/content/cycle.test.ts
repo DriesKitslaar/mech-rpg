@@ -9,6 +9,7 @@ import { BattleFlow } from '../../src/ui/battleFlow';
 import { startMissionBattle } from '../../src/core/mission';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { unknownTerms } from '../helpers/conditions';
+import { done, inHub, press, select, snap, strong } from '../helpers/app';
 
 const fresh = (cycle = 0): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), cycle });
 const did = (game: GameState, ...ids: string[]): GameState => ids.reduce((g, id) => completeMission(g, id, MISSIONS), game);
@@ -31,10 +32,18 @@ function opening(id: string, index: number, cycle: number): string[] {
   return said;
 }
 
-/** Everything said in a battle of a contract while the pilot does nothing but end their turns, up to the given round. */
-function heard(id: string, index: number, cycle: number, rounds: number): string[] {
+/**
+ * Everything said in a battle of a contract while the pilot does nothing but end their turns, up to
+ * the given round. A sturdy pilot's frame has armour enough to be standing there whatever is fielded.
+ */
+function heard(id: string, index: number, cycle: number, rounds: number, sturdy = false): string[] {
   const m = forCycle(mission(id), cycle);
   const flow = new BattleFlow(startMissionBattle(STARTER_BUILD, m, index, ALL_ENEMIES, CATALOG, 3), CATALOG, { talk: m.battles[index].talk, cycle });
+  if (sturdy) {
+    const state = structuredClone(flow.state);
+    for (const part of Object.values(state.units[0].parts)) if (part) { part.ap *= 200; part.maxAp *= 200; }
+    flow.state = state;
+  }
   const said: string[] = [];
   for (let guard = 0; guard < 20000; guard++) {
     if (flow.phase === 'animating') flow.advance();
@@ -57,12 +66,15 @@ describe('the first telling', () => {
     expect(letters(far).filter((id) => ['ashfall-paper', 'tidy-desk-box'].includes(id))).toEqual([]);
   });
 
-  test('hears nothing of the recorder in a battle', () => {
-    for (const m of MISSIONS) {
-      m.battles.forEach((_, i) => {
-        if ((m.when ?? '').includes('cycle:')) return;
-        expect(opening(m.id, i, 0).filter((line) => line.startsWith('Recorder')), `${m.id}/${i}`).toEqual([]);
-      });
+  test('hears nothing of the recorder in a battle, played to the round the recorder speaks in', () => {
+    // Every battle of a contract of every telling in which the recorder has a line, and the round of that line.
+    const spoken = MISSIONS.filter((m) => !(m.when ?? '').includes('cycle:')).flatMap((m) => m.battles.flatMap((battle, i) =>
+      (battle.talk ?? []).filter((line) => line.who === 'Recorder').map((line) => ({ id: m.id, i, round: line.at as number }))));
+    expect(spoken.map((s) => `${s.id}/${s.i} ${s.round}`)).toEqual(['undertow-2/0 2', 'undertow-2/1 2', 'hadron-4/0 2', 'undertow-5/0 4', 'favour-sixty/0 2']);
+    for (const { id, i, round } of spoken) {
+      // The later telling hears it by then, so the same turns of a first telling would too, were the line not kept back.
+      expect(heard(id, i, 1, round, true).filter((line) => line.startsWith('Recorder')).length, `${id}/${i} later`).toBe(1);
+      expect(heard(id, i, 0, round, true).filter((line) => line.startsWith('Recorder')), `${id}/${i}`).toEqual([]);
     }
   });
 });
@@ -147,5 +159,41 @@ describe('a later telling', () => {
     const second = availableMissions(did(fresh(1), ...ACT_ONE), MISSIONS).map((m) => forCycle(m, 1)).find((m) => m.id === 'quest-1')!;
     expect(second.scale).toBeCloseTo(mission('quest-1').scale! * 1.25, 5);
     expect(second.reward).toBe(Math.round(mission('quest-1').reward * 1.5));
+  });
+});
+
+describe('the game itself tells a battle which telling it is', () => {
+  /** Everything said in the first battle at the dock, played in the game with its talk on, while the pilot only ends turns. */
+  function atTheDock(cycle: number): string[] {
+    const base = strong(done('intro-1', 'intro-2', 'undertow-1'));
+    const { app } = inHub({ ...base, cycle, scenes: SCENES.filter((s) => !s.ending).map((s) => s.id) }, 5, { fast: false });
+    select(app, 'contracts');
+    select(app, 'undertow-2');
+    select(app, 'accept');
+    const said: string[] = [];
+    for (let i = 0; i < 8000 && snap(app).screen === 'battle'; i++) {
+      const battle = snap(app).battle as unknown as { phase: string; round: number; spoken: string | null };
+      if (battle.phase === 'talk') {
+        if (battle.spoken && said[said.length - 1] !== battle.spoken) said.push(battle.spoken);
+        app.update(400);
+        press(app, 'confirm');
+      } else if (battle.phase === 'action') {
+        if (battle.round > 3) break;
+        select(app, 'endTurn');
+      } else if (battle.phase === 'result') break;
+      else app.update(100);
+    }
+    return said;
+  }
+  const RECORDER = 'Gate four. Trucks one and two are through. Lead, where are you. Lead, answer.';
+
+  test('in the second telling the recorder is heard at the dock; in the first, with the same presses, it is not', () => {
+    const first = atTheDock(0);
+    const second = atTheDock(1);
+    expect(first).toContain('Six rounds, pilot. The boats need six rounds.');
+    expect(first).not.toContain(RECORDER);
+    expect(second).toContain('Six rounds, pilot. The boats need six rounds.');
+    expect(second).toContain(RECORDER);
+    expect(second.indexOf(RECORDER)).toBeGreaterThan(0);
   });
 });

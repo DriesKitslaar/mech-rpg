@@ -87,6 +87,18 @@ describe('conditions joined', () => {
     expect(is(game, 'intro-1&!chose:logs=keep')).toBe(false);
   });
 
+  test('not binds tightest, also at the head of a condition: !a&b is not-a, and b', () => {
+    // The game has flown the two introductions and not met its rival, and is in its second telling.
+    expect(is(game, '!rival-1&cycle:1')).toBe(true);
+    // Not "not (rival-1 and cycle 2)", which would hold.
+    expect(is(game, '!rival-1&cycle:2')).toBe(false);
+    expect(is(game, '!intro-1&cycle:1')).toBe(false);
+    expect(is(game, '!intro-1|cycle:1')).toBe(true);
+    expect(is(game, '!intro-1|cycle:2')).toBe(false);
+    expect(is(game, '!rival-1|cycle:2')).toBe(true);
+    expect(is(game, '!rival-1&!cycle:2&intro-2')).toBe(true);
+  });
+
   test('any of binds loosest: a|b&c is a, or b and c', () => {
     expect(is(game, 'rival-1|intro-1&cycle:1')).toBe(true);
     expect(is(game, 'rival-1|intro-1&cycle:2')).toBe(false);

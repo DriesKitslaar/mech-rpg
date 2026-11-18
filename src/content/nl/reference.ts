@@ -316,7 +316,8 @@ export const REFERENCE_NL: Record<string, string> = {
   Defaulted: 'In gebreke',
   'Default on the policy.': 'Blijf in gebreke op de polis.',
   'Both Columns': 'Debet en credit',
-  'Give both verdicts.': 'Vel beide vonnissen.',
+  'Enforce the policy, and default on it.':
+    'Voer de polis uit, en blijf erop in gebreke.',
   Renewal: 'Verlenging',
   'Start the war again.': 'Begin de oorlog opnieuw.',
   'On the Ladder': 'Op de ranglijst',
@@ -437,15 +438,15 @@ export const REFERENCE_NL: Record<string, string> = {
   "A wet booklet. The first leaf.":
     "Een nat boekje. Het eerste blad.",
   "Not far down the way down. Failing that, the post brings it when all is decided.":
-    "Niet ver op de weg omlaag. Anders brengt de post het als alles beslist is.",
+    "Een paar etages diep. Anders brengt de post het als alles beslist is.",
   "MERIDIAN PIT MUTUAL AID SOCIETY. Founded at the No. 1 shaft, Varn. Rule 1: of every wage a tenth, in iron, to the box. Rule 2: the box buries the dead and feeds the hurt. Rule 9: nine checks on the board make a meeting. No rule is struck but by a meeting.":
-    "MERIDIAN PIT MUTUAL AID SOCIETY. Opgericht bij schacht No. 1, Varn. Regel 1: van elk loon een tiende, in ijzer, in de kist. Regel 2: de kist begraaft de doden en voedt de gewonden. Regel 9: negen penningen op het bord maken een vergadering. Geen regel vervalt dan door een vergadering.",
+    "MERIDIAN PIT MUTUAL AID SOCIETY. Opgericht bij schacht No. 1, Varn. Regel 1: van elk loon een tiende, in ijzer, in de kist. Regel 2: de kist begraaft de doden en voedt de gewonden. Regel 9: negen penningen op het bord maken een vergadering. Een regel vervalt alleen door een vergadering.",
   "POLICY VRN-1":
     "POLIS VRN-1",
   "First leaf. Sent by a tidy desk.":
     "Eerste blad. Van een net bureau.",
-  "The first leaf of what they are collecting on. It comes when your own roof has been defended.":
-    "Het eerste blad van waar ze op innen. Het komt als je eigen dak verdedigd is.",
+  "A clerk has it. Clerks post things when they are ready, and not before.":
+    "Een klerk heeft het. Klerken posten als ze zover zijn, en niet eerder.",
   "War, riot and civil disturbance. Written at Varn for the Society, by the Society. Joined later: Hadron Mining. Joined later still: Lumen Systems. On total loss, all that is insured passes to the Mutual, to be held for its members.":
     "Oorlog, oproer en burgerlijke onlusten. Geschreven in Varn voor de Society, door de Society. Later toegetreden: Hadron Mining. Nog later: Lumen Systems. Bij total loss gaat al het verzekerde over op de Mutual, te bewaren voor haar leden.",
   "COUNTING RHYME":
@@ -455,7 +456,7 @@ export const REFERENCE_NL: Record<string, string> = {
   "Children sing it where the lights went out. Put the lights back on.":
     "Kinderen zingen het waar het licht uitging. Doe het licht weer aan.",
   "Brass for the owner / silver for the store / iron for the digger / water for the floor. / Nine on the board / and the box is ours once more.":
-    "Koper voor de baas / zilver voor de kas / ijzer voor de delver / water waar hij was. / Negen op het bord / en de kist is weer van ons.",
+    "Koper voor de baas / zilver voor de kas / ijzer voor de delver / water waar hij was. / Negen op het bord, en gauw / is de kist van mij en jou.",
   "SURVEY REPORT":
     "MEETRAPPORT",
   "Bottom of the stack, survey station.":
@@ -463,15 +464,15 @@ export const REFERENCE_NL: Record<string, string> = {
   "At the bottom of a stack of readings that somebody guards like a mint.":
     "Onder op een stapel metingen die iemand bewaakt als een bankkluis.",
   "Seams one to eight: worked out. Seam nine: worked out. Reserves: nil. Recommendation: none that the Board will care for. Stamped across the page: NOT TO BE CIRCULATED. The date is forty years old.":
-    "Ader een tot acht: uitgeput. Ader negen: uitgeput. Reserves: nul. Advies: geen dat het Bestuur zal bevallen. Dwars over het blad gestempeld: NIET VERSPREIDEN. De datum is veertig jaar oud.",
+    "Aders een tot en met acht: uitgeput. Ader negen: uitgeput. Reserves: nul. Advies: geen dat het Bestuur zal bevallen. Dwars over het blad gestempeld: NIET VERSPREIDEN. De datum is veertig jaar oud.",
   "BOARD MINUTE":
     "BESTUURSNOTULE",
   "Hadron Mining. Forty years old.":
     "Hadron Mining. Veertig jaar oud.",
-  "Each side keeps a copy where it keeps what it knows: a vault, a stack, an eye.":
-    "Elke partij bewaart een kopie bij wat ze weet: een kluis, een stapel, een oog.",
-  "Item 4. The surveyor's report is received and does not leave this room. Item 5. The Society's box holds forty years of tenths. A fund that cannot meet cannot object. Item 6. The pumps on the bottom level are found uneconomic. Carried.":
-    "Punt 4. Het meetrapport is ontvangen en verlaat deze kamer niet. Punt 5. De kist van de Society bevat veertig jaar tienden. Een fonds dat niet kan vergaderen kan geen bezwaar maken. Punt 6. De pompen van het onderste niveau zijn onrendabel bevonden. Aangenomen.",
+  "Three roads pass a copy: through a vault, past a stack, under an eye.":
+    "Drie wegen komen langs een kopie: door een kluis, langs een stapel, onder een oog.",
+  "Item 4. The surveyor's report is received and does not leave this room. Item 5. The Society's box is noted: forty years of tenths. Item 6. The pumps on the bottom level are found uneconomic. Carried.":
+    "Punt 4. Het meetrapport is ontvangen en verlaat deze kamer niet. Punt 5. Kennis genomen van de kist van de Society: veertig jaar tienden. Punt 6. De pompen van het onderste niveau zijn onrendabel bevonden. Aangenomen.",
   "SHIFT LOG":
     "LOGBOEK",
   "No. 1 shaft. Night shift. Pencil.":
@@ -487,53 +488,53 @@ export const REFERENCE_NL: Record<string, string> = {
   "In the hall, where it was left. Only a frame that has been there twice finds the hall.":
     "In de zaal, waar het bleef liggen. Alleen een frame dat er twee keer was vindt de zaal.",
   "General meeting, bottom level. Present: seven. Adjourned for want of a quorum. The Secretary will act for the Society until one is had. Every page after this is signed by the Secretary. There are forty years of them. The hand never changes.":
-    "Ledenvergadering, onderste niveau. Aanwezig: zeven. Verdaagd bij gebrek aan quorum. De Secretaris handelt voor de Society tot er een is. Elk blad hierna is getekend door de Secretaris. Het zijn er veertig jaar. Het handschrift verandert nooit.",
+    "Ledenvergadering, onderste niveau. Aanwezig: zeven. Verdaagd bij gebrek aan quorum. De Secretaris handelt voor de Society tot er een is. Elk blad hierna is getekend door de Secretaris. Veertig jaar aan bladen. Het handschrift verandert nooit.",
   "PROXY FORM":
     "VOLMACHT",
   "Printed by the thousand.":
     "Per duizend gedrukt.",
-  "A man who took a seal and a client list took a box of these as well.":
+  "A man who took a seal and a client list took a ream of these as well.":
     "Een man die een zegel en een klantenlijst meenam, nam hier ook een doos van mee.",
   "I, the undersigned member, being unable to attend, appoint the Secretary to vote for me at any meeting, for ever. The signatures are all in one hand. So are the dates. Each is the day after a flood.":
-    "Ik, ondergetekend lid, verhinderd te komen, machtig de Secretaris om voor mij te stemmen op elke vergadering, voor altijd. De handtekeningen zijn alle van een hand. De data ook. Elke datum is de dag na een overstroming.",
+    "Ik, ondergetekend lid, verhinderd te komen, machtig de Secretaris om voor mij te stemmen op elke vergadering, voor altijd. De handtekeningen zijn allemaal in hetzelfde handschrift. De data ook. Elke datum is de dag na een overstroming.",
   "LETTERHEAD":
     "BRIEFHOOFD",
   "The foot of every page they send.":
     "Onder aan elk blad dat ze sturen.",
-  "Small print, at the foot of a notice. It is read once the first seals are off.":
-    "Kleine lettertjes, onder aan een kennisgeving. Te lezen als de eerste zegels eraf zijn.",
+  "At the foot of a page. Nobody reads the foot of a page until they have to.":
+    "Onder aan een blad. Niemand leest de voet van een blad voor het moet.",
   "Meridian Mutual. A mutual society: owned by its members. Registered office: Society Hall, Bottom Level, Varn. (The office is temporarily inaccessible.)":
     "Meridian Mutual. Een onderlinge: eigendom van haar leden. Statutaire zetel: Society Hall, Onderste Niveau, Varn. (Het kantoor is tijdelijk onbereikbaar.)",
   "WEIGH TICKET":
     "WEEGBON",
   "Hadron rail yard, weighbridge.":
     "Spoorterrein Hadron, weegbrug.",
-  "The yard gives it to the pilot who brings the train in as well as it can be done.":
-    "Het spoorterrein geeft hem aan de piloot die de trein zo goed mogelijk binnenbrengt.",
-  "Ore train, Seam Nine. Declared: full. Weighed: empty. Passed. Consignee: Meridian Mutual, by standing order. In another hand: it has passed like this every night for forty years.":
-    "Ertstrein, Ader Negen. Opgegeven: vol. Gewogen: leeg. Doorgelaten. Ontvanger: Meridian Mutual, doorlopende order. In een ander handschrift: zo gaat het elke nacht, al veertig jaar.",
+  "The yard gives it up once the trains have stopped, to a pilot who brought one in as well as it can be done.":
+    "Het spoorterrein geeft hem af als de treinen stilstaan, aan wie er een zo goed mogelijk binnenbracht.",
+  "Ore train, Seam Nine. Declared: full. Weighed: empty. Passed. Consignee: by standing order. In another hand: it has passed like this every night for forty years.":
+    "Ertstrein, Ader Negen. Opgegeven: vol. Gewogen: leeg. Doorgelaten. Ontvanger: volgens doorlopende order. In een ander handschrift: zo gaat het elke nacht, al veertig jaar.",
   "ESCORT FILE":
     "ESCORTEDOSSIER",
-  "Licensing board. Closed file.":
-    "Licentiecommissie. Gesloten dossier.",
-  "A clerk sends it after an old pilot has told you what a clean record costs.":
-    "Een klerk stuurt het nadat een oude piloot vertelde wat een schone staat kost.",
-  "Four trucks, bottom level to the board office, by the sluice. Cargo: passengers, and one iron box. Lead escort: SIXTY. Second escort: a callsign, cut out with a knife. Lost at gate four. Liability: the second escort. Filed so for a fee.":
-    "Vier trucks, onderste niveau naar het kantoor van de commissie, via de sluis. Lading: passagiers, en een ijzeren kist. Eerste escorte: SIXTY. Tweede escorte: een roepnaam, uitgesneden met een mes. Verloren bij poort vier. Aansprakelijk: de tweede escorte. Zo geboekt tegen betaling.",
+  "A carbon copy. A clerk kept it.":
+    "Een doorslag. Een klerk hield hem.",
+  "A clerk kept it. It is sent on once it has been spoken of.":
+    "Een klerk bewaarde het. Het wordt doorgestuurd zodra erover gesproken is.",
+  "Four trucks, bottom level to the licensing office, by the sluice. Cargo: passengers, and one iron box. Lead escort: SIXTY. Second escort: a callsign, cut out with a knife. Lost at the sluice. Liability: the second escort. Filed so for a fee.":
+    "Vier trucks, onderste niveau naar het licentiekantoor, via de sluis. Lading: passagiers, en een ijzeren kist. Escorteleider: SIXTY. Tweede escorte: een roepnaam, uitgesneden met een mes. Verloren bij de sluis. Aansprakelijk: de tweede escorte. Zo geboekt tegen betaling.",
   "STOP ORDER":
     "STOPOPDRACHT",
   "Desk 9. Eleven years old.":
     "Balie 9. Elf jaar oud.",
-  "In a relay that still listens on a channel that should be dead.":
-    "In een relais dat nog luistert op een kanaal dat dood hoort te zijn.",
+  "In a relay that listens on a channel that should be dead. First the channel has to speak.":
+    "In een relais dat luistert op een kanaal dat dood hoort te zijn. Eerst moet het kanaal spreken.",
   "Stop a freight convoy at the sluice. Do not open the trucks. Payment on confirmation. Taken by a new licence, aged twenty. It is the first entry in a long record.":
-    "Stop een vrachtkonvooi bij de sluis. Open de trucks niet. Betaling na bevestiging. Aangenomen door een nieuwe licentie, twintig jaar oud. Het is de eerste regel van een lange staat van dienst.",
+    "Stop een vrachtkonvooi bij de sluis. Open de trucks niet. Betaling na bevestiging. Aangenomen door een nieuwe licentie; de piloot is twintig. Het is de eerste regel van een lange staat van dienst.",
   "PLAYBACK ONE":
     "OPNAME EEN",
   "Your frame's recorder. Channel nine.":
     "Recorder van je frame. Kanaal negen.",
-  "The frame says it itself, the second time it stands in that water.":
-    "Het frame zegt het zelf, de tweede keer dat het in dat water staat.",
+  "The frame says it itself, the second time it stands in the water of the dock.":
+    "Het frame zegt het zelf, de tweede keer dat het in het water van het dok staat.",
   "Gate four. Trucks one and two are through. Lead, where are you. Lead, answer. Three is burning. I am staying with four. Count the trucks. Count them again.":
     "Poort vier. Truck een en twee zijn erdoor. Leider, waar ben je. Leider, antwoord. Drie brandt. Ik blijf bij vier. Tel de trucks. Tel ze nog eens.",
   "PLAYBACK TWO":
@@ -546,16 +547,16 @@ export const REFERENCE_NL: Record<string, string> = {
     "OUDE LICENTIE",
   "A desk drawer on the night shift.":
     "Een bureaula van de nachtdienst.",
-  "In a drawer that has been shut for eleven years. Play somebody a recording.":
-    "In een la die elf jaar dicht zat. Laat iemand een opname horen.",
+  "In a drawer that has been shut for eleven years. It opens for a voice it knows.":
+    "In een la die elf jaar dicht zat. Hij gaat open voor een stem die hij kent.",
   "A pilot's licence, cancelled eleven years ago. The callsign has been cut out with a knife. The frame number has not. It is the number on your frame.":
     "Een pilotenlicentie, elf jaar geleden ingetrokken. De roepnaam is uitgesneden met een mes. Het framenummer niet. Het is het nummer op jouw frame.",
   "RETAINER":
-    "HONORARIUM",
+    "VAST CONTRACT",
   "Sent on with a fee, unasked.":
     "Ongevraagd meegestuurd met een loon.",
   "Somebody who owes you for a hatch sends it with the fee.":
-    "Iemand die je een luik schuldig is stuurt het mee met het loon.",
+    "Iemand die je iets schuldig is om een luik stuurt het mee met het loon.",
   "Callsign: ASHFALL. Payer: left blank. Renewed eleven times. On the back, in pencil, underlined twice: who.":
     "Roepnaam: ASHFALL. Betaler: niet ingevuld. Elf keer verlengd. Op de achterkant, in potlood, twee keer onderstreept: wie.",
   "MODEL NOTE":
@@ -564,8 +565,8 @@ export const REFERENCE_NL: Record<string, string> = {
     "Lumen Systems, afdeling prognoses.",
   "It arrives once you have been asked the price of what your mech has seen.":
     "Het komt als je gevraagd is wat de prijs is van wat je mech zag.",
-  "Varn, residual. Input: heads below the gates, counted nightly. Output: years until no meeting can be had. Last year: three. Since the dock: six. Recommendation: close the dock. Cut the relay. Count again.":
-    "Varn, restwaarde. Invoer: koppen onder de poorten, elke nacht geteld. Uitvoer: jaren tot er geen vergadering meer kan zijn. Vorig jaar: drie. Sinds het dok: zes. Advies: sluit het dok. Snijd het relais af. Tel opnieuw.",
+  "Varn, residual. Input: heads below the gates, counted nightly. Output: years of quorum remaining. Last year: three. Since the dock: six. Recommendation: close the dock. Cut the relay. Count again.":
+    "Varn, restwaarde. Invoer: koppen onder de poorten, elke nacht geteld. Uitvoer: resterende jaren quorum. Vorig jaar: drie. Sinds het dok: zes. Advies: sluit het dok. Snijd het relais af. Tel opnieuw.",
   "TAMSIN'S BOOK":
     "TAMSINS BOEK",
   "A school notebook in a biscuit tin.":
@@ -578,34 +579,34 @@ export const REFERENCE_NL: Record<string, string> = {
     "INKOOPORDER",
   "Desk 9.":
     "Balie 9.",
-  "Under the seat of a tank that was called stolen. Do that job as well as it can be done.":
-    "Onder de stoel van een tank die gestolen heette. Doe die klus zo goed als het kan.",
+  "Under the seat of a tank that was called stolen. Kill it cleanly. Wrecks are searched when a war ends.":
+    "Onder de stoel van een tank die gestolen heette. Sloop hem netjes. Na een oorlog zoekt men in wrakken.",
   "One tank, Hadron pattern, from stock. Deliver to: the occupants, Seam Nine. Bill to: Hadron Mining, as stolen. One contractor to remove it afterwards. Bill to: Hadron Mining.":
     "Een tank, model Hadron, uit voorraad. Leveren aan: de bezetters, Ader Negen. Factuur aan: Hadron Mining, als gestolen. Een opdrachtnemer om hem daarna op te ruimen. Factuur aan: Hadron Mining.",
   "BOOKING SLIP":
     "BOEKINGSBON",
   "Dispatch, freight desk.":
     "Dispatch, vrachtbalie.",
-  "It turns up after a wreck in the freight lane, whatever you did about the hatch.":
-    "Het duikt op na een wrak in de vrachtbaan, wat je ook met het luik deed.",
+  "It turns up after a wreck, whatever was done about the wreck.":
+    "Het duikt op na een wrak, wat er ook met het wrak gebeurde.",
   "One escort slot, sold twice. Second buyer: Desk 9, on account. Written under it in another pen: do not tell either pilot. I told neither.":
     "Een escorteplek, twee keer verkocht. Tweede koper: Balie 9, op rekening. Eronder in een andere pen: zeg het geen van beide piloten. Ik zei het geen van beiden.",
   "THREE RECEIPTS":
     "DRIE BONNEN",
   "Meridian Mutual. Premiums received.":
     "Meridian Mutual. Ontvangen premies.",
-  "Blown off a roof where something was priced and went over the edge.":
-    "Van een dak gewaaid waar iets geprijsd werd en over de rand ging.",
+  "In a pocket a long way up. Wait for a wind.":
+    "In een zak hoog boven de stad. Wacht op wind.",
   "Hadron Mining: paid, quarterly. Lumen Systems: paid, by the second. The Society: paid in full, forty years in advance. See box.":
     "Hadron Mining: betaald, per kwartaal. Lumen Systems: betaald, per seconde. De Society: volledig betaald, veertig jaar vooruit. Zie kist.",
   "SCHEDULE C":
     "BIJLAGE C",
   "The page of the notice nobody reads.":
     "Het blad dat niemand leest.",
-  "It is delivered to everybody, the morning after a war.":
-    "Het wordt bij iedereen bezorgd, de ochtend na een oorlog.",
+  "Everybody in Varn will be sent one. Hardly anybody will turn to it.":
+    "Iedereen in Varn krijgt er een. Bijna niemand bladert ernaartoe.",
   "Movable collateral. Item 1: one salvage frame, with its recorder. Item 2: its pilot, by licence. Items 3 to 40112: see ledger.":
-    "Roerend onderpand. Post 1: een bergingsframe, met zijn recorder. Post 2: de piloot ervan, per licentie. Post 3 tot 40112: zie grootboek.",
+    "Roerend onderpand. Post 1: een geborgen frame, met zijn recorder. Post 2: de piloot ervan, per licentie. Post 3 tot 40112: zie grootboek.",
   "BRASS PLATE":
     "KOPEREN PLAAT",
   "On a door, under water to the lintel.":
@@ -620,16 +621,16 @@ export const REFERENCE_NL: Record<string, string> = {
     "Society Hall. De inkt is nog nat.",
   "Not written yet.":
     "Nog niet geschreven.",
-  "General meeting, Society Hall. Present: eight checks on the board, with their holders; a ninth, tied to the foot of a frame in the door; the Secretary. Item 1: that the Society resume its business. Carried. Item 2: any other business. There was a great deal.":
-    "Ledenvergadering, Society Hall. Aanwezig: acht penningen op het bord, met hun houders; een negende, aan de voet van een frame in de deur; de Secretaris. Punt 1: dat de Society haar werk hervat. Aangenomen. Punt 2: de rondvraag. Dat was heel wat.",
-  "CHECK 117":
-    "PENNING 117",
+  "General meeting, Society Hall. Present: eight checks on the board; a ninth, tied to the foot of a frame in the door; the Secretary. The box was opened and the roll read. Item 1: that the Society resume its business. Carried. Item 2: any other business. There was a great deal.":
+    "Ledenvergadering, Society Hall. Aanwezig: acht penningen op het bord; een negende, aan de voet van een frame in de deur; de Secretaris. De kist ging open en de lijst is voorgelezen. Punt 1: dat de Society haar werk hervat. Aangenomen. Punt 2: de rondvraag. Dat was heel wat.",
+  "CHECK 114":
+    "PENNING 114",
   "Tied to your frame's left foot.":
     "Aan de linkervoet van je frame.",
   "Somebody leaves it on the frame when the last boat is away.":
     "Iemand laat hem achter op het frame als de laatste boot weg is.",
-  "A brass lamp check, the size of a coin, stamped 117. It was tied to the frame with fishing line after the dock. Forty-one people walked past that foot. None of them will say whose it was.":
-    "Een koperen lampenpenning, zo groot als een munt, gestempeld 117. Na het dok met visdraad aan het frame geknoopt. Eenenveertig mensen liepen langs die voet. Niemand wil zeggen van wie hij was.",
+  "A brass lamp check, the size of a coin, stamped 114. It was tied to the frame with fishing line after the dock. Forty-one people walked past that foot. None of them will say whose it was.":
+    "Een koperen lampenpenning, zo groot als een munt, gestempeld 114. Na het dok met visdraad aan het frame geknoopt. Eenenveertig mensen liepen langs die voet. Niemand wil zeggen van wie hij was.",
   "CHECK 302":
     "PENNING 302",
   "From the newest licence in Varn.":
@@ -642,10 +643,10 @@ export const REFERENCE_NL: Record<string, string> = {
     "PENNING 58",
   "Wired to the breech of a siege gun.":
     "Vastgemaakt aan een belegeringskanon.",
-  "A dead woman pays her debts in ordnance, and in one other thing.":
-    "Een dode vrouw betaalt haar schulden in geschut, en in nog een ding.",
+  "A dead woman settles what she owes, and adds one thing.":
+    "Een dode vrouw vereffent wat ze schuldig is, en doet er iets bij.",
   "Stamped 58. \"My mother's. Hadron took the lamp and forgot the tag. Do not lose it. I am dead. I cannot get another.\"":
-    "Gestempeld 58. \"Van mijn moeder. Hadron nam de lamp en vergat het plaatje. Raak hem niet kwijt. Ik ben dood. Ik krijg geen nieuwe.\"",
+    "Gestempeld 58. \"Van mijn moeder. Hadron nam de lamp en vergat het plaatje. Raak het niet kwijt. Ik ben dood. Ik krijg geen nieuw.\"",
   "CHECK 61":
     "PENNING 61",
   "Eleven years in an old coat pocket.":
@@ -661,13 +662,13 @@ export const REFERENCE_NL: Record<string, string> = {
   "Make the board write a thing down eleven years late. Somebody answers the letter.":
     "Laat de commissie iets elf jaar te laat opschrijven. Iemand beantwoordt de brief.",
   "Stamped 204. A note with it: for the pilot who made them write it down. It was my father's. He was on the second truck.":
-    "Gestempeld 204. Een briefje erbij: voor de piloot die zorgde dat ze het opschreven. Hij was van mijn vader. Die zat op de tweede truck.",
+    "Gestempeld 204. Een briefje erbij: voor de piloot die zorgde dat ze het opschreven. Hij was van mijn vader. Die zat in de tweede truck.",
   "CHECK 9":
     "PENNING 9",
   "Clipped to the paper on your debt.":
     "Vastgeklemd aan je schuldpapier.",
-  "It is clipped to a debt, in a vault where paper is kept. Be square with the night shift.":
-    "Hij zit aan een schuld geklemd, in een kluis vol papier. Sta quitte met de nachtdienst.",
+  "It is clipped to a debt, in a vault where paper is kept. Let the night shift off.":
+    "Hij zit aan een schuld geklemd, in een kluis vol papier. Laat de nachtdienst vrijuit gaan.",
   "Stamped 9. The paper calls it security. Dispatch held it a long time and then said to keep it with the frame, because that is where it was the last time anybody saw it.":
     "Gestempeld 9. Het papier noemt hem zekerheid. Dispatch hield hem lang vast en zei toen: bewaar hem bij het frame, want daar was hij de laatste keer dat iemand hem zag.",
   "CHECK 441":
@@ -682,32 +683,32 @@ export const REFERENCE_NL: Record<string, string> = {
     "PENNING 12",
   "Cut out of the Scrap King's shell.":
     "Uit de schil van de Scrap King.",
-  "Welded into the shell of a thing that eats wrecks and wears them.":
-    "Gelast in de schil van een ding dat wrakken eet en ze draagt.",
+  "Welded into the shell of a thing that wears what it eats.":
+    "Gelast in de schil van een ding dat draagt wat het eet.",
   "Stamped 12. It had been welded over twice. The Guild asked what it was. The Guild was told it fell in the canal.":
     "Gestempeld 12. Er was twee keer overheen gelast. Het Gilde vroeg wat het was. Het Gilde kreeg te horen dat het in het kanaal viel.",
   "CHECK 276":
     "PENNING 276",
   "On a string, among stolen helmets.":
     "Aan een touw, tussen gestolen helmen.",
-  "A thief of helmets keeps one thing that would not shine up.":
-    "Een helmendief bewaart een ding dat niet wilde glimmen.",
+  "A thief of helmets keeps one thing that nobody would buy.":
+    "Een helmendief bewaart een ding dat niemand wil kopen.",
   "Stamped 276. \"That? Off a dead frame in the low lanes. I kept it because it would not shine up. Brass that will not shine has been somewhere.\"":
     "Gestempeld 276. \"Dat? Van een dood frame in de lage stegen. Ik hield hem omdat hij niet wilde glimmen. Koper dat niet glimt is ergens geweest.\"",
   "CHECK 3":
     "PENNING 3",
   "In a seal case, under the seal.":
     "In een zegeldoos, onder het zegel.",
-  "Filed as evidence, to be destroyed. The last name on the board did not destroy it.":
-    "Geboekt als bewijs, te vernietigen. De laatste naam op het bord vernietigde hem niet.",
+  "Filed as evidence, to be destroyed. The last name on the notices did not destroy it.":
+    "Geboekt als bewijs, te vernietigen. De laatste gezochte naam vernietigde hem niet.",
   "Stamped 3. The label reads: evidence of membership, destroy. It was not destroyed. Somebody at Meridian wanted to know what it would be worth one day.":
     "Gestempeld 3. Op het label: bewijs van lidmaatschap, vernietigen. Hij is niet vernietigd. Iemand bij Meridian wilde weten wat hij ooit waard zou zijn.",
   "CHECK 88":
     "PENNING 88",
   "Staked on a fight in the back room.":
     "Ingezet in de achterkamer.",
-  "In the room behind the pit, somebody stakes it and loses on purpose.":
-    "In de kamer achter de arena zet iemand hem in en verliest expres.",
+  "In the room behind the pit, the second to sit down stakes it. Win it.":
+    "In de kamer achter de arena zet de tweede die gaat zitten hem in. Win hem.",
   "Stamped 88. \"My family has been holding that for a meeting that never comes. You look like someone who goes to meetings.\"":
     "Gestempeld 88. \"Mijn familie bewaart hem voor een vergadering die nooit komt. Jij ziet eruit als iemand die naar vergaderingen gaat.\"",
   "CHECK 190":
@@ -730,8 +731,8 @@ export const REFERENCE_NL: Record<string, string> = {
     "PENNING 350",
   "Handed over with a drink owed.":
     "Overhandigd met een beloofd glas.",
-  "A man who laughs on an open channel pays a debt with his grandmother's brass.":
-    "Een man die lacht op een open kanaal betaalt een schuld met het koper van zijn oma.",
+  "A man who laughs on an open channel settles up with his grandmother's brass.":
+    "Een man die lacht op een open kanaal rekent af met het koper van zijn oma.",
   "Stamped 350. \"My gran's. She said it opens a hall. I said which hall. She said the wet one, and laughed, and would not say another word.\"":
     "Gestempeld 350. \"Van mijn oma. Ze zei: hij opent een zaal. Ik zei: welke zaal. Ze zei: de natte, en lachte, en zei er geen woord meer over.\"",
   "CHECK 71":
@@ -757,8 +758,8 @@ export const REFERENCE_NL: Record<string, string> = {
     "De stem van Meridian voor ieder die niet kan komen. Een barriere, een hamer die je uit balans slaat, Lien Drones om de vijf beurten, drie vechtwijzen.",
   "THE SOCIETY":
     "DE SOCIETY",
-  "The Meridian Pit Mutual Aid Society met in its hall for the first time in forty years, with nine checks on the board. The Secretary took the minutes. Nobody owns the city now but the people in it, and they own a good deal more than the city.":
-    "De Meridian Pit Mutual Aid Society vergaderde voor het eerst in veertig jaar in haar zaal, met negen penningen op het bord. De Secretaris notuleerde. De stad is nu van niemand dan van wie er woont, en die bezitten veel meer dan de stad.",
+  "The Meridian Pit Mutual Aid Society met in its hall for the first time in forty years, with nine checks counted. The Secretary took the minutes. Nobody owns the city now but the people in it, and they own a good deal more than the city.":
+    "De Meridian Pit Mutual Aid Society vergaderde voor het eerst in veertig jaar in haar zaal, met negen penningen geteld. De Secretaris notuleerde. De stad is nu van niemand dan van wie er woont, en die bezitten veel meer dan de stad.",
   "Any Other Business":
     "Rondvraag",
   "Hold the meeting.":
@@ -774,5 +775,5 @@ export const REFERENCE_NL: Record<string, string> = {
   "Nine on the Board":
     "Negen op het bord",
   "Hold nine lamp checks.":
-    "Heb negen lampenpenningen.",
+    "Bezit negen lampenpenningen.",
 };

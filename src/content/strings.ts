@@ -314,7 +314,7 @@ export const STRINGS = {
     accept: 'Accept', back: 'Back', reward: 'PAYS', engagements: (n: number) => (n === 1 ? '1 ENGAGEMENT' : `${n} ENGAGEMENTS`),
     hostiles: 'EXPECTED', exclusive: 'EXCLUSIVE: the other two clients will withdraw their offers.',
     finale: 'THE LAST MOVE OF THE WAR', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: AN ELITE',
-    verdict: 'VERDICT: your answer ends the story. The other offer is withdrawn.',
+    verdict: 'VERDICT: your answer ends the story. Every other offer is withdrawn.',
     replay: 'ARCHIVE: pays less. Nothing in the story changes.',
     lent: 'LENT MECH: yours cannot deploy. The bill is still yours.',
     // A second pilot for the contract: the row in the briefing's menu, and what they cost.

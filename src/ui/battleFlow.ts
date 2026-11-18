@@ -96,13 +96,17 @@ export class BattleFlow {
 
   /**
    * The lines of a moment that has come and has not had them yet: one enemy left of several, the
-   * pilot's core below half. Each moment has its say once in a battle.
+   * pilot's core below half. Each moment has its say once in a battle. They are asked for whenever
+   * the pilot is about to be handed the menu, so a moment that comes in the middle of a turn (the
+   * shot that left one standing did not end it) is spoken of then, not a round later; a turn played
+   * by Auto Turn hands over no menu, and says it at the next one. A battle that is over is never
+   * asked: what is said then is what is said of a win.
    */
   private moments(): Spoken[] {
     const core = this.player.parts.core;
     const come: Record<'last' | 'hurt', boolean> = {
       last: this.began > 1 && this.livingEnemies().length === 1,
-      hurt: !!core && core.ap > 0 && core.ap * 2 < core.maxAp,
+      hurt: !!core && core.ap * 2 < core.maxAp,
     };
     return (['last', 'hurt'] as const).flatMap((moment) => {
       if (!come[moment] || this.momentsSaid.has(moment)) return [];
@@ -333,7 +337,8 @@ export class BattleFlow {
       return;
     }
     // The player's turn: whatever was to be said by this round and has not been is said first, once.
-    // A round the pilot sat out (a turn lost to heat) keeps its line for the next turn they do get.
+    // A round the pilot sat out (a turn lost to heat) keeps its line for the next turn they do get; a
+    // battle that ends before there is one never says it, so what must be heard is written for the win.
     const due = [...new Set(this.talk.flatMap((line) => (typeof line.at === 'number' ? [line.at] : [])))]
       .filter((round) => round <= this.state.round && !this.roundsSaid.has(round))
       .sort((a, b) => a - b);
