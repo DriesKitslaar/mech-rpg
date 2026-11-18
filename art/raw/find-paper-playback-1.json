@@ -1,0 +1,9 @@
+{
+  "id": "find-paper-playback-1",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of a small reel of brown magnetic tape with a loose strip of tape unspooling from it, lying beside a scuffed orange metal recorder box with a round glass window. Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background."
+}

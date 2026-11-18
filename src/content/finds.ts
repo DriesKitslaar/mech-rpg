@@ -2,10 +2,12 @@ import type { Find } from '../core/codex';
 
 /** A paper: its place among the papers, what it is called, where it comes from, what finds it, the clue that stands in for it, and what it says. */
 const paper = (no: number, id: string, title: string, source: string, after: string, clue: string, text: string): Find =>
-  ({ id: `paper-${id}`, no, kind: 'paper', title, source, after, clue, text });
-/** A brass lamp check: the number stamped on it, where it came from, what finds it, its clue, and what there is to say about it. */
-const check = (no: number, id: string, source: string, after: string, clue: string, text: string): Find =>
-  ({ id: `check-${id}`, no, kind: 'check', title: `CHECK ${no}`, source, after, clue, text });
+  ({ id: `paper-${id}`, no, kind: 'paper', title, source, after, clue, text, picture: `find-paper-${id}` });
+/** What the brass of a check looks like by now: kept dry, green from the water (or from wherever it would not shine up), black from a fire. */
+const BRASS = { dry: 'find-check-0', drowned: 'find-check-1', burnt: 'find-check-2' };
+/** A brass lamp check: the number stamped on it, how it has fared, where it came from, what finds it, its clue, and what there is to say about it. */
+const check = (no: number, id: string, brass: keyof typeof BRASS, source: string, after: string, clue: string, text: string): Find =>
+  ({ id: `check-${id}`, no, kind: 'check', title: `CHECK ${no}`, source, after, clue, text, picture: BRASS[brass] });
 
 /**
  * What there is to find: twenty-four papers, numbered in the order of what they are about (the
@@ -88,52 +90,52 @@ export const FINDS: Find[] = [
     'Not written yet.',
     'General meeting, Society Hall. Present: eight checks on the board; a ninth, tied to the foot of a frame in the door; the Secretary. The box was opened and the roll read. Item 1: that the Society resume its business. Carried. Item 2: any other business. There was a great deal.'),
 
-  check(114, 'dock', 'Tied to your frame\'s left foot.', 'undertow-2',
+  check(114, 'dock', 'dry', 'Tied to your frame\'s left foot.', 'undertow-2',
     'Somebody leaves it on the frame when the last boat is away.',
     'A brass lamp check, the size of a coin, stamped 114. It was tied to the frame with fishing line after the dock. Forty-one people walked past that foot. None of them will say whose it was.'),
-  check(302, 'kite', 'From the newest licence in Varn.', 'favour-kite',
+  check(302, 'kite', 'dry', 'From the newest licence in Varn.', 'favour-kite',
     'A newcomer you spoke up for lasts longer than a week, and pays what he owes.',
     'Stamped 302. It came on the key ring of his grandmother\'s frame. He took it for a locker tag. He would like it back if it turns out to be worth something.'),
-  check(58, 'marrow', 'Wired to the breech of a siege gun.', 'favour-marrow',
+  check(58, 'marrow', 'burnt', 'Wired to the breech of a siege gun.', 'favour-marrow',
     'A dead woman settles what she owes, and adds one thing.',
     'Stamped 58. "My mother\'s. Hadron took the lamp and forgot the tag. Do not lose it. I am dead. I cannot get another."'),
-  check(61, 'convoy', 'Eleven years in an old coat pocket.', 'favour-sixty',
+  check(61, 'convoy', 'dry', 'Eleven years in an old coat pocket.', 'favour-sixty',
     'Bring every truck through the water for a man who could not sit in the seat.',
     'Stamped 61. "It was on the floor of the lead truck. It is not mine. I have never been able to throw it in the water, and I have stood at that water often."'),
-  check(204, 'letter', 'An envelope with no return address.', 'chose:sixty=file&finale',
+  check(204, 'letter', 'dry', 'An envelope with no return address.', 'chose:sixty=file&finale',
     'Make the board write a thing down eleven years late. Somebody answers the letter.',
     'Stamped 204. A note with it: for the pilot who made them write it down. It was my father\'s. He was on the second truck.'),
-  check(9, 'debt', 'Clipped to the paper on your debt.', 'favour-dispatch',
+  check(9, 'debt', 'dry', 'Clipped to the paper on your debt.', 'favour-dispatch',
     'It is clipped to a debt, in a vault where paper is kept. Let the night shift off.',
     'Stamped 9. The paper calls it security. Dispatch held it a long time and then said to keep it with the frame, because that is where it was the last time anybody saw it.'),
-  check(441, 'hatch', 'Wedged in a hatch you tore off.', 'favour-ashfall',
+  check(441, 'hatch', 'burnt', 'Wedged in a hatch you tore off.', 'favour-ashfall',
     'It was wedged in a hatch. Whoever was behind the hatch sends it on.',
     'Stamped 441. "It is older than my frame and it is not mine. I asked around about it. People went very quiet. I thought you ought to have the thing that makes people quiet."'),
-  check(12, 'king', 'Cut out of the Scrap King\'s shell.', 'guild-3',
+  check(12, 'king', 'burnt', 'Cut out of the Scrap King\'s shell.', 'guild-3',
     'Welded into the shell of a thing that wears what it eats.',
     'Stamped 12. It had been welded over twice. The Guild asked what it was. The Guild was told it fell in the canal.'),
-  check(276, 'magpie', 'On a string, among stolen helmets.', 'bounty-1',
+  check(276, 'magpie', 'drowned', 'On a string, among stolen helmets.', 'bounty-1',
     'A thief of helmets keeps one thing that nobody would buy.',
     'Stamped 276. "That? Off a dead frame in the low lanes. I kept it because it would not shine up. Brass that will not shine has been somewhere."'),
-  check(3, 'notary', 'In a seal case, under the seal.', 'bounty-6',
+  check(3, 'notary', 'dry', 'In a seal case, under the seal.', 'bounty-6',
     'Filed as evidence, to be destroyed. The last name on the notices did not destroy it.',
     'Stamped 3. The label reads: evidence of membership, destroy. It was not destroyed. Somebody at Meridian wanted to know what it would be worth one day.'),
-  check(88, 'pit', 'Staked on a fight in the back room.', 'arena:12',
+  check(88, 'pit', 'dry', 'Staked on a fight in the back room.', 'arena:12',
     'In the room behind the pit, the second to sit down stakes it. Win it.',
     'Stamped 88. "My family has been holding that for a meeting that never comes. You look like someone who goes to meetings."'),
-  check(190, 'depth', 'On its hook, ten floors down.', 'floor:10',
+  check(190, 'depth', 'drowned', 'On its hook, ten floors down.', 'floor:10',
     'Ten floors down there is a board of hooks. One hook is not empty.',
     'Stamped 190. A tally board, ten floors down, every hook empty but one. Whoever hung this up at the start of a shift did not come back for it at the end.'),
-  check(2, 'krell', 'Thrown from a cockpit, walking away.', 'undertow-3',
+  check(2, 'krell', 'dry', 'Thrown from a cockpit, walking away.', 'undertow-3',
     'A man who kept keys throws it away at last, to whoever puts him on foot.',
     'Stamped 2. A boy\'s check: the number is low because the boy carried lamps at the first shaft. He has had forty years to throw it away.'),
-  check(350, 'rook', 'Handed over with a drink owed.', 'lumen-4',
+  check(350, 'rook', 'dry', 'Handed over with a drink owed.', 'lumen-4',
     'A man who laughs on an open channel settles up with his grandmother\'s brass.',
     'Stamped 350. "My gran\'s. She said it opens a hall. I said which hall. She said the wet one, and laughed, and would not say another word."'),
-  check(71, 'barge', 'In the wheelhouse of a sunk barge.', 'hadron-4',
+  check(71, 'barge', 'drowned', 'In the wheelhouse of a sunk barge.', 'hadron-4',
     'In a wheelhouse, on a board of hooks, on a barge with a yard number.',
     'Stamped 71. The barge had a tally board like a pit. Whoever built her hung up a check before every shift, even to go to war.'),
-  check(133, 'gate', 'Sent up from the east gate.', 'favour-undertow',
+  check(133, 'gate', 'dry', 'Sent up from the east gate.', 'favour-undertow',
     'A gate holds because a mech kept its mouth shut. Somebody at the gate sends it up.',
     'Stamped 133. It came in a twist of small notes. "One of ours wants you counted with us. It is not a gift. It is a seat."'),
 ];

@@ -333,6 +333,17 @@ function portrait(id: string, who: string): ArtJob {
   };
 }
 
+/**
+ * Something that was found, as it lies there: one thing seen from close by, the size of a face. A
+ * page of writing shows rows of marks and no letters: what it says is in the database, in words.
+ */
+function found(id: string, what: string): ArtJob {
+  return {
+    id: `find-${id}`, kind: 'portrait',
+    prompt: `16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of ${what} Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background.`,
+  };
+}
+
 /** What each family looks like, in words: its drawing from the front and its drawing from behind are both made from this. */
 const DESIGNS: Record<string, string> = {
   halo:
@@ -611,6 +622,36 @@ const DRAWN: ArtJob[] = [
   // Not a face: the recorder behind the seat of the pilot's own frame, which has a voice of a kind.
   { id: 'portrait-recorder', kind: 'portrait',
     prompt: '16-bit pixel art, crisp pixels, no anti-aliasing, no text, no lettering: a close-up of an old flight recorder bolted into the wall of a mecha cockpit, a scuffed orange metal box with two small tape reels behind a round glass window, one small red light glowing on it, a blank riveted brass plate under the window, thick cables running off both sides. Lit by pink and cyan neon from the sides, plain very dark blue background.' },
+
+  // What is found: a picture for each paper, in the order of their numbers, and the brass of a lamp check
+  // with nothing stamped on it (the game stamps the number): kept dry, long under water, and through a fire.
+  found('paper-rules', 'a small water-stained booklet with a curled grey card cover, lying open at its first page, the paper swollen and wavy from damp.'),
+  found('paper-policy', 'a crisp cream insurance policy document, its first page, perfectly flat and clean, with a thick black border, a round gold foil seal in the lower corner and a neat steel paper clip.'),
+  found('paper-rhyme', 'exactly nine white chalk circles drawn by a child on a damp dark concrete wall, arranged as a square of three rows of three circles, with a stub of white chalk lying on a ledge below them and nothing else drawn on the wall.'),
+  found('paper-survey', 'a thick stack of old survey sheets held by a rusty bulldog clip, the top sheet showing a hand-drawn cross-section of rock layers with thin dark seams, and a heavy red rectangular rubber stamp mark struck across it.'),
+  found('paper-minute', 'a single yellowed typewritten page of company minutes with a band of yellow and black hazard stripes across its top edge, two punched holes and a rusty staple.'),
+  found('paper-shift', 'a grimy mine shift logbook lying open, its pages ruled in columns and smeared with coal dust, written in grey pencil, with a short pencil stub on a piece of string lying across it.'),
+  found('paper-adjourned', 'a heavy old leather-bound minute book lying open near its end, the left page filled with neat rows of handwriting and one signature at the bottom, a faded red ribbon marker lying across it.'),
+  found('paper-proxy', 'a tall ream of identical printed forms, hundreds of sheets stacked dead square, each with a dotted signature line at the bottom, the top sheet signed in blue ink.'),
+  found('paper-letterhead', 'the bottom edge of a glossy black letter page with one thin gold line across it and a tiny gold emblem of a balance scale in the middle of the line, the rest of the page out of view.'),
+  found('paper-ticket', 'a small slip of thin yellow weighbridge ticket paper that has been folded small and opened again, with two printed boxes, a round punch hole and a dark oily thumbprint.'),
+  found('paper-escort', 'a smudged blue carbon copy sheet lying half out of a buff card folder, with one small rectangular hole cut out of the sheet with a knife.'),
+  found('paper-stop', 'a single old order form on thin pink paper, creased in four, with the round rubber stamp of an office in faded purple ink and a small paper tag tied to it with string.'),
+  found('paper-playback-1', 'a small reel of brown magnetic tape with a loose strip of tape unspooling from it, lying beside a scuffed orange metal recorder box with a round glass window.'),
+  found('paper-playback-2', 'a small reel of brown magnetic tape lying on a wet steel floor, half of it stained dark by water, the snapped end of the tape curling upwards.'),
+  found('paper-licence', 'an old pilot licence card in a cracked clear plastic sleeve, its square photo faded by damp to a featureless pale grey blur with no face and no figure to be seen, a broad red diagonal band stamped across the card, and one small rectangular hole cut out of the card with a knife.'),
+  found('paper-retainer', 'a folded sheet of grey contract paper lying face down, with one short pencil scribble on its back underlined twice, and a thin stack of banknotes in a paper band lying on one corner.'),
+  found('paper-model', 'a clean white forecast printout on a white clipboard with a thin strip of cyan light, showing a single thin cyan line graph that falls to the right and then turns upwards.'),
+  found('paper-book', 'a child\'s school exercise notebook with a faded teal cover, lying in an open dented biscuit tin, with a short pencil beside it.'),
+  found('paper-order', 'a crumpled, oil-stained purchase order form on pale yellow paper with a column of ruled boxes and a round rubber stamp mark, flattened out again after being folded small.'),
+  found('paper-booking', 'a small booking slip torn from a perforated pad, with one printed line and a second line added by hand in ink of another colour, held by a paper clip.'),
+  found('paper-receipts', 'three small receipts with torn perforated edges, fanned out like playing cards, of black paper with thin gold lines, each with a small round gold seal.'),
+  found('paper-schedule', 'a thick stapled legal notice on thin gold-tinted paper, opened at a page far inside it, the page covered in very small close rows of marks, one corner dog-eared.'),
+  found('paper-plate', 'a polished rectangular brass door plate with four screws, fixed to a rotten green door that stands under dark water, the brass bright and clean while everything around it is green with slime.'),
+  found('paper-minutes', 'a fresh sheet of cream paper covered in rows of wet black ink handwriting, with a steel dip pen lying across it and a small open bottle of black ink beside it, one drop of ink still shining.'),
+  found('check-0', 'a round brass tally token of the kind miners hung on a board: a thick worn brass disc with a raised rim and one small hole near its top edge, its face smooth, blank and empty, seen straight from the front.'),
+  found('check-1', 'a round brass tally token of the kind miners hung on a board: a thick brass disc with a raised rim and one small hole near its top edge, dull and stained green with verdigris from long years under water, its face smooth, blank and empty, seen straight from the front.'),
+  found('check-2', 'a round brass tally token of the kind miners hung on a board: a thick brass disc with a raised rim and one small hole near its top edge, blackened by soot and heat, with a bead of old weld on its rim, its face smooth, blank and empty, seen straight from the front.'),
 
   { id: 'app-icon', kind: 'icon',
     prompt: '16-bit pixel art app icon, crisp pixels, no anti-aliasing, no text, no lettering: the head of an original Japanese anime-style mecha seen from the front, a helmet in dark charcoal armour with one curved crest and a single horizontal visor glowing hot pink, lit from the sides by pink and cyan neon, bold simple shapes, centred, filling most of the square, on a plain very dark navy background.' },

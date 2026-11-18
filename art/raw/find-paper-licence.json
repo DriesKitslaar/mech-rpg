@@ -1,0 +1,9 @@
+{
+  "id": "find-paper-licence",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of an old pilot licence card in a cracked clear plastic sleeve, its square photo faded by damp to a featureless pale grey blur with no face and no figure to be seen, a broad red diagonal band stamped across the card, and one small rectangular hole cut out of the card with a knife. Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background."
+}

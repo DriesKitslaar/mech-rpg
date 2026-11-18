@@ -1,18 +1,22 @@
 import { FINDS } from '../../src/content/finds';
 import { SCENES } from '../../src/content/scenes';
-import { findLabel } from '../../src/ui/databaseScreen';
+import SPRITES from '../../src/content/sprites.json';
+import { FIND_PICTURE, FIND_SOURCE_CHARS, FIND_TEXT_LINES, PAGE_CHARS, findLabel } from '../../src/ui/databaseScreen';
 import { setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
-import { TOAST_MS } from '../../src/ui/app';
-import { COLORS } from '../../src/ui/widgets';
+import { TOAST_MS, type AppDeps } from '../../src/ui/app';
+import type { SpriteStore } from '../../src/ui/sprites';
+import { COLORS, wrap } from '../../src/ui/widgets';
 import { record } from '../helpers/canvas';
 import { done, fresh, inHub, press, savedGame, select, snap } from '../helpers/app';
 
-type Detail = { title: string; lines: string[]; source?: string };
+type Detail = { title: string; lines: string[]; source?: string; picture?: string; stamp?: string };
 const detail = (app: Parameters<typeof snap>[0]) => snap(app).detail as Detail;
+/** A store whose pictures say which they are, so that a test can tell what was drawn. */
+const named: SpriteStore = { get: (id, fallback) => ({ image: { id } as unknown as CanvasImageSource, w: fallback.w, h: fallback.h }) };
 /** Opens the database on the page of what has been found. */
-function onFinds(saved = fresh()) {
-  const made = inHub({ ...saved, scenes: ['act-1'] });
+function onFinds(saved = fresh(), deps: Partial<AppDeps> = {}) {
+  const made = inHub({ ...saved, scenes: ['act-1'] }, undefined, deps);
   select(made.app, 'database');
   press(made.app, 'next', 'next', 'next');
   expect(snap(made.app).page).toBe('finds');
@@ -82,22 +86,119 @@ describe('the page of what has been found', () => {
     }
   });
 
-  test('is drawn with where a find comes from in a dimmer letter, under its name', () => {
-    const { app } = onFinds(done('intro-1', 'intro-2', 'undertow-1'));
+  test('is drawn with its picture under its name, where it comes from beside the picture in a dimmer letter, and its words below', () => {
+    const { app } = onFinds(done('intro-1', 'intro-2', 'undertow-1'), { sprites: named });
     press(app, 'down', 'down');
+    expect(detail(app)).toMatchObject({ title: 'COUNTING RHYME', source: 'Sung to children below the gates.', picture: 'find-paper-rhyme' });
+    expect(detail(app).stamp).toBeUndefined();
     const drawn = record((ctx) => app.draw(ctx));
     const name = drawn.texts.find((t) => t.text === 'COUNTING RHYME')!;
-    const source = drawn.texts.find((t) => t.text === 'Sung to children below the gates.')!;
-    const first = drawn.texts.find((t) => t.text.startsWith('Brass for the owner'))!;
+    const picture = drawn.images.find((i) => (i.image as { id?: string }).id === 'find-paper-rhyme')!;
     expect(name.color).toBe(COLORS.accent);
-    expect(source.color).toBe(COLORS.dim);
-    expect(source.y).toBeGreaterThan(name.y);
-    expect(first.y).toBeGreaterThan(source.y);
-    expect(source.x).toBe(name.x);
-    // Every line of it is on the page.
-    const page = drawn.texts.filter((t) => t.x === name.x && t.y > source.y);
+    // The picture is drawn as it was made, pixel for pixel, at the left of the page under the name.
+    expect(picture).toMatchObject({ x: name.x, w: FIND_PICTURE, h: FIND_PICTURE });
+    expect(FIND_PICTURE).toBe(56);
+    expect(picture.y).toBeGreaterThanOrEqual(name.y + 11);
+    // Where it comes from: beside the picture, in as many short lines as it takes, none below the picture's foot.
+    const source = wrap('Sung to children below the gates.', FIND_SOURCE_CHARS);
+    expect(source.length).toBe(2);
+    const beside = source.map((line) => drawn.texts.find((t) => t.text === line)!);
+    for (const line of beside) {
+      expect(line.color).toBe(COLORS.dim);
+      expect(line.x).toBe(picture.x + FIND_PICTURE + 6);
+      expect(line.right).toBeLessThanOrEqual(306 - 4);
+      expect(line.y).toBeGreaterThanOrEqual(picture.y);
+      expect(line.y + 11).toBeLessThanOrEqual(picture.y + FIND_PICTURE);
+    }
+    // Every line of what it says is on the page, under the picture.
+    const first = drawn.texts.find((t) => t.text.startsWith('Brass for the owner'))!;
+    expect(first.x).toBe(name.x);
+    expect(first.y).toBeGreaterThanOrEqual(picture.y + FIND_PICTURE + 4);
+    const page = drawn.texts.filter((t) => t.x === name.x && t.y >= first.y);
     expect(page.map((t) => t.text).join(' ')).toBe(FINDS[2].text);
     for (const line of page) expect(line.y).toBeLessThan(252 - 11);
+  });
+
+  test('a check is the bare brass with its number stamped on it by the game: dark on the metal, with a light edge under it', () => {
+    const { app } = onFinds(done('intro-1', 'intro-2', 'undertow-1', 'undertow-2'), { sprites: named });
+    for (let i = 0; i < 24; i++) press(app, 'down');
+    expect(detail(app)).toMatchObject({ title: 'CHECK 114', picture: 'find-check-0', stamp: '114' });
+    const drawn = record((ctx) => app.draw(ctx));
+    const picture = drawn.images.find((i) => (i.image as { id?: string }).id === 'find-check-0')!;
+    expect(picture).toMatchObject({ w: FIND_PICTURE, h: FIND_PICTURE });
+    const stamps = drawn.texts.filter((t) => t.text === '114' && t.align === 'center');
+    expect(stamps.length).toBe(2);
+    const [edge, cut] = stamps;
+    // The number sits in the middle of the disc, below the hole it hung by.
+    expect(cut.x).toBe(picture.x + FIND_PICTURE / 2);
+    expect(cut.y).toBeGreaterThan(picture.y + 16);
+    expect(cut.y + cut.size).toBeLessThan(picture.y + FIND_PICTURE - 8);
+    expect([edge.x - cut.x, edge.y - cut.y]).toEqual([1, 1]);
+    expect(edge.color).not.toBe(cut.color);
+    // It is drawn after the brass, or the brass would cover it.
+    const at = (kind: string, of: unknown[], item: unknown) => drawn.order.findIndex((step) => step.kind === kind && step.at === of.indexOf(item));
+    expect(at('text', drawn.texts, edge)).toBeGreaterThan(at('image', drawn.images, picture));
+    expect(at('text', drawn.texts, cut)).toBeGreaterThan(at('text', drawn.texts, edge));
+    // The widest number there is still lies inside the face of the disc.
+    const widest = Math.max(...FINDS.filter((f) => f.kind === 'check').map((f) => String(f.no).length));
+    expect(widest * cut.size * 0.4).toBeLessThanOrEqual(34);
+  });
+
+  test('one not found shows no picture, and nothing is stamped', () => {
+    const { app } = onFinds(done('intro-1', 'intro-2', 'undertow-1'), { sprites: named });
+    for (const steps of [0, 24]) {
+      for (let i = 0; i < steps; i++) press(app, 'down');
+      expect(detail(app).title).toBe('? ? ?');
+      expect(detail(app).picture).toBeUndefined();
+      expect(detail(app).stamp).toBeUndefined();
+      const drawn = record((ctx) => app.draw(ctx));
+      expect(drawn.images.filter((i) => String((i.image as { id?: string }).id).startsWith('find-'))).toEqual([]);
+      // As before: that it is not found, under the three marks, and then the clue.
+      const marks = drawn.texts.find((t) => t.text === '? ? ?' && t.color === COLORS.accent)!;
+      const not = drawn.texts.find((t) => t.text === 'Not found yet.')!;
+      expect(not.x).toBe(marks.x);
+      expect(not.y).toBeGreaterThan(marks.y);
+    }
+  });
+
+  test.each(['en', 'nl'] as const)('with its picture above them every find still has all its words on the page (%s)', (language) => {
+    try {
+      const base = fresh();
+      const { app } = onFinds({ ...base, codex: FINDS.map((f) => f.id), settings: { ...base.settings, language } }, { sprites: named });
+      for (const find of FINDS) {
+        expect(detail(app).title, find.id).toBe(find.title);
+        expect(detail(app).picture, find.id).toBe(find.picture);
+        const drawn = record((ctx) => app.draw(ctx));
+        const picture = drawn.images.find((i) => (i.image as { id?: string }).id === find.picture)!;
+        // Where it comes from fits beside the picture.
+        const source = wrap(find.source, FIND_SOURCE_CHARS);
+        expect(source.length, find.id).toBeLessThanOrEqual(Math.floor(FIND_PICTURE / 11));
+        for (const line of source) expect(drawn.texts.some((t) => t.text === line && t.x === picture.x + FIND_PICTURE + 6), `${find.id}: ${line}`).toBe(true);
+        // Every line of its words is drawn, under the picture and above the foot of the page.
+        const words = wrap(find.text, PAGE_CHARS);
+        expect(words.length, find.id).toBeLessThanOrEqual(FIND_TEXT_LINES);
+        const below = drawn.texts.filter((t) => t.x === picture.x && t.y >= picture.y + FIND_PICTURE);
+        expect(below.map((t) => t.text), find.id).toEqual(words);
+        for (const line of below) expect(line.y + 11, find.id).toBeLessThanOrEqual(252 - 2);
+        press(app, 'down');
+      }
+    } finally {
+      setLanguage('en');
+    }
+  });
+
+  test('every picture is one the game has, the size of a face: each paper its own, a check one of three bare brasses', () => {
+    const sprites = SPRITES as Record<string, { w: number; h: number }>;
+    for (const find of FINDS) expect(sprites[find.picture], find.id).toMatchObject({ w: FIND_PICTURE, h: FIND_PICTURE });
+    const papers = FINDS.filter((f) => f.kind === 'paper');
+    expect(papers.map((f) => f.picture)).toEqual(papers.map((f) => `find-${f.id}`));
+    const brass = (id: string): string => FINDS.find((f) => f.id === `check-${id}`)!.picture;
+    // Kept dry it is brass still; what lay under water, or would not shine up, is green; what came through a fire is black.
+    expect(['dock', 'kite', 'convoy', 'letter', 'debt', 'notary', 'pit', 'krell', 'rook', 'gate'].map(brass)).toEqual(Array.from({ length: 10 }, () => 'find-check-0'));
+    expect(['magpie', 'depth', 'barge'].map(brass)).toEqual(['find-check-1', 'find-check-1', 'find-check-1']);
+    expect(['marrow', 'hatch', 'king'].map(brass)).toEqual(['find-check-2', 'find-check-2', 'find-check-2']);
+    // And the game holds no picture of a find that no find shows.
+    expect(Object.keys(sprites).filter((id) => id.startsWith('find-')).sort()).toEqual([...new Set(FINDS.map((f) => f.picture))].sort());
   });
 
   test('in Dutch a check is a penning, and the rhyme is the Dutch one', () => {

@@ -3057,5 +3057,585 @@
    },
    "total_tokens": 311
   }
+ },
+ {
+  "id": "find-paper-rules",
+  "at": "2026-11-18T14:53:58.979Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 110,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 110
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 306
+  }
+ },
+ {
+  "id": "find-paper-plate",
+  "at": "2026-11-18T14:54:11.181Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 117,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 117
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 313
+  }
+ },
+ {
+  "id": "find-check-0",
+  "at": "2026-11-18T14:54:23.081Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0085,
+  "usage": {
+   "input_tokens": 127,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 127
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 323
+  }
+ },
+ {
+  "id": "find-paper-policy",
+  "at": "2026-11-18T14:57:10.315Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 119,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 119
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 315
+  }
+ },
+ {
+  "id": "find-paper-rhyme",
+  "at": "2026-11-18T14:57:21.994Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 117,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 117
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 313
+  }
+ },
+ {
+  "id": "find-paper-survey",
+  "at": "2026-11-18T14:57:32.834Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0085,
+  "usage": {
+   "input_tokens": 126,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 322
+  }
+ },
+ {
+  "id": "find-paper-minute",
+  "at": "2026-11-18T14:57:44.104Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 113,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 309
+  }
+ },
+ {
+  "id": "find-paper-shift",
+  "at": "2026-11-18T14:57:55.054Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 122,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 122
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 318
+  }
+ },
+ {
+  "id": "find-paper-adjourned",
+  "at": "2026-11-18T14:58:11.743Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 119,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 119
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 315
+  }
+ },
+ {
+  "id": "find-paper-proxy",
+  "at": "2026-11-18T14:58:23.269Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 115,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 115
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 311
+  }
+ },
+ {
+  "id": "find-paper-letterhead",
+  "at": "2026-11-18T14:58:32.090Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 122,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 122
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 318
+  }
+ },
+ {
+  "id": "find-paper-ticket",
+  "at": "2026-11-18T14:58:42.226Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 116,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 116
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 312
+  }
+ },
+ {
+  "id": "find-paper-escort",
+  "at": "2026-11-18T14:58:55.417Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 112,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 112
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 308
+  }
+ },
+ {
+  "id": "find-paper-stop",
+  "at": "2026-11-18T14:59:05.755Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 119,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 119
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 315
+  }
+ },
+ {
+  "id": "find-paper-playback-1",
+  "at": "2026-11-18T14:59:20.947Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 115,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 115
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 311
+  }
+ },
+ {
+  "id": "find-paper-playback-2",
+  "at": "2026-11-18T14:59:31.913Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 112,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 112
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 308
+  }
+ },
+ {
+  "id": "find-paper-licence",
+  "at": "2026-11-18T14:59:43.125Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 122,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 122
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 318
+  }
+ },
+ {
+  "id": "find-paper-retainer",
+  "at": "2026-11-18T14:59:57.565Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 121,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 121
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 317
+  }
+ },
+ {
+  "id": "find-paper-model",
+  "at": "2026-11-18T15:00:07.220Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 116,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 116
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 312
+  }
+ },
+ {
+  "id": "find-paper-book",
+  "at": "2026-11-18T15:00:18.214Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 108,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 304
+  }
+ },
+ {
+  "id": "find-paper-order",
+  "at": "2026-11-18T15:00:28.963Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 117,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 117
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 313
+  }
+ },
+ {
+  "id": "find-paper-booking",
+  "at": "2026-11-18T15:00:40.425Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 115,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 115
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 311
+  }
+ },
+ {
+  "id": "find-paper-receipts",
+  "at": "2026-11-18T15:01:02.157Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 113,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 309
+  }
+ },
+ {
+  "id": "find-paper-schedule",
+  "at": "2026-11-18T15:01:12.610Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 119,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 119
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 315
+  }
+ },
+ {
+  "id": "find-paper-minutes",
+  "at": "2026-11-18T15:01:27.977Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 122,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 122
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 318
+  }
+ },
+ {
+  "id": "find-check-1",
+  "at": "2026-11-18T15:01:39.012Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0085,
+  "usage": {
+   "input_tokens": 140,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 140
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 336
+  }
+ },
+ {
+  "id": "find-check-2",
+  "at": "2026-11-18T15:01:54.449Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0086,
+  "usage": {
+   "input_tokens": 143,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 143
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 339
+  }
+ },
+ {
+  "id": "find-paper-rhyme",
+  "at": "2026-11-18T15:03:29.908Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0085,
+  "usage": {
+   "input_tokens": 129,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 129
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 325
+  }
+ },
+ {
+  "id": "find-paper-licence",
+  "at": "2026-11-18T15:03:39.198Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0085,
+  "usage": {
+   "input_tokens": 140,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 140
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 336
+  }
  }
 ]
