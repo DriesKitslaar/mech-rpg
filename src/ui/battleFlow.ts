@@ -261,6 +261,7 @@ export class BattleFlow {
         const attacker = this.state.units.find((u) => u.id === event.unit)!;
         const weapon = weaponIn(attacker.build, event.weapon, this.catalog)?.name ?? event.weapon;
         if (!event.hit) return STRINGS.miss(weapon, name(event.target));
+        if (event.shatter) return STRINGS.shatter(weapon, name(event.target));
         // A hit the barrier took whole shows what the barrier lost instead of armour.
         return event.damage === 0 && event.absorbed
           ? STRINGS.barrierHit(weapon, name(event.target), event.absorbed)
@@ -269,6 +270,10 @@ export class BattleFlow {
       case 'partDestroyed':
         return event.part === 'core' ? null : STRINGS.partDestroyed(name(event.unit), part(event.unit, event.part));
       case 'unitDestroyed': return STRINGS.unitDestroyed(name(event.unit));
+      case 'momentum': {
+        const unit = this.state.units.find((u) => u.id === event.unit)!;
+        return STRINGS.momentum(weaponIn(unit.build, event.weapon, this.catalog)?.name ?? event.weapon, event.chain);
+      }
       case 'boost': return STRINGS.boost(name(event.unit));
       case 'guard': return STRINGS.guard(name(event.unit));
       case 'stagger': return STRINGS.stagger(name(event.unit));

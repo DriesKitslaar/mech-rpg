@@ -23,7 +23,7 @@ export const STRINGS_NL = {
     you: 'JOUW MECH', target: 'DOELWIT', weapons: 'WAPENS', repair: 'WAT REPAREREN?', paint: 'WIE MARKEREN?',
     targetOf: (n: number, of: number) => `DOELWIT ${n}/${of}  L1/R1`,
   },
-  preview: { hit: 'TREF', damage: 'SCH.', all: 'ALLE' },
+  preview: { hit: 'TREF', damage: 'SCH.', all: 'ALLE', kills: 'VERNIETIGT' },
   weaponMenu: {
     charge: 'LADEN', ready: 'KLAAR',
     reasons: {
@@ -61,8 +61,10 @@ export const STRINGS_NL = {
   yourTurn: (round: number) => `Ronde ${round} - jouw zet`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} raakt ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} mist ${obj(target)}`,
+  shatter: (weapon: string, target: string) => `${weapon} VERMORZELT ${obj(target)}`,
   partDestroyed: (unit: string, part: string) => `${subj(unit)}: ${part} vernietigd`,
   unitDestroyed: (unit: string) => does(unit, 'vernietigd', 'bent vernietigd'),
+  momentum: (weapon: string, chain: number) => (chain > 1 ? `REEKS x${chain} - ${weapon} weer klaar` : `${weapon} weer klaar`),
   boost: (unit: string) => does(unit, 'boost'),
   guard: (unit: string) => `${subj(unit)}: schrap`,
   stagger: (unit: string) => does(unit, 'WANKELT'),

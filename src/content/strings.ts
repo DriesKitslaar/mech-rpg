@@ -24,7 +24,7 @@ export const STRINGS = {
     // With more than one enemy to aim at: which one this is, and the buttons that go to the next.
     targetOf: (n: number, of: number) => `TARGET ${n}/${of}  L1/R1`,
   },
-  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL' },
+  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL', kills: 'DESTROYS' },
   weaponMenu: {
     charge: 'CHARGE', ready: 'READY',
     reasons: {
@@ -64,8 +64,12 @@ export const STRINGS = {
   yourTurn: (round: number) => `Round ${round} - your move`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} misses ${obj(target)}`,
+  // A hit that took half of an ordinary machine's core in one blow, and so all of it.
+  shatter: (weapon: string, target: string) => `${weapon} SHATTERS ${obj(target)}`,
   partDestroyed: (unit: string, part: string) => `${unit}: ${part} destroyed`,
   unitDestroyed: (unit: string) => does(unit, 'destroyed', 'are destroyed'),
+  // A volley that destroyed something: its weapon may fire again this turn. From the second in a turn the run is counted.
+  momentum: (weapon: string, chain: number) => (chain > 1 ? `CHAIN x${chain} - ${weapon} ready again` : `${weapon} ready again`),
   boost: (unit: string) => does(unit, 'boosts', 'boost'),
   guard: (unit: string) => does(unit, 'braces', 'brace'),
   stagger: (unit: string) => does(unit, 'is STAGGERED', 'are STAGGERED'),

@@ -8,7 +8,7 @@ export type SoundName =
   | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat'
   | 'guard' | 'stagger' | 'charge' | 'module'
   | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive' | 'radio' | 'relic'
-  | 'thunder' | 'sign' | 'slam';
+  | 'thunder' | 'sign' | 'slam' | 'ready';
 
 /** One synthesised note or burst. Times are in seconds, frequencies in hertz. */
 export interface Tone {
@@ -96,6 +96,8 @@ export const SOUNDS: Record<SoundName, Tone[]> = {
   // The database growing: two quiet notes, like a terminal acknowledging.
   entry: [t('square', 988, 0, 0.05, 0.14), t('square', 1319, 0.07, 0.09, 0.14)],
   repair: [t('triangle', 520, 0, 0.08, 0.35), t('triangle', 780, 0.09, 0.12, 0.35)],
+  // A weapon ready again after a kill: a breech closing, and a note up a fifth.
+  ready: [t('noise', 0, 0, 0.02, 0.3), t('square', 740, 0.02, 0.04, 0.22), t('square', 1110, 0.065, 0.08, 0.22)],
   overheat: [t('square', 520, 0, 0.1, 0.35), t('square', 390, 0.16, 0.1, 0.35), t('square', 520, 0.32, 0.1, 0.35)],
   victory: [t('square', 523, 0, 0.12, 0.3), t('square', 659, 0.13, 0.12, 0.3), t('square', 784, 0.26, 0.12, 0.3), t('square', 1047, 0.39, 0.3, 0.3)],
   defeat: [t('sawtooth', 392, 0, 0.2, 0.3), t('sawtooth', 311, 0.22, 0.2, 0.3), t('sawtooth', 233, 0.44, 0.45, 0.3)],
@@ -111,6 +113,7 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
     case 'shot': return [{ name: SHOT[damageType], delayMs: 0 }, { name: event.hit ? 'hit' : 'miss', delayMs: flightMs }];
     case 'partDestroyed': return now('partDestroyed');
     case 'unitDestroyed': return now('unitDestroyed');
+    case 'momentum': return now('ready');
     case 'boost': return now('boost');
     case 'guard': return now('guard');
     case 'stagger': return now('stagger');

@@ -270,7 +270,7 @@ describe('the database', () => {
     press(app, 'prev', 'prev');
     expect(ids(app)).toEqual(MANUAL.map((topic) => topic.id));
     press(app, 'down', 'down');
-    expect(snap(app).detail).toMatchObject({ title: 'AIMING' });
+    expect(snap(app).detail).toMatchObject({ title: 'MOMENTUM' });
     expect((snap(app).detail as { lines: string[] }).lines.join(' ')).toBe(MANUAL[2].text);
   });
 

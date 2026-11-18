@@ -97,6 +97,12 @@ export interface Asset { name: string; hp: number; maxHp: number }
 
 /** The most enemies that stand on the field at once. A carrier launches no more than this allows. */
 export const MAX_ENEMIES = 3;
+/**
+ * Shatter: one blow that takes at least this share of an ordinary machine's core, as it stood at
+ * full strength, finishes the machine. A heavy weapon goes through a light machine; a light one
+ * has to wear it down.
+ */
+export const SHATTER = 0.5;
 
 export interface UnitState {
   id: string;
@@ -123,6 +129,12 @@ export interface UnitState {
   usedBoost: boolean;
   usedCool: boolean;
   fired: WeaponSlot[];
+  /**
+   * Units this unit's volleys have destroyed in its current turn, in an open battle: 0 when the
+   * turn begins. A volley that destroys one readies its weapon again, so a unit that outguns the
+   * field goes on through it.
+   */
+  chain: number;
   repairsLeft: number;
   destroyed: boolean;
   mods: UnitMods;
@@ -177,6 +189,8 @@ export interface UnitState {
   /** See `EnemyDef.partNames` and `EnemyDef.portrait`. Only the screen reads them. */
   partNames?: Partial<Record<FrameSlot, string>>;
   portrait?: string;
+  /** Commands the machines beside it: see `EnemyDef.leader`. */
+  leader?: true;
 }
 
 export type BattleEvent =
@@ -184,11 +198,17 @@ export type BattleEvent =
   | { type: 'turnSkipped'; unit: string }
   /**
    * `part` is where the shot was aimed; `appliedTo` and `damage` are what was actually hit and lost.
-   * `absorbed` is what a barrier took off it first.
+   * `absorbed` is what a barrier took off it first. `shatter` marks a hit that went through an
+   * ordinary machine in one blow (see `SHATTER`).
    */
-  | { type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; appliedTo: FrameSlot; hit: boolean; damage: number; absorbed?: number }
+  | { type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; appliedTo: FrameSlot; hit: boolean; damage: number; absorbed?: number; shatter?: true }
   | { type: 'partDestroyed'; unit: string; part: FrameSlot }
   | { type: 'unitDestroyed'; unit: string }
+  /**
+   * A volley of `unit`'s destroyed something and the battle goes on: `weapon` is ready again, and
+   * `chain` is how many that makes this turn.
+   */
+  | { type: 'momentum'; unit: string; weapon: WeaponSlot; chain: number }
   | { type: 'boost'; unit: string }
   | { type: 'guard'; unit: string }
   | { type: 'cool'; unit: string; amount: number }
@@ -239,6 +259,13 @@ export interface BattleState {
   focus?: string;
   /** Multiplies the armour and damage of every enemy, those that join later included. */
   enemyScale: number;
+  /**
+   * True of a battle against ordinary machines: one that began against more than one, none of
+   * which leads (see `leads`). Momentum and Shatter are rules of an open battle and of no other:
+   * a fight against a boss, a named pilot, an elite or an objective's target, or against one
+   * machine, is fought as it always was, by every machine in it, to its end.
+   */
+  open: boolean;
   /** Set when the battle ended because the pilot walked away from it. */
   retreated?: boolean;
 }
@@ -320,7 +347,7 @@ function createUnit(
   return {
     id, name, side, build, composed: false, abilities: {}, phases: [], phase: 0, ...extra, parts, heat: 0, energy: 0, ammo, restocked: {},
     boosted: false, overheated: false,
-    usedBoost: false, usedCool: false, fired: [], repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
+    usedBoost: false, usedCool: false, fired: [], chain: 0, repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
     stagger: 0, staggerMax: Math.max(1, Math.round(stats.stability * mods.toughness)), staggered: 0,
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
     barrier: 0, painted: 0, paintBonus: 0, chaff: 0, damageBoost: 1, drive: 0, ironSkin: false, deadeye: false, turnEnergy: 0,
@@ -339,6 +366,7 @@ function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scal
     ...(def.paint ? { paint: def.paint } : {}),
     ...(def.partNames ? { partNames: def.partNames } : {}),
     ...(def.portrait ? { portrait: def.portrait } : {}),
+    ...(def.leader ? { leader: true as const } : {}),
     ...(abilities.bomb ? { fuse: abilities.bomb.fuse } : {}),
     ...(abilities.carrier ? { launchIn: abilities.carrier.every } : {}),
     ...(mark ? { mark } : {}),
@@ -354,6 +382,23 @@ function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scal
 const isAlive = (part: PartState | undefined): boolean => !!part && part.ap > 0;
 const findUnit = (state: BattleState, id: string): UnitState | undefined => state.units.find((u) => u.id === id);
 const standing = (state: BattleState, side: UnitState['side']): UnitState[] => state.units.filter((u) => u.side === side && !u.destroyed);
+
+/**
+ * True of a machine a fight is about: one with phases to go through (a boss), with a name and a
+ * face, with the mark of an elite, one that commands the others, or the one the objective names.
+ */
+export function leads(unit: UnitState, objective: Objective): boolean {
+  return unit.phases.length > 0 || !!unit.portrait || !!unit.mark || !!unit.leader
+    || ('target' in objective && unit.id === `enemy-${objective.target}`);
+}
+
+/**
+ * True of a machine that is one of many: an enemy in an open battle, whether it stood there from
+ * the start or joined later. What a pilot outguns happens to these and to nobody else.
+ */
+export function ordinary(state: BattleState, unit: UnitState): boolean {
+  return state.open && unit.side === 'enemy';
+}
 
 /** The enemy an objective names, if it names one. */
 export function objectiveTarget(state: BattleState): UnitState | undefined {
@@ -564,6 +609,7 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     unit.usedCool = false;
     unit.usedModule = false;
     unit.fired = [];
+    unit.chain = 0;
     state.events.push({ type: 'turnStart', unit: unit.id });
     // A turn lost to overheating is lost to a fuse and a launch bay too: neither gets this far.
     if (unit.fuse !== undefined) {
@@ -667,6 +713,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
   const units = [playerUnit, ...enemies.map((e, i) => createEnemy(e, `enemy-${i}`, enemyName(enemies, i), i, enemyScale, catalog, opts.marks?.[i]))];
   const state: BattleState = {
     units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing', objective, enemyScale,
+    open: enemies.length > 1 && !units.some((unit) => unit.side === 'enemy' && leads(unit, objective)),
     ...(objective.type === 'protect' ? { asset: { name: objective.name, hp: objective.hp, maxHp: objective.hp } } : {}),
     ...(opts.support ? { support: { ...opts.support } } : {}),
     ...(opts.ground ? { ground: opts.ground } : {}),
@@ -685,8 +732,12 @@ export function shotsOf(weapon: Weapon): number {
 
 export interface ShotPreview {
   hitChance: number;
-  /** Damage of one hit, before any barrier. */
+  /** Damage of one hit, before any barrier. Of a hit that shatters: the barrier and all that is left of the core, if that is more. */
   damage: number;
+  /** True when one hit would shatter the machine: see `SHATTER`. */
+  shatter: boolean;
+  /** True when one hit would destroy the machine, by shattering it or by being enough: what the aiming line promises. */
+  kills: boolean;
   /** Shots fired at the target. */
   shots: number;
   /** True when every other living enemy is fired at as well. */
@@ -735,10 +786,19 @@ export function previewShot(
   const full = Math.max(1, Math.round(amount));
   // A part that is already destroyed passes half the damage on to the core.
   const passesOn = target.parts[part]!.ap <= 0;
+  const dealt = passesOn ? Math.max(1, Math.floor(full / 2)) : full;
+  const core = target.parts.core!;
+  const atCore = (part === 'core' || passesOn) && core.ap > 0;
+  // A barrier takes a hit before the armour does. What gets past it to the core of an ordinary machine,
+  // as one blow of half that core's full strength or more, goes through the machine.
+  const arrives = dealt - target.barrier;
+  const shatter = atCore && arrives >= SHATTER * core.maxAp && ordinary(state, target);
   return {
     // A shot under Deadeye does not miss; any other is never surer than 95 in 100 nor wilder than 10.
     hitChance: attacker.deadeye ? 100 : Math.min(95, Math.max(10, raw)),
-    damage: passesOn ? Math.max(1, Math.floor(full / 2)) : full,
+    damage: shatter ? Math.max(dealt, core.ap + target.barrier) : dealt,
+    shatter,
+    kills: atCore && (shatter || arrives >= core.ap),
     shots: shotsOf(weapon),
     salvo: weapon.trait === 'salvo',
   };
@@ -899,12 +959,17 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
     : [];
   // What the volley does for the meters: once for landing at all, once for each unit it landed on, and for each kill.
   const struck = new Set<UnitState>();
+  // Momentum, in an open battle: a volley that destroys something pays for itself. The weapon is ready again and
+  // the energy it took comes back, once, however many it destroys; each one is a link in the turn's chain.
+  // The heat and the round stay spent, so a run ends in an overheat or an empty magazine if nothing
+  // else stops it; and a weapon that was charged has to be charged again.
+  let repaid = false;
   for (const target of [primary, ...others]) {
     const aimed: FrameSlot = target === primary ? action.part : 'core';
     // Each shot is rolled and previewed on its own, because an earlier one may have destroyed
     // the part (or the target) the next was aimed at.
     for (let i = 0; i < shotsOf(weapon) && !target.destroyed; i++) {
-      const { hitChance, damage } = previewShot(state, unit.id, action.weapon, target.id, aimed, catalog);
+      const { hitChance, damage, shatter } = previewShot(state, unit.id, action.weapon, target.id, aimed, catalog);
       let value: number;
       if (roll) value = roll();
       else ({ value, state: state.rng } = nextRandom(state.rng));
@@ -913,7 +978,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       const absorbed = hit ? Math.min(target.barrier, damage) : 0;
       state.events.push({
         type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: aimed, appliedTo, hit,
-        damage: hit ? damage - absorbed : 0, ...(absorbed > 0 ? { absorbed } : {}),
+        damage: hit ? damage - absorbed : 0, ...(absorbed > 0 ? { absorbed } : {}), ...(hit && shatter ? { shatter: true as const } : {}),
       });
       if (!hit) continue;
       struck.add(target);
@@ -923,9 +988,19 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       if (weapon.trait === 'drain') target.energyDebt += weapon.traitPower ?? 0;
       addImpact(state, target, Math.round(impactOf(weapon) * (target.guarding ? GUARD_IMPACT : 1)));
       checkPhases(state, target, catalog);
+      if (target.destroyed && state.open) {
+        unit.chain += 1;
+        if (!repaid) {
+          repaid = true;
+          unit.fired = unit.fired.filter((slot) => slot !== action.weapon);
+          if (!weapon.charge) unit.energy += weapon.energy;
+        }
+      }
       // The objective may be met (or lost) by this very shot: the rest of the volley stays in the barrel.
       checkOutcome(state);
       if (state.outcome !== 'ongoing') break;
+      // Said while there is something left to turn the weapon on: the volley that ends a battle readies it for nothing.
+      if (target.destroyed && state.open) state.events.push({ type: 'momentum', unit: unit.id, weapon: action.weapon, chain: unit.chain });
     }
     if (state.outcome !== 'ongoing') break;
   }

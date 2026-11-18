@@ -75,14 +75,35 @@ test('menus wrap around', () => {
 });
 
 test('confirming a shot applies it and reports the result', () => {
-  const flow = ready();
+  // A turret takes a rifle's slug and stands: the weapon has fired and is not offered again this turn.
+  const flow = ready(createBattle(DEMO_BUILD, [ENEMIES['gun-turret'], ENEMIES['recon-drone']], CATALOG, 1));
   press(flow, 'confirm', 'confirm', 'confirm');
   expect(flow.state.units[0].ammo.rightHand).toBe(29);
-  expect(flow.message).toMatch(/Rivet Rifle (hits|misses)/);
+  expect(flow.message).toMatch(/Rivet Rifle (hits|misses) Gun Turret/);
   settle(flow);
   expect(flow.phase).toBe('action');
   press(flow, 'confirm');
   expect(flow.menu.items.filter((i) => i.enabled).map((i) => i.id)).toEqual(['leftHand', 'shoulder']);
+});
+
+test('a shot that goes through a light machine says so, and the weapon is offered again', () => {
+  const flow = ready();
+  expect(flow.preview).toBeNull();
+  press(flow, 'confirm', 'confirm');
+  // The aiming line knows before the trigger is pulled.
+  expect(flow.preview).toMatchObject({ shatter: true, kills: true, damage: 50 });
+  press(flow, 'confirm');
+  expect(flow.state.units[0].ammo.rightHand).toBe(29);
+  expect(flow.message).toBe('Rivet Rifle SHATTERS Recon Drone A');
+  const said: string[] = [];
+  for (let guard = 0; flow.phase === 'animating' && guard < 500; guard++) { flow.advance(); said.push(flow.message); }
+  // What is said, in the order it happened: the machine goes, and then the weapon is back.
+  expect(said.filter((line, i) => line !== said[i - 1])).toEqual(['Recon Drone A destroyed', 'Rivet Rifle ready again', 'Round 1 - your move']);
+  expect(flow.phase).toBe('action');
+  press(flow, 'confirm');
+  // The round is spent and the rifle is ready all the same.
+  expect(flow.menu.items.filter((i) => i.enabled).map((i) => i.id)).toEqual(['rightHand', 'leftHand', 'shoulder']);
+  expect(flow.state.units[0].chain).toBe(1);
 });
 
 test('a disabled menu item does nothing and ending the turn passes play', () => {

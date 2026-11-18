@@ -1435,7 +1435,9 @@ export class BattleScreen {
       const p = this.flow.preview;
       if (phase === 'target' && p) {
         const times = p.salvo ? ` ${STRINGS.preview.all}` : p.shots > 1 ? ` x${p.shots}` : '';
-        drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}${times}`, x, y + 1, { size: 16 });
+        // A hit that would finish the machine says so instead of a figure: that is what the figure would mean.
+        if (p.kills) drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.kills}`, x, y + 1, { size: 16, color: COLORS.accent });
+        else drawText(ctx, `${STRINGS.preview.hit} ${p.hitChance}%   ${STRINGS.preview.damage} ${p.damage}${times}`, x, y + 1, { size: 16 });
       }
       this.drawEnergyAndHeat(ctx, player, 6, LOGICAL_H - 2 * LINE - 2, 132);
     } else {

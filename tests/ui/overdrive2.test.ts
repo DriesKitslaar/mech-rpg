@@ -240,8 +240,9 @@ describe('the Overdrive and the pilot\'s game', () => {
   const skinned = (): GameState => ({ ...strong(done('intro-1', 'intro-2')), xp: xpForLevel(6), overdrive: 'iron-skin' });
 
   test('every battle of a contract is counted, and the next contract adds to the count instead of replacing it', () => {
-    const { app, store } = inHub(skinned());
-    const first = contract(app, 'lumen-1');
+    // A contract whose battles both outlast the meter: a lance goes through the light machines of a first job in one turn.
+    const { app, store } = inHub({ ...strong(done('intro-1', 'intro-2', 'undertow-1')), xp: xpForLevel(6), overdrive: 'iron-skin' });
+    const first = contract(app, 'undertow-2');
     // One went off in each of the two battles: the first battle's is not forgotten when the second is booked.
     expect(first.length).toBe(2);
     expect(first.every((n) => n > 0)).toBe(true);

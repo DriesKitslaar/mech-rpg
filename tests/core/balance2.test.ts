@@ -1,13 +1,38 @@
+import type { FramePart } from '../../src/core/types';
+import { ENEMIES } from '../../src/content/enemies';
 import { MISSIONS } from '../../src/content/missions';
+import { CATALOG } from '../../src/content/parts';
 import { ids, play } from '../helpers/balance';
 
 /** The second act's wars and the third act: the contracts a pilot plays with a full Ronin or better. */
 
+/**
+ * The war contract a full Ronin outguns. Both of its battles are open and fought against light
+ * machines that come for something to protect; a rail lance goes through a bomb crawler in one
+ * hit and is ready for the next, so what used to be a race (won 92 times in a hundred) is one the
+ * Ronin wins. It is still a fight for the frame before it.
+ */
+const OUTGUNNED = 'lumen-5';
+
 test.each(ids('path'))('war contract %s is a fight, not a wall, for a full Ronin, and it pays', (id) => {
   const { winRate, meanNet } = play(id, 'tier4');
   expect(winRate).toBeGreaterThanOrEqual(0.5);
-  expect(winRate).toBeLessThanOrEqual(0.98);
+  if (id !== OUTGUNNED) expect(winRate).toBeLessThanOrEqual(0.98);
   expect(meanNet).toBeGreaterThan(0);
+});
+
+test('the war contract a full Ronin outguns is made of light machines only, and is a fight for the frame before it', () => {
+  const mission = MISSIONS.find((m) => m.id === OUTGUNNED)!;
+  expect(mission.phase).toBe('path');
+  // Nobody in it leads, and nothing in it is heavier than a tank: every battle of it is open.
+  const cores = mission.battles.flatMap((battle) => battle.enemies.map((id) => (CATALOG[ENEMIES[id].build.core!] as FramePart).ap));
+  expect(Math.max(...cores)).toBeLessThanOrEqual(200);
+  expect(mission.battles.every((battle) => battle.objective?.type === 'protect')).toBe(true);
+  expect(mission.battles.flatMap((battle) => battle.enemies).some((id) => ENEMIES[id].leader || ENEMIES[id].portrait || ENEMIES[id].phases)).toBe(false);
+  expect(play(OUTGUNNED, 'tier4').winRate).toBeGreaterThan(0.98);
+  const before = play(OUTGUNNED, 'tier3').winRate;
+  expect(before).toBeGreaterThanOrEqual(0.5);
+  expect(before).toBeLessThanOrEqual(0.9);
 });
 
 test.each(ids('path'))('war contract %s is not for the gear a pilot leaves the introductions with', (id) => {
