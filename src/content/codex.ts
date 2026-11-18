@@ -246,6 +246,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'Some of what you do leaves something behind: a paper, a brass check. The database keeps them under FOUND, the papers by their numbers. One you have not found shows a clue in its place. Nothing found is lost when the story starts over.',
   },
   {
+    id: 'bench', title: 'THE BENCH',
+    text: 'In the garage, R1 on a part you own puts it on the bench. A step costs its number times the price of the part and adds a twentieth: armour to a frame part, damage to a weapon, output to a generator. The work stays with the part when it is sold. The bench goes two steps, and one further each time the story starts over, to five.',
+  },
+  {
     id: 'difficulty', title: 'DIFFICULTY',
     text: 'Story takes a fifth off enemy armour and firepower; Veteran adds a fifth. Change it in the options whenever you like. Fast battles play everything at two and a half times the speed.',
   },

@@ -24,6 +24,7 @@ import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } fr
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
 import { drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill, type Drill } from '../core/training';
+import { tunedCatalog, type Tuning } from '../core/tuning';
 import type { BuildError, Catalog, EnemyDef, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
@@ -257,7 +258,9 @@ class MissionHost implements Screen {
         // The pilot's own Overdrive goes with the pilot's own mech; a drill that teaches it brings its own.
         ...(overdrive ? { overdrive: overdrive.kind, ...(this.index === 0 && overdrive.drive > 0 ? { drive: overdrive.drive } : {}) } : {}),
         // A run of the Gauntlet has its own boons and arrives as the last floor left it; the pilot's perks stay outside.
-        ...(run ? { mods: runMods(run), carry: run.carry ?? undefined } : drill ? {} : { mods: { aim, evasion, energy, cooling, repairs, armour } }),
+        // The bench's work is on the pilot's own parts: a frame that is lent is as the factory made it.
+        ...(run ? { mods: runMods(run), carry: run.carry ?? undefined } : drill ? {}
+          : { mods: { aim, evasion, energy, cooling, repairs, armour, ...(this.mission.loaner ? {} : this.app.tune()) } }),
       },
     );
     // Each battle of a contract has its own song: the last one may be against a boss.
@@ -683,7 +686,8 @@ export class App {
 
   /** Why the current build may not deploy; empty when it may. */
   buildErrors(): BuildError[] {
-    return this.game ? validatePlayerBuild(this.game.build, this.deps.catalog) : [];
+    // As the garage reads it: a generator the bench has worked on gives what it now gives.
+    return this.game ? validatePlayerBuild(this.game.build, tunedCatalog(this.deps.catalog, this.game.tuning)) : [];
   }
 
   /**
@@ -754,6 +758,12 @@ export class App {
   openMirrorBriefing(): void {
     const mission = this.mirrorFight();
     if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
+  }
+
+  /** The bench's work on the pilot's parts, as a battle takes it: nothing at all when there is none. */
+  tune(): { tune?: Tuning } {
+    const tuning = this.game?.tuning;
+    return tuning && Object.keys(tuning).length > 0 ? { tune: tuning } : {};
   }
 
   /** Every enemy a battle can field, the opponent of a mirror match made from the pilot's build as it is now. */

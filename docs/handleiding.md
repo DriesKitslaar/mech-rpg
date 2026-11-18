@@ -138,6 +138,20 @@ Het spel slaat vanzelf op na alles wat telt. Er zijn drie opslagplekken; op het 
 **Continue** (het laatst gespeelde spel), **New Game** of **Load Game**. Terug naar het titelscherm
 ga je met **Options** en dan **Quit to Title**.
 
+## De werkbank
+
+In de **Garage** kun je onderdelen die je bezit sterker laten maken. Kies een vak, ga op een
+onderdeel staan en druk op **R1**: het ligt op de werkbank.
+
+- Een stap maakt het onderdeel een twintigste beter: meer pantser bij hoofd, kern, armen en benen,
+  meer schade bij een wapen, meer vermogen bij een generator. Boosters, FCS, modules en schilden
+  neemt de werkbank niet.
+- Een stap kost zijn nummer maal de prijs van het onderdeel: de tweede stap kost dus twee keer de
+  prijs.
+- Het werk hoort bij het onderdeel. Verkoop je het en koop je het later terug, dan is het er nog.
+- In de eerste ronde gaat de werkbank twee stappen. Elke keer dat je met **New Cycle** opnieuw
+  begint, kan er één stap bij, tot vijf. Achter de naam staat hoe ver een onderdeel is: `+2`.
+
 ## Moeilijkheid
 
 Onder **Options** staat **Difficulty**: Story (vijanden 20% zwakker), Standard, of Veteran (20%

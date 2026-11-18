@@ -69,6 +69,8 @@ export function mirrorEnemy(state: GameState, name: string): EnemyDef {
   return {
     id: 'mirror', name, ai: 'gunner', sprite: 'enemy-rival', composed: true, build: { ...state.build },
     paint: state.paint === 'obsidian' ? 'bone' : 'obsidian',
+    // The copy is the pilot's mech as it flies: with the bench's work on it.
+    ...(state.tuning && Object.keys(state.tuning).length > 0 ? { tune: { ...state.tuning } } : {}),
   };
 }
 

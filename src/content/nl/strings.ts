@@ -344,6 +344,10 @@ export const STRINGS_NL = {
       head: 'HOOFD', core: 'KERN', arms: 'ARMEN', legs: 'BENEN', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
       rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SCHDR',
     },
+    toBench: 'R1: WERKBANK', bench: 'DE WERKBANK', benchStep: (step: number, cap: number) => `Stap ${step} van ${cap}`,
+    tune: (step: number) => `Naar +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `Je hebt ${credits} c`,
+    benchFigures: { armour: 'Pantser', damage: 'Schade', output: 'Vermogen' },
+    benchAtLimit: 'Niet verder deze ronde', benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
   },
   shop: {
     heading: 'WINKEL', buy: 'KOOP', sell: 'VERK.', credits: 'CR',

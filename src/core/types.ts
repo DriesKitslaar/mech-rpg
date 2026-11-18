@@ -233,6 +233,8 @@ export interface EnemyDef {
   partNames?: Partial<Record<FrameSlot, string>>;
   /** Sprite id of the face shown when it talks. */
   portrait?: string;
+  /** Bench work it comes with, by part id: the copy of the pilot's mech that a mirror match fields is tuned as the pilot's is. */
+  tune?: Record<string, number>;
 }
 
 export const FRAME_SLOTS: FrameSlot[] = ['core', 'legs', 'arms', 'head'];

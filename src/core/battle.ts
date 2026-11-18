@@ -4,6 +4,7 @@ import {
   moduleOf, shieldOf, weaponIn,
 } from './build';
 import { nextRandom } from './rng';
+import { stepOf, tuneFactor, tunedOutput, type Tuning } from './tuning';
 import {
   FRAME_SLOTS, WEAPON_SLOTS,
   type Abilities, type AiProfile, type BossPhase, type Build, type Catalog, type EnemyDef, type FrameSlot, type Module,
@@ -17,6 +18,8 @@ export interface PartState { ap: number; maxAp: number }
 /**
  * Adjustments to a unit: pilot perks for the player, difficulty scaling for enemies.
  * `aim` to `repairs` are added; `armour` is an added fraction; `damage` and `toughness` multiply.
+ * `tune` is the bench's work on the unit's parts, by part id (see tuning.ts): it is read where a
+ * frame part's armour is set, where a shot's damage is worked out and where a turn's energy is.
  */
 export interface UnitMods {
   aim: number;
@@ -27,6 +30,7 @@ export interface UnitMods {
   armour: number;
   damage: number;
   toughness: number;
+  tune?: Tuning;
 }
 export const NO_MODS: UnitMods = { aim: 0, evasion: 0, energy: 0, cooling: 0, repairs: 0, armour: 0, damage: 1, toughness: 1 };
 
@@ -302,7 +306,7 @@ function createUnit(
   for (const slot of FRAME_SLOTS) {
     const part = framePart(build, slot, catalog);
     if (!part) continue;
-    const ap = Math.round(part.ap * (1 + mods.armour) * mods.toughness);
+    const ap = Math.round(part.ap * tuneFactor(mods.tune, part.id) * (1 + mods.armour) * mods.toughness);
     parts[slot] = { ap, maxAp: ap };
   }
   if (!parts.core) throw new Error(`unit ${id} has no core`);
@@ -341,6 +345,7 @@ function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scal
   }, {
     damage: scale * (mark === 'overclocked' ? MARK.damage : 1), toughness: scale,
     ...(mark === 'armoured' ? { armour: MARK.armour } : {}), ...(mark === 'swift' ? { evasion: MARK.evasion } : {}),
+    ...(def.tune ? { tune: def.tune } : {}),
   });
   if (mark === 'shielded') unit.barrier = markShield(unit);
   return unit;
@@ -404,7 +409,8 @@ export const coolingOn = (state: BattleState, unit: UnitState, catalog: Catalog)
   Math.max(0, coolingOf(unit, catalog) + (state.ground?.cooling ?? 0));
 
 export const turnEnergyOf = (unit: UnitState, catalog: Catalog): number =>
-  computeBuildStats(unit.build, catalog).turnEnergy + unit.mods.energy;
+  computeBuildStats(unit.build, catalog).turnEnergy + unit.mods.energy
+  + tunedOutput(generatorOf(unit.build, catalog), stepOf(unit.mods.tune, unit.build.generator));
 /** Heat a unit sheds at the end of its turn, and with the cool action. */
 export const coolingOf = (unit: UnitState, catalog: Catalog): number => generatorOf(unit.build, catalog).cooling + unit.mods.cooling;
 export const boostCost = (unit: UnitState, catalog: Catalog): number =>
@@ -719,7 +725,7 @@ export function previewShot(
   const raw = weapon.accuracy + aim - evasionOn(state, target, catalog) - target.chaff + limb - headPenalty;
 
   const resist = targetPart.resist[weapon.damageType] * (weapon.trait === 'pierce' ? 0.5 : 1);
-  let amount = weapon.damage * (1 - resist) * attacker.mods.damage * attacker.damageBoost * aegisFactor(state, target)
+  let amount = weapon.damage * tuneFactor(attacker.mods.tune, weapon.id) * (1 - resist) * attacker.mods.damage * attacker.damageBoost * aegisFactor(state, target)
     * (state.ground?.damage?.[weapon.damageType] ?? 1);
   if (target.side === 'player' && state.support?.order === 'cover') amount *= 1 - coverShare(state.support);
   if (attacker.deadeye) amount *= DEADEYE_DAMAGE;
