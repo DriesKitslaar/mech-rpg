@@ -1723,6 +1723,141 @@
     "w": 56,
     "h": 56
   },
+  "find-paper-rules": {
+    "file": "sprites/find-paper-rules.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-policy": {
+    "file": "sprites/find-paper-policy.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-rhyme": {
+    "file": "sprites/find-paper-rhyme.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-survey": {
+    "file": "sprites/find-paper-survey.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-minute": {
+    "file": "sprites/find-paper-minute.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-shift": {
+    "file": "sprites/find-paper-shift.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-adjourned": {
+    "file": "sprites/find-paper-adjourned.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-proxy": {
+    "file": "sprites/find-paper-proxy.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-letterhead": {
+    "file": "sprites/find-paper-letterhead.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-ticket": {
+    "file": "sprites/find-paper-ticket.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-escort": {
+    "file": "sprites/find-paper-escort.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-stop": {
+    "file": "sprites/find-paper-stop.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-playback-1": {
+    "file": "sprites/find-paper-playback-1.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-playback-2": {
+    "file": "sprites/find-paper-playback-2.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-licence": {
+    "file": "sprites/find-paper-licence.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-retainer": {
+    "file": "sprites/find-paper-retainer.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-model": {
+    "file": "sprites/find-paper-model.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-book": {
+    "file": "sprites/find-paper-book.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-order": {
+    "file": "sprites/find-paper-order.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-booking": {
+    "file": "sprites/find-paper-booking.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-receipts": {
+    "file": "sprites/find-paper-receipts.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-schedule": {
+    "file": "sprites/find-paper-schedule.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-plate": {
+    "file": "sprites/find-paper-plate.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-paper-minutes": {
+    "file": "sprites/find-paper-minutes.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-check-0": {
+    "file": "sprites/find-check-0.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-check-1": {
+    "file": "sprites/find-check-1.png",
+    "w": 56,
+    "h": 56
+  },
+  "find-check-2": {
+    "file": "sprites/find-check-2.png",
+    "w": 56,
+    "h": 56
+  },
   "app-icon": {
     "file": "sprites/app-icon.png",
     "w": 192,

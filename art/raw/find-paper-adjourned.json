@@ -1,0 +1,9 @@
+{
+  "id": "find-paper-adjourned",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of a heavy old leather-bound minute book lying open near its end, the left page filled with neat rows of handwriting and one signature at the bottom, a faded red ribbon marker lying across it. Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background."
+}

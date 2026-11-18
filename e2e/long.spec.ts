@@ -161,3 +161,47 @@ test('the other offer in Dutch: the header and the rows fit, and the fight for t
   expect((await saved(page)).choices).toMatchObject({ train: 'weigh' });
   expect(errors).toEqual([]);
 });
+
+test('what is found has a picture: a paper its own, a check the bare brass with its number stamped on it, one not found none', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // A pilot who holds the rule book, the weigh ticket, three checks (kept dry, long under water, through a fire) and nothing else.
+  const held = ['paper-rules', 'paper-ticket', 'check-dock', 'check-depth', 'check-king'];
+  const base = again({ codex: held });
+  await load(page, base);
+  await enterHub(page);
+  await choose(page, 'database');
+  await waitForScreen(page, 'database');
+  for (let i = 0; i < 3; i++) await press(page, 'e');
+  expect((await snap(page)).page).toBe('finds');
+  type Detail = { detail: { title: string; picture?: string; stamp?: string } };
+  const detail = async () => (await snap(page) as unknown as Detail).detail;
+  const to = async (id: string) => {
+    for (let i = 0; i < 45; i++) {
+      const s = await snap(page);
+      if (s.menu.items[s.menu.cursor]?.id === id) return;
+      await press(page, 'ArrowDown');
+    }
+    throw new Error(`no row ${id}`);
+  };
+  await to('paper-rules');
+  expect(await detail()).toMatchObject({ title: 'RULE BOOK', picture: 'find-paper-rules' });
+  await quiet(page);
+  await page.screenshot({ path: shot('database-find-paper') });
+  await to('paper-policy');
+  expect((await detail()).picture).toBeUndefined();
+  await page.screenshot({ path: shot('database-find-missing') });
+  await to('paper-ticket');
+  expect(await detail()).toMatchObject({ title: 'WEIGH TICKET', picture: 'find-paper-ticket' });
+  await page.screenshot({ path: shot('database-find-ticket') });
+  await to('check-dock');
+  expect(await detail()).toMatchObject({ title: 'CHECK 114', picture: 'find-check-0', stamp: '114' });
+  await page.screenshot({ path: shot('database-find-check') });
+  await to('check-king');
+  expect(await detail()).toMatchObject({ title: 'CHECK 12', picture: 'find-check-2', stamp: '12' });
+  await page.screenshot({ path: shot('database-find-check-burnt') });
+  await to('check-depth');
+  expect(await detail()).toMatchObject({ title: 'CHECK 190', picture: 'find-check-1', stamp: '190' });
+  await page.screenshot({ path: shot('database-find-check-drowned') });
+  expect(errors).toEqual([]);
+});

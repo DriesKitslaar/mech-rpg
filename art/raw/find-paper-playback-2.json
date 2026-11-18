@@ -1,0 +1,9 @@
+{
+  "id": "find-paper-playback-2",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of a small reel of brown magnetic tape lying on a wet steel floor, half of it stained dark by water, the snapped end of the tape curling upwards. Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background."
+}

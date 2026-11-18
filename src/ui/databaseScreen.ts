@@ -49,6 +49,12 @@ const PORTRAIT = 56;
 /** The most lines a find's text may take on its page, and its clue: both stand under a name and a line about where it comes from. */
 export const FIND_TEXT_LINES = 12;
 export const FIND_CLUE_LINES = 3;
+/** The side of a find's picture: it is drawn at the size it was made, as a face is. */
+export const FIND_PICTURE = 56;
+/** Characters to a line beside that picture, where a find's page says where it comes from. */
+export const FIND_SOURCE_CHARS = charsFor(PAGE.w - 12 - FIND_PICTURE - 6);
+/** A check's number as the game stamps it on the brass: the cut dark, with the light catching its lower edge. */
+const STAMP = { size: 16, top: 22, cut: '#2b1a08', edge: '#f4d98c' };
 
 /** What the page on the right shows, as words: tests read it, and the screen draws it. */
 interface Detail {
@@ -60,8 +66,11 @@ interface Detail {
   /** Somebody's face, and whom they work for, written beside it. */
   portrait?: string;
   role?: string;
-  /** Where a find comes from, written small under its name. */
+  /** Where a find comes from: beside its picture once it is found, and under the three marks until then. */
   source?: string;
+  /** A find's picture, once it is found; and on a check, the number the page stamps on the brass. */
+  picture?: string;
+  stamp?: string;
 }
 
 /**
@@ -166,7 +175,10 @@ export class DatabaseScreen implements Screen {
       if (!find) return null;
       // One that is not found says where it is, after its fashion, and nothing of what it is.
       if (!selected.enabled) return { title: D.unknown, source: D.notFound, lines: wrap(find.clue, PAGE_CHARS) };
-      return { title: find.title, source: find.source, lines: wrap(find.text, PAGE_CHARS) };
+      return {
+        title: find.title, source: find.source, lines: wrap(find.text, PAGE_CHARS), picture: find.picture,
+        ...(find.kind === 'check' ? { stamp: String(find.no) } : {}),
+      };
     }
     const entry = this.page === 'world' ? WORLD.find((e) => e.id === selected.id) : MANUAL.find((t) => t.id === selected.id);
     return entry ? { title: entry.title, lines: wrap(entry.text, PAGE_CHARS) } : null;
@@ -240,7 +252,17 @@ export class DatabaseScreen implements Screen {
     let y = PAGE.y + 4;
     drawText(ctx, detail.title, x, y, { color: COLORS.accent });
     y += LINE + 2;
-    if (detail.source) {
+    if (detail.picture) {
+      // What was found, the size of a face, and beside it where it comes from.
+      drawPortrait(ctx, this.app.deps.sprites, detail.picture, x, y, FIND_PICTURE);
+      if (detail.stamp) {
+        const middle = x + FIND_PICTURE / 2;
+        drawText(ctx, detail.stamp, middle + 1, y + STAMP.top + 1, { size: STAMP.size, align: 'center', color: STAMP.edge });
+        drawText(ctx, detail.stamp, middle, y + STAMP.top, { size: STAMP.size, align: 'center', color: STAMP.cut });
+      }
+      wrap(detail.source ?? '', FIND_SOURCE_CHARS).forEach((line, i) => drawText(ctx, line, x + FIND_PICTURE + 6, y + 1 + i * LINE, { color: COLORS.dim }));
+      y += FIND_PICTURE + 6;
+    } else if (detail.source) {
       drawText(ctx, detail.source, x, y, { color: COLORS.dim });
       y += LINE + 4;
     }

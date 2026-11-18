@@ -1,0 +1,9 @@
+{
+  "id": "find-paper-rhyme",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of exactly nine white chalk circles drawn by a child on a damp dark concrete wall, arranged as a square of three rows of three circles, with a stub of white chalk lying on a ledge below them and nothing else drawn on the wall. Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background."
+}

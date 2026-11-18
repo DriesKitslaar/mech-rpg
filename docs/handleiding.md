@@ -120,6 +120,8 @@ Je vindt ze terug in de **Database** op de pagina **Found**.
 
 - De papieren staan op nummer. Een nummer zonder naam heb je nog niet; op die pagina staat dan een
   aanwijzing waar het ligt. Die aanwijzingen zijn met opzet niet letterlijk.
+- Elk gevonden stuk heeft op zijn pagina een plaatje van hoe het erbij ligt. Op een penning staat
+  het nummer dat erin geslagen is.
 - Geen enkel stuk legt een ander uit. Wat ze samen betekenen, moet je zelf aan elkaar leggen.
 - Luister ook naar wat er tijdens een gevecht gezegd wordt. Het gaat niet altijd over het gevecht.
 - Wat je gevonden hebt, blijf je houden als je met **New Cycle** opnieuw begint.

@@ -1,0 +1,9 @@
+{
+  "id": "find-check-1",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of a round brass tally token of the kind miners hung on a board: a thick brass disc with a raised rim and one small hole near its top edge, dull and stained green with verdigris from long years under water, its face smooth, blank and empty, seen straight from the front. Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background."
+}

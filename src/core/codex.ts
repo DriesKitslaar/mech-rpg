@@ -29,6 +29,8 @@ export interface Find extends Entry {
   source: string;
   /** A few words about where it is, shown while it is not found. */
   clue: string;
+  /** The picture of it, once found: a paper as it lies there, a check as bare brass (its page stamps the number on it). */
+  picture: string;
 }
 
 /** True of an entry that is a find, rather than a few lines about the world. */

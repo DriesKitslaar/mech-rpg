@@ -1,0 +1,9 @@
+{
+  "id": "find-paper-policy",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of a crisp cream insurance policy document, its first page, perfectly flat and clean, with a thick black border, a round gold foil seal in the lower corner and a neat steel paper clip. Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background."
+}

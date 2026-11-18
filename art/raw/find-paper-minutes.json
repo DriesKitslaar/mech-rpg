@@ -1,0 +1,9 @@
+{
+  "id": "find-paper-minutes",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no readable text, no letters, no numbers: a close-up of a fresh sheet of cream paper covered in rows of wet black ink handwriting, with a steel dip pen lying across it and a small open bottle of black ink beside it, one drop of ink still shining. Any writing on it is only rows of tiny abstract marks. One single thing, centred, filling most of the square. Lit by a warm lamp from above with a faint cyan neon glow along one edge, plain very dark blue background."
+}
