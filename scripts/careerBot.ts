@@ -21,6 +21,7 @@ import {
   BUILD_SLOTS, buy, checkBuy, checkSell, equip, isValidState, ownedCount, sell, type BuildSlot, type Difficulty, type GameState,
 } from '../src/core/game';
 import { levelFor } from '../src/core/pilot';
+import { checkTune, stepOf, tunable, tune } from '../src/core/tuning';
 import type { Build } from '../src/core/types';
 import { CATALOG } from '../src/content/parts';
 import { REFERENCE_BUILDS } from '../src/content/referenceBuilds';
@@ -44,6 +45,8 @@ export interface CareerOptions {
   answers?: Record<string, string>;
   /** Contracts beside the story to fly as soon as they are on offer, before the story goes on. */
   side?: string[];
+  /** Whether the pilot spends what is left on the bench once the best frame is fitted; they do, unless told not to. */
+  bench?: boolean;
 }
 
 export interface CareerReport {
@@ -75,6 +78,8 @@ export interface CareerReport {
   cycle: number;
   /** The lowest the pilot's credits ever were. */
   lowestCredits: number;
+  /** The steps the bench has taken on the parts the pilot ended in, all told. */
+  benchSteps: number;
 }
 
 type Snap = {
@@ -129,7 +134,7 @@ export function playCareer(options: CareerOptions): CareerReport {
   };
   const report: CareerReport = {
     options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0, arenaLosses: 0, endings: [], side: [],
-    credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity,
+    credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity, benchSteps: 0,
   };
   let tier = -1;
 
@@ -227,6 +232,27 @@ export function playCareer(options: CareerOptions): CareerReport {
     }
   };
 
+  /**
+   * With the best frame fitted there is nothing left to save for: what is over goes to the bench, a
+   * step at a time on whichever fitted part is furthest behind, for as long as the bench will take it.
+   */
+  const benchUp = (): void => {
+    if (options.bench === false || tier < TIERS.length - 1) return;
+    let game: GameState = app.game!;
+    for (let guard = 0; guard < 200; guard++) {
+      const next = [...new Set(Object.values(game.build))]
+        .filter((id) => tunable(CATALOG[id]) && checkTune(game, id, CATALOG) === null)
+        .sort((a, b) => stepOf(game.tuning, a) - stepOf(game.tuning, b) || CATALOG[a].price - CATALOG[b].price)[0];
+      if (next === undefined || game.credits - CATALOG[next].price * (stepOf(game.tuning, next) + 1) < RESERVE) break;
+      game = tune(game, next, CATALOG);
+    }
+    if (game !== app.game) {
+      app.commit(game);
+      app.go('hub');
+      checkSave();
+    }
+  };
+
   /** Spends perk points as they come, on what keeps a mech alive and hitting. */
   const learn = (): void => {
     for (const id of ['plating', 'marksman', 'capacitor', 'heatsinks', 'reflexes', 'fieldTech', 'quartermaster', 'haggler']) {
@@ -251,6 +277,7 @@ export function playCareer(options: CareerOptions): CareerReport {
       if (rank > 10 && app.game!.arenaRank < 10) return;
       if (!arena(rank)) return;
       gearUp();
+      benchUp();
       learn();
     }
   };
@@ -268,6 +295,7 @@ export function playCareer(options: CareerOptions): CareerReport {
     const rested = new Map<string, number>();
     while (report.contracts < limit) {
       gearUp();
+      benchUp();
       learn();
       if (app.canStartCycle()) {
         if (app.game!.cycle + 1 >= cycles) { report.finished = true; break; }
@@ -319,6 +347,7 @@ export function playCareer(options: CareerOptions): CareerReport {
   return {
     ...report, credits: game.credits, level: levelFor(game.xp), arenaRank: game.arenaRank, medals: game.medals.length, cycle: game.cycle,
     lowestCredits: Number.isFinite(report.lowestCredits) ? report.lowestCredits : game.credits,
+    benchSteps: Object.values(game.build).reduce((sum, id) => sum + stepOf(game.tuning, id), 0),
   };
 }
 
@@ -329,7 +358,7 @@ export function careerLine(r: CareerReport): string {
   return [
     `${faction}/${verdict}/${difficulty}/#${seed}`.padEnd(34),
     r.finished ? 'finished' : `STOPPED (${r.stopped})`,
-    `contracts ${r.contracts} (won ${r.won})`, `grind ${r.grind}`, `level ${r.level}`, `arena ${r.arenaRank}`, `${r.tier}`,
+    `contracts ${r.contracts} (won ${r.won})`, `grind ${r.grind}`, `level ${r.level}`, `arena ${r.arenaRank}`, `${r.tier}`, `bench ${r.benchSteps}`,
     `credits ${r.credits} (low ${r.lowestCredits})`, `medals ${r.medals}`, lost ? `lost: ${lost}` : 'lost no contract',
     `arena fights lost ${r.arenaLosses}`,
   ].join('  ');

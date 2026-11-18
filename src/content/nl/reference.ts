@@ -215,8 +215,8 @@ export const REFERENCE_NL: Record<string, string> = {
   'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.':
     'Gewonnen contracten zijn ervaring. Elk level geeft een perkpunt; perks koop je op het pilotenscherm en hou je voorgoed. Medailles verdien je met wat je doet, ze betalen een beetje, en staan daar ook.',
   'A NEW CYCLE': 'EEN NIEUWE CYCLUS',
-  'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and your arena rank. Enemies get tougher and contracts pay better each time.':
-    'Is het verhaal uit, dan kun je het opnieuw beginnen. Je houdt credits, onderdelen, level, perks, medailles, de database en je arenarang. Vijanden worden taaier en contracten betalen beter, elke keer.',
+  'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and your arena rank. Enemies get tougher and contracts pay better the first two times; after that both stay as they are. The bench goes one step further each time, up to five.':
+    'Als het verhaal uit is kun je opnieuw beginnen. Je houdt credits, onderdelen, level, perks, medailles, de database en je arenarang. De eerste twee keer worden vijanden taaier en stijgt het loon; daarna blijft dat gelijk. De werkbank gaat elke keer een stap verder, tot vijf.',
   DIFFICULTY: 'MOEILIJKHEID',
   'Story takes a fifth off enemy armour and firepower; Veteran adds a fifth. Change it in the options whenever you like. Fast battles play everything at two and a half times the speed.':
     'Verhaal: een vijfde minder pantser en vuurkracht voor vijanden; Veteraan: een vijfde meer. Altijd te wijzigen in de opties. Snelle gevechten: alles tweeenhalf keer zo snel.',

@@ -239,7 +239,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'cycle', title: 'A NEW CYCLE',
-    text: 'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and your arena rank. Enemies get tougher and contracts pay better each time.',
+    text: 'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and your arena rank. Enemies get tougher and contracts pay better the first two times; after that both stay as they are. The bench goes one step further each time, up to five.',
   },
   {
     id: 'finds', title: 'WHAT IS FOUND',

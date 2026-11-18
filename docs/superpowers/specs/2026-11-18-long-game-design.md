@@ -58,11 +58,14 @@ further with every cycle, to five. The garage shows a part's numbers as tuned; a
 carries its step after its name ("+2"). A stock frame that is lent (the Gauntlet's, a loaner) is
 as the factory made it. The mirror match's copy of the pilot's mech is tuned as the pilot's is.
 
-**Later cycles.** The strength and the pay of a cycle grow as before up to the fourth cycle and
-then stay: what the fourth cycle fields, every later cycle fields. The exact figures are set by
-simulation against a pilot who has every perk and has used the bench as far as it goes in that
-cycle: the automatic player wins each verdict on Standard at least six times in ten in every
-cycle, and no contract of the story less than half the time.
+**Later cycles.** The strength and the pay of a cycle grow as before up to the third cycle (half
+again as tough, twice the pay) and then stay: what the third cycle fields, every later cycle
+fields. The figure was set by simulation (the table is in the plan): with it the automatic player,
+in the best frame and with every perk, wins every verdict on Standard in every cycle whether or
+not the bench is used, so nobody is shut out for not finding the bench; on Veteran the bench is
+what gets a pilot through, and its last step, which comes a cycle after the peak, turns the
+hardest contract from mostly lost to mostly won. A ceiling one cycle later was measured too and
+dropped: on Standard it left the third verdict out of reach of a pilot who had not used the bench.
 
 **The other offer.** From the second cycle on, the briefing of three contracts has a second
 entry, "The other offer": the other side's briefing, with its own pay. Accepting it flies another
@@ -90,8 +93,9 @@ cannot be trusted with a figure, the game draws the check itself.
    useless.
 2. **Stop the scaling and nothing else.** Fair, but then nothing grows at all after the first
    cycle, and the surplus still has no use.
-3. **Chosen: the bench, and scaling that stops where the bench does.** Growth has a price and an
-   end, and both sides reach their ceiling in the same cycle.
+3. **Chosen: the bench, and scaling that stops.** Growth has a price and an end. The enemies
+   reach their ceiling in the third cycle and the bench in the fourth, so a pilot who keeps at it
+   ends up a little ahead.
 
 For the later cycle's contracts: a second contract that stands in for the first was considered
 and dropped (every condition that names the first would have to learn about the second). The

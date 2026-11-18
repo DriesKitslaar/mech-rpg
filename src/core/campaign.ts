@@ -289,18 +289,31 @@ export function introductionsDone(state: GameState, missions: Mission[]): boolea
 
 export const CYCLE_SCALE = 0.25;
 export const CYCLE_PAY = 0.5;
+/**
+ * The cycle in which a contract is as tough as it gets: what the third telling fields, every later
+ * telling fields, and pays. A pilot stops growing (the level has a cap, the bench has a last step),
+ * so what is fielded against them stops too: measured, a quarter more with every telling without
+ * end leaves the sixth telling unwinnable with everything a pilot can have.
+ */
+export const CYCLE_PEAK = 2;
+const counted = (cycle: number): number => Math.min(Math.max(0, cycle), CYCLE_PEAK);
+/** What a cycle multiplies the enemies' strength by, and the armour of what is to be protected. */
+export const cycleStrength = (cycle: number): number => 1 + CYCLE_SCALE * counted(cycle);
+/** What a cycle multiplies a contract's pay by. */
+export const cyclePay = (cycle: number): number => 1 + CYCLE_PAY * counted(cycle);
 
 /**
- * A story contract as it is offered in the given cycle: tougher enemies, better pay. What has to be
- * protected grows sturdier by as much as the enemies grow tougher: it loses armour by the head of
- * enemy standing, and tougher enemies stand longer. The patrol never changes.
+ * A story contract as it is offered in the given cycle: tougher enemies, better pay, both up to the
+ * cycle of `CYCLE_PEAK` and the same from then on. What has to be protected grows sturdier by as
+ * much as the enemies grow tougher: it loses armour by the head of enemy standing, and tougher
+ * enemies stand longer. The patrol never changes.
  */
 export function forCycle(mission: Mission, cycle: number): Mission {
   if (cycle <= 0 || mission.phase === 'patrol') return mission;
-  const tougher = 1 + CYCLE_SCALE * cycle;
+  const tougher = cycleStrength(cycle);
   return {
     ...mission,
-    reward: Math.round(mission.reward * (1 + CYCLE_PAY * cycle)),
+    reward: Math.round(mission.reward * cyclePay(cycle)),
     scale: Math.round((mission.scale ?? 1) * tougher * 100) / 100,
     battles: mission.battles.map((battle) =>
       (battle.objective?.type === 'protect' ? { ...battle, objective: { ...battle.objective, hp: Math.ceil(battle.objective.hp * tougher) } } : battle)),
