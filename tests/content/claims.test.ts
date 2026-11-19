@@ -6,7 +6,7 @@ import {
 import { ASK_BONUS, ASK_TIER, BOARD_SIZE, PAY_PER_HEAD, swarmContract } from '../../src/core/board';
 import { FORECAST_PLAYS } from '../../src/core/forecast';
 import { CHAMPION_RANK } from '../../src/core/arena';
-import { MASTER_PURSE, crownHeld, masterPurse, mastersOpen, recordMasterWin } from '../../src/core/masters';
+import { CROWN_BONUS, MASTER_PURSE, askBonus, crownHeld, masterPurse, mastersOpen, recordMasterWin } from '../../src/core/masters';
 import { RANGE_MAX, rangeLimit, sparEnemy } from '../../src/core/range';
 import { MASTERS } from '../../src/content/masters';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
@@ -25,6 +25,7 @@ import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, DEMO_BUILD, SHOP_PARTS, STARTER_BUILD } from '../../src/content/parts';
 import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
+import { CROWN_PAINTS, paintsFor } from '../../src/ui/paint';
 
 /** What the game tells the player about its rules, held against the rules themselves. */
 const topic = (id: string): string => MANUAL.find((t) => t.id === id)!.text;
@@ -116,6 +117,25 @@ describe('the masters', () => {
     expect(crownHeld(recordMasterWin(game, 'bastion', 'bastion'), 'bastion')).toBe(true);
     expect(text).toMatch(/The briefing says which build that is\.$/);
     expect(STRINGS.arena.pages.masters).toBe('MASTERS');
+  });
+});
+
+describe('crowns', () => {
+  test('the manual says what a crown gives: it is kept, it is marked, its paint is the holder\'s, and the board pays the holder more', () => {
+    const text = topic('crowns');
+    expect(text).toMatch(/^A crown is kept for good, through every telling\./);
+    const game = newGame(CATALOG, STARTER_BUILD);
+    const holder = recordMasterWin(game, 'bastion', 'bastion');
+    // The garage offers the holder the master's own paint, and nobody else.
+    expect(text).toContain("The garage offers the holder the master's own paint.");
+    const paint = CROWN_PAINTS.find((scheme) => scheme.crown === 'bastion')!.id;
+    expect(MASTERS.find((master) => master.kind === 'bastion')!.paint).toBe(paint);
+    expect(paintsFor(holder)).toContain(paint);
+    expect(paintsFor(game)).not.toContain(paint);
+    // Half as much again, where anyone else is paid a quarter more.
+    expect(text).toMatch(/pays the holder half as much again, where it pays anyone else a quarter more\.$/);
+    expect([askBonus(holder, 'bastion'), askBonus(game, 'bastion'), askBonus(holder, 'lancer')]).toEqual([0.5, 0.25, 0.25]);
+    expect([CROWN_BONUS, ASK_BONUS]).toEqual([0.5, 0.25]);
   });
 });
 

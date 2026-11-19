@@ -215,7 +215,8 @@ Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen
 
 De arena heeft een tweede pagina: druk op **R1** (of **L1**) voor **MASTERS**. Daar staan zeven
 meesters, een voor elke klasse. Ze nemen alleen de **kampioen** van de ladder aan (rang tien); tot
-dan kun je ze wel bekijken.
+dan kun je ze wel bekijken. Word je kampioen, dan schrijft het arenakantoor je erover (onder
+**Messages**).
 
 - **Elke build mag een meester uitdagen.** Win je, dan krijg je de pot: 9000 de eerste keer,
   daarna een kwart.
@@ -230,6 +231,19 @@ dan kun je ze wel bekijken.
   dan de eigen klasse: dat is de pot. De kroon is met opzet het moeilijkst.
 - Een kroon raak je niet meer kwijt, ook niet als je het verhaal opnieuw begint. Je kunt een
   meester zo vaak opnieuw uitdagen als je wilt.
+
+**Wat een kroon je geeft:**
+
+- **De titel.** Onder **Pilot**, pagina **CLASS**, staat een kroontje bij elke klasse waarvan je
+  de kroon hebt, en bovenaan hoeveel je er hebt (**CROWNS 2/7**). Sta je op zo'n klasse, dan
+  heet je daar zoals de meester heette: **MASTER BASTION**.
+- **De lak van de meester.** In de **Garage** wissel je met **L1/R1** van lak. Na de twaalf
+  gewone kleuren komen de kleuren van de meesters die je versloeg in hun eigen klasse. Alleen
+  jij en die meester dragen ze.
+- **Meer loon.** Een open contract dat een klasse zoekt, betaalt normaal een kwart extra als je
+  het in zo'n build wint. Heb je de kroon van die klasse, dan is dat de **helft extra**. In de
+  briefing staat het bedrag dat voor jou geldt (**+50% PAY**).
+- **Twee medailles:** een voor je eerste kroon, een voor alle zeven.
 
 ## Twee duels na het einde
 

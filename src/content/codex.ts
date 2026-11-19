@@ -324,6 +324,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.',
   },
   {
+    id: 'crowns', title: 'CROWNS',
+    text: "A crown is kept for good, through every telling. It is marked on your page of classes, and its holder is called by the master's title there. The garage offers the holder the master's own paint. A contract on the board that asks for that class pays the holder half as much again, where it pays anyone else a quarter more.",
+  },
+  {
     id: 'masters', title: 'THE MASTERS',
     text: "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, a quarter after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.",
   },

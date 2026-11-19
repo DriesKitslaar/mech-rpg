@@ -1,11 +1,11 @@
 import { archetypeOf, type Archetype } from '../core/archetype';
-import { ASK_BONUS, isSwarm } from '../core/board';
+import { isSwarm } from '../core/board';
 import { computeBuildStats } from '../core/build';
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
 import { advance, counted, newCount, type Count, type Forecast } from '../core/forecast';
 import { groundFor } from '../core/ground';
-import { crownHeld, isMaster } from '../core/masters';
+import { askBonus, crownHeld, isMaster } from '../core/masters';
 import type { Fight } from '../core/mission';
 import type { Sortie } from '../core/sortie';
 import { isRange, parseSpar } from '../core/range';
@@ -292,7 +292,8 @@ export class BriefingScreen implements Screen {
     if (mission.asks) {
       const met = kind === mission.asks;
       const fits = this.fits;
-      const wants = B.asks(B.wanted[mission.asks], Math.round(ASK_BONUS * 100));
+      // What it pays on top is the pilot's own figure: more for the holder of that class's crown.
+      const wants = B.asks(B.wanted[mission.asks], Math.round(askBonus(this.app.game!, mission.asks) * 100));
       drawText(ctx, !met && fits !== null ? `${wants} ${B.asksBuild(fits + 1)}` : wants, 72, 51, { color: met ? COLORS.armor : COLORS.heat });
     }
     // A master's duel says on that line what the crown asks: a win as the master's own class. It is lit and

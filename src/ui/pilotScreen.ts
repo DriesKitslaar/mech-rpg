@@ -1,5 +1,6 @@
 import { ARCHETYPES, adviceFor, archetypeOf, wonAs, type Archetype, type BuildAdvice } from '../core/archetype';
 import { DEFAULT_CALLSIGN, type BuildSlot, type GameState } from '../core/game';
+import { crownHeld, crownsHeld, mastersOpen } from '../core/masters';
 import { MEDAL_PAY, medalProgress, type Medal } from '../core/medals';
 import { OVERDRIVES, type OverdriveId } from '../core/battle';
 import { MAX_LEVEL, OVERDRIVE_LEVEL, checkBuyPerk, fittedOverdrive, levelFor, overdriveOpen, perkPoints, xpForLevel } from '../core/pilot';
@@ -13,7 +14,7 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { nameRank, nextNameAt, renownOf } from '../core/renown';
 import { RECORD_ROWS, rankTally, recordLines } from './record';
-import { CHAR_W, COLORS, LINE, MEDAL_COLORS, charsFor, drawList, drawMedal, drawMeter, drawPanel, drawRowLight, drawTabs, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, CROWN_COLOR, LINE, MEDAL_COLORS, charsFor, drawCrown, drawList, drawMedal, drawMeter, drawPanel, drawRowLight, drawTabs, drawText, wrap } from './widgets';
 
 const P = STRINGS.pilot;
 const M = STRINGS.medals;
@@ -27,6 +28,8 @@ const ADVICE_COLUMNS: BuildSlot[][] = [['head', 'core', 'arms', 'legs', 'generat
 const MEDAL_ROWS = 13;
 /** Where, on the page of kinds, what makes a kind is written after its name; and how wide a column of the build to try is. */
 const CLASS_RULE_X = 92;
+/** Where a crown held is marked on a class's row: after the longest rule, before the widest count of wins. The crowns are counted above it, to the same edge. */
+const CROWN_X = 264;
 const ADVICE_COLUMN_W = 146;
 
 /** The pilot: level and perks, the medals earned and still to earn, the record of what they have done, and the kinds of machine there are. */
@@ -189,6 +192,10 @@ export class PilotScreen implements Screen {
     drawPanel(ctx, 4, 18, LOGICAL_W - 8, 95);
     drawText(ctx, C.heading, 12, 22, { color: COLORS.dim, size: 10 });
     drawText(ctx, C.won, LOGICAL_W - 12, 22, { align: 'right', color: COLORS.dim, size: 10 });
+    // The crowns of the arena's masters, counted once they are there to be taken, or once one is held.
+    if (mastersOpen(game) || crownsHeld(game) > 0) {
+      drawText(ctx, STRINGS.arena.masters.crowns(crownsHeld(game), ARCHETYPES.length), CROWN_X + 9, 22, { align: 'right', color: COLORS.dim, size: 10 });
+    }
     this.classes.items.forEach((item, i) => {
       const kind = item.id as Archetype;
       const y = 34 + i * LINE;
@@ -200,12 +207,15 @@ export class PilotScreen implements Screen {
       // The kind the pilot flies now stands out; one never won as is dim.
       drawText(ctx, item.label, 18, y, { color: selected ? COLORS.accent : kind === flown ? COLORS.armor : item.enabled ? COLORS.text : COLORS.dim });
       drawText(ctx, C.rules[kind], CLASS_RULE_X, y, { color: COLORS.dim });
+      if (crownHeld(game, kind)) drawCrown(ctx, CROWN_X, y + 2);
       drawText(ctx, item.note ?? '', LOGICAL_W - 12, y, { align: 'right', color: wonAs(game, kind) > 0 ? COLORS.text : COLORS.dim });
     });
 
     const kind = this.kind;
     drawPanel(ctx, 4, 117, LOGICAL_W - 8, 135);
-    drawText(ctx, C.names[kind].toUpperCase(), 12, 121, { color: COLORS.accent });
+    // A class whose crown the pilot holds is called by what its holder is called.
+    if (crownHeld(game, kind)) drawText(ctx, STRINGS.arena.masters.titles[kind].toUpperCase(), 12, 121, { color: CROWN_COLOR });
+    else drawText(ctx, C.names[kind].toUpperCase(), 12, 121, { color: COLORS.accent });
     if (kind === flown) drawText(ctx, C.yours, LOGICAL_W - 12, 121, { align: 'right', color: COLORS.armor });
     wrap(C.notes[kind], charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((text, i) => drawText(ctx, text, 12, 133 + i * LINE));
 

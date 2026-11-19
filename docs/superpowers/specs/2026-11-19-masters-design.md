@@ -20,8 +20,8 @@ on it.
    in the purest machine of that class. They take challenges from the champion of the ladder. Any
    build may challenge, for a purse. A pilot who beats a master **in a machine of the master's own
    class** takes that class's **crown**.
-2. **What a crown gives.** It is seen: on the pilot's page of classes, in the record, and in a
-   paint that only its holder may wear. It pays: a contract that asks for that class pays its
+2. **What a crown gives.** It is seen: on the pilot's page of classes, and in a paint that only
+   its holder may wear. It pays: a contract that asks for that class pays its
    holder twice the usual bonus. Two medals count them.
 3. An APK after every step. No rule of combat changes, and no balance test of what exists changes.
 
@@ -90,8 +90,9 @@ go through an artillery frame. That is the purse. The crown is the harder thing 
 
 ### What a crown gives (K2)
 
-- **The title.** The pilot's page of classes marks each class whose crown is held and counts them;
-  the record has a row for them.
+- **The title.** The pilot's page of classes marks each class whose crown is held, counts them,
+  and calls such a class by what its holder is called. (The record was to have a row for them;
+  its two columns are full, so the count stands on the page of classes.)
 - **The master's paint.** Seven schemes, one a master. The garage offers each only to the pilot
   who holds that crown.
 - **Pay.** A contract on the board that asks for a class pays a quarter more to a pilot who wins

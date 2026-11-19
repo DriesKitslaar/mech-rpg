@@ -1,10 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
+import { generateBoard } from '../src/core/board';
 import { completeMission } from '../src/core/campaign';
 import { BUILD_SLOTS, buy, equip, newGame, saveLoadout, type GameState } from '../src/core/game';
 import { xpForLevel } from '../src/core/pilot';
 import { tunable } from '../src/core/tuning';
 import type { Build } from '../src/core/types';
 import { ARCHETYPE_BUILDS } from '../src/content/archetypeBuilds';
+import { BOARD_TEXT } from '../src/content/board';
 import { WORLD } from '../src/content/codex';
 import { MISSIONS } from '../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
@@ -189,6 +191,47 @@ test('the masters are locked to a pilot who is not champion, and the page says w
   await settle(page, 20);
   expect((await snap(page)).screen).toBe('arena');
   await page.screenshot({ path: shot('arena-masters-locked') });
+  expect(errors).toEqual([]);
+});
+
+test('what a crown gives: a mark on the pilot\'s page of classes, the master\'s paint in the garage, and more pay on the board for that class', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // So many battles won that the board has a contract that asks for a lancer.
+  let won = 60;
+  while (!generateBoard(won, 3, BOARD_TEXT).some((mission) => mission.asks === 'lancer')) won += 1;
+  const asking = generateBoard(won, 3, BOARD_TEXT).find((mission) => mission.asks === 'lancer')!;
+  await load(page, champion({ battlesWon: won, masters: ['duellist', 'lancer', 'bastion'], crowns: ['lancer', 'bastion'] }), '/?seed=7');
+  // The pilot's page of classes: a crown on the two rows, the count above them, and the holder's title under the cursor.
+  await choose(page, 'pilot');
+  await waitForScreen(page, 'pilot');
+  for (let i = 0; i < 6 && (await snap(page)).page !== 'classes'; i++) await press(page, 'KeyE');
+  expect((await snap(page)).page).toBe('classes');
+  for (let i = 0; i < 3; i++) await press(page, 'ArrowDown');
+  await settle(page);
+  await page.screenshot({ path: shot('pilot-classes-crowns') });
+  // The garage: one step back from factory colours is the paint of the last crown held, the bastions'.
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  await choose(page, 'garage');
+  await waitForScreen(page, 'garage');
+  await press(page, 'KeyQ');
+  expect((await kept(page)).paint).toBe('basalt');
+  await press(page, 'KeyQ');
+  expect((await kept(page)).paint).toBe('ultraviolet');
+  await settle(page);
+  await page.screenshot({ path: shot('garage-crown-paint') });
+  // The board: the contract that asks for a lancer pays this pilot half as much again.
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  await choose(page, 'contracts');
+  await choose(page, asking.id);
+  await waitForScreen(page, 'briefing');
+  await typed(page);
+  await oddsCounted(page);
+  await settle(page);
+  await page.screenshot({ path: shot('asks-crown-briefing') });
   expect(errors).toEqual([]);
 });
 
