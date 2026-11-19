@@ -215,8 +215,9 @@ Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen
 
 Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appointment**. Win je
 dat, dan volgt een tweede: **First Sword**. Het zijn gevechten van één tegen één, tegen piloten van
-buiten de stad, elk in een mecha die niemand in Varn bouwt. Wie zo'n duel wint, mag die mecha
-daarna in de **Shop** kopen. Dat recht raak je niet meer kwijt, ook niet in een nieuwe cyclus.
+buiten de stad, elk in een mecha die niemand in Varn bouwt. Een wingman kun je er niet voor huren:
+ze vroegen om jou alleen. Wie zo'n duel wint, mag die mecha daarna in de **Shop** kopen. Dat recht
+raak je niet meer kwijt, ook niet in een nieuwe cyclus.
 
 | Mecha | Wat hem bijzonder maakt | Hoe je hem verslaat |
 |---|---|---|

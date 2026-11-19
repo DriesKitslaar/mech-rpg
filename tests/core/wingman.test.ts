@@ -6,6 +6,7 @@ import { feeAfter, takesWingman, wingmanOpen, withWingman } from '../../src/core
 import { ALL_ENEMIES, ARENA } from '../../src/content/arena';
 import { DRILLS } from '../../src/content/drills';
 import { MISSIONS } from '../../src/content/missions';
+import { DUELS } from '../../src/content/sidework';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 import { WINGMEN } from '../../src/content/wingmen';
 import { drillMission } from '../../src/core/training';
@@ -81,6 +82,19 @@ describe('a contract flown with a wingman', () => {
     const drill = drillMission(fresh(), DRILLS[0], 'Training Simulator');
     expect(takesWingman(drill)).toBe(false);
     expect(takesWingman(mission('patrol'))).toBe(true);
+  });
+
+  test('nobody comes along to a duel: the other side asked for one pilot, by callsign', () => {
+    expect(DUELS.length).toBe(2);
+    for (const duel of DUELS) {
+      expect(duel.series).toBe('duel');
+      expect(takesWingman(duel), duel.id).toBe(false);
+      expect(withWingman(duel, kite)).toBe(duel);
+    }
+    // The first of them says as much.
+    expect(DUELS[0].briefing[0]).toMatch(/They asked for you by callsign, and for nobody else\.$/);
+    // Other work off the board is as it was.
+    expect(takesWingman(mission('bounty-1'))).toBe(true);
   });
 
   test('a contract whose every battle already has an ally takes no wingman: nobody is paid for standing by', () => {
