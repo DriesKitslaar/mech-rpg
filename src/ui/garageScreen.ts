@@ -1,3 +1,4 @@
+import { archetypeOf } from '../core/archetype';
 import type { BuildSlot } from '../core/game';
 import type { BuildStats } from '../core/types';
 import { STRINGS } from '../content/strings';
@@ -12,6 +13,7 @@ import { partLines } from './partInfo';
 import { CHAR_W, COLORS, LINE, drawList, drawPanel, drawRowLight, drawText } from './widgets';
 
 const G = STRINGS.garage;
+const C = STRINGS.classes;
 const LIST_X = 162;
 const LIST_W = LOGICAL_W - LIST_X;
 const STATS_Y = 196;
@@ -44,7 +46,11 @@ export class GarageScreen implements Screen {
     const bench = flow.benchInfo;
     return {
       menu: { items: list.items, cursor: list.cursor },
-      garage: { mode: flow.mode, slot: flow.slot, candidate: flow.candidate, errors: flow.errors, paint: flow.game.paint, ...(bench ? { bench } : {}) },
+      garage: {
+        mode: flow.mode, slot: flow.slot, candidate: flow.candidate, errors: flow.errors, paint: flow.game.paint, ...(bench ? { bench } : {}),
+        // What kind of machine the build is, with the part under the cursor counted as fitted.
+        kind: archetypeOf(flow.previewBuild, this.app.deps.catalog),
+      },
     };
   }
 
@@ -68,6 +74,12 @@ export class GarageScreen implements Screen {
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, G.heading, 5, 1, { color: COLORS.accent });
     drawText(ctx, G.back, LOGICAL_W - 5, 1, { align: 'right', color: COLORS.dim });
+    // What kind of machine this is, and what that kind is good at: as it would be with the part under the cursor
+    // fitted, and lit when that part would make it another kind than it is now.
+    const { catalog } = this.app.deps;
+    const kind = archetypeOf(flow.previewBuild, catalog);
+    const changes = kind !== archetypeOf(flow.game.build, catalog);
+    drawText(ctx, C.garage(C.names[kind], C.tags[kind]), LOGICAL_W / 2, 1, { align: 'center', color: changes ? COLORS.armor : COLORS.text });
 
     // Right: the slot list, or the parts for the chosen slot with the highlighted part's statistics.
     drawPanel(ctx, LIST_X, 20, LIST_W, 174);

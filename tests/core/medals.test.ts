@@ -165,6 +165,32 @@ describe('the medals', () => {
     expect(byId('met-all').progress(fresh()).need).toBe(kinds.length);
   });
 
+  test('the kinds of machine: three of them tried, twenty-five contracts won as one, and five as each of the seven', () => {
+    const as = (wonAs: GameState['wonAs']): GameState => ({ ...fresh(), wonAs });
+    expect(byId('class-3')).toMatchObject({ name: 'Second Opinion', tier: 1 });
+    expect(byId('class-25')).toMatchObject({ name: 'Specialist', tier: 2 });
+    expect(byId('class-all')).toMatchObject({ name: 'Full Hangar', tier: 3, text: 'Win 5 contracts as each of the 7 classes.' });
+    // Three kinds, once each: however many times the first two were flown, a third is what it takes.
+    expect(earns('class-3', as({ duellist: 40, bastion: 9 }))).toBe(false);
+    expect(earns('class-3', as({ duellist: 1, bastion: 1, lancer: 1 }))).toBe(true);
+    expect(byId('class-3').progress(as({ duellist: 1, bastion: 0, lancer: 2 }))).toEqual({ have: 2, need: 3 });
+    // Twenty-five as one kind: spread over several they do not add up.
+    expect(earns('class-25', as({ duellist: 24, bastion: 24, lancer: 24 }))).toBe(false);
+    expect(earns('class-25', as({ skirmisher: 25 }))).toBe(true);
+    expect(byId('class-25').progress(as({ duellist: 7, bastion: 12 }))).toEqual({ have: 12, need: 25 });
+    // Five as each: the count is of kinds that have their five, and all seven are asked for.
+    const five = { duellist: 5, marksman: 5, artillery: 5, lancer: 5, bastion: 5, skirmisher: 5, allrounder: 5 };
+    expect(earns('class-all', as(five))).toBe(true);
+    expect(earns('class-all', as({ ...five, lancer: 4 }))).toBe(false);
+    expect(byId('class-all').progress(as({ ...five, lancer: 4, artillery: 0 }))).toEqual({ have: 5, need: 7 });
+    expect(byId('class-all').progress(fresh())).toEqual({ have: 0, need: 7 });
+    // A kind this version does not know counts for none of the three.
+    expect(byId('class-3').progress(as({ duellist: 1, sapper: 3, medic: 2 } as GameState['wonAs']))).toEqual({ have: 1, need: 3 });
+    expect(earns('class-25', as({ sapper: 30 } as GameState['wonAs']))).toBe(false);
+    // The medals pay as their metal does, and the first is within a new pilot's reach: the three frames on the lot are three kinds.
+    expect(awardMedals(as({ allrounder: 1, skirmisher: 1, bastion: 1 }), MEDALS).earned.map((m) => m.id)).toContain('class-3');
+  });
+
   test('the last one asks for every other medal', () => {
     const all = byId('all');
     expect(MEDALS[MEDALS.length - 1]).toBe(all);

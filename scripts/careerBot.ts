@@ -50,6 +50,11 @@ export interface CareerOptions {
   bench?: boolean;
   /** Whether the pilot takes the other side's offer wherever a briefing has one; they fly the first offer, unless told to. */
   offers?: boolean;
+  /**
+   * The builds the pilot moves up through as the shop and the purse allow, the first the humblest: a pilot who
+   * flies one kind of machine all the way. Without it, the reference builds every career has been flown in.
+   */
+  ladder?: Build[];
 }
 
 export interface CareerReport {
@@ -78,13 +83,15 @@ export interface CareerReport {
   level: number;
   arenaRank: number;
   medals: number;
-  /** The reference build the pilot ended in. */
+  /** The reference build the pilot ended in; with a ladder of its own, the rung of it (`rung1` the first). */
   tier: string;
   cycle: number;
   /** The lowest the pilot's credits ever were. */
   lowestCredits: number;
   /** The steps the bench has taken on the parts the pilot ended in, all told. */
   benchSteps: number;
+  /** The contracts won as each kind of machine, as the game kept count. */
+  wonAs: Record<string, number>;
 }
 
 type Snap = {
@@ -103,6 +110,9 @@ function memoryStore(): KeyValueStore & { data: Record<string, string> } {
 }
 
 const TIERS = ['tier1', 'tier2', 'tier3', 'tier4', 'tier5', 'tier6'];
+/** What the pilot moves up through: the reference builds, or the ladder it was given. */
+const rungsOf = (options: CareerOptions): { name: string; build: Build }[] =>
+  options.ladder ? options.ladder.map((build, i) => ({ name: `rung${i + 1}`, build })) : TIERS.map((name) => ({ name, build: REFERENCE_BUILDS[name] }));
 /** Credits the pilot keeps back when buying: a bad contract must not leave it unable to pay for the next. */
 const RESERVE = 400;
 /** How often a contract is tried before the pilot goes to earn money and gear elsewhere, and how often that is allowed. */
@@ -140,9 +150,10 @@ export function playCareer(options: CareerOptions): CareerReport {
   };
   const report: CareerReport = {
     options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0, arenaLosses: 0, endings: [], side: [], offers: [],
-    credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity, benchSteps: 0,
+    credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity, benchSteps: 0, wonAs: {},
   };
   let tier = -1;
+  const rungs = rungsOf(options);
 
   /** Checks that what is stored is what is in memory, and that it would load. */
   const checkSave = (): void => {
@@ -196,8 +207,8 @@ export function playCareer(options: CareerOptions): CareerReport {
    */
   const gearUp = (): void => {
     const stock = new Set(app.stock().map((part) => part.id));
-    for (let t = TIERS.length - 1; t > tier; t--) {
-      const target: Build = REFERENCE_BUILDS[TIERS[t]];
+    for (let t = rungs.length - 1; t > tier; t--) {
+      const target: Build = rungs[t].build;
       const wanted = Object.values(target);
       let game: GameState = app.game!;
       if (!wanted.every((id) => stock.has(id) || ownedCount(game, id) > 0)) continue;
@@ -236,7 +247,7 @@ export function playCareer(options: CareerOptions): CareerReport {
       app.commit(game);
       app.go('hub');
       tier = t;
-      report.tier = TIERS[t];
+      report.tier = rungs[t].name;
       checkSave();
       return;
     }
@@ -247,7 +258,7 @@ export function playCareer(options: CareerOptions): CareerReport {
    * step at a time on whichever fitted part is furthest behind, for as long as the bench will take it.
    */
   const benchUp = (): void => {
-    if (options.bench === false || tier < TIERS.length - 1) return;
+    if (options.bench === false || tier < rungs.length - 1) return;
     let game: GameState = app.game!;
     for (let guard = 0; guard < 200; guard++) {
       const next = [...new Set(Object.values(game.build))]
@@ -358,6 +369,7 @@ export function playCareer(options: CareerOptions): CareerReport {
     ...report, credits: game.credits, level: levelFor(game.xp), arenaRank: game.arenaRank, medals: game.medals.length, cycle: game.cycle,
     lowestCredits: Number.isFinite(report.lowestCredits) ? report.lowestCredits : game.credits,
     benchSteps: Object.values(game.build).reduce((sum, id) => sum + stepOf(game.tuning, id), 0),
+    wonAs: { ...(game.wonAs ?? {}) },
   };
 }
 

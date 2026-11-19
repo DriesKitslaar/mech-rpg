@@ -72,7 +72,12 @@
 
 ### Task B2: archetypes
 
-- [ ] `archetypeOf(build, catalog)`, the garage's line, the record's count and the medals, a reference build for each kind at three stages, the whole story measured for each. Detailed when B3 is in.
+**Files:** `src/core/archetype.ts` (`ARCHETYPES`, `archetypeOf`, `wonAs`, `kindsWon`, `mostWonAs`, `recordWinAs`, `adviceFor`), `src/core/game.ts` (`wonAs`, checked on loading), `src/content/archetypeBuilds.ts` (`ARCHETYPE_BUILDS`, `STAGES`, `STAGE_BUDGET`), `src/content/medals.ts` (three medals), `src/content/strings.ts` and `nl/` (`classes`), `src/ui/pilotScreen.ts` (the page), `src/ui/garageScreen.ts` (the line), `src/ui/app.ts` (the count), `scripts/careerBot.ts` (`ladder`, `wonAs` in the report)
+
+- [x] The rule, with tests (`tests/core/archetype.test.ts`): seven kinds in order, each rule and what it yields to, the legs as sold, that no part of no consequence changes the name, the count and its check on loading.
+- [x] Builds measured for each kind at three stages; the ones chosen held to their stage (`tests/content/archetypeBuilds.test.ts`) and flown through whole careers (`tests/scripts/kinds.test.ts`).
+- [x] The page, the garage's line, the count and the suggestion (`tests/ui/classes.test.ts`), in both languages.
+- [ ] The medals' tests, the browser test with pictures, the guide, mutation, APK.
 
 ### Task B4: final check
 

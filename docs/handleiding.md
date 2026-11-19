@@ -38,6 +38,8 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 
    Je zit er niet aan vast: de onderdelen van de twee die je laat staan liggen vanaf het begin in
    de winkel, en je mag ze door elkaar gebruiken. Wie zonder kijken op A drukt krijgt de Hauler.
+   Het zijn meteen drie verschillende klassen: een All-rounder, een Skirmisher en een Bastion (zie
+   **Zeven klassen**).
 3. In het hoofdkwartier kies je **Contracts**. De cursor staat al op **Shakedown Run**, het eerste
    contract van het verhaal; de patrouille erboven is er voor als je geld nodig hebt.
 4. In het gevecht kies je **Fire**, een wapen en een onderdeel van de vijand. De kern (Core) is
@@ -59,7 +61,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 | The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
 | Garage | Onderdelen wisselen, verf kiezen (L1/R1), drie builds bewaren (links/rechts). |
 | Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
-| Pilot | Niveau en vaardigheden, medailles, en een logboek van alles wat je gedaan hebt. |
+| Pilot | Niveau en vaardigheden, medailles, een logboek van alles wat je gedaan hebt, en de zeven klassen (**Class**). |
 | Messages | Berichten van je opdrachtgevers. |
 | Database | Fiches van elke vijand die je bent tegengekomen, de mensen van Varn, achtergrond over de stad, wat je gevonden hebt (**Found**), de spelregels en de muziek. |
 | Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid, A en B omwisselen, de aftiteling opnieuw bekijken, terug naar het titelscherm. De opties gelden voor alle drie de opslagplekken. |
@@ -232,6 +234,40 @@ later terug.
 Het spel slaat vanzelf op na alles wat telt. Er zijn drie opslagplekken; op het titelscherm kies je
 **Continue** (het laatst gespeelde spel), **New Game** of **Load Game**. Terug naar het titelscherm
 ga je met **Options** en dan **Quit to Title**.
+
+## Zeven klassen
+
+Elke build is één van zeven soorten machine. De **Garage** zegt bovenin welke, met erachter waar
+die soort goed in is: bijvoorbeeld `DUELLIST: boosts in and strikes`. Sta je met de cursor op een
+onderdeel dat er een andere soort van zou maken, dan staat die er al, in het groen.
+
+Het spel loopt de regels van boven naar beneden af; de eerste die klopt, telt.
+
+| Klasse | Wat je ervoor nodig hebt | Waar hij goed in is |
+|---|---|---|
+| **Duellist** | Een kling in een van beide handen | De hardste klap die er is, en nooit zonder munitie. Je moet wel elke beurt eerst boosten. |
+| **Sharpshooter** | Een wapen dat moet opladen (`CHARGE`) | Eén groot schot om de beurt: het sloopt een onderdeel of breekt een veld. Traag tegen een groep. |
+| **Artillery** | Een salvo op de schouder (`SALVO`) | Raakt alles op het veld tegelijk: gemaakt voor zwermen. Neem er goede wapens bij voor de zware machines. |
+| **Lancer** | Twee of meer wapens, allemaal energie | Geen munitie en geen kosten per schot. Wordt heet. Wapens met `THERMAL` en `DRAIN` leggen de tegenstander lam. |
+| **Bastion** | Een schild, of benen met `MOB` 18 of lager | Incasseert en blijft staan. Ontwijkt niets. |
+| **Skirmisher** | Benen met `MOB` 40 of hoger | Moeilijk te raken en vroeg aan de beurt. Dun pantser. |
+| **All-rounder** | Al het andere | Kan alles redelijk en is nergens de beste in. |
+
+Hoofd, kern, armen, generator, booster, FCS en module doen er voor de klasse niet toe: die wissel
+je vrij. `MOB` staat op de benen zelf (het getal bij **Mobility** onderin de garage is lager, omdat
+daar het gewicht van je build in zit).
+
+Onder **Pilot** staat het blad **Class** met dezelfde lijst en hoeveel contracten je als elke
+klasse hebt gewonnen. Daaronder staat van de klasse onder de cursor een build die je nu kunt
+samenstellen: wit is wat je al hebt, roze wat je nog moet kopen, grijs wat nog nergens te koop is.
+Het spel kiest de beste die je met je credits kunt betalen; kan dat met geen enkele, dan de
+goedkoopste, om voor te sparen.
+
+Een contract dat je wint in je eigen mecha telt voor de klasse van die mecha. De Gauntlet, de
+training en een geleende mecha tellen niet. Er zijn drie medailles: voor drie klassen proberen,
+voor 25 contracten in één klasse, en voor vijf contracten in elk van de zeven.
+
+Alle zeven zijn doorgemeten: met elk kun je het hele verhaal uitspelen, ook op Veteran.
 
 ## De werkbank
 
