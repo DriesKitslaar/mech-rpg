@@ -1,7 +1,9 @@
-import { DEFAULT_CALLSIGN } from '../core/game';
+import { ARCHETYPES, adviceFor, archetypeOf, wonAs, type Archetype, type BuildAdvice } from '../core/archetype';
+import { DEFAULT_CALLSIGN, type BuildSlot, type GameState } from '../core/game';
 import { MEDAL_PAY, medalProgress, type Medal } from '../core/medals';
 import { OVERDRIVES, type OverdriveId } from '../core/battle';
 import { MAX_LEVEL, OVERDRIVE_LEVEL, checkBuyPerk, fittedOverdrive, levelFor, overdriveOpen, perkPoints, xpForLevel } from '../core/pilot';
+import { ARCHETYPE_BUILDS, STAGES } from '../content/archetypeBuilds';
 import { MEDALS } from '../content/medals';
 import { PERKS } from '../content/perks';
 import { STRINGS } from '../content/strings';
@@ -15,18 +17,27 @@ import { CHAR_W, COLORS, LINE, MEDAL_COLORS, charsFor, drawList, drawMedal, draw
 
 const P = STRINGS.pilot;
 const M = STRINGS.medals;
-export type PilotPage = 'perks' | 'drive' | 'medals' | 'record';
-const PAGES: PilotPage[] = ['perks', 'medals', 'record', 'drive'];
+export type PilotPage = 'perks' | 'drive' | 'medals' | 'record' | 'classes';
+const PAGES: PilotPage[] = ['perks', 'medals', 'record', 'classes', 'drive'];
 const O = STRINGS.overdrive;
+const C = STRINGS.classes;
+/** The suggested build is listed in two columns: what the frame is made of and what is inside it, then what it fights with. */
+const ADVICE_COLUMNS: BuildSlot[][] = [['head', 'core', 'arms', 'legs', 'generator', 'booster'], ['fcs', 'module', 'rightHand', 'leftHand', 'shoulder']];
 /** Medals listed at a time. */
 const MEDAL_ROWS = 13;
+/** Where, on the page of kinds, what makes a kind is written after its name; and how wide a column of the build to try is. */
+const CLASS_RULE_X = 92;
+const ADVICE_COLUMN_W = 146;
 
-/** The pilot: level and perks, the medals earned and still to earn, and the record of what they have done. */
+/** The pilot: level and perks, the medals earned and still to earn, the record of what they have done, and the kinds of machine there are. */
 export class PilotScreen implements Screen {
   private page: PilotPage = 'perks';
   private perks = new MenuList();
   private medals = new MenuList();
   private drives = new MenuList();
+  private classes = new MenuList();
+  /** The build last suggested on the page of kinds, with the kind and the game it was worked out for. */
+  private advised: { kind: Archetype; game: GameState; advice: BuildAdvice } | null = null;
 
   constructor(private app: App) {
     this.refresh();
@@ -44,6 +55,8 @@ export class PilotScreen implements Screen {
       id, label: O.names[id], enabled: overdriveOpen(game, id),
       note: fitted === id ? O.fitted : overdriveOpen(game, id) ? undefined : O.level(OVERDRIVE_LEVEL[id]),
     })));
+    // The kinds of machine, in the order their rules are asked: each with what was won as it, and lit once something was.
+    this.classes.setItems(ARCHETYPES.map((kind) => ({ id: kind, label: C.names[kind], enabled: wonAs(game, kind) > 0, note: String(wonAs(game, kind)) })));
     this.medals.setItems(MEDALS.map((medal) => {
       const { have, need, earned } = medalProgress(medal, game);
       return {
@@ -75,8 +88,33 @@ export class PilotScreen implements Screen {
     };
   }
 
+  /** The kind under the cursor on the page of kinds, and the kind the pilot's own build is. */
+  private get kind(): Archetype {
+    return (this.classes.selected?.id ?? ARCHETYPES[0]) as Archetype;
+  }
+
+  private get flown(): Archetype {
+    return archetypeOf(this.app.game!.build, this.app.deps.catalog);
+  }
+
+  /**
+   * A build of the kind under the cursor that the pilot could put together now, and what of it is still to be
+   * bought. The page asks at every frame; it is worked out again only when the cursor is on another kind or the
+   * game is another game than it was (anything bought, sold or earned makes it one).
+   */
+  private advice(): BuildAdvice {
+    const game = this.app.game!;
+    const kind = this.kind;
+    if (this.advised?.kind !== kind || this.advised.game !== game) {
+      const stock = new Set(this.app.stock().map((part) => part.id));
+      const builds = STAGES.map((stage) => ARCHETYPE_BUILDS[kind][stage]);
+      this.advised = { kind, game, advice: adviceFor(game, builds, (id) => stock.has(id), this.app.deps.catalog) };
+    }
+    return this.advised.advice;
+  }
+
   private get list(): MenuList | null {
-    return this.page === 'perks' ? this.perks : this.page === 'medals' ? this.medals : this.page === 'drive' ? this.drives : null;
+    return { perks: this.perks, medals: this.medals, drive: this.drives, classes: this.classes, record: null }[this.page];
   }
 
   private turn(by: number): void {
@@ -112,6 +150,7 @@ export class PilotScreen implements Screen {
       ...(this.page === 'medals' ? { detail: this.detail() } : {}),
       ...(this.page === 'drive' ? { overdrive: fittedOverdrive(game) ?? null } : {}),
       ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length), known: { rank: nameRank(game), renown: renownOf(game), next: nextNameAt(game) } } : {}),
+      ...(this.page === 'classes' ? { classes: { flown: this.flown, kind: this.kind, advice: this.advice() } } : {}),
     };
   }
 
@@ -134,8 +173,58 @@ export class PilotScreen implements Screen {
     if (this.page === 'perks') this.drawPerks(ctx);
     else if (this.page === 'drive') this.drawDrive(ctx);
     else if (this.page === 'medals') this.drawMedals(ctx);
+    else if (this.page === 'classes') this.drawClasses(ctx);
     else this.drawRecord(ctx);
     drawText(ctx, this.page === 'perks' ? P.hint : this.page === 'drive' ? O.hint : P.pageHint, LOGICAL_W / 2, 255, { align: 'center', color: COLORS.dim });
+  }
+
+  /**
+   * The kinds of machine: what makes each, in the order the rules are asked, and what was won as it; under
+   * that, what the one under the cursor is good at, and a build of it to put together now.
+   */
+  private drawClasses(ctx: CanvasRenderingContext2D): void {
+    const game = this.app.game!;
+    const { catalog } = this.app.deps;
+    const flown = this.flown;
+    drawPanel(ctx, 4, 18, LOGICAL_W - 8, 95);
+    drawText(ctx, C.heading, 12, 22, { color: COLORS.dim, size: 10 });
+    drawText(ctx, C.won, LOGICAL_W - 12, 22, { align: 'right', color: COLORS.dim, size: 10 });
+    this.classes.items.forEach((item, i) => {
+      const kind = item.id as Archetype;
+      const y = 34 + i * LINE;
+      const selected = i === this.classes.cursor;
+      if (selected) {
+        drawRowLight(ctx, 7, y + 1, LOGICAL_W - 17);
+        drawText(ctx, '>', 10, y, { color: COLORS.accent });
+      }
+      // The kind the pilot flies now stands out; one never won as is dim.
+      drawText(ctx, item.label, 18, y, { color: selected ? COLORS.accent : kind === flown ? COLORS.armor : item.enabled ? COLORS.text : COLORS.dim });
+      drawText(ctx, C.rules[kind], CLASS_RULE_X, y, { color: COLORS.dim });
+      drawText(ctx, item.note ?? '', LOGICAL_W - 12, y, { align: 'right', color: wonAs(game, kind) > 0 ? COLORS.text : COLORS.dim });
+    });
+
+    const kind = this.kind;
+    drawPanel(ctx, 4, 117, LOGICAL_W - 8, 135);
+    drawText(ctx, C.names[kind].toUpperCase(), 12, 121, { color: COLORS.accent });
+    if (kind === flown) drawText(ctx, C.yours, LOGICAL_W - 12, 121, { align: 'right', color: COLORS.armor });
+    wrap(C.notes[kind], charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((text, i) => drawText(ctx, text, 12, 133 + i * LINE));
+
+    // One to put together now: what the pilot owns of it is plain, what is still to be bought stands out, and what no shop sells yet is dim.
+    const advice = this.advice();
+    ctx.fillStyle = COLORS.border;
+    ctx.fillRect(12, 168, LOGICAL_W - 24, 1);
+    drawText(ctx, C.advice, 12, 171, { color: COLORS.dim, size: 10 });
+    const status = advice.unsold.length > 0 ? C.unsold : advice.toBuy.length === 0 ? C.owned : C.toBuy(advice.cost);
+    drawText(ctx, status, LOGICAL_W - 12, 171, { align: 'right', color: advice.toBuy.length === 0 ? COLORS.armor : COLORS.dim, size: 10 });
+    ADVICE_COLUMNS.forEach((slots, column) => slots.forEach((slot, row) => {
+      const id = advice.build[slot];
+      const x = 12 + column * ADVICE_COLUMN_W;
+      const y = 182 + row * LINE;
+      drawText(ctx, STRINGS.garage.slotTags[slot], x, y + 1, { color: COLORS.dim, size: 10 });
+      const name = id !== undefined && Object.hasOwn(catalog, id) ? catalog[id].name : '-';
+      const color = id === undefined || advice.unsold.includes(slot) ? COLORS.dim : advice.toBuy.includes(slot) ? COLORS.accent : COLORS.text;
+      drawText(ctx, name, x + 34, y, { color });
+    }));
   }
 
   /** The Overdrives: which there are, which is flown with, what the one under the cursor does, and how the meter fills. */

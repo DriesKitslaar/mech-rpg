@@ -260,6 +260,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'Reverse legs dodge better when they boost. Four legs are steady and aim shoulder weapons better. Tracks cannot boost, but guard best and are the hardest to stagger. Hover boosts cheaply and is easily knocked off balance.',
   },
   {
+    id: 'classes', title: 'CLASSES',
+    text: 'A build is one of seven classes, the first it fits: a blade makes a Duellist, a weapon that charges a Sharpshooter, a salvo Artillery, two or more weapons, all energy, a Lancer, a shield or legs of MOB 18 or less a Bastion, legs of MOB 40 or more a Skirmisher, anything else an All-rounder. The garage names yours.',
+  },
+  {
     id: 'pilot', title: 'LEVELS AND PERKS',
     text: 'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.',
   },

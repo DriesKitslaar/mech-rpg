@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { completeMission } from '../src/core/campaign';
 import { buy, equip, newGame, type GameState } from '../src/core/game';
 import type { Build } from '../src/core/types';
+import { ARCHETYPE_BUILDS } from '../src/content/archetypeBuilds';
 import { MISSIONS } from '../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
 import { REFERENCE_BUILDS } from '../src/content/referenceBuilds';
@@ -301,5 +302,97 @@ test('the two frames as their owner has them: in the garage, and in a battle beh
   await press(page, 'Enter');
   await waitForPhase(page, 'action');
   await page.screenshot({ path: shot('battle-sterling-struck') });
+  expect(errors).toEqual([]);
+});
+
+/** A pilot after the first act, in the Hauler, with a blade in the locker: every page read, every lesson told. */
+function afterFirstAct(extra: Partial<GameState> = {}): GameState {
+  let g = newGame(CATALOG, STARTER_BUILD, 'VANTA');
+  for (const id of ['intro-1', 'intro-2', 'hadron-1', 'lumen-1', 'undertow-1']) g = completeMission(g, id, MISSIONS);
+  return {
+    ...g, credits: 7200, inventory: { ...g.inventory, 'wpn-arc-blade': 1 }, scenes: SCENES.map((scene) => scene.id), lessons: ['momentum', 'rout'],
+    // Six contracts won so far, as two kinds; the medals a first win and a clean one earn are already held.
+    wonAs: { duellist: 4, bastion: 2 }, stats: { ...g.stats, contracts: 6, flawless: 1 }, medals: ['first-contract', 'first-flawless'], ...extra,
+  };
+}
+type Classes = { flown: string; kind: string; advice: { build: Build; toBuy: string[]; cost: number; unsold: string[] } };
+const classes = async (page: Page): Promise<Classes> => (await snap(page) as unknown as { classes: Classes }).classes;
+const garageKind = async (page: Page): Promise<string> => (await snap(page) as unknown as { garage: { kind: string; candidate: string | null } }).garage.kind;
+
+test('the kinds of machine: the garage names the one on the floor, the pilot\'s screen lists the seven with one to build now, and a third kind won as earns a medal', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await load(page, afterFirstAct());
+  // The garage: a Hauler with a rifle is an all-rounder, and says so along the top.
+  await choose(page, 'garage');
+  await waitForScreen(page, 'garage');
+  for (let i = 0; i < 90; i++) await nextFrame(page);
+  expect(await garageKind(page)).toBe('allrounder');
+  await page.screenshot({ path: shot('garage-class') });
+  // With the cursor on the blade in the locker it is a duellist already, before the blade is fitted.
+  await choose(page, 'leftHand');
+  for (let i = 0; i < 6; i++) {
+    const { garage } = await snap(page) as unknown as { garage: { candidate: string | null } };
+    if (garage.candidate === 'wpn-arc-blade') break;
+    await press(page, 'ArrowDown');
+  }
+  expect(await garageKind(page)).toBe('duellist');
+  await page.screenshot({ path: shot('garage-class-change') });
+  await press(page, 'Escape');
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  // The pilot's screen: the fourth page is the seven kinds.
+  await choose(page, 'pilot');
+  await waitForScreen(page, 'pilot');
+  for (let i = 0; i < 3; i++) await press(page, 'KeyE');
+  expect((await snap(page) as unknown as { page: string }).page).toBe('classes');
+  for (let i = 0; i < 60; i++) await nextFrame(page);
+  expect((await snap(page)).menu.items.map((item) => [item.id, item.note])).toEqual([
+    ['duellist', '4'], ['marksman', '0'], ['artillery', '0'], ['lancer', '0'], ['bastion', '2'], ['skirmisher', '0'], ['allrounder', '0'],
+  ]);
+  expect(await classes(page)).toMatchObject({ flown: 'allrounder', kind: 'duellist', advice: { build: ARCHETYPE_BUILDS.duellist.early, unsold: [] } });
+  await page.screenshot({ path: shot('pilot-classes') });
+  for (let i = 0; i < 3; i++) await press(page, 'ArrowDown');
+  // The lancer of the first act: nothing of it is beyond what this pilot has to spend.
+  const lancer = await classes(page);
+  expect(lancer).toMatchObject({ kind: 'lancer', advice: { build: ARCHETYPE_BUILDS.lancer.early, unsold: [] } });
+  expect(lancer.advice.cost).toBeLessThanOrEqual(7200);
+  await page.screenshot({ path: shot('pilot-classes-lancer') });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  // A patrol won in the Hauler is one for the all-rounders: the third kind this pilot has won as, and a medal for it.
+  await acceptContract(page, 'patrol');
+  expect(await autoBattle(page)).toBe('victory');
+  await press(page, 'Enter');
+  await waitForScreen(page, 'settlement');
+  const after = await kept(page);
+  expect(after.wonAs).toEqual({ duellist: 4, bastion: 2, allrounder: 1 });
+  expect(after.medals).toContain('class-3');
+  // It is announced over the settlement, once that has come in.
+  await page.waitForFunction(() => (window as any).__game.snapshot().toast === 'class-3');
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: shot('settlement-class-medal') });
+  expect(errors).toEqual([]);
+});
+
+test('the kinds of machine in Dutch', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const base = afterFirstAct();
+  await load(page, { ...base, settings: { ...base.settings, language: 'nl' } });
+  await choose(page, 'garage');
+  await waitForScreen(page, 'garage');
+  for (let i = 0; i < 90; i++) await nextFrame(page);
+  await page.screenshot({ path: shot('nl-garage-class') });
+  await press(page, 'Escape');
+  await waitForScreen(page, 'hub');
+  await choose(page, 'pilot');
+  await waitForScreen(page, 'pilot');
+  for (let i = 0; i < 3; i++) await press(page, 'KeyE');
+  for (let i = 0; i < 60; i++) await nextFrame(page);
+  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Duellist', 'Scherpschutter', 'Artillerie', 'Lansier', 'Bastion', 'Jager', 'Allrounder']);
+  await press(page, 'ArrowDown');
+  await page.screenshot({ path: shot('nl-pilot-classes') });
   expect(errors).toEqual([]);
 });

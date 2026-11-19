@@ -263,7 +263,40 @@ export const STRINGS = {
     heading: 'PILOT', level: 'LEVEL', xp: 'XP', next: 'NEXT LEVEL', maxLevel: 'MAX LEVEL', points: 'PERK POINTS',
     hint: 'A: spend a point   L1/R1: page   B: back', pageHint: 'L1/R1: page   B: back',
     noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
-    pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDALS', record: 'RECORD' },
+    pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDALS', record: 'RECORD', classes: 'CLASS' },
+  },
+  // What kind of machine a build is: what each kind is called, what makes one, what it is good at, and one to try.
+  classes: {
+    heading: 'A MACHINE IS THE FIRST OF THESE IT FITS', won: 'WON', yours: 'YOURS NOW',
+    names: {
+      duellist: 'Duellist', marksman: 'Sharpshooter', artillery: 'Artillery', lancer: 'Lancer', bastion: 'Bastion', skirmisher: 'Skirmisher',
+      allrounder: 'All-rounder',
+    },
+    // What makes one. The figures are the rules' own; a test holds them to it.
+    rules: {
+      duellist: 'A blade in either hand', marksman: 'A weapon that has to charge', artillery: 'A salvo on the shoulder',
+      lancer: 'Two weapons or more, all energy', bastion: 'A shield, or legs of MOB 18 or less', skirmisher: 'Legs of MOB 40 or more',
+      allrounder: 'Anything else',
+    },
+    // What it is good at, in a few words: said in the garage, after the name.
+    tags: {
+      duellist: 'boosts in and strikes', marksman: 'one great shot at a time', artillery: 'fire on the whole field',
+      lancer: 'beams that never run dry', bastion: 'takes it and stays standing', skirmisher: 'hard to hit, quick to act',
+      allrounder: 'no weakness, no speciality',
+    },
+    notes: {
+      duellist: 'Closes in on a boost and strikes with a blade: a heavy blow every turn, and it never runs dry. Every strike needs a boost first.',
+      marksman: 'Charges in one turn and fires in the next: one great shot that takes a part off or breaks a field. Slow to answer a crowd.',
+      artillery: 'One salvo is fired at every machine on the field. Made for swarms and escorts. Carry good guns beside it: one heavy machine barely notices.',
+      lancer: 'Nothing to reload and no bill for a shot. Hot and hungry: heat and the generator are its limits. Thermal and drain weapons cook and starve the other machine.',
+      bastion: 'Takes the blow and stays standing: a shield to guard behind, or legs that carry the heaviest plate. It is not built to dodge.',
+      skirmisher: 'Hard to hit and first to act: it boosts, shoots and is gone. Thin plate: what does land, lands hard.',
+      allrounder: 'Does every job and owns none of them: room for a gun of each sort, and an answer to most things.',
+    },
+    garage: (name: string, tag: string) => `${name.toUpperCase()}: ${tag}`,
+    // A build of the kind under the cursor that the shop can supply now, and what of it is still to be bought.
+    advice: 'ONE TO FLY NOW', owned: 'You own all of it', toBuy: (credits: number) => `Still to buy: ${credits} c`,
+    unsold: 'Not all of it is sold yet',
   },
   medals: {
     heading: 'MEDALS', earned: 'MEDAL EARNED', earnedMany: 'MEDALS EARNED', count: (n: number) => `${n} medals`, pay: (credits: number) => `+${credits} c`, held: 'EARNED', pays: (credits: number) => `Pays ${credits} c`,

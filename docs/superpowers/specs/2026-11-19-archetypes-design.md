@@ -142,20 +142,59 @@ So a pilot meets each frame on the field before owning it.
 
 ### Archetypes the game knows (B2)
 
-A build is one of a handful of kinds, by what it carries and how it moves: for instance a blade
-and quick legs make a duellist, tracks or a shield and thick plate a bastion, a charge weapon and
-a sharp eye a marksman, a salvo on a wide stance artillery, two energy weapons a lancer, quick
-legs and light guns a skirmisher, and anything else a workhorse. The rules are few, checked in
-order, and written so that swapping a part of no consequence does not change the name.
+A build is one of seven kinds, asked about in this order, and it is the first that fits:
 
-The garage shows the name with one line on what that kind of machine is good at. The record keeps
-the contracts won as each kind, and there are medals for flying several kinds. Each kind has a
-reference build at three stages of the story, and each is measured over the whole story: a kind
-that cannot finish it has its parts looked at, not the fights.
+| Kind | What makes one |
+| --- | --- |
+| Duellist | A blade in either hand |
+| Sharpshooter (`marksman`) | A weapon that has to charge |
+| Artillery | A salvo |
+| Lancer | Two weapons or more, every one of them an energy weapon |
+| Bastion | A shield, or legs of mobility 18 or less |
+| Skirmisher | Legs of mobility 40 or more |
+| All-rounder | Anything else |
 
-**Edges.** A rule of its own for each kind (a duellist's kill giving the boost back, and the like)
-is the obvious next thing and is not promised here: it is added only for kinds the measurements
-show to be behind, and only after the same measurements say what it does to the hard fights.
+Only the weapons, a shield and the legs are asked about, and the legs are read as they are sold,
+not as the load leaves them: a head, a core, arms, a generator, a booster, fire control or a module
+can be changed, and a heavier gun fitted, without the machine being called something else. The
+three starters come out as three kinds (all-rounder, skirmisher, bastion), and so do the reference
+builds (all-rounder, bastion in heavy plate, duellist on the ladder).
+
+**Where the pilot meets it.** The garage says the kind and what it is good at along its top, as it
+would be with the part under the cursor fitted, lit when that part would change it. The pilot's
+screen has a page of the seven: what makes each, what was won as each, what the one under the
+cursor is good at, and a build of it to put together now. That build is the best of the kind's
+three (below) whose every part is owned or on the shelf and whose missing parts the credits in
+hand pay for; when they pay for none it is the one nearest to complete, and before anything of it
+is sold it is the first, with what no shop sells yet shown dim. A contract won in the pilot's own
+machine is counted for the kind that machine is (not a lent mech, a drill or a Gauntlet floor), and
+three medals go by that count: three kinds tried, twenty-five contracts as one, five as each.
+
+**A build of each kind at three stages** (`src/content/archetypeBuilds.ts`): bought with what the
+first act sells (7200 credits at most), with what the choice sells (13700), and with what the arena
+pays out (28100). They are what the page suggests and what the tests fly.
+
+**What measuring showed.** Several builds of each kind were measured at each stage before these
+were chosen (thirty to forty battles a fight with the game's own automatic pilot, no perks until
+the audit). The figures are wins in a hundred over all the fights of a stage.
+
+- Early (the second contracts, the rival, the three choices), every kind wins 93 to 100.
+- In the war (its nine contracts and three finales) the kinds spread out: sharpshooter 95,
+  skirmisher 93, duellist 92, all-rounder 90, bastion 83, artillery 81, lancer 77. The lancer is the
+  one that had to be found: built round the emitters that only burn it wins 19 to 50, because a
+  turn's energy does not pay for them and a cooler generator makes less of it; built round the
+  weapons that heat and drain the other machine it wins 77. A salvo does little to one heavy
+  machine, so artillery carries two good guns beside it.
+- At the audit and the two verdicts every pilot is offered, with a veteran's perks, every kind wins
+  91 to 100.
+- Whole careers: the bot flew each kind's ladder by three roads on Standard and finished all
+  twenty-one without a patrol flown for money and with at most one story contract lost; on Veteran
+  all seven finish too, the duellist with thirty patrols and the rest with ten at most.
+
+**Edges.** No kind was given a rule of its own. The measurements did not ask for one: the kind
+furthest behind gets through the story on Veteran with parts the shop already sells. A rule for
+each kind stays the obvious next thing, and stays out until somebody wants the balance of the
+whole story moved for it.
 
 ## Approaches considered
 

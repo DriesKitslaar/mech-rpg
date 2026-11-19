@@ -1,4 +1,5 @@
 import { chooseEnemyAction } from '../../src/core/ai';
+import { ARCHETYPES, QUICK_LEGS, SLOW_LEGS, archetypeOf } from '../../src/core/archetype';
 import {
   HEAT_LIMIT, MAX_ENEMIES, OVERKILL, SHATTER, activeUnit, applyAction, checkAction, createBattle, guardFactor, previewShot, type BattleState,
 } from '../../src/core/battle';
@@ -16,7 +17,7 @@ import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { MEDALS } from '../../src/content/medals';
 import { MISSIONS } from '../../src/content/missions';
-import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
+import { CATALOG, DEMO_BUILD, SHOP_PARTS, STARTER_BUILD } from '../../src/content/parts';
 import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
 
@@ -45,6 +46,76 @@ describe('the action that sheds heat', () => {
     for (const text of [...MANUAL.map((t) => t.text), ...DRILLS.flatMap((d) => [...d.briefing, d.debrief, ...(d.battle.talk ?? []).map((l) => l.text)])]) {
       expect(text).not.toMatch(/\bCool (sheds|down|off)\b/);
     }
+  });
+});
+
+describe('the classes', () => {
+  test('the manual names all seven in the order they are asked about, with the figures the rules go by, and each is what it says of a build that fits it', () => {
+    const text = topic('classes');
+    expect(ARCHETYPES).toHaveLength(7);
+    expect(text).toContain('one of seven classes, the first it fits');
+    // Named in the order of the rules, each by the name the game gives it.
+    const names = ARCHETYPES.map((kind) => STRINGS.classes.names[kind]);
+    expect(names).toEqual(['Duellist', 'Sharpshooter', 'Artillery', 'Lancer', 'Bastion', 'Skirmisher', 'All-rounder']);
+    const at = names.map((name) => text.indexOf(name));
+    expect(at.every((i) => i >= 0)).toBe(true);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+    expect(text).toContain(`legs of MOB ${SLOW_LEGS} or less a Bastion`);
+    expect(text).toContain(`legs of MOB ${QUICK_LEGS} or more a Skirmisher`);
+    // And each clause is true of the plainest build that fits it.
+    const hauler = (extra: object) => archetypeOf({ ...STARTER_BUILD, rightHand: undefined, ...extra }, CATALOG);
+    expect(hauler({ rightHand: 'wpn-arc-blade' })).toBe('duellist');
+    expect(hauler({ rightHand: 'wpn-coil-pistol' })).toBe('marksman');
+    expect(hauler({ rightHand: 'wpn-rivet-rifle', shoulder: 'wpn-micro-salvo' })).toBe('artillery');
+    expect(hauler({ rightHand: 'wpn-arc-pistol', leftHand: 'wpn-pulse-carbine' })).toBe('lancer');
+    expect(hauler({ rightHand: 'wpn-rivet-rifle', leftHand: 'shd-plate' })).toBe('bastion');
+    expect(hauler({ rightHand: 'wpn-rivet-rifle', legs: 'legs-dozer' })).toBe('bastion');
+    expect(hauler({ rightHand: 'wpn-rivet-rifle', legs: 'legs-courier' })).toBe('skirmisher');
+    expect(hauler({ rightHand: 'wpn-rivet-rifle' })).toBe('allrounder');
+  });
+
+  test('what the page says each class is good at is true of the parts that make one', () => {
+    const N = STRINGS.classes.notes;
+    const weapons = SHOP_PARTS.filter((part): part is Weapon => part.kind === 'weapon');
+    // A blade never runs dry, and no blade strikes without a boost.
+    expect(N.duellist).toContain('it never runs dry');
+    expect(N.duellist).toContain('Every strike needs a boost first');
+    const blades = weapons.filter((weapon) => weapon.melee);
+    expect(blades.length).toBeGreaterThan(0);
+    expect(blades.every((weapon) => weapon.ammo === null)).toBe(true);
+    for (const blade of blades) {
+      const s = toPlayer(createBattle({ ...STARTER_BUILD, rightHand: blade.id }, [ENEMIES['gun-turret']], CATALOG, 3));
+      expect(checkAction(s, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' }, CATALOG), blade.id).toBe('needsBoost');
+    }
+    // No energy weapon has anything to reload or bills anything for a shot; and energy weapons are the hot ones.
+    expect(N.lancer).toContain('Nothing to reload and no bill for a shot');
+    const energy = weapons.filter((weapon) => weapon.damageType === 'energy');
+    expect(energy.every((weapon) => weapon.ammo === null && weapon.costPerShot === 0)).toBe(true);
+    const guns = weapons.filter((weapon) => weapon.mount === 'hand' && !weapon.melee && !weapon.charge);
+    const mean = (list: Weapon[], of: (weapon: Weapon) => number): number => list.reduce((sum, weapon) => sum + of(weapon), 0) / list.length;
+    const hot = (weapon: Weapon): number => weapon.heat / weapon.damage;
+    const hungry = (weapon: Weapon): number => weapon.energy / weapon.damage;
+    expect(mean(guns.filter((w) => w.damageType === 'energy'), hot)).toBeGreaterThan(mean(guns.filter((w) => w.damageType !== 'energy'), hot));
+    expect(mean(guns.filter((w) => w.damageType === 'energy'), hungry)).toBeGreaterThan(mean(guns.filter((w) => w.damageType !== 'energy'), hungry));
+    // There are energy weapons that heat the other machine and energy weapons that drain it.
+    expect(N.lancer).toContain('Thermal and drain weapons');
+    expect(energy.some((weapon) => weapon.trait === 'thermal') && energy.some((weapon) => weapon.trait === 'drain')).toBe(true);
+    // A weapon that charges fires in the turn after; a salvo is one shot at every machine.
+    expect(N.marksman).toContain('Charges in one turn and fires in the next');
+    expect(STRINGS.partInfo.charge).toBe('CHARGE: fires a turn later');
+    expect(N.artillery).toContain('One salvo is fired at every machine on the field');
+    expect(STRINGS.partInfo.traits.salvo()).toBe('SALVO: hits every enemy');
+    // The legs that make a bastion are the ones that carry the most; the ones that make a skirmisher carry the least.
+    expect(N.bastion).toContain('legs that carry the heaviest plate');
+    const legs = SHOP_PARTS.filter((part) => part.kind === 'legs') as (typeof SHOP_PARTS[number] & { mobility: number; capacity: number })[];
+    const byLoad = [...legs].sort((a, b) => b.capacity - a.capacity);
+    expect(byLoad.slice(0, 2).every((part) => part.mobility <= SLOW_LEGS)).toBe(true);
+    const slow = legs.filter((part) => part.mobility <= SLOW_LEGS);
+    const quick = legs.filter((part) => part.mobility >= QUICK_LEGS);
+    expect(Math.min(...slow.map((part) => part.capacity))).toBeGreaterThan(Math.max(...quick.map((part) => part.capacity)));
+    // And the quick ones act first: the round goes by mobility.
+    expect(N.skirmisher).toContain('first to act');
+    expect(topic('turn')).toContain('The more mobile unit acts first each round');
   });
 });
 

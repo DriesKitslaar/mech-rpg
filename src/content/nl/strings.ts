@@ -232,7 +232,36 @@ export const STRINGS_NL = {
     heading: 'PILOOT', level: 'LEVEL', xp: 'XP', next: 'VOLGEND LVL', maxLevel: 'MAX LEVEL', points: 'PERKPUNTEN',
     hint: 'A: besteed punt   L1/R1: blad   B: terug', pageHint: 'L1/R1: blad   B: terug',
     noPoints: 'Geen perkpunten. Win contracten voor levels.', maxed: 'Deze perk zit op de hoogste rang.',
-    pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDAILLE', record: 'DOSSIER' },
+    pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDAILLE', record: 'DOSSIER', classes: 'KLASSE' },
+  },
+  classes: {
+    heading: 'EEN MACHINE IS DE EERSTE DIE PAST', won: 'WINST', yours: 'NU DE JOUWE',
+    names: {
+      duellist: 'Duellist', marksman: 'Scherpschutter', artillery: 'Artillerie', lancer: 'Lansier', bastion: 'Bastion', skirmisher: 'Jager',
+      allrounder: 'Allrounder',
+    },
+    rules: {
+      duellist: 'Een kling in een hand', marksman: 'Een wapen dat moet laden', artillery: 'Een salvo op de schouder',
+      lancer: 'Twee of meer wapens, alle energie', bastion: 'Een schild, of benen tot MOB 18', skirmisher: 'Benen vanaf MOB 40',
+      allrounder: 'Al het andere',
+    },
+    tags: {
+      duellist: 'boost erin en slaat toe', marksman: 'een groot schot per keer', artillery: 'vuur over het hele veld',
+      lancer: 'stralen die nooit opraken', bastion: 'incasseert en blijft staan', skirmisher: 'lastig te raken, snel weg',
+      allrounder: 'geen zwakte, geen kunstje',
+    },
+    notes: {
+      duellist: 'Boost erheen en slaat toe met een kling: elke beurt een zware klap, en nooit leeg. Elke slag vraagt eerst een boost.',
+      marksman: 'Laadt een beurt en vuurt de volgende: een groot schot dat een onderdeel sloopt of een veld breekt. Traag tegen een menigte.',
+      artillery: 'Een salvo vuurt op elke machine op het veld. Gemaakt voor zwermen en escortes. Neem er goede wapens bij: een zware machine merkt het amper.',
+      lancer: 'Niets te herladen en geen rekening per schot. Heet en hongerig: hitte en de generator zijn de grens. Thermisch en aftap koken en verhongeren de ander.',
+      bastion: 'Incasseert en blijft staan: een schild om achter te dekken, of benen voor het zwaarste pantser. Niet gebouwd om te ontwijken.',
+      skirmisher: 'Lastig te raken en als eerste aan zet: boost, schiet en is weg. Dun pantser: wat raakt, komt hard aan.',
+      allrounder: 'Doet elk werk en blinkt nergens uit: plek voor elk soort wapen, en een antwoord op het meeste.',
+    },
+    garage: (name: string, tag: string) => `${name.toUpperCase()}: ${tag}`,
+    advice: 'BOUW ER NU EEN', owned: 'Je hebt alles al', toBuy: (credits: number) => `Nog te kopen: ${credits} c`,
+    unsold: 'Nog niet alles is te koop',
   },
   medals: {
     heading: 'MEDAILLE', earned: 'MEDAILLE ERBIJ', earnedMany: 'MEDAILLES ERBIJ', count: (n: number) => `${n} stuks`, pay: (credits: number) => `+${credits} c`, held: 'BEHAALD', pays: (credits: number) => `Loon ${credits} c`,

@@ -15,6 +15,7 @@ import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import {
   TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, learn, newGame, type GameState, type LightDetail, type Settings,
 } from '../core/game';
+import { archetypeOf, recordWinAs } from '../core/archetype';
 import { startMissionBattle } from '../core/mission';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
@@ -1080,6 +1081,8 @@ export class App {
       met: [...next.met, ...fought.met.filter((kind) => !next.met.includes(kind))],
       ...(fought.overdrives ? { overdrives: (next.overdrives ?? 0) + fought.overdrives } : {}),
     };
+    // A win in the pilot's own build is a win for the kind of machine that build is. A mech that was lent is nobody's kind.
+    if (settlement.won && mission.loaner === undefined) next = recordWinAs(next, archetypeOf(next.build, this.deps.catalog));
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
       else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);
