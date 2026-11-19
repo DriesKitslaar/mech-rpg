@@ -232,7 +232,7 @@ describe('saved builds', () => {
   test('left or right from the slot list opens three slots, empty at first', () => {
     const flow = new GarageFlow(fresh(), CATALOG);
     toLoadouts(flow);
-    expect(flow.loadouts.items.map((i) => [i.id, i.label])).toEqual([['0', '1  (empty)'], ['1', '2  (empty)'], ['2', '3  (empty)']]);
+    expect(flow.loadouts.items.map((i) => [i.id, i.label])).toEqual([['0', '1  Empty'], ['1', '2  Empty'], ['2', '3  Empty']]);
     flow.onInput('cancel');
     expect(flow.mode).toBe('slots');
     flow.onInput('left');
@@ -304,7 +304,7 @@ describe('saved builds', () => {
     flow.onInput('confirm');
     expect(choose(flow, 'clear')).toBe('changed');
     expect(flow.game.loadouts).toEqual([null, null, null]);
-    expect(flow.loadouts.items[2].label).toBe('3  (empty)');
+    expect(flow.loadouts.items[2].label).toBe('3  Empty');
   });
 
   test('back and cancel leave the menu without changing anything', () => {

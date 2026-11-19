@@ -409,7 +409,7 @@ export const STRINGS = {
     weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', cooling: 'Cooling',
     evasion: 'Boost evade', volley: 'Volley EN', back: 'B: back',
     factoryPaint: 'Factory', paint: (name: string) => `L1/R1 PAINT: ${name}`, toLoadouts: 'LEFT/RIGHT: SAVED BUILDS',
-    loadouts: 'SAVED BUILDS', emptyLoadout: '(empty)', load: 'Load', save: 'Save current build', clear: 'Clear', backItem: 'Back',
+    loadouts: 'SAVED BUILDS', emptyLoadout: 'Empty', load: 'Load', save: 'Save current build', clear: 'Clear', backItem: 'Back',
     missing: (name: string) => `Missing: ${name}`,
     slotTags: {
       head: 'HEAD', core: 'CORE', arms: 'ARMS', legs: 'LEGS', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
@@ -422,7 +422,7 @@ export const STRINGS = {
     benchAtLimit: 'No further this cycle', benchAtEnd: 'As far as it goes', benchShort: 'Not enough credits',
   },
   shop: {
-    heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'CR',
+    heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'c',
     tabs: {
       head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', booster: 'Bst', fcs: 'FCS', module: 'Mod',
       hand: 'Hand', shoulder: 'Shldr',

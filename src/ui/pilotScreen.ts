@@ -1,3 +1,4 @@
+import { DEFAULT_CALLSIGN } from '../core/game';
 import { MEDAL_PAY, medalProgress, type Medal } from '../core/medals';
 import { OVERDRIVES, type OverdriveId } from '../core/battle';
 import { MAX_LEVEL, OVERDRIVE_LEVEL, checkBuyPerk, fittedOverdrive, levelFor, overdriveOpen, perkPoints, xpForLevel } from '../core/pilot';
@@ -125,8 +126,9 @@ export class PilotScreen implements Screen {
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, P.heading, 5, 1, { color: COLORS.accent });
-    // The callsign stands a little after the heading, however long the heading is in the language set.
-    drawText(ctx, game.callsign, 5 + Math.round(P.heading.length * CHAR_W) + 6, 1);
+    // The callsign stands a little after the heading, however long the heading is in the language set. A pilot
+    // who never took a name is called what the heading already says: it is not written twice.
+    if (game.callsign !== DEFAULT_CALLSIGN) drawText(ctx, game.callsign, 5 + Math.round(P.heading.length * CHAR_W) + 6, 1);
     drawTabs(ctx, LOGICAL_W - 5, 1, PAGES.map((page) => P.pages[page]), PAGES.indexOf(this.page));
 
     if (this.page === 'perks') this.drawPerks(ctx);

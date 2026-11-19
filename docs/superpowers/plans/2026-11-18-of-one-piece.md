@@ -73,6 +73,10 @@
 
 ### Task U3: the testers' findings
 
+(As it went: the testers were stopped early. The notes of the one who had been through every kept screenshot were
+checked against the pictures and answered: `tests/ui/toastRoom.test.ts`, `tests/ui/onePiece.test.ts`, and the notes'
+answers in the spec. The three play-throughs are still to be done.)
+
 - [ ] Read all four `findings.md`. For each finding: reproduce it (the picture, then the game), decide (mend / leave with the reason), group by what mends it.
 - [ ] Mend worst first, one group at a time, each with a test that fails before and passes after.
 - [ ] Write "What the testers found, and what it changed" in the spec.

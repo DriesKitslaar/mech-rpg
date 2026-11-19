@@ -716,7 +716,8 @@ export class BattleScreen {
     ctx.fillRect(x, y + h - 1, LOGICAL_W, 1);
     const title = this.opts.title ?? this.opts.label ?? '';
     drawText(ctx, title, x + LOGICAL_W / 2, y + 7, { size: 16, align: 'center', color: COLORS.accent });
-    drawText(ctx, this.instruction(), x + LOGICAL_W / 2, y + 27, { align: 'center', color: COLORS.heat });
+    // What the battle asks, in capitals whatever it asks: the banner is written in them throughout.
+    drawText(ctx, this.instruction().toUpperCase(), x + LOGICAL_W / 2, y + 27, { align: 'center', color: COLORS.heat });
     // A battle against ordinary machines says so before the first shot: the rule that holds there, at the end of that line.
     if (this.flow.state.open) drawText(ctx, STRINGS.battleIntro.open, x + LOGICAL_W - 8, y + 27, { align: 'right', color: COLORS.accent });
     // Who is flying it, once that is somebody: on a band of its own under the banner, coming and going with it.

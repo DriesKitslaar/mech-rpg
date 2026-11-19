@@ -169,6 +169,17 @@ describe('in the first contract of a new game', () => {
     expect(battle(app).message).toBe(STRINGS.momentum.ready(rifle.name));
   });
 
+  test('what is kept is written once: the frames after it save nothing', () => {
+    const { app, store } = firstKill();
+    expect(savedGame(store).lessons).toEqual(['momentum']);
+    let writes = 0;
+    const write = store.setItem.bind(store);
+    store.setItem = (key: string, value: string): void => { writes += 1; write(key, value); };
+    for (let i = 0; i < 200; i++) app.update(16);
+    expect(writes).toBe(0);
+    expect(battle(app).outcome).toBe('ongoing');
+  });
+
   test('a pilot who has been told is not told again, in that battle or the next contract', () => {
     const { app, store, after } = firstKill({ ...fresh(), lessons: ['momentum'] });
     expect(after).not.toContain(LESSON_LINES.momentum.text);

@@ -149,8 +149,12 @@ const TOAST_SLIDE_MS = 180;
 
 /** More medals than this earned at once are announced together. */
 const TOASTS_AT_ONCE = 3;
-/** Screens that are not interrupted: an announcement waits until they are over. */
-const NO_TOASTS: ScreenName[] = ['battle', 'scene', 'ending', 'credits', 'title', 'callsign'];
+/**
+ * The screens with room at the foot for an announcement. Anywhere else it would lie over a line of
+ * button hints, a figure or a line of text for as long as it is up, and a battle or a page of story
+ * is not interrupted at all: there it waits, and is announced where there is room for it.
+ */
+const TOAST_ROOM: ScreenName[] = ['hub', 'settlement', 'options'];
 
 /** What the battles of a contract added up to, for the record. */
 export interface Fought { tally: Stats; met: string[]; retreated: boolean; overdrives?: number }
@@ -236,8 +240,6 @@ class MissionHost implements Screen {
   private overdrives = 0;
   /** What there is to say about the battle the contract was lost in; null after a win or a retreat. */
   private tip: Advice | null = null;
-  /** How many of the lessons said in the battle being fought have been written into the kept game. */
-  private learnt = 0;
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
@@ -278,7 +280,6 @@ class MissionHost implements Screen {
     // What Dispatch explains once is explained on a contract: the simulator and the Gauntlet have voices of their own.
     const told = game?.lessons ?? [];
     const lessons = drill ? {} : Object.fromEntries(LESSONS.filter((id) => !told.includes(id)).map((id) => [id, LESSON_LINES[id]]));
-    this.learnt = 0;
     this.flow = new BattleFlow(state, catalog, {
       talk: this.mission.battles[this.index].talk, quiet: fast, cycle: this.app.game?.cycle ?? 0, lessons, ...(opening ? { opening } : {}),
     });
@@ -368,12 +369,12 @@ class MissionHost implements Screen {
     this.bookIfOver();
   }
 
-  /** What the pilot has just been told is kept at once: closing the game in the middle of that fight does not bring the line back. */
+  /**
+   * What the pilot has just been told is kept at once: closing the game in the middle of that fight does not bring
+   * the line back. (Asked every frame: what the kept game already holds changes nothing and saves nothing.)
+   */
   private keepLessons(): void {
-    const said = this.flow.taught;
-    if (said.length === this.learnt) return;
-    this.app.learn(said.slice(this.learnt));
-    this.learnt = said.length;
+    this.app.learn(this.flow.taught);
   }
 
   draw(ctx: CanvasRenderingContext2D): void { this.screen.draw(ctx); }
@@ -1156,11 +1157,12 @@ export class App {
     this.stepToast(dtMs);
   }
 
-  /** One announcement at a time, and none over a battle or a page of story: they wait for what comes after. */
+  /** One announcement at a time, and only where there is room for one (`TOAST_ROOM`): elsewhere they wait. */
   private stepToast(dtMs: number): void {
+    const room = TOAST_ROOM.includes(this.name);
     if (this.toast) {
-      // One that is up when a battle or a page of story begins steps aside, and is announced again after it.
-      if (NO_TOASTS.includes(this.name)) {
+      // One that is up when the pilot goes somewhere without room for it steps aside, and is announced again after.
+      if (!room) {
         this.toasts.unshift(this.toast.item);
         this.toast = null;
         return;
@@ -1169,15 +1171,15 @@ export class App {
       if (this.toast.left <= 0) this.toast = null;
       return;
     }
-    if (this.toasts.length === 0 || NO_TOASTS.includes(this.name)) return;
+    if (this.toasts.length === 0 || !room) return;
     this.toast = { item: this.toasts.shift()!, left: TOAST_MS };
     this.deps.sfx?.play(this.toast.item.sound);
   }
 
   /**
-   * An announcement: a strip that slides up from the bottom edge, stays, and slides back. Down there it
-   * covers a line of button hints for a moment; at the top it would cover the name of the screen, or
-   * the heading of a settlement.
+   * An announcement: a strip that slides up from the bottom edge, stays, and slides back. It is only
+   * shown on a screen whose foot is free (`TOAST_ROOM`); at the top it would cover the name of the
+   * screen, or the heading of a settlement.
    */
   private drawToast(ctx: CanvasRenderingContext2D): void {
     if (!this.toast) return;

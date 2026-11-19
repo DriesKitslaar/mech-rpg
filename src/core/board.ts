@@ -54,11 +54,17 @@ export const PAY_PER_BATTLE = 200;
 export const ELITE_TIER = 3;
 export const ELITE_PAY = 400;
 
+/** A client's face, for the contract, where the client has one. */
+const faceOf = (text: BoardText, client: string): { portrait?: string } =>
+  (text.faces && Object.hasOwn(text.faces, client) ? { portrait: text.faces[client] } : {});
+
 /** The words open contracts are written with. */
 export interface BoardText {
   adjectives: string[];
   nouns: string[];
   clients: string[];
+  /** The face of a client who has one, by the client's name as `clients` has it: a contract of theirs is briefed under it. */
+  faces?: Record<string, string>;
   backgrounds: string[];
   /** One opening line per background, same order. */
   places: string[];
@@ -168,8 +174,9 @@ export function generateBoard(battlesWon: number, cycle: number, text: BoardText
     let title = `${dice.pick(text.adjectives)} ${dice.pick(text.nouns)}`;
     while (usedTitles.has(title)) title = `${dice.pick(text.adjectives)} ${dice.pick(text.nouns)}`;
     usedTitles.add(title);
+    const client = dice.pick(text.clients);
     board.push({
-      id: `open-${cycle}-${battlesWon}-${i}`, phase: 'patrol', title, client: dice.pick(text.clients),
+      id: `open-${cycle}-${battlesWon}-${i}`, phase: 'patrol', title, client, ...faceOf(text, client),
       briefing: [text.places[place], text.threats[strongest], text.battles(battleCount)],
       debrief: dice.pick(text.debriefs),
       reward: PAY_PER_POINT * spent + PAY_PER_BATTLE * battleCount,
@@ -208,8 +215,10 @@ export function swarmContract(battlesWon: number, cycle: number, text: BoardText
   let gunships = 0;
   const machines = Array.from({ length: total }, () => dice.pick(kinds)).map((id) => (id === 'gunship' && ++gunships > SWARM_GUNSHIPS ? 'recon-drone' : id));
   const place = dice.roll(text.backgrounds.length);
+  const title = dice.pick(text.swarmTitles);
+  const client = dice.pick(text.clients);
   return {
-    id: `open-${cycle}-${battlesWon}-${SWARM}`, phase: 'patrol', title: dice.pick(text.swarmTitles), client: dice.pick(text.clients),
+    id: `open-${cycle}-${battlesWon}-${SWARM}`, phase: 'patrol', title, client, ...faceOf(text, client),
     briefing: [text.places[place], text.swarm], debrief: dice.pick(text.debriefs),
     reward: PAY_PER_HEAD * total, scale: scaleFor(tier),
     battles: [{ enemies: machines.slice(0, MAX_ENEMIES), reserve: machines.slice(MAX_ENEMIES), background: text.backgrounds[place] }],

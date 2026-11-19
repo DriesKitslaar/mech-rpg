@@ -108,7 +108,51 @@ the same voice as a tester's find), grouped, and answered worst first.
 
 ## What the testers found, and what it changed
 
-(Written as the findings are answered.)
+The four testers were stopped after some twenty minutes by a limit on the account they ran under.
+Three had found their feet and written nothing down yet. The fourth, who laid the screens side by
+side, had been through all 170 kept screenshots and left notes on each; those notes were checked
+against the pictures and the game, and are what this part answers. The play-throughs of the first
+hours, of the whole game in Dutch and of the middle and the end are still to be done.
+
+- **Announcements lay over the screen they came up on.** A medal, a name or new pages in the
+  database are announced in a strip at the foot of the screen, wherever the pilot is. On most
+  screens the foot holds something: the last row of the garage's figures and both its lines of
+  hints, the third machine a briefing expects, the last line of a drill's or a database page's
+  text, the hints of the shop, the pilot's page, the arena and the Gauntlet. Half the kept
+  screenshots showed one lying over something. An announcement is now shown only where the foot is
+  free (the hub, a settlement, the options); anywhere else it waits, loses none of its time, and
+  is shown when the pilot is back where there is room. (One finding fell with this: the arena was
+  said to have no hint for going back. It has; it was under an announcement.)
+- **The same note in two sizes on two rows.** A note at the right of a row is written smaller
+  where it would run into the name beside it. On the hub that made "after Hot Barrel" large beside
+  Arena and small beside The Gauntlet. Where one row of a list needs the small letters, every
+  note of that list is now written in them, whichever rows are in view.
+- **PILOT PILOT.** The pilot's page writes the callsign beside its heading. A pilot who never took
+  a name is called PILOT, and the header read PILOT PILOT (PILOOT PILOT in Dutch). The callsign
+  is left out where it is only the name nobody chose.
+- **The arena's ladder.** "10. The Magistrate" began a letter to the right of "9. Bastion". The
+  numbers are written to one width.
+- **The end roll.** Where it comes to rest, the line at the top edge stood there cut in half. A
+  line the edge would cut is left out once the roll stands still; while it climbs, lines leave by
+  the top edge as they did.
+- **The banner.** What a battle asks was in capitals where it asked for the field cleared and not
+  where it asked for anything else. It is in capitals throughout, like the rest of the banner.
+- **One sign, one word.** Credits were "CR" in the shop and "c" at the bench and on a medal: "c"
+  everywhere. A saved build that holds nothing was "(empty)" where a slot that holds nothing is
+  "Empty": the same word now.
+- **Dispatch on the board.** A contract of the story from Dispatch is briefed under Dispatch's
+  face; an open contract from Dispatch was briefed under the plain mark of a client without one.
+  It has the face now. The other clients of the board are letterheads and keep the mark.
+- **Left as they are, with a reason.** The bars of two machines that stand close run into each
+  other's line in a few fights (a tank behind two drones, the Leviathan beside what it launches):
+  true, and to mend it the bars would have to be laid out against each other, which is more than
+  a finding of this size should move in a screen with that many tests on where things stand; it
+  is written down for the round that next touches the field. The hub says HEADQUARTERS in its
+  header and over its menu: the second is the name of the list, as CONTRACTS and ARCHIVE are when
+  those are shown there. The database's WORLD tab lists only what is known where the other tabs
+  show a row of question marks for what is not: its entries are opened by the story and a row for
+  each would say how many turns the story has left. Numbers are written without a mark between
+  the thousands: there are boxes (the shop's header, a settlement's lines) with no room for one.
 
 ## Left to the builder
 
