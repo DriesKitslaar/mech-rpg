@@ -27,7 +27,7 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 ## Wat er in zit
 
 - **Mecha**: elf sloten (kop, romp, armen, benen, generator, booster, vuurleiding, module, twee
-  handen, schouder) en 133 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
+  handen, schouder) en 143 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
   niet overschrijden en de generator moet alles kunnen voeden. Twaalf verfschema's, acht die je in
   de arena verdient, drie die je zelf mengt, en zeven opgeslagen builds. Je begint in een van drie mecha's naar keuze.
 - **Zeven klassen**: elke build is een Duellist, Sharpshooter, Artillery, Lancer, Bastion,

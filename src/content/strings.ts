@@ -592,6 +592,12 @@ export const STRINGS = {
       drain: (power: number) => `DRAIN: -${power} energy on target`,
       burst: (power: number) => `BURST: fires ${power} times`,
       salvo: () => 'SALVO: hits every enemy',
+      // The five kinds that ask something of the machine that carries them. A spool's line is given the most it fires.
+      redline: (power: number) => `REDLINE: +${power}% per 10 heat`,
+      surge: () => 'SURGE: all EN, DMG per 100',
+      punish: (power: number) => `PUNISH: +${power}% on staggered`,
+      fork: (power: number) => `FORK: ${power}% leaps to the next`,
+      spool: (most: number) => `SPOOL: 2-${most} shots, +1/turn`,
     },
     legTypes: {
       biped: '', reverse: 'REVERSE: boost +8 evasion', quad: 'QUAD: steady, shoulder +6',

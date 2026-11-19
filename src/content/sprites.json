@@ -1567,6 +1567,56 @@
     "w": 44,
     "h": 22
   },
+  "wpn-slagcaster": {
+    "file": "sprites/wpn-slagcaster.png",
+    "w": 41,
+    "h": 22
+  },
+  "wpn-forkbolt": {
+    "file": "sprites/wpn-forkbolt.png",
+    "w": 58,
+    "h": 20
+  },
+  "wpn-flywheel": {
+    "file": "sprites/wpn-flywheel.png",
+    "w": 43,
+    "h": 22
+  },
+  "wpn-sluice": {
+    "file": "sprites/wpn-sluice.png",
+    "w": 58,
+    "h": 16
+  },
+  "wpn-spike-driver": {
+    "file": "sprites/wpn-spike-driver.png",
+    "w": 43,
+    "h": 22
+  },
+  "wpn-headsman": {
+    "file": "sprites/wpn-headsman.png",
+    "w": 58,
+    "h": 20
+  },
+  "wpn-thresher": {
+    "file": "sprites/wpn-thresher.png",
+    "w": 36,
+    "h": 26
+  },
+  "wpn-thunderhead": {
+    "file": "sprites/wpn-thunderhead.png",
+    "w": 37,
+    "h": 26
+  },
+  "wpn-crucible": {
+    "file": "sprites/wpn-crucible.png",
+    "w": 31,
+    "h": 26
+  },
+  "wpn-spillway": {
+    "file": "sprites/wpn-spillway.png",
+    "w": 44,
+    "h": 25
+  },
   "wpn-enemy-longbow": {
     "file": "sprites/wpn-enemy-longbow.png",
     "w": 58,
@@ -5985,6 +6035,146 @@
     "gy": 7,
     "mx": 35,
     "my": 4
+  },
+  "wpn-slagcaster.small": {
+    "file": "sprites/wpn-slagcaster.small.png",
+    "w": 26,
+    "h": 14
+  },
+  "wpn-slagcaster.back": {
+    "file": "sprites/wpn-slagcaster.back.png",
+    "w": 33,
+    "h": 20,
+    "gx": 6,
+    "gy": 11,
+    "mx": 32,
+    "my": 6
+  },
+  "wpn-forkbolt.small": {
+    "file": "sprites/wpn-forkbolt.small.png",
+    "w": 38,
+    "h": 13
+  },
+  "wpn-forkbolt.back": {
+    "file": "sprites/wpn-forkbolt.back.png",
+    "w": 47,
+    "h": 21,
+    "gx": 10,
+    "gy": 13,
+    "mx": 46,
+    "my": 5
+  },
+  "wpn-flywheel.small": {
+    "file": "sprites/wpn-flywheel.small.png",
+    "w": 28,
+    "h": 14
+  },
+  "wpn-flywheel.back": {
+    "file": "sprites/wpn-flywheel.back.png",
+    "w": 35,
+    "h": 19,
+    "gx": 8,
+    "gy": 11,
+    "mx": 34,
+    "my": 6
+  },
+  "wpn-sluice.small": {
+    "file": "sprites/wpn-sluice.small.png",
+    "w": 38,
+    "h": 10
+  },
+  "wpn-sluice.back": {
+    "file": "sprites/wpn-sluice.back.png",
+    "w": 47,
+    "h": 18,
+    "gx": 9,
+    "gy": 13,
+    "mx": 46,
+    "my": 5
+  },
+  "wpn-spike-driver.small": {
+    "file": "sprites/wpn-spike-driver.small.png",
+    "w": 27,
+    "h": 14
+  },
+  "wpn-spike-driver.back": {
+    "file": "sprites/wpn-spike-driver.back.png",
+    "w": 33,
+    "h": 21,
+    "gx": 8,
+    "gy": 11,
+    "mx": 35,
+    "my": 6
+  },
+  "wpn-headsman.small": {
+    "file": "sprites/wpn-headsman.small.png",
+    "w": 38,
+    "h": 13
+  },
+  "wpn-headsman.back": {
+    "file": "sprites/wpn-headsman.back.png",
+    "w": 46,
+    "h": 22,
+    "gx": 9,
+    "gy": 15,
+    "mx": 45,
+    "my": 7
+  },
+  "wpn-thresher.small": {
+    "file": "sprites/wpn-thresher.small.png",
+    "w": 24,
+    "h": 17
+  },
+  "wpn-thresher.back": {
+    "file": "sprites/wpn-thresher.back.png",
+    "w": 29,
+    "h": 20,
+    "gx": 17,
+    "gy": 9,
+    "mx": 29,
+    "my": 6
+  },
+  "wpn-thunderhead.small": {
+    "file": "sprites/wpn-thunderhead.small.png",
+    "w": 24,
+    "h": 17
+  },
+  "wpn-thunderhead.back": {
+    "file": "sprites/wpn-thunderhead.back.png",
+    "w": 31,
+    "h": 22,
+    "gx": 19,
+    "gy": 9,
+    "mx": 30,
+    "my": 6
+  },
+  "wpn-crucible.small": {
+    "file": "sprites/wpn-crucible.small.png",
+    "w": 20,
+    "h": 17
+  },
+  "wpn-crucible.back": {
+    "file": "sprites/wpn-crucible.back.png",
+    "w": 25,
+    "h": 23,
+    "gx": 15,
+    "gy": 11,
+    "mx": 25,
+    "my": 9
+  },
+  "wpn-spillway.small": {
+    "file": "sprites/wpn-spillway.small.png",
+    "w": 29,
+    "h": 16
+  },
+  "wpn-spillway.back": {
+    "file": "sprites/wpn-spillway.back.png",
+    "w": 36,
+    "h": 21,
+    "gx": 22,
+    "gy": 10,
+    "mx": 35,
+    "my": 7
   },
   "wpn-enemy-longbow.small": {
     "file": "sprites/wpn-enemy-longbow.small.png",

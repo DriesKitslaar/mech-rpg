@@ -519,6 +519,11 @@ export const STRINGS_NL = {
       drain: (power: number) => `AFTAP: -${power} energie bij doel`,
       burst: (power: number) => `STOOT: vuurt ${power} keer`,
       salvo: () => 'SALVO: raakt elke vijand',
+      redline: (power: number) => `WITHEET: +${power}% per 10 hitte`,
+      surge: () => 'PIEK: alle EN, SCH per 100',
+      punish: (power: number) => `STRAF: +${power}% op wankelend`,
+      fork: (power: number) => `VONK: ${power}% slaat over`,
+      spool: (most: number) => `OPTOEREN: 2-${most}x, +1/beurt`,
     },
     legTypes: {
       biped: '', reverse: 'OMGEKEERD: boost +8 ontwijk', quad: 'QUAD: stevig, schouder +6',

@@ -71,18 +71,21 @@ describe('shop catalogue', () => {
     expect(count('booster')).toBe(7);
     expect(count('fcs')).toBe(7);
     expect(count('module')).toBe(11);
-    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(24);
-    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(17);
+    expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(30);
+    expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(21);
     expect(count('shield')).toBe(4);
-    expect(SHOP_PARTS).toHaveLength(133);
+    expect(SHOP_PARTS).toHaveLength(143);
   });
 
   test('every trait has what it needs, and each trait is used', () => {
     for (const w of weapons) {
-      if (w.trait === 'thermal' || w.trait === 'drain' || w.trait === 'burst') expect(w.traitPower, w.id).toBeGreaterThan(0);
+      // The kinds whose line carries a number are sold with that number; the rest are sold with none.
+      const powered = ['thermal', 'drain', 'burst', 'redline', 'punish', 'fork', 'spool'];
+      if (w.trait && powered.includes(w.trait)) expect(w.traitPower, w.id).toBeGreaterThan(0);
       else expect(w.traitPower, w.id).toBeUndefined();
     }
-    expect(new Set(weapons.map((w) => w.trait).filter(Boolean))).toEqual(new Set(['pierce', 'thermal', 'drain', 'twin', 'burst', 'salvo']));
+    expect(new Set(weapons.map((w) => w.trait).filter(Boolean)))
+      .toEqual(new Set(['pierce', 'thermal', 'drain', 'twin', 'burst', 'salvo', 'redline', 'surge', 'punish', 'fork', 'spool']));
   });
 
   test('blades and charge weapons: a blade needs no ammunition and pushes hard, and both kinds exist in each mount they come in', () => {

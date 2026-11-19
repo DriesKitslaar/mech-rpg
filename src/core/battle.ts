@@ -151,6 +151,13 @@ export interface UnitState {
   usedCool: boolean;
   fired: WeaponSlot[];
   /**
+   * The weapons fired at all this turn, whatever a kill or a Second Wind readied again: and, for each weapon, how many
+   * of the unit's own turns in a row before this one it was fired in. A spool winds up by these (see `shotsNow`); a
+   * turn that passes without a weapon, a turn lost to heat among them, sets it back to none.
+   */
+  spun: WeaponSlot[];
+  spool: Partial<Record<WeaponSlot, number>>;
+  /**
    * Units this unit's volleys have destroyed in its current turn, in an open battle: 0 when the
    * turn begins. A volley that destroys one readies its weapon again, so a unit that outguns the
    * field goes on through it.
@@ -229,7 +236,17 @@ export type BattleEvent =
    * `absorbed` is what a barrier took off it first. `shatter` marks a hit that went through an
    * ordinary machine in one blow (see `SHATTER`).
    */
-  | { type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; appliedTo: FrameSlot; hit: boolean; damage: number; absorbed?: number; shatter?: true }
+  | {
+    type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; appliedTo: FrameSlot; hit: boolean; damage: number;
+    absorbed?: number; shatter?: true;
+    /** The machine a fork's bolt leapt on from: a shot that has one was not rolled for, and is a hit. */
+    via?: string;
+    /**
+     * What the weapon's kind made of this hit, in a hundred of what the weapon is listed at, where that is not a
+     * hundred: a redline fired warm, a surge by what it took, a punish landing on a staggered machine.
+     */
+    lift?: number;
+  }
   | { type: 'partDestroyed'; unit: string; part: FrameSlot }
   /** `overkill` marks a machine of the other side destroyed by a hit of `OVERKILL` times its core at full strength. */
   | { type: 'unitDestroyed'; unit: string; overkill?: true }
@@ -367,6 +384,10 @@ export const PAINT_TURNS = 3;
 export const SHOCK_DAMAGE = 15;
 export const OVERCLOCK_HEAT = 25;
 export const LIMITER_HEAT = 30;
+/** The energy a surge weapon's damage is listed for: it does that much, and pushes that hard, for every so much it takes. */
+export const SURGE_UNIT = 100;
+/** The shots a spool fires before it has wound up at all. */
+export const SPOOL_BASE = 2;
 
 const HAND_SLOTS: WeaponSlot[] = ['rightHand', 'leftHand'];
 
@@ -393,7 +414,7 @@ function createUnit(
   const unit: UnitState = {
     id, name, side, build, composed: false, abilities: {}, phases: [], phase: 0, ...extra, parts, heat: 0, energy: 0, ammo, restocked: {},
     boosted: false, overheated: false,
-    usedBoost: false, usedCool: false, fired: [], chain: 0, repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
+    usedBoost: false, usedCool: false, fired: [], spun: [], spool: {}, chain: 0, repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
     stagger: 0, staggerMax: Math.max(1, Math.round(stats.stability * mods.toughness)), staggered: 0,
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
     barrier: 0, painted: 0, paintBonus: 0, chaff: 0, damageBoost: 1, drive: 0, ironSkin: false, deadeye: false, turnEnergy: 0,
@@ -710,6 +731,9 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     raiseBarrier(state, unit, catalog);
     unit.chaff = 0;
     if (unit.painted > 0) unit.painted -= 1;
+    // What was fired in the turn before has been fired one more turn in a row; what was not begins again.
+    unit.spool = Object.fromEntries(unit.spun.map((slot) => [slot, (unit.spool[slot] ?? 0) + 1]));
+    unit.spun = [];
     if (unit.staggered > 0) {
       unit.staggered -= 1;
       if (unit.staggered === 0) {
@@ -856,11 +880,64 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
   return state;
 }
 
-/** How many times one pull of the trigger fires at a target. */
+/** How many times one pull of the trigger fires at a target, of a weapon as it is sold: a spool that has not wound up at all. */
 export function shotsOf(weapon: Weapon): number {
   if (weapon.trait === 'twin') return 2;
   if (weapon.trait === 'burst') return Math.max(1, weapon.traitPower ?? 1);
+  if (weapon.trait === 'spool') return SPOOL_BASE;
   return 1;
+}
+
+/** How many times one pull fires as the unit stands: of a spool, one more for every turn in a row it has been fired, as far as it winds. */
+export function shotsNow(unit: UnitState, slot: WeaponSlot, weapon: Weapon): number {
+  if (weapon.trait !== 'spool') return shotsOf(weapon);
+  return SPOOL_BASE + Math.min(weapon.traitPower ?? 0, unit.spool[slot] ?? 0);
+}
+
+/**
+ * What a weapon's kind makes of its damage, as a factor, by how its own machine stands and who it is fired at: a
+ * redline by its machine's heat, a surge by the energy it takes (`taken` once it has taken it; all there is, before),
+ * a punish by whether the target is off balance. One for any other weapon.
+ */
+function kindLift(attacker: UnitState, weapon: Weapon, target?: UnitState, taken?: number): number {
+  switch (weapon.trait) {
+    case 'redline': return 1 + (Math.min(attacker.heat, HEAT_LIMIT) * (weapon.traitPower ?? 0)) / 1000;
+    case 'surge': return (taken ?? attacker.energy) / SURGE_UNIT;
+    case 'punish': return target && target.staggered > 0 ? 1 + (weapon.traitPower ?? 0) / 100 : 1;
+    default: return 1;
+  }
+}
+
+/**
+ * Where a fork's bolt goes on to from the machine it hit: the next one along the line of the other side that still
+ * stands, round to the first again. Nobody when no other does. The line is the order the targets are gone through in.
+ */
+export function forkTarget(state: BattleState, attackerId: string, targetId: string): UnitState | undefined {
+  const attacker = findUnit(state, attackerId);
+  if (!attacker) return undefined;
+  const line = state.units.filter((u) => u.side !== attacker.side);
+  const from = line.findIndex((u) => u.id === targetId);
+  if (from < 0) return undefined;
+  for (let step = 1; step < line.length; step++) {
+    const next = line[(from + step) % line.length];
+    if (!next.destroyed) return next;
+  }
+  return undefined;
+}
+
+/**
+ * What firing a weapon would take and fire as its unit stands now, for whoever has to say so before the trigger is
+ * pulled. `energy` is what it would take: of a surge, all there is, and the least it asks when there is not that.
+ * `shots` is what one pull would fire. `lift` is what the weapon's kind makes of its damage by how its own machine
+ * stands, in a hundred: a redline's heat, a surge's energy; a hundred where it makes nothing of it. (What a punish
+ * does depends on who it is fired at, and is in the preview of that shot.)
+ */
+export function weaponNow(state: BattleState, unitId: string, slot: WeaponSlot, catalog: Catalog): { energy: number; shots: number; lift: number } {
+  const unit = findUnit(state, unitId);
+  const weapon = unit && weaponIn(unit.build, slot, catalog);
+  if (!unit || !weapon) throw new Error('weaponNow: no such unit or weapon');
+  const energy = weapon.trait === 'surge' ? Math.max(weapon.energy, unit.energy) : weapon.energy;
+  return { energy, shots: shotsNow(unit, slot, weapon), lift: Math.round(kindLift(unit, weapon, undefined, energy) * 100) };
 }
 
 export interface ShotPreview {
@@ -875,6 +952,8 @@ export interface ShotPreview {
   shots: number;
   /** True when every other living enemy is fired at as well. */
   salvo: boolean;
+  /** The unit a hit would leap on to, of a fork with another machine to leap on to: see `forkTarget`. */
+  fork?: string;
 }
 
 export function previewShot(
@@ -883,8 +962,23 @@ export function previewShot(
   const attacker = findUnit(state, attackerId);
   const target = findUnit(state, targetId);
   const weapon = attacker && weaponIn(attacker.build, slot, catalog);
-  const targetPart = target && framePart(target.build, part, catalog);
-  if (!attacker || !target || !weapon || !targetPart) throw new Error('previewShot: no such attacker, weapon, target or part');
+  if (!attacker || !target || !weapon || !framePart(target.build, part, catalog)) throw new Error('previewShot: no such attacker, weapon, target or part');
+  const { hitChance, damage, shatter, kills, shots, salvo } = shotOn(state, attacker, slot, weapon, target, part, catalog);
+  const next = weapon.trait === 'fork' ? forkTarget(state, attackerId, targetId) : undefined;
+  return { hitChance, damage, shatter, kills, shots, salvo, ...(next ? { fork: next.id } : {}) };
+}
+
+/**
+ * What one shot is worth as things stand: what the aiming line is told, and what firing then does. `taken` is the
+ * energy a surge took to fire it, once it has been taken. `share` is what a fork's bolt keeps of the weapon's
+ * damage and push when it has leapt on: all of it, of any other shot. Beyond the preview it says what the
+ * weapon's kind made of the damage, in a hundred (`lift`), and how hard a hit pushes (`push`).
+ */
+function shotOn(
+  state: BattleState, attacker: UnitState, slot: WeaponSlot, weapon: Weapon, target: UnitState, part: FrameSlot, catalog: Catalog,
+  taken?: number, share = 1,
+): ShotPreview & { lift: number; push: number } {
+  const targetPart = framePart(target.build, part, catalog)!;
 
   let aim = attacker.mods.aim;
   let headPenalty = 0;
@@ -909,8 +1003,9 @@ export function previewShot(
   const raw = weapon.accuracy + aim - evasionOn(state, target, catalog) - target.chaff + limb - headPenalty;
 
   const resist = targetPart.resist[weapon.damageType] * (weapon.trait === 'pierce' ? 0.5 : 1);
-  let amount = weapon.damage * tuneFactor(attacker.mods.tune, weapon.id) * (1 - resist) * attacker.mods.damage * attacker.damageBoost * aegisFactor(state, target)
-    * (state.ground?.damage?.[weapon.damageType] ?? 1);
+  const lift = kindLift(attacker, weapon, target, taken);
+  let amount = weapon.damage * lift * share * tuneFactor(attacker.mods.tune, weapon.id) * (1 - resist) * attacker.mods.damage * attacker.damageBoost
+    * aegisFactor(state, target) * (state.ground?.damage?.[weapon.damageType] ?? 1);
   if (target.side === 'player' && state.support?.order === 'cover') amount *= 1 - coverShare(state.support);
   if (attacker.deadeye) amount *= DEADEYE_DAMAGE;
   if (target.ironSkin) amount *= IRON_SKIN;
@@ -933,8 +1028,11 @@ export function previewShot(
     shatter,
     // (Not of the one a contract wants driven off: no hit destroys that machine.)
     kills: atCore && !spared(state, target) && (shatter || arrives >= core.ap),
-    shots: shotsOf(weapon),
+    shots: shotsNow(attacker, slot, weapon),
     salvo: weapon.trait === 'salvo',
+    lift: Math.round(lift * 100),
+    // A surge pushes as much harder as it hits.
+    push: impactOf(weapon) * (weapon.trait === 'surge' ? lift : 1) * share,
   };
 }
 
@@ -1084,9 +1182,14 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   const primary = findUnit(state, action.target)!;
   const weapon = weaponIn(unit.build, action.weapon, catalog)!;
 
+  // A surge takes all the energy there is, and its shots are worth what it took; any other weapon takes what it asks.
+  const taken = weapon.trait === 'surge' ? unit.energy : weapon.energy;
+  // What one pull fires is settled before it is pulled: a spool winds up by turns, not by shots.
+  const pulls = shotsNow(unit, action.weapon, weapon);
   if (weapon.charge) unit.charged = unit.charged.filter((slot) => slot !== action.weapon);
-  else unit.energy -= weapon.energy;
+  else unit.energy -= taken;
   unit.fired.push(action.weapon);
+  if (!unit.spun.includes(action.weapon)) unit.spun.push(action.weapon);
   const ammo = unit.ammo[action.weapon];
   if (typeof ammo === 'number') unit.ammo[action.weapon] = ammo - 1;
 
@@ -1099,24 +1202,33 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   // Momentum, in an open battle: a volley that destroys something pays for itself. The weapon is ready again and
   // the energy it took comes back, once, however many it destroys; each one is a link in the turn's chain.
   // The heat and the round stay spent, so a run ends in an overheat or an empty magazine if nothing
-  // else stops it; and a weapon that was charged has to be charged again.
+  // else stops it; and a weapon that was charged has to be charged again. (Of a surge, what comes back is the
+  // least it asks, not all it took: the great shot of a turn is its first.)
   let repaid = false;
   const chainBefore = unit.chain;
-  for (const target of [primary, ...others]) {
-    const aimed: FrameSlot = target === primary ? action.part : 'core';
+  // Who is fired at, in order, and at what. `via` marks what has leapt on from a fork's hit: one bolt for a share
+  // of the weapon's damage, which is not rolled for.
+  const aims: { target: UnitState; part: FrameSlot; share: number; via?: string }[] =
+    [{ target: primary, part: action.part, share: 1 }, ...others.map((target) => ({ target, part: 'core' as const, share: 1 }))];
+  for (let at = 0; at < aims.length; at++) {
+    const { target, part: aimed, share, via } = aims[at];
     // Each shot is rolled and previewed on its own, because an earlier one may have destroyed
     // the part (or the target) the next was aimed at.
-    for (let i = 0; i < shotsOf(weapon) && !target.destroyed; i++) {
-      const { hitChance, damage, shatter } = previewShot(state, unit.id, action.weapon, target.id, aimed, catalog);
-      let value: number;
-      if (roll) value = roll();
-      else ({ value, state: state.rng } = nextRandom(state.rng));
-      const hit = value * 100 < hitChance;
+    for (let i = 0; i < (via ? 1 : pulls) && !target.destroyed; i++) {
+      const { hitChance, damage, shatter, lift, push } = shotOn(state, unit, action.weapon, weapon, target, aimed, catalog, taken, share);
+      let hit = true;
+      if (!via) {
+        let value: number;
+        if (roll) value = roll();
+        else ({ value, state: state.rng } = nextRandom(state.rng));
+        hit = value * 100 < hitChance;
+      }
       const appliedTo: FrameSlot = target.parts[aimed]!.ap > 0 ? aimed : 'core';
       const absorbed = hit ? Math.min(target.barrier, damage) : 0;
       state.events.push({
         type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: aimed, appliedTo, hit,
         damage: hit ? damage - absorbed : 0, ...(absorbed > 0 ? { absorbed } : {}), ...(hit && shatter ? { shatter: true as const } : {}),
+        ...(via ? { via } : {}), ...(hit && !via && lift !== 100 ? { lift } : {}),
       });
       if (!hit) continue;
       struck.add(target);
@@ -1129,7 +1241,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       if (damage > absorbed) damagePart(state, target, appliedTo, damage - absorbed, overkill);
       if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
       if (weapon.trait === 'drain') target.energyDebt += weapon.traitPower ?? 0;
-      addImpact(state, target, Math.round(impactOf(weapon) * (target.guarding ? GUARD_IMPACT : 1)));
+      addImpact(state, target, Math.round(push * (target.guarding ? GUARD_IMPACT : 1)));
       checkPhases(state, target, catalog);
       if (target.destroyed && state.open) {
         unit.chain += 1;
@@ -1138,6 +1250,11 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
           unit.fired = unit.fired.filter((slot) => slot !== action.weapon);
           if (!weapon.charge) unit.energy += weapon.energy;
         }
+      }
+      // A fork's hit goes on to the next machine along the line, from where the one it hit stands (or stood).
+      if (weapon.trait === 'fork' && !via) {
+        const next = forkTarget(state, unit.id, target.id);
+        if (next) aims.push({ target: next, part: 'core', share: (weapon.traitPower ?? 0) / 100, via: target.id });
       }
       // The objective may be met (or lost) by this very shot: the rest of the volley stays in the barrel.
       checkOutcome(state);
