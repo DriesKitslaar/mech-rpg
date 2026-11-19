@@ -276,6 +276,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: "The simulator's second page (L1/R1) is the range: your own build against any machine you have met, up to three of the lighter ones, one of a mech or anything of the story's. A real fight: perks, bench work, Overdrive and difficulty all count. Nothing is billed, paid or counted; afterwards you see what it would have cost.",
   },
   {
+    id: 'spar', title: 'SPARRING',
+    text: "The range also lists your saved builds that can be flown. Pick one and the simulator flies it against you: the same parts, with the bench's work on them, in other colours, flown as its class is flown. The odds in the briefing say which of two builds beats the other before a shot is fired. Nothing is billed, paid or counted.",
+  },
+  {
     id: 'pilot', title: 'LEVELS AND PERKS',
     text: 'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.',
   },

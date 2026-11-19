@@ -5,7 +5,7 @@ import {
 } from '../../src/core/battle';
 import { ASK_BONUS, ASK_TIER, BOARD_SIZE, PAY_PER_HEAD, swarmContract } from '../../src/core/board';
 import { FORECAST_PLAYS } from '../../src/core/forecast';
-import { RANGE_MAX, rangeLimit } from '../../src/core/range';
+import { RANGE_MAX, SPAR_AI, rangeLimit, sparEnemy } from '../../src/core/range';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { newGame } from '../../src/core/game';
 import { NAME_AT, RENOWN, renownOf } from '../../src/core/renown';
@@ -78,6 +78,20 @@ describe('the range', () => {
     // The page it names is on the simulator's own tabs, and the briefing says the same of the bill.
     expect(STRINGS.training.pages.range).toBe('TEST RANGE');
     expect(STRINGS.training.rangeFree).toContain('Nothing here is billed, paid or counted.');
+  });
+});
+
+describe('sparring', () => {
+  test('the manual says what is sparred with, how it is made and flown, and that nothing of it is kept', () => {
+    const text = topic('spar');
+    expect(text).toMatch(/^The range also lists your saved builds that can be flown\./);
+    // The same parts, with the bench's work on them, in colours that are not the pilot's.
+    const game = { ...newGame(CATALOG, STARTER_BUILD), loadouts: [STARTER_BUILD, null, null], tuning: { 'gen-kd1': 1 }, paint: 'obsidian' };
+    const opponent = sparEnemy(game, 0, 'Saved Build 1', CATALOG);
+    expect(text).toContain('the same parts, with the bench\'s work on them, in other colours, flown as its class is flown');
+    expect(opponent).toMatchObject({ build: STARTER_BUILD, tune: { 'gen-kd1': 1 }, ai: SPAR_AI[archetypeOf(STARTER_BUILD, CATALOG)] });
+    expect(opponent.paint).not.toBe(game.paint);
+    expect(text).toMatch(/Nothing is billed, paid or counted\.$/);
   });
 });
 

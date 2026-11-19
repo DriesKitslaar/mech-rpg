@@ -26,7 +26,9 @@ import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } fr
 import { nameRank } from '../core/renown';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
-import { isRange, parseRange, rangeKinds, rangeLimit, rangeMission, rangeSettlement } from '../core/range';
+import {
+  SPAR_ENEMY, isRange, parseRange, parseSpar, rangeKinds, rangeLimit, rangeMission, rangeSettlement, sparEnemy, sparMission, sparSlots,
+} from '../core/range';
 import { drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill, type Drill } from '../core/training';
 import { tunedCatalog, type Tuning } from '../core/tuning';
 import type { BuildError, Catalog, EnemyDef, Part } from '../core/types';
@@ -809,7 +811,10 @@ export class App {
 
   /** Every enemy a battle can field, the opponent of a mirror match made from the pilot's build: the one fitted now, or the one `game` has. */
   enemies(game: GameState | null = this.game): Record<string, EnemyDef> {
-    return game ? { ...ALL_ENEMIES, mirror: mirrorEnemy(game, STRINGS.arena.mirror.name) } : ALL_ENEMIES;
+    if (!game) return ALL_ENEMIES;
+    // The saved builds that can be sparred with are opponents too, each made from its own parts.
+    const spars = sparSlots(game, this.deps.catalog).map((slot) => [SPAR_ENEMY(slot), sparEnemy(game, slot, STRINGS.training.spar(slot + 1), this.deps.catalog)]);
+    return { ...ALL_ENEMIES, mirror: mirrorEnemy(game, STRINGS.arena.mirror.name), ...Object.fromEntries(spars) };
   }
 
   /**
@@ -855,17 +860,26 @@ export class App {
     return entry?.open ? drillMission(this.game!, entry.drill, STRINGS.training.client) : undefined;
   }
 
-  /** The machines the range can field: every kind the database has a page for that the pilot has met, with how many of it at most. */
-  rangeList(): { kind: string; name: string; limit: number }[] {
+  /**
+   * What the range can field. First the pilot's saved builds that can be sparred with, one of each, with the
+   * slot they are saved in; then every kind of machine the database has a page for that the pilot has met,
+   * with how many of it at most.
+   */
+  rangeList(): { kind: string; name: string; limit: number; spar?: number }[] {
     const game = this.game;
-    return game ? rangeKinds(game, UNITS.map((unit) => unit.id)).map((kind) => ({ kind, name: ALL_ENEMIES[kind].name, limit: rangeLimit(kind) })) : [];
+    if (!game) return [];
+    const spars = sparSlots(game, this.deps.catalog).map((slot) => ({ kind: SPAR_ENEMY(slot), name: STRINGS.training.spar(slot + 1), limit: 1, spar: slot }));
+    return [...spars, ...rangeKinds(game, UNITS.map((unit) => unit.id)).map((kind) => ({ kind, name: ALL_ENEMIES[kind].name, limit: rangeLimit(kind) }))];
   }
 
-  /** A fight on the range as a contract, if the machine is one the pilot has met. */
+  /** A fight on the range as a contract, if what is asked for is on the range's list: a machine met, or a saved build that can be sparred with. */
   private rangeFight(kind: string, count: number): Mission | undefined {
     const entry = this.rangeList().find((machine) => machine.kind === kind);
     if (!entry) return undefined;
     const T = STRINGS.training;
+    if (entry.spar !== undefined) {
+      return sparMission(entry.spar, { title: T.sparTitle, client: T.client, free: T.rangeFree, debrief: T.rangeDebrief, briefing: T.sparBriefing });
+    }
     return rangeMission(kind, count, entry.name, {
       title: T.rangeTitle, client: T.client, free: T.rangeFree, debrief: T.rangeDebrief,
       briefing: (name, fielded) => T.rangeBriefing(fielded > 1 ? `${name} ${T.rangeCount(fielded)}` : name),
@@ -1034,6 +1048,8 @@ export class App {
   private offered(missionId: string, replay: boolean): Mission | undefined {
     if (replay) return this.archive().find((m) => m.id === missionId);
     if (missionId.startsWith('drill-')) return this.drillFight(missionId);
+    const spar = parseSpar(missionId);
+    if (spar !== null) return this.rangeFight(SPAR_ENEMY(spar), 1);
     const range = parseRange(missionId);
     if (range) return this.rangeFight(range.kind, range.count);
     if (missionId.startsWith('gauntlet-')) return this.gauntletFloor()?.id === missionId ? this.gauntletFloor() : undefined;

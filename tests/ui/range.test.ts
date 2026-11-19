@@ -1,6 +1,8 @@
+import { MIRROR_SCALE } from '../../src/core/arena';
 import { DIFFICULTY_SCALE, saveLoadout, type GameState } from '../../src/core/game';
 import { xpForLevel } from '../../src/core/pilot';
 import { rangeLimit } from '../../src/core/range';
+import { tunedCatalog } from '../../src/core/tuning';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
 import { UNITS, WORLD } from '../../src/content/codex';
@@ -94,13 +96,16 @@ describe('the simulator has two pages', () => {
 
   test('the range lists every machine met, by its name, in the order the database has them', () => {
     const { app } = onRange(pilot());
-    expect(ids(app)).toEqual(listed(app));
+    // (The pilot's saved builds head the list; they are another describe's.)
+    const machines = snap(app).menu.items.filter((item) => !item.id.startsWith('spar-'));
+    expect(machines.map((item) => item.id)).toEqual(listed(app));
     // Those the pilot was said to have met are among them, and nothing the pilot has not met is.
     for (const kind of MET) expect(ids(app)).toContain(kind);
     expect(ids(app)).not.toContain('strip-miner');
-    expect(ids(app).length).toBeLessThan(ORDER.length);
-    expect(snap(app).menu.items.map((item) => item.label)).toEqual(ids(app).map((id) => ALL_ENEMIES[id].name));
-    expect(snap(app).menu.items.every((item) => item.enabled && item.note === 'x1')).toBe(true);
+    expect(machines.length).toBeLessThan(ORDER.length);
+    expect(machines.map((item) => item.label)).toEqual(machines.map((item) => ALL_ENEMIES[item.id].name));
+    expect(machines.every((item) => item.enabled && item.note === 'x1')).toBe(true);
+    toRow(app, 'recon-drone');
     expect(rangeOf(app)).toEqual({ kind: 'recon-drone', count: 1, limit: 3 });
   });
 
@@ -136,12 +141,12 @@ describe('the simulator has two pages', () => {
 
   test('with every machine met the list stays in its panel and scrolls', () => {
     const { app } = onRange(pilot({ met: [...ORDER] }));
-    expect(ids(app)).toEqual(ORDER);
+    expect(ids(app).filter((id) => !id.startsWith('spar-'))).toEqual(ORDER);
     const rows = (): Written[] => drawn(app).texts.filter((t) => t.left === 18 && t.y >= 32 && t.y < 184);
     expect(rows().length).toBeLessThanOrEqual(13);
     expect(Math.max(...rows().map((t) => t.y)) + LINE).toBeLessThanOrEqual(181);
     // Down past the bottom of the window: the last machine comes into it.
-    for (let i = 0; i < ORDER.length - 1; i++) press(app, 'down');
+    for (let i = 0; i < ids(app).length - 1; i++) press(app, 'down');
     expect(rangeOf(app)!.kind).toBe(ORDER[ORDER.length - 1]);
     expect(rows().map((t) => t.text)).toContain(ALL_ENEMIES[ORDER[ORDER.length - 1]].name);
     expect(Math.max(...rows().map((t) => t.y)) + LINE).toBeLessThanOrEqual(181);
@@ -408,10 +413,10 @@ describe('in Dutch', () => {
     setLanguage('nl');
     const N = STRINGS_NL.training;
     expect(snap(app).count).toBe(`GEZIEN ${listed(app).length}/${ORDER.length}`);
+    toRow(app, 'gun-turret');
     let shown = drawn(app);
     expect(shown.texts.filter((t) => t.y === 1).map((t) => t.text)).toEqual(expect.arrayContaining([N.pages.drills, N.pages.range]));
     expect(written(shown, N.rangeHint).y).toBe(255);
-    toRow(app, 'gun-turret');
     press(app, 'right', 'confirm');
     shown = drawn(app);
     expect(shown.texts.filter((t) => t.y === 40 || t.y === 51).map((t) => t.text).join(' ')).toBe(N.rangeTag);
@@ -420,6 +425,151 @@ describe('in Dutch', () => {
     expect(shown.texts.some((t) => /^LOON/.test(t.text))).toBe(false);
     expect(STRINGS_NL.settlement.wouldCost).toBe('ZOU KOSTEN');
     // Nothing on the page runs out of it.
+    for (const t of shown.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 4);
+  });
+});
+
+describe('sparring with a saved build', () => {
+  const armourOf = (build: typeof BASTION): number => (['head', 'core', 'arms', 'legs'] as const).reduce((sum, slot) => sum + (CATALOG[build[slot]!] as { ap: number }).ap, 0);
+
+  test('the saved builds that can be flown head the list, each with its class: one of each, whatever is pressed', () => {
+    const { app } = onRange(pilot());
+    expect(ids(app)[0]).toBe('spar-0');
+    expect(ids(app).slice(1)).toEqual(listed(app));
+    expect(snap(app).menu.items[0]).toEqual({ id: 'spar-0', label: 'Saved Build 1', enabled: true, note: 'Bastion' });
+    expect(rangeOf(app)).toEqual({ kind: 'spar-0', count: 1, limit: 1 });
+    press(app, 'right', 'left', 'right');
+    expect(rangeOf(app)).toEqual({ kind: 'spar-0', count: 1, limit: 1 });
+    expect(snap(app).menu.items[0].note).toBe('Bastion');
+    // The count above the list is of machines met, as it was.
+    expect(snap(app).count).toBe(`SEEN ${listed(app).length}/${ORDER.length}`);
+  });
+
+  test('a saved build that cannot be flown is not an opponent, and with none saved the list is the machines', () => {
+    const none = onRange(pilot({ loadouts: [null, null, null] })).app;
+    expect(ids(none)).toEqual(listed(none));
+    const base = pilot();
+    const sold = onRange({ ...base, inventory: { ...base.inventory, [BASTION.core]: 0 } }).app;
+    expect(ids(sold)).toEqual(listed(sold));
+    // Two saved: both head the list, in the garage's order, by the garage's numbers.
+    const two = onRange({ ...base, loadouts: [null, BASTION, base.build] }).app;
+    expect(ids(two).slice(0, 2)).toEqual(['spar-1', 'spar-2']);
+    expect(snap(two).menu.items.slice(0, 2).map((item) => [item.label, item.note])).toEqual([['Saved Build 2', 'Bastion'], ['Saved Build 3', 'Lancer']]);
+  });
+
+  test('beside the list stands the build, and under it what kind of machine it is, its figures, and that the simulator flies it', () => {
+    const { app } = onRange(pilot());
+    const shown = drawn(app);
+    expect(written(shown, 'SAVED BUILD 1')).toMatchObject({ left: 12, y: 189, size: 16, color: COLORS.accent });
+    expect(shown.texts.some((t) => t.y === 207 && /^Armour \d+ {3}Mobility \d+ {3}Energy \d+$/.test(t.text))).toBe(true);
+    expect(written(shown, `Armour ${armourOf(BASTION)}   Mobility 7   Energy 235`).color).toBe(COLORS.armor);
+    expect(written(shown, 'BASTION: takes it and stays standing').y).toBe(219);
+    expect(T.sparNote).toBe('The simulator flies this build against you.');
+    expect(written(shown, T.sparNote).y).toBe(219 + LINE);
+    expect(written(shown, T.hint).y).toBe(255);
+    expect((snap(app).detail as { title: string }).title).toBe('SAVED BUILD 1');
+    // The figures are the build's as it would fly: with what the bench has done to its parts.
+    const benched = onRange(pilot({ tuning: { [BASTION.core]: 2 } })).app;
+    const tuned = tunedCatalog(CATALOG, { [BASTION.core]: 2 });
+    const armour = (['head', 'core', 'arms', 'legs'] as const).reduce((sum, slot) => sum + (tuned[BASTION[slot]!] as { ap: number }).ap, 0);
+    expect(armour).toBeGreaterThan(armourOf(BASTION));
+    expect(drawn(benched).texts.some((t) => t.y === 207 && t.text.startsWith(`Armour ${armour}   `))).toBe(true);
+    // The build is drawn as a mech, part by part, where a machine of the range would stand.
+    expect(shown.images.filter((image) => image.x >= 150 && image.w < 200).length).toBeGreaterThan(3);
+    const panel = shown.texts.filter((t) => t.y >= 184);
+    for (const a of panel) for (const b of panel) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
+  });
+
+  test('A opens its briefing: which build is flown against the pilot, the build row to answer with, and no pay', () => {
+    const { app } = onRange(pilot());
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('briefing');
+    expect(snap(app).briefing).toMatchObject({ mission: 'range-spar-0', reward: 0, wingman: null });
+    expect(ids(app)).toEqual(['accept', 'build', 'back']);
+    const shown = drawn(app);
+    expect(written(shown, 'SPARRING')).toMatchObject({ y: 8, size: 16 });
+    expect(shown.texts.filter((t) => t.y === 40 || t.y === 51).map((t) => t.text).join(' ')).toBe(T.rangeTag);
+    // What is expected is the build, by the name the garage gives it.
+    expect(written(shown, 'Saved Build 1').left).toBe(104);
+    const body = shown.texts.filter((t) => t.y >= 78 && t.y < 190 && t.left === 12).map((t) => t.text).join(' ');
+    expect(body).toContain('The simulator flies your saved build 1 against the machine you bring');
+    expect(body).toContain('Nothing here is billed, paid or counted.');
+    expect(written(shown, T.rangePays).y).toBe(215);
+    // B goes back to the range, to that build's row.
+    press(app, 'cancel');
+    expect(snap(app)).toMatchObject({ screen: 'training', page: 'range' });
+    expect(rangeOf(app)!.kind).toBe('spar-0');
+  });
+
+  test('the fight is against that build, with the bench\'s work on it, scaled as a mirror match is; and nothing of it is kept', () => {
+    const base = pilot({ tuning: { [BASTION.generator!]: 1 } });
+    const { app, store } = onRange({ ...base, settings: { ...base.settings, difficulty: 'veteran' } });
+    const before = savedGame(store);
+    press(app, 'confirm');
+    select(app, 'accept');
+    expect(snap(app).screen).toBe('battle');
+    expect(snap(app).battle).toMatchObject({ mission: 'range-spar-0', enemies: ['spar-0'], enemyScale: MIRROR_SCALE * DIFFICULTY_SCALE.veteran });
+    const opponent = app.enemies()['spar-0'];
+    expect(opponent).toMatchObject({ name: 'Saved Build 1', composed: true, build: BASTION, ai: 'bruiser', tune: { [BASTION.generator!]: 1 } });
+    fly(app);
+    expect(snap(app).settlement).toMatchObject({ reward: 0, simulated: true });
+    expect(savedGame(store)).toEqual(before);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'training', page: 'range' });
+    expect(rangeOf(app)!.kind).toBe('spar-0');
+  });
+
+  test('the build the pilot answers with can be another saved one, or the very one that is flown against them', () => {
+    const { app, store } = onRange(pilot());
+    press(app, 'confirm');
+    select(app, 'build');
+    expect((snap(app).briefing as unknown as { build: { slot: number | null; kind: string } }).build).toMatchObject({ slot: 0, kind: 'bastion' });
+    for (let i = 0; i < 4 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'accept'; i++) press(app, 'up');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('battle');
+    // Bastion against bastion: the pilot's is fitted, and the opponent is still the saved one.
+    expect(savedGame(store).build).toEqual(BASTION);
+    expect(app.enemies()['spar-0'].build).toEqual(BASTION);
+    expect(snap(app).player!.maxAp).toBe(armourOf(BASTION));
+  });
+
+  test('a build that is not saved, or cannot be flown, cannot be sparred with by any road', () => {
+    const { app } = onRange(pilot());
+    app.openRangeBriefing('spar-1', 1);
+    expect(snap(app).screen).toBe('training');
+    app.startMission('range-spar-2');
+    expect(snap(app).screen).toBe('training');
+    app.startMission('range-spar-7');
+    expect(snap(app).screen).toBe('training');
+    expect(Object.keys(app.enemies()).filter((id) => id.startsWith('spar-'))).toEqual(['spar-0']);
+  });
+
+  test('the odds of a spar are counted like any other: against that build', () => {
+    const { app } = onRange(pilot());
+    press(app, 'confirm');
+    const mission = (app as unknown as { current: { mission: Parameters<App['fight']>[0] } }).current.mission;
+    const prospect = app.prospect(mission, null, null)!;
+    expect(prospect.mission.id).toBe('range-spar-0');
+    expect(prospect.fight.enemies['spar-0'].build).toEqual(BASTION);
+    expect(prospect.fight.opts.enemyScale).toBe(MIRROR_SCALE);
+  });
+
+  test('in Dutch', () => {
+    // A game kept in Dutch: the screens are made in the language the game is set to.
+    const base = pilot();
+    const { app } = onRange({ ...base, settings: { ...base.settings, language: 'nl' } });
+    const N = STRINGS_NL.training;
+    expect(N.spar(1)).toBe('Mijn build 1');
+    expect(snap(app).menu.items[0]).toMatchObject({ label: 'Mijn build 1', note: 'Bastion' });
+    let shown = drawn(app);
+    expect(written(shown, 'MIJN BUILD 1').y).toBe(189);
+    expect(written(shown, N.sparNote).y).toBe(219 + LINE);
+    press(app, 'confirm');
+    shown = drawn(app);
+    expect(N.sparTitle).toBe('Sparren');
+    expect(written(shown, 'SPARREN').y).toBe(8);
+    expect(written(shown, 'Mijn build 1').left).toBe(104);
+    expect(shown.texts.filter((t) => t.y >= 78 && t.y < 190 && t.left === 12).map((t) => t.text).join(' ')).toContain('De simulator vliegt je bewaarde build 1');
     for (const t of shown.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 4);
   });
 });

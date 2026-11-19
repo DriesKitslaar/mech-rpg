@@ -1,5 +1,9 @@
-import { parseRange } from '../core/range';
+import { archetypeOf } from '../core/archetype';
+import { computeBuildStats } from '../core/build';
+import { SPAR_ENEMY, parseRange, parseSpar } from '../core/range';
 import { DRILL_PAY } from '../core/training';
+import { tunedCatalog } from '../core/tuning';
+import type { Build } from '../core/types';
 import { ALL_ENEMIES } from '../content/arena';
 import { UNITS } from '../content/codex';
 import { DRILLS } from '../content/drills';
@@ -14,6 +18,8 @@ import { unitPage } from './unitPage';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
 
 const T = STRINGS.training;
+const C = STRINGS.classes;
+const G = STRINGS.garage;
 
 /** The simulator's pages: its drills, and the range where the pilot's own build is tried. */
 export type TrainingPage = 'drills' | 'range';
@@ -47,15 +53,28 @@ export class TrainingScreen implements Screen {
     this.drills = new MenuList(drills.map(({ drill, open, passed }) => ({
       id: drill.id, label: drill.title, enabled: open, note: !open ? T.locked : passed ? T.passed : String(DRILL_PAY),
     })), Math.max(0, drills.findIndex(({ drill }) => drill.id === at)));
-    const fought = at ? parseRange(at) : null;
+    // A fight on the range was against so many of a machine, or a spar with the saved build of a slot.
+    const spar = at ? parseSpar(at) : null;
+    const fought = spar !== null ? { kind: SPAR_ENEMY(spar), count: 1 } : at ? parseRange(at) : null;
     this.page = fought ? 'range' : 'drills';
     if (fought) this.counts.set(fought.kind, fought.count);
     this.machines = new MenuList(this.rows(), Math.max(0, app.rangeList().findIndex((machine) => machine.kind === fought?.kind)));
   }
 
-  /** The range's rows: each machine met by its name, with how many of it are to be fielded. */
+  /** The saved build a row of the range stands for, when it is one of the pilot's own to spar with. */
+  private sparBuild(slot: number | undefined): Build | null {
+    return slot === undefined ? null : this.app.game?.loadouts[slot] ?? null;
+  }
+
+  /**
+   * The range's rows. A saved build to spar with goes by the name the garage gives it, with the kind of
+   * machine it is; a machine met goes by its name, with how many of it are to be fielded.
+   */
   private rows(): { id: string; label: string; enabled: boolean; note: string }[] {
-    return this.app.rangeList().map(({ kind, name }) => ({ id: kind, label: name, enabled: true, note: T.rangeCount(this.counts.get(kind) ?? 1) }));
+    return this.app.rangeList().map(({ kind, name, spar }) => {
+      const build = this.sparBuild(spar);
+      return { id: kind, label: name, enabled: true, note: build ? C.names[archetypeOf(build, this.app.deps.catalog)] : T.rangeCount(this.counts.get(kind) ?? 1) };
+    });
   }
 
   private get list(): MenuList {
@@ -66,14 +85,16 @@ export class TrainingScreen implements Screen {
     return DRILLS[this.drills.cursor];
   }
 
-  /** The machine under the cursor on the range, how many of it are asked for, and how many may be. */
-  private get machine(): { kind: string; count: number; limit: number } | null {
+  /** What is under the cursor on the range, how many of it are asked for, and how many may be; and the saved build it is, when it is one. */
+  private get machine(): { kind: string; count: number; limit: number; build: Build | null; slot: number | null } | null {
     const entry = this.app.rangeList()[this.machines.cursor];
-    return entry ? { kind: entry.kind, count: this.counts.get(entry.kind) ?? 1, limit: entry.limit } : null;
+    if (!entry) return null;
+    return { kind: entry.kind, count: Math.min(entry.limit, this.counts.get(entry.kind) ?? 1), limit: entry.limit, build: this.sparBuild(entry.spar), slot: entry.spar ?? null };
   }
 
   private count(): string {
-    if (this.page === 'range') return STRINGS.database.met(this.app.rangeList().length, UNITS.length);
+    // Machines met, of those the database has: the pilot's own builds are not among either.
+    if (this.page === 'range') return STRINGS.database.met(this.app.rangeList().filter((entry) => entry.spar === undefined).length, UNITS.length);
     return T.count(this.app.drillList().filter((d) => d.passed).length, DRILLS.length);
   }
 
@@ -104,12 +125,12 @@ export class TrainingScreen implements Screen {
 
   view(): ScreenView {
     const machine = this.machine;
+    const title = !machine ? '' : machine.slot !== null ? T.spar(machine.slot + 1) : ALL_ENEMIES[machine.kind].name;
     return {
       menu: { items: this.list.items, cursor: this.list.cursor }, count: this.count(), page: this.page,
-      detail: this.page === 'drills' ? { title: this.drill.title.toUpperCase(), lesson: this.drill.lesson }
-        : { title: machine ? ALL_ENEMIES[machine.kind].name.toUpperCase() : '', lesson: '' },
-      // On the range: the machine under the cursor, how many of it are to be fielded, and how many may be.
-      range: this.page === 'range' ? machine : null,
+      detail: this.page === 'drills' ? { title: this.drill.title.toUpperCase(), lesson: this.drill.lesson } : { title: title.toUpperCase(), lesson: '' },
+      // On the range: what is under the cursor, how many of it are to be fielded, and how many may be.
+      range: this.page === 'range' && machine ? { kind: machine.kind, count: machine.count, limit: machine.limit } : null,
     };
   }
 
@@ -125,7 +146,8 @@ export class TrainingScreen implements Screen {
     const calm = this.app.settings.calm === true;
     const clock = fast ? 0 : this.clock;
     drawRoom(ctx, 'bg-simulator', clock, calm, fast);
-    if (this.page === 'drills') this.drawLent(ctx);
+    if (this.page === 'drills') this.drawMech(ctx, this.drill.build);
+    else if (this.machine?.build) this.drawMech(ctx, this.machine.build);
     else this.drawMachine(ctx);
     drawRoomSpill(ctx, 'bg-simulator', clock, calm);
 
@@ -144,13 +166,13 @@ export class TrainingScreen implements Screen {
     else this.drawRange(ctx);
   }
 
-  /** The mech the selected drill lends, facing left towards the list. */
-  private drawLent(ctx: CanvasRenderingContext2D): void {
+  /** A mech beside the list, facing left towards it: the one the selected drill lends, or the saved build that is sparred with. */
+  private drawMech(ctx: CanvasRenderingContext2D, build: Build): void {
     ctx.save();
     ctx.translate(LOGICAL_W + 6, 18);
     ctx.scale(-1, 1);
     drawMechShadow(ctx, 0, 0);
-    drawMech(ctx, mechSprites(this.app.deps.sprites, this.drill.build), 0, 0, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
+    drawMech(ctx, mechSprites(this.app.deps.sprites, build), 0, 0, { dx: 0, dy: 0 }, Math.round(Math.sin(this.clock / 520)));
     ctx.restore();
   }
 
@@ -191,6 +213,19 @@ export class TrainingScreen implements Screen {
     if (!machine) {
       // Nothing has been met: nothing to field yet.
       wrap(T.rangeEmpty, charsFor(LOGICAL_W - 28)).forEach((row, i) => drawText(ctx, row, 12, 207 + i * LINE, { color: COLORS.dim }));
+      drawText(ctx, T.hint, LOGICAL_W / 2, 255, { align: 'center', color: COLORS.dim });
+      return;
+    }
+    if (machine.build && machine.slot !== null) {
+      // A saved build to spar with: its name in the garage, its figures with the bench's work counted, what kind of machine it is.
+      const catalog = tunedCatalog(this.app.deps.catalog, this.app.game?.tuning);
+      const stats = computeBuildStats(machine.build, catalog);
+      const armour = (['head', 'core', 'arms', 'legs'] as const).reduce((sum, slot) => sum + (catalog[machine.build![slot]!] as { ap: number }).ap, 0);
+      const kind = archetypeOf(machine.build, this.app.deps.catalog);
+      drawText(ctx, T.spar(machine.slot + 1).toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
+      drawText(ctx, `${G.armour} ${armour}   ${G.mobility} ${stats.mobility}   ${G.energy} ${stats.turnEnergy}`, 12, 207, { color: COLORS.armor });
+      drawText(ctx, C.garage(C.names[kind], C.tags[kind]), 12, 219);
+      drawText(ctx, T.sparNote, 12, 219 + LINE, { color: COLORS.dim });
       drawText(ctx, T.hint, LOGICAL_W / 2, 255, { align: 'center', color: COLORS.dim });
       return;
     }

@@ -328,6 +328,10 @@ in **je eigen build**.
   ervaring, geen medailles. Na afloop zie je wel wat een echte vlucht had gekost (**WOULD HAVE
   COST**), zodat je weet hoe duur je build is om te vliegen.
 - Handig om een nieuw wapen te proberen, twee builds te vergelijken of een baas te oefenen.
+- **Sparren:** bovenaan de lijst staan je bewaarde builds (**Saved Build 1** tot en met **3**).
+  Kies er een en de simulator vliegt die build tegen je: dezelfde onderdelen, met het werk van de
+  werkbank, in andere kleuren. Zo zie je welke van je builds de andere verslaat; de winkans in de
+  briefing zegt het al vooraf.
 
 ## De werkbank
 

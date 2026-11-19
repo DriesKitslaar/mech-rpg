@@ -3,12 +3,20 @@ import { MAX_ENEMIES } from '../../src/core/battle';
 import { MECH_ENEMIES, STORY_ENEMIES } from '../../src/core/board';
 import { settle } from '../../src/core/economy';
 import { startMissionBattle } from '../../src/core/mission';
-import { RANGE_HALL, RANGE_MAX, isRange, parseRange, rangeId, rangeKinds, rangeLimit, rangeMission, rangeSettlement, type RangeText } from '../../src/core/range';
+import { archetypeOf } from '../../src/core/archetype';
+import { MIRROR_SCALE } from '../../src/core/arena';
+import { buy, newGame, type GameState } from '../../src/core/game';
+import {
+  RANGE_HALL, RANGE_MAX, SPAR_AI, SPAR_ENEMY, isRange, parseRange, parseSpar, rangeId, rangeKinds, rangeLimit, rangeMission, rangeSettlement, sparEnemy, sparId,
+  sparMission, sparSlots, type RangeText, type SparText,
+} from '../../src/core/range';
+import type { Build } from '../../src/core/types';
+import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
 import { isDrill } from '../../src/core/training';
 import { takesWingman } from '../../src/core/wingman';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { UNITS } from '../../src/content/codex';
-import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
+import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 
 /**
  * The range: the pilot's own build against any machine met, in the simulator, for nothing. A fight
@@ -92,4 +100,80 @@ test('every machine the database has a page for can be fielded, as many as may b
     expect(start.units.slice(1).map((unit) => unit.kind), kind).toEqual(Array(rangeLimit(kind)).fill(kind));
     expect(['victory', 'defeat'], kind).toContain(runBattle(start, CATALOG, chooseAutoPlayerAction).outcome);
   }
+});
+
+describe('sparring: a saved build of the pilot\'s own as the opponent', () => {
+  const HALO: Build = { ...STARTER_BUILD, head: 'head-halo' };
+  /** A pilot with a duellist saved first, nothing second, and a bastion saved third. */
+  const pilot = (): GameState => {
+    let game: GameState = { ...newGame(CATALOG, STARTER_BUILD), credits: 9_999_999 };
+    for (const build of [ARCHETYPE_BUILDS.duellist.war, ARCHETYPE_BUILDS.bastion.war]) {
+      for (const id of new Set(Object.values(build).filter((part): part is string => part !== undefined))) {
+        while ((game.inventory[id] ?? 0) < Object.values(build).filter((part) => part === id).length) game = buy(game, id, CATALOG);
+      }
+    }
+    return { ...game, loadouts: [ARCHETYPE_BUILDS.duellist.war, null, ARCHETYPE_BUILDS.bastion.war] };
+  };
+  const SPAR: SparText = { title: 'Sparring', client: 'Training Simulator', debrief: 'Reset.', briefing: (slot) => `Build ${slot}.`, free: 'Nothing is billed.' };
+
+  test('a spar is a fight on the range with an id of its own, which no fight against a machine can have', () => {
+    expect(sparId(2)).toBe('range-spar-2');
+    expect([0, 1, 2].map((slot) => parseSpar(sparId(slot)))).toEqual([0, 1, 2]);
+    for (const id of ['range-spar-3', 'range-spar-', 'range-spar-x', 'range-spar-01', 'range-1-tank', 'spar-1', 'arrange-spar-1', '']) expect(parseSpar(id), id).toBeNull();
+    expect(isRange({ id: sparId(0) })).toBe(true);
+    expect(parseRange(sparId(0))).toBeNull();
+    expect(SPAR_ENEMY(1)).toBe('spar-1');
+  });
+
+  test('the saved builds that can be sparred with: those that are there, still owned and fit to fly, the one on the floor among them', () => {
+    const game = pilot();
+    expect(sparSlots(game, CATALOG)).toEqual([0, 2]);
+    // Sold since: not an opponent.
+    expect(sparSlots({ ...game, inventory: { ...game.inventory, [ARCHETYPE_BUILDS.bastion.war.core]: 0 } }, CATALOG)).toEqual([0]);
+    // Unarmed: not fit to fly, so not an opponent either.
+    expect(sparSlots({ ...game, loadouts: [{ ...STARTER_BUILD, rightHand: undefined }, null, null] }, CATALOG)).toEqual([]);
+    // The very build the pilot is flying can be sparred with: it is a mirror.
+    expect(sparSlots({ ...game, loadouts: [game.build, null, null] }, CATALOG)).toEqual([0]);
+    expect(sparSlots({ ...game, loadouts: [null, null, null] }, CATALOG)).toEqual([]);
+    // Fit to fly is judged with the bench's work counted: a generator the bench has worked on carries what it could not as sold.
+    const hungry: Build = { ...STARTER_BUILD, head: 'head-auditor', core: 'core-sterling', arms: 'arms-shrike', fcs: 'fcs-omni', rightHand: undefined, shoulder: 'wpn-sunlance' };
+    let owner: GameState = { ...newGame(CATALOG, STARTER_BUILD), credits: 9_999_999 };
+    for (const id of new Set(Object.values(hungry).filter((part): part is string => part !== undefined))) if (!owner.inventory[id]) owner = buy(owner, id, CATALOG);
+    owner = { ...owner, loadouts: [hungry, null, null] };
+    expect(sparSlots(owner, CATALOG)).toEqual([]);
+    expect(sparSlots({ ...owner, tuning: { 'gen-kd1': 1 } }, CATALOG)).toEqual([0]);
+  });
+
+  test('the opponent is that build, part for part, with the bench\'s work on it, in other colours, and flown as its class is flown', () => {
+    const game = pilot();
+    const duellist = sparEnemy(game, 0, 'Saved Build 1', CATALOG);
+    expect(duellist).toEqual({ id: 'spar-0', name: 'Saved Build 1', ai: 'bruiser', sprite: 'enemy-rival', composed: true, build: ARCHETYPE_BUILDS.duellist.war, paint: 'obsidian' });
+    // A copy: what is done to the opponent is not done to the saved build.
+    expect(duellist.build).not.toBe(game.loadouts[0]);
+    const tuned = sparEnemy({ ...game, tuning: { 'gen-kd1': 2 }, paint: 'obsidian' }, 2, 'Saved Build 3', CATALOG);
+    expect(tuned).toMatchObject({ id: 'spar-2', ai: 'bruiser', build: ARCHETYPE_BUILDS.bastion.war, tune: { 'gen-kd1': 2 }, paint: 'bone' });
+    // Each class has its way of flying.
+    expect(SPAR_AI).toEqual({ duellist: 'bruiser', marksman: 'gunner', artillery: 'sprayer', lancer: 'gunner', bastion: 'bruiser', skirmisher: 'skirmisher', allrounder: 'gunner' });
+    expect(sparEnemy({ ...game, loadouts: [HALO, null, null] }, 0, 'x', CATALOG).ai).toBe(SPAR_AI[archetypeOf(HALO, CATALOG)]);
+  });
+
+  test('the contract: one fight in the hall against that build, as a mirror match is scaled, for no pay', () => {
+    const mission = sparMission(2, SPAR);
+    expect(mission).toEqual({
+      id: 'range-spar-2', phase: 'patrol', title: 'Sparring', client: 'Training Simulator', briefing: ['Build 3.', 'Nothing is billed.'], debrief: 'Reset.',
+      reward: 0, scale: MIRROR_SCALE, battles: [{ enemies: ['spar-2'], background: RANGE_HALL }],
+    });
+    expect(isDrill(mission)).toBe(false);
+    expect(takesWingman(mission)).toBe(false);
+  });
+
+  test('it is a fight that can be fought to an end, by either side', () => {
+    const game = pilot();
+    const enemies = { ...ALL_ENEMIES, 'spar-0': sparEnemy(game, 0, 'Saved Build 1', CATALOG), 'spar-2': sparEnemy(game, 2, 'Saved Build 3', CATALOG) };
+    for (const slot of [0, 2]) {
+      const start = startMissionBattle(ARCHETYPE_BUILDS.marksman.war, sparMission(slot, SPAR), 0, enemies, CATALOG, 9, undefined, { enemyScale: MIRROR_SCALE });
+      expect(start.units[1]).toMatchObject({ kind: `spar-${slot}`, composed: true, build: game.loadouts[slot] });
+      expect(['victory', 'defeat']).toContain(runBattle(start, CATALOG, chooseAutoPlayerAction).outcome);
+    }
+  });
 });

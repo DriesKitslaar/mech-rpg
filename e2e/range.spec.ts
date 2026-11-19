@@ -78,7 +78,9 @@ test('the range: the simulator\'s second page lists the machines met, and a figh
   expect((await snap(page)).page).toBe('range');
   const rows = (await snap(page)).menu.items;
   expect(rows.map((item) => item.id)).toEqual(expect.arrayContaining(['recon-drone', 'gun-turret', 'tank', 'heavy-mech', 'rival']));
-  expect(rows.every((item) => item.note === 'x1')).toBe(true);
+  expect(rows.filter((item) => !item.id.startsWith('spar-')).every((item) => item.note === 'x1')).toBe(true);
+  // The bastion saved first heads the list: a saved build is an opponent too.
+  expect(rows[0]).toMatchObject({ id: 'spar-0', label: 'Saved Build 1', note: 'Bastion' });
   await settle(page);
   await page.screenshot({ path: shot('range') });
   // Three turrets: left and right say how many, and they stand beside the list.
@@ -169,5 +171,42 @@ test('the range in Dutch', async ({ page }) => {
   await oddsCounted(page);
   await settle(page);
   await page.screenshot({ path: shot('nl-range-briefing') });
+  expect(errors).toEqual([]);
+});
+
+test('sparring: a saved build heads the range, and the simulator flies it against the pilot', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await load(page, pilot(), '/?seed=7');
+  await choose(page, 'training');
+  await waitForScreen(page, 'training');
+  await press(page, 'KeyE');
+  // The bastion saved first is the first row: the build itself stands beside the list.
+  expect(await range(page)).toEqual({ kind: 'spar-0', count: 1, limit: 1 });
+  await press(page, 'ArrowRight');
+  expect(await range(page)).toEqual({ kind: 'spar-0', count: 1, limit: 1 });
+  await settle(page);
+  await page.screenshot({ path: shot('range-spar') });
+  await press(page, 'Enter');
+  await waitForScreen(page, 'briefing');
+  for (let i = 0; i < 80 && (await snap(page) as unknown as { typing?: boolean }).typing; i++) await page.waitForTimeout(100);
+  await oddsCounted(page);
+  await settle(page);
+  const briefing = (await snap(page) as unknown as { briefing: { mission: string; reward: number; odds: { played: number; done: boolean } | null } }).briefing;
+  expect(briefing).toMatchObject({ mission: 'range-spar-0', reward: 0, odds: { played: 20, done: true } });
+  await page.screenshot({ path: shot('range-spar-briefing') });
+  // The fight: the sharpshooter on the floor against the bastion, in colours that are not the pilot's.
+  await choose(page, 'accept');
+  await waitForScreen(page, 'battle');
+  expect((await snap(page)).battle).toMatchObject({ mission: 'range-spar-0', enemies: ['spar-0'] });
+  for (let i = 0; i < 6000; i++) {
+    const s = await snap(page);
+    if (s.battle?.phase === 'action') break;
+    if (s.battle?.spoken) await press(page, 'Enter');
+    else await nextFrame(page);
+  }
+  await settle(page, 20);
+  await page.screenshot({ path: shot('range-spar-battle') });
   expect(errors).toEqual([]);
 });

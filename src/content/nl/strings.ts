@@ -323,6 +323,10 @@ export const STRINGS_NL = {
     rangeHint: 'LEFT/RIGHT: hoeveel   A: briefing   B: terug',
     rangeCount: (n: number) => `x${n}`,
     rangePays: 'GRATIS',
+    spar: (slot: number) => `Mijn build ${slot}`,
+    sparTitle: 'Sparren',
+    sparBriefing: (slot: number) => `De simulator vliegt je bewaarde build ${slot} tegen jouw machine: dezelfde onderdelen, met het werk van de werkbank erop.`,
+    sparNote: 'De simulator vliegt deze build tegen je.',
   },
   credits: {
     flownBy: 'PILOOT', level: (n: number) => `PILOTENLEVEL ${n}`, record: 'HET DOSSIER', stat: (label: string, value: string) => `${label}  ${value}`,
