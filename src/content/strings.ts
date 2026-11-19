@@ -412,6 +412,8 @@ export const STRINGS = {
     oddsNote: 'this contract flown on Auto Turn',
     // An open contract that asks for a class of machine: the line under its client, and each class as it is asked for.
     asks: (wanted: string, percent: number) => `WANTS ${wanted}: +${percent}% PAY`,
+    // After it, while another build is chosen: which of the pilot's saved builds is of that class.
+    asksBuild: (slot: number) => `(BUILD ${slot})`,
     wanted: {
       duellist: 'A DUELLIST', marksman: 'A SHARPSHOOTER', artillery: 'ARTILLERY', lancer: 'A LANCER', bastion: 'A BASTION',
       skirmisher: 'A SKIRMISHER', allrounder: 'AN ALL-ROUNDER',

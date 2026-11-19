@@ -153,6 +153,16 @@ export class BriefingScreen implements Screen {
     return this.sortie ? archetypeOf(this.sortie.build, this.app.deps.catalog) : null;
   }
 
+  /**
+   * The first of the pilot's saved builds that is of the class the contract asks for, by its slot: the one
+   * to turn to for what the contract pays more. Null when it asks for nothing, or nothing saved is of it.
+   */
+  private get fits(): number | null {
+    const { asks } = this.mission;
+    const found = asks ? this.builds.find((sortie) => sortie.slot !== null && archetypeOf(sortie.build, this.app.deps.catalog) === asks) : undefined;
+    return found?.slot ?? null;
+  }
+
   /** Walks through the builds there are to take, round and round. */
   private turnBuild(step: number): void {
     const count = this.builds.length;
@@ -227,7 +237,8 @@ export class BriefingScreen implements Screen {
         // How the contract is likely to go in it: flights won of those counted so far, and whether all are counted.
         odds: this.odds,
         // The class the contract asks for, when it asks, and whether the build chosen is of it.
-        asks: this.mission.asks ? { kind: this.mission.asks, met: this.kind === this.mission.asks } : null,
+        // And the slot of the first saved build that is of it, for the pilot who would rather be paid for it.
+        asks: this.mission.asks ? { kind: this.mission.asks, met: this.kind === this.mission.asks, fits: this.fits } : null,
         // How many offers there are for this contract, the client of the one showing, and whether that is the other side's.
         offers: this.other ? 2 : 1, client: this.mission.client, turned: this.mission === this.other,
       },
@@ -265,9 +276,13 @@ export class BriefingScreen implements Screen {
     wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
       drawText(ctx, line, 72, 40 + i * 11, { color: decisive ? COLORS.danger : COLORS.dim }));
     // An open contract that asks for a class says so on the second line, which its one-line tag leaves free:
-    // a notice, and lit in the colour of pay when the build chosen is of that class.
+    // lit in the colour of pay when the build chosen is of that class; a notice otherwise, which then points
+    // to the saved build that is, when there is one.
     if (mission.asks) {
-      drawText(ctx, B.asks(B.wanted[mission.asks], Math.round(ASK_BONUS * 100)), 72, 51, { color: kind === mission.asks ? COLORS.armor : COLORS.heat });
+      const met = kind === mission.asks;
+      const fits = this.fits;
+      const wants = B.asks(B.wanted[mission.asks], Math.round(ASK_BONUS * 100));
+      drawText(ctx, !met && fits !== null ? `${wants} ${B.asksBuild(fits + 1)}` : wants, 72, 51, { color: met ? COLORS.armor : COLORS.heat });
     }
     // What it will be taken in, in the corner the title leaves free: which build, and what kind of machine that is.
     // A saved build that was turned to stands out: it is not the one on the floor, and accepting will fit it.

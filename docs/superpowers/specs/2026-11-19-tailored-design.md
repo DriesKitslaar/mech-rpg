@@ -107,8 +107,10 @@ dice of their own, so that every board is otherwise exactly the board it always 
 - **The list:** the contract's pay ends in a plus (`2900+`).
 - **The briefing:** a line under the contract's tag, `WANTS A BASTION: +25% PAY`. It is a notice in
   amber while the build chosen is of another class, and stands in the colour of pay once a build
-  of that class is turned to on the Build row. With the odds beside it, the briefing then answers
-  both questions: does it pay to switch, and can that build do it.
+  of that class is turned to on the Build row. While it is a notice it points to the first saved
+  build of that class, when the pilot has one that can be flown: `... (BUILD 1)`. With the odds
+  beside it, the briefing then answers both questions: does it pay to switch, and can that build
+  do it.
 - **The settlement:** won in a build of that class, a quarter of the fee as it was paid (after a
   wingman's share and the pilot's pay perk; not of what the rank added) on a row of its own,
   `Bastion bonus +725`. Won as anything else, or lost, it pays what it says. With the rank's row

@@ -162,7 +162,7 @@ test('the build row in Dutch, and with nothing saved', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-type Asks = { kind: string; met: boolean };
+type Asks = { kind: string; met: boolean; fits: number | null };
 const asks = async (page: Page): Promise<Asks | null> => (await snap(page) as unknown as { briefing: { asks: Asks | null } }).briefing.asks;
 
 test('work that asks for a class: a plus on the list, a line in the briefing that lights up for a build of the class', async ({ page }) => {
@@ -180,19 +180,20 @@ test('work that asks for a class: a plus on the list, a line in the briefing tha
   await press(page, 'Enter');
   await waitForScreen(page, 'briefing');
   await written(page);
-  // In the duellist on the floor it is a notice: the contract can be flown, and pays what it says.
-  expect(await asks(page)).toEqual({ kind: 'bastion', met: false });
+  // In the duellist on the floor it is a notice: the contract can be flown, and pays what it says. The notice
+  // points to the build that would be paid for: the bastion saved first.
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: false, fits: 0 });
   await page.screenshot({ path: shot('briefing-asks') });
   // Turned to the bastion saved first, the line is lit; the odds beside it say whether the bastion can do it.
   await toRow(page, 'build');
   await press(page, 'ArrowRight');
   expect(await chosen(page)).toMatchObject({ slot: 0, kind: 'bastion' });
-  expect(await asks(page)).toEqual({ kind: 'bastion', met: true });
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: true, fits: 0 });
   await counted(page);
   await page.screenshot({ path: shot('briefing-asks-met') });
   // The sharpshooter is not what was asked for either.
   await press(page, 'ArrowRight');
-  expect(await asks(page)).toEqual({ kind: 'bastion', met: false });
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: false, fits: 0 });
   expect(errors).toEqual([]);
 });
 
@@ -214,7 +215,7 @@ test('won as the class asked for, the contract pays a quarter more, on a row of 
   await waitForScreen(page, 'briefing');
   await toRow(page, 'build');
   await press(page, 'ArrowRight');
-  expect(await asks(page)).toEqual({ kind: 'bastion', met: true });
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: true, fits: 0 });
   await toRow(page, 'accept');
   await press(page, 'Enter');
   await waitForScreen(page, 'battle');
@@ -244,10 +245,10 @@ test('the class wanted, in Dutch', async ({ page }) => {
   await choose(page, 'open-0-20-1');
   await waitForScreen(page, 'briefing');
   await written(page);
-  expect(await asks(page)).toEqual({ kind: 'bastion', met: false });
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: false, fits: 0 });
   await toRow(page, 'build');
   await press(page, 'ArrowRight');
-  expect(await asks(page)).toEqual({ kind: 'bastion', met: true });
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: true, fits: 0 });
   await counted(page);
   await page.screenshot({ path: shot('nl-briefing-asks') });
   expect(errors).toEqual([]);

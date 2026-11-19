@@ -29,7 +29,7 @@ const drawn = (app: App): Drawn => record((ctx) => app.draw(ctx));
 const quiet = (base: GameState): GameState => ({ ...base, codex: WORLD.map((entry) => entry.id), scenes: ['act-1'] });
 const B = STRINGS.briefing;
 const BASTION = ARCHETYPE_BUILDS.bastion.war;
-interface Asks { kind: Archetype; met: boolean }
+interface Asks { kind: Archetype; met: boolean; fits: number | null }
 const asksOf = (app: App): Asks | null => (snap(app).briefing as unknown as { asks: Asks | null }).asks;
 interface Asked { kind: Archetype; bonus: number }
 const askedOf = (app: App): Asked | null => (snap(app).settlement as unknown as { asked: Asked | null }).asked;
@@ -102,7 +102,7 @@ describe('at the briefing', () => {
     const { won, asking } = boardAsking('lancer');
     const app = atBriefing(pilot(won), asking.id);
     // The juggernaut on the floor is a lancer: the line is lit, in the colour of pay.
-    expect(asksOf(app)).toEqual({ kind: 'lancer', met: true });
+    expect(asksOf(app)).toEqual({ kind: 'lancer', met: true, fits: null });
     let line = written(drawn(app), 'WANTS A LANCER: +25% PAY');
     expect(line).toMatchObject({ left: 72, y: 51, color: COLORS.armor, size: 12 });
     // Under the contract's own tag, a row lower.
@@ -112,24 +112,55 @@ describe('at the briefing', () => {
     // Turned to the bastion saved first, it is a notice and no more.
     toRow(app, 'build');
     press(app, 'right');
-    expect(asksOf(app)).toEqual({ kind: 'lancer', met: false });
+    expect(asksOf(app)).toEqual({ kind: 'lancer', met: false, fits: null });
     line = written(drawn(app), 'WANTS A LANCER: +25% PAY');
     expect(line.color).toBe(COLORS.heat);
     // And back.
     press(app, 'left');
-    expect(asksOf(app)).toEqual({ kind: 'lancer', met: true });
+    expect(asksOf(app)).toEqual({ kind: 'lancer', met: true, fits: null });
     expect(written(drawn(app), 'WANTS A LANCER: +25% PAY').color).toBe(COLORS.armor);
   });
 
-  test('a saved build of the class asked for lights it up when it is turned to', () => {
+  test('a saved build of the class asked for is pointed to, and lights the line up when it is turned to', () => {
     const { won, asking } = boardAsking('bastion');
     const app = atBriefing(pilot(won), asking.id);
-    expect(asksOf(app)).toEqual({ kind: 'bastion', met: false });
-    expect(written(drawn(app), 'WANTS A BASTION: +25% PAY').color).toBe(COLORS.heat);
+    // The bastion is saved first: the line says which build would be paid for.
+    expect(asksOf(app)).toEqual({ kind: 'bastion', met: false, fits: 0 });
+    expect(written(drawn(app), 'WANTS A BASTION: +25% PAY (BUILD 1)')).toMatchObject({ left: 72, y: 51, color: COLORS.heat });
     toRow(app, 'build');
     press(app, 'right');
-    expect(asksOf(app)).toEqual({ kind: 'bastion', met: true });
+    // Turned to, it needs no pointing to.
+    expect(asksOf(app)).toEqual({ kind: 'bastion', met: true, fits: 0 });
     expect(written(drawn(app), 'WANTS A BASTION: +25% PAY').color).toBe(COLORS.armor);
+    expect(drawn(app).texts.filter((t) => /\(BUILD/.test(t.text))).toEqual([]);
+  });
+
+  test('the build pointed to is the first saved one of the class, by the number the garage gives it; none saved, none pointed to', () => {
+    const { won, asking } = boardAsking('bastion');
+    // The bastion saved second, behind a sharpshooter; and a second bastion saved third.
+    const base = pilot(won);
+    const [bastion] = base.loadouts;
+    const sharp = wearing(base, ARCHETYPE_BUILDS.marksman.war);
+    const second = { ...sharp, build: base.build, loadouts: [sharp.build, bastion, { ...bastion!, rightHand: bastion!.leftHand, leftHand: bastion!.rightHand }] };
+    const app = atBriefing(second, asking.id);
+    expect(asksOf(app)).toEqual({ kind: 'bastion', met: false, fits: 1 });
+    expect(written(drawn(app), 'WANTS A BASTION: +25% PAY (BUILD 2)').color).toBe(COLORS.heat);
+    // With no bastion saved the line is as it was.
+    const none = atBriefing({ ...base, loadouts: [null, null, null] }, asking.id);
+    expect(asksOf(none)).toEqual({ kind: 'bastion', met: false, fits: null });
+    expect(written(drawn(none), 'WANTS A BASTION: +25% PAY').color).toBe(COLORS.heat);
+    // A saved build that cannot be flown is not pointed to: its parts were sold.
+    const sold = atBriefing({ ...base, inventory: { ...base.inventory, [BASTION.core]: 0 } }, asking.id);
+    expect(asksOf(sold)).toEqual({ kind: 'bastion', met: false, fits: null });
+  });
+
+  test('the pointer is the same word in Dutch, and the longest line there is stays clear of the corner', () => {
+    expect(B.asksBuild(2)).toBe('(BUILD 2)');
+    expect(STRINGS_NL.briefing.asksBuild(2)).toBe('(BUILD 2)');
+    const longest = `${STRINGS_NL.briefing.asks(STRINGS_NL.briefing.wanted.marksman, 25)} ${STRINGS_NL.briefing.asksBuild(3)}`;
+    expect(longest).toBe('ZOEKT SCHERPSCHUTTER: +25% LOON (BUILD 3)');
+    // From where the line starts to the panel's edge, with room to spare.
+    expect(72 + longest.length * 4.8).toBeLessThan(310 - 12);
   });
 
   test('a contract that asks for nothing has no such line, and neither has the patrol or a contract of the story', () => {

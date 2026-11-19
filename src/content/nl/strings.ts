@@ -365,6 +365,7 @@ export const STRINGS_NL = {
     odds: (won: number, played: number) => `KANS ${won}/${played}`, oddsWait: 'KANS ..',
     oddsNote: 'dit contract op Auto-beurt',
     asks: (wanted: string, percent: number) => `ZOEKT ${wanted}: +${percent}% LOON`,
+    asksBuild: (slot: number) => `(BUILD ${slot})`,
     wanted: {
       duellist: 'DUELLIST', marksman: 'SCHERPSCHUTTER', artillery: 'ARTILLERIE', lancer: 'LANSIER', bastion: 'BASTION',
       skirmisher: 'JAGER', allrounder: 'ALLROUNDER',

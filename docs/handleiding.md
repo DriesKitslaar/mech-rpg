@@ -309,7 +309,8 @@ bepaalde klasse. Je herkent het in de lijst aan een **plus** achter het loon (bi
   **een kwart meer loon**. Op de afrekening staat dat als een eigen regel, bijvoorbeeld
   **Bastion bonus +600**.
 - De regel in de briefing is **geel** zolang je gekozen build niet van die klasse is, en wordt
-  **groen** zodra je op de rij **Build** naar een build van die klasse bladert.
+  **groen** zodra je op de rij **Build** naar een build van die klasse bladert. Heb je zo'n build
+  bewaard, dan staat erachter welke: **(BUILD 1)**.
 - Na elk gewonnen contract hangt er een nieuw bord, met een andere vraag. Zo loont het om meer dan
   een soort build bewaard te hebben.
 
