@@ -6,14 +6,14 @@ import { generateBoard, swarmContract } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
   archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, otherOffer, markRead,
-  markSceneSeen, startNewCycle, stockFor, unreadMessages,
+  markSceneSeen, startNewCycle, stockFor, unreadMessages, LESSONS,
   type Mission, type Scene,
 } from '../core/campaign';
 import { isFind, metByRecord, openEntries, type Entry, type Find } from '../core/codex';
 import { applySettlement, debtRelief, settle, type Settlement } from '../core/economy';
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import {
-  TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, newGame, type GameState, type LightDetail, type Settings,
+  TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, learn, newGame, type GameState, type LightDetail, type Settings,
 } from '../core/game';
 import { startMissionBattle } from '../core/mission';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
@@ -31,7 +31,7 @@ import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
 import { WORLD } from '../content/codex';
 import { FINDS } from '../content/finds';
-import { DRILLS } from '../content/drills';
+import { DRILLS, LESSON_LINES } from '../content/drills';
 import { MEDALS } from '../content/medals';
 import { MESSAGES, MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
@@ -236,6 +236,8 @@ class MissionHost implements Screen {
   private overdrives = 0;
   /** What there is to say about the battle the contract was lost in; null after a win or a retreat. */
   private tip: Advice | null = null;
+  /** How many of the lessons said in the battle being fought have been written into the kept game. */
+  private learnt = 0;
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
@@ -273,7 +275,13 @@ class MissionHost implements Screen {
     const rank = game && !drill ? nameRank(game) : 0;
     const known = rank > 0 ? STRINGS.renown.names[rank - 1].toUpperCase() : null;
     const opening = known && state.open ? STRINGS.renown.opening(known, STRINGS.renown.notes[rank - 1]) : undefined;
-    this.flow = new BattleFlow(state, catalog, { talk: this.mission.battles[this.index].talk, quiet: fast, cycle: this.app.game?.cycle ?? 0, ...(opening ? { opening } : {}) });
+    // What Dispatch explains once is explained on a contract: the simulator and the Gauntlet have voices of their own.
+    const told = game?.lessons ?? [];
+    const lessons = drill ? {} : Object.fromEntries(LESSONS.filter((id) => !told.includes(id)).map((id) => [id, LESSON_LINES[id]]));
+    this.learnt = 0;
+    this.flow = new BattleFlow(state, catalog, {
+      talk: this.mission.battles[this.index].talk, quiet: fast, cycle: this.app.game?.cycle ?? 0, lessons, ...(opening ? { opening } : {}),
+    });
     const battle = this.mission.battles[this.index];
     const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
     if (this.index > 0) this.app.openShutter();
@@ -356,7 +364,16 @@ class MissionHost implements Screen {
 
   update(dtMs: number): void {
     this.screen.update(dtMs);
+    this.keepLessons();
     this.bookIfOver();
+  }
+
+  /** What the pilot has just been told is kept at once: closing the game in the middle of that fight does not bring the line back. */
+  private keepLessons(): void {
+    const said = this.flow.taught;
+    if (said.length === this.learnt) return;
+    this.app.learn(said.slice(this.learnt));
+    this.learnt = said.length;
   }
 
   draw(ctx: CanvasRenderingContext2D): void { this.screen.draw(ctx); }
@@ -903,6 +920,12 @@ export class App {
   }
 
   /** Books a drill: the first pass pays and is remembered; nothing else changes. */
+  /** Writes into the kept game what the pilot has been told in the field, so that it is not said again. */
+  learn(lessons: readonly string[]): void {
+    const next = learn(this.game!, lessons);
+    if (next !== this.game) this.commit(next);
+  }
+
   bookDrill(settlement: Settlement, mission: Mission): void {
     const next = recordDrill(this.game!, settlement, mission);
     if (next !== this.game) this.commit(next);

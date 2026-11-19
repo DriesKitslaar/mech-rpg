@@ -22,6 +22,8 @@ export interface Drill {
   after: Condition;
   /** The Overdrive the lent mech has, and what its meter starts at: only the drill that teaches it. */
   overdrive?: Mission['overdrive'];
+  /** Its battle is an open one where the machines in it make it so: only a drill that teaches what an open battle gives. */
+  open?: true;
 }
 
 /** What a drill pays, once: the first time it is passed. */
@@ -41,11 +43,12 @@ export const drillOpen = (game: GameState, drill: Drill, missions: Mission[]): b
  * A drill in the shape of a contract, so it is briefed, fought and settled like one. It pays only until it has been passed.
  * Its battle is never an open one: a drill is about one thing, in a mech and against machines picked so that doing
  * that thing wins it, and a lent weapon that went through them, or machines that lost their nerve, would win it instead.
+ * The drills that teach exactly that say so (`open`), and are left as their machines make them.
  */
 export function drillMission(game: GameState, drill: Drill, client: string): Mission {
   return {
     id: drill.id, phase: 'patrol', title: drill.title, client, briefing: drill.briefing, debrief: drill.debrief,
-    reward: drillPassed(game, drill.id) ? 0 : DRILL_PAY, battles: [{ ...drill.battle, closed: true }], scale: drill.scale ?? 1, loaner: drill.build,
+    reward: drillPassed(game, drill.id) ? 0 : DRILL_PAY, battles: [drill.open ? drill.battle : { ...drill.battle, closed: true }], scale: drill.scale ?? 1, loaner: drill.build,
     ...(drill.overdrive ? { overdrive: drill.overdrive } : {}),
   };
 }

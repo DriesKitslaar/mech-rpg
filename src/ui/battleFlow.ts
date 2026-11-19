@@ -4,7 +4,7 @@ import {
   type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState, ORDERS,
 } from '../core/battle';
 import { moduleOf, weaponIn } from '../core/build';
-import type { TalkLine } from '../core/campaign';
+import { LESSONS, type Lesson, type LessonLine, type TalkLine } from '../core/campaign';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Catalog, type FrameSlot, type WeaponSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -32,6 +32,8 @@ export interface FlowOptions {
   quiet?: boolean;
   /** What stands in the message bar as the battle opens, before anything has happened. */
   opening?: string;
+  /** What this pilot has not been told yet: each line is said once, the first time its moment comes (see `Lesson`). */
+  lessons?: Partial<Record<Lesson, LessonLine>>;
 }
 
 const O = STRINGS.objectives;
@@ -66,6 +68,8 @@ export class BattleFlow {
   spoken: Spoken | null = null;
   /** Why the battle ended the way it did, when that is not plain to see. */
   resultNote = '';
+  /** The lessons said in this battle, in the order they were said: whoever keeps the game remembers them. */
+  readonly taught: Lesson[] = [];
 
   private shown = 0;
   private weapon: WeaponSlot | null = null;
@@ -119,6 +123,22 @@ export class BattleFlow {
       if (!come[moment] || this.momentsSaid.has(moment)) return [];
       this.momentsSaid.add(moment);
       return this.lines(moment);
+    });
+  }
+
+  /**
+   * The lessons whose moment this is and which this pilot has not had. A lesson is about what the
+   * pilot is looking at as the menu is handed over: the weapon a kill has just readied, the machine
+   * that has just lost its nerve and still stands. A moment that went by without a menu (a turn
+   * played by Auto Turn, a volley that ended the battle) has no line; the next one will.
+   */
+  private lessons(come: Record<Lesson, boolean>): Spoken[] {
+    if (this.opts.quiet) return [];
+    return LESSONS.flatMap((id) => {
+      const line = this.opts.lessons?.[id];
+      if (!line || !come[id] || this.taught.includes(id)) return [];
+      this.taught.push(id);
+      return [{ who: line.who, text: line.text, ...(line.portrait ? { portrait: line.portrait } : {}) }];
     });
   }
 
@@ -362,6 +382,8 @@ export class BattleFlow {
     // the turn again by this very step, in place of the turn's own line. A step that goes on to something else
     // (the automatic player's next action) says nothing of it: the word over the mech and the sound have.
     let standing: string | null = null;
+    /** True where that line says of a weapon that it is ready again, and it is. */
+    let readied = false;
     while (this.shown < this.state.events.length) {
       const event = this.state.events[this.shown++];
       // Machines that come on together are said in one line and shown at once. (A field holds three: after two
@@ -377,7 +399,11 @@ export class BattleFlow {
         if (!['ready', 'charge'].includes(this.readied(event.weapon))) this.idle.add(this.shown - 1);
         // What a kill gave back is the last thing a volley says. Nothing waits for it: it is said as the turn is
         // handed back, and stands in the bar while the pilot chooses what to do with it.
-        if (this.shown === this.state.events.length && this.state.outcome === 'ongoing') { standing = text; continue; }
+        if (this.shown === this.state.events.length && this.state.outcome === 'ongoing') {
+          standing = text;
+          readied = this.readied(event.weapon) === 'ready';
+          continue;
+        }
       }
       if (text !== null) {
         this.message = text;
@@ -418,7 +444,8 @@ export class BattleFlow {
       .filter((round) => round <= this.state.round && !this.roundsSaid.has(round))
       .sort((a, b) => a - b);
     for (const round of due) this.roundsSaid.add(round);
-    this.say([...due.flatMap((round) => this.lines(round)), ...this.moments()], () => this.openActionMenu(standing));
+    const lessons = this.lessons({ momentum: readied, rout: this.livingEnemies().some((unit) => unit.shaken) });
+    this.say([...lessons, ...due.flatMap((round) => this.lines(round)), ...this.moments()], () => this.openActionMenu(standing));
   }
 
   /** Hands the pilot the menu. `standing` is what the bar says in place of the turn's own line, where the step that got here had something to say. */

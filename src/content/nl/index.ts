@@ -2,7 +2,7 @@ import { dictionary, overlay, textsOf, translatable, type TextSlot } from '../la
 import { ARENA } from '../arena';
 import { BOARD_TEXT } from '../board';
 import { JUKEBOX, MANUAL, PEOPLE, UNITS, WORLD } from '../codex';
-import { DRILLS } from '../drills';
+import { DRILLS, LESSON_LINES } from '../drills';
 import { FINDS } from '../finds';
 import { ENEMIES } from '../enemies';
 import { MEDALS } from '../medals';
@@ -32,6 +32,8 @@ function contentTexts(): TextSlot[] {
     ...textsOf('missions', MISSIONS, { title: 'mission.title', client: 'client', briefing: 'briefing', debrief: 'debrief' }),
     ...textsOf('missions', offers, { client: 'client', briefing: 'briefing', debrief: 'debrief' }),
     ...textsOf('missions', battles.flatMap((b) => b.talk ?? []), { text: 'battle.talk', who: 'who' }),
+    // What Dispatch explains once, the first time it happens.
+    ...textsOf('missions', Object.values(LESSON_LINES), { text: 'battle.talk', who: 'who' }),
     // Whoever fires in support of a battle is named in the briefing and on the field: a name stays, a thing is translated.
     ...textsOf('missions', battles.flatMap((b) => (b.support ? [b.support] : [])), { name: 'who' }),
     ...textsOf('missions', battles.flatMap((b) => (b.objective && 'name' in b.objective ? [b.objective] : [])), { name: 'asset' }),

@@ -32,6 +32,16 @@ export interface TalkLine {
   text: string;
 }
 
+/**
+ * What is explained to a pilot once, the first time it happens to them: why a kill gave a weapon
+ * back (`momentum`), and why a machine that was not hit is leaving (`rout`). In the order they are
+ * said where both come at once.
+ */
+export const LESSONS = ['momentum', 'rout'] as const;
+export type Lesson = typeof LESSONS[number];
+/** A lesson's line: who says it, and what. */
+export type LessonLine = Pick<TalkLine, 'who' | 'portrait' | 'text'>;
+
 export interface Battle {
   enemies: string[];
   /** Machines that are not on the field at the start: they come on in this order as room is made. See `BattleState.reserve`. */

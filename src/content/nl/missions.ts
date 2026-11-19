@@ -566,6 +566,32 @@ export const MISSIONS_NL: Record<string, string> = {
     `Dit is Tweede Adem: je beurt begint opnieuw. Vuur alles af, druk op R1, vuur alles nog eens af. De jouwe opent op pilotenlevel 3.`,
   [`Two turns in one. It is worth most when the first one is spent.`]: `Twee beurten in een. Het meest waard als de eerste op is.`,
   [`The meter is full already. Spend your energy first, then R1.`]: `De meter is al vol. Verbruik eerst je energie, dan R1.`,
+  // The drills that teach what an open battle gives.
+  [`Follow Through`]: `Doorpakken`,
+  [`Momentum and rout`]: `Doorstoten en vlucht`,
+  [`Where the banner says MOMENTUM, nothing on the field outranks you. A weapon that destroys a machine there is ready again in the same turn, and its energy comes back.`]:
+    `Waar de banner DOORSTOTEN zegt, staat er niets boven je op het veld. Een wapen dat daar een machine vernietigt is in dezelfde beurt weer klaar, en de energie komt terug.`,
+  [`Destroy two in one turn and what is left loses its nerve and leaves. One lance, two drones, and an enforcer the lance cannot hurt. It does not have to.`]:
+    `Vernietig er twee in een beurt en wat er nog staat raakt in paniek en vlucht. Een lans, twee drones, en een Enforcer die de lans niet deert. Dat hoeft ook niet.`,
+  [`Two down in one turn and the big one ran. It was never going to be a fair fight. That is the idea.`]:
+    `Twee neer in een beurt en de grote ging ervandoor. Een eerlijk gevecht zou het nooit worden. Dat is de bedoeling.`,
+  [`Aim at a drone: the line says DESTROYS. One blow that takes half a core finishes the machine. Take both this turn, with the one lance, and watch the enforcer.`]:
+    `Mik op een drone: er staat VERNIETIGT. Een klap die een halve kern wegslaat maakt de machine af. Pak ze beide deze beurt, met die ene lans, en let op de Enforcer.`,
+  [`The Nest`]: `Het nest`,
+  [`A swarm`]: `Een zwerm`,
+  [`A swarm is more machines than a field holds. Three stand at a time; the rest come on at the start of each round, in the place of whoever fell or fled.`]:
+    `Een zwerm is meer machines dan er op een veld passen. Er staan er drie tegelijk; de rest komt op aan het begin van elke ronde, op de plek van wie viel of vluchtte.`,
+  [`The strip at the top counts what is still to come. Until it is gone the battle is not won. This frame is the kind you will own one day. See what it does.`]:
+    `De strook bovenaan telt wat er nog komt. Tot die weg is, is het gevecht niet gewonnen. Zo'n frame heb je op een dag zelf. Kijk wat het doet.`,
+  [`Eight machines, and none of them got to matter. Out there they pay you by the head for this.`]:
+    `Acht machines, en geen ervan deed ertoe. Daarbuiten betalen ze je hiervoor per stuk.`,
+  [`Three on the field and five behind them. They come on as the round turns, where one fell. The salvo fires at all three at once.`]:
+    `Drie op het veld en vijf erachter. Ze komen op als de ronde omslaat, op de plek van wie viel. Het salvo vuurt op alle drie tegelijk.`,
+  // What Dispatch explains once, the first time it happens.
+  [`One down, and the weapon that did it is ready again. That is the MOMENTUM on the banner: nothing here outranks you, so a kill gives the shot back. Use it.`]:
+    `Een neer, en het wapen dat het deed is weer klaar. Dat is DOORSTOTEN, het woord op de banner: niets hier staat boven je, dus elke vernietigde machine geeft je het schot terug.`,
+  [`Two in one turn, and the one that is left has lost its nerve. It leaves on its turn without firing. It only counts as destroyed if you get to it first.`]:
+    `Twee in een beurt, en wat er nog staat is in paniek. Het vertrekt in zijn beurt zonder te vuren. Het telt alleen als vernietigd als je het eerst te pakken krijgt.`,
   // What the wanted say when the fight opens and when it is lost.
   [`Nice helmet. I will have it when you are done with it.`]: `Mooie helm. Die neem ik als jij ermee klaar bent.`,
   [`All right, all right! Keep the helmet. Mine was nicer anyway.`]: `Al goed, al goed! Hou die helm maar. De mijne was toch mooier.`,

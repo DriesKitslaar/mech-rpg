@@ -44,7 +44,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 |---|---|
 | Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld), drie wisselende losse contracten en één zwerm. Onderaan staat het archief. |
 | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
-| Training | Elf oefeningen in een geleende mecha. |
+| Training | Dertien oefeningen in een geleende mecha. |
 | The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
 | Garage | Onderdelen wisselen, verf kiezen (L1/R1), drie builds bewaren (links/rechts). |
 | Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
@@ -77,7 +77,12 @@ gevecht aan het woord **MOMENTUM** (Nederlands: **DOORSTOTEN**) rechts op de ban
 gevecht begint. Tegen een baas, in een duel en in al die andere zware gevechten verandert er niets
 aan het gevecht zelf. Wel kom je er soms frisser aan, als het gevecht ervoor in hetzelfde contract
 tegen gewone machines was. In de oefeningen (Training) gelden deze regels niet: daar leer je één
-ding tegelijk. In de Gauntlet gelden ze wel.
+ding tegelijk. Alleen de twee oefeningen die er juist over gaan, **Follow Through** en **The Nest**,
+zijn zelf zo'n gevecht. In de Gauntlet gelden de regels ook.
+
+De eerste keer dat een vernietigde machine je een wapen teruggeeft, en de eerste keer dat een
+machine in paniek raakt, legt Dispatch in één regel uit wat er gebeurt. Daarna zegt hij het nooit
+meer.
 
 - **Doorstoten.** Een wapen waarmee je een machine vernietigt, is in dezelfde beurt meteen weer
   klaar, en de energie van dat schot krijg je terug. Zo ruim je met één zwaar wapen een heel veld

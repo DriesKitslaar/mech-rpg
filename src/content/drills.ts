@@ -1,4 +1,4 @@
-import type { TalkLine } from '../core/campaign';
+import type { Lesson, LessonLine, TalkLine } from '../core/campaign';
 import type { Drill } from '../core/training';
 
 /** Every drill is fought in the simulator's own hall: a grid of light with nothing in it to break. */
@@ -210,4 +210,53 @@ export const DRILLS: Drill[] = [
     },
     overdrive: { kind: 'second-wind', drive: 100 },
   },
+  // The two that teach what an open battle gives, and so are open battles themselves.
+  {
+    id: 'drill-momentum', title: 'Follow Through', lesson: 'Momentum and rout', after: 'intro-2', scale: 1.5, open: true,
+    briefing: [
+      'Where the banner says MOMENTUM, nothing on the field outranks you. A weapon that destroys a machine there is ready again in the same turn, and its energy comes back.',
+      'Destroy two in one turn and what is left loses its nerve and leaves. One lance, two drones, and an enforcer the lance cannot hurt. It does not have to.',
+    ],
+    debrief: 'Two down in one turn and the big one ran. It was never going to be a fair fight. That is the idea.',
+    // One weapon, so that a second shot in a turn can only be one a kill gave back; an aim that seldom misses a drone.
+    build: {
+      head: 'head-wraith', core: 'core-ronin', arms: 'arms-wraith', legs: 'legs-ronin', generator: 'gen-prism',
+      booster: 'bst-stock', fcs: 'fcs-tracer', rightHand: 'wpn-rail-lance',
+    },
+    battle: {
+      enemies: ['heavy-mech', 'recon-drone', 'recon-drone'], background: HALL,
+      talk: [
+        sim('start', 'Aim at a drone: the line says DESTROYS. One blow that takes half a core finishes the machine. Take both this turn, with the one lance, and watch the enforcer.'),
+      ],
+    },
+  },
+  {
+    id: 'drill-swarm', title: 'The Nest', lesson: 'A swarm', after: 'intro-2', open: true,
+    briefing: [
+      'A swarm is more machines than a field holds. Three stand at a time; the rest come on at the start of each round, in the place of whoever fell or fled.',
+      'The strip at the top counts what is still to come. Until it is gone the battle is not won. This frame is the kind you will own one day. See what it does.',
+    ],
+    debrief: 'Eight machines, and none of them got to matter. Out there they pay you by the head for this.',
+    build: {
+      head: 'head-ronin', core: 'core-ronin', arms: 'arms-ronin', legs: 'legs-ronin', generator: 'gen-tidal',
+      booster: 'bst-stock', fcs: 'fcs-omni', rightHand: 'wpn-rail-lance', shoulder: 'wpn-micro-salvo',
+    },
+    battle: {
+      enemies: ['recon-drone', 'bomb-crawler', 'recon-drone'],
+      reserve: ['recon-drone', 'recon-drone', 'bomb-crawler', 'recon-drone', 'recon-drone'], background: HALL,
+      talk: [
+        sim('start', 'Three on the field and five behind them. They come on as the round turns, where one fell. The salvo fires at all three at once.'),
+      ],
+    },
+  },
 ];
+
+/**
+ * What Dispatch explains to a pilot once, in the field, the first time it happens to them: the two
+ * things an open battle does that the screen alone does not make plain. See `Lesson`.
+ */
+const told = (text: string): LessonLine => ({ who: 'Dispatch', portrait: 'portrait-dispatch', text });
+export const LESSON_LINES: Record<Lesson, LessonLine> = {
+  momentum: told('One down, and the weapon that did it is ready again. That is the MOMENTUM on the banner: nothing here outranks you, so a kill gives the shot back. Use it.'),
+  rout: told('Two in one turn, and the one that is left has lost its nerve. It leaves on its turn without firing. It only counts as destroyed if you get to it first.'),
+};
