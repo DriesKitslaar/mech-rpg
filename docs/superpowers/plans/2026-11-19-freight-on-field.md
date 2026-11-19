@@ -65,4 +65,4 @@
 
 ### Task V3: final check
 
-- [ ] Read through once more; the soak; the last APK; a short Dutch summary.
+- [x] Read through once more; the soak; the last APK; a short Dutch summary. (Browser tests added for the freight the others did not come to: the core stack in the vault, the favour's convoy in the sluice, the drill's convoy in the hall.)

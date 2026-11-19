@@ -97,15 +97,15 @@ async function pick(page: Page, id: string): Promise<void> {
   }
   throw new Error(`no row ${id}`);
 }
-/** From the title into a contract's first battle, to the first moment the pilot may act. */
-async function fly(page: Page, missionId: string): Promise<void> {
+/** From the title into a contract's first battle (or, by way of the simulator, a drill's), to the first moment the pilot may act. */
+async function fly(page: Page, missionId: string, by: 'contracts' | 'training' = 'contracts'): Promise<void> {
   for (let i = 0; i < 400; i++) {
     const s = await snap(page) as Seen;
     if (s.screen === 'battle' && s.battle?.phase === 'action') return;
     if (s.busy) await adv(page, 96);
     else if (s.screen === 'title') await pick(page, 'continue');
-    else if (s.screen === 'hub' && (!s.list || s.list === 'main')) await pick(page, 'contracts');
-    else if (s.screen === 'hub') await pick(page, missionId);
+    else if (s.screen === 'hub' && (!s.list || s.list === 'main')) await pick(page, by);
+    else if (s.screen === 'hub' || s.screen === 'training') await pick(page, missionId);
     else if (s.screen === 'briefing') await pick(page, 'accept');
     else if (s.screen === 'battle' && s.battle?.phase === 'talk') { await tap(page, 'Enter'); await adv(page, 160); }
     else if (s.screen === 'battle') await adv(page, 160);
@@ -204,5 +204,48 @@ test('the story\'s ore train stands on the field of the pits, and in Dutch what 
   expect(struck.asset!.hp).toBeLessThan(struck.asset!.max);
   await adv(page, 48);
   await page.screenshot({ path: shot('nl-freight-struck') });
+  expect(errors).toEqual([]);
+});
+
+// The freight the story has that the tests above do not come to: each in the place it is fought over in.
+const ACT_ONE = ['hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1'];
+
+test('the story\'s core stack stands on the floor of the vault', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = await open(page, pilot(14, ARCHETYPE_BUILDS.allrounder.late, [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4']));
+  await fly(page, 'lumen-5');
+  const f = await field(page);
+  expect(f.freight).toMatchObject({ sprite: 'asset-core-stack' });
+  expect(f.asset).toMatchObject({ hp: f.asset!.max });
+  await adv(page, 400);
+  await page.screenshot({ path: shot('freight-core-stack') });
+  expect(errors).toEqual([]);
+});
+
+test('the convoy of a favour stands on the low floor of the sluice', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = await open(page, pilot(14, ARCHETYPE_BUILDS.allrounder.late, [...ACT_ONE, 'choice-lumen'], { choices: { sixty: 'keep' } }));
+  await fly(page, 'favour-sixty');
+  const f = await field(page);
+  expect(f.freight).toMatchObject({ sprite: 'asset-convoy' });
+  // Lower on the screen than freight on any other floor: the sluice's floor begins lower.
+  expect(f.freight!.y + f.freight!.h).toBeGreaterThan(124);
+  await adv(page, 400);
+  await page.screenshot({ path: shot('freight-convoy-sluice') });
+  expect(errors).toEqual([]);
+});
+
+test('the convoy of the simulator\'s drill stands in the hall, clear of what the simulator says', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors = await open(page, pilot(2, ARCHETYPE_BUILDS.allrounder.early));
+  await fly(page, 'drill-protect', 'training');
+  const f = await field(page);
+  expect(f.freight).toMatchObject({ sprite: 'asset-convoy' });
+  await adv(page, 400);
+  await page.screenshot({ path: shot('freight-convoy-drill') });
+  const struck = await untilStruck(page, 'Convoy');
+  expect(struck.asset!.hp).toBeLessThan(struck.asset!.max);
+  await adv(page, 48);
+  await page.screenshot({ path: shot('freight-convoy-drill-struck') });
   expect(errors).toEqual([]);
 });
