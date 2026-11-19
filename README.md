@@ -27,22 +27,27 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 ## Wat er in zit
 
 - **Mecha**: elf sloten (kop, romp, armen, benen, generator, booster, vuurleiding, module, twee
-  handen, schouder) en 112 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
+  handen, schouder) en 129 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
   niet overschrijden en de generator moet alles kunnen voeden. Twaalf verfschema's en drie
-  opgeslagen builds.
+  opgeslagen builds. Je begint in een van drie mecha's naar keuze.
+- **Zeven klassen**: elke build is een Duellist, Sharpshooter, Artillery, Lancer, Bastion,
+  Skirmisher of All-rounder. De garage zegt welke, het pilotenscherm houdt bij wat je als elke
+  klasse hebt gewonnen en stelt een build voor die je nu kunt kopen. Met elk van de zeven is het
+  hele verhaal uit te spelen.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.
-- **Vijanden**: dertig soorten, waaronder drones die de rest afdekken of repareren, stoorzenders,
+- **Vijanden**: 47 soorten, waaronder drones die de rest afdekken of repareren, stoorzenders,
   lopende bommen, dragers, benoemde piloten en eindbazen die halverwege van tactiek veranderen.
 - **Campagne**: drie bedrijven, 29 verhaalcontracten waarvan één piloot er achttien speelt, drie
   opdrachtgevers, twee slotkeuzes en zes eindes. Contracten hebben doelen (overleven, beschermen,
   uitschakelen zonder te vernietigen, verjagen) en een rang van S tot D. Gespeelde contracten staan
   in een archief.
 - **Arena**: een ladder van tien piloten, een achterkamer met vijf voor de kampioen, en een
-  spiegelgevecht tegen je eigen mecha.
-- **Training**: tien oefeningen in een geleende mecha die elk één ding uitleggen.
-- **Piloot**: niveaus en acht vaardigheden, 45 medailles en een logboek.
+  spiegelgevecht tegen je eigen mecha. Na het verhaal: twee duels, elk om een mecha die je
+  daarna zelf mag kopen.
+- **Training**: dertien oefeningen in een geleende mecha die elk één ding uitleggen.
+- **Piloot**: niveaus en acht vaardigheden, 64 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
 - **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,

@@ -41,6 +41,18 @@ describe('a build of each kind for each stage', () => {
     expect(stats.turnEnergy).toBeGreaterThanOrEqual(200);
   });
 
+  test('what each costs bought new, stage by stage: the builds are the ones that were measured, to the part', () => {
+    expect(Object.fromEntries(ARCHETYPES.map((kind) => [kind, STAGES.map((stage) => price(ARCHETYPE_BUILDS[kind][stage]))]))).toEqual({
+      duellist: [6400, 11300, 26100], marksman: [5300, 13500, 17300], artillery: [6400, 12000, 20300], lancer: [6200, 13600, 23900],
+      bastion: [5800, 10700, 28100], skirmisher: [6500, 11400, 25700], allrounder: [7200, 13700, 23700],
+    });
+    // Every kind's builds grow dearer as the story goes on: none is a step back.
+    for (const kind of ARCHETYPES) {
+      const costs = STAGES.map((stage) => price(ARCHETYPE_BUILDS[kind][stage]));
+      expect([...costs].sort((a, b) => a - b), kind).toEqual(costs);
+    }
+  });
+
   test('what a pilot has to spend by each stage is what the reference build of that stage costs', () => {
     expect(STAGE_BUDGET).toEqual({ early: price(REFERENCE_BUILDS.tier2), war: price(REFERENCE_BUILDS.tier4), late: price(REFERENCE_BUILDS.tier6) });
     expect(STAGE_BUDGET).toEqual({ early: 7200, war: 13700, late: 28100 });

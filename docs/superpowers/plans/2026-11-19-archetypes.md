@@ -77,7 +77,7 @@
 - [x] The rule, with tests (`tests/core/archetype.test.ts`): seven kinds in order, each rule and what it yields to, the legs as sold, that no part of no consequence changes the name, the count and its check on loading.
 - [x] Builds measured for each kind at three stages; the ones chosen held to their stage (`tests/content/archetypeBuilds.test.ts`) and flown through whole careers (`tests/scripts/kinds.test.ts`).
 - [x] The page, the garage's line, the count and the suggestion (`tests/ui/classes.test.ts`), in both languages.
-- [ ] The medals' tests, the browser test with pictures, the guide, mutation, APK.
+- [x] The medals' tests, the browser test with pictures, the guide and a chapter of the manual, mutation (a hundred and twenty-six faults, all found once the Dutch rules and what each build costs were pinned), APK.
 
 ### Task B4: final check
 

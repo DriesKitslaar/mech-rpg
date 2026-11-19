@@ -1,4 +1,4 @@
-import { ARCHETYPES, QUICK_LEGS, SLOW_LEGS, adviceFor, archetypeOf, type Archetype, type BuildAdvice } from '../../src/core/archetype';
+import { ARCHETYPES, LANCER_WEAPONS, QUICK_LEGS, SLOW_LEGS, adviceFor, archetypeOf, type Archetype, type BuildAdvice } from '../../src/core/archetype';
 import { arenaMission } from '../../src/core/arena';
 import { lentPatrol } from '../../src/core/campaign';
 import type { Settlement } from '../../src/core/economy';
@@ -133,8 +133,13 @@ describe('the page of kinds', () => {
       lancer: 'Two weapons or more, all energy', bastion: `A shield, or legs of MOB ${SLOW_LEGS} or less`, skirmisher: `Legs of MOB ${QUICK_LEGS} or more`,
       allrounder: 'Anything else',
     });
-    expect(STRINGS_NL.classes.rules.bastion).toContain(`MOB ${SLOW_LEGS}`);
-    expect(STRINGS_NL.classes.rules.skirmisher).toContain(`MOB ${QUICK_LEGS}`);
+    // And in Dutch: the same figures, and two weapons where the English says two.
+    expect(STRINGS_NL.classes.rules).toEqual({
+      duellist: 'Een kling in een hand', marksman: 'Een wapen dat moet laden', artillery: 'Een salvo op de schouder',
+      lancer: 'Twee of meer wapens, alle energie', bastion: `Een schild, of benen tot MOB ${SLOW_LEGS}`, skirmisher: `Benen vanaf MOB ${QUICK_LEGS}`,
+      allrounder: 'Al het andere',
+    });
+    expect(LANCER_WEAPONS).toBe(2);
     // MOB is what a pair of legs calls its own mobility, in both languages: the figure to look for is on the part.
     expect([STRINGS.partInfo.mobility, STRINGS_NL.partInfo.mobility]).toEqual(['MOB', 'MOB']);
   });

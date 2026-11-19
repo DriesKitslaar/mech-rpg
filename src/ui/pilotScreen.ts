@@ -53,11 +53,8 @@ export class PilotScreen implements Screen {
       id, label: O.names[id], enabled: overdriveOpen(game, id),
       note: fitted === id ? O.fitted : overdriveOpen(game, id) ? undefined : O.level(OVERDRIVE_LEVEL[id]),
     })));
-    // The kinds of machine, in the order their rules are asked: each with what was won as it. The one the pilot flies now is marked.
-    const flown = archetypeOf(game.build, this.app.deps.catalog);
-    this.classes.setItems(ARCHETYPES.map((kind) => ({
-      id: kind, label: C.names[kind], enabled: wonAs(game, kind) > 0 || kind === flown, note: String(wonAs(game, kind)),
-    })));
+    // The kinds of machine, in the order their rules are asked: each with what was won as it, and lit once something was.
+    this.classes.setItems(ARCHETYPES.map((kind) => ({ id: kind, label: C.names[kind], enabled: wonAs(game, kind) > 0, note: String(wonAs(game, kind)) })));
     this.medals.setItems(MEDALS.map((medal) => {
       const { have, need, earned } = medalProgress(medal, game);
       return {
