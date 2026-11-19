@@ -237,6 +237,9 @@ export const REFERENCE_NL: Record<string, string> = {
   'LEG TYPES': 'BEENSOORTEN',
   'Reverse legs dodge better when they boost. Four legs are steady and aim shoulder weapons better. Tracks cannot boost, but guard best and are the hardest to stagger. Hover boosts cheaply and is easily knocked off balance.':
     'Omgekeerde benen ontwijken beter als ze boosten. Vier benen staan stevig en richten schouderwapens beter. Rupsbanden kunnen niet boosten, maar dekken het best en wankelen het minst snel. Hover boost goedkoop en raakt makkelijk uit balans.',
+  CLASSES: 'KLASSEN',
+  'A build is one of seven classes, the first it fits: a blade makes a Duellist, a weapon that charges a Sharpshooter, a salvo Artillery, two or more weapons, all energy, a Lancer, a shield or legs of MOB 18 or less a Bastion, legs of MOB 40 or more a Skirmisher, anything else an All-rounder. The garage names yours.':
+    'Een build is een van zeven klassen, de eerste die past: een kling maakt een Duellist, een wapen dat laadt een Scherpschutter, een salvo Artillerie, twee of meer wapens, alle energie, een Lansier, een schild of benen tot MOB 18 een Bastion, benen vanaf MOB 40 een Jager, al het andere een Allrounder. De garage noemt de jouwe.',
   'LEVELS AND PERKS': 'LEVELS EN PERKS',
   'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.':
     'Gewonnen contracten zijn ervaring. Elk level geeft een perkpunt; perks koop je op het pilotenscherm en hou je voorgoed. Medailles verdien je met wat je doet, ze betalen een beetje, en staan daar ook.',
