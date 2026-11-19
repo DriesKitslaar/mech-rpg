@@ -78,7 +78,9 @@ A frame built for one pilot: tall, plated like a herald's coat, a crest of seven
 head. In figures it stands a little above the Auditor in armour and between the Auditor and the
 Sterling in speed; its core raises a small field and its arms keep their balance through a
 blade's stroke, as the two duel frames' do. It pays for that in weight, in what it draws from the
-generator, and in price. On its own legs it is an all-rounder; what it carries makes it any class.
+generator, and in price. On its own legs it is an all-rounder; what it carries makes it a duellist,
+a marksman, artillery or a lancer, and behind a shield it is a bastion. It is too heavy for the
+quick legs a skirmisher stands on: that class keeps its own frames.
 
 It is sold only to a pilot who has taken the seat, in every telling: like an arena prize, it is
 not something a vendor remembers.

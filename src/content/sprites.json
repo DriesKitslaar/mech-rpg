@@ -1154,6 +1154,106 @@
       "hi": 0.491
     }
   },
+  "legs-sovereign": {
+    "file": "sprites/legs-sovereign.png",
+    "w": 120,
+    "h": 93,
+    "ox": 17,
+    "oy": 55,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "core-sovereign": {
+    "file": "sprites/core-sovereign.png",
+    "w": 43,
+    "h": 52,
+    "ox": 52,
+    "oy": 29,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "head-sovereign": {
+    "file": "sprites/head-sovereign.png",
+    "w": 32,
+    "h": 40,
+    "ox": 59,
+    "oy": 3,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-sovereign.near": {
+    "file": "sprites/arms-sovereign.near.png",
+    "w": 56,
+    "h": 47,
+    "ox": 85,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-sovereign.far": {
+    "file": "sprites/arms-sovereign.far.png",
+    "w": 44,
+    "h": 78,
+    "ox": 22,
+    "oy": 10,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
   "legs-crawler": {
     "file": "sprites/legs-crawler.png",
     "w": 138,
@@ -3653,6 +3753,114 @@
       "hi": 0.491
     }
   },
+  "legs-sovereign.back": {
+    "file": "sprites/legs-sovereign.back.png",
+    "w": 92,
+    "h": 73,
+    "ox": 13,
+    "oy": 51,
+    "hx": 39,
+    "hy": 36,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "core-sovereign.back": {
+    "file": "sprites/core-sovereign.back.png",
+    "w": 37,
+    "h": 37,
+    "ox": 40,
+    "oy": 27,
+    "hx": 18,
+    "hy": 13,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "head-sovereign.back": {
+    "file": "sprites/head-sovereign.back.png",
+    "w": 24,
+    "h": 21,
+    "ox": 49,
+    "oy": 3,
+    "hx": 11,
+    "hy": 11,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-sovereign.near.back": {
+    "file": "sprites/arms-sovereign.near.back.png",
+    "w": 45,
+    "h": 35,
+    "ox": 64,
+    "oy": 13,
+    "hx": 24,
+    "hy": 20,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-sovereign.far.back": {
+    "file": "sprites/arms-sovereign.far.back.png",
+    "w": 30,
+    "h": 58,
+    "ox": 18,
+    "oy": 12,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
   "legs-crawler.back": {
     "file": "sprites/legs-crawler.back.png",
     "w": 101,
@@ -4971,6 +5179,114 @@
       "lo": 0.005,
       "mid": 0.158,
       "hi": 0.491
+    }
+  },
+  "legs-sovereign.small": {
+    "file": "sprites/legs-sovereign.small.png",
+    "w": 78,
+    "h": 60,
+    "ox": 11,
+    "oy": 36,
+    "hx": 41,
+    "hy": 33,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "core-sovereign.small": {
+    "file": "sprites/core-sovereign.small.png",
+    "w": 28,
+    "h": 34,
+    "ox": 34,
+    "oy": 19,
+    "hx": 16,
+    "hy": 13,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "head-sovereign.small": {
+    "file": "sprites/head-sovereign.small.png",
+    "w": 20,
+    "h": 26,
+    "ox": 39,
+    "oy": 2,
+    "hx": 10,
+    "hy": 12,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-sovereign.near.small": {
+    "file": "sprites/arms-sovereign.near.small.png",
+    "w": 37,
+    "h": 31,
+    "ox": 55,
+    "oy": 11,
+    "hx": 18,
+    "hy": 17,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-sovereign.far.small": {
+    "file": "sprites/arms-sovereign.far.small.png",
+    "w": 29,
+    "h": 50,
+    "ox": 14,
+    "oy": 7,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        7,
+        8,
+        10,
+        11
+      ],
+      "lo": 0.031,
+      "mid": 0.261,
+      "hi": 0.844
     }
   },
   "legs-crawler.small": {

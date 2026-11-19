@@ -63,6 +63,8 @@ export interface GameState {
   masters?: string[];
   /** The classes whose crown the pilot holds: their master beaten in a machine of that class. Kept through the cycles. */
   crowns?: string[];
+  /** True once the pilot has taken the eighth seat of the arena's masters. Kept through the cycles; see seat.ts. */
+  seat?: true;
   /** The run of the Gauntlet under way, if there is one. */
   gauntlet?: Run | null;
   /** The most floors of the Gauntlet cleared in one run. */

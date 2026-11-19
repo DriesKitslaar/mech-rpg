@@ -214,7 +214,7 @@ export function wear(run: Run, catalog: Catalog): number {
   return max > 0 ? 1 - left / max : 0;
 }
 
-/** Parts the run may be offered on this floor: for sale somewhere, not too dear for how deep it is, and not what is already fitted. */
+/** Parts the run may be offered on this floor: for sale somewhere and not built to order, not too dear for how deep it is, and not what is already fitted. */
 function partOffers(run: Run, catalog: Catalog): { slot: BuildSlot; part: string }[] {
   const ceiling = 900 + run.floor * 550;
   // The cheap end drops out as the run goes deeper, but never so far that nothing is left to offer.
@@ -222,7 +222,7 @@ function partOffers(run: Run, catalog: Catalog): { slot: BuildSlot; part: string
   const price = (id: string | undefined): number => (id ? (catalog[id] as Part | undefined)?.price ?? 0 : -1);
   const offers: { slot: BuildSlot; part: string }[] = [];
   for (const part of Object.values(catalog) as Part[]) {
-    if (!part.vendor || part.price > ceiling || part.price < floor) continue;
+    if (!part.vendor || ('bespoke' in part && part.bespoke) || part.price > ceiling || part.price < floor) continue;
     // Nothing the frame already carries, in whichever hand.
     if (Object.values(run.build).includes(part.id)) continue;
     // Where it would go: an empty mount first, else the mount holding the cheaper thing. So a weapon for the hand fills the empty hand.

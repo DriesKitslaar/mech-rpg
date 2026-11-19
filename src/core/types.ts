@@ -39,6 +39,11 @@ export interface FramePart {
    * blade after it does, as any blade does from other arms.
    */
   poise?: true;
+  /**
+   * Built to order for one pilot: its yard sells it to whoever has earned it, and it is never come by any other
+   * way. The Gauntlet, which offers what the market sells, does not offer it.
+   */
+  bespoke?: true;
   vendor?: Vendor;
 }
 

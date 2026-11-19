@@ -4977,5 +4977,245 @@
    },
    "total_tokens": 1368
   }
+ },
+ {
+  "id": "family-sovereign",
+  "at": "2026-11-19T15:24:07.851Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0193,
+  "usage": {
+   "input_tokens": 1272,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 248
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1468
+  }
+ },
+ {
+  "id": "legs-sovereign",
+  "at": "2026-11-19T15:24:30.748Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1128,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 104
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1324
+  }
+ },
+ {
+  "id": "core-sovereign",
+  "at": "2026-11-19T15:24:40.689Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1134,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 110
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1330
+  }
+ },
+ {
+  "id": "head-sovereign",
+  "at": "2026-11-19T15:24:48.280Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0185,
+  "usage": {
+   "input_tokens": 1116,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1312
+  }
+ },
+ {
+  "id": "arms-sovereign.near",
+  "at": "2026-11-19T15:24:56.278Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-sovereign.far",
+  "at": "2026-11-19T15:25:04.829Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1139,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 115
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1335
+  }
+ },
+ {
+  "id": "back-sovereign",
+  "at": "2026-11-19T15:25:13.121Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.03,
+  "usage": {
+   "input_tokens": 2376,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 328
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2572
+  }
+ },
+ {
+  "id": "legs-sovereign.back",
+  "at": "2026-11-19T15:25:52.849Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-sovereign.back",
+  "at": "2026-11-19T15:26:02.235Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.019,
+  "usage": {
+   "input_tokens": 1210,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 186
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1406
+  }
+ },
+ {
+  "id": "head-sovereign.back",
+  "at": "2026-11-19T15:26:10.719Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1183,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 159
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1379
+  }
+ },
+ {
+  "id": "arms-sovereign.near.back",
+  "at": "2026-11-19T15:26:19.773Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-sovereign.far.back",
+  "at": "2026-11-19T15:26:28.736Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
  }
 ]

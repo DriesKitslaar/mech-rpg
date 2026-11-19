@@ -36,15 +36,17 @@
 - `GameState.seat?: true`, validated on load (anything else is dropped).
 - `seat.ts`: `seatHeld(state: Pick<GameState, 'seat'>): boolean`.
 - `Condition` `'seat'`: reached when the seat is held; `stockFor` treats it as earned (never kept by a vendor's memory).
-- Parts: `head-sovereign` (Sovereign Crest), `core-sovereign` (Sovereign Core), `arms-sovereign` (Sovereign Arms), `legs-sovereign` (Sovereign Greaves); vendor `freelance`; `SHOP_UNLOCKS[...] = 'seat'`.
+- Parts: `head-sovereign` (Sovereign Crest), `core-sovereign` (Sovereign Core), `arms-sovereign` (Sovereign Arms), `legs-sovereign` (Sovereign Legs); vendor `freelance`; `SHOP_UNLOCKS[...] = 'seat'`.
+- `FramePart.bespoke?: true`: built to order, never offered by the Gauntlet. `OWN_COLOURS` in `scripts/art/jobs.ts`: colours a family has beside the shared palette.
 - Art: `family('sovereign', …)`, `layersOf`, `backFamily`, `backLayersOf` as the Shrike and the Sterling have; the design's words in `DESIGNS.sovereign`.
 
 **Steps:**
 
-- [ ] The design's words; the twelve jobs; generate at `low`; process; look at the machine put together from the front and from behind, in factory colours and in two paints; redo what does not read.
-- [ ] The four parts with first figures (a little above the Auditor in armour, mobility 36, a field of 20 in the core, poise in the arms, aim 20 and 14, the highest weight, drain and price of any frame): tests that it is the dearest frame, that a late build in it stands and is of the class its weapons make it, and that on its own legs with plain guns it is an all-rounder.
-- [ ] `GameState.seat`, `seatHeld`, the condition, the unlock: tests that the shop has no Sovereign without the seat in a first telling and in a later one, and has all four with it; that a kept game with a wrong `seat` loads without one.
-- [ ] Mutation over the step. APK.
+- [x] The design's words; the twelve jobs; generate at `low`; process; look at the machine put together from the front and from behind, in factory colours and in two paints; redo what does not read.
+- [x] The four parts with first figures (a little above the Auditor in armour, mobility 36, a field of 20 in the core, poise in the arms, aim 20 and 14, the highest drain and price of any frame and a weight only the Colossus passes): tests that it is the dearest frame, that a late build in it stands and is of the class its weapons make it, and that on its own legs with plain guns it is an all-rounder and never a skirmisher.
+- [x] `GameState.seat`, `seatHeld`, the condition, the unlock: tests that the shop has no Sovereign without the seat in a first telling and in a later one, and has all four with it; that a kept game with a wrong `seat` loads without one.
+- [x] Colours of its own beside the shared palette (`OWN_COLOURS`), so that it is violet and no other picture changes; built to order (`FramePart.bespoke`), so that the Gauntlet's salvage does not turn it up and that mode's measure stands.
+- [x] Mutation over the step. APK.
 
 ### Task E2: the duel
 

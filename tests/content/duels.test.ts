@@ -269,10 +269,10 @@ describe('the two frames', () => {
       'legs-sterling': freelance({ name: 'Sterling Greaves', kind: 'legs', ap: 140, resist: { kinetic: 0.15, energy: 0.2, explosive: 0.15 }, weight: 150, drain: 65, price: 3600, capacity: 950, mobility: 52 }),
     };
     for (const [id, figures] of Object.entries(measured)) expect(CATALOG[id], id).toEqual({ id, ...figures });
-    // Nothing else in the catalogue raises a field or keeps its boost through a strike.
+    // Nothing else in the catalogue raises a field or keeps its boost through a strike, but the frame that has something of both.
     const all = Object.values(CATALOG) as FramePart[];
-    expect(all.filter((part) => part.field !== undefined).map((part) => part.id)).toEqual(['core-sterling']);
-    expect(all.filter((part) => part.poise !== undefined).map((part) => part.id)).toEqual(['arms-shrike']);
+    expect(all.filter((part) => part.field !== undefined).map((part) => part.id)).toEqual(['core-sterling', 'core-sovereign']);
+    expect(all.filter((part) => part.poise !== undefined).map((part) => part.id)).toEqual(['arms-shrike', 'arms-sovereign']);
   });
 
   test('the Sterling is nearly as quick as a Wraith and better plated; the Shrike is the lighter of the two, with the best arms there are for a hand weapon', () => {

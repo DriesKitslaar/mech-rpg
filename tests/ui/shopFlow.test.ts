@@ -27,7 +27,7 @@ test('each tab lists its stock with the price', () => {
   const flow = shop();
   expect(flow.list.items.map((i) => i.id)).toEqual([
     'head-scout-mk1', 'head-courier', 'head-dozer', 'head-halo', 'head-bulwark', 'head-ronin', 'head-wraith', 'head-colossus', 'head-mantis', 'head-auditor',
-    'head-shrike', 'head-sterling',
+    'head-shrike', 'head-sterling', 'head-sovereign',
   ]);
   // The three kinds of salvage come first, at the same price.
   expect(flow.list.items.slice(0, 3).map((i) => i.note)).toEqual(['300', '300', '300']);

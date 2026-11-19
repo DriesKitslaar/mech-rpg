@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as iq from 'image-q';
 import sharp, { type Sharp } from 'sharp';
-import { BACK_POSE_BOX, BACK_TILT, BOX, JOBS, POSE_BOX, SMALL_POSE_BOX, paintGroups, type ArtJob } from './jobs';
+import { BACK_POSE_BOX, BACK_TILT, BOX, JOBS, OWN_COLOURS, POSE_BOX, SMALL_POSE_BOX, paintFamilyOf, paintGroups, type ArtJob } from './jobs';
 import { analyse, type PaintInfo } from '../../src/ui/paint';
 import { bounds, chromaKeyGreen, hitSpot, quantize, trim, type RawImage, type RGB } from './imageOps';
 import { HIT_LAYER, VIEWS, type HitPart, type MechView } from '../../src/ui/mechLayout';
@@ -224,7 +224,9 @@ async function main(): Promise<void> {
     if (job.kind === 'family') continue; // families are only the source the layers are cut from
     if (!existsSync(`${RAW}/${job.source ?? job.id}.png`)) { console.log(`skip ${job.id} (no raw image)`); continue; }
     try {
-      const entry = await (job.kind === 'layer' ? processLayer(job, palette) : job.view ? processCarried(job, palette) : processFree(job, palette));
+      // A layer of a family with colours of its own is held to the shared palette and to those.
+      const own = job.kind === 'layer' ? OWN_COLOURS[paintFamilyOf(job)] : undefined;
+      const entry = await (job.kind === 'layer' ? processLayer(job, own ? [...palette, ...own] : palette) : job.view ? processCarried(job, palette) : processFree(job, palette));
       manifest[job.id] = entry;
       console.log(`ok   ${job.id} ${entry.w}x${entry.h}${entry.ox !== undefined ? ` at ${entry.ox},${entry.oy}` : ''}`);
     } catch (e) {

@@ -26,7 +26,7 @@ test('a layer cut from a drawing from behind is painted as the same family, and 
   expect(paintFamilyOf(layer('legs-spider.back'))).toBe('ronin');
   // Every layer from the front has one from behind and a small one, of the same family.
   const fronts = JOBS.filter((job) => job.kind === 'layer' && !/\.(back|small)$/.test(job.id));
-  expect(fronts).toHaveLength(63);
+  expect(fronts).toHaveLength(68);
   for (const front of fronts) {
     for (const view of ['back', 'small']) expect(paintFamilyOf(layer(`${front.id}.${view}`)), `${front.id}.${view}`).toBe(paintFamilyOf(front));
   }
@@ -56,7 +56,7 @@ test('every frame layer belongs to a family that has a body', () => {
 describe('what a family is judged by', () => {
   test('what was cut from its own drawing from the front: not its views from behind, its small copies, or legs edited onto it', () => {
     const groups = paintGroups(JOBS);
-    expect([...groups.keys()].sort()).toEqual(['auditor', 'bulwark', 'colossus', 'courier', 'dozer', 'halo', 'mantis', 'ronin', 'salvage', 'shrike', 'sterling', 'wraith']);
+    expect([...groups.keys()].sort()).toEqual(['auditor', 'bulwark', 'colossus', 'courier', 'dozer', 'halo', 'mantis', 'ronin', 'salvage', 'shrike', 'sovereign', 'sterling', 'wraith']);
     for (const [family, { judged, all }] of groups) {
       expect(judged.length, family).toBeGreaterThanOrEqual(5);
       for (const id of judged) {

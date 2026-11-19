@@ -105,7 +105,7 @@ describe('how a machine stands, when what it fights with says nothing', () => {
     const by = (name: Archetype): string[] => legs.filter((part) => kind(armed({ rightHand: 'wpn-rivet-rifle' }, { legs: part.id })) === name).map((part) => part.id).sort();
     expect(by('bastion')).toEqual(['legs-bulwark', 'legs-colossus', 'legs-crawler', 'legs-dozer']);
     expect(by('skirmisher')).toEqual(['legs-courier', 'legs-glide', 'legs-halo', 'legs-mantis', 'legs-shrike', 'legs-sterling', 'legs-wraith']);
-    expect(by('allrounder')).toEqual(['legs-auditor', 'legs-ronin', 'legs-spider', 'legs-strider']);
+    expect(by('allrounder')).toEqual(['legs-auditor', 'legs-ronin', 'legs-sovereign', 'legs-spider', 'legs-strider']);
     // The edges are the Dozer's legs and the Courier's, and a point either side of each is another kind.
     expect([(CATALOG['legs-dozer'] as FramePart).mobility, (CATALOG['legs-courier'] as FramePart).mobility]).toEqual([SLOW_LEGS, QUICK_LEGS]);
     const withLegs = (mobility: number): Archetype => {

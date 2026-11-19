@@ -331,8 +331,8 @@ describe('what is fired', () => {
   });
 
   test('lands on the pilot\'s mech on the part that is hit, on a pixel of its drawing: whatever it wears, tracks, four legs and a hover unit among it', () => {
-    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([15, 12, 12, 12]);
-    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(51);
+    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([16, 13, 13, 13]);
+    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(55);
     let lowered = 0;
     for (const build of WARDROBE) {
       for (const id of [build.legs!, build.core, build.head!, build.arms!]) expect(CATALOG[id], id).toBeDefined();
