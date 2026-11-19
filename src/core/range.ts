@@ -5,7 +5,7 @@ import { MECH_ENEMIES, STORY_ENEMIES } from './board';
 import { validatePlayerBuild } from './build';
 import type { Mission } from './campaign';
 import type { Settlement } from './economy';
-import { checkLoadout, type GameState } from './game';
+import { LOADOUT_SLOTS, checkLoadout, type GameState } from './game';
 import { tunedCatalog } from './tuning';
 import type { Catalog, EnemyDef } from './types';
 
@@ -72,10 +72,10 @@ export const rangeSettlement = (bill: Settlement): Settlement => ({ ...bill, sim
 export const SPAR_ENEMY = (slot: number): string => `spar-${slot}`;
 /** The id of a spar with the saved build in a slot. */
 export const sparId = (slot: number): string => `${PREFIX}spar-${slot}`;
-/** The slot a spar's id names. Null for anything that is not such an id. */
+/** The slot a spar's id names: one of the places a build can be kept in. Null for anything that is not such an id. */
 export function parseSpar(id: string): number | null {
-  const found = /^range-spar-([0-2])$/.exec(id);
-  return found ? Number(found[1]) : null;
+  const found = /^range-spar-(\d)$/.exec(id);
+  return found && Number(found[1]) < LOADOUT_SLOTS ? Number(found[1]) : null;
 }
 
 /**

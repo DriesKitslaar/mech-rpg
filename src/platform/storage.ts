@@ -1,6 +1,6 @@
 import { isValidRun } from '../core/gauntlet';
 import {
-  DEFAULT_CALLSIGN, DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LIGHT_DETAILS, LOADOUT_SLOTS, SAVE_VERSION, TEXT_SPEEDS, isValidState,
+  DEFAULT_CALLSIGN, DEFAULT_SETTINGS, DIFFICULTIES, FACTORY_PAINT, LIGHT_DETAILS, LOADOUT_SLOTS, LOADOUT_SLOTS_MIN, SAVE_VERSION, TEXT_SPEEDS, isValidState,
   type Difficulty, type GameState, type LightDetail, type Settings, type TextSpeed,
 } from '../core/game';
 import { NO_STATS } from '../core/stats';
@@ -59,6 +59,12 @@ function upgrade(value: unknown): unknown {
     const won = save.battlesWon;
     const contracts = typeof won === 'number' && Number.isSafeInteger(won) && won >= 0 ? won : 0;
     save = { ...save, version: SAVE_VERSION, callsign: DEFAULT_CALLSIGN, stats: { ...NO_STATS, contracts }, medals: [], met: [], drills: [], codex: [] };
+  }
+  // A game kept when there were fewer places for a saved build: the places it does not name are empty. What it
+  // does name is left as it is, for the validity check to judge.
+  const kept = save.loadouts;
+  if (Array.isArray(kept) && kept.length >= LOADOUT_SLOTS_MIN && kept.length < LOADOUT_SLOTS) {
+    save = { ...save, loadouts: [...kept, ...Array.from({ length: LOADOUT_SLOTS - kept.length }, () => null)] };
   }
   return save;
 }

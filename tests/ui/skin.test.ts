@@ -372,7 +372,7 @@ describe('the cursor\'s light on the screens that draw their own rows', () => {
     const { app } = inHub();
     select(app, 'garage');
     press(app, 'right');
-    expect(snap(app).menu.items.length).toBe(3);
+    expect(snap(app).menu.items.length).toBe(7);
     behind(picture(app));
     press(app, 'confirm');
     // Two lists are on screen now; the one being answered is lit.

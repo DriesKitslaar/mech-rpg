@@ -123,11 +123,40 @@ describe('a save from the fourth version', () => {
   });
 });
 
-test('a save from the fifth version gains factory paint and three empty build slots', () => {
+test('a save from the fifth version gains factory paint and seven empty build slots', () => {
   const { paint: _p, loadouts: _l, ...rest } = { ...game(), xp: 300, arenaRank: 2 };
   const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: JSON.stringify({ ...rest, version: 5 }) }), CATALOG).load();
   expect(loaded).toEqual({ ...game(), xp: 300, arenaRank: 2 });
-  expect(loaded).toMatchObject({ version: SAVE_VERSION, paint: 'factory', loadouts: [null, null, null] });
+  expect(loaded).toMatchObject({ version: SAVE_VERSION, paint: 'factory', loadouts: [null, null, null, null, null, null, null] });
+});
+
+describe('a game kept when there were three places for a saved build', () => {
+  const kept = (loadouts: unknown): string => JSON.stringify({ ...game(), xp: 300, loadouts });
+
+  test('loads with seven: the three as they were, in their places, and four more that are empty', () => {
+    const build = game().build;
+    const other = { ...build, rightHand: undefined };
+    const loaded = new SaveFile(memoryStore({ [SAVE_KEY]: kept([null, build, other]) }), CATALOG).load()!;
+    expect(loaded.loadouts).toEqual([null, build, JSON.parse(JSON.stringify(other)), null, null, null, null]);
+    expect(loaded.version).toBe(SAVE_VERSION);
+    expect({ ...loaded, loadouts: null }).toEqual({ ...game(), xp: 300, loadouts: null });
+  });
+
+  test('a list that is already full is left as it is, and one that is no list of builds is refused as before', () => {
+    const full = [null, null, null, null, null, game().build, null];
+    expect(new SaveFile(memoryStore({ [SAVE_KEY]: kept(full) }), CATALOG).load()!.loadouts).toEqual(full);
+    for (const bad of [[null, null], [null, null, null, null, null, null, null, null], 'three', [null, 'mine', null], undefined]) {
+      expect(new SaveFile(memoryStore({ [SAVE_KEY]: kept(bad) }), CATALOG).load(), JSON.stringify(bad)).toBeNull();
+    }
+  });
+
+  test('the game written back holds the full list', () => {
+    const store = memoryStore({ [SAVE_KEY]: kept([null, game().build, null]) });
+    const file = new SaveFile(store, CATALOG);
+    const loaded = file.load()!;
+    expect(file.save(loaded)).toBe(true);
+    expect(JSON.parse(store.data[SAVE_KEY]).loadouts).toHaveLength(7);
+  });
 });
 
 describe('a save from the sixth version', () => {

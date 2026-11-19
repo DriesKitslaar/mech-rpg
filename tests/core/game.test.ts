@@ -1,8 +1,9 @@
 import {
-  BUILD_SLOTS, DIFFICULTIES, LOADOUT_SLOTS, OPTIONAL_SLOTS, SAVE_VERSION, STARTING_CREDITS, buy, checkLoadout, clearLoadout,
+  BUILD_SLOTS, DIFFICULTIES, LOADOUT_SLOTS, LOADOUT_SLOTS_MIN, OPTIONAL_SLOTS, SAVE_VERSION, STARTING_CREDITS, buy, checkLoadout, clearLoadout,
   loadLoadout, saveLoadout, setPaint, checkBuy, checkEquip, checkSell, ensureArmed, equip, equippedCount, fits, isValidState,
   newGame, sell, spareCount, type GameState,
 } from '../../src/core/game';
+import { ARCHETYPES } from '../../src/core/archetype';
 import type { Catalog, Shield } from '../../src/core/types';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 
@@ -324,19 +325,58 @@ describe('saved builds', () => {
   const fit = (g: GameState, slots: Record<string, string>): GameState =>
     Object.entries(slots).reduce((acc, [slot, id]) => equip(acc, slot as keyof GameState['build'], id, CATALOG), g);
 
-  test('a new game has three empty slots', () => {
-    expect(fresh().loadouts).toEqual([null, null, null]);
-    expect(LOADOUT_SLOTS).toBe(3);
+  const EMPTY = [null, null, null, null, null, null, null];
+
+  test('a new game has seven empty slots: room for a build of each class', () => {
+    expect(fresh().loadouts).toEqual(EMPTY);
+    expect(LOADOUT_SLOTS).toBe(7);
+    expect(LOADOUT_SLOTS).toBe(ARCHETYPES.length);
+    expect(LOADOUT_SLOTS_MIN).toBe(3);
+  });
+
+  test('every slot can be saved to, checked, loaded from and cleared, the seventh as the first', () => {
+    let g = rich('head-halo');
+    for (let slot = 0; slot < 7; slot++) {
+      expect(checkLoadout(g, slot, CATALOG), String(slot)).toEqual({ refusal: 'empty' });
+      g = saveLoadout(g, slot);
+      expect(checkLoadout(g, slot, CATALOG), String(slot)).toBeNull();
+    }
+    expect(g.loadouts).toEqual(EMPTY.map(() => g.build));
+    const other = saveLoadout(equip(g, 'head', 'head-halo', CATALOG), 6);
+    expect(other.loadouts[6]!.head).toBe('head-halo');
+    expect(other.loadouts.slice(0, 6)).toEqual(g.loadouts.slice(0, 6));
+    expect(loadLoadout(equip(other, 'head', 'head-scout-mk1', CATALOG), 6, CATALOG).build.head).toBe('head-halo');
+    expect(clearLoadout(other, 6).loadouts[6]).toBeNull();
+    expect(isValidState(other, CATALOG)).toBe(true);
+  });
+
+  test('a game kept when there were three places is as good as any: the places it does not name are empty, and writing one writes the full list', () => {
+    const old = { ...saveLoadout(fresh(), 1), loadouts: [null, fresh().build, null] };
+    expect(isValidState(old, CATALOG)).toBe(true);
+    // A place the list does not name is there, and empty.
+    expect(checkLoadout(old, 5, CATALOG)).toEqual({ refusal: 'empty' });
+    expect(checkLoadout(old, 1, CATALOG)).toBeNull();
+    expect(() => loadLoadout(old, 5, CATALOG)).toThrow('illegal loadout: empty');
+    // Saving into the seventh keeps what was there and fills the list out.
+    const saved = saveLoadout(old, 6);
+    expect(saved.loadouts).toEqual([null, old.build, null, null, null, null, old.build]);
+    expect(isValidState(saved, CATALOG)).toBe(true);
+    // So does clearing, whichever place it is.
+    expect(clearLoadout(old, 1).loadouts).toEqual(EMPTY);
+    expect(clearLoadout(old, 4).loadouts).toEqual([null, old.build, null, null, null, null, null]);
+    expect(old.loadouts).toHaveLength(3);
+    // Four, five and six places are lists a game could have kept on the way; they are read the same.
+    for (const length of [4, 5, 6]) expect(isValidState({ ...old, loadouts: EMPTY.slice(0, length) }, CATALOG), String(length)).toBe(true);
   });
 
   test('saving copies the current build; later changes to the build do not touch the copy', () => {
     const start = rich('wpn-arc-pistol');
     const saved = saveLoadout(start, 1);
-    expect(saved.loadouts).toEqual([null, start.build, null]);
+    expect(saved.loadouts).toEqual([null, start.build, null, null, null, null, null]);
     const changed = equip(saved, 'leftHand', 'wpn-arc-pistol', CATALOG);
     expect(changed.loadouts[1]).toEqual(start.build);
     expect(changed.loadouts[1]).not.toBe(changed.build);
-    expect(start.loadouts).toEqual([null, null, null]);
+    expect(start.loadouts).toEqual(EMPTY);
   });
 
   test('loading swaps the whole build, and every part it frees is owned as before', () => {
@@ -354,10 +394,13 @@ describe('saved builds', () => {
 
   test('an empty slot, or a slot that does not exist, cannot be loaded', () => {
     expect(checkLoadout(fresh(), 0, CATALOG)).toEqual({ refusal: 'empty' });
-    expect(checkLoadout(fresh(), 3, CATALOG)).toEqual({ refusal: 'unknown' });
+    expect(checkLoadout(fresh(), 7, CATALOG)).toEqual({ refusal: 'unknown' });
     expect(checkLoadout(fresh(), -1, CATALOG)).toEqual({ refusal: 'unknown' });
+    expect(checkLoadout(fresh(), 1.5, CATALOG)).toEqual({ refusal: 'unknown' });
     expect(() => loadLoadout(fresh(), 0, CATALOG)).toThrow('illegal loadout: empty');
-    expect(() => saveLoadout(fresh(), 5)).toThrow('illegal loadout: unknown');
+    expect(() => saveLoadout(fresh(), 7)).toThrow('illegal loadout: unknown');
+    expect(() => clearLoadout(fresh(), 7)).toThrow('illegal loadout: unknown');
+    expect(() => loadLoadout(fresh(), 7, CATALOG)).toThrow('illegal loadout: unknown');
   });
 
   test('a build with a part that has been sold cannot be loaded, and the refusal names the part', () => {
@@ -376,12 +419,16 @@ describe('saved builds', () => {
 
   test('a slot can be cleared', () => {
     const g = clearLoadout(saveLoadout(fresh(), 0), 0);
-    expect(g.loadouts).toEqual([null, null, null]);
+    expect(g.loadouts).toEqual(EMPTY);
   });
 
   const bad: [string, (g: any) => unknown][] = [
     ['no loadouts', (g) => { const { loadouts: _l, ...rest } = g; return rest; }],
     ['two slots', (g) => ({ ...g, loadouts: [null, null] })],
+    ['eight slots', (g) => ({ ...g, loadouts: [null, null, null, null, null, null, null, null] })],
+    ['no slots at all', (g) => ({ ...g, loadouts: [] })],
+    ['something that is no build in the seventh slot', (g) => ({ ...g, loadouts: [null, null, null, null, null, null, 'mine'] })],
+    ['a seventh saved build with an enemy part', (g) => ({ ...g, loadouts: [null, null, null, null, null, null, { ...g.build, core: 'core-drone' }] })],
     ['a slot that is not a build', (g) => ({ ...g, loadouts: [null, 'mine', null] })],
     ['a saved build with an unknown part', (g) => ({ ...g, loadouts: [{ ...g.build, core: 'nope' }, null, null] })],
     ['a saved build with a part in the wrong slot', (g) => ({ ...g, loadouts: [{ ...g.build, head: 'core-hauler' }, null, null] })],

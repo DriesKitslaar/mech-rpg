@@ -10,7 +10,7 @@ import { CROWN_BONUS, MASTER_PURSE, askBonus, crownHeld, masterPurse, mastersOpe
 import { RANGE_MAX, rangeLimit, sparEnemy } from '../../src/core/range';
 import { MASTERS } from '../../src/content/masters';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
-import { newGame } from '../../src/core/game';
+import { LOADOUT_SLOTS, newGame, saveLoadout } from '../../src/core/game';
 import { NAME_AT, RENOWN, renownOf } from '../../src/core/renown';
 import { tallyBattle } from '../../src/core/stats';
 import { drillMission, drillSettlement, recordDrill } from '../../src/core/training';
@@ -25,6 +25,8 @@ import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, DEMO_BUILD, SHOP_PARTS, STARTER_BUILD } from '../../src/content/parts';
 import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
+import { REFERENCE_NL } from '../../src/content/nl/reference';
+import { GarageFlow } from '../../src/ui/garageFlow';
 import { CROWN_PAINTS, paintsFor } from '../../src/ui/paint';
 
 /** What the game tells the player about its rules, held against the rules themselves. */
@@ -96,6 +98,22 @@ describe('sparring', () => {
     expect(opponent).toMatchObject({ build: STARTER_BUILD, tune: { 'gen-kd1': 1 }, ai: CLASS_AI[archetypeOf(STARTER_BUILD, CATALOG)] });
     expect(opponent.paint).not.toBe(game.paint);
     expect(text).toMatch(/Nothing is billed, paid or counted\.$/);
+  });
+});
+
+describe('the garage', () => {
+  test('the manual says how many builds can be kept, that it is room for one of each class, and that each goes by its class, in both languages', () => {
+    const text = topic('garage');
+    const count = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][LOADOUT_SLOTS];
+    const aantal = ['geen', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen'][LOADOUT_SLOTS];
+    expect(LOADOUT_SLOTS).toBe(ARCHETYPES.length);
+    expect(text).toMatch(new RegExp(` Left and right open your ${count} saved builds: room for one of each class, each listed by the class it is\\.$`));
+    expect(REFERENCE_NL[text]).toMatch(new RegExp(` Links en rechts: je ${aantal} bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd\\.$`));
+    // As many rows as it says, and a build kept in one goes by the class it is.
+    const flow = new GarageFlow(saveLoadout(newGame(CATALOG, STARTER_BUILD), LOADOUT_SLOTS - 1), CATALOG);
+    flow.onInput('right');
+    expect(flow.loadouts.items).toHaveLength(LOADOUT_SLOTS);
+    expect(flow.loadouts.items[LOADOUT_SLOTS - 1].label).toBe(`${LOADOUT_SLOTS}  ${STRINGS.classes.names[archetypeOf(STARTER_BUILD, CATALOG)]}`);
   });
 });
 

@@ -232,8 +232,8 @@ export const REFERENCE_NL: Record<string, string> = {
   'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying, and you can owe 2000 at most: what a bill adds beyond that, Dispatch writes off.':
     'Reparaties kosten 0.8 credits per punt pantser en elk schot kost geld. Een onderdeel verkopen geeft terug wat je betaalde, dus iets uitproberen kost niets. Schuld belet kopen, nooit vliegen, en je schuld is hooguit 2000: wat een rekening daarboven toevoegt, schrijft Dispatch af.',
   'THE GARAGE': 'DE GARAGE',
-  'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Left and right open your three saved builds.':
-    'Een build moet onder het gewicht blijven dat zijn benen dragen en binnen de energie van zijn generator. L1 en R1 wisselen de lak. Links en rechts: je drie bewaarde builds.',
+  'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Left and right open your seven saved builds: room for one of each class, each listed by the class it is.':
+    'Een build moet onder het gewicht blijven dat zijn benen dragen en binnen de energie van zijn generator. L1 en R1 wisselen de lak. Links en rechts: je zeven bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd.',
   'LEG TYPES': 'BEENSOORTEN',
   'Reverse legs dodge better when they boost. Four legs are steady and aim shoulder weapons better. Tracks cannot boost, but guard best and are the hardest to stagger. Hover boosts cheaply and is easily knocked off balance.':
     'Omgekeerde benen ontwijken beter als ze boosten. Vier benen staan stevig en richten schouderwapens beter. Rupsbanden kunnen niet boosten, maar dekken het best en wankelen het minst snel. Hover boost goedkoop en raakt makkelijk uit balans.',

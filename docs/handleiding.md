@@ -59,7 +59,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
 | Training | Dertien oefeningen in een geleende mecha, en het proefveld voor je eigen build. |
 | The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
-| Garage | Onderdelen wisselen, verf kiezen (L1/R1), drie builds bewaren (links/rechts). |
+| Garage | Onderdelen wisselen, verf kiezen (L1/R1), zeven builds bewaren (links/rechts). |
 | Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
 | Pilot | Niveau en vaardigheden, medailles, een logboek van alles wat je gedaan hebt, en de zeven klassen (**Class**). |
 | Messages | Berichten van je opdrachtgevers. |
@@ -310,12 +310,15 @@ Je hoeft niet terug naar de garage om van build te wisselen. Bij de briefing van
 rechtsboven waarin je het gaat vliegen: **CURRENT BUILD** en de klasse. In het menu staat onder
 **Accept** de rij **Build**. Ga erop staan en je ziet de build zelf (klasse, pantser, mobiliteit,
 energie, wapens); met links en rechts blader je naar je bewaarde builds (**SAVED BUILD 1** tot en
-met **3**). Kies je **Accept**, dan wordt de gekozen build gemonteerd en begint het contract. Hij
+met **7**). Kies je **Accept**, dan wordt de gekozen build gemonteerd en begint het contract. Hij
 blijft daarna gemonteerd, net als wanneer je hem in de garage laadt.
 
 - Een bewaarde build staat er alleen bij als je alle onderdelen nog bezit en hij mag uitrukken
   (niet te zwaar, genoeg energie, een wapen).
 - Builds bewaar je in de **Garage**: links of rechts, een plek kiezen, **Save current build**.
+  Er zijn **zeven plekken**: genoeg voor een build van elke klasse. Een plek zit niet aan een
+  klasse vast; je mag ook zeven duellisten bewaren. In de lijst staat bij elke plek wat voor
+  machine erin zit en van welk frame de kern is, bijvoorbeeld `2  Bastion   Colossus`.
 - Bij een geleende mecha, de training en de Gauntlet is er niets te kiezen.
 
 ### Je winkans
@@ -362,7 +365,7 @@ in **je eigen build**.
   ervaring, geen medailles. Na afloop zie je wel wat een echte vlucht had gekost (**WOULD HAVE
   COST**), zodat je weet hoe duur je build is om te vliegen.
 - Handig om een nieuw wapen te proberen, twee builds te vergelijken of een baas te oefenen.
-- **Sparren:** bovenaan de lijst staan je bewaarde builds (**Saved Build 1** tot en met **3**).
+- **Sparren:** bovenaan de lijst staan je bewaarde builds (**Saved Build 1** tot en met **7**).
   Kies er een en de simulator vliegt die build tegen je: dezelfde onderdelen, met het werk van de
   werkbank, in andere kleuren. Zo zie je welke van je builds de andere verslaat; de winkans in de
   briefing zegt het al vooraf.

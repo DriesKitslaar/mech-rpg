@@ -253,7 +253,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'garage', title: 'THE GARAGE',
-    text: 'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Left and right open your three saved builds.',
+    text: 'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Left and right open your seven saved builds: room for one of each class, each listed by the class it is.',
   },
   {
     id: 'legs', title: 'LEG TYPES',
