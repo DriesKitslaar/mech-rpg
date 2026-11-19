@@ -1,5 +1,5 @@
 import { ARCHETYPES, adviceFor, archetypeOf, wonAs, type Archetype, type BuildAdvice } from '../core/archetype';
-import { DEFAULT_CALLSIGN, type BuildSlot } from '../core/game';
+import { DEFAULT_CALLSIGN, type BuildSlot, type GameState } from '../core/game';
 import { MEDAL_PAY, medalProgress, type Medal } from '../core/medals';
 import { OVERDRIVES, type OverdriveId } from '../core/battle';
 import { MAX_LEVEL, OVERDRIVE_LEVEL, checkBuyPerk, fittedOverdrive, levelFor, overdriveOpen, perkPoints, xpForLevel } from '../core/pilot';
@@ -36,6 +36,8 @@ export class PilotScreen implements Screen {
   private medals = new MenuList();
   private drives = new MenuList();
   private classes = new MenuList();
+  /** The build last suggested on the page of kinds, with the kind and the game it was worked out for. */
+  private advised: { kind: Archetype; game: GameState; advice: BuildAdvice } | null = null;
 
   constructor(private app: App) {
     this.refresh();
@@ -95,10 +97,20 @@ export class PilotScreen implements Screen {
     return archetypeOf(this.app.game!.build, this.app.deps.catalog);
   }
 
-  /** A build of the kind under the cursor that the pilot could put together now, and what of it is still to be bought. */
+  /**
+   * A build of the kind under the cursor that the pilot could put together now, and what of it is still to be
+   * bought. The page asks at every frame; it is worked out again only when the cursor is on another kind or the
+   * game is another game than it was (anything bought, sold or earned makes it one).
+   */
   private advice(): BuildAdvice {
-    const stock = new Set(this.app.stock().map((part) => part.id));
-    return adviceFor(this.app.game!, STAGES.map((stage) => ARCHETYPE_BUILDS[this.kind][stage]), (id) => stock.has(id), this.app.deps.catalog);
+    const game = this.app.game!;
+    const kind = this.kind;
+    if (this.advised?.kind !== kind || this.advised.game !== game) {
+      const stock = new Set(this.app.stock().map((part) => part.id));
+      const builds = STAGES.map((stage) => ARCHETYPE_BUILDS[kind][stage]);
+      this.advised = { kind, game, advice: adviceFor(game, builds, (id) => stock.has(id), this.app.deps.catalog) };
+    }
+    return this.advised.advice;
   }
 
   private get list(): MenuList | null {

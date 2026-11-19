@@ -81,4 +81,5 @@
 
 ### Task B4: final check
 
-- [ ] Mutation over the round, the soak, the last APK, a short Dutch summary.
+- [x] Mutation over the round (sixty-two faults in the starters, a hundred in the two frames, a hundred and twenty-six in the kinds: all found once the tests they showed missing were written; three more were in figures nothing reads or were no change at all), the soak (six robot players, five minutes each, nothing refused), the page of kinds made to work its suggestion out once and not at every frame, the last APK, a short Dutch summary.
+- Not done here: the three play-throughs by fresh eyes. The helpers that play the game for that were over their limit until the twenty-second; they can be run then.

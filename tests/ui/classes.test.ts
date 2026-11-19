@@ -303,6 +303,34 @@ describe('one to fly now', () => {
   });
 });
 
+describe('the page works its suggestion out once, not at every frame', () => {
+  test('drawn again and again it asks the shop once; on another kind it asks once more; and a game that has changed is asked about afresh', () => {
+    const app = onPage(AFTER.war);
+    const asked = vi.spyOn(app, 'stock');
+    for (let i = 0; i < 5; i++) { drawn(app); snap(app); }
+    // Whatever was asked before the count began, nothing more is asked while the cursor stays where it is.
+    expect(asked).toHaveBeenCalledTimes(0);
+    press(app, 'down');
+    for (let i = 0; i < 5; i++) { drawn(app); snap(app); }
+    expect(asked).toHaveBeenCalledTimes(1);
+    expect(page(app).advice.build).toEqual(ARCHETYPE_BUILDS.marksman.war);
+    // Back on the first kind: it is the kind that is remembered, not a list of them.
+    press(app, 'up');
+    expect(page(app).advice.build).toEqual(ARCHETYPE_BUILDS.duellist.war);
+    expect(asked).toHaveBeenCalledTimes(2);
+    // The pilot comes into money while the page is open (a medal's pay, say): the suggestion is the one that money pays for.
+    app.commit({ ...app.game!, credits: 0 });
+    const poor = page(app).advice;
+    expect(asked).toHaveBeenCalledTimes(3);
+    app.commit({ ...app.game!, credits: STAGE_BUDGET.war });
+    expect(page(app).advice.build).toEqual(ARCHETYPE_BUILDS.duellist.war);
+    expect(asked).toHaveBeenCalledTimes(4);
+    // With nothing in hand it was the one nearest to complete, which for a pilot in a Hauler is the first act's.
+    expect(poor.build).toEqual(ARCHETYPE_BUILDS.duellist.early);
+    asked.mockRestore();
+  });
+});
+
 describe('the page can be read', () => {
   const cases = (['en', 'nl'] as Language[]).flatMap((language) => (['start', ...STAGES] as (Stage | 'start')[]).map((stage) => [language, stage] as const));
 
