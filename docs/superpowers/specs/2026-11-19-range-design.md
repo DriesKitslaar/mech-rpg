@@ -56,6 +56,12 @@ When it ends, the bill is shown as a real flight would have had it: ammunition f
 lost, part by part. It is marked as not billed, and nothing of it is booked: credits, experience,
 contracts won, wins by class, the record, medals and the machines met all stay as they were.
 
+The range is flown in the pilot's own mech. While that may not deploy, the range is closed, as the
+arena is: what it could field is still listed, none of it can be chosen, and the page says what is
+wrong where it otherwise names the keys. No fight on it is on offer by any road, and nothing is
+fitted for one. The drills are as they were: each lends a mech of its own. (Added at the final
+check: before it, a briefing opened whose Accept did nothing.)
+
 ### Sparring (P2)
 
 Above the machines the range lists the pilot's saved builds that can be flown, as opponents: a

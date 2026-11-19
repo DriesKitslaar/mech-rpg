@@ -363,6 +363,25 @@ describe('what the app is asked to fit', () => {
     expect(savedGame(store).build).toEqual(BASTION);
   });
 
+  test('nothing is fitted for a contract that is not on offer: no such contract, or one that waits for the mech to be put right', () => {
+    const { app, store } = inHub(threeBuilds());
+    expect(app.missions().map((mission) => mission.id)).toContain('lumen-3');
+    app.startMission('no-such-contract', false, null, false, 0);
+    expect(snap(app).screen).toBe('hub');
+    expect(app.game!.build).toEqual(DUELLIST);
+    expect(savedGame(store).build).toEqual(DUELLIST);
+    // A mech that may not deploy is offered the lent patrol only. A contract of the story is not started by
+    // naming a saved build for it: the build would be fitted for work that was not on offer.
+    const unarmed = { ...threeBuilds(), build: { ...DUELLIST, rightHand: undefined, leftHand: undefined, shoulder: undefined } };
+    const stripped = inHub(unarmed);
+    expect(stripped.app.buildErrors()).toEqual(['noWeapon']);
+    expect(stripped.app.missions().map((mission) => mission.id)).toEqual(['patrol']);
+    stripped.app.startMission('lumen-3', false, null, false, 0);
+    expect(snap(stripped.app).screen).toBe('hub');
+    expect(stripped.app.game!.build).toEqual(unarmed.build);
+    expect(savedGame(stripped.store).build).toEqual(JSON.parse(JSON.stringify(unarmed.build)));
+  });
+
   test('what may deploy is judged as the garage judges it, with the bench\'s work counted: a build only the bench makes fit to fly is offered, and fitted', () => {
     // A hungry frame on the starter's generator with one weapon, a sunlance: twenty of energy short of firing it as the parts are sold.
     const hungry: Build = { ...STARTER_BUILD, head: 'head-auditor', core: 'core-sterling', arms: 'arms-shrike', fcs: 'fcs-omni', rightHand: undefined, shoulder: 'wpn-sunlance' };

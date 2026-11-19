@@ -7,7 +7,7 @@ import { advance, counted, newCount, type Count, type Forecast } from '../core/f
 import { groundFor } from '../core/ground';
 import type { Fight } from '../core/mission';
 import type { Sortie } from '../core/sortie';
-import { isRange } from '../core/range';
+import { isRange, parseSpar } from '../core/range';
 import { isDrill } from '../core/training';
 import { tunedCatalog } from '../core/tuning';
 import type { BuildSlot } from '../core/game';
@@ -46,7 +46,10 @@ export const oddsColor = (odds: Forecast): string =>
 export function hostiles(mission: Mission): string[] {
   const counts = new Map<string, number>();
   for (const battle of mission.battles) for (const id of [...battle.enemies, ...(battle.reserve ?? [])]) counts.set(id, (counts.get(id) ?? 0) + 1);
-  return [...counts].map(([id, n]) => `${id === 'mirror' ? STRINGS.arena.mirror.name : ALL_ENEMIES[id]?.name ?? id}${n > 1 ? ` x${n}` : ''}`);
+  // The mirror, and a saved build that is sparred with, are machines made on the spot: each goes by what the game calls it.
+  const spar = parseSpar(mission.id);
+  const name = (id: string): string => (id === 'mirror' ? STRINGS.arena.mirror.name : spar !== null ? STRINGS.training.spar(spar + 1) : ALL_ENEMIES[id]?.name ?? id);
+  return [...counts].map(([id, n]) => `${name(id)}${n > 1 ? ` x${n}` : ''}`);
 }
 
 const BO = STRINGS.objectives.brief;

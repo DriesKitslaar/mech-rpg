@@ -328,6 +328,15 @@ in **je eigen build**.
   ervaring, geen medailles. Na afloop zie je wel wat een echte vlucht had gekost (**WOULD HAVE
   COST**), zodat je weet hoe duur je build is om te vliegen.
 - Handig om een nieuw wapen te proberen, twee builds te vergelijken of een baas te oefenen.
+- **Sparren:** bovenaan de lijst staan je bewaarde builds (**Saved Build 1** tot en met **3**).
+  Kies er een en de simulator vliegt die build tegen je: dezelfde onderdelen, met het werk van de
+  werkbank, in andere kleuren. Zo zie je welke van je builds de andere verslaat; de winkans in de
+  briefing zegt het al vooraf.
+- Het proefveld vlieg je in je eigen mecha. Kan die niet uitrukken (te zwaar, te weinig energie,
+  geen wapen), dan is het proefveld **dicht**: de lijst staat er nog, maar grijs, en onderaan staat
+  waarom (**CLOSED: your mech cannot deploy**). Breng je mecha in de **Garage** in orde, of laad
+  daar een bewaarde build, en het is weer open. De oefeningen kun je altijd doen: die lenen je een
+  mecha.
 
 ## De werkbank
 

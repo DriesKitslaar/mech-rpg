@@ -249,6 +249,9 @@ export const REFERENCE_NL: Record<string, string> = {
   'THE RANGE': 'HET PROEFVELD',
   "The simulator's second page (L1/R1) is the range: your own build against any machine you have met, up to three of the lighter ones, one of a mech or anything of the story's. A real fight: perks, bench work, Overdrive and difficulty all count. Nothing is billed, paid or counted; afterwards you see what it would have cost.":
     'Pagina twee van de simulator (L1/R1) is het proefveld: je eigen build tegen elke machine die je al zag, tot drie lichtere, of een mech of iets uit het verhaal. Een echt gevecht: perks, werkbank, Overdrive en moeilijkheid tellen mee. Niets wordt gerekend, betaald of geteld; daarna zie je wat het had gekost.',
+  SPARRING: 'SPARREN',
+  "The range also lists your saved builds that can be flown. Pick one and the simulator flies it against you: the same parts, with the bench's work on them, in other colours, flown as its class is flown. The odds in the briefing say which of two builds beats the other before a shot is fired. Nothing is billed, paid or counted.":
+    'Het proefveld toont ook je bewaarde builds die kunnen vliegen. Kies er een en de simulator vliegt hem tegen je: dezelfde onderdelen, met het werk van de werkbank, in andere kleuren, gevlogen zoals zijn klasse vliegt. De kans in de briefing zegt welke build wint voor er een schot valt. Niets wordt gerekend, betaald of geteld.',
   'LEVELS AND PERKS': 'LEVELS EN PERKS',
   'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.':
     'Gewonnen contracten zijn ervaring. Elk level geeft een perkpunt; perks koop je op het pilotenscherm en hou je voorgoed. Medailles verdien je met wat je doet, ze betalen een beetje, en staan daar ook.',

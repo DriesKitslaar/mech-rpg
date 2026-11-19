@@ -362,9 +362,15 @@ export const STRINGS = {
     rangeWon: 'RANGE CLEARED', rangeLost: 'SHOT DOWN',
     rangeEmpty: 'Nothing met yet. Fly a contract and come back.',
     rangeHint: 'LEFT/RIGHT: how many   A: briefing   B: back',
+    rangeShut: (why: string) => `CLOSED: your mech cannot deploy (${why}).`,
     rangeCount: (n: number) => `x${n}`,
     // Where a contract's briefing says what it pays.
     rangePays: 'FREE',
+    // Sparring: a saved build of the pilot's own as the opponent, by the number the garage gives it.
+    spar: (slot: number) => `Saved Build ${slot}`,
+    sparTitle: 'Sparring',
+    sparBriefing: (slot: number) => `The simulator flies your saved build ${slot} against the machine you bring: the same parts, with the bench's work on them.`,
+    sparNote: 'The simulator flies this build against you.',
   },
   credits: {
     flownBy: 'FLOWN BY', level: (n: number) => `PILOT LEVEL ${n}`, record: 'THE RECORD', stat: (label: string, value: string) => `${label}  ${value}`,

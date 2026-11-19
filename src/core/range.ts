@@ -1,8 +1,13 @@
+import { archetypeOf, type Archetype } from './archetype';
+import { MIRROR_SCALE } from './arena';
 import { MAX_ENEMIES } from './battle';
 import { MECH_ENEMIES, STORY_ENEMIES } from './board';
+import { validatePlayerBuild } from './build';
 import type { Mission } from './campaign';
 import type { Settlement } from './economy';
-import type { GameState } from './game';
+import { checkLoadout, type GameState } from './game';
+import { tunedCatalog } from './tuning';
+import type { AiProfile, Catalog, EnemyDef } from './types';
 
 /**
  * The range: a page of the simulator where the pilot's own build is flown against any machine met,
@@ -57,3 +62,62 @@ export function rangeMission(kind: string, count: number, name: string, text: Ra
 
 /** The bill of a range fight: what a real flight would have cost, marked as a bill that is shown and not booked. */
 export const rangeSettlement = (bill: Settlement): Settlement => ({ ...bill, simulated: true });
+
+/**
+ * Sparring: one of the pilot's own saved builds as the opponent. A spar is a fight on the range like
+ * the others, against a machine made of that build's parts and flown by the game.
+ */
+
+/** The id of the opponent made from the saved build in a slot, as a battle fields it. */
+export const SPAR_ENEMY = (slot: number): string => `spar-${slot}`;
+/** The id of a spar with the saved build in a slot. */
+export const sparId = (slot: number): string => `${PREFIX}spar-${slot}`;
+/** The slot a spar's id names. Null for anything that is not such an id. */
+export function parseSpar(id: string): number | null {
+  const found = /^range-spar-([0-2])$/.exec(id);
+  return found ? Number(found[1]) : null;
+}
+
+/** How the game flies a build of each class: what it aims at, and whether it darts in and out. */
+export const SPAR_AI: Record<Archetype, AiProfile> = {
+  duellist: 'bruiser', marksman: 'gunner', artillery: 'sprayer', lancer: 'gunner', bastion: 'bruiser', skirmisher: 'skirmisher', allrounder: 'gunner',
+};
+
+/**
+ * The saved builds that can be sparred with, by slot: those that are there, whose parts are all still
+ * owned, and that may deploy as the garage reads them, with the bench's work counted. The build the
+ * pilot is flying is one of them when it is saved: sparring with it is a mirror match.
+ */
+export function sparSlots(game: GameState, catalog: Catalog): number[] {
+  const tuned = tunedCatalog(catalog, game.tuning);
+  return game.loadouts.flatMap((build, slot) => (build && checkLoadout(game, slot, tuned) === null && validatePlayerBuild(build, tuned).length === 0 ? [slot] : []));
+}
+
+/** The saved build in a slot as an opponent: that build part for part, with the bench's work on it, in colours that are not the pilot's, flown as its class is. */
+export function sparEnemy(game: GameState, slot: number, name: string, catalog: Catalog): EnemyDef {
+  const build = { ...game.loadouts[slot]! };
+  return {
+    id: SPAR_ENEMY(slot), name, ai: SPAR_AI[archetypeOf(build, catalog)], sprite: 'enemy-rival', composed: true, build,
+    paint: game.paint === 'obsidian' ? 'bone' : 'obsidian',
+    ...(game.tuning && Object.keys(game.tuning).length > 0 ? { tune: { ...game.tuning } } : {}),
+  };
+}
+
+/** The words a spar is written with. */
+export interface SparText {
+  title: string;
+  client: string;
+  /** Which saved build is flown against the pilot, by the number the garage gives it. */
+  briefing: (slot: number) => string;
+  free: string;
+  debrief: string;
+}
+
+/** A spar as a contract: one fight in the hall against the saved build of that slot, scaled as a mirror match is, for no pay. */
+export function sparMission(slot: number, text: SparText): Mission {
+  return {
+    id: sparId(slot), phase: 'patrol', title: text.title, client: text.client,
+    briefing: [text.briefing(slot + 1), text.free], debrief: text.debrief, reward: 0, scale: MIRROR_SCALE,
+    battles: [{ enemies: [SPAR_ENEMY(slot)], background: RANGE_HALL }],
+  };
+}
