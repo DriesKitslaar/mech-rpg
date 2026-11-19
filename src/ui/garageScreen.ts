@@ -1,5 +1,6 @@
 import { archetypeOf } from '../core/archetype';
 import { LOADOUT_SLOTS, type BuildSlot } from '../core/game';
+import { MIX_KEYS, MIX_STEPS, type MixKey } from '../core/mix';
 import type { BuildStats } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -8,9 +9,10 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { GarageFlow } from './garageFlow';
 import { drawMech, mechSprites } from './mechView';
 import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
+import { mixSwatches } from './paint';
 import { idlePose } from './pose';
 import { partLines } from './partInfo';
-import { CHAR_W, COLORS, LINE, drawList, drawPanel, drawRowLight, drawText } from './widgets';
+import { CHAR_W, COLORS, LINE, charsFor, drawList, drawPanel, drawRowLight, drawText, wrap } from './widgets';
 
 const G = STRINGS.garage;
 const C = STRINGS.classes;
@@ -20,6 +22,21 @@ const LIST_W = LOGICAL_W - LIST_X;
 const LOADOUTS_Y = 40;
 const LOADOUT_MENU_Y = LOADOUTS_Y + LOADOUT_SLOTS * LINE + 4;
 const STATS_Y = 196;
+/**
+ * The page of paint: where its heading and its six rows stand, where on a row the strip of its steps
+ * begins, how far under the row's own line and how tall it is, how wide one cell of it is (three
+ * pixels for the two wheels of twenty-four, eight for the others), and where the line under the rows begins.
+ */
+export const MIX_PAGE = {
+  headY: 24,
+  rowY: (row: number): number => 40 + row * 17,
+  stripX: LIST_X + 52,
+  stripDy: 2,
+  stripH: 7,
+  cellW: (key: MixKey): number => (MIX_STEPS[key] > 8 ? 3 : 8),
+  noteY: 146,
+};
+const M = G.mixer;
 
 /** Draws the garage and passes its results to the app: every change is saved at once. */
 export class GarageScreen implements Screen {
@@ -45,12 +62,14 @@ export class GarageScreen implements Screen {
 
   view(): ScreenView {
     const { flow } = this;
-    const list = { slots: flow.slots, parts: flow.parts, loadouts: flow.loadouts, loadoutMenu: flow.loadoutMenu, bench: flow.bench }[flow.mode];
+    const list = { slots: flow.slots, parts: flow.parts, loadouts: flow.loadouts, loadoutMenu: flow.loadoutMenu, bench: flow.bench, paint: flow.paintRows }[flow.mode];
     const bench = flow.benchInfo;
     return {
       menu: { items: list.items, cursor: list.cursor },
       garage: {
         mode: flow.mode, slot: flow.slot, candidate: flow.candidate, errors: flow.errors, paint: flow.game.paint, ...(bench ? { bench } : {}),
+        // The mix of the pilot's own that is worn, when what is worn is one.
+        mix: flow.mix,
         // What kind of machine the build is, with the part under the cursor counted as fitted.
         kind: archetypeOf(flow.previewBuild, this.app.deps.catalog),
       },
@@ -118,6 +137,8 @@ export class GarageScreen implements Screen {
       }
     } else if (flow.mode === 'bench') {
       this.drawBench(ctx);
+    } else if (flow.mode === 'paint') {
+      this.drawPaint(ctx);
     } else {
       drawText(ctx, STRINGS.slots[flow.slot].toUpperCase(), LIST_X + 6, 24, { color: COLORS.dim });
       // On a part the bench takes, the head of the list says which button puts it there: the foot of
@@ -193,7 +214,56 @@ export class GarageScreen implements Screen {
     } else if (flow.mode === 'slots') {
       // With nothing wrong, the foot of the panel says what the shoulder buttons and the D-pad do here.
       drawText(ctx, G.paint(flow.paintName), 8, STATS_Y + 61, { color: COLORS.dim, size: 10 });
-      drawText(ctx, G.toLoadouts, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
+      drawText(ctx, G.pages.slots, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
+    } else if (flow.mode === 'paint') {
+      drawText(ctx, G.pages.paint, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
     }
+  }
+
+  /**
+   * The page of paint: the paint that is worn, and under it the five things a mix of the pilot's own
+   * sets, each as a strip of its steps in the colours they would give, with the one chosen marked.
+   * While what is worn is no mix the five are dim and have no strip.
+   */
+  private drawPaint(ctx: CanvasRenderingContext2D): void {
+    const { flow } = this;
+    const mix = flow.mix;
+    drawText(ctx, M.heading, LIST_X + 6, MIX_PAGE.headY, { color: COLORS.dim });
+    drawText(ctx, M.change, LOGICAL_W - 8, MIX_PAGE.headY + 1, { align: 'right', color: COLORS.dim, size: 10 });
+    flow.paintRows.items.forEach((item, i) => {
+      const selected = i === flow.paintRows.cursor;
+      const y = MIX_PAGE.rowY(i);
+      if (selected) {
+        drawRowLight(ctx, LIST_X + 1, y + 1, LIST_W - 3);
+        drawText(ctx, '>', LIST_X + 3, y, { color: COLORS.accent });
+      }
+      drawText(ctx, item.label, LIST_X + 10, y + 1, { color: COLORS.dim, size: 10 });
+      if (item.id === 'paint') {
+        drawText(ctx, item.note ?? '', MIX_PAGE.stripX, y, { color: selected ? COLORS.accent : COLORS.text });
+        return;
+      }
+      if (!mix) {
+        drawText(ctx, '-', MIX_PAGE.stripX, y, { color: COLORS.dim });
+        return;
+      }
+      const key = item.id as MixKey;
+      const w = MIX_PAGE.cellW(key);
+      const top = y + MIX_PAGE.stripDy;
+      mixSwatches(mix, key).forEach((colour, step) => {
+        ctx.fillStyle = colour;
+        ctx.fillRect(MIX_PAGE.stripX + step * w, top, w, MIX_PAGE.stripH);
+      });
+      // The chosen step: a bar over its cell and a bar under it.
+      ctx.fillStyle = COLORS.text;
+      ctx.fillRect(MIX_PAGE.stripX + mix[key] * w, top - 2, w, 1);
+      ctx.fillRect(MIX_PAGE.stripX + mix[key] * w, top + MIX_PAGE.stripH + 1, w, 1);
+      // The three whose steps have names say the name of the one chosen.
+      if (key === 'finish' || key === 'shade' || key === 'glow') {
+        drawText(ctx, M[key][mix[key]], MIX_PAGE.stripX + MIX_STEPS[key] * w + 6, y, { color: selected ? COLORS.accent : COLORS.text });
+      }
+    });
+    ctx.fillStyle = COLORS.border;
+    ctx.fillRect(LIST_X + 6, MIX_PAGE.noteY - 4, LIST_W - 12, 1);
+    wrap(mix ? M.yours : M.ready, charsFor(LIST_W - 12)).forEach((line, i) => drawText(ctx, line, LIST_X + 6, MIX_PAGE.noteY + i * LINE, { color: COLORS.dim }));
   }
 }

@@ -4,6 +4,7 @@ import { createBattle, type BattleState } from '../../src/core/battle';
 import { computeBuildStats, validatePlayerBuild } from '../../src/core/build';
 import { arrivedMessages, reached, stockFor } from '../../src/core/campaign';
 import { newGame } from '../../src/core/game';
+import { DEFAULT_MIXES, MIX_SLOTS, mixId } from '../../src/core/mix';
 import { awardMedals, medalProgress } from '../../src/core/medals';
 import { playMission } from '../../src/core/mission';
 import { perkEffects } from '../../src/core/pilot';
@@ -234,23 +235,25 @@ describe('what the seat gives', () => {
 
   test('the keeper\'s paint is the holder\'s to wear, after the crowns\' paints, and nobody else\'s', () => {
     const free = ['factory', ...PAINTS.map((paint) => paint.id)];
-    expect(paintsFor(game)).toEqual(free);
-    expect(paintsFor(crowned)).toEqual([...free, ...CROWN_PAINTS.map((paint) => paint.id)]);
-    expect(paintsFor(seated)).toEqual([...free, ...CROWN_PAINTS.map((paint) => paint.id), 'touchstone']);
+    // After every paint that is won come the pilot's own three mixes, which anyone has.
+    const own = DEFAULT_MIXES.map(mixId);
+    expect(paintsFor(game)).toEqual([...free, ...own]);
+    expect(paintsFor(crowned)).toEqual([...free, ...CROWN_PAINTS.map((paint) => paint.id), ...own]);
+    expect(paintsFor(seated)).toEqual([...free, ...CROWN_PAINTS.map((paint) => paint.id), 'touchstone', ...own]);
     // It goes with the seat and not with the crowns: a seat held with fewer crowns kept still has it, and something odd in the seat's place has not.
-    expect(paintsFor({ crowns: ['bastion'], seat: true })).toEqual([...free, 'basalt', 'touchstone']);
+    expect(paintsFor({ crowns: ['bastion'], seat: true })).toEqual([...free, 'basalt', 'touchstone', ...own]);
     expect(paintsFor({ crowns: [...ARCHETYPES], seat: 'yes' as unknown as true })).not.toContain('touchstone');
   });
 
   test('the garage steps to it and names it for the holder; worn by anyone else it is named, stepped away from and not come back to', () => {
     const held = new GarageFlow(seated, CATALOG);
-    held.onInput('prev');
+    // Back from factory colours, past the pilot's own three mixes.
+    for (let i = 0; i <= MIX_SLOTS; i++) held.onInput('prev');
     expect(held.game.paint).toBe('touchstone');
     expect(held.paintName).toBe('Touchstone');
     held.onInput('prev');
     expect(held.game.paint).toBe(CROWN_PAINTS.at(-1)!.id);
-    held.onInput('next');
-    held.onInput('next');
+    for (let i = 0; i < 2 + MIX_SLOTS; i++) held.onInput('next');
     expect(held.game.paint).toBe('factory');
     const other = new GarageFlow({ ...crowned, paint: 'touchstone' }, CATALOG);
     expect(other.paintName).toBe('Touchstone');
@@ -361,7 +364,8 @@ describe('what the seat gives', () => {
     expect(text).toMatch(/Take the seat and its frame, the Sovereign, is on the shop's list, and the keeper's paint is yours\.$/);
     expect(dutch).toMatch(/staat in de winkel, en de lak van de houder is van jou\.$/);
     expect(SHOP_UNLOCKS['core-sovereign']).toBe('seat');
-    expect(paintsFor(seated).at(-1)).toBe(KEEPER.paint);
+    // The last paint that is won: only the pilot's own mixes stand after it.
+    expect(paintsFor(seated).at(-1 - MIX_SLOTS)).toBe(KEEPER.paint);
     expect(STRINGS_NL.arena.seat.row.toUpperCase()).toBe(REFERENCE_NL[topic.title]);
   });
 });

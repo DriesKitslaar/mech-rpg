@@ -1,6 +1,7 @@
 import { ARCHETYPES, type Archetype } from '../../src/core/archetype';
 import { DIFFICULTY_SCALE, type GameState } from '../../src/core/game';
 import { masterId } from '../../src/core/masters';
+import { MIX_SLOTS } from '../../src/core/mix';
 import { xpForLevel } from '../../src/core/pilot';
 import { SEAT_ID, seatHeld } from '../../src/core/seat';
 import { tunable } from '../../src/core/tuning';
@@ -376,9 +377,9 @@ describe('where the seat is seen and what comes of it', () => {
     select(app, 'messages');
     expect(snap(app).menu.items.map((item) => item.id)).toContain('seat-yard');
     press(app, 'cancel');
-    // The garage: L1 from the factory's colours is the last paint there is, which is the keeper's now.
+    // The garage: L1 from the factory's colours, past the pilot's own three mixes, is the last paint that is won, which is the keeper's now.
     select(app, 'garage');
-    press(app, 'prev');
+    for (let i = 0; i <= MIX_SLOTS; i++) press(app, 'prev');
     expect(savedGame(store).paint).toBe('touchstone');
     expect(drawn(app).texts.some((t) => t.text === STRINGS.garage.paint('Touchstone'))).toBe(true);
     press(app, 'cancel');
@@ -396,8 +397,10 @@ describe('where the seat is seen and what comes of it', () => {
     expect(letters).not.toContain('seat-yard');
     press(app, 'cancel');
     select(app, 'garage');
-    press(app, 'prev');
-    expect(savedGame(store).paint).not.toBe('touchstone');
+    for (let i = 0; i <= MIX_SLOTS; i++) {
+      press(app, 'prev');
+      expect(savedGame(store).paint).not.toBe('touchstone');
+    }
     press(app, 'cancel');
     select(app, 'shop');
     expect(snap(app).menu.items.some((item) => item.id === 'head-sovereign')).toBe(false);

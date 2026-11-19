@@ -26,7 +26,7 @@
 
 - A kept game whose paint or kept mixes are not right (a step out of range, a slot that does not match its place, a list of the wrong length, something that is no text): opens, wears factory colours or the three as they come, and does not crash.
 - Trying a hundred mixes in a row: the store holds the pictures of four, and none of a ready paint is ever forgotten.
-- A mix worn from behind in a battle, in the launch and small on the arena's page: coloured, not as drawn.
+- A mix worn in the hangar, from behind in a battle and in the launch: coloured, not as drawn. And a dark mix against a copy of itself: the copy is not in a paint as dark.
 - L1 and R1 on the parts page, which went through twelve paints and back to factory colours: through the three mixes as well, without changing one.
 - The rows of the paint page in Dutch; and a pilot on a row that is dim pressing L1: nothing changes and nothing is kept.
 
@@ -47,18 +47,19 @@
   - `mixesOf(state: Pick<GameState, 'mixes'>): Mix[]` (three: what is kept where it is right, else as they come)
   - `stepMix(mix: Mix, key: MixKey, step: number): Mix` (round and round)
   - `setMix(state: GameState, mix: Mix): GameState` (kept in its slot, and worn)
+  - `likenessPaint(paint: string): string` (what a copy of the pilot's own machine wears against it: `obsidian`, or `bone` where the pilot's is obsidian or a mix of the two darkest shades)
 - `GameState.mixes?: string[]`.
 - `src/ui/paint.ts`: `MIX_FINISH: number[]` (4), `MIX_SHADE: number[]` (5), `MIX_GLOW: number[]` (3), `schemeOfMix(mix: Mix): PaintScheme` (its id is `mixId(mix)`, its name `Mix <slot>`); `paintById` knows a mix; `paintsFor(state)` ends with the three.
-- `src/ui/paintedCache.ts`: `class PaintedCache<T> { constructor(kept: number, passing: (paint: string) => boolean); get(sprite: string, paint: string, make: () => T): T; size: number }`.
+- `src/ui/paintedCache.ts`: `MIX_KEPT = 4`, `class PaintedCache<T> { constructor(kept: number, passing: (paint: string) => boolean); get(sprite: string, paint: string, make: () => T): T; size: number }`.
 
 **Steps:**
 
-- [ ] The rules of a mix with their tests: the grammar both ways, every name that is no mix, the steps going round, the three as they come, what a game keeps and what it makes of a list that is not right.
-- [ ] What is checked of a kept game: a mix worn, three kept; a game from before the round; one with a paint or a list that is not right. Tests.
-- [ ] The colours: `schemeOfMix` for every step within the ready paints' range, white and black where the spec says, the name; `paintById` and `paintsFor`. Tests.
-- [ ] The cache with its tests, and the sprite store using it.
-- [ ] Through the game: a mix worn in the hangar, from behind in a battle and in the launch is coloured (the store is asked for that paint). Tests.
-- [ ] Mutation over the step.
+- [x] The rules of a mix with their tests: the grammar both ways, every name that is no mix, the steps going round, the three as they come, what a game keeps and what it makes of a list that is not right.
+- [x] What is checked of a kept game: a mix worn, three kept; a game from before the round; one with a paint or a list that is not right. Tests.
+- [x] The colours: `schemeOfMix` for every step within the ready paints' range, white and black where the spec says, the name; `paintById` and `paintsFor`. Tests.
+- [x] The cache with its tests, and the sprite store using it.
+- [x] Through the game: a mix worn in the hangar, from behind in a battle and in the launch is coloured (the store is asked for that paint). Tests.
+- [x] Mutation over the step.
 
 ### Task C2: the paint page
 
@@ -69,16 +70,17 @@
 **Interfaces:**
 - `GarageFlow.mode` gains `'paint'`; `GarageFlow.paintRows: MenuList` (ids `paint`, then `MIX_KEYS`); `GarageFlow.mix: Mix | null` (the mix worn, when it is one).
 - The garage's snapshot gains `mix: Mix | null`.
-- `STRINGS.garage.mixer = { heading, change, rows: { paint, hue, finish, shade, trim, glow }, finish: string[4], shade: string[5], glow: string[3], ready, yours }`, and the foot of the screen says which way the paint and the builds are.
+- `STRINGS.garage.mixer = { heading, change, rows: { paint, hue, finish, shade, trim, glow }, finish: string[4], shade: string[5], glow: string[3], ready, yours }`, and `STRINGS.garage.pages = { slots, paint }`: what the foot of the parts and of the paint page say of which way the other pages are.
+- `src/ui/paint.ts`: `mixSwatches(mix: Mix, key: MixKey): string[]` (the colours of a row's steps, as `#rrggbb`); `src/ui/garageScreen.ts`: `MIX_PAGE` (where the page's heading, rows, strips and the line under them stand).
 - A medal `mixed` (tier 1): wear a mix.
 
 **Steps:**
 
-- [ ] The ring and the page in the flow: left and right from each of the three, up and down the rows, L1 and R1 on each row, the dim rows, what is kept. Tests.
-- [ ] Drawing it: the rows, the strips in the colours they would give, the mark on the chosen step, the names, the line under them; nothing over anything, in both languages. Tests.
-- [ ] The words, the medal, the manual's chapter and the garage's own, the guide, the README: with claim tests.
-- [ ] In a browser: the page in both languages, a white machine in the hangar, behind it in a battle and in the launch; every other browser test still passing.
-- [ ] Mutation over the step.
+- [x] The ring and the page in the flow: left and right from each of the three, up and down the rows, L1 and R1 on each row, the dim rows, what is kept. Tests.
+- [x] Drawing it: the rows, the strips in the colours they would give, the mark on the chosen step, the names, the line under them; nothing over anything, in both languages. Tests.
+- [x] The words, the medal, the manual's chapter and the garage's own, the guide, the README: with claim tests.
+- [x] In a browser: the page in both languages, a white machine in the hangar, behind it in a battle and in the launch; every other browser test still passing.
+- [x] Mutation over the step.
 
 ### Task C3: final check
 

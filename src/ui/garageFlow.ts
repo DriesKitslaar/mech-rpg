@@ -5,6 +5,7 @@ import {
   saveLoadout, setPaint, spareCount,
   type BuildSlot, type GameState,
 } from '../core/game';
+import { MIX_KEYS, parseMix, setMix, stepMix, type Mix, type MixKey } from '../core/mix';
 import { TUNE_MAX, checkTune, stepOf, tunable, tune, tuneCap, tuneCost, tunedCatalog, tunedPart, type TuneRefusal } from '../core/tuning';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Build, type BuildError, type BuildStats, type Catalog, type Part } from '../core/types';
 import { STRINGS } from '../content/strings';
@@ -13,6 +14,7 @@ import { MenuList, type ListItem } from './menuList';
 import { paintById, paintsFor } from './paint';
 
 const G = STRINGS.garage;
+const M = G.mixer;
 const NONE = '(none)';
 /** Factory colours first, then every scheme: the order L1 and R1 step through. */
 
@@ -46,12 +48,14 @@ function figureOf(part: Part): { figure: BenchInfo['figure']; value: number } {
  */
 export class GarageFlow {
   game: GameState;
-  mode: 'slots' | 'parts' | 'loadouts' | 'loadoutMenu' | 'bench' = 'slots';
+  mode: 'slots' | 'parts' | 'loadouts' | 'loadoutMenu' | 'bench' | 'paint' = 'slots';
   slots: MenuList;
   parts = new MenuList();
   loadouts = new MenuList();
   loadoutMenu = new MenuList();
   bench = new MenuList();
+  /** The rows of the paint page: the paint that is worn, and the five things a mix sets. */
+  paintRows: MenuList;
   /** The part on the bench. */
   private benchId: string | null = null;
   /** The catalogue as the pilot reads it: the same parts, with the bench's work counted into their figures. */
@@ -62,6 +66,18 @@ export class GarageFlow {
     this.catalog = tunedCatalog(factory, game.tuning);
     this.slots = new MenuList(this.slotItems());
     this.loadouts = new MenuList(this.loadoutItems());
+    this.paintRows = new MenuList(this.paintItems());
+  }
+
+  /** The mix the machine wears, when what it wears is one of the pilot's own mixes. */
+  get mix(): Mix | null {
+    return parseMix(this.game.paint);
+  }
+
+  /** The paint page's rows as they stand: the first says what is worn; the five of a mix are dim while what is worn is none. */
+  private paintItems(): ListItem[] {
+    const mixed = this.mix !== null;
+    return [{ id: 'paint', label: M.rows.paint, enabled: true, note: this.paintName }, ...MIX_KEYS.map((key) => ({ id: key, label: M.rows[key], enabled: mixed }))];
   }
 
   /** A part's name, with the step the bench has taken it to. */
@@ -243,6 +259,7 @@ export class GarageFlow {
     const order = paintsFor(this.game);
     const at = Math.max(0, order.indexOf(this.game.paint));
     this.game = setPaint(this.game, order[(at + step + order.length) % order.length]);
+    this.paintRows.setItems(this.paintItems());
   }
 
   /** Runs the chosen entry of a saved build's menu. */
@@ -262,14 +279,16 @@ export class GarageFlow {
   }
 
   onInput(action: InputAction): 'stay' | 'changed' | 'exit' {
-    const list = { slots: this.slots, parts: this.parts, loadouts: this.loadouts, loadoutMenu: this.loadoutMenu, bench: this.bench }[this.mode];
+    const list = { slots: this.slots, parts: this.parts, loadouts: this.loadouts, loadoutMenu: this.loadoutMenu, bench: this.bench, paint: this.paintRows }[this.mode];
     if (action === 'up') { list.move(-1); return 'stay'; }
     if (action === 'down') { list.move(1); return 'stay'; }
     switch (this.mode) {
       case 'slots':
         if (action === 'cancel') return 'exit';
         if (action === 'prev' || action === 'next') { this.stepPaint(action === 'next' ? 1 : -1); return 'changed'; }
-        if (action === 'left' || action === 'right') { this.mode = 'loadouts'; return 'stay'; }
+        // The panel's three pages stand in a ring: the paint to the left of the parts, the saved builds to the right.
+        if (action === 'left') { this.mode = 'paint'; return 'stay'; }
+        if (action === 'right') { this.mode = 'loadouts'; return 'stay'; }
         if (action === 'confirm') {
           const items = this.partItems(this.slot);
           const fitted = items.findIndex((item) => item.id === (this.game.build[this.slot] ?? NONE));
@@ -310,13 +329,31 @@ export class GarageFlow {
         return 'changed';
       }
       case 'loadouts':
-        if (action === 'cancel' || action === 'left' || action === 'right') { this.mode = 'slots'; return 'stay'; }
+        if (action === 'cancel' || action === 'left') { this.mode = 'slots'; return 'stay'; }
+        if (action === 'right') { this.mode = 'paint'; return 'stay'; }
         if (action === 'confirm') {
           const items = this.loadoutMenuItems(this.loadoutIndex);
           this.loadoutMenu = new MenuList(items, items.findIndex((item) => item.enabled));
           this.mode = 'loadoutMenu';
         }
         return 'stay';
+      case 'paint': {
+        if (action === 'cancel' || action === 'right') { this.mode = 'slots'; return 'stay'; }
+        if (action === 'left') { this.mode = 'loadouts'; return 'stay'; }
+        if (action !== 'prev' && action !== 'next') return 'stay';
+        const step = action === 'next' ? 1 : -1;
+        const row = this.paintRows.selected!.id;
+        if (row === 'paint') {
+          this.stepPaint(step);
+          return 'changed';
+        }
+        // One of the five things a mix sets: a step on or back, for the mix that is worn. With none worn the row is dim.
+        const mix = this.mix;
+        if (!mix) return 'stay';
+        // (The rows stand as they stood: it is the same mix in the same place, a step on.)
+        this.game = setMix(this.game, stepMix(mix, row as MixKey, step));
+        return 'changed';
+      }
       case 'loadoutMenu': {
         if (action === 'cancel') { this.mode = 'loadouts'; return 'stay'; }
         const item = this.loadoutMenu.selected;

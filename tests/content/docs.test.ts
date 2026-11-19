@@ -3,6 +3,7 @@ import { ARCHETYPES } from '../../src/core/archetype';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
 import { startNewCycle } from '../../src/core/campaign';
 import { launches } from '../../src/core/launch';
+import { DEFAULT_MIXES, MIX_KEYS, MIX_SLOTS, MIX_STEPS, mixId } from '../../src/core/mix';
 import { MAX_LEVEL } from '../../src/core/pilot';
 import { SEAT_PURSE, seatPurse } from '../../src/core/seat';
 import { ALL_STRIPES, MAX_STRIPE_POINTS, STRIPES_AT, STRIPES_A_POINT, countsForClass, stripePoints, stripesHeld } from '../../src/core/stripes';
@@ -23,7 +24,7 @@ import { STARTERS } from '../../src/content/starters';
 import { STRINGS } from '../../src/content/strings';
 import { FAST_BATTLE_SPEED } from '../../src/ui/app';
 import { LAMPS_AT, LAUNCH_MS } from '../../src/ui/launch';
-import { CROWN_PAINTS, PAINTS, SEAT_PAINT } from '../../src/ui/paint';
+import { CROWN_PAINTS, PAINTS, SEAT_PAINT, paintsFor, rampOf, schemeOfMix, toHsl } from '../../src/ui/paint';
 
 /**
  * The README's list of what is in the game, held to the game: a figure written there is the count
@@ -42,7 +43,7 @@ describe('the README counts what is there', () => {
     expect(README).toContain(`en ${SHOP_PARTS.length} onderdelen in de winkel`);
     // The paints anyone may wear, and those won in the arena: a master's for each crown, and the keeper's.
     const earned = CROWN_PAINTS.length + 1;
-    expect(README).toContain(`${capital(word(PAINTS.length))} verfschema's, ${word(earned)} die je in de arena verdient, en ${word(LOADOUT_SLOTS)} opgeslagen builds.`);
+    expect(README).toContain(`${capital(word(PAINTS.length))} verfschema's, ${word(earned)} die je in de arena verdient, ${word(MIX_SLOTS)} die je zelf mengt, en ${word(LOADOUT_SLOTS)} opgeslagen builds.`);
     expect(CROWN_PAINTS).toHaveLength(MASTERS.length);
     expect(SEAT_PAINT.id).toBe(KEEPER.paint);
     expect(README).toContain(`Je begint in een van ${word(STARTERS.length)} mecha's naar keuze.`);
@@ -263,5 +264,76 @@ describe('what is said of stripes is so', () => {
     expect(README).toContain('**Strepen**: een klasse geeft je een streep bij 3, 8 en 15 gewonnen contracten, en elke vijfde streep is een perkpunt.');
     expect(README).toContain('met twintig strepen heb je eindelijk elke rang van elke perk.');
     expect(MAX_STRIPE_POINTS * STRIPES_A_POINT).toBe(20);
+  });
+});
+
+describe('what is said of the paint shop is so', () => {
+  const M = STRINGS.garage.mixer;
+  const chapter = MANUAL.find((entry) => entry.id === 'paint')!;
+  const garage = MANUAL.find((entry) => entry.id === 'garage')!;
+  const section = GUIDE.slice(GUIDE.indexOf('## De spuiterij: je eigen lak'), GUIDE.indexOf('## Moeilijkheid'));
+  const raw = GUIDE_TEXT.slice(GUIDE_TEXT.indexOf('## De spuiterij: je eigen lak'), GUIDE_TEXT.indexOf('## Moeilijkheid'));
+
+  test('the manual: how many paints come ready, the three that are mixed, what is set and how, and that a mix is kept', () => {
+    expect(chapter.title).toBe('THE PAINT SHOP');
+    expect(chapter.text).toContain("Twelve paints come ready, and a master's crown brings theirs.");
+    expect(PAINTS).toHaveLength(12);
+    expect(chapter.text).toContain('MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake.');
+    expect(MIX_SLOTS).toBe(3);
+    expect(MIX_KEYS).toHaveLength(5);
+    expect(chapter.text).toContain("Up and down choose a row; L1 and R1 change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows.");
+    expect(chapter.text).toMatch(/A mix is kept as you leave it\.$/);
+    const dutch = REFERENCE_NL[chapter.text];
+    expect(dutch).toContain('Twaalf lakken zijn kant en klaar; de kroon van een meester geeft de zijne.');
+    expect(dutch).toContain('MIX 1, 2 en 3 meng je zelf: trek er een aan en vijf rijen ontwaken.');
+    expect(dutch).toMatch(/Je mengsel blijft bewaard\.$/);
+    expect(REFERENCE_NL[chapter.title]).toBe('DE SPUITERIJ');
+    // The garage's own chapter says which way the paint shop and the saved builds are.
+    expect(garage.text).toContain('Right opens your seven saved builds');
+    expect(garage.text).toMatch(/Left opens the paint shop\.$/);
+    expect(REFERENCE_NL[garage.text]).toMatch(/Rechts: je zeven bewaarde builds.*Links: de spuiterij\.$/);
+  });
+
+  test('the guide: the order of the paints, the three as they come, and the page by its name', () => {
+    expect(section.length).toBeGreaterThan(600);
+    expect(section).toContain('de kleuren van de fabriek, twaalf kant-en-klare lakken, de lakken die je in de arena verdient, en als laatste **Mix 1**, **Mix 2** en **Mix 3**.');
+    // Factory colours, the twelve, what is won, and last the three.
+    const all = paintsFor({ crowns: ['bastion'], seat: true });
+    expect(all[0]).toBe('factory');
+    expect(all.slice(1, 1 + PAINTS.length)).toEqual(PAINTS.map((paint) => paint.id));
+    expect(all.slice(-MIX_SLOTS)).toEqual(DEFAULT_MIXES.map(mixId));
+    expect(DEFAULT_MIXES.map((mix) => schemeOfMix(mix).name)).toEqual(['Mix 1', 'Mix 2', 'Mix 3']);
+    // A white machine with blue lights, a black one with red, and navy with gold.
+    expect(section).toContain('een witte mecha met blauwe lichten, een zwarte met rode, en een marineblauwe met goud');
+    const [white, black, navy] = DEFAULT_MIXES.map((mix) => schemeOfMix(mix));
+    const light = (scheme: typeof white): number => toHsl(...rampOf(scheme)[3])[2];
+    expect(light(white)).toBeGreaterThan(0.5);
+    expect(light(black)).toBeLessThan(0.25);
+    expect([white.accentHue, black.accentHue, navy.accentHue]).toEqual([195, 0, 45]);
+    expect(navy.hue).toBe(210);
+    expect(section).toContain(`Druk in de garage op **links**: dan sta je in de **${M.heading}**.`);
+    expect(section).toContain("Naar rechts ga je naar je bewaarde builds; de drie pagina's staan in een kring.");
+  });
+
+  test('the guide\'s table: each row by its name, in its number of steps, with the names its steps have', () => {
+    const rows = raw.split('\n').filter((line) => line.startsWith('| **'));
+    expect(rows.map((line) => line.split('|')[1].trim())).toEqual(MIX_KEYS.map((key) => `**${M.rows[key]}**`));
+    expect(rows.map((line) => Number(line.split('|')[2].trim()))).toEqual(MIX_KEYS.map((key) => MIX_STEPS[key]));
+    expect(rows[1]).toContain(`${M.finish[0]} (bijna geen kleur), ${M.finish.slice(1).join(', ')}.`);
+    expect(rows[2]).toContain(`${M.shade.join(', ')}.`);
+    expect(rows[4]).toContain(`${M.glow.join(', ')}.`);
+    // White and black, as the guide says they are made.
+    expect(section).toContain(`**${M.finish[0]}** met **${M.shade[0]}** geeft een witte mecha, **${M.finish[0]}** met **${M.shade.at(-1)}** een zwarte.`);
+    expect([DEFAULT_MIXES[0].finish, DEFAULT_MIXES[0].shade]).toEqual([0, 0]);
+    expect([DEFAULT_MIXES[1].finish, DEFAULT_MIXES[1].shade]).toEqual([0, MIX_STEPS.shade - 1]);
+    expect(section).toContain('Het kost niets. Er is een medaille voor wie een eigen mengsel draagt.');
+    expect(MEDALS.find((entry) => entry.id === 'mixed')).toMatchObject({ tier: 1 });
+  });
+
+  test('the README and the hangar\'s table in the guide say where it is', () => {
+    expect(README).toContain('**Eigen lak**: in de garage meng je je eigen lak, in vijf rijen:');
+    expect(README).toContain('en drie mengsels blijven bewaard.');
+    expect(GUIDE).toContain('| Garage | Onderdelen wisselen, verf kiezen (L1/R1), je eigen lak mengen (links), zeven builds bewaren (rechts). |');
+    expect(GUIDE).toContain('- Builds bewaar je in de **Garage**: naar rechts, een plek kiezen, **Save current build**.');
   });
 });

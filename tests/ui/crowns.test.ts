@@ -4,6 +4,7 @@ import type { Mission } from '../../src/core/campaign';
 import type { Settlement } from '../../src/core/economy';
 import { newGame, saveLoadout, type GameState } from '../../src/core/game';
 import { CROWN_BONUS, askBonus, recordMasterWin } from '../../src/core/masters';
+import { DEFAULT_MIXES, MIX_SLOTS, mixId } from '../../src/core/mix';
 import { awardMedals, medalProgress } from '../../src/core/medals';
 import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
 import { BOARD_TEXT } from '../../src/content/board';
@@ -142,32 +143,33 @@ describe('the pilot\'s page of classes', () => {
 describe('the master\'s paint', () => {
   test('what a pilot may wear: factory colours, the twelve anyone may, and the paint of each crown held, in the order of the classes', () => {
     const free = ['factory', ...PAINTS.map((paint) => paint.id)];
-    expect(paintsFor(fresh())).toEqual(free);
-    expect(paintsFor(crowned(fresh(), 'bastion'))).toEqual([...free, 'basalt']);
-    expect(paintsFor(crowned(fresh(), 'skirmisher', 'duellist'))).toEqual([...free, 'mercury', 'kingfisher']);
-    expect(paintsFor(crowned(fresh(), ...ARCHETYPES))).toEqual([...free, ...CROWN_PAINTS.map((paint) => paint.id)]);
+    // After them all, the pilot's own three mixes: anyone has those.
+    const own = DEFAULT_MIXES.map(mixId);
+    expect(paintsFor(fresh())).toEqual([...free, ...own]);
+    expect(paintsFor(crowned(fresh(), 'bastion'))).toEqual([...free, 'basalt', ...own]);
+    expect(paintsFor(crowned(fresh(), 'skirmisher', 'duellist'))).toEqual([...free, 'mercury', 'kingfisher', ...own]);
+    expect(paintsFor(crowned(fresh(), ...ARCHETYPES))).toEqual([...free, ...CROWN_PAINTS.map((paint) => paint.id), ...own]);
     // A master beaten in another machine gives no paint; a name that is no class gives none.
-    expect(paintsFor(recordMasterWin(fresh(), 'bastion', 'lancer'))).toEqual(free);
-    expect(paintsFor({ crowns: ['nobody'] })).toEqual(free);
+    expect(paintsFor(recordMasterWin(fresh(), 'bastion', 'lancer'))).toEqual([...free, ...own]);
+    expect(paintsFor({ crowns: ['nobody'] })).toEqual([...free, ...own]);
   });
 
   test('the garage steps through them and no others: the twelve as before, and after them the paints of the crowns held', () => {
     const none = new GarageFlow(fresh(), CATALOG);
     const seen: string[] = [];
     for (let i = 0; i < 20; i++) { none.onInput('next'); seen.push(none.game.paint); }
-    expect(seen.slice(0, 13)).toEqual([...PAINTS.map((paint) => paint.id), 'factory']);
+    expect(seen.slice(0, 13 + MIX_SLOTS)).toEqual([...PAINTS.map((paint) => paint.id), ...DEFAULT_MIXES.map(mixId), 'factory']);
     for (const paint of CROWN_PAINTS) expect(seen).not.toContain(paint.id);
     const held = new GarageFlow(crowned(fresh(), 'bastion', 'lancer'), CATALOG);
-    held.onInput('prev');
+    // Back from factory colours, past the pilot's own three mixes.
+    for (let i = 0; i <= MIX_SLOTS; i++) held.onInput('prev');
     expect(held.game.paint).toBe('basalt');
     expect(held.paintName).toBe('Basalt');
     held.onInput('prev');
     expect(held.game.paint).toBe('ultraviolet');
     held.onInput('prev');
     expect(held.game.paint).toBe(PAINTS.at(-1)!.id);
-    held.onInput('next');
-    held.onInput('next');
-    held.onInput('next');
+    for (let i = 0; i < 3 + MIX_SLOTS; i++) held.onInput('next');
     expect(held.game.paint).toBe('factory');
   });
 
@@ -178,7 +180,7 @@ describe('the master\'s paint', () => {
     expect(flow.game.paint).toBe(PAINTS[0].id);
     for (let i = 0; i < 30; i++) { flow.onInput('next'); expect(flow.game.paint).not.toBe('mercury'); }
     const back = new GarageFlow({ ...fresh(), paint: 'mercury' }, CATALOG);
-    back.onInput('prev');
+    for (let i = 0; i <= MIX_SLOTS; i++) back.onInput('prev');
     expect(back.game.paint).toBe(PAINTS.at(-1)!.id);
   });
 
@@ -190,7 +192,7 @@ describe('the master\'s paint', () => {
     };
     const { app, store } = inHub(crowned(pilot(), 'bastion'), undefined, { sprites: painting });
     select(app, 'garage');
-    press(app, 'prev');
+    for (let i = 0; i <= MIX_SLOTS; i++) press(app, 'prev');
     expect(savedGame(store).paint).toBe('basalt');
     asked.length = 0;
     drawn(app);

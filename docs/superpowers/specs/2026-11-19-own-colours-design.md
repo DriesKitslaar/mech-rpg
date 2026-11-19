@@ -17,8 +17,7 @@ into the paint shop, and none of it costs the game its balance. This round gives
    how strong that colour is, how light or dark it is, the colour of the lights and trim, and how
    hard those burn.
 2. **Three mixes are kept**, each as it was left, and each is worn like any other paint: in the
-   garage, in the hangar, in a battle from the front and from behind, in the launch, on the
-   arena's pages.
+   garage, in the hangar, in a battle from behind and in the launch.
 3. **Mixed where the machine stands.** A page of the garage: the machine beside it changes with
    every press.
 4. An APK after every step.
@@ -86,6 +85,12 @@ The page has six rows:
   they would give, with the one chosen marked, and for the three that have names the name. L1 and
   R1 change the row under the cursor, round and round. They are dim, and do nothing, while the
   machine wears a paint that is not a mix: a line under them says to choose MIX 1, 2 or 3.
+
+### Against a copy of itself
+
+The arena's mirror and a spar with a saved build put the pilot's own machine on the other side, in
+obsidian so that the two are told apart (in bone, for a pilot who wears obsidian). A mix of one of
+the two darkest shades is met in bone as well.
 
 ### Keeping the handheld's memory
 

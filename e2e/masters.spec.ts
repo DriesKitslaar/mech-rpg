@@ -217,7 +217,8 @@ test('what a crown gives: a mark on the pilot\'s page of classes, the master\'s 
   await waitForScreen(page, 'hub');
   await choose(page, 'garage');
   await waitForScreen(page, 'garage');
-  await press(page, 'KeyQ');
+  // Back from the factory's colours: past the pilot's own three mixes to the last paint that was won.
+  for (let i = 0; i < 4; i++) await press(page, 'KeyQ');
   expect((await kept(page)).paint).toBe('basalt');
   await press(page, 'KeyQ');
   expect((await kept(page)).paint).toBe('ultraviolet');

@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ARCHETYPES } from '../src/core/archetype';
 import { completeMission } from '../src/core/campaign';
 import { BUILD_SLOTS, buy, equip, newGame, type GameState } from '../src/core/game';
+import { DEFAULT_MIXES, MIX_KEYS, isMix, mixId, setMix, stepMix, type Mix } from '../src/core/mix';
 import { xpForLevel } from '../src/core/pilot';
 import { stripesEarned } from '../src/core/stripes';
 import { tunable } from '../src/core/tuning';
@@ -183,6 +184,8 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let launching = false;
   // The stripes announced, as each comes up: one may be said again after stepping aside for a screen with no room for it.
   const stripes = new Set<string>();
+  // Whether the garage's page of paint has been tried.
+  let painted = false;
   // Every notice that came up, and how long the bill on the screen has been left standing for them.
   const notices = new Set<string>();
   let read = 0;
@@ -255,6 +258,17 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
       else if (has('descend')) await go('descend');
       else await tap(page, 'Enter');
       await step(160);
+    } else if (s.screen === 'garage' && rooms[0] === 'garage' && !painted) {
+      // The garage's page of paint first: down a mix's rows, each taken a few steps on, so that a machine is coloured
+      // afresh on a real canvas with every press. (With a ready paint worn the rows are dim and the presses do nothing.)
+      painted = true;
+      await tap(page, 'ArrowLeft');
+      for (let row = 0; row < 5; row++) {
+        await tap(page, 'ArrowDown');
+        for (let i = 0; i < 3; i++) { await tap(page, 'KeyE'); await step(160); }
+      }
+      await tap(page, 'ArrowRight');
+      await step(240);
     } else {
       // A room: a look round it, touching nothing that is bought, sold or set, and out again.
       // In the database that ends on the page of what was found, three rows down it.
@@ -268,13 +282,18 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel, launches, flown, stripes: [...stripes], waiting, notices: notices.size };
 }
 
-const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held' }[] = [
-  { name: 'from the first contract, in English, with all of the light', done: [], prefer: ['hadron'], settings: {} },
+/** A mix that is none of the three as they come: orange armour, vivid and dark, with violet trim. */
+const OWN: Mix = { slot: 3, hue: 2, finish: 3, shade: 3, trim: 19, glow: 1 };
+
+const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held'; mix?: Mix }[] = [
+  // In the white mix as it comes: the launch and every battle from the first contract on show a mixed machine from behind.
+  { name: 'from the first contract, in English, with all of the light', done: [], prefer: ['hadron'], settings: {}, mix: DEFAULT_MIXES[0] },
   { name: 'with Hadron through the war and the audit, enforcing', done: ACT_ONE, prefer: ['hadron', 'enforce'], settings: {} },
   { name: 'with Lumen, in Dutch, in a calm picture, defaulting', done: ACT_ONE, prefer: ['lumen', 'default'], settings: { language: 'nl', calm: true } },
   { name: 'with the Undertow, with less light and battles played faster', done: ACT_ONE, prefer: ['undertow', 'enforce'], settings: { detail: 'lean', fastBattles: true } },
   { name: 'a later telling in a frame the bench has worked on, taking the other side\'s offers', done: [], prefer: ['hadron'], settings: {}, later: true },
-  { name: 'the Gauntlet and every room, after the war, with no soft light', done: AFTER_THE_WAR, prefer: [], settings: { detail: 'bare' } },
+  // In a mix of their own, which the garage's page of paint then changes row by row.
+  { name: 'the Gauntlet and every room, after the war, with no soft light', done: AFTER_THE_WAR, prefer: [], settings: { detail: 'bare' }, mix: OWN },
   // The keeper's machine through its three ways, and then the bill, the notice and the rooms of the one who took the seat from it.
   { name: 'the holder of seven crowns, who takes the eighth seat', done: AFTER_THE_WAR, prefer: [], settings: { difficulty: 'story' }, seat: 'taken' },
   // The Sovereign from behind in every battle, in the keeper's paint, against its own likeness first.
@@ -285,7 +304,8 @@ for (const player of PLAYERS) {
   test(`soak: ${player.name}`, async ({ page }) => {
     test.skip(!ASKED, 'a long look: run with SOAK=1');
     test.setTimeout((MINUTES + 2) * 60_000);
-    const start = player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done);
+    const made = player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done);
+    const start = player.mix ? setMix(made, player.mix) : made;
     const errors = await open(page, start, player.settings);
     const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
@@ -305,6 +325,18 @@ for (const player of PLAYERS) {
     for (const id of earned) expect([...played.stripes, ...played.waiting], id).toContain(id);
     for (const id of played.stripes) expect(earned, id).toContain(id);
     console.log(`${player.name}: stripes earned ${earned.join(' ') || 'none'}, of which still waiting ${earned.filter((id) => !played.stripes.includes(id)).join(' ') || 'none'}`);
+    // A player who set out in a mix: one who never came to the garage still wears it, and one who did has it changed as
+    // the page of paint was pressed: each of its five things three steps on. (The look round the garage after that
+    // steps on to other paints, so what is worn at the end is not asked.)
+    if (player.mix) {
+      const worn = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as { paint: string; mixes?: string[] });
+      if (!played.screens.includes('garage')) expect(worn.paint).toBe(mixId(player.mix));
+      else {
+        const turned = MIX_KEYS.reduce((mix, key) => stepMix(mix, key, 3), player.mix);
+        expect(isMix(worn.mixes?.[player.mix.slot - 1])).toBe(true);
+        expect(worn.mixes?.[player.mix.slot - 1]).toBe(mixId(turned));
+      }
+    }
     // Every one of them flew a swarm: the machines that come on later were on the screen.
     expect(played.swarms).toBe(1);
     // And jobs, once the board had one to offer: what each kind asks was on the field, with everything drawn.
