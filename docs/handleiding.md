@@ -215,7 +215,8 @@ Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen
 
 De arena heeft een tweede pagina: druk op **R1** (of **L1**) voor **MASTERS**. Daar staan zeven
 meesters, een voor elke klasse. Ze nemen alleen de **kampioen** van de ladder aan (rang tien); tot
-dan kun je ze wel bekijken.
+dan kun je ze wel bekijken. Word je kampioen, dan schrijft het arenakantoor je erover (onder
+**Messages**).
 
 - **Elke build mag een meester uitdagen.** Win je, dan krijg je de pot: 9000 de eerste keer,
   daarna een kwart.

@@ -315,6 +315,12 @@ export const STORY_NL: Record<string, string> = {
   'Five pilots fight there who stopped caring about the ladder years ago. They have asked to meet you.':
     'Daar vechten vijf piloten die al jaren niets meer om de ranglijst geven. Ze hebben naar je gevraagd.',
   'No rules change. The purses do.': 'De regels blijven. De potten niet.',
+  'Seven who never climbed': 'Zeven die nooit klommen',
+  'One more thing a champion is told. Seven pilots here never fought for the ladder: each is the master of one class of machine.':
+    'Nog iets dat een kampioen hoort. Zeven piloten hier vochten nooit om de ranglijst: elk is de meester van een klasse.',
+  'Any machine may challenge one, for a purse. Beat a master in a machine of their own class and their title is yours: the office keeps a crown for each.':
+    'Elke machine mag er een uitdagen, om een pot. Versla een meester in zijn eigen klasse en zijn titel is van jou: het kantoor bewaart voor elk een kroon.',
+  'They are on the arena list, on the page beside the ladder.': 'Ze staan op de arenalijst, op de pagina naast de ranglijst.',
   "Meridian's stock": 'Meridians inboedel',
   'Whatever else happened, a great deal of black and gold equipment is suddenly on the market.':
     'Wat er verder ook gebeurde, er is opeens heel veel zwart-gouden materieel op de markt.',

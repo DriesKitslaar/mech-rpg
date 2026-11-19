@@ -1047,6 +1047,14 @@ export const MESSAGES: Message[] = [
     ],
   },
   {
+    ...OFFICE, id: 'masters', subject: 'Seven who never climbed', after: 'arena:10',
+    body: [
+      'One more thing a champion is told. Seven pilots here never fought for the ladder: each is the master of one class of machine.',
+      'Any machine may challenge one, for a purse. Beat a master in a machine of their own class and their title is yours: the office keeps a crown for each.',
+      'They are on the arena list, on the page beside the ladder.',
+    ],
+  },
+  {
     id: 'meridian-stock', from: 'Dispatch', portrait: 'portrait-dispatch', subject: 'Meridian\'s stock', after: 'verdict',
     body: [
       'Whatever else happened, a great deal of black and gold equipment is suddenly on the market.',

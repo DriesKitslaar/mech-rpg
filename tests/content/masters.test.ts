@@ -2,6 +2,7 @@ import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
 import { ARCHETYPES, CLASS_AI, archetypeOf, type Archetype } from '../../src/core/archetype';
 import { createBattle } from '../../src/core/battle';
 import { computeBuildStats, validatePlayerBuild } from '../../src/core/build';
+import { unreadMessages } from '../../src/core/campaign';
 import { newGame } from '../../src/core/game';
 import { masterEnemy, masterId, masterMission } from '../../src/core/masters';
 import { playMission } from '../../src/core/mission';
@@ -13,12 +14,14 @@ import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
 import { PEOPLE, UNITS } from '../../src/content/codex';
 import { ENEMIES } from '../../src/content/enemies';
 import { MASTERS, MASTER_ENEMIES, masterOf } from '../../src/content/masters';
+import { MESSAGES, MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { PERKS } from '../../src/content/perks';
 import SPRITES from '../../src/content/sprites.json';
 import { STRINGS } from '../../src/content/strings';
 import { WINGMEN } from '../../src/content/wingmen';
 import { LOGICAL_W } from '../../src/ui/display';
+import { done } from '../helpers/app';
 import { CROWN_PAINTS, PAINTS, paintById, rampOf } from '../../src/ui/paint';
 import { charsFor, wrap } from '../../src/ui/widgets';
 
@@ -179,6 +182,29 @@ describe('the masters on the field', () => {
     const order = UNITS.map((unit) => unit.id);
     for (const master of MASTERS) expect(order).not.toContain(masterId(master.kind));
     expect(rangeKinds({ met: ARCHETYPES.map(masterId) }, order)).toEqual([]);
+  });
+});
+
+describe('the arena office tells a champion', () => {
+  test('a message arrives when the pilot becomes champion, and not before: who the masters are, what takes a crown, and where they are found', () => {
+    const message = MESSAGES.find((m) => m.id === 'masters')!;
+    expect(message).toMatchObject({ from: 'Arena Office', after: 'arena:10' });
+    const arrived = (arenaRank: number): string[] => unreadMessages({ ...done('intro-1', 'intro-2'), arenaRank }, MESSAGES, MISSIONS).map((m) => m.id);
+    expect(arrived(9)).not.toContain('masters');
+    expect(arrived(10)).toContain('masters');
+    expect(arrived(15)).toContain('masters');
+    // It comes with the word about the back room, and after it.
+    const ids = MESSAGES.map((m) => m.id);
+    expect(ids.indexOf('masters')).toBe(ids.indexOf('back-room') + 1);
+    expect(ids.filter((id) => id === 'masters')).toHaveLength(1);
+    // What it says is what the rules are.
+    const text = message.body.join(' ');
+    expect(text).toContain('Seven pilots');
+    expect(MASTERS).toHaveLength(7);
+    expect(text).toContain('Any machine may challenge one, for a purse.');
+    expect(text).toContain('Beat a master in a machine of their own class and their title is yours');
+    expect(text).toMatch(/on the page beside the ladder\.$/);
+    expect(STRINGS.arena.pages).toEqual({ ladder: 'LADDER', masters: 'MASTERS' });
   });
 });
 
