@@ -291,12 +291,17 @@ describe('on the field', () => {
 
   test('an escort is lost when the freight is, and won with it standing', () => {
     const job = jobOf(AT.escort);
-    const asset = (job.battles[0].objective as { name: string; hp: number });
+    const asset = (job.battles[0].objective as { name: string; hp: number; sprite: string });
     const lost = fly(pilot(AT.escort), job.id);
     expect(snap(lost.app).battle).toMatchObject({ objective: `${asset.name.toUpperCase()} ${asset.hp}/${asset.hp}` });
+    // What is left of the freight, and its picture on the field: there from the first moment, whole.
+    expect(snap(lost.app).battle).toMatchObject({ asset: { hp: asset.hp, max: asset.hp }, freight: { sprite: asset.sprite } });
+    expect(asset.sprite).toMatch(/^asset-/);
     idle(lost.app);
     expect(snap(lost.app).battle).toMatchObject({ outcome: 'defeat' });
     expect(snap(lost.app).battle).toMatchObject({ note: `${asset.name}: lost.` });
+    // Lost, there is nothing of it left, and nothing of it on the field.
+    expect(snap(lost.app).battle).toMatchObject({ asset: { hp: 0, max: asset.hp }, freight: null });
     press(lost.app, 'confirm');
     expect(snap(lost.app).settlement).toMatchObject({ won: false });
     expect(savedGame(lost.store).jobs).toBeUndefined();
@@ -304,6 +309,16 @@ describe('on the field', () => {
     autoBattle(won.app);
     expect(snap(won.app).battle).toMatchObject({ outcome: 'victory', enemies: [] });
     expect(snap(won.app).battle).toMatchObject({ note: `${asset.name}: safe.` });
+    // Won, it stands there still, with whatever it has left.
+    const kept = snap(won.app).battle as unknown as { asset: { hp: number; max: number }; freight: { sprite: string } | null };
+    expect(kept.asset.hp).toBeGreaterThan(0);
+    expect(kept.asset.max).toBe(asset.hp);
+    expect(kept.freight).toMatchObject({ sprite: asset.sprite });
+    // No other kind of job has anything to keep, or anything of it on the field.
+    for (const kind of JOB_KINDS.filter((other) => other !== 'escort')) {
+      const other = fly(pilot(AT[kind]), jobOf(AT[kind]).id);
+      expect(snap(other.app).battle, kind).toMatchObject({ asset: null, freight: null });
+    }
     press(won.app, 'confirm');
     expect(snap(won.app).settlement).toMatchObject({ won: true, reward: job.reward });
     expect(savedGame(won.store).jobs).toEqual({ escort: 1 });

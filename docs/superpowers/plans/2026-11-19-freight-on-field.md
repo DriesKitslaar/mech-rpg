@@ -12,7 +12,7 @@
 
 - No rule of combat changes: the freight loses what it lost before, when it lost it.
 - A battle without a sprite for its freight (and every battle without freight) is drawn pixel for pixel as it was.
-- Nothing moves in a calm picture; a hurried screen waits for nothing.
+- In a calm picture the field does not shake and nothing flashes hard (the freight flinches and is lit gently, as a machine that is hit is there); a hurried screen waits for nothing.
 - Images at quality `low` only; the ledger's ceiling holds; the proxy's address and key are never written into the repository.
 - Every new English text has its Dutch, inside the room its kind has.
 - Nothing is merged without the owner's word.
@@ -52,14 +52,16 @@
 - `stage.ts`: `freightSpot(place: Place): Spot` and `freightAt(spot, size): Standing`.
 - `BattleFx`: the `asset` event with a sprite on the field is a jolt and a flash of the freight, sparks and the figure at it; without one, the figure under the strip as before.
 - `BattleScreen`: draws the freight and its shadow before the enemies; smoke from a third down; breaking when lost.
+- `BattleFlow.assetLeft: number | null`: what is left of the freight as far as the message bar has said; the strip's count and meter use it.
 
 **Steps:**
 
-- [ ] Where it stands, with tests over every line-up (the Review Focus's first line).
-- [ ] Drawn with its shadow; not drawn without a sprite: tests on the recorded canvas, a battle with and one without, calm and hurried.
-- [ ] Struck, smoking, lost: tests of what is drawn and written as the events come, and in a calm picture.
-- [ ] The manual's line on objectives, Dutch, the guide.
-- [ ] Browser test with pictures in each place. Mutation over the step. APK.
+- [x] Where it stands, with tests over every line-up (the Review Focus's first line).
+- [x] Drawn with its shadow; not drawn without a sprite: tests on the recorded canvas, a battle with and one without, calm and hurried.
+- [x] Struck, smoking, lost: tests of what is drawn and written as the events come, and in a calm picture.
+- [x] What is left of it goes by what the message bar has said (`BattleFlow.assetLeft`): the strip, the smoke and the picture are not a message ahead of the blow. A round that took nothing is no blow and no line.
+- [x] The manual's line on objectives, Dutch, the guide.
+- [x] Browser test with pictures in each place. Mutation over the step. APK.
 
 ### Task V3: final check
 

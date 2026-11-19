@@ -44,6 +44,9 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 - **Soorten werk**: naast de drie open contracten staat er steeds een klus die om iets anders
   vraagt: één doelwit uitschakelen, een machine heel terugbrengen, vracht beschermen of zes rondes
   standhouden. Welke build je meeneemt maakt daar echt verschil.
+- **In beeld**: wat je bij een escorte beschermt staat echt op het veld (een loonwagen, een
+  ertstrein, een colonne). Je ziet het geraakt worden, roken als er nog een derde over is, en de
+  lucht in gaan als je het verliest.
 - **Hangar**: zeven plekken voor bewaarde builds in plaats van drie, genoeg voor een build van
   elke klasse; de garage noemt elke plek naar de klasse van de build die erin zit.
 - **Meesters**: de arena heeft een tweede pagina met zeven meesters, een per klasse. Versla je er

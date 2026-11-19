@@ -155,6 +155,10 @@ Niet elk gevecht win je door alles te vernietigen. Boven het veld staat wat er g
 
 - **Hold out**: een aantal rondes overleven.
 - **Protect**: iets beschermen. Het verliest elke ronde één punt per vijand die nog staat.
+  Is het vracht (een trein, een wagen, een colonne), dan staat die ook echt op het veld, tussen
+  jou en de vijand. Je ziet hem schudden als hij geraakt wordt, met erboven wat hij verliest.
+  **Rookt en brandt hij, dan is er nog maar een derde of minder over.** Op nul gaat hij de lucht
+  in en heb je verloren.
 - **Destroy**: één aangewezen vijand uitschakelen.
 - **Disable**: een machine uitschakelen zonder hem te vernietigen: benen en armen eraf, kern heel laten.
 - **Drive off**: een piloot verjagen door zijn kern ver genoeg te beschadigen.
@@ -362,7 +366,7 @@ er gevraagd wordt.
 | --- | --- | --- |
 | **Hit** (doelwit) | Eén machine is aangewezen (**TARGET**), en die is **OVERCLOCKED**: hij slaat harder. Valt hij, dan is de klus klaar, ook als de rest nog staat. | Veel schade in één keer: een Duellist of Sharpshooter is zo klaar. |
 | **Repo** (beslag) | De klant wil één machine heel terug. Schiet zijn **armen en benen** eraf en laat de **kern** heel. Vernietig je hem, dan verlies je. Het spel richt bij die machine vanzelf eerst op een arm of been. | Rustig mikken. Het duurt wat langer en betaalt wat meer. |
-| **Escort** | Er staat vracht van de klant op het veld (bovenin, bijvoorbeeld **WAGE TRUCK 11/11**). Elke ronde haalt elke vijand die nog staat er één punt af. Op nul verlies je. | Snel opruimen: een Duellist redt het bijna altijd, een Bastion of Lancer veel minder vaak. |
+| **Escort** | Er staat vracht van de klant op het veld: je ziet hem staan tussen jou en de vijand, en bovenin staat hoeveel er over is (bijvoorbeeld **WAGE TRUCK 11/11**). Elke ronde haalt elke vijand die nog staat er één punt af. Begint hij te roken, dan is er nog een derde of minder. Op nul verlies je. | Snel opruimen: een Duellist redt het bijna altijd, een Bastion of Lancer veel minder vaak. |
 | **Hold** (standhouden) | Er komt meer dan je kunt verslaan, en wat je sloopt wordt vervangen. Overleef **zes rondes** (**HOLD OUT 1/6**). | Stevig staan: een Bastion of Artillery haalt het altijd, een lichte mecha heeft het zwaar. |
 
 - Na elk gewonnen contract is er een **andere soort** klus. Ze wisselen in vaste volgorde, dus na

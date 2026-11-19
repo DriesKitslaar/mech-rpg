@@ -37,7 +37,7 @@ finished one.
   out, in any line-up the board or the story fields against it.
 - A picture that reads as one of the enemy's machines.
 - A battle without freight that looks any different from before.
-- Anything that moves in a calm picture, or anything a hurried screen waits for.
+- A field that shakes or a hard flash in a calm picture, or anything a hurried screen waits for.
 
 ## How it works
 
@@ -54,8 +54,10 @@ nearer stands in front of it, with a shadow under it like everything else on the
 When a round begins and the freight loses something, the picture is thrown a little and lit white
 for a moment, sparks come off it, and the figure it lost is written over it. From a third of what
 it could take downwards, smoke rises from it. When nothing is left it comes apart as a machine
-that is one picture does, and the battle is over. In a calm picture it does not shake and is not
-lit; a hurried screen draws it standing, as it draws everything.
+that is one picture does, and the battle is over. In a calm picture it is treated as a machine
+that is hit is treated there: it flinches and is lit gently, and the field under it does not shake.
+A hurried screen draws it standing, as it draws everything. A round that begins with nothing
+standing against it takes nothing from it, and then nothing is shown or said.
 
 The pictures are made as every machine's was: drawn from the side by the image service against a
 frame of the game as the reference for colour and line, cut out, and brought to the game's size

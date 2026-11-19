@@ -117,6 +117,19 @@ export function standAt(spot: { x: number; y: number }, size: { w: number; h: nu
   return { x, y, ground: Math.max(spot.y, y + size.h) };
 }
 
+/**
+ * Where what an escort keeps alive stands: on the farthest line of the floor, ahead of the pilot's
+ * mech and left of where the first of the enemy stands, so that it is between the two it is fought
+ * over by. It is drawn before anything else that stands on the floor: whatever is nearer, or as far,
+ * stands in front of it.
+ */
+export const FREIGHT_X = 132;
+export const freightSpot = (place: Place): Spot => ({ x: FREIGHT_X, y: farLine(place) });
+/** Stands freight of this size on its spot: its middle over it, its foot on it. */
+export function freightAt(spot: Spot, size: { w: number; h: number }): Standing {
+  return { x: Math.round(spot.x - size.w / 2), y: spot.y - size.h, ground: spot.y };
+}
+
 /** The order machines are drawn in: the farthest first, so that what is nearer stands in front of it. Of two on one line, the first listed is behind. */
 export function farToNear<T extends { ground: number }>(standing: T[]): T[] {
   return standing.map((item, i) => ({ item, i })).sort((a, b) => a.item.ground - b.item.ground || a.i - b.i).map(({ item }) => item);

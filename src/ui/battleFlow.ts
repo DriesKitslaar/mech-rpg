@@ -174,7 +174,10 @@ export class BattleFlow {
     switch (objective.type) {
       case 'destroy': return null;
       case 'survive': return { text: O.survive(Math.min(round, objective.rounds), objective.rounds), meter: { value: Math.min(round, objective.rounds), max: objective.rounds } };
-      case 'protect': return asset ? { text: O.protect(asset.name, asset.hp, asset.maxHp), meter: { value: asset.hp, max: asset.maxHp } } : null;
+      case 'protect': {
+        const left = this.assetLeft;
+        return asset && left !== null ? { text: O.protect(asset.name, left, asset.maxHp), meter: { value: left, max: asset.maxHp } } : null;
+      }
       case 'leader': return target ? { text: O.leader(target.name), target: target.id } : null;
       case 'disable': return target ? { text: O.disable(target.name), target: target.id } : null;
       case 'driveOff': {
@@ -184,6 +187,22 @@ export class BattleFlow {
         return { text: O.driveOff(target.name), target: target.id, meter: { value: Math.max(0, core.ap - floor), max: core.maxAp - floor } };
       }
     }
+  }
+
+  /**
+   * What is left of what the battle is fought to keep alive, as far as has been said; null where there is nothing to
+   * keep. The rules take a round's toll from it as the last machine of the round acts, and it is not taken on the
+   * screen (the strip that counts it, the picture on the field) until the message bar has said so.
+   */
+  get assetLeft(): number | null {
+    const asset = this.state.asset;
+    if (!asset) return null;
+    let left = asset.hp;
+    for (let i = this.shown; i < this.state.events.length; i++) {
+      const event = this.state.events[i];
+      if (event.type === 'asset') left += event.lost;
+    }
+    return left;
   }
 
   /**
@@ -370,7 +389,8 @@ export class BattleFlow {
       case 'support': return STRINGS.support(event.name, name(event.target), event.damage);
       case 'order': return STRINGS.orders.told(event.name, event.order);
       case 'overdrive': return STRINGS.overdrive.used(STRINGS.overdrive.names[event.kind]);
-      case 'asset': return STRINGS.asset(this.state.asset?.name ?? '', event.hp, event.lost);
+      // A round that began with nobody standing against it took nothing from it: there is nothing to say.
+      case 'asset': return event.lost > 0 ? STRINGS.asset(this.state.asset?.name ?? '', event.hp, event.lost) : null;
       case 'turnStart':
       case 'outcome':
         return null;

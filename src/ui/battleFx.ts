@@ -32,6 +32,11 @@ export interface Scene {
   /** True when the weapon is a blade or a ram: it is swung, not fired. */
   isMelee(unitId: string, weapon: WeaponSlot): boolean;
   /**
+   * Where what the battle is fought to keep alive stands on the field: the middle of its picture, and its top. Null,
+   * and in a scene that does not say, it has no picture: what happens to it is then written by the strip that names it.
+   */
+  freight?(): { at: Pt; top: number } | null;
+  /**
    * True when the weapon is on the far side of its mech from the camera, so that the mech's own
    * body is between the two: what it fires is seen to come out from behind the mech. A scene that
    * does not say has every weapon in plain view.
@@ -69,6 +74,12 @@ export const sizeAt = (depth: number): number => NEAR_SIZE - (NEAR_SIZE - FAR_SI
 /** How far past its target a shot that misses flies on, and how far to the side of it it passes. */
 const MISS_ON = 34;
 const MISS_WIDE = 12;
+
+/**
+ * What the freight goes by among the things the effects throw, light and take away: it is no unit,
+ * and no unit has this name.
+ */
+export const FREIGHT = 'freight';
 
 /** How many pixels the hardest blow there is throws the field: a bomb going off. The screen draws its picture out further than that. */
 export const HARDEST_JOLT = 5;
@@ -434,10 +445,29 @@ export class BattleFx {
         this.say(PROJECTILE_MS, to, `-${event.damage}`, '#ffffff');
         break;
       }
-      case 'asset':
-        // What is being guarded is no machine on the field: what it loses is written under the strip that names it, on the screen.
-        if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger, { over: true });
+      case 'asset': {
+        if (event.lost <= 0) break;
+        const freight = s.freight?.() ?? null;
+        // What is being guarded and has no picture is nothing on the field: what it loses is written under the strip that names it, on the screen.
+        if (!freight) { this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger, { over: true }); break; }
+        // With a picture it is struck where it stands: thrown and lit as a machine that is hit is, sparks off it, and what it lost over it.
+        const { at, top } = freight;
+        this.add(0, HIT_MS, { kind: 'hit', unit: FREIGHT });
+        this.add(0, SPARK_MS, { kind: 'sparks', at, color: COLORS.heat });
+        this.add(0, HIT_MS, { kind: 'burst', at, size: 10 * FAR_SIZE, color: COLORS.heat, style: 'impact' });
+        this.jolt(0, 1, 140);
+        this.say(0, { x: at.x, y: top - 2 }, `-${event.lost}`, COLORS.danger);
+        // With nothing left of it, it goes up as a machine does, far off: in pieces, then all at once.
+        if (event.hp <= 0) {
+          this.add(HIT_MS, DEATH_MS, { kind: 'death', unit: FREIGHT, at });
+          for (const [i, off] of [[0, 0], [-8, 4], [7, -5]].entries()) {
+            this.add(HIT_MS + i * 110, 280, { kind: 'burst', at: { x: at.x + off[0], y: at.y + off[1] }, size: (11 + i) * FAR_SIZE, color: '#ff8a3c', style: 'fire' });
+          }
+          this.add(HIT_MS + WRECK_AT, WRECK_MS, { kind: 'burst', at, size: WRECK_SIZE * FAR_SIZE, color: '#ff8a3c', style: 'fire' });
+          this.jolt(HIT_MS, 3, 320);
+        }
         break;
+      }
       case 'fieldDown': {
         // The field goes out over the whole machine: sparks in the colour it had, and the word for it.
         const at = s.centre(event.unit);

@@ -12,7 +12,7 @@ import { RANGE_MAX, rangeLimit, sparEnemy } from '../../src/core/range';
 import { MASTERS } from '../../src/content/masters';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { LOADOUT_SLOTS, newGame, saveLoadout } from '../../src/core/game';
-import { JOB_KINDS, JOB_NUMBERS, JOB_TIER, jobContract, jobKind } from '../../src/core/jobs';
+import { JOB_KINDS, JOB_NUMBERS, JOB_TIER, jobContract, jobKind, makeJob } from '../../src/core/jobs';
 import { NAME_AT, RENOWN, renownOf } from '../../src/core/renown';
 import { tallyBattle } from '../../src/core/stats';
 import { drillMission, drillSettlement, recordDrill } from '../../src/core/training';
@@ -28,8 +28,12 @@ import { CATALOG, DEMO_BUILD, SHOP_PARTS, STARTER_BUILD } from '../../src/conten
 import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
 import { REFERENCE_NL } from '../../src/content/nl/reference';
+import { BattleFlow } from '../../src/ui/battleFlow';
+import { BattleScreen, FREIGHT_BURNS } from '../../src/ui/battleScreen';
 import { GarageFlow } from '../../src/ui/garageFlow';
 import { CROWN_PAINTS, paintsFor } from '../../src/ui/paint';
+import { sprites } from '../helpers/app';
+import { record } from '../helpers/canvas';
 
 /** What the game tells the player about its rules, held against the rules themselves. */
 const topic = (id: string): string => MANUAL.find((t) => t.id === id)!.text;
@@ -116,6 +120,36 @@ describe('the garage', () => {
     flow.onInput('right');
     expect(flow.loadouts.items).toHaveLength(LOADOUT_SLOTS);
     expect(flow.loadouts.items[LOADOUT_SLOTS - 1].label).toBe(`${LOADOUT_SLOTS}  ${STRINGS.classes.names[archetypeOf(STARTER_BUILD, CATALOG)]}`);
+  });
+});
+
+describe('what is guarded', () => {
+  test('the manual says that freight stands on the field and how much is left of it when it burns, in both languages', () => {
+    const text = topic('objectives');
+    const fraction = ['', 'all', 'a half', 'a third', 'a quarter'];
+    const deel = ['', 'alles', 'de helft', 'een derde', 'een kwart'];
+    expect(text).toMatch(new RegExp(` Freight you guard stands on the field; if it burns, ${fraction[FREIGHT_BURNS]} or less is left\\.$`));
+    expect(REFERENCE_NL[text]).toMatch(new RegExp(` Vracht die je bewaakt staat op het veld: brandt die, dan rest ${deel[FREIGHT_BURNS]} of minder\\.$`));
+    // It stands there: every escort the board has names a picture for its freight, and the field shows it where the battle has it.
+    for (let seed = 1; seed <= 40; seed++) {
+      const [battle] = makeJob('escort', 1 + (seed % 8), seed, BOARD_TEXT).battles;
+      const state = createBattle(STARTER_BUILD, battle.enemies.map((id) => ENEMIES[id]), CATALOG, seed, { objective: battle.objective });
+      const screen = new BattleScreen(new BattleFlow(state, CATALOG, { quiet: true }), sprites, CATALOG, { fast: true, background: battle.background });
+      expect(screen.freight, `escort ${seed}`).toMatchObject({ sprite: (battle.objective as { sprite: string }).sprite });
+    }
+    // The fraction is the screen's own: a flame is drawn on it from there down and not before, whatever it could take.
+    const burning = (hp: number, max: number): boolean => {
+      const state = createBattle(STARTER_BUILD, [ENEMIES['recon-drone']], CATALOG, 5, { objective: { type: 'protect', name: 'Convoy', hp: max, sprite: 'asset-convoy' } });
+      state.asset!.hp = hp;
+      const flow = new BattleFlow(state, CATALOG, { quiet: true });
+      const screen = new BattleScreen(flow, sprites, CATALOG, { fast: false, background: 'bg-mine' });
+      for (let i = 0; i < 4000 && (screen.banner || flow.phase !== 'action'); i++) screen.update(16);
+      return record((ctx) => screen.draw(ctx)).rects.some((rect) => rect.color === '#ff8a3c' && rect.w === 3 && rect.h === 2);
+    };
+    for (const max of [9, 10, 11, 12, 20]) {
+      const most = Math.floor(max / FREIGHT_BURNS);
+      expect([burning(max, max), burning(most + 1, max), burning(most, max), burning(1, max)], `of ${max}`).toEqual([false, false, true, true]);
+    }
   });
 });
 
