@@ -7,6 +7,7 @@ import { advance, counted, newCount, type Count, type Forecast } from '../core/f
 import { groundFor } from '../core/ground';
 import type { Fight } from '../core/mission';
 import type { Sortie } from '../core/sortie';
+import { isRange } from '../core/range';
 import { isDrill } from '../core/training';
 import { tunedCatalog } from '../core/tuning';
 import type { BuildSlot } from '../core/game';
@@ -262,6 +263,7 @@ export class BriefingScreen implements Screen {
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
     const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
     const tag = isDrill(mission) ? STRINGS.training.tag
+      : isRange(mission) ? STRINGS.training.rangeTag
       : mission.loaner !== undefined ? B.lent
       : mission.id.startsWith('cup-') ? STRINGS.arena.cups.tag
       : mission.arenaRank !== undefined || mission.id === MIRROR_ID ? STRINGS.arena.fight
@@ -354,7 +356,8 @@ export class BriefingScreen implements Screen {
     // Footer: what to expect, what it pays, and the choice.
     drawPanel(ctx, 4, 198, LOGICAL_W - 8, 68);
     drawText(ctx, B.engagements(mission.battles.length), 12, 203, { color: COLORS.dim });
-    drawText(ctx, `${B.reward} ${this.fee}`, 12, 215, { size: 16, color: COLORS.armor });
+    // A fight on the range has no fee and no bill: it says so where a contract says what it pays.
+    drawText(ctx, isRange(mission) ? STRINGS.training.rangePays : `${B.reward} ${this.fee}`, 12, 215, { size: 16, color: COLORS.armor });
     if (this.hires.length > 0) {
       drawText(ctx, B.wingman, 12, 233, { color: COLORS.dim });
       drawText(ctx, this.wingman?.name ?? B.alone, 12, 243, { color: this.wingman ? COLORS.accent : COLORS.text });

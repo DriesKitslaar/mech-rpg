@@ -38,6 +38,8 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   rekent voor die build je winkans uit (het vliegt het contract twintig keer zelf, met al jouw
   perks, werkbank, Overdrive en wingman). Een van de open contracten zoekt telkens een klasse en
   betaalt een kwart meer als je het in zo'n build wint.
+- **Proefveld**: in de simulator probeer je je eigen build gratis uit tegen elke machine die je
+  al bent tegengekomen; na afloop zie je wat een echte vlucht had gekost.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.

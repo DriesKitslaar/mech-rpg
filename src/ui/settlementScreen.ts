@@ -38,13 +38,15 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked } = this.settlement;
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated } = this.settlement;
     return {
       menu: { items: [], cursor: 0 },
       settlement: {
         net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0, relief: relief ?? 0, tip: won ? null : this.tip,
         // What the contract paid on top for being won as the class it asked for, and which class.
         asked: asked ?? null,
+        // True of the bill of a fight on the range: shown, and not booked.
+        simulated: simulated === true,
       },
     };
   }
@@ -66,7 +68,8 @@ export class SettlementScreen implements Screen {
     drawPanel(ctx, x, 20, w, 230);
     drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
     const drill = isDrill(this.mission);
-    const heading = drill ? (s.won ? STRINGS.training.won : STRINGS.training.lost) : s.won ? S.won : S.lost;
+    const T = STRINGS.training;
+    const heading = drill ? (s.won ? T.won : T.lost) : s.simulated ? (s.won ? T.rangeWon : T.rangeLost) : s.won ? S.won : S.lost;
     drawText(ctx, heading, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
     const fast = this.app.deps.fast;
     if (s.rank) {
@@ -94,7 +97,8 @@ export class SettlementScreen implements Screen {
       drawText(ctx, amount > 0 ? `+${amount}` : String(amount), right, y, { align: 'right', color });
       y += LINE;
     };
-    row(S.reward, s.reward, s.reward > 0 ? COLORS.armor : COLORS.dim);
+    // A fight on the range had no fee on offer: its bill begins with what it would have cost.
+    if (!s.simulated) row(S.reward, s.reward, s.reward > 0 ? COLORS.armor : COLORS.dim);
     if (s.rank && s.bonus) row(S.rankBonus(s.rank), s.bonus, COLORS.armor);
     // What a contract that asked for a class paid for being won as one.
     if (s.asked) row(S.askBonus(STRINGS.classes.names[s.asked.kind]), s.asked.bonus, COLORS.armor);
@@ -114,10 +118,16 @@ export class SettlementScreen implements Screen {
 
     ctx.fillStyle = COLORS.border;
     ctx.fillRect(x + 10, 180, w - 20, 1);
-    drawText(ctx, S.net, x + 10, 186, { size: 16 });
     // The net amount counts up (or down) to what it is.
     const net = fast ? s.net : Math.round(s.net * Math.min(1, this.clock / COUNT_MS));
-    drawText(ctx, net > 0 ? `+${net}` : String(net), right, 186, { size: 16, align: 'right', color: s.net >= 0 ? COLORS.armor : COLORS.danger });
+    if (s.simulated) {
+      // Nothing of this bill is booked: where the net stands, what a real flight would have come to, and not in the colours of money.
+      drawText(ctx, S.wouldCost, x + 10, 186, { size: 16, color: COLORS.dim });
+      drawText(ctx, String(-net), right, 186, { size: 16, align: 'right', color: COLORS.dim });
+    } else {
+      drawText(ctx, S.net, x + 10, 186, { size: 16 });
+      drawText(ctx, net > 0 ? `+${net}` : String(net), right, 186, { size: 16, align: 'right', color: s.net >= 0 ? COLORS.armor : COLORS.danger });
+    }
     const balance = this.app.game!.credits; // already includes this settlement
     drawText(ctx, S.balance, x + 10, 206, { color: COLORS.dim });
     drawText(ctx, String(balance), right, 206, { align: 'right', color: balance < 0 ? COLORS.danger : COLORS.text });

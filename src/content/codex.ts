@@ -272,6 +272,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'Once the board has grown a little, one of its three open contracts wants a class: its pay on the list ends in a plus, and its briefing says which. It can be won as anything; won in a build of that class it pays a quarter more. Turn to such a build on the Build row and the line lights up.',
   },
   {
+    id: 'range', title: 'THE RANGE',
+    text: "The simulator's second page (L1/R1) is the range: your own build against any machine you have met, up to three of the lighter ones, one of a mech or anything of the story's. A real fight: perks, bench work, Overdrive and difficulty all count. Nothing is billed, paid or counted; afterwards you see what it would have cost.",
+  },
+  {
     id: 'pilot', title: 'LEVELS AND PERKS',
     text: 'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.',
   },

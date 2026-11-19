@@ -57,7 +57,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 |---|---|
 | Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld), drie wisselende losse contracten en één zwerm. Onderaan staat het archief. |
 | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
-| Training | Dertien oefeningen in een geleende mecha. |
+| Training | Dertien oefeningen in een geleende mecha, en het proefveld voor je eigen build. |
 | The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
 | Garage | Onderdelen wisselen, verf kiezen (L1/R1), drie builds bewaren (links/rechts). |
 | Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
@@ -313,6 +313,21 @@ bepaalde klasse. Je herkent het in de lijst aan een **plus** achter het loon (bi
   bewaard, dan staat erachter welke: **(BUILD 1)**.
 - Na elk gewonnen contract hangt er een nieuw bord, met een andere vraag. Zo loont het om meer dan
   een soort build bewaard te hebben.
+
+### Het proefveld: je build gratis uitproberen
+
+Onder **Training** zit een tweede pagina: druk op **R1** (of **L1**) voor **TEST RANGE**. Daar
+staat elke machine die je al bent tegengekomen. Kies er een, en je vecht er in de simulator tegen
+in **je eigen build**.
+
+- Met **links/rechts** kies je hoeveel: tot drie van de lichtere machines, één van een mecha of
+  van iets uit het verhaal (ook de grote bazen die je al versloeg).
+- Het is een echt gevecht: je perks, de werkbank, je Overdrive en de moeilijkheid tellen mee. In de
+  briefing kun je ook hier je build kiezen en zie je je winkans.
+- **Er wordt niets gerekend, betaald of geteld.** Geen munitie, geen reparaties, geen loon, geen
+  ervaring, geen medailles. Na afloop zie je wel wat een echte vlucht had gekost (**WOULD HAVE
+  COST**), zodat je weet hoe duur je build is om te vliegen.
+- Handig om een nieuw wapen te proberen, twee builds te vergelijken of een baas te oefenen.
 
 ## De werkbank
 
