@@ -6,7 +6,7 @@ import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/storage';
 import type { InputAction } from '../../src/platform/input';
-import { App, type AppDeps } from '../../src/ui/app';
+import { App, SHUTTER_MS, type AppDeps } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
 
 /** What the app tests share: an app over a store in memory, and ways to press through it. */
@@ -69,6 +69,19 @@ export function inHub(saved?: GameState, seed?: number, deps: Partial<AppDeps> =
   return made;
 }
 export const savedGame = (store: Store, key = SAVE_KEY) => JSON.parse(store.data[key]) as GameState;
+
+/**
+ * Cuts short the launch a contract opens with in a game that is not hurried, where there is one: the
+ * doors it opens behind are let open first (nothing is pressed while they hide it), and a press then
+ * ends it. The battle is at its own first moment after that, with its banner still to run.
+ */
+export function pastLaunch(app: App): void {
+  const launching = (): boolean => !!(app.snapshot() as { launch?: unknown }).launch;
+  if (!launching()) return;
+  app.update(SHUTTER_MS);
+  app.onInput('confirm');
+  if (launching()) throw new Error('the launch was not cut');
+}
 /** What the given medals have paid between them. */
 export const medalPay = (medalIds: string[]): number => medalIds.reduce((sum, id) => sum + MEDAL_PAY[MEDALS.find((m) => m.id === id)!.tier], 0);
 export const fresh = (): GameState => newGame(CATALOG, STARTER_BUILD);
@@ -89,13 +102,14 @@ export function strong(base: GameState): GameState {
   return { ...g, credits: base.credits };
 }
 
-/** From the hub into a contract's first battle. */
+/** From the hub into a contract's first battle: past the launch it opens with, in a game that is not hurried. */
 export function accept(app: App, missionId: string): void {
   select(app, 'contracts');
   select(app, missionId);
   expect(snap(app).screen).toBe('briefing');
   select(app, 'accept');
   expect(snap(app).screen).toBe('battle');
+  pastLaunch(app);
 }
 /** Plays the current battle to its result: fires the first weapon while it can, ends the turn when it cannot. */
 export function finishBattle(app: App): void {

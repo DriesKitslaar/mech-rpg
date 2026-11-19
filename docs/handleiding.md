@@ -68,6 +68,11 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 
 ## Een gevecht
 
+Een contract dat je vanuit de hangar vliegt begint met de **lancering**: je eigen mecha staat op de
+katapult, drie lampen gaan aan, en hij schiet de tunnel uit. Het duurt anderhalve seconde. Met **A**
+of **B** sla je het over. Staat **Fast Battles** aan, dan zie je het niet. In de arena, in de
+simulator en in de Gauntlet is er geen lancering.
+
 Elke beurt krijg je energie van je generator. Daarmee kun je:
 
 - **Fire**: elk wapen één keer per beurt afvuren. Je mikt op een onderdeel. Zonder benen kan een
@@ -458,7 +463,7 @@ onderdeel staan en druk op **R1**: het ligt op de werkbank.
 
 Onder **Options** staat **Difficulty**: Story (vijanden 20% zwakker), Standard, of Veteran (20%
 sterker). Je kunt het op elk moment veranderen. **Fast Battles** speelt gevechten tweeënhalf keer
-zo snel af.
+zo snel af, en slaat de lancering aan het begin van een contract over.
 
 ## Als iets niet werkt
 

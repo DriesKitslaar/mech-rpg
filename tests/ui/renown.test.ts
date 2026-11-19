@@ -12,7 +12,7 @@ import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen, INTRO_MS } from '../../src/ui/battleScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { COLORS } from '../../src/ui/widgets';
-import { accept, done, finishMission, inHub, makeApp, press, select, snap, strong, toHub } from '../helpers/app';
+import { accept, done, finishMission, inHub, makeApp, pastLaunch, press, select, snap, strong, toHub } from '../helpers/app';
 import { record } from '../helpers/canvas';
 
 /** A name from deeds, where the pilot meets it: on their page, as it is earned, and as a battle opens. */
@@ -180,6 +180,8 @@ describe('as a battle opens', () => {
     for (let i = 0; i < 200 && snap(app).screen !== 'briefing'; i++) app.update(16);
     select(app, 'accept');
     for (let i = 0; i < 400 && snap(app).screen !== 'battle'; i++) app.update(16);
+    // (The launch it opens with is for its own tests.)
+    pastLaunch(app);
     for (let i = 0; i < 20; i++) app.update(16);
     return { app, said: texts(app).map((t) => t.text), message: snap(app).message };
   }

@@ -341,7 +341,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'controls', title: 'CONTROLS',
-    text: 'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive.',
+    text: 'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive. A or B cuts short the launch a contract opens with; with Fast Battles on there is none.',
   },
 ];
 

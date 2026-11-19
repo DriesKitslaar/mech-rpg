@@ -1,19 +1,25 @@
 import { readFileSync } from 'node:fs';
 import { ARCHETYPES } from '../../src/core/archetype';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
+import { launches } from '../../src/core/launch';
 import { SEAT_PURSE, seatPurse } from '../../src/core/seat';
 import type { FramePart, Weapon } from '../../src/core/types';
 import { ARENA } from '../../src/content/arena';
+import { MANUAL } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { MASTERS } from '../../src/content/masters';
 import { MEDALS } from '../../src/content/medals';
+import { REFERENCE_NL } from '../../src/content/nl/reference';
+import { STRINGS_NL } from '../../src/content/nl/strings';
 import { CATALOG, SHOP_PARTS, SHOP_UNLOCKS } from '../../src/content/parts';
 import { PERKS } from '../../src/content/perks';
 import { KEEPER } from '../../src/content/seat';
 import { SONGS } from '../../src/content/songs';
 import { STARTERS } from '../../src/content/starters';
 import { STRINGS } from '../../src/content/strings';
+import { FAST_BATTLE_SPEED } from '../../src/ui/app';
+import { LAMPS_AT, LAUNCH_MS } from '../../src/ui/launch';
 import { CROWN_PAINTS, PAINTS, SEAT_PAINT } from '../../src/ui/paint';
 
 /**
@@ -135,5 +141,32 @@ describe('the guide\'s chapter on the eighth seat says what is so', () => {
     expect(more).toEqual(['Colossus Legs', 'Crawler Treads']);
     expect(GUIDE).toContain('op die van de Colossus en de rupsbanden na, en zijn toch vlugger dan die twee');
     for (const part of legs.filter((entry) => entry.capacity! > own.capacity!)) expect(own.mobility!, part.id).toBeGreaterThan(part.mobility!);
+  });
+});
+
+describe('what is said of the launch is so', () => {
+  const controls = MANUAL.find((entry) => entry.id === 'controls')!;
+
+  test('the manual\'s chapter on the controls says how it is cut short and how it is done without, naming the option by its name', () => {
+    expect(controls.text).toMatch(/A or B cuts short the launch a contract opens with; with Fast Battles on there is none\.$/);
+    expect(controls.text).toContain(STRINGS.options.fastBattles);
+    const dutch = REFERENCE_NL[controls.text];
+    expect(dutch).toMatch(/A of B kapt de lancering af waarmee een contract opent; met Snel vechten aan is die er niet\.$/);
+    expect(dutch).toContain(STRINGS_NL.options.fastBattles);
+  });
+
+  test('the guide gives its length as it is, names the option, and says where there is none', () => {
+    const chapter = GUIDE.slice(GUIDE.indexOf('## Een gevecht'), GUIDE.indexOf('## Opdrachten'));
+    expect(chapter).toContain('begint met de **lancering**');
+    // A second and a half.
+    expect(chapter).toContain('Het duurt anderhalve seconde.');
+    expect(LAUNCH_MS).toBe(1500);
+    expect(chapter).toContain(`Staat **${STRINGS.options.fastBattles}** aan, dan zie je het niet.`);
+    expect(chapter).toContain('In de arena, in de simulator en in de Gauntlet is er geen lancering.');
+    for (const id of ['arena-3', 'cup-gold', 'arena-seat', 'drill-basics', 'range-spar-1', 'gauntlet-4']) expect(launches({ id }), id).toBe(false);
+    expect(GUIDE).toContain(`**${STRINGS.options.fastBattles}** speelt gevechten tweeënhalf keer zo snel af, en slaat de lancering aan het begin van een contract over.`);
+    expect(FAST_BATTLE_SPEED).toBe(2.5);
+    expect(README).toContain('**Lancering**: elk contract vanuit de hangar opent met je eigen mecha op de katapult: drie lampen,');
+    expect(LAMPS_AT).toHaveLength(3);
   });
 });
