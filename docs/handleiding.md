@@ -211,6 +211,26 @@ Je vindt ze terug in de **Database** op de pagina **Found**.
 Na de tien rangen van de ladder is er voor de kampioen nog een achterkamer met vijf piloten.
 Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen mecha.
 
+### De meesters: een kroon per klasse
+
+De arena heeft een tweede pagina: druk op **R1** (of **L1**) voor **MASTERS**. Daar staan zeven
+meesters, een voor elke klasse. Ze nemen alleen de **kampioen** van de ladder aan (rang tien); tot
+dan kun je ze wel bekijken.
+
+- **Elke build mag een meester uitdagen.** Win je, dan krijg je de pot: 9000 de eerste keer,
+  daarna een kwart.
+- **Versla je een meester in een build van zijn eigen klasse, dan is de kroon van die klasse van
+  jou.** Een bastion tegen de meester van de bastions, een duellist tegen die van de duellisten.
+  In de briefing staat het erbij: **CROWN: WIN AS A BASTION**. Vlieg je iets anders, dan wijst die
+  regel naar je bewaarde build die wel past (**BUILD 2**); kies die op de rij **Build** en de
+  regel licht op.
+- Een meester vliegt zoals zijn klasse vliegt. Wil je oefenen: bewaar een build van die klasse en
+  spar ertegen op het proefveld. De winkans in de briefing zegt of je er klaar voor bent.
+- Elke meester heeft zijn eigen zwakke plek. Een andere klasse heeft het soms veel makkelijker
+  dan de eigen klasse: dat is de pot. De kroon is met opzet het moeilijkst.
+- Een kroon raak je niet meer kwijt, ook niet als je het verhaal opnieuw begint. Je kunt een
+  meester zo vaak opnieuw uitdagen als je wilt.
+
 ## Twee duels na het einde
 
 Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appointment**. Win je

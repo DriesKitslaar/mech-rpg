@@ -41,6 +41,8 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 - **Proefveld**: in de simulator probeer je je eigen build gratis uit tegen elke machine die je
   al bent tegengekomen, of je spart tegen een van je eigen bewaarde builds; na afloop zie je wat
   een echte vlucht had gekost.
+- **Meesters**: de arena heeft een tweede pagina met zeven meesters, een per klasse. Versla je er
+  een in een build van zijn eigen klasse, dan is de kroon van die klasse van jou.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.

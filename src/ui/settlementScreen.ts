@@ -2,6 +2,7 @@ import type { Advice } from '../core/advice';
 import type { Mission } from '../core/campaign';
 import { isDrill } from '../core/training';
 import type { Settlement } from '../core/economy';
+import { masterOf } from '../content/masters';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -38,7 +39,7 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated } = this.settlement;
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned } = this.settlement;
     return {
       menu: { items: [], cursor: 0 },
       settlement: {
@@ -47,6 +48,8 @@ export class SettlementScreen implements Screen {
         asked: asked ?? null,
         // True of the bill of a fight on the range: shown, and not booked.
         simulated: simulated === true,
+        // The class whose crown this duel took from its master.
+        crowned: crowned ?? null,
       },
     };
   }
@@ -69,7 +72,8 @@ export class SettlementScreen implements Screen {
     drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
     const drill = isDrill(this.mission);
     const T = STRINGS.training;
-    const heading = drill ? (s.won ? T.won : T.lost) : s.simulated ? (s.won ? T.rangeWon : T.rangeLost) : s.won ? S.won : S.lost;
+    // A duel that took a master's crown is headed by that.
+    const heading = drill ? (s.won ? T.won : T.lost) : s.simulated ? (s.won ? T.rangeWon : T.rangeLost) : s.crowned ? S.crowned : s.won ? S.won : S.lost;
     drawText(ctx, heading, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
     const fast = this.app.deps.fast;
     if (s.rank) {
@@ -112,7 +116,8 @@ export class SettlementScreen implements Screen {
     }
 
     // After a win, what the client had to say about it; after a defeat, what Dispatch makes of it.
-    const words = s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
+    // A master who has just lost the crown says so themselves.
+    const words = s.crowned ? `"${masterOf(s.crowned).concede}"` : s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
     wrap(words, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
       drawText(ctx, line, x + 10, 144 + i * LINE, { color: s.won ? COLORS.dim : COLORS.text }));
 

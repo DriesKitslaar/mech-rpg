@@ -209,8 +209,23 @@ export const STRINGS_NL = {
     heading: 'ARENA', client: 'Arenakantoor', win: 'Publiek kreeg waar voor zijn geld. Jij ook.',
     rank: (n: number) => `RANG ${n}`, purse: 'POT', rematch: 'REVANCHE',
     next: 'VOLGENDE RIVAAL', beaten: 'GEKLOPT', locked: 'OP SLOT', champion: 'Jij bent de kampioen van Varn.',
-    yourRank: (n: number, of: number) => (n === 0 ? 'GEEN RANG' : `JOUW RANG ${n}/${of}`), fight: 'ARENAGEVECHT', back: 'A: daag uit   B: terug',
+    yourRank: (n: number, of: number) => (n === 0 ? 'GEEN RANG' : `JOUW RANG ${n}/${of}`), fight: 'ARENAGEVECHT', back: 'A: daag uit   L1/R1: blad   B: terug',
     apex: 'Niemand meer te verslaan. De achterkamer drinkt op jou.',
+    pages: { ladder: 'LADDER', masters: 'MEESTERS' },
+    masters: {
+      titles: {
+        duellist: 'Meesterduellist', marksman: 'Meesterschutter', artillery: 'Artilleriemeester', lancer: 'Meesterlansier', bastion: 'Bastionmeester',
+        skirmisher: 'Meesterjager', allrounder: 'Meester van alles',
+      },
+      tag: 'MEESTERDUEL: een tegen een, om de pot',
+      crown: (wanted: string) => `KROON: WIN ALS ${wanted}`,
+      held: 'DEZE KROON IS VAN JOU',
+      crowns: (held: number, of: number) => `KRONEN ${held}/${of}`,
+      open: 'OPEN', crowned: 'KROON',
+      locked: 'De meesters nemen alleen de kampioen van de ranglijst aan, en niemand anders.',
+      win: 'De pot is van jou. De kroon is voor wie ze verslaat in hun eigen klasse.',
+      taken: 'KROON GEPAKT',
+    },
     cups: {
       tag: 'BEKER: drie gevechten, geen rust',
       names: { 'cup-bronze': 'Bronsbeker', 'cup-silver': 'Zilverbeker', 'cup-gold': 'Goudbeker' } as Record<string, string>,
@@ -403,6 +418,7 @@ export const STRINGS_NL = {
   scene: { continue: 'Verder met A', yourCall: 'JOUW KEUZE', answer: 'UP/DOWN: kies   A: antwoord. Staat vast.' },
   settlement: {
     won: 'CONTRACT VOLTOOID', lost: 'CONTRACT MISLUKT', reward: 'Loon', ammo: 'Munitie', repairs: 'Reparatie',
+    crowned: 'DE KROON IS VAN JOU',
     rank: 'RANG', rankBonus: (rank: string) => `Bonus rang ${rank}`,
     askBonus: (name: string) => `Bonus ${name}`,
     net: 'NETTO', balance: 'SALDO', continue: 'Verder met A',

@@ -1,6 +1,7 @@
 import { MIRROR_ID } from '../core/arena';
 import type { Battle, Mission } from '../core/campaign';
 import { isGauntlet } from '../core/gauntlet';
+import { isMaster } from '../core/masters';
 import type { EnemyDef } from '../core/types';
 import type { TrackName } from '../platform/music';
 import type { ScreenName } from './app';
@@ -26,7 +27,7 @@ export function battleTrack(mission: Mission, index: number, enemies: Record<str
   // The last word goes to the boss song: the rival at full strength is a boss like any other.
   if (isBossBattle(mission.battles[index], enemies)) return 'boss';
   if (mission.battles[index]?.enemies.some((id) => RIVALS.includes(id))) return 'rival';
-  if (mission.arenaRank !== undefined || mission.id === MIRROR_ID || mission.id.startsWith('cup-')) return 'arena';
+  if (mission.arenaRank !== undefined || mission.id === MIRROR_ID || mission.id.startsWith('cup-') || isMaster(mission)) return 'arena';
   // The Gauntlet's open floors have a song of their own; its wardens have the boss's, above.
   if (isGauntlet(mission)) return 'descent';
   // The war, the audit and the verdicts have a harder song than the first act and the odd jobs.

@@ -54,6 +54,10 @@ export interface GameState {
   overdrives?: number;
   /** Ids of the arena cups won. */
   cups?: string[];
+  /** The classes whose master has been beaten in the arena, in whatever machine, in the order they were. Kept through the cycles; see masters.ts. */
+  masters?: string[];
+  /** The classes whose crown the pilot holds: their master beaten in a machine of that class. Kept through the cycles. */
+  crowns?: string[];
   /** The run of the Gauntlet under way, if there is one. */
   gauntlet?: Run | null;
   /** The most floors of the Gauntlet cleared in one run. */
@@ -326,6 +330,10 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!isRecord(inventory) || !isRecord(build)) return false;
   if (!isRecord(ranks) || !Object.values(ranks).every((rank) => RANKS.includes(rank as Rank)) || !isTextList(scenes)) return false;
   if (value.cups !== undefined && !(isTextList(value.cups) && value.cups.length <= 16)) return false;
+  // Masters beaten and crowns held: plain names of classes. One this version does not know is kept: a later one may.
+  for (const classes of [value.masters, value.crowns]) {
+    if (classes !== undefined && !(isTextList(classes) && classes.length <= 16 && classes.every((kind) => /^[a-z]{1,24}$/.test(kind)))) return false;
+  }
   if (value.heard !== undefined && !(isTextList(value.heard) && value.heard.length <= 64)) return false;
   if (value.overdrive !== undefined && !OVERDRIVES.includes(value.overdrive as OverdriveId)) return false;
   if (value.overdrives !== undefined && !(isWholeNonNegative(value.overdrives) && value.overdrives <= 1_000_000)) return false;

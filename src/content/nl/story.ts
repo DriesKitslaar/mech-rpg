@@ -370,6 +370,36 @@ export const STORY_NL: Record<string, string> = {
     'Bouwde de kuil en ging nooit weg. Void Rifle, Breaker Cannon, een kling, en nanites die pantser herstellen.',
   'I dug this hole. I decide who climbs out.': 'Ik groef deze kuil. Ik bepaal wie eruit klimt.',
 
+  // The arena: the masters, one of each class.
+  'A Shrike with a Gavel in one hand, an arc blade in the other and nothing that shoots. He is on you every round, and plated to outlast you there.':
+    'Een Shrike met een Gavel in de ene hand, een Arc Blade in de andere en niets dat schiet. Hij zit elke ronde op je, met pantser om dat langer vol te houden dan jij.',
+  'Guns are for people who are afraid of the distance.': 'Geweren zijn voor wie bang is voor de afstand.',
+  'At my own distance. Take it, and keep it sharp.': 'Op mijn eigen afstand. Pak aan, en houd hem scherp.',
+  'An Auditor on four legs that do not sway, a Longbow in the hand and a Decree on the shoulder. Both charge for a turn. Guard when they glow: what they hit, they finish.':
+    'Een Auditor op vier vaste benen, een Longbow in de hand en een Decree op de schouder. Beide laden een beurt op. Dekking als ze gloeien: wat ze raken, maken ze af.',
+  'One line. I only draw it once.': 'Een lijn. Ik trek hem maar een keer.',
+  'You drew it straighter than I did. The crown is yours.': 'Jij trok hem rechter dan ik. De kroon is van jou.',
+  'A Ronin body on Colossus legs that fires by the clock: a Hornet salvo, a frag launcher, and a Writ rifle through whatever they open. End it before your magazines do.':
+    'Een Ronin-lijf op Colossus-benen dat op de klok vuurt: Hornet Salvo, Frag Launcher, en een Writ Rifle door wat die openleggen. Maak het af voor je magazijnen leeg zijn.',
+  'Count with me. You will not get to ten.': 'Tel maar mee. Tien haal je niet.',
+  'You kept better time than I did. Take the crown.': 'Jij hield de maat beter dan ik. Neem de kroon.',
+  'Energy and nothing else, behind a Sterling field: a lance emitter, a disruptor and a null beam. Every hit comes out of your next turn. Small hits stop at the field.':
+    'Energie en niets anders, achter een Sterling-veld: Lance Emitter, Disruptor en Null Beam. Elke treffer gaat van je volgende beurt af. Kleine treffers stranden op het veld.',
+  'You brought ammunition. How quaint.': 'Je hebt munitie bij je. Wat schattig.',
+  'Light against light, and yours was brighter. It is yours.': 'Licht tegen licht, en het jouwe was feller. Hij is van jou.',
+  'Colossus plate on treads behind a tower shield. A void rifle that halves what your armour resists, and a breaker cannon. It does not move, and nothing here hits harder.':
+    'Colossus-platen op rupsbanden achter een Tower Shield. Een Void Rifle die je pantserweerstand halveert en een Breaker Cannon. Beweegt niet, en niets hier slaat harder.',
+  'Push. Everyone pushes. I am still here.': 'Duw maar. Iedereen duwt. Ik sta er nog.',
+  'Moved. The first time in eleven years. The crown is yours.': 'Verschoven. Voor het eerst in elf jaar. De kroon is van jou.',
+  'A Wraith that is never where you aimed, with a void rifle, a needler and chaff for when you get a lock. She wins on the shots you miss, so make each one count.':
+    'Een Wraith die nooit is waar je mikte, met Void Rifle, Needler en chaff voor als je haar toch vasthebt. Ze wint op de schoten die je mist, dus laat elk schot tellen.',
+  'Take your time aiming. I will be somewhere else.': 'Mik gerust rustig. Ik ben dan al ergens anders.',
+  'You were there before I was. Nobody has been. Take it.': 'Jij was er eerder dan ik. Dat lukte nog niemand. Pak aan.',
+  'An Auditor with a gun of each sort: a Writ rifle, a pulse carbine and a howler that knocks you flat, and nanites to put the armour back. No trick, and no weakness to find.':
+    'Een Auditor met van elk soort een wapen: Writ Rifle, Pulse Carbine en een Howler die je omver slaat, en nanites die pantser herstellen. Geen truc, en geen zwakke plek.',
+  'Thirty years, and they still call me Journeyman.': 'Dertig jaar, en ze noemen me nog steeds Journeyman.',
+  'Now there is nothing left to learn from me. Take the crown.': 'Nu valt er niets meer van mij te leren. Neem de kroon.',
+
   // What named enemies say when they change tactics.
   'Witnessed, sealed, and now enforced.': 'Gezien, verzegeld, en nu ten uitvoer gelegd.',
   'MINE. ALL OF IT. MINE.': 'VAN MIJ. ALLES. VAN MIJ.',

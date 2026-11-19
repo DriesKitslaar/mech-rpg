@@ -275,6 +275,9 @@ export const REFERENCE_NL: Record<string, string> = {
   'ARENA CUPS': 'ARENABEKERS',
   'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.':
     'Een beker is drie van de ranglijst achter elkaar, met alleen veldonderhoud ertussen. Hij opent zodra je zijn drie hebt verslagen. De pot is voor alle drie of voor geen: eerst volledig, daarna een kwart.',
+  'THE MASTERS': 'DE MEESTERS',
+  "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, a quarter after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.":
+    'De tweede pagina van de arena (L1/R1): zeven meesters, een per klasse, die alleen de kampioen aannemen. Elke build mag vechten, om een pot: eerst volledig, daarna een kwart. Versla een meester in een build van zijn eigen klasse en de kroon van die klasse is van jou. De briefing zegt welke build dat is.',
   CONTROLS: 'BESTURING',
   'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive.':
     'D-pad: bewegen. A: kiezen. B: terug. L1/R1: bladeren, van tab en in gevecht van doelwit wisselen. R1 in je beurt zet een volle Overdrive in.',
