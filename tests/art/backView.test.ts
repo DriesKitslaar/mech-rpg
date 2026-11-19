@@ -81,8 +81,8 @@ describe('the mech from behind, from the pictures that are shipped', () => {
   const JOINTS = joints();
   const solid = new Map([...HEADS, ...CORES, ...LEGS, ...ARMS].map((id) => [id, mask(id)]));
 
-  test('there are twelve heads, twelve bodies, fifteen pairs of legs and twelve pairs of arms, and each layer is one piece that lies in reach of the pose box', () => {
-    expect([HEADS.length, CORES.length, LEGS.length, ARMS.length]).toEqual([12, 12, 15, 24]);
+  test('there are thirteen heads, thirteen bodies, sixteen pairs of legs and thirteen pairs of arms, and each layer is one piece that lies in reach of the pose box', () => {
+    expect([HEADS.length, CORES.length, LEGS.length, ARMS.length]).toEqual([13, 13, 16, 26]);
     for (const [id, layer] of solid) {
       const entry = MANIFEST[id];
       expect(entry.ox! >= -MARGIN && entry.oy! >= -MARGIN && entry.ox! + entry.w <= BACK_BOX + MARGIN && entry.oy! + entry.h <= BACK_BOX + MARGIN - (entry.drop ?? 0), id).toBe(true);
@@ -207,7 +207,7 @@ describe('where a mech holds what it carries', () => {
     for (const view of ['back', 'small'] as MechView[]) {
       const { suffix, mount } = VIEWS[view];
       const families = Object.keys(MANIFEST).flatMap((id) => (id.startsWith('arms-') && id.endsWith(`.near${suffix}`) ? [id.slice(0, -`.near${suffix}`.length)] : []));
-      expect(families, view).toHaveLength(12);
+      expect(families, view).toHaveLength(13);
       for (const arms of families) {
         const [near, far] = [`${arms}.near${suffix}`, `${arms}.far${suffix}`];
         // Where the game has each hand: where the view has that fist, or where the arm says its own was drawn.
@@ -355,9 +355,9 @@ describe('where a hit lands on each part of a mech that is fought', () => {
     expect(hitPartOf('arms-rigger.far')).toBeNull();
   });
 
-  test('every layer that can be hit says where: fifteen pairs of legs and twelve each of bodies, heads and near arms, from behind and small', () => {
+  test('every layer that can be hit says where: sixteen pairs of legs and thirteen each of bodies, heads and near arms, from behind and small', () => {
     const count = (view: MechView, part: HitPart): number => layers.filter((layer) => layer.view === view && layer.part === part).length;
-    for (const view of ['back', 'small'] as MechView[]) expect([count(view, 'legs'), count(view, 'core'), count(view, 'head'), count(view, 'arms')], view).toEqual([15, 12, 12, 12]);
+    for (const view of ['back', 'small'] as MechView[]) expect([count(view, 'legs'), count(view, 'core'), count(view, 'head'), count(view, 'arms')], view).toEqual([16, 13, 13, 13]);
     for (const { id } of layers) expect([typeof MANIFEST[id].hx, typeof MANIFEST[id].hy], id).toEqual(['number', 'number']);
     // No other picture says so: nothing from the front (nothing is fought from the front), no far arm, nothing carried, no machine.
     const said = Object.keys(MANIFEST).filter((id) => MANIFEST[id].hx !== undefined || MANIFEST[id].hy !== undefined);

@@ -1,3 +1,5 @@
+import { JUKEBOX, UNITS, WORLD } from '../../src/content/codex';
+import { FINDS } from '../../src/content/finds';
 import { language, setLanguage } from '../../src/content/language';
 import { MISSIONS } from '../../src/content/missions';
 import { SCENES } from '../../src/content/scenes';
@@ -6,9 +8,10 @@ import { CATALOG } from '../../src/content/parts';
 import { SETTINGS_KEY, SaveFile } from '../../src/platform/storage';
 import { App } from '../../src/ui/app';
 import { creditLines } from '../../src/ui/creditsScreen';
+import { LIST as DATABASE_LIST } from '../../src/ui/databaseScreen';
 import { BRIEFING_CHARS, briefingRows, groundLines, objectiveLines } from '../../src/ui/briefingScreen';
 import { SCENE_LINES, sceneRows } from '../../src/ui/sceneScreen';
-import { charsFor, wrap } from '../../src/ui/widgets';
+import { CHAR_W, charsFor, wrap } from '../../src/ui/widgets';
 import { done, finishMission, fresh, inHub, makeApp, press, savedGame, select, snap, strong } from '../helpers/app';
 
 type AppOf = ReturnType<typeof inHub>['app'];
@@ -43,6 +46,30 @@ describe('the game in Dutch', () => {
       press(app, 'cancel');
       if (snap(app).screen !== 'hub') press(app, 'cancel');
       expect(snap(app).screen).toBe('hub');
+    }
+  });
+
+  test('no row of the database\'s lists runs past its panel, in either language, with everything met, known, found and heard', () => {
+    for (const lang of ['en', 'nl'] as const) {
+      const base = strong(done('intro-1', 'intro-2'));
+      const { app } = inHub({
+        ...base, met: UNITS.map((unit) => unit.id), codex: [...WORLD.map((entry) => entry.id), ...FINDS.map((find) => find.id)],
+        completed: MISSIONS.map((mission) => mission.id), heard: JUKEBOX.map((song) => song.id), settings: { ...base.settings, language: lang },
+      });
+      select(app, 'database');
+      const pages: string[] = [];
+      // (A name is written twelve pixels into the panel, and the panel's edge is a pixel wide.)
+      const [from, edge] = [DATABASE_LIST.x + 12, DATABASE_LIST.x + DATABASE_LIST.w - 2];
+      for (let i = 0; i < 8; i++) {
+        const shown = snap(app) as unknown as { page: string; menu: { items: { label: string; enabled: boolean }[] } };
+        if (pages.includes(shown.page)) break;
+        pages.push(shown.page);
+        // Nothing is left unnamed: every row is one that has its name.
+        expect(shown.menu.items.filter((item) => !item.enabled).map((item) => item.label), `${lang} ${shown.page}`).toEqual([]);
+        for (const item of shown.menu.items) expect(from + item.label.length * CHAR_W, `${lang} ${shown.page}: ${item.label}`).toBeLessThanOrEqual(edge);
+        press(app, 'next');
+      }
+      expect(pages).toEqual(['units', 'people', 'world', 'finds', 'manual', 'music']);
     }
   });
 

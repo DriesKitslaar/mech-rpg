@@ -2,6 +2,7 @@ import type { ArenaOpponent } from '../core/arena';
 import type { AiProfile, Build, EnemyDef } from '../core/types';
 import { ENEMIES } from './enemies';
 import { MASTER_ENEMIES } from './masters';
+import { SEAT_ENEMIES } from './seat';
 
 const PURSES = [800, 1200, 1600, 2000, 2600, 3200, 3800, 4600, 5400, 7000, 9000, 11000, 13000, 16000, 22000];
 
@@ -173,7 +174,8 @@ export const ARENA_ENEMIES: Record<string, EnemyDef> = Object.fromEntries(LADDER
 ]));
 
 /**
- * Every enemy a battle can field: contract enemies, arena opponents and the arena's masters. The
- * opponent of a mirror match is made from the pilot's build when the fight starts; see `mirrorEnemy`.
+ * Every enemy a battle can field: contract enemies, arena opponents, the arena's masters and the keeper
+ * of their eighth seat. The opponent of a mirror match is made from the pilot's build when the fight
+ * starts; see `mirrorEnemy`.
  */
-export const ALL_ENEMIES: Record<string, EnemyDef> = { ...ENEMIES, ...ARENA_ENEMIES, ...MASTER_ENEMIES };
+export const ALL_ENEMIES: Record<string, EnemyDef> = { ...ENEMIES, ...ARENA_ENEMIES, ...MASTER_ENEMIES, ...SEAT_ENEMIES };

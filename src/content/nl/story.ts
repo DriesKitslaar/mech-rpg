@@ -321,6 +321,19 @@ export const STORY_NL: Record<string, string> = {
   'Any machine may challenge one, for a purse. Beat a master in a machine of their own class and their title is yours: the office keeps a crown for each.':
     'Elke machine mag er een uitdagen, om een pot. Versla een meester in zijn eigen klasse en zijn titel is van jou: het kantoor bewaart voor elk een kroon.',
   'They are on the arena list, on the page beside the ladder.': 'Ze staan op de arenalijst, op de pagina naast de ranglijst.',
+  'The eighth seat': 'De achtste stoel',
+  'Seven crowns on one head. The office has never had to write this letter.': 'Zeven kronen op een hoofd. Deze brief heeft het kantoor nog nooit geschreven.',
+  'The masters keep a table of eight seats. The eighth has a keeper, Touchstone, who takes one challenge: from the pilot who holds all seven crowns. That is you.':
+    'De meesters hebben een tafel met acht stoelen. De achtste heeft een houder, Touchstone, en die neemt een uitdaging aan: van wie alle zeven kronen heeft. Jij dus.',
+  "Bring any machine: no class is asked for. The seat is on the masters' page, under the seven.":
+    'Kom in welke machine ook: er wordt geen klasse gevraagd. De stoel staat bij de meesters, onder de zeven.',
+  'An order book': 'Een orderboek',
+  "Touchstone's yard has sent word. The Sovereign was built for whoever keeps the eighth seat, and that is you now.":
+    'De werf van Touchstone liet iets weten. De Sovereign is gebouwd voor wie de achtste stoel houdt, en dat ben jij nu.',
+  "Its head, core, arms and legs are on the shop's list. They ask us to say that nothing about it is cheap.":
+    'Hoofd, kern, armen en benen staan in de winkel. We moeten erbij zeggen dat niets eraan goedkoop is.',
+  "The keeper's paint is in your garage with the others. Touchstone says it suits whoever earned it.":
+    'De lak van de houder staat in je garage bij de rest. Touchstone zegt dat hij staat bij wie hem verdiend heeft.',
   "Meridian's stock": 'Meridians inboedel',
   'Whatever else happened, a great deal of black and gold equipment is suddenly on the market.':
     'Wat er verder ook gebeurde, er is opeens heel veel zwart-gouden materieel op de markt.',
@@ -405,6 +418,13 @@ export const STORY_NL: Record<string, string> = {
     'Een Auditor met van elk soort een wapen: Writ Rifle, Pulse Carbine en een Howler die je omver slaat, en nanites die pantser herstellen. Geen truc, en geen zwakke plek.',
   'Thirty years, and they still call me Journeyman.': 'Dertig jaar, en ze noemen me nog steeds Journeyman.',
   'Now there is nothing left to learn from me. Take the crown.': 'Nu valt er niets meer van mij te leren. Neem de kroon.',
+  // The keeper of the eighth seat.
+  'The Sovereign fights three ways, changing as it is hurt: a charging rail and a howler that knocks you flat, then light that drains you, then two blades.':
+    'De Sovereign vecht op drie manieren en wisselt bij schade: een oplaadrail en een howler die je omver blaast, dan licht dat je leegtrekt, dan twee klingen.',
+  'Seven crowns. Let us see which of them is you.': 'Zeven kronen. Eens zien welke daarvan jij bent.',
+  'It was only ever kept warm. Sit down, pilot.': 'Hij werd alleen warm gehouden. Ga zitten, piloot.',
+  'Range is answered. Now the light: mind your generator.': 'Afstand is beantwoord. Nu het licht: let op je generator.',
+  'Guns down. What is left is what you are.': 'Wapens neer. Wat overblijft, dat ben jij.',
 
   // What named enemies say when they change tactics.
   'Witnessed, sealed, and now enforced.': 'Gezien, verzegeld, en nu ten uitvoer gelegd.',

@@ -226,6 +226,14 @@ export const STRINGS_NL = {
       win: 'De pot is van jou. De kroon is voor wie ze verslaat in hun eigen klasse.',
       taken: 'KROON GEPAKT',
     },
+    seat: {
+      row: 'De achtste stoel', title: 'Houder van de achtste stoel',
+      tag: 'DE ACHTSTE STOEL: een tegen een, om de stoel',
+      held: 'STOEL', count: (held: number, of: number) => `${held}/${of}`,
+      locked: 'De achtste stoel heeft een houder, en die neemt een uitdaging aan: van wie alle zeven kronen heeft.',
+      win: 'De werf van zijn machine neemt nu jouw order aan.',
+      taken: 'STOEL GEPAKT',
+    },
     cups: {
       tag: 'BEKER: drie gevechten, geen rust',
       names: { 'cup-bronze': 'Bronsbeker', 'cup-silver': 'Zilverbeker', 'cup-gold': 'Goudbeker' } as Record<string, string>,
@@ -419,7 +427,7 @@ export const STRINGS_NL = {
   scene: { continue: 'Verder met A', yourCall: 'JOUW KEUZE', answer: 'UP/DOWN: kies   A: antwoord. Staat vast.' },
   settlement: {
     won: 'CONTRACT VOLTOOID', lost: 'CONTRACT MISLUKT', reward: 'Loon', ammo: 'Munitie', repairs: 'Reparatie',
-    crowned: 'DE KROON IS VAN JOU',
+    crowned: 'DE KROON IS VAN JOU', seated: 'DE STOEL IS VAN JOU',
     rank: 'RANG', rankBonus: (rank: string) => `Bonus rang ${rank}`,
     askBonus: (name: string) => `Bonus ${name}`,
     net: 'NETTO', balance: 'SALDO', continue: 'Verder met A',

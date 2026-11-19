@@ -3,6 +3,7 @@ import type { Mission } from '../core/campaign';
 import { isDrill } from '../core/training';
 import type { Settlement } from '../core/economy';
 import { masterOf } from '../content/masters';
+import { KEEPER } from '../content/seat';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -39,7 +40,7 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned } = this.settlement;
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned, seated } = this.settlement;
     return {
       menu: { items: [], cursor: 0 },
       settlement: {
@@ -50,6 +51,8 @@ export class SettlementScreen implements Screen {
         simulated: simulated === true,
         // The class whose crown this duel took from its master.
         crowned: crowned ?? null,
+        // True of the bill of the duel that took the eighth seat.
+        seated: seated === true,
       },
     };
   }
@@ -72,8 +75,8 @@ export class SettlementScreen implements Screen {
     drawText(ctx, this.mission.title, LOGICAL_W / 2, 42, { align: 'center', color: COLORS.dim });
     const drill = isDrill(this.mission);
     const T = STRINGS.training;
-    // A duel that took a master's crown is headed by that.
-    const heading = drill ? (s.won ? T.won : T.lost) : s.simulated ? (s.won ? T.rangeWon : T.rangeLost) : s.crowned ? S.crowned : s.won ? S.won : S.lost;
+    // A duel that took a master's crown is headed by that, and the one that took the eighth seat by that.
+    const heading = drill ? (s.won ? T.won : T.lost) : s.simulated ? (s.won ? T.rangeWon : T.rangeLost) : s.seated ? S.seated : s.crowned ? S.crowned : s.won ? S.won : S.lost;
     drawText(ctx, heading, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
     const fast = this.app.deps.fast;
     if (s.rank) {
@@ -116,8 +119,9 @@ export class SettlementScreen implements Screen {
     }
 
     // After a win, what the client had to say about it; after a defeat, what Dispatch makes of it.
-    // A master who has just lost the crown says so themselves.
-    const words = s.crowned ? `"${masterOf(s.crowned).concede}"` : s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
+    // A master who has just lost the crown says so themselves, and so does the keeper who has just lost the seat: and
+    // after the keeper's words stands what the arena has to say of it, which is where their machine is to be had.
+    const words = s.seated ? `"${KEEPER.concede}" ${this.mission.debrief}` : s.crowned ? `"${masterOf(s.crowned).concede}"` : s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
     wrap(words, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
       drawText(ctx, line, x + 10, 144 + i * LINE, { color: s.won ? COLORS.dim : COLORS.text }));
 

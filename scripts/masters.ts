@@ -3,17 +3,22 @@
 // wins in a hundred, and how many rounds a win and a loss take. The master's own class is starred: that is the
 // pairing a master is set by (see src/content/masters.ts).
 //
-// usage: npx tsx scripts/masters.ts [flights] [class]
+// The keeper of the eighth seat is measured the same way, against every class: no class is its own.
+//
+// usage: npx tsx scripts/masters.ts [flights] [class | seat]
 import { chooseAutoPlayerAction, runBattle } from '../src/core/ai';
 import { ARCHETYPES, archetypeOf } from '../src/core/archetype';
 import { computeBuildStats, validatePlayerBuild } from '../src/core/build';
 import { newGame } from '../src/core/game';
 import { masterMission } from '../src/core/masters';
+import type { Mission } from '../src/core/campaign';
+import { seatMission } from '../src/core/seat';
 import { playMission } from '../src/core/mission';
 import { perkEffects } from '../src/core/pilot';
 import { ALL_ENEMIES } from '../src/content/arena';
 import { ARCHETYPE_BUILDS } from '../src/content/archetypeBuilds';
 import { MASTERS } from '../src/content/masters';
+import { KEEPER } from '../src/content/seat';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
 import { PERKS } from '../src/content/perks';
 
@@ -29,6 +34,36 @@ const PILOTS: Record<string, object> = {
   full: perks({ marksman: 3, reflexes: 3, capacitor: 3, heatsinks: 3, fieldTech: 2, plating: 3 }),
 };
 const game = newGame(CATALOG, STARTER_BUILD);
+
+/** One row of a table: a fight against every class's late build, flown by one pilot. `own` stars a class. */
+function row(pilot: string, mods: object, mission: Mission, own?: string): string {
+  const cells = ARCHETYPES.map((challenger) => {
+    let wins = 0;
+    let wonRounds = 0;
+    let lostRounds = 0;
+    for (let flight = 1; flight <= flights; flight++) {
+      const seed = flight % 2 ? flight * 7919 : flight * 104729 + 13;
+      const end = playMission(ARCHETYPE_BUILDS[challenger].late, mission, ALL_ENEMIES, CATALOG, seed, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction), { mods, enemyScale: mission.scale ?? 1 });
+      if (end.outcome === 'victory') { wins += 1; wonRounds += end.round; } else lostRounds += end.round;
+    }
+    const won = wins ? (wonRounds / wins).toFixed(1) : '-';
+    const lost = flights - wins ? (lostRounds / (flights - wins)).toFixed(1) : '-';
+    return `${challenger === own ? '*' : ' '}${challenger.slice(0, 4)} ${String(Math.round((wins / flights) * 100)).padStart(3)}% (${won}/${lost})`;
+  });
+  return `  ${pilot.padEnd(8)}${cells.join(' ')}`;
+}
+
+// The keeper of the eighth seat, who is nobody's class: every late build against the machine that fights three ways.
+if (!only || only === 'seat') {
+  const mission = seatMission(game, KEEPER, { client: '', win: '' });
+  const builds = [KEEPER.build, ...KEEPER.phases.map((phase, i) => KEEPER.phases.slice(0, i + 1).reduce((build, { refit }) => ({ ...build, ...refit }), KEEPER.build))];
+  const shapes = builds.map((build) => {
+    const stats = computeBuildStats(build, CATALOG);
+    return `${archetypeOf(build, CATALOG)} ${stats.weight}/${stats.capacity} en ${stats.turnEnergy}${validatePlayerBuild(build, CATALOG).length ? ' INVALID' : ''}`;
+  });
+  console.log(`${KEEPER.name} x${KEEPER.scale} plating +${KEEPER.plating ?? 0}  ${shapes.join(' -> ')}`);
+  for (const [pilot, mods] of Object.entries(PILOTS)) console.log(row(pilot, mods, mission));
+}
 
 for (const master of MASTERS) {
   if (only && only !== master.kind) continue;

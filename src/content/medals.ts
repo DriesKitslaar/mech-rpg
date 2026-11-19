@@ -4,6 +4,7 @@ import { checksHeld, papersFound } from '../core/codex';
 import { FACTORY_PAINT, type GameState } from '../core/game';
 import { JOB_KINDS, jobsWon, kindsOfJob } from '../core/jobs';
 import { crownsHeld } from '../core/masters';
+import { seatHeld } from '../core/seat';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
 import { TUNE_MAX, stepOf, tunable } from '../core/tuning';
@@ -79,6 +80,8 @@ const EARNED: Medal[] = [
   // The masters: a crown is a master beaten in a machine of their own class.
   { id: 'crown-1', name: 'Uneasy Head', text: "Take a master's crown in the arena.", tier: 2, progress: count(1, crownsHeld) },
   { id: 'crown-all', name: 'Seven Crowns', text: 'Hold the crown of every class.', tier: 3, progress: count(ARCHETYPES.length, crownsHeld) },
+  // The eighth seat: its keeper beaten, by the holder of every crown.
+  { id: 'seat', name: 'True Metal', text: "Take the eighth seat at the masters' table.", tier: 3, progress: count(1, (g) => (seatHeld(g) ? 1 : 0)) },
   { id: 'overdrive', name: 'Redline', text: 'Set off an Overdrive.', tier: 1, progress: count(1, (g) => g.overdrives ?? 0) },
   { id: 'overdrive-50', name: 'Past the Stop', text: 'Set off 50 Overdrives.', tier: 2, progress: count(50, (g) => g.overdrives ?? 0) },
   // The Gauntlet.

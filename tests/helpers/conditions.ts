@@ -1,3 +1,4 @@
+import { ARCHETYPES } from '../../src/core/archetype';
 import { ARENA } from '../../src/content/arena';
 import { MISSIONS } from '../../src/content/missions';
 import { SCENES } from '../../src/content/scenes';
@@ -21,14 +22,15 @@ export const questions = (): Map<string, string[]> =>
 
 /**
  * The terms of a condition that name nothing there is: a contract that is not in the game, an
- * answer nobody can give, an arena rank past the last, a number that is no number. Empty when the
+ * answer nobody can give, an arena rank past the last, more crowns than there are, a number that is
+ * no number. Empty when the
  * condition can come true.
  */
 export function unknownTerms(condition: string): string[] {
   const ids = new Set(MISSIONS.map((m) => m.id));
   const asked = questions();
   return termsOf(condition).filter((term) => {
-    if (['start', 'choice', 'finale', 'verdict'].includes(term)) return false;
+    if (['start', 'choice', 'finale', 'verdict', 'seat'].includes(term)) return false;
     const colon = term.indexOf(':');
     if (colon < 0) return !ids.has(term);
     const [kind, rest] = [term.slice(0, colon), term.slice(colon + 1)];
@@ -40,6 +42,8 @@ export function unknownTerms(condition: string): string[] {
     const n = Number(rest);
     if (!Number.isInteger(n) || n < 0) return true;
     if (kind === 'arena') return n < 1 || n > ARENA.length;
+    // Crowns: one at least, and no more than there are classes.
+    if (kind === 'crowns') return n < 1 || n > ARCHETYPES.length;
     return !['cycle', 'floor', 'checks'].includes(kind);
   });
 }

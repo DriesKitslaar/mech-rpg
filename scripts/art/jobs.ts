@@ -147,6 +147,16 @@ function lowerBody(id: string, fromFamily: string, description: string): ArtJob 
  * legs, the family their drawing was edited from. Legs then take a paint scheme the way the torso
  * above them does. A layer cut from a drawing from behind takes the paint of the same family.
  */
+/**
+ * Colours a family has of its own, beside the palette every picture shares: an enamel no other machine
+ * wears, which the shared palette has no colour for. Only that family's layers are held to them, so no
+ * other picture changes for it.
+ */
+export const OWN_COLOURS: Record<string, [number, number, number][]> = {
+  // The Sovereign's violet, from its shadow to its shine.
+  sovereign: [[36, 10, 61], [53, 16, 87], [73, 22, 118], [98, 38, 148], [133, 70, 186]],
+};
+
 export function paintFamilyOf(layerJob: ArtJob): string {
   const name = /(?:family|back)-([a-z0-9-]+)\.png$/.exec(layerJob.references?.[0] ?? '')?.[1] ?? layerJob.id;
   return JOBS.find((job) => job.id === `family-${name}`)?.base ?? name;
@@ -253,6 +263,11 @@ function backLayer(id: string, fromFamily: string, which: Layer, keep: string = 
  * that backpack on every other family's back.
  */
 const HEAD_FROM_BEHIND: Record<string, string> = {
+  sovereign:
+    'only the head itself: the violet helmet dome at the very top of the mecha with the fan of gold points that ' +
+    'stands up around it and the gold band directly under the dome. Erase everything else: in particular the violet ' +
+    'backpack block with the ribbed gold vent that lies directly below the helmet, both large layered pauldrons ' +
+    'beside it, the arms, the torso, the hanging tabard plate and the legs.',
   sterling:
     'only the head itself: the white helm at the very top of the mecha with its single tall curved crest fin, and ' +
     'nothing below the neck. Erase everything else: in particular the round white backpack drum with the vertical vent ' +
@@ -286,6 +301,12 @@ const HEAD_FROM_BEHIND: Record<string, string> = {
 
 /** Torsos that came away from behind with the head still standing on them: each is told which part that is. */
 const CORE_FROM_BEHIND: Record<string, string> = {
+  sovereign:
+    'only the torso seen from behind: the violet backpack block with the ribbed gold vent in its middle and the ' +
+    'round white lamp on each side of it, and the narrow ivory body directly under it down to the waist. Erase ' +
+    'everything else and fill it with green: the helmet dome with its fan of gold points that stands on top of the ' +
+    'block (that is the head), both large layered pauldrons with the round white joints beside the block (those ' +
+    'belong to the arms), both arms, the hips with the hanging tabard plate and both legs.',
   sterling:
     'only the torso seen from behind: the round white backpack drum with the vertical vent in its middle and the ' +
     'narrow white body directly under it down to the waist. Erase everything else and fill it with green: the helm with ' +
@@ -461,6 +482,15 @@ const DESIGNS: Record<string, string> = {
     'white lights: long coat-like armour skirts hanging from the hips at the front and back, narrow shoulders with upright ' +
     'gold-edged collar plates, slender precise limbs, and a smooth faceless mask head with one thin vertical gold line and ' +
     'a low crown ridge. Slimmer and taller-looking than the first image, elegant, cold and expensive.',
+  // The frame of the one who keeps the eighth seat. A design of this game's own: a herald in violet enamel and gold
+  // under a crest of seven points, one for each crown that is asked of whoever comes for it.
+  sovereign:
+    'a tall, stately ceremonial champion mecha in deep violet enamel armour with broad polished gold borders, ' +
+    'ivory-white joints and a few small warm white lights: a high gold-edged collar standing like a mantle over ' +
+    'broad layered shoulders, a long narrow violet tabard plate with a gold border hanging from the waist at the ' +
+    'front, slender strong limbs with a gold band at each knee and wrist, and a smooth closed helm with one narrow ' +
+    'white visor slit, crowned by a fan of seven short gold points that stand up around the back of the head like ' +
+    'a sunburst. Taller-looking and prouder than the first image, immaculate, regal and calm.',
 };
 
 /** Everything that is drawn: asked of the image service, or the same raw picture used a second time. */
@@ -484,6 +514,8 @@ const DRAWN: ArtJob[] = [
   // The two frames for the end of the game: what the swords of the Coast Circuit fly.
   family('sterling', 'ronin', DESIGNS.sterling),
   family('shrike', 'ronin', DESIGNS.shrike),
+  // The frame for the very end of it: what the keeper of the eighth seat flies.
+  family('sovereign', 'ronin', DESIGNS.sovereign),
   // Free-standing lower bodies: a family drawing with only the legs replaced, from which the legs layer is cut.
   lowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
@@ -507,6 +539,7 @@ const DRAWN: ArtJob[] = [
   ...layersOf('dozer', { legs: 'legs-dozer', core: 'core-dozer', head: 'head-dozer', arms: 'arms-dozer' }),
   ...layersOf('sterling', { legs: 'legs-sterling', core: 'core-sterling', head: 'head-sterling', arms: 'arms-sterling' }),
   ...layersOf('shrike', { legs: 'legs-shrike', core: 'core-shrike', head: 'head-shrike', arms: 'arms-shrike' }),
+  ...layersOf('sovereign', { legs: 'legs-sovereign', core: 'core-sovereign', head: 'head-sovereign', arms: 'arms-sovereign' }),
   layer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   layer('legs-spider', 'spider', 'legs',
@@ -811,6 +844,7 @@ const DRAWN: ArtJob[] = [
   backFamily('dozer', 'ronin'),
   backFamily('sterling', 'ronin'),
   backFamily('shrike', 'ronin'),
+  backFamily('sovereign', 'ronin'),
   backLowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
     'with hazard stripes on the track guards. No legs and no feet.'),
@@ -832,6 +866,7 @@ const DRAWN: ArtJob[] = [
   ...backLayersOf('dozer', { legs: 'legs-dozer', core: 'core-dozer', head: 'head-dozer', arms: 'arms-dozer' }),
   ...backLayersOf('sterling', { legs: 'legs-sterling', core: 'core-sterling', head: 'head-sterling', arms: 'arms-sterling' }),
   ...backLayersOf('shrike', { legs: 'legs-shrike', core: 'core-shrike', head: 'head-shrike', arms: 'arms-shrike' }),
+  ...backLayersOf('sovereign', { legs: 'legs-sovereign', core: 'core-sovereign', head: 'head-sovereign', arms: 'arms-sovereign' }),
   backLayer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   backLayer('legs-spider', 'spider', 'legs',

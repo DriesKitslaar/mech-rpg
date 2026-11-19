@@ -6,6 +6,7 @@ import { DRILLS, LESSON_LINES } from '../drills';
 import { FINDS } from '../finds';
 import { ENEMIES } from '../enemies';
 import { MASTERS } from '../masters';
+import { KEEPER } from '../seat';
 import { MEDALS } from '../medals';
 import { ENDINGS, EPILOGUES, MESSAGES, MISSIONS } from '../missions';
 import { PERKS } from '../perks';
@@ -60,6 +61,9 @@ function contentTexts(): TextSlot[] {
     ...textsOf('story', ARENA, { style: 'arena.style', taunt: 'arena.taunt' }),
     // The arena's masters: how each fights, what they say before the duel, and what they say when the crown is taken, where a debrief stands.
     ...textsOf('story', MASTERS, { style: 'arena.style', taunt: 'arena.taunt', concede: 'debrief' }),
+    // The keeper of the eighth seat, as a master: and what they say as their machine changes, as a boss's is said.
+    ...textsOf('story', [KEEPER], { style: 'arena.style', taunt: 'arena.taunt', concede: 'debrief' }),
+    ...textsOf('story', KEEPER.phases, { line: 'battle.talk' }),
     ...textsOf('missions', [BOARD_TEXT], { adjectives: 'board.word', nouns: 'board.word', clients: 'client', places: 'briefing', debriefs: 'debrief', swarmTitles: 'mission.title', swarm: 'briefing' }),
     ...textsOf('missions', [BOARD_TEXT.threats], Object.fromEntries(Object.keys(BOARD_TEXT.threats).map((id) => [id, 'briefing']))),
     ...textsOf('missions', [BOARD_TEXT.elite], Object.fromEntries(Object.keys(BOARD_TEXT.elite).map((mark) => [mark, 'briefing']))),

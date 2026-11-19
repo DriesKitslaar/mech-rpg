@@ -1,0 +1,12 @@
+{
+  "id": "back-sovereign",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/back-ronin.png",
+    "art/raw/family-sovereign.png"
+  ],
+  "prompt": "The first image shows a mecha seen from behind in a combat stance. Redraw it as a different mecha design in exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, elbows, hands, hips, knees, feet) stays in the same place. In particular the arm on the right side of the image stays raised and stretched forward towards the upper right, with its fist exactly where it is in the first image, and the arm on the left side stays bent at its side. The new design is shown from the front in the second image; in words it is: a tall, stately ceremonial champion mecha in deep violet enamel armour with broad polished gold borders, ivory-white joints and a few small warm white lights: a high gold-edged collar standing like a mantle over broad layered shoulders, a long narrow violet tabard plate with a gold border hanging from the waist at the front, slender strong limbs with a gold band at each knee and wrist, and a smooth closed helm with one narrow white visor slit, crowned by a fan of seven short gold points that stand up around the back of the head like a sunburst. Taller-looking and prouder than the first image, immaculate, regal and calm. Seen from behind, its back shows armour plates and a backpack unit that suit that design. Keep the same proportions between joints. No weapons, empty hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

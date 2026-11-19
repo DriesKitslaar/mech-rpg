@@ -37,8 +37,8 @@ export function personKnown(game: GameState, person: Person): boolean {
   if ('met' in person.when) return game.met.includes(person.when.met);
   return game.cycle > 0 || reached(game, person.when.after, MISSIONS);
 }
-/** The list on the left and the page on the right. */
-const LIST = { x: 4, y: 18, w: 106, h: 234 };
+/** The list on the left and the page on the right. A row's name in the list begins twelve pixels into its panel and must end inside it. */
+export const LIST = { x: 4, y: 18, w: 106, h: 234 };
 const PAGE = { x: 114, y: 18, w: LOGICAL_W - 118, h: 234 };
 const ROWS = Math.floor((LIST.h - 10) / LINE);
 /** Characters to a line of the page, and the box a unit's picture stands in. */

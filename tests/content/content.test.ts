@@ -21,7 +21,7 @@ const SLOT_KINDS: Record<keyof Build, string[]> = {
 };
 const FACTIONS: Faction[] = ['hadron', 'lumen', 'undertow'];
 /** The conditions something can wait for that are not the id of a contract. */
-const isKeyword = (condition: string): boolean => ['start', 'choice', 'finale', 'verdict'].includes(condition) || /^arena:([1-9]|10)$/.test(condition);
+const isKeyword = (condition: string): boolean => ['start', 'choice', 'finale', 'verdict', 'seat'].includes(condition) || /^arena:([1-9]|10)$/.test(condition);
 /** A contract won at some time: the condition names a contract there is. */
 const isWon = (condition: string): boolean => condition.startsWith('won:') && MISSIONS.some((m) => m.id === condition.slice(4));
 const builds: [string, Build][] = [
@@ -66,7 +66,7 @@ describe('shop catalogue', () => {
 
   test('the shelf: frame parts, generators, weapons, shields, boosters, fire control and modules', () => {
     const count = (kind: string) => SHOP_PARTS.filter((p) => p.kind === kind).length;
-    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([12, 12, 12, 15]);
+    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([13, 13, 13, 16]);
     expect(count('generator')).toBe(8);
     expect(count('booster')).toBe(7);
     expect(count('fcs')).toBe(7);
@@ -74,7 +74,7 @@ describe('shop catalogue', () => {
     expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(24);
     expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(17);
     expect(count('shield')).toBe(4);
-    expect(SHOP_PARTS).toHaveLength(129);
+    expect(SHOP_PARTS).toHaveLength(133);
   });
 
   test('every trait has what it needs, and each trait is used', () => {

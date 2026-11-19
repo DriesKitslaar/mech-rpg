@@ -249,6 +249,40 @@ dan kun je ze wel bekijken. Word je kampioen, dan schrijft het arenakantoor je e
   briefing staat het bedrag dat voor jou geldt (**+50% PAY**).
 - **Twee medailles:** een voor je eerste kroon, een voor alle zeven.
 
+### De achtste stoel
+
+Onder de zeven meesters staat een achtste rij: **The Eighth Seat**. Daar zit geen meester van een
+klasse, maar de houder van de stoel: **Touchstone**. Hij neemt maar één uitdaging aan: van wie
+**alle zeven kronen** heeft. Tot dan staat er hoeveel je er hebt (**3/7**) en kun je alleen kijken.
+Met de zevende kroon schrijft het arenakantoor je erover (onder **Messages**).
+
+- **Elke build mag.** Er wordt geen klasse gevraagd en er is geen kroon te halen: je vecht om de
+  stoel zelf. Het is één tegen één; een wingman kun je niet meenemen.
+- De pot is 15000 de eerste keer, daarna een kwart. Je kunt het duel zo vaak overdoen als je wilt.
+- Zijn machine, de **Sovereign**, vecht op **drie manieren** en wisselt als hij geraakt wordt. Bij
+  elke wissel zegt hij wat er komt.
+
+| Wanneer | Wat hij doet | Waar je op let |
+|---|---|---|
+| Tot hij een derde kwijt is | Hij blijft op afstand, met een geweer dat een beurt oplaadt (**Longbow Rail**) en een kanon dat je uit evenwicht slaat (**Howler**). | Nu is hij het makkelijkst te raken. Bewaak (**Guard**) in de beurt dat het geladen schot komt. |
+| Tot hij twee derde kwijt is | Licht: drie energiewapens, waarvan er een je generator leegzuigt (**Null Beam**). Hij ontwijkt nu beter. | Reken op minder energie per beurt, en op meer missers. |
+| Daarna | Twee klingen (**Gavel** en **Arc Blade**). Hij komt op je af en slaat een tiende harder. | Bewaar je Overdrive en je zwaarste schot voor dit stuk. |
+
+Een **Sharpshooter** heeft het hier het makkelijkst, daarna een **All-rounder** of een **Bastion**.
+Lichte, snelle builds (Skirmisher, Duellist, Lancer) hebben het het zwaarst. De winkans in de
+briefing zegt hoe jouw build ervoor staat.
+
+**Wat de stoel je geeft:**
+
+- **De Sovereign.** Zijn vier onderdelen (kop, romp, armen, benen) staan daarna in de **Shop**. Ze
+  zijn de duurste die er zijn: samen 29200. Dat recht raak je niet meer kwijt, ook niet in een
+  nieuwe cyclus.
+- **De lak van de houder.** In de **Garage** staat **Touchstone** achter de kleuren van de
+  meesters: donker staal met goud.
+- **De titel.** Onder **Pilot**, pagina **CLASS**, staat bovenaan **THE EIGHTH SEAT** in plaats van
+  het aantal kronen.
+- **Een medaille** en een brief van het arenakantoor.
+
 ## Twee duels na het einde
 
 Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appointment**. Win je
@@ -264,7 +298,10 @@ raak je niet meer kwijt, ook niet in een nieuwe cyclus.
 
 Vlieg je ze zelf, dan gelden dezelfde regels voor jou. Op het onderdeel staat het erbij: **POISE**
 bij de armen van de Shrike, **FIELD** bij de kern van de Sterling (bij jou vangt het veld 25 schade
-op; dat van de tegenstander is veel sterker). Met twee zwaarden kost de tweede slag je wel je
+op; dat van de tegenstander is veel sterker). De **Sovereign** van de achtste stoel heeft allebei:
+armen met **POISE** en een kern met een kleiner veld (20). Hij is zwaar en duur. Zijn benen dragen
+meer dan alle andere, op die van de Colossus en de rupsbanden na, en zijn toch vlugger dan die
+twee. Met twee zwaarden kost de tweede slag je wel je
 Boost. Staat er **FIELD DOWN** in je statusregel, dan is je veld gebroken en komt het een beurt
 later terug.
 

@@ -5,7 +5,7 @@ import type {
 
 const r = (kinetic: number, energy: number, explosive: number): Resist => ({ kinetic, energy, explosive });
 
-type FrameExtra = Pick<FramePart, 'aim' | 'capacity' | 'mobility' | 'legType' | 'field' | 'poise'>;
+type FrameExtra = Pick<FramePart, 'aim' | 'capacity' | 'mobility' | 'legType' | 'field' | 'poise' | 'bespoke'>;
 const frame = (
   id: string, name: string, kind: FrameSlot, ap: number, resist: Resist, weight: number, drain: number,
   price: number, vendor: Vendor | undefined, extra: FrameExtra = {},
@@ -107,6 +107,14 @@ export const SHOP_PARTS: Part[] = [
   frame('core-sterling', 'Sterling Core', 'core', 205, r(0.2, 0.25, 0.2), 190, 70, 4400, 'freelance', { field: 25 }),
   frame('arms-sterling', 'Sterling Arms', 'arms', 100, r(0.15, 0.2, 0.15), 90, 45, 3000, 'freelance', { aim: 14 }),
   frame('legs-sterling', 'Sterling Greaves', 'legs', 140, r(0.15, 0.2, 0.15), 150, 65, 3600, 'freelance', { capacity: 950, mobility: 52 }),
+  // Sovereign: built for one pilot, the keeper of the eighth seat. A little more of everything than an Auditor, a field
+  // in its core like a Sterling's and arms that keep their balance like a Shrike's, at a price in weight, in what it
+  // draws and in credits that nothing else asks. Sold to the pilot who takes the seat, and built to order: no run of the
+  // Gauntlet turns one up.
+  frame('head-sovereign', 'Sovereign Crest', 'head', 95, r(0.3, 0.3, 0.25), 55, 40, 6400, 'freelance', { aim: 20, bespoke: true }),
+  frame('core-sovereign', 'Sovereign Core', 'core', 350, r(0.3, 0.3, 0.3), 380, 95, 8800, 'freelance', { field: 20, bespoke: true }),
+  frame('arms-sovereign', 'Sovereign Arms', 'arms', 175, r(0.25, 0.3, 0.25), 180, 60, 6400, 'freelance', { aim: 14, poise: true, bespoke: true }),
+  frame('legs-sovereign', 'Sovereign Legs', 'legs', 235, r(0.3, 0.3, 0.25), 300, 80, 7600, 'freelance', { capacity: 1650, mobility: 36, bespoke: true }),
   // Legs that are not legs. Each changes a rule of its own; see LEG_TYPES.
   frame('legs-crawler', 'Crawler Treads', 'legs', 300, r(0.35, 0.1, 0.25), 420, 50, 2200, 'hadron', { capacity: 2200, mobility: 8, legType: 'tank' }),
   frame('legs-spider', 'Spider Quad', 'legs', 220, r(0.2, 0.2, 0.2), 300, 70, 2800, 'freelance', { capacity: 1500, mobility: 22, legType: 'quad' }),
@@ -389,6 +397,8 @@ export const SHOP_UNLOCKS: Record<string, string> = {
   // The frames of the Coast Circuit: its yard takes an order from a pilot who has beaten its work in a duel.
   'head-shrike': 'won:duel-1', 'core-shrike': 'won:duel-1', 'arms-shrike': 'won:duel-1', 'legs-shrike': 'won:duel-1',
   'head-sterling': 'won:duel-2', 'core-sterling': 'won:duel-2', 'arms-sterling': 'won:duel-2', 'legs-sterling': 'won:duel-2',
+  // The Sovereign: ordered from its yard by the pilot who has taken the eighth seat of the arena's masters, and by nobody else.
+  'head-sovereign': 'seat', 'core-sovereign': 'seat', 'arms-sovereign': 'seat', 'legs-sovereign': 'seat',
   // Meridian's stock comes on the market when the audit is over, whichever way it ended.
   'head-auditor': 'verdict', 'core-auditor': 'verdict', 'arms-auditor': 'verdict', 'legs-auditor': 'verdict',
   'wpn-writ': 'verdict', 'wpn-gavel': 'verdict', 'wpn-decree': 'verdict',

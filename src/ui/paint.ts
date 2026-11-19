@@ -6,6 +6,7 @@
 import type { Archetype } from '../core/archetype';
 import type { GameState } from '../core/game';
 import { crownHeld } from '../core/masters';
+import { seatHeld } from '../core/seat';
 
 export type RGB = [number, number, number];
 
@@ -65,13 +66,22 @@ export const CROWN_PAINTS: (PaintScheme & { crown: Archetype })[] = [
 ];
 
 /**
- * The paints a pilot may wear, in the order the garage steps through them: factory colours, the
- * schemes anyone may wear, and after them the paint of each crown the pilot holds.
+ * The paint of the keeper of the eighth seat: black as the stone they are named for, with the streak gold
+ * leaves on it. Worn by the keeper, and after them only by the pilot who has taken the seat.
  */
-export const paintsFor = (state: Pick<GameState, 'crowns'>): string[] =>
-  [FACTORY, ...PAINTS.map((paint) => paint.id), ...CROWN_PAINTS.filter((paint) => crownHeld(state, paint.crown)).map((paint) => paint.id)];
+export const SEAT_PAINT: PaintScheme = { id: 'touchstone', name: 'Touchstone', hue: 240, sat: 0.05, accentHue: 46, accentSat: 0.9, shade: 0.22 };
 
-export const paintById = (id: string): PaintScheme | undefined => PAINTS.find((p) => p.id === id) ?? CROWN_PAINTS.find((p) => p.id === id);
+/**
+ * The paints a pilot may wear, in the order the garage steps through them: factory colours, the
+ * schemes anyone may wear, after them the paint of each crown the pilot holds, and last the keeper's,
+ * for the pilot who has taken the eighth seat.
+ */
+export const paintsFor = (state: Pick<GameState, 'crowns' | 'seat'>): string[] => [
+  FACTORY, ...PAINTS.map((paint) => paint.id), ...CROWN_PAINTS.filter((paint) => crownHeld(state, paint.crown)).map((paint) => paint.id),
+  ...(seatHeld(state) ? [SEAT_PAINT.id] : []),
+];
+
+export const paintById = (id: string): PaintScheme | undefined => PAINTS.find((p) => p.id === id) ?? CROWN_PAINTS.find((p) => p.id === id) ?? (id === SEAT_PAINT.id ? SEAT_PAINT : undefined);
 
 /** Hue in degrees, saturation and lightness in 0..1. */
 export function toHsl(r: number, g: number, b: number): [number, number, number] {

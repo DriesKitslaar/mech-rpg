@@ -1,6 +1,7 @@
 import { ARCHETYPES, adviceFor, archetypeOf, wonAs, type Archetype, type BuildAdvice } from '../core/archetype';
 import { DEFAULT_CALLSIGN, type BuildSlot, type GameState } from '../core/game';
 import { crownHeld, crownsHeld, mastersOpen } from '../core/masters';
+import { seatHeld } from '../core/seat';
 import { MEDAL_PAY, medalProgress, type Medal } from '../core/medals';
 import { OVERDRIVES, type OverdriveId } from '../core/battle';
 import { MAX_LEVEL, OVERDRIVE_LEVEL, checkBuyPerk, fittedOverdrive, levelFor, overdriveOpen, perkPoints, xpForLevel } from '../core/pilot';
@@ -192,8 +193,11 @@ export class PilotScreen implements Screen {
     drawPanel(ctx, 4, 18, LOGICAL_W - 8, 95);
     drawText(ctx, C.heading, 12, 22, { color: COLORS.dim, size: 10 });
     drawText(ctx, C.won, LOGICAL_W - 12, 22, { align: 'right', color: COLORS.dim, size: 10 });
-    // The crowns of the arena's masters, counted once they are there to be taken, or once one is held.
-    if (mastersOpen(game) || crownsHeld(game) > 0) {
+    // The crowns of the arena's masters, counted once they are there to be taken, or once one is held. For the pilot who
+    // has taken the eighth seat the count has nothing left to say (every row has its crown): the seat stands there instead.
+    if (seatHeld(game)) {
+      drawText(ctx, STRINGS.arena.seat.row.toUpperCase(), CROWN_X + 9, 22, { align: 'right', color: CROWN_COLOR, size: 10 });
+    } else if (mastersOpen(game) || crownsHeld(game) > 0) {
       drawText(ctx, STRINGS.arena.masters.crowns(crownsHeld(game), ARCHETYPES.length), CROWN_X + 9, 22, { align: 'right', color: COLORS.dim, size: 10 });
     }
     this.classes.items.forEach((item, i) => {

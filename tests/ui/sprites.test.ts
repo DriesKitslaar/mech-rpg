@@ -63,9 +63,9 @@ describe('a picture and what the manifest says of it', () => {
     // Three lower bodies that lower what stands on them, in three views; every weapon a pilot can carry, from behind; every layer that can be hit.
     expect(counts.drop).toBeGreaterThanOrEqual(5);
     expect(counts.held).toBeGreaterThanOrEqual(24);
-    // Twelve frames of four parts each that can be hit (of the arms, the one stretched forward), and the three lower bodies
+    // Thirteen frames of four parts each that can be hit (of the arms, the one stretched forward), and the three lower bodies
     // that are not legs: from behind, and far off.
-    expect(counts.hit).toBe(102);
+    expect(counts.hit).toBe(110);
     // The two arms of one frame, from behind, whose fists were drawn away from where the pose has them.
     expect(counts.fist).toBe(2);
   });
