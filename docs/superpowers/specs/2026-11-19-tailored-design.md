@@ -17,8 +17,8 @@ the other half of that: the last one made the kinds, this one makes a pilot use 
 
 1. **The build is chosen at the briefing.** A row of the briefing says what will be flown and lets
    the pilot turn through the saved builds; accepting the contract fits the one chosen.
-2. **The briefing says what suits the contract.** For the contracts of the story, which classes
-   do best in it, by measurement, and whether the build chosen is one of them.
+2. **The briefing says how the contract is likely to go in the build chosen.** Not a table of
+   advice by class: the odds for this pilot's own build, with everything about it counted.
 3. **Work that asks for a class.** One open contract on the board asks for a class and pays more
    to a pilot who wins it as one.
 4. An APK after every step. No battle changes: nothing here touches a rule of combat or the
@@ -28,14 +28,16 @@ the other half of that: the last one made the kinds, this one makes a pilot use 
 
 - No fourth saved build, and no editing of a build from the briefing: the garage is where builds
   are made.
-- No hint for contracts the board rolls or for the arena: only fixed contracts are measured.
-- No penalty for flying a class that does not suit. It is advice.
+- No promise in the odds: they are what the game's automatic pilot makes of the contract, which a
+  careful pilot beats and a careless one does not reach. They say so.
 
 ## What would make it a failure
 
 - A build fitted at the briefing that may not deploy, or a contract started in another build than
   the briefing showed.
-- Advice that is wrong: a class named as suiting a contract it loses.
+- Odds that are not the odds of the fight that follows: counted without the pilot's perks, the
+  bench's work, the difficulty set, the wingman hired or the Overdrive fitted.
+- A briefing that stutters on the handheld while the odds are worked out.
 - A briefing that no longer fits its panel, in either language.
 
 ## How it works
@@ -57,15 +59,29 @@ that builds saved in the garage can be chosen here.
 Not on a contract flown in a lent mech, a drill, or the Gauntlet: those are not flown in the
 pilot's build.
 
-### What suits (M2)
+### The odds (M2)
 
-For each contract of the story, the seven classes' builds for that stage of the story are flown
-through it by the game's own automatic pilot, and the classes that do best are written down in a
-table (`src/content/suits.ts`). A class suits when it is within a few points of the best and wins
-more often than not; at most three are named, best first. The build row's page says which classes
-suit the contract and whether the build chosen is one; the class in the header is lit when it is.
-A test flies the same fights with fewer battles and holds the table to it: no class named may be
-far behind the best, and the best measured may not be missing.
+A first plan was a table: for each contract of the story, the classes that do best in it, measured
+with each class's build for that stage. Measuring it showed why not. In twenty of the story's
+twenty-eight contracts every class wins nine times in ten with its stage's build, so the table
+says "anything" nearly everywhere; where it says more, what matters is which build falls behind
+(a bastion wins one war contract one time in four), and a table by class says nothing about the
+build a pilot actually owns.
+
+So the briefing works the odds out for the build chosen. The contract is flown twenty times by the
+game's own automatic pilot in that build, set up exactly as the fight that follows would be: the
+pilot's perks, the bench's work, the difficulty, the Overdrive fitted, the wingman hired, the offer
+that is showing; for a mirror match, against a mirror of that build. The wins are counted and
+written in the header under the class (`ODDS 17/20`) and on the build's page. Turning to another
+build, hiring or sending home a wingman, or turning to the other side's offer counts afresh; what
+was counted before is kept for when the pilot turns back.
+
+One flight is flown a frame, so that the briefing goes on writing itself out while the count
+runs; until it is done the header says that it is counting. The flights are always the same
+flights: the same build on the same contract gets the same odds every time it is looked at. In
+the game's hurried mode (the tests', the career bot's) nothing is counted.
+
+Not on a contract flown in a lent mech or a drill.
 
 ### Work that asks for a class (M3)
 
@@ -84,9 +100,11 @@ For choosing the build:
 3. **Choosing a class and letting the game fit its suggested build.** It would buy and sell on
    the pilot's behalf, which is nobody's idea of a briefing.
 
-For the advice: a rule of thumb from what the contract fields (a swarm wants a salvo, a field
-wants one great shot) was set against measuring. Measuring is what the project is set up to do,
-and a rule of thumb would be wrong wherever the fights are not what they look like.
+For what suits a contract, three ways were weighed: a rule of thumb from what the contract fields
+(a swarm wants a salvo, a field wants one great shot), a table by class from measurement, and the
+odds of the pilot's own build worked out on the spot (chosen). The first is wrong wherever a fight
+is not what it looks like; the second was measured and says little (above); the third is the only
+one that is about the build on the page, and it covers the board's contracts and the arena too.
 
 ## Constraints
 
@@ -96,5 +114,5 @@ and a rule of thumb would be wrong wherever the fights are not what they look li
 
 ## Left to the builder
 
-Where the class stands in the header, the words on the build's page, how many points count as
-"within a few", what the asked class pays, and how the board chooses which contract asks.
+Where the class stands in the header, the words on the build's page, how many flights make the
+odds, what the asked class pays, and how the board chooses which contract asks.

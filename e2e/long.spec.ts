@@ -99,12 +99,12 @@ test('the other offer: a later telling has two offers for a contract; the other 
   await choose(page, 'hadron-1');
   await waitForScreen(page, 'briefing');
   expect(await briefing(page)).toMatchObject({ mission: 'hadron-1', offers: 2, turned: false, client: 'Director Brenn, Hadron Mining', reward: 2400 });
-  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Accept', 'Wingman', 'Other offer', 'Back']);
+  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Accept', 'Build', 'Wingman', 'Other offer', 'Back']);
   await quiet(page);
   await page.screenshot({ path: shot('briefing-two-offers') });
   await choose(page, 'other');
   expect(await briefing(page)).toMatchObject({ mission: 'hadron-1', offers: 2, turned: true, client: 'Tamsin, The Undertow', reward: 1350 });
-  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Accept', 'First offer', 'Back']);
+  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Accept', 'Build', 'First offer', 'Back']);
   await page.screenshot({ path: shot('briefing-other-offer') });
 
   // Their fight: not the drones of the first offer but the crew sent to clear the seam, with the tank firing for the pilot.
@@ -144,10 +144,10 @@ test('the other offer in Dutch: the header and the rows fit, and the fight for t
   await choose(page, 'contracts');
   await choose(page, 'hadron-2');
   await waitForScreen(page, 'briefing');
-  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Aannemen', 'Wingman', 'Ander bod', 'Terug']);
+  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Aannemen', 'Build', 'Wingman', 'Ander bod', 'Terug']);
   await choose(page, 'other');
   expect(await briefing(page)).toMatchObject({ mission: 'hadron-2', turned: true, client: 'Tamsin, de Undertow', reward: 1650 });
-  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Aannemen', 'Wingman', 'Eerste bod', 'Terug']);
+  expect((await snap(page)).menu.items.map((item) => item.label)).toEqual(['Aannemen', 'Build', 'Wingman', 'Eerste bod', 'Terug']);
   await quiet(page);
   await page.screenshot({ path: shot('briefing-other-offer-nl') });
   await choose(page, 'accept');

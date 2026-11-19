@@ -379,6 +379,25 @@ describe('what the app is asked to fit', () => {
     expect(savedGame(store).build).toEqual(BASTION);
   });
 
+  test('what may deploy is judged as the garage judges it, with the bench\'s work counted: a build only the bench makes fit to fly is offered, and fitted', () => {
+    // A hungry frame on the starter's generator with one weapon, a sunlance: twenty of energy short of firing it as the parts are sold.
+    const hungry: Build = { ...STARTER_BUILD, head: 'head-auditor', core: 'core-sterling', arms: 'arms-shrike', fcs: 'fcs-omni', rightHand: undefined, shoulder: 'wpn-sunlance' };
+    const owner = wearing(wearing(quiet(done('intro-1', 'intro-2')), hungry), STARTER_BUILD);
+    const base = { ...owner, loadouts: [hungry, null, null] };
+    // As sold: not offered, and asked for all the same it starts nothing.
+    const plain = inHub(base);
+    expect(plain.app.sorties().map((sortie) => sortie.slot)).toEqual([null]);
+    plain.app.startMission('patrol', false, null, false, 0);
+    expect(snap(plain.app).screen).toBe('hub');
+    expect(savedGame(plain.store).build).toEqual(STARTER_BUILD);
+    // One step at the bench on the generator gives it those twenty: offered, and fitted when accepted.
+    const tuned = inHub({ ...base, tuning: { 'gen-kd1': 1 } });
+    expect(tuned.app.sorties().map((sortie) => sortie.slot)).toEqual([null, 0]);
+    tuned.app.startMission('patrol', false, null, false, 0);
+    expect(snap(tuned.app).screen).toBe('battle');
+    expect(savedGame(tuned.store).build).toEqual(hungry);
+  });
+
   test('what can be flown is what the row turns through, and a drill fits nothing whatever it is asked', () => {
     const { app } = inHub(threeBuilds());
     expect(app.sorties().map((sortie) => sortie.slot)).toEqual([null, 0, 1]);

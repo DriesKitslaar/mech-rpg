@@ -85,14 +85,14 @@ export class BriefingScreen implements Screen {
   private other: Mission | null;
   /**
    * What the contract can be taken in, the build on the floor first, and which of them is chosen. Empty for a
-   * contract that is not flown in the pilot's own machine: a lent mech, a drill.
+   * contract that is flown in a mech that is lent: the patrol of a pilot whose own cannot deploy, and every drill.
    */
   private builds: Sortie[];
   private chosen = 0;
 
   constructor(private app: App, private first: Mission) {
     this.other = app.otherOffer(first);
-    this.builds = first.loaner === undefined && !isDrill(first) ? app.sorties() : [];
+    this.builds = first.loaner === undefined ? app.sorties() : [];
     this.turnTo(first);
   }
 
