@@ -96,6 +96,8 @@ export interface Mission {
   elite?: EnemyMark;
   /** The class of machine an open contract asks for: won in a build of that class it pays more. */
   asks?: Archetype;
+  /** Set on a duel with a master of the arena: the class whose crown is fought for. Won in a build of that class, the crown is the pilot's; see masters.ts. */
+  crown?: Archetype;
   /** Set on an arena fight: the rank of the opponent. */
   arenaRank?: number;
   /** Set on a training drill: the mech that is lent for it. See training.ts. */

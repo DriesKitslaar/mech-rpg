@@ -1,4 +1,4 @@
-import { archetypeOf, type Archetype } from './archetype';
+import { CLASS_AI, archetypeOf } from './archetype';
 import { MIRROR_SCALE } from './arena';
 import { MAX_ENEMIES } from './battle';
 import { MECH_ENEMIES, STORY_ENEMIES } from './board';
@@ -7,7 +7,7 @@ import type { Mission } from './campaign';
 import type { Settlement } from './economy';
 import { checkLoadout, type GameState } from './game';
 import { tunedCatalog } from './tuning';
-import type { AiProfile, Catalog, EnemyDef } from './types';
+import type { Catalog, EnemyDef } from './types';
 
 /**
  * The range: a page of the simulator where the pilot's own build is flown against any machine met,
@@ -78,11 +78,6 @@ export function parseSpar(id: string): number | null {
   return found ? Number(found[1]) : null;
 }
 
-/** How the game flies a build of each class: what it aims at, and whether it darts in and out. */
-export const SPAR_AI: Record<Archetype, AiProfile> = {
-  duellist: 'bruiser', marksman: 'gunner', artillery: 'sprayer', lancer: 'gunner', bastion: 'bruiser', skirmisher: 'skirmisher', allrounder: 'gunner',
-};
-
 /**
  * The saved builds that can be sparred with, by slot: those that are there, whose parts are all still
  * owned, and that may deploy as the garage reads them, with the bench's work counted. The build the
@@ -97,7 +92,7 @@ export function sparSlots(game: GameState, catalog: Catalog): number[] {
 export function sparEnemy(game: GameState, slot: number, name: string, catalog: Catalog): EnemyDef {
   const build = { ...game.loadouts[slot]! };
   return {
-    id: SPAR_ENEMY(slot), name, ai: SPAR_AI[archetypeOf(build, catalog)], sprite: 'enemy-rival', composed: true, build,
+    id: SPAR_ENEMY(slot), name, ai: CLASS_AI[archetypeOf(build, catalog)], sprite: 'enemy-rival', composed: true, build,
     paint: game.paint === 'obsidian' ? 'bone' : 'obsidian',
     ...(game.tuning && Object.keys(game.tuning).length > 0 ? { tune: { ...game.tuning } } : {}),
   };

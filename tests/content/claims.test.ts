@@ -1,11 +1,14 @@
 import { chooseEnemyAction } from '../../src/core/ai';
-import { ARCHETYPES, QUICK_LEGS, SLOW_LEGS, archetypeOf } from '../../src/core/archetype';
+import { ARCHETYPES, CLASS_AI, QUICK_LEGS, SLOW_LEGS, archetypeOf } from '../../src/core/archetype';
 import {
   HEAT_LIMIT, MAX_ENEMIES, OVERKILL, SHATTER, activeUnit, applyAction, checkAction, createBattle, guardFactor, previewShot, type BattleState,
 } from '../../src/core/battle';
 import { ASK_BONUS, ASK_TIER, BOARD_SIZE, PAY_PER_HEAD, swarmContract } from '../../src/core/board';
 import { FORECAST_PLAYS } from '../../src/core/forecast';
-import { RANGE_MAX, SPAR_AI, rangeLimit, sparEnemy } from '../../src/core/range';
+import { CHAMPION_RANK } from '../../src/core/arena';
+import { MASTER_PURSE, crownHeld, masterPurse, mastersOpen, recordMasterWin } from '../../src/core/masters';
+import { RANGE_MAX, rangeLimit, sparEnemy } from '../../src/core/range';
+import { MASTERS } from '../../src/content/masters';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { newGame } from '../../src/core/game';
 import { NAME_AT, RENOWN, renownOf } from '../../src/core/renown';
@@ -89,9 +92,30 @@ describe('sparring', () => {
     const game = { ...newGame(CATALOG, STARTER_BUILD), loadouts: [STARTER_BUILD, null, null], tuning: { 'gen-kd1': 1 }, paint: 'obsidian' };
     const opponent = sparEnemy(game, 0, 'Saved Build 1', CATALOG);
     expect(text).toContain('the same parts, with the bench\'s work on them, in other colours, flown as its class is flown');
-    expect(opponent).toMatchObject({ build: STARTER_BUILD, tune: { 'gen-kd1': 1 }, ai: SPAR_AI[archetypeOf(STARTER_BUILD, CATALOG)] });
+    expect(opponent).toMatchObject({ build: STARTER_BUILD, tune: { 'gen-kd1': 1 }, ai: CLASS_AI[archetypeOf(STARTER_BUILD, CATALOG)] });
     expect(opponent.paint).not.toBe(game.paint);
     expect(text).toMatch(/Nothing is billed, paid or counted\.$/);
+  });
+});
+
+describe('the masters', () => {
+  test('the manual says how many there are, who may challenge them, what the purse is, and what takes the crown', () => {
+    const text = topic('masters');
+    expect(text).toMatch(/^The arena's second page \(L1\/R1\): seven masters, one of each class, who take challenges from the champion\./);
+    expect(MASTERS).toHaveLength(7);
+    expect(MASTERS.map((master) => master.kind)).toEqual([...ARCHETYPES]);
+    const game = newGame(CATALOG, STARTER_BUILD);
+    expect([mastersOpen({ arenaRank: CHAMPION_RANK - 1 }), mastersOpen({ arenaRank: CHAMPION_RANK })]).toEqual([false, true]);
+    // Any build may fight one, for a purse: in full the first time, a quarter after.
+    expect(text).toContain('Any build may fight one, for a purse: in full the first time, a quarter after.');
+    const beaten = recordMasterWin(game, 'bastion', 'lancer');
+    expect([masterPurse(game, 'bastion'), masterPurse(beaten, 'bastion')]).toEqual([MASTER_PURSE, MASTER_PURSE / 4]);
+    expect(crownHeld(beaten, 'bastion')).toBe(false);
+    // In a build of their own class, the crown.
+    expect(text).toContain('Beat a master in a build of their own class and the crown of that class is yours.');
+    expect(crownHeld(recordMasterWin(game, 'bastion', 'bastion'), 'bastion')).toBe(true);
+    expect(text).toMatch(/The briefing says which build that is\.$/);
+    expect(STRINGS.arena.pages.masters).toBe('MASTERS');
   });
 });
 

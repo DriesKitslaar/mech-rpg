@@ -1,6 +1,6 @@
 import { framePart, shieldOf, weaponIn } from './build';
 import { BUILD_SLOTS, ownedCount, type BuildSlot, type GameState } from './game';
-import { WEAPON_SLOTS, type Build, type Catalog } from './types';
+import { WEAPON_SLOTS, type AiProfile, type Build, type Catalog } from './types';
 
 /**
  * What kind of machine a build is, by what it carries and how its legs move: a handful of kinds,
@@ -31,6 +31,14 @@ export function archetypeOf(build: Build, catalog: Catalog): Archetype {
   if (mobility !== undefined && mobility >= QUICK_LEGS) return 'skirmisher';
   return 'allrounder';
 }
+
+/**
+ * How the game flies a machine of each class when one is its to fly (a saved build sparred with, a
+ * master of the arena): what it aims at, and whether it darts in and out.
+ */
+export const CLASS_AI: { [kind in Archetype]: AiProfile } = {
+  duellist: 'bruiser', marksman: 'gunner', artillery: 'sprayer', lancer: 'gunner', bastion: 'bruiser', skirmisher: 'skirmisher', allrounder: 'gunner',
+};
 
 type Record = Pick<GameState, 'wonAs'>;
 

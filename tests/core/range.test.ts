@@ -3,11 +3,11 @@ import { MAX_ENEMIES } from '../../src/core/battle';
 import { MECH_ENEMIES, STORY_ENEMIES } from '../../src/core/board';
 import { settle } from '../../src/core/economy';
 import { startMissionBattle } from '../../src/core/mission';
-import { archetypeOf } from '../../src/core/archetype';
+import { CLASS_AI, archetypeOf } from '../../src/core/archetype';
 import { MIRROR_SCALE } from '../../src/core/arena';
 import { buy, newGame, type GameState } from '../../src/core/game';
 import {
-  RANGE_HALL, RANGE_MAX, SPAR_AI, SPAR_ENEMY, isRange, parseRange, parseSpar, rangeId, rangeKinds, rangeLimit, rangeMission, rangeSettlement, sparEnemy, sparId,
+  RANGE_HALL, RANGE_MAX, SPAR_ENEMY, isRange, parseRange, parseSpar, rangeId, rangeKinds, rangeLimit, rangeMission, rangeSettlement, sparEnemy, sparId,
   sparMission, sparSlots, type RangeText, type SparText,
 } from '../../src/core/range';
 import type { Build } from '../../src/core/types';
@@ -153,8 +153,8 @@ describe('sparring: a saved build of the pilot\'s own as the opponent', () => {
     const tuned = sparEnemy({ ...game, tuning: { 'gen-kd1': 2 }, paint: 'obsidian' }, 2, 'Saved Build 3', CATALOG);
     expect(tuned).toMatchObject({ id: 'spar-2', ai: 'bruiser', build: ARCHETYPE_BUILDS.bastion.war, tune: { 'gen-kd1': 2 }, paint: 'bone' });
     // Each class has its way of flying.
-    expect(SPAR_AI).toEqual({ duellist: 'bruiser', marksman: 'gunner', artillery: 'sprayer', lancer: 'gunner', bastion: 'bruiser', skirmisher: 'skirmisher', allrounder: 'gunner' });
-    expect(sparEnemy({ ...game, loadouts: [HALO, null, null] }, 0, 'x', CATALOG).ai).toBe(SPAR_AI[archetypeOf(HALO, CATALOG)]);
+    expect(CLASS_AI).toEqual({ duellist: 'bruiser', marksman: 'gunner', artillery: 'sprayer', lancer: 'gunner', bastion: 'bruiser', skirmisher: 'skirmisher', allrounder: 'gunner' });
+    expect(sparEnemy({ ...game, loadouts: [HALO, null, null] }, 0, 'x', CATALOG).ai).toBe(CLASS_AI[archetypeOf(HALO, CATALOG)]);
   });
 
   test('the contract: one fight in the hall against that build, as a mirror match is scaled, for no pay', () => {

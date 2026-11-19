@@ -15,7 +15,8 @@ import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import {
   TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, learn, newGame, type GameState, type LightDetail, type Settings,
 } from '../core/game';
-import { archetypeOf, recordWinAs, type Archetype } from '../core/archetype';
+import { ARCHETYPES, archetypeOf, recordWinAs, type Archetype } from '../core/archetype';
+import { crownHeld, crownSettlement, isMaster, masterMission, mastersOpen, parseMaster, recordMasterWin } from '../core/masters';
 import { startFight, type Fight } from '../core/mission';
 import { fitSortie, sortieBuilds, type Sortie } from '../core/sortie';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
@@ -33,6 +34,7 @@ import { drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordD
 import { tunedCatalog, type Tuning } from '../core/tuning';
 import type { BuildError, Catalog, EnemyDef, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
+import { masterOf } from '../content/masters';
 import { BOARD_TEXT } from '../content/board';
 import { UNITS, WORLD } from '../content/codex';
 import { FINDS } from '../content/finds';
@@ -351,8 +353,10 @@ class MissionHost implements Screen {
     }
     const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
-    // A contract that asked for a class pays more to a pilot who won it as one.
-    const settlement = askSettlement(rankSettlement(bill, performance), this.mission, this.app.flownAs(this.mission));
+    // A contract that asked for a class pays more to a pilot who won it as one; a master beaten in a machine of
+    // their own class gives up the crown, which the bill says before the win is written down.
+    const flown = this.app.flownAs(this.mission);
+    const settlement = crownSettlement(askSettlement(rankSettlement(bill, performance), this.mission, flown), this.mission, flown, this.app.game!);
     this.count();
     const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state), overdrives: this.overdrives });
     // What the debt limit wrote off is shown with the bill.
@@ -720,7 +724,10 @@ export class App {
     const named = before && nameRank(game) > nameRank(before) ? nameRank(game) : 0;
     const nameToasts: Toast[] = named === 0 ? []
       : [{ id: `name:${named}`, heading: STRINGS.renown.earned, title: STRINGS.renown.names[named - 1], sound: 'medal' }];
-    this.toasts.push(...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
+    // A crown that has just been taken is said once, by what its holder is now called.
+    const crownToasts: Toast[] = !before ? [] : ARCHETYPES.filter((kind) => crownHeld(game, kind) && !crownHeld(before, kind))
+      .map((kind) => ({ id: `crown:${kind}`, heading: STRINGS.arena.masters.taken, title: STRINGS.arena.masters.titles[kind], sound: 'medal' }));
+    this.toasts.push(...crownToasts, ...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
     this.game = game;
     this.saveFailed = !this.file.save(game);
     // Options that could not be stored when they were changed go with the next thing that can be.
@@ -800,6 +807,22 @@ export class App {
 
   openMirrorBriefing(): void {
     const mission = this.mirrorFight();
+    if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
+  }
+
+  /**
+   * The duel with the master of a class, if the masters take this pilot's challenge. A pilot who holds that
+   * crown hears the arena's usual word after a win; anyone else is told where the crown goes.
+   */
+  private masterFight(kind: Archetype): Mission | undefined {
+    const game = this.game;
+    if (!game || !this.sideWorkOpen() || !mastersOpen(game)) return undefined;
+    const A = STRINGS.arena;
+    return masterMission(game, masterOf(kind), { client: A.client, win: crownHeld(game, kind) ? A.win : A.masters.win });
+  }
+
+  openMasterBriefing(kind: Archetype): void {
+    const mission = this.masterFight(kind);
     if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
@@ -1026,7 +1049,7 @@ export class App {
   closeBriefing(mission: Mission): void {
     if (isDrill(mission) || isRange(mission)) this.show('training', new TrainingScreen(this, mission.id));
     else if (mission.id === MIRROR_ID) this.show('arena', new ArenaScreen(this, MIRROR));
-    else if (isCup(mission)) this.show('arena', new ArenaScreen(this, mission.id));
+    else if (isCup(mission) || isMaster(mission)) this.show('arena', new ArenaScreen(this, mission.id));
     else if (mission.arenaRank !== undefined) this.show('arena', new ArenaScreen(this, `rank-${mission.arenaRank}`));
     else this.openHub(mission.replay ? 'archive' : 'contracts', mission.id);
   }
@@ -1060,6 +1083,8 @@ export class App {
     if (missionId.startsWith('gauntlet-')) return this.gauntletFloor()?.id === missionId ? this.gauntletFloor() : undefined;
     if (missionId === MIRROR_ID) return this.mirrorFight();
     if (missionId.startsWith('cup-')) return this.cupFight(missionId);
+    const master = parseMaster(missionId);
+    if (master) return this.masterFight(master);
     const arena = /^arena-(\d+)$/.exec(missionId);
     return arena ? this.arenaFight(Number(arena[1])) : this.missions().find((m) => m.id === missionId);
   }
@@ -1192,6 +1217,8 @@ export class App {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
       else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);
       else if (isCup(mission)) next = recordCupWin(next, mission.id);
+      // A master beaten is beaten whatever was flown; the crown goes with the class of the build it was flown in.
+      else if (mission.crown !== undefined) next = recordMasterWin(next, mission.crown, kind);
       else if (MISSIONS.some((m) => m.id === mission.id)) {
         // Flown for the other side, it is remembered as that: an answer, like the story's other decisions.
         if (mission.turned && !mission.replay) next = decide(next, mission.turned.question, mission.turned.answer);

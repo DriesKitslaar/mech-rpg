@@ -3,6 +3,8 @@
  * colour scheme. Pure pixel arithmetic; the sprite store applies it and the art pipeline uses
  * `analyse` to record, per family, what is armour and what is trim.
  */
+import type { Archetype } from '../core/archetype';
+
 export type RGB = [number, number, number];
 
 /** What the recolouring needs to know about the family a layer was cut from. */
@@ -46,7 +48,21 @@ export const PAINTS: PaintScheme[] = [
   { id: 'midnight', name: 'Midnight', hue: 232, sat: 0.55, accentHue: 40, accentSat: 0.95, shade: 0.08 },
 ];
 
-export const paintById = (id: string): PaintScheme | undefined => PAINTS.find((p) => p.id === id);
+/**
+ * The paints of the arena's masters, one a class: each is worn by the master of that class, and after
+ * them only by the pilot who holds that class's crown. They are no part of `PAINTS`, which anyone may wear.
+ */
+export const CROWN_PAINTS: (PaintScheme & { crown: Archetype })[] = [
+  { id: 'mercury', name: 'Mercury', crown: 'duellist', hue: 205, sat: 0.1, accentHue: 275, accentSat: 0.85, shade: -0.16 },
+  { id: 'abyss', name: 'Abyss', crown: 'marksman', hue: 245, sat: 0.5, accentHue: 150, accentSat: 0.85, shade: 0.1 },
+  { id: 'brass', name: 'Brass', crown: 'artillery', hue: 46, sat: 0.6, accentHue: 172, accentSat: 0.8, shade: 0.02 },
+  { id: 'ultraviolet', name: 'Ultraviolet', crown: 'lancer', hue: 302, sat: 0.72, accentHue: 182, accentSat: 0.95 },
+  { id: 'basalt', name: 'Basalt', crown: 'bastion', hue: 18, sat: 0.2, accentHue: 40, accentSat: 0.95, shade: 0.1 },
+  { id: 'kingfisher', name: 'Kingfisher', crown: 'skirmisher', hue: 194, sat: 0.62, accentHue: 28, accentSat: 0.95, shade: -0.08 },
+  { id: 'patina', name: 'Patina', crown: 'allrounder', hue: 176, sat: 0.42, accentHue: 22, accentSat: 0.85, shade: 0.03 },
+];
+
+export const paintById = (id: string): PaintScheme | undefined => PAINTS.find((p) => p.id === id) ?? CROWN_PAINTS.find((p) => p.id === id);
 
 /** Hue in degrees, saturation and lightness in 0..1. */
 export function toHsl(r: number, g: number, b: number): [number, number, number] {

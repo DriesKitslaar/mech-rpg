@@ -1,5 +1,8 @@
+import { ARCHETYPES, type Archetype } from '../core/archetype';
 import { ARENA_RANKS, CHAMPION_RANK, CUPS, arenaPurse, checkChallenge, cupOpen, cupPurse, cupWon, mirrorEnemy, mirrorOpen, mirrorPurse, shownRanks } from '../core/arena';
+import { crownHeld, crownsHeld, masterBeaten, masterId, masterPurse, mastersOpen, parseMaster } from '../core/masters';
 import { ARENA, ARENA_ENEMIES } from '../content/arena';
+import { MASTER_ENEMIES, masterOf } from '../content/masters';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -8,26 +11,37 @@ import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
 import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { idlePose } from './pose';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawText, wrap } from './widgets';
+import { COLORS, LINE, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
 
 const A = STRINGS.arena;
+const M = A.masters;
+const C = STRINGS.classes;
 
 /** The entry of the list that is the mirror match. No opponent has this id. */
 export const MIRROR = 'mirror';
 /** Rows of the list shown at a time. */
 const ROWS = 10;
+/** The arena's pages: the ladder with the mirror match and the cups under it, and the masters who stand apart from it. */
+export type ArenaPage = 'ladder' | 'masters';
+const PAGES: ArenaPage[] = ['ladder', 'masters'];
+/** How it stands between the pilot and a master. */
+export type MasterState = 'locked' | 'open' | 'beaten' | 'crown';
 
 /**
- * The ladder: ten opponents, fought in order, each shown with their mech before the challenge. A
- * champion also sees the five of the back room. Under them all is the mirror match.
+ * The arena. Its first page is the ladder: ten opponents, fought in order, each shown with their
+ * mech before the challenge; a champion also sees the five of the back room, and under them all are
+ * the mirror match and the cups. Its second is the masters: one of each class, who take challenges
+ * from the champion.
  */
 export class ArenaScreen implements Screen {
-  private list: MenuList;
+  private page: ArenaPage;
+  private ladder: MenuList;
+  private masters: MenuList;
   private clock = 0;
   /** How many ranks this pilot is shown. */
   private shown: number;
 
-  /** `at` puts the cursor on that entry, for returning from its briefing. */
+  /** `at` puts the cursor on that entry, for returning from its briefing: a rank, the mirror match, a cup, or a master's duel by its id. */
   constructor(private app: App, at?: string) {
     const game = app.game!;
     this.shown = shownRanks(game);
@@ -44,17 +58,40 @@ export class ArenaScreen implements Screen {
     ];
     // The cursor starts on the next opponent, or on the last one once there is nobody left to beat.
     const index = items.findIndex((item) => item.id === at);
-    this.list = new MenuList(items, index >= 0 ? index : Math.min(game.arenaRank, this.shown - 1));
+    this.ladder = new MenuList(items, index >= 0 ? index : Math.min(game.arenaRank, this.shown - 1));
+    // The masters, by their class: what the duel pays, or that the crown is the pilot's already.
+    const open = mastersOpen(game);
+    const fought = at ? parseMaster(at) : null;
+    this.masters = new MenuList(ARCHETYPES.map((kind) => ({
+      id: masterId(kind), label: C.names[kind], enabled: open,
+      note: !open ? A.locked : crownHeld(game, kind) ? M.crowned : String(masterPurse(game, kind)),
+    })), fought ? ARCHETYPES.indexOf(fought) : 0);
+    this.page = fought ? 'masters' : 'ladder';
   }
 
-  /** The opponent under the cursor; none while it is on the mirror match. */
+  private get list(): MenuList {
+    return this.page === 'ladder' ? this.ladder : this.masters;
+  }
+
+  /** The opponent under the cursor; none while it is on the mirror match or a cup, or on the masters' page. */
   private get opponent() {
-    return this.list.selected?.id.startsWith('rank-') ? ARENA[this.list.cursor] : undefined;
+    return this.page === 'ladder' && this.ladder.selected?.id.startsWith('rank-') ? ARENA[this.ladder.cursor] : undefined;
   }
 
   /** The cup under the cursor, if it is on one. */
   private get cup() {
-    return CUPS.find((cup) => cup.id === this.list.selected?.id);
+    return this.page === 'ladder' ? CUPS.find((cup) => cup.id === this.ladder.selected?.id) : undefined;
+  }
+
+  /** The class whose master is under the cursor, on the masters' page. */
+  private get master(): Archetype | null {
+    return this.page === 'masters' ? ARCHETYPES[this.masters.cursor] : null;
+  }
+
+  /** How it stands with the master of a class: not open to this pilot yet, open, beaten in another machine, or the crown held. */
+  private stateOf(kind: Archetype): MasterState {
+    const game = this.app.game!;
+    return !mastersOpen(game) ? 'locked' : crownHeld(game, kind) ? 'crown' : masterBeaten(game, kind) ? 'beaten' : 'open';
   }
 
   update(dtMs: number): void {
@@ -65,15 +102,24 @@ export class ArenaScreen implements Screen {
     if (action === 'up') this.list.move(-1);
     else if (action === 'down') this.list.move(1);
     else if (action === 'cancel') this.app.go('hub');
-    else if (action === 'confirm' && this.list.selected?.enabled) {
-      if (this.opponent) this.app.openArenaBriefing(this.opponent.rank);
+    else if (action === 'prev' || action === 'next') {
+      this.page = PAGES[(PAGES.indexOf(this.page) + (action === 'next' ? 1 : -1) + PAGES.length) % PAGES.length];
+    } else if (action === 'confirm' && this.list.selected?.enabled) {
+      if (this.master) this.app.openMasterBriefing(this.master);
+      else if (this.opponent) this.app.openArenaBriefing(this.opponent.rank);
       else if (this.cup) this.app.openCupBriefing(this.cup.id);
       else this.app.openMirrorBriefing();
     }
   }
 
   view(): ScreenView {
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, arena: { rank: this.app.game!.arenaRank, of: this.shown, cups: this.app.game!.cups ?? [] } };
+    const game = this.app.game!;
+    const master = this.master;
+    return {
+      menu: { items: this.list.items, cursor: this.list.cursor }, arena: { rank: game.arenaRank, of: this.shown, cups: game.cups ?? [] }, page: this.page,
+      // On the masters' page: whose master is under the cursor, and how it stands with them.
+      master: master ? { kind: master, state: this.stateOf(master) } : null,
+    };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -87,8 +133,9 @@ export class ArenaScreen implements Screen {
     // The selected opponent's mech, facing left towards the list. For the mirror match, the pilot's own in the house paint.
     const o = this.opponent;
     const cup = this.cup;
+    const master = this.master;
     // For a cup, the last of its three: the one the purse has to be taken from.
-    const shown = o ? ARENA_ENEMIES[o.enemy] : cup ? ARENA_ENEMIES[ARENA[cup.ranks[2] - 1].enemy] : mirrorEnemy(game, A.mirror.name);
+    const shown = master ? MASTER_ENEMIES[masterId(master)] : o ? ARENA_ENEMIES[o.enemy] : cup ? ARENA_ENEMIES[ARENA[cup.ranks[2] - 1].enemy] : mirrorEnemy(game, A.mirror.name);
     const { fast } = this.app.deps;
     const calm = this.app.settings.calm === true;
     const clock = fast ? 0 : this.clock;
@@ -103,25 +150,46 @@ export class ArenaScreen implements Screen {
 
     drawPanel(ctx, 0, 0, LOGICAL_W, 14);
     drawText(ctx, A.heading, 5, 1, { color: COLORS.accent });
-    drawText(ctx, A.yourRank(game.arenaRank, this.shown), LOGICAL_W - 5, 1, { align: 'right', color: COLORS.dim });
+    drawTabs(ctx, LOGICAL_W - 5, 1, PAGES.map((page) => A.pages[page]), PAGES.indexOf(this.page));
 
+    // The list, with what the page counts above it: the pilot's rank on the ladder, or the crowns held.
     drawPanel(ctx, 4, 18, 150, 128);
+    drawText(ctx, master ? M.crowns(crownsHeld(game), ARCHETYPES.length) : A.yourRank(game.arenaRank, this.shown), 10, 22, { color: COLORS.dim, size: 10 });
     drawText(ctx, A.purse, 146, 22, { align: 'right', color: COLORS.dim, size: 10 });
     drawList(ctx, this.list, 10, 32, 134, ROWS);
 
     drawPanel(ctx, 4, 184, LOGICAL_W - 8, 82);
-    const state = cup ? (!cupOpen(game, cup) ? A.locked : cupWon(game, cup) ? A.cups.won : A.cups.open)
-      : !o ? (this.list.selected?.enabled ? A.next : A.locked)
-      : o.rank <= game.arenaRank ? A.beaten : o.rank === game.arenaRank + 1 ? A.next : A.locked;
-    drawText(ctx, (o ? o.name : cup ? A.cups.names[cup.id] : A.mirror.title).toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
-    drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === A.locked ? COLORS.danger : state === A.next ? COLORS.armor : COLORS.dim });
-    // The one at the top of what this pilot can see has a word for whoever has beaten them.
-    const last = o && o.rank === game.arenaRank && (o.rank === CHAMPION_RANK || o.rank === ARENA_RANKS);
-    const cupNames = cup ? cup.ranks.map((rank) => ARENA[rank - 1].name) : [];
-    const words = cup ? (cupOpen(game, cup) ? A.cups.style(cupNames) : A.cups.locked(cupNames[2]))
-      : !o ? (this.list.selected?.enabled ? A.mirror.style : A.mirror.locked)
-      : last ? (o.rank === ARENA_RANKS ? A.apex : A.champion) : o.style;
-    wrap(words, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + i * LINE));
+    if (master) this.drawMaster(ctx, master);
+    else {
+      const state = cup ? (!cupOpen(game, cup) ? A.locked : cupWon(game, cup) ? A.cups.won : A.cups.open)
+        : !o ? (this.list.selected?.enabled ? A.next : A.locked)
+        : o.rank <= game.arenaRank ? A.beaten : o.rank === game.arenaRank + 1 ? A.next : A.locked;
+      drawText(ctx, (o ? o.name : cup ? A.cups.names[cup.id] : A.mirror.title).toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
+      drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === A.locked ? COLORS.danger : state === A.next ? COLORS.armor : COLORS.dim });
+      // The one at the top of what this pilot can see has a word for whoever has beaten them.
+      const last = o && o.rank === game.arenaRank && (o.rank === CHAMPION_RANK || o.rank === ARENA_RANKS);
+      const cupNames = cup ? cup.ranks.map((rank) => ARENA[rank - 1].name) : [];
+      const words = cup ? (cupOpen(game, cup) ? A.cups.style(cupNames) : A.cups.locked(cupNames[2]))
+        : !o ? (this.list.selected?.enabled ? A.mirror.style : A.mirror.locked)
+        : last ? (o.rank === ARENA_RANKS ? A.apex : A.champion) : o.style;
+      wrap(words, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + i * LINE));
+    }
     drawText(ctx, A.back, LOGICAL_W / 2, 253, { align: 'center', color: COLORS.dim });
+  }
+
+  /**
+   * The master of a class: their name, how it stands with them, what they are the master of, and how they
+   * fight. While the masters are not open to this pilot, whom they take challenges from stands where the
+   * line about their fighting would.
+   */
+  private drawMaster(ctx: CanvasRenderingContext2D, kind: Archetype): void {
+    const master = masterOf(kind);
+    const state = this.stateOf(kind);
+    const word = { locked: A.locked, open: M.open, beaten: A.beaten, crown: M.crowned }[state];
+    const color = { locked: COLORS.danger, open: COLORS.armor, beaten: COLORS.dim, crown: COLORS.accent }[state];
+    drawText(ctx, master.name.toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
+    drawText(ctx, word, LOGICAL_W - 12, 191, { align: 'right', color });
+    drawText(ctx, M.titles[kind].toUpperCase(), 12, 207, { color: COLORS.armor });
+    wrap(state === 'locked' ? M.locked : master.style, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + (i + 1) * LINE));
   }
 }

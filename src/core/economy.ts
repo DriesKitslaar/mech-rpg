@@ -29,6 +29,8 @@ export interface Settlement {
   asked?: { kind: Archetype; bonus: number };
   /** Set on the bill of a fight on the range: it is what a real flight would have cost, shown and not booked; see range.ts. */
   simulated?: true;
+  /** The class whose crown this duel took from its master; see masters.ts. */
+  crowned?: Archetype;
 }
 
 /** Pilot perks that change the bill: a fraction more pay, a fraction off ammunition and repairs. */

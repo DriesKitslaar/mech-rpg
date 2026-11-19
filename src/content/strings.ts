@@ -239,8 +239,27 @@ export const STRINGS = {
     heading: 'ARENA', client: 'Arena Office', win: 'The crowd got what it paid for. So did you.',
     rank: (n: number) => `RANK ${n}`, purse: 'PURSE', rematch: 'REMATCH',
     next: 'NEXT OPPONENT', beaten: 'BEATEN', locked: 'LOCKED', champion: 'You are the champion of Varn.',
-    yourRank: (n: number, of: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/${of}`), fight: 'ARENA FIGHT', back: 'A: challenge   B: back',
+    yourRank: (n: number, of: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/${of}`), fight: 'ARENA FIGHT', back: 'A: challenge   L1/R1: page   B: back',
     apex: 'There is nobody left to beat. The back room drinks to you.',
+    // The arena's two pages: the ladder, and the masters who stand apart from it.
+    pages: { ladder: 'LADDER', masters: 'MASTERS' },
+    // The masters: one of each class. Beaten in a machine of their own class, a master gives up the crown.
+    masters: {
+      // What the master of each class is called, and after them whoever takes their crown.
+      titles: {
+        duellist: 'Master Duellist', marksman: 'Master Sharpshooter', artillery: 'Master of Artillery', lancer: 'Master Lancer', bastion: 'Master Bastion',
+        skirmisher: 'Master Skirmisher', allrounder: 'Master of All Trades',
+      },
+      tag: "MASTER'S DUEL: one against one, for the purse",
+      // What the crown asks, in the briefing: a win as the class, named as a contract that asks for one names it.
+      crown: (wanted: string) => `CROWN: WIN AS ${wanted}`,
+      held: 'YOU HOLD THIS CROWN',
+      crowns: (held: number, of: number) => `CROWNS ${held}/${of}`,
+      open: 'OPEN', crowned: 'CROWN',
+      locked: 'The masters take challenges from the champion of the ladder, and from nobody else.',
+      win: 'The purse is yours. The crown goes to whoever beats them at their own game.',
+      taken: 'CROWN TAKEN',
+    },
     // The cups: three of the ladder back to back.
     cups: {
       tag: 'ARENA CUP: three fights, no rest',
@@ -453,6 +472,8 @@ export const STRINGS = {
   scene: { continue: 'Press A to continue', yourCall: 'YOUR CALL', answer: 'UP/DOWN: choose   A: answer. It stands.' },
   settlement: {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
+    // The heading of a duel that took a master's crown.
+    crowned: 'THE CROWN IS YOURS',
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
     askBonus: (name: string) => `${name} bonus`,

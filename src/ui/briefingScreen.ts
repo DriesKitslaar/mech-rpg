@@ -5,6 +5,7 @@ import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
 import { advance, counted, newCount, type Count, type Forecast } from '../core/forecast';
 import { groundFor } from '../core/ground';
+import { crownHeld, isMaster } from '../core/masters';
 import type { Fight } from '../core/mission';
 import type { Sortie } from '../core/sortie';
 import { isRange, parseSpar } from '../core/range';
@@ -162,7 +163,7 @@ export class BriefingScreen implements Screen {
    * to turn to for what the contract pays more. Null when it asks for nothing, or nothing saved is of it.
    */
   private get fits(): number | null {
-    const { asks } = this.mission;
+    const asks = this.mission.asks ?? this.mission.crown;
     const found = asks ? this.builds.find((sortie) => sortie.slot !== null && archetypeOf(sortie.build, this.app.deps.catalog) === asks) : undefined;
     return found?.slot ?? null;
   }
@@ -243,6 +244,10 @@ export class BriefingScreen implements Screen {
         // The class the contract asks for, when it asks, and whether the build chosen is of it.
         // And the slot of the first saved build that is of it, for the pilot who would rather be paid for it.
         asks: this.mission.asks ? { kind: this.mission.asks, met: this.kind === this.mission.asks, fits: this.fits } : null,
+        // The crown a master's duel is fought for: whether the build chosen is of its class, whether the pilot holds it already,
+        // and the slot of the first saved build that is of it.
+        crown: this.mission.crown
+          ? { kind: this.mission.crown, met: this.kind === this.mission.crown, held: crownHeld(this.app.game!, this.mission.crown), fits: this.fits } : null,
         // How many offers there are for this contract, the client of the one showing, and whether that is the other side's.
         offers: this.other ? 2 : 1, client: this.mission.client, turned: this.mission === this.other,
       },
@@ -269,6 +274,7 @@ export class BriefingScreen implements Screen {
       : isRange(mission) ? STRINGS.training.rangeTag
       : mission.loaner !== undefined ? B.lent
       : mission.id.startsWith('cup-') ? STRINGS.arena.cups.tag
+      : isMaster(mission) ? STRINGS.arena.masters.tag
       : mission.arenaRank !== undefined || mission.id === MIRROR_ID ? STRINGS.arena.fight
       : mission.replay ? B.replay
       : isSwarm(mission) ? B.swarm
@@ -288,6 +294,16 @@ export class BriefingScreen implements Screen {
       const fits = this.fits;
       const wants = B.asks(B.wanted[mission.asks], Math.round(ASK_BONUS * 100));
       drawText(ctx, !met && fits !== null ? `${wants} ${B.asksBuild(fits + 1)}` : wants, 72, 51, { color: met ? COLORS.armor : COLORS.heat });
+    }
+    // A master's duel says on that line what the crown asks: a win as the master's own class. It is lit and
+    // points to a saved build as the line above does; a pilot who holds the crown is told that instead.
+    if (mission.crown) {
+      const M = STRINGS.arena.masters;
+      const held = crownHeld(this.app.game!, mission.crown);
+      const met = kind === mission.crown;
+      const fits = this.fits;
+      const asked = M.crown(B.wanted[mission.crown]);
+      drawText(ctx, held ? M.held : !met && fits !== null ? `${asked} ${B.asksBuild(fits + 1)}` : asked, 72, 51, { color: held || met ? COLORS.armor : COLORS.heat });
     }
     // What it will be taken in, in the corner the title leaves free: which build, and what kind of machine that is.
     // A saved build that was turned to stands out: it is not the one on the floor, and accepting will fit it.
