@@ -258,6 +258,20 @@ export const STRINGS_NL = {
     noPoints: 'Geen perkpunten. Win contracten voor levels.', maxed: 'Deze perk zit op de hoogste rang.',
     pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDAILLE', record: 'DOSSIER', classes: 'KLASSE' },
   },
+  stripes: {
+    held: (have: number, of: number) => `STREPEN ${have}/${of}`,
+    nextPoint: (at: number) => `PUNT BIJ ${at}`,
+    allPoints: 'ELK PUNT BINNEN',
+    nextStripe: (at: number) => `STREEP BIJ ${at} WINST`,
+    allThree: 'ALLE DRIE STREPEN',
+    points: (have: number, of: number, points: number, next: number | null) =>
+      `Strepen ${have}/${of}: ${points === 1 ? '1 punt' : `${points} punten`} tot nu${next === null ? '' : `, volgend bij ${next}`}.`,
+    earned: 'STREEP VERDIEND',
+    title: (kind: string, stripe: number) => `${kind} ${'I'.repeat(stripe)}`,
+    point: '+1 PUNT',
+    towards: (won: number, at: number) => `NAAR STREEP ${won}/${at}`,
+    thisWin: 'WIN DIT VOOR EEN STREEP',
+  },
   classes: {
     heading: 'EEN MACHINE IS DE EERSTE DIE PAST', won: 'WINST', yours: 'NU DE JOUWE',
     names: {

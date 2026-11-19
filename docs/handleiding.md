@@ -348,6 +348,31 @@ Een contract dat je wint in je eigen mecha telt voor de klasse van die mecha. De
 training en een geleende mecha tellen niet. Er zijn drie medailles: voor drie klassen proberen,
 voor 25 contracten in één klasse, en voor vijf contracten in elk van de zeven.
 
+### Strepen
+
+Een klasse geeft je een **streep** bij 3, bij 8 en bij 15 contracten die je in die klasse wint:
+drie per klasse, eenentwintig in totaal. Op het blad **Class** staan ze als drie streepjes voor het
+aantal gewonnen contracten. Onderaan links staat hoeveel je er hebt (**STRIPES 10/21**), en bij de
+klasse onder de cursor bij hoeveel gewonnen contracten haar volgende streep komt (**NEXT STRIPE AT
+8 WON**).
+
+**Elke vijfde streep is een perkpunt**, van welke klassen ze ook komen: vier punten bij twintig
+strepen. Je levels geven er negentien en alle perks samen hebben drieëntwintig rangen: pas met
+strepen krijg je ze dus allemaal vol. De eerste streep van een klasse kost het minst (drie
+contracten), dus je eerste punt heb je het snelst door vijf soorten machines te vliegen: vijftien
+contracten. Onderaan rechts staat bij hoeveel strepen je volgende punt komt (**POINT AT 15**), en
+het blad **Perks** zegt hoeveel punten je strepen al hebben opgebracht.
+
+Bij de briefing zie je het ook. Ga op de rij **Build** staan: rechts van de naam van de build
+staan de streepjes van zijn klasse, met **NEXT STRIPE 6/8** (zes van de acht contracten gewonnen).
+Is dit contract het laatste dat nog ontbreekt, dan staat er **WIN THIS FOR A STRIPE**. Blader je
+naar een andere bewaarde build, dan zie je de stand van die klasse. In de simulator staat er niets:
+die telt niet mee.
+
+Wint je mecha een contract waarmee je een streep haalt, dan meldt het spel dat onderin beeld, met
+**+1 POINT** erbij als het de vijfde was. Een streep raak je niet meer kwijt, ook niet als je het
+verhaal opnieuw begint. Er zijn twee medailles: voor je eerste streep en voor alle eenentwintig.
+
 Alle zeven zijn doorgemeten: met elk kun je het hele verhaal uitspelen, ook op Veteran.
 
 ### Je build kiezen bij de briefing

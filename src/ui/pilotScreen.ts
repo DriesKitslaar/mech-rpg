@@ -2,6 +2,7 @@ import { ARCHETYPES, adviceFor, archetypeOf, wonAs, type Archetype, type BuildAd
 import { DEFAULT_CALLSIGN, type BuildSlot, type GameState } from '../core/game';
 import { crownHeld, crownsHeld, mastersOpen } from '../core/masters';
 import { seatHeld } from '../core/seat';
+import { ALL_STRIPES, MAX_STRIPES, nextPointAt, nextStripeAt, stripePoints, stripesHeld, stripesOf } from '../core/stripes';
 import { MEDAL_PAY, medalProgress, type Medal } from '../core/medals';
 import { OVERDRIVES, type OverdriveId } from '../core/battle';
 import { MAX_LEVEL, OVERDRIVE_LEVEL, checkBuyPerk, fittedOverdrive, levelFor, overdriveOpen, perkPoints, xpForLevel } from '../core/pilot';
@@ -15,7 +16,9 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { nameRank, nextNameAt, renownOf } from '../core/renown';
 import { RECORD_ROWS, rankTally, recordLines } from './record';
-import { CHAR_W, COLORS, CROWN_COLOR, LINE, MEDAL_COLORS, charsFor, drawCrown, drawList, drawMedal, drawMeter, drawPanel, drawRowLight, drawTabs, drawText, wrap } from './widgets';
+import {
+  CHAR_W, COLORS, CROWN_COLOR, LINE, MEDAL_COLORS, STRIPE_COLOR, charsFor, drawCrown, drawList, drawMedal, drawMeter, drawPanel, drawRowLight, drawStripes, drawTabs, drawText, wrap,
+} from './widgets';
 
 const P = STRINGS.pilot;
 const M = STRINGS.medals;
@@ -23,6 +26,7 @@ export type PilotPage = 'perks' | 'drive' | 'medals' | 'record' | 'classes';
 const PAGES: PilotPage[] = ['perks', 'medals', 'record', 'classes', 'drive'];
 const O = STRINGS.overdrive;
 const C = STRINGS.classes;
+const T = STRINGS.stripes;
 /** The suggested build is listed in two columns: what the frame is made of and what is inside it, then what it fights with. */
 const ADVICE_COLUMNS: BuildSlot[][] = [['head', 'core', 'arms', 'legs', 'generator', 'booster'], ['fcs', 'module', 'rightHand', 'leftHand', 'shoulder']];
 /** Medals listed at a time. */
@@ -31,6 +35,12 @@ const MEDAL_ROWS = 13;
 const CLASS_RULE_X = 92;
 /** Where a crown held is marked on a class's row: after the longest rule, before the widest count of wins. The crowns are counted above it, to the same edge. */
 const CROWN_X = 264;
+/** Where a class's stripes stand on its row: after the crown, before what was won as it. */
+export const STRIPES_X = CROWN_X + 11;
+/** The row of the class's panel where its next stripe is named: the last row of the build, in the corner the build leaves free. */
+export const CLASS_STRIPE_Y = 238;
+/** The row of the perks page that says what stripes have brought: under what the perk does, over what stands in the way of buying it. */
+export const PERKS_STRIPES_Y = 226;
 const ADVICE_COLUMN_W = 146;
 
 /** The pilot: level and perks, the medals earned and still to earn, the record of what they have done, and the kinds of machine there are. */
@@ -180,6 +190,7 @@ export class PilotScreen implements Screen {
     else if (this.page === 'classes') this.drawClasses(ctx);
     else this.drawRecord(ctx);
     drawText(ctx, this.page === 'perks' ? P.hint : this.page === 'drive' ? O.hint : P.pageHint, LOGICAL_W / 2, 255, { align: 'center', color: COLORS.dim });
+    if (this.page === 'classes') this.drawStripeCount(ctx);
   }
 
   /**
@@ -212,6 +223,8 @@ export class PilotScreen implements Screen {
       drawText(ctx, item.label, 18, y, { color: selected ? COLORS.accent : kind === flown ? COLORS.armor : item.enabled ? COLORS.text : COLORS.dim });
       drawText(ctx, C.rules[kind], CLASS_RULE_X, y, { color: COLORS.dim });
       if (crownHeld(game, kind)) drawCrown(ctx, CROWN_X, y + 2);
+      // The stripes the class has given, of the three it has to give.
+      drawStripes(ctx, STRIPES_X, y + 2, stripesOf(game, kind), MAX_STRIPES);
       drawText(ctx, item.note ?? '', LOGICAL_W - 12, y, { align: 'right', color: wonAs(game, kind) > 0 ? COLORS.text : COLORS.dim });
     });
 
@@ -239,6 +252,21 @@ export class PilotScreen implements Screen {
       const color = id === undefined || advice.unsold.includes(slot) ? COLORS.dim : advice.toBuy.includes(slot) ? COLORS.accent : COLORS.text;
       drawText(ctx, name, x + 34, y, { color });
     }));
+    // In the corner the build leaves free: the contracts won as this class at which it gives its next stripe.
+    const next = nextStripeAt(game, kind);
+    drawText(ctx, next === null ? T.allThree : T.nextStripe(next), LOGICAL_W - 12, CLASS_STRIPE_Y, { align: 'right', color: next === null ? STRIPE_COLOR : COLORS.dim, size: 10 });
+  }
+
+  /**
+   * Beside the page's hint, on the classes page: every stripe held of those there are, and how many
+   * the next perk point asks for.
+   */
+  private drawStripeCount(ctx: CanvasRenderingContext2D): void {
+    const game = this.app.game!;
+    const held = stripesHeld(game);
+    const next = nextPointAt(game);
+    drawText(ctx, T.held(held, ALL_STRIPES), 12, 256, { color: held > 0 ? STRIPE_COLOR : COLORS.dim, size: 10 });
+    drawText(ctx, next === null ? T.allPoints : T.nextPoint(next), LOGICAL_W - 12, 256, { align: 'right', color: COLORS.dim, size: 10 });
   }
 
   /** The Overdrives: which there are, which is flown with, what the one under the cursor does, and how the meter fills. */
@@ -288,6 +316,8 @@ export class PilotScreen implements Screen {
       if (refusal === 'maxed') drawText(ctx, P.maxed, 12, 238, { color: COLORS.dim });
       else if (refusal === 'noPoints') drawText(ctx, P.noPoints, 12, 238, { color: COLORS.dim });
     }
+    // Points come from stripes too: how many are held, how many points they have brought, and when the next comes.
+    drawText(ctx, T.points(stripesHeld(game), ALL_STRIPES, stripePoints(game), nextPointAt(game)), 12, PERKS_STRIPES_Y, { color: stripePoints(game) > 0 ? STRIPE_COLOR : COLORS.dim });
   }
 
   private drawMedals(ctx: CanvasRenderingContext2D): void {

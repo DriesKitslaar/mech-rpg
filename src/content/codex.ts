@@ -264,6 +264,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'A build is one of seven classes, the first it fits: a blade makes a Duellist, a weapon that charges a Sharpshooter, a salvo Artillery, two or more weapons, all energy, a Lancer, a shield or legs of MOB 18 or less a Bastion, legs of MOB 40 or more a Skirmisher, anything else an All-rounder. The garage names yours.',
   },
   {
+    id: 'stripes', title: 'STRIPES',
+    text: "A class gives you a stripe at 3, at 8 and at 15 contracts won flying it: three a class, twenty-one in all. Every fifth stripe you hold, of whatever classes, is a perk point: the first is soonest had by flying five kinds of machine. The CLASS page shows them, and a briefing's Build row how near the next is.",
+  },
+  {
     id: 'odds', title: 'ODDS',
     text: 'A briefing gives the odds of the contract in the build you have chosen: Auto Turn flies it 20 times with your perks, bench work, Overdrive, wingman and difficulty, and its wins are counted. Another build is another count. The odds are what Auto Turn makes of the fight: flying it yourself, you can do better.',
   },

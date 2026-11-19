@@ -177,6 +177,20 @@ describe('Dutch: the interface', () => {
     expect(tooLong).toEqual([]);
   });
 
+  test('says the numbers the English says, in the order the English says them: a count, a price or a threshold is the same in both', () => {
+    const numbers = (text: string): string[] => text.match(/\d+/g) ?? [];
+    const dutch = new Map(leaves(STRINGS_NL).map((leaf) => [leaf.path, leaf.said]));
+    const differ: string[] = [];
+    for (const { path, said } of english) {
+      const other = dutch.get(path);
+      if (!other) continue;
+      said.forEach((text, i) => {
+        if (other[i] !== undefined && numbers(other[i]).join(' ') !== numbers(text).join(' ')) differ.push(`${path}: "${other[i]}" for "${text}"`);
+      });
+    }
+    expect(differ).toEqual([]);
+  });
+
   test('setting the language puts it over the English in place, and setting it back puts the English back', () => {
     const before = JSON.stringify(leaves(STRINGS));
     setLanguage('nl');

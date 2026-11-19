@@ -27,6 +27,7 @@ import { WINGMEN } from '../content/wingmen';
 import { intentOf } from '../core/intent';
 import { intentText } from './tags';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
+import { countsForClass, stripesEarned } from '../core/stripes';
 import { nameRank } from '../core/renown';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
@@ -92,7 +93,7 @@ import { TitleScreen } from './titleScreen';
 import { TrainingScreen } from './trainingScreen';
 import { setDetail } from './light';
 import { Pace, type Detail } from './pace';
-import { COLORS, drawMedal, drawPage, drawPanel, drawText } from './widgets';
+import { COLORS, drawMedal, drawPage, drawPanel, drawStripes, drawText } from './widgets';
 import { drawBlind, drawDoors } from './wipe';
 
 /** What a screen reports about itself, for tests and for telling whether an input did anything. */
@@ -182,6 +183,8 @@ interface Toast {
   note?: string;
   /** The metal of a medal; an announcement without one is about the database. */
   tier?: Tier;
+  /** How many of its class's three stripes the stripe announced makes: it is drawn as those, where a medal or a page would be. */
+  stripes?: number;
   sound: SoundName;
 }
 
@@ -790,7 +793,12 @@ export class App {
     // The eighth seat, taken, is said once as well: after the crowns, which came before it.
     const seatToasts: Toast[] = before && seatHeld(game) && !seatHeld(before)
       ? [{ id: 'seat', heading: STRINGS.arena.seat.taken, title: STRINGS.arena.seat.row, sound: 'medal' }] : [];
-    this.toasts.push(...crownToasts, ...seatToasts, ...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
+    // A stripe is said as it is earned: whose it is and which of the class's three, and that it brought a perk point when it did.
+    const stripeToasts: Toast[] = !before ? [] : stripesEarned(before, game).map(({ kind, stripe, point }) => ({
+      id: `stripe:${kind}:${stripe}`, heading: STRINGS.stripes.earned, title: STRINGS.stripes.title(STRINGS.classes.names[kind], stripe), stripes: stripe, sound: 'medal' as const,
+      ...(point ? { note: STRINGS.stripes.point } : {}),
+    }));
+    this.toasts.push(...crownToasts, ...seatToasts, ...stripeToasts, ...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
     this.game = game;
     this.saveFailed = !this.file.save(game);
     // Options that could not be stored when they were changed go with the next thing that can be.
@@ -1320,9 +1328,9 @@ export class App {
     return relief;
   }
 
-  /** The kind of machine a contract is flown as: that of the build on the floor. A mech that was lent is nobody's kind. */
+  /** The kind of machine a contract is flown as: that of the build on the floor. A mech that was lent is nobody's kind, and the simulator and the Gauntlet count for none. */
   flownAs(mission: Mission): Archetype | null {
-    return this.game && mission.loaner === undefined ? archetypeOf(this.game.build, this.deps.catalog) : null;
+    return this.game && countsForClass(mission) ? archetypeOf(this.game.build, this.deps.catalog) : null;
   }
 
   /** Shows a settlement that has already been booked. */
@@ -1434,6 +1442,7 @@ export class App {
     ctx.fillRect(x, y, w, h);
     drawPanel(ctx, x, y, w, h);
     if (item.tier) drawMedal(ctx, x + 6, y + 9, item.tier, true);
+    else if (item.stripes) drawStripes(ctx, x + 7, y + 10, item.stripes);
     else drawPage(ctx, x + 6, y + 9);
     drawText(ctx, item.heading, x + 20, y + 2, { color: COLORS.dim, size: 10 });
     drawText(ctx, item.title, x + 20, y + 12, { color: COLORS.accent });
