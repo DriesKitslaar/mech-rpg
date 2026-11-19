@@ -28,6 +28,17 @@ export interface FramePart {
   mobility?: number;
   /** Legs only; a plain biped when absent. */
   legType?: LegType;
+  /**
+   * A core only: the field it raises. A barrier of this much stands when a battle opens and takes the first of
+   * whatever lands. While any of it stands at the unit's own turn it is whole again; a field that was broken
+   * stays down for a round, and is whole the turn after that.
+   */
+  field?: number;
+  /**
+   * Arms only: the first blade to strike in a turn does not give up the boost that carried the mech in. A second
+   * blade after it does, as any blade does from other arms.
+   */
+  poise?: true;
   vendor?: Vendor;
 }
 
@@ -196,6 +207,8 @@ export interface Abilities {
   bomb?: { fuse: number; damage: number };
   /** Launches a `unit` every `every` of its turns while fewer than three enemies stand. */
   carrier?: { unit: EnemyDef; every: number };
+  /** Raises a field of this much, whatever the core it flies is sold with: a house machine tuned past what its yard sells. See `FramePart.field`. */
+  field?: number;
 }
 
 /** A change a boss goes through when its core has taken enough. */
@@ -240,6 +253,11 @@ export interface EnemyDef {
   leader?: true;
   /** Bench work it comes with, by part id: the copy of the pilot's mech that a mirror match fields is tuned as the pilot's is. */
   tune?: Record<string, number>;
+  /**
+   * Armour it has beyond what its parts give it, as a share of them: 1 is twice the armour. A frame plated to
+   * last a duel takes longer to bring down and hits no harder for it, which a contract's scale would make it do.
+   */
+  plating?: number;
 }
 
 export const FRAME_SLOTS: FrameSlot[] = ['core', 'legs', 'arms', 'head'];

@@ -96,6 +96,10 @@ export const REFERENCE_NL: Record<string, string> = {
     'Gezocht. Een Ronin met een thermische lans en een infernopod. Spreidt zijn vuur over je hele mech. Koel op tijd.',
   'Wanted. An Auditor frame gone private: a barrier, a draining coil and a decree. It hits harder once it is losing.':
     'Gezocht. Een Auditor-frame dat voor zichzelf begon: een barriere, een aftappende spoel en een decreet. Slaat harder zodra het verliest.',
+  'Coast Circuit. A Shrike with a blade and a rifle. It boosts in, strikes and is still boosting: hard to hit until it staggers or loses its legs.':
+    'Coast Circuit. Een Shrike met kling en geweer. Boost erin, slaat en boost nog steeds: lastig te raken tot hij wankelt of zijn benen kwijt is.',
+  "The Circuit's first sword, in a Sterling. Its field takes what lands first and is whole each round unless you break it. Broken, it is down a round.":
+    'Eerste zwaard van het Circuit, in een Sterling. Zijn veld vangt de eerste treffers op en is elke ronde weer heel, tenzij je het breekt. Dan is het een ronde weg.',
 
   // --- Database: the world ---
   'A mining city on a seam that should have run dry forty years ago. The pits go down, the towers go up, and the lowest streets flood every spring. Nobody governs Varn. Three powers hold it between them, and none of them will fight for it in person.':
@@ -455,6 +459,10 @@ export const REFERENCE_NL: Record<string, string> = {
   'Cut frames open for the Night Market and left the pilots where they fell.': 'Sneed frames open voor de Night Market en liet de piloten liggen.',
   'Decorated in the war by whichever side was paying. Kept the mech, the medals and the habit.': 'In de oorlog gedecoreerd door wie er maar betaalde. Hield de mech, de medailles en de gewoonte.',
   'Left Meridian with a frame, a seal and a client list, and went on foreclosing in private.': 'Verliet Meridian met een frame, een zegel en een klantenlijst, en ging op eigen houtje verder met beslagleggen.',
+  'Duels for standing up and down the coast and keeps what it wins. Named for the place a shrike hangs its catch.':
+    'Duelleert langs de hele kust om aanzien en houdt de winst. Genoemd naar waar een klauwier zijn vangst ophangt.',
+  'First sword of the Coast Circuit for nine seasons. Salutes before the duel and after it, and means it both times.':
+    'Negen seizoenen eerste zwaard van het Coast Circuit. Salueert voor het duel en erna, en meent het beide keren.',
   Wingman: 'Wingman',
   'Licensed pilot': 'Piloot met licentie',
   Wanted: 'Gezocht',

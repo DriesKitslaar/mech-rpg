@@ -438,6 +438,19 @@ export class BattleFx {
         // What is being guarded is no machine on the field: what it loses is written under the strip that names it, on the screen.
         if (event.lost > 0) this.say(0, { x: 30, y: 44 }, `-${event.lost}`, COLORS.danger, { over: true });
         break;
+      case 'fieldDown': {
+        // The field goes out over the whole machine: sparks in the colour it had, and the word for it.
+        const at = s.centre(event.unit);
+        this.add(0, SPARK_MS, { kind: 'sparks', at, color: COLORS.energy });
+        this.say(0, at, STRINGS.fx.fieldDown, COLORS.energy);
+        break;
+      }
+      case 'fieldUp': {
+        const at = s.centre(event.unit);
+        this.add(0, SHIELD_MS, { kind: 'shield', at, aim: this.headingOf(event.unit) });
+        this.say(0, at, STRINGS.fx.fieldUp, COLORS.energy);
+        break;
+      }
       case 'recover':
       case 'turnStart':
       case 'outcome':

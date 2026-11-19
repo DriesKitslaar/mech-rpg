@@ -350,6 +350,8 @@ export class BattleFlow {
       case 'guard': return STRINGS.guard(name(event.unit));
       case 'stagger': return STRINGS.stagger(name(event.unit));
       case 'recover': return STRINGS.recover(name(event.unit));
+      case 'fieldDown': return STRINGS.fieldDown(name(event.unit));
+      case 'fieldUp': return STRINGS.fieldUp(name(event.unit));
       case 'charge': {
         const unit = this.state.units.find((u) => u.id === event.unit)!;
         return STRINGS.charge(name(event.unit), weaponIn(unit.build, event.weapon, this.catalog)?.name ?? event.weapon);

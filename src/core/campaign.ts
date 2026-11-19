@@ -144,9 +144,10 @@ export interface Message {
  * Something a message, a part, a scene or a find waits for: the start, any exclusive contract
  * (`choice`), any finale, any verdict, the id of a contract, an answer to a question of the story
  * (`chose:question=answer`), an arena rank (`arena:N`), the cycle (`cycle:N`: the second telling is
- * cycle 1), an S rank on a contract (`s:contract`), the deepest floor of the Gauntlet (`floor:N`),
- * or checks held (`checks:N`). Conditions can be joined: `a&b` is both, `a|b` is either, `!a` is
- * not; `|` binds loosest, so `a|b&c` is a, or b and c.
+ * cycle 1), an S rank on a contract (`s:contract`), a contract won at some time, in this telling of
+ * the story or an earlier one (`won:contract`), the deepest floor of the Gauntlet (`floor:N`), or
+ * checks held (`checks:N`). Conditions can be joined: `a&b` is both, `a|b` is either, `!a` is not;
+ * `|` binds loosest, so `a|b&c` is a, or b and c.
  */
 export type Condition = 'start' | 'choice' | 'finale' | 'verdict' | string;
 
@@ -407,6 +408,8 @@ export function reached(state: GameState, condition: Condition, missions: Missio
   if (condition.startsWith('cycle:')) return state.cycle >= Number(condition.slice(6));
   // "s:contract": the best rank ever earned on it is an S. Ranks are kept through the cycles.
   if (condition.startsWith('s:')) return Object.hasOwn(state.ranks, condition.slice(2)) && state.ranks[condition.slice(2)] === 'S';
+  // "won:contract": it has a rank, and a rank is what a won contract leaves. Ranks are kept through the cycles.
+  if (condition.startsWith('won:')) return Object.hasOwn(state.ranks, condition.slice(4));
   if (condition.startsWith('floor:')) return (state.gauntletBest ?? 0) >= Number(condition.slice(6));
   if (condition.startsWith('checks:')) return checksHeld(state) >= Number(condition.slice(7));
   return state.completed.includes(condition);
@@ -415,7 +418,8 @@ export function reached(state: GameState, condition: Condition, missions: Missio
 /**
  * What the shop sells now. `unlocks` maps a part id to the contract (or `'choice'`, or `'arena:N'`)
  * that puts it in stock. Vendors do not forget a pilot: from the second cycle on, everything a
- * contract unlocks stays in stock. Arena prizes always need the rank. What the third act unlocks
+ * contract unlocks stays in stock. Arena prizes always need the rank, and what a duel won opens
+ * always needs the duel won (which, once won, is won for good). What the third act unlocks
  * stays only for a pilot who has given a verdict before: a game that reached a later cycle when the
  * story still ended with the war has never met Meridian, and is not sold its parts.
  */
@@ -424,7 +428,8 @@ export function stockFor(state: GameState, parts: Part[], unlocks: Record<string
     condition === 'verdict' || missions.some((m) => m.id === condition && (m.phase === 'audit' || m.phase === 'verdict'));
   // Every won story contract leaves a rank, and ranks are kept through the cycles.
   const judged = all(missions, 'verdict').some((m) => Object.hasOwn(state.ranks, m.id));
-  const kept = (condition: string): boolean => state.cycle > 0 && !condition.startsWith('arena:') && (!actThree(condition) || judged);
+  const earned = (condition: string): boolean => condition.startsWith('arena:') || condition.startsWith('won:');
+  const kept = (condition: string): boolean => state.cycle > 0 && !earned(condition) && (!actThree(condition) || judged);
   return parts.filter((part) => !Object.hasOwn(unlocks, part.id) || kept(unlocks[part.id]) || reached(state, unlocks[part.id], missions));
 }
 

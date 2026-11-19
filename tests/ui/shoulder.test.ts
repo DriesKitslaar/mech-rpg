@@ -331,8 +331,8 @@ describe('what is fired', () => {
   });
 
   test('lands on the pilot\'s mech on the part that is hit, on a pixel of its drawing: whatever it wears, tracks, four legs and a hover unit among it', () => {
-    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([13, 10, 10, 10]);
-    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(43);
+    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([15, 12, 12, 12]);
+    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(51);
     let lowered = 0;
     for (const build of WARDROBE) {
       for (const id of [build.legs!, build.core, build.head!, build.arms!]) expect(CATALOG[id], id).toBeDefined();
@@ -348,7 +348,8 @@ describe('what is fired', () => {
         const aim = VIEWS.back.hit![part];
         const off = Math.hypot(hit.x - (HERO.x + aim.x), hit.y - (HERO.y + aim.y + (part === 'legs' ? 0 : legs.drop ?? 0)));
         // A squat frame carries its head a little lower than the others: the hit is on the head it has, not over it.
-        expect(off, `${part} of ${build.legs}`).toBeLessThanOrEqual({ core: 0, head: 5, arms: 7, legs: 20 }[part]);
+        // The widest stance there is has the leg nearest the middle twenty-one from it.
+        expect(off, `${part} of ${build.legs}`).toBeLessThanOrEqual({ core: 0, head: 5, arms: 7, legs: 21 }[part]);
       }
       // Its middle is under its body, at its waist or a little over it, and the floor under it is the line its feet are on.
       const core = own.find((image) => idOf(image) === `${build.core}.back`)!;

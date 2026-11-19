@@ -57,6 +57,8 @@ export const UNITS: UnitPage[] = [
   { id: 'hollow', note: 'Wanted. A Mantis that leaps in with a thermal cutter. Every cut heats you up. Blasts barely mark it.' },
   { id: 'paragon', note: 'Wanted. A Ronin with a thermal lance and an inferno pod. It spreads its fire over all of you. Vent early.' },
   { id: 'notary', title: 'The Notary', note: 'Wanted. An Auditor frame gone private: a barrier, a draining coil and a decree. It hits harder once it is losing.' },
+  { id: 'larder', note: 'Coast Circuit. A Shrike with a blade and a rifle. It boosts in, strikes and is still boosting: hard to hit until it staggers or loses its legs.' },
+  { id: 'argent', note: 'The Circuit\'s first sword, in a Sterling. Its field takes what lands first and is whole each round unless you break it. Broken, it is down a round.' },
 ];
 
 /** What there is to know about Varn, in the order it comes to light. */
@@ -381,4 +383,8 @@ export const PEOPLE: Person[] = [
     text: 'Decorated in the war by whichever side was paying. Kept the mech, the medals and the habit.' },
   { id: 'notary', name: 'The Notary', portrait: 'portrait-notary', role: 'Wanted', when: { met: 'notary' }, bounty: 'bounty-6',
     text: 'Left Meridian with a frame, a seal and a client list, and went on foreclosing in private.' },
+  { id: 'larder', name: 'Larder', portrait: 'portrait-larder', role: 'Coast Circuit', when: { met: 'larder' },
+    text: 'Duels for standing up and down the coast and keeps what it wins. Named for the place a shrike hangs its catch.' },
+  { id: 'argent', name: 'Argent', portrait: 'portrait-argent', role: 'Coast Circuit', when: { met: 'argent' },
+    text: 'First sword of the Coast Circuit for nine seasons. Salutes before the duel and after it, and means it both times.' },
 ];

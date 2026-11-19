@@ -10,6 +10,7 @@ export const ENEMY_COST: Record<string, number> = {
   'lien-drone': 2, bailiff: 6,
   'mortar-nest': 3, 'hunter-drone': 2, 'flak-walker': 3, breacher: 4, 'arc-pylon': 3, longshot: 3, 'scrap-king': 9, 'night-train': 9,
   magpie: 5, dredge: 6, lark: 6, hollow: 6, paragon: 7, notary: 9,
+  larder: 9, argent: 11,
   sable: 7, rook: 7, krell: 8, 'rival-2': 7, assessor: 9, 'strip-miner': 9, overseer: 9, leviathan: 9, 'ashfall-unbound': 10, adjuster: 12, proxy: 12,
 };
 /** At most one of these per battle. */
@@ -17,6 +18,7 @@ export const MECH_ENEMIES = [
   'light-mech', 'stalker', 'heavy-mech', 'rival', 'juggernaut', 'marksman', 'ripper', 'bulldozer', 'bailiff',
   'sable', 'rook', 'krell', 'rival-2', 'assessor', 'ashfall-unbound',
   'magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary',
+  'larder', 'argent',
 ];
 /** Enemies that belong to the story: the named pilots, the great machines, and everything of Meridian's. */
 export const STORY_ENEMIES = [
@@ -25,6 +27,8 @@ export const STORY_ENEMIES = [
   'scrap-king', 'night-train',
   // The wanted are met on their own notices.
   'magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary',
+  // The swords of the Coast Circuit are met in their duels.
+  'larder', 'argent',
 ];
 /**
  * Enemies that are no fight on their own: they cover, mend or jam for the others, or simply blow

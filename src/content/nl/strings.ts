@@ -33,7 +33,7 @@ export const STRINGS_NL = {
   },
   tags: {
     boost: 'BOOST', guard: 'DEKKING', stagger: 'WANKELT', charged: 'GELADEN', charging: 'LAADT OP', painted: 'GEMERKT',
-    barrier: (n: number) => `BARRIERE ${n}`, chaff: 'CHAFF', stability: 'STAB',
+    barrier: (n: number) => `BARRIERE ${n}`, fieldDown: 'VELD WEG', chaff: 'CHAFF', stability: 'STAB',
     fuse: (n: number) => `LONT ${n}`, aegis: 'AEGIS', jammer: 'STOORDER', mender: 'HERSTEL', carrier: 'DRAGER', shaken: 'PANIEK',
     covered: 'GEDEKT', jammed: (n: number) => `GESTOORD -${n}`, ironSkin: 'IJZERHUID', deadeye: 'SCHERPOOG',
     marks: { armoured: 'GEPANTSERD', overclocked: 'OVERKLOKT', swift: 'SNEL', shielded: 'SCHILD' } as Record<string, string>,
@@ -81,6 +81,8 @@ export const STRINGS_NL = {
   guard: (unit: string) => `${subj(unit)}: schrap`,
   stagger: (unit: string) => does(unit, 'WANKELT'),
   recover: (unit: string) => does(unit, 'staat pal'),
+  fieldDown: (unit: string) => `${subj(unit)}: veld weg`,
+  fieldUp: (unit: string) => `${subj(unit)}: veld terug`,
   charge: (unit: string, weapon: string) => does(unit, `laadt ${weapon} op`),
   barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} raakt ${obj(target)} - barriere -${absorbed}`,
   module: {
@@ -396,13 +398,15 @@ export const STRINGS_NL = {
     hint: 'A handel  L1/R1 categorie  LEFT/RIGHT koop/verkoop  B terug', fitHint: 'Monteer in de Garage.',
   },
   partInfo: {
-    ap: 'AP', resist: 'RES K/S/E', weight: 'GEW', drain: 'VERBR.', aim: 'TREF', capacity: 'LAST', mobility: 'MOB',
+    ap: 'AP', resist: 'RES K/S/E', weight: 'GEW', drain: 'VERBR', aim: 'TREF', capacity: 'LAST', mobility: 'MOB',
     output: 'VERMOGEN', cooling: 'KOELING', damage: 'SCH', accuracy: 'PREC', energy: 'EN', heat: 'HITTE', ammo: 'MUN.',
     impact: 'DUW', unlimited: 'onbeperkt', perShot: '/schot',
     thrust: 'STUWING', boostCost: 'BOOSTKOSTEN', aimByType: 'TREF K/S/E', focus: 'FOCUS', uses: 'KEREN',
     guard: (blocked: number) => `DEKKING: stopt ${blocked}%`, guardShort: 'DEKKING',
     versus: (name: string) => `VS ${name}`,
     charge: 'LADEN: vuurt een beurt later', melee: 'MELEE: verbruikt je Boost',
+    field: (n: number) => `VELD: vangt ${n} per ronde`, fieldBreak: 'Gebroken: een beurt weg',
+    poise: 'BALANS: 1 kling houdt Boost',
     traits: {
       twin: () => 'DUO: vuurt tweemaal',
       pierce: () => 'DOORBOOR: halve weerstand',
@@ -430,6 +434,7 @@ export const STRINGS_NL = {
   },
   fx: {
     miss: 'MIS', overheat: 'OVERVERHIT', stagger: 'WANKELT', shaken: 'PANIEK', block: (n: number) => `BLOK ${n}`,
+    fieldDown: 'VELD WEG', fieldUp: 'VELD TERUG',
     overkill: 'OVERKILL', chain: (n: number) => `REEKS x${n}`, rout: 'VLUCHT', offline: 'UIT',
     phase: (n: number) => `FASE ${n}`,
     modules: {

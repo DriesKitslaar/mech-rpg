@@ -1,0 +1,11 @@
+{
+  "id": "family-shrike",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png"
+  ],
+  "prompt": "The first image shows a mecha in a combat stance. Redraw it as a different mecha design in exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, elbows, hands, hips, knees, feet) stays in the same place. The new design is: a lean, forward-hunched light duelling mecha in matte ash-grey and charcoal armour with rust-red edge marks and small amber lights: long forearms with a slim blade housing along each, a narrow chest, sharp knee guards, small swept-back shoulder guards, and a small wedge-shaped head with a black band across a narrow amber visor, like a mask. Slimmer and lighter than the first image, quick and predatory. Keep the same proportions between joints. No weapons, empty hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

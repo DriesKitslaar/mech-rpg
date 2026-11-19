@@ -54,6 +54,9 @@ export function partLines(part: Part): string[] {
         `${I.resist} ${pct(part.resist.kinetic)}/${pct(part.resist.energy)}/${pct(part.resist.explosive)}`,
         ...(extra ? [extra] : []),
         ...(legs ? [legs] : []),
+        // What this part does that no other does.
+        ...(part.field ? [I.field(part.field), I.fieldBreak] : []),
+        ...(part.poise ? [I.poise] : []),
       ];
     }
   }

@@ -22,6 +22,8 @@ const SLOT_KINDS: Record<keyof Build, string[]> = {
 const FACTIONS: Faction[] = ['hadron', 'lumen', 'undertow'];
 /** The conditions something can wait for that are not the id of a contract. */
 const isKeyword = (condition: string): boolean => ['start', 'choice', 'finale', 'verdict'].includes(condition) || /^arena:([1-9]|10)$/.test(condition);
+/** A contract won at some time: the condition names a contract there is. */
+const isWon = (condition: string): boolean => condition.startsWith('won:') && MISSIONS.some((m) => m.id === condition.slice(4));
 const builds: [string, Build][] = [
   ['starter', STARTER_BUILD], ['demo', DEMO_BUILD],
   ...Object.values(ENEMIES).map((e): [string, Build] => [e.id, e.build]),
@@ -64,7 +66,7 @@ describe('shop catalogue', () => {
 
   test('the shelf: frame parts, generators, weapons, shields, boosters, fire control and modules', () => {
     const count = (kind: string) => SHOP_PARTS.filter((p) => p.kind === kind).length;
-    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([10, 10, 10, 13]);
+    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([12, 12, 12, 15]);
     expect(count('generator')).toBe(8);
     expect(count('booster')).toBe(7);
     expect(count('fcs')).toBe(7);
@@ -72,7 +74,7 @@ describe('shop catalogue', () => {
     expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(24);
     expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(17);
     expect(count('shield')).toBe(4);
-    expect(SHOP_PARTS).toHaveLength(121);
+    expect(SHOP_PARTS).toHaveLength(129);
   });
 
   test('every trait has what it needs, and each trait is used', () => {
@@ -314,7 +316,7 @@ describe('campaign content', () => {
       for (const id of Object.values(enemy.build)) expect(CATALOG[id], `${enemy.id}: ${id}`).toBeDefined();
       if (enemy.portrait) expect(enemy.portrait in SPRITES, enemy.portrait).toBe(true);
     }
-    expect(Object.keys(ENEMIES)).toHaveLength(45);
+    expect(Object.keys(ENEMIES)).toHaveLength(47);
   });
 
   test('every enemy appears in the story', () => {
@@ -325,8 +327,8 @@ describe('campaign content', () => {
   test('enemies that are drawn from their parts have a sprite for every part they show, in every phase', () => {
     const composed = Object.values(ENEMIES).filter((e) => e.composed);
     expect(composed.map((e) => e.id).sort()).toEqual([
-      'ashfall-unbound', 'assessor', 'bailiff', 'bulldozer', 'dredge', 'heavy-mech', 'hollow', 'juggernaut', 'krell', 'lark', 'light-mech', 'magpie', 'marksman',
-      'notary', 'paragon', 'ripper', 'rival', 'rival-2', 'rook', 'sable', 'stalker',
+      'argent', 'ashfall-unbound', 'assessor', 'bailiff', 'bulldozer', 'dredge', 'heavy-mech', 'hollow', 'juggernaut', 'krell', 'larder', 'lark', 'light-mech',
+      'magpie', 'marksman', 'notary', 'paragon', 'ripper', 'rival', 'rival-2', 'rook', 'sable', 'stalker',
     ]);
     for (const enemy of composed) {
       const { head, core, arms, legs } = enemy.build;
@@ -404,7 +406,7 @@ describe('campaign content', () => {
   test('shop unlocks name real parts and real conditions, and the starter kit is never locked', () => {
     for (const [partId, condition] of Object.entries(SHOP_UNLOCKS)) {
       expect(SHOP_PARTS.some((p) => p.id === partId), partId).toBe(true);
-      expect(isKeyword(condition) || MISSIONS.some((m) => m.id === condition), condition).toBe(true);
+      expect(isKeyword(condition) || isWon(condition) || MISSIONS.some((m) => m.id === condition), condition).toBe(true);
     }
     for (const id of Object.values(STARTER_BUILD)) expect(id in SHOP_UNLOCKS, id).toBe(false);
   });

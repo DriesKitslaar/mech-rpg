@@ -183,6 +183,8 @@ export interface UnitState {
   usedModule: boolean;
   /** Damage the pulse barrier still absorbs; gone at the unit's next turn. */
   barrier: number;
+  /** The field of the unit's core was broken and is not back yet: it stays down for the round after the one it broke in. */
+  fieldDown?: true;
   /** Own turns left during which attackers get `paintBonus` to hit this unit. */
   painted: number;
   paintBonus: number;
@@ -251,6 +253,9 @@ export type BattleEvent =
   | { type: 'repair'; unit: string; part: FrameSlot; amount: number }
   | { type: 'overheat'; unit: string }
   | { type: 'stagger'; unit: string }
+  /** The field of a unit's core took all it could and is gone; and, a round later, is whole again. */
+  | { type: 'fieldDown'; unit: string }
+  | { type: 'fieldUp'; unit: string }
   | { type: 'recover'; unit: string }
   | { type: 'charge'; unit: string; weapon: WeaponSlot }
   /**
@@ -385,7 +390,7 @@ function createUnit(
     // Enemies are not on a budget: they never run dry.
     if (weapon) ammo[slot] = side === 'enemy' ? null : weapon.ammo;
   }
-  return {
+  const unit: UnitState = {
     id, name, side, build, composed: false, abilities: {}, phases: [], phase: 0, ...extra, parts, heat: 0, energy: 0, ammo, restocked: {},
     boosted: false, overheated: false,
     usedBoost: false, usedCool: false, fired: [], chain: 0, repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
@@ -393,11 +398,50 @@ function createUnit(
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
     barrier: 0, painted: 0, paintBonus: 0, chaff: 0, damageBoost: 1, drive: 0, ironSkin: false, deadeye: false, turnEnergy: 0,
   };
+  // A core with a field has it up before anybody has had a turn.
+  unit.barrier = fieldOf(unit, catalog);
+  return unit;
 }
 
 /** The barrier a shielded elite stands behind: a share of all the armour it came with. */
 function markShield(unit: UnitState): number {
   return Math.round(MARK.shield * Object.values(unit.parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0));
+}
+
+/**
+ * The field a unit's core raises, if it is a core that raises one: a barrier of that much, standing when a
+ * battle opens. An enemy's is as much stronger as the enemy is, and an enemy may fly one tuned to raise more
+ * than its core is sold with.
+ */
+export function fieldOf(unit: UnitState, catalog: Catalog): number {
+  return Math.round((unit.abilities.field ?? framePart(unit.build, 'core', catalog)?.field ?? 0) * unit.mods.toughness);
+}
+
+/** Said when a blow has just taken the last of a barrier that is a core's field: the field is down. */
+function fieldBroken(state: BattleState, target: UnitState, absorbed: number, catalog: Catalog): void {
+  if (absorbed > 0 && target.barrier === 0 && fieldOf(target, catalog) > 0) state.events.push({ type: 'fieldDown', unit: target.id });
+}
+
+/** How many of the blades a unit carries it has struck with this turn and not had readied again. */
+const bladesSpent = (unit: UnitState, catalog: Catalog): number =>
+  unit.fired.filter((slot) => weaponIn(unit.build, slot, catalog)?.melee).length;
+
+/** The barrier a unit stands behind as a battle opens: its core's field, or an elite's shield if that is more. */
+const standingBarrier = (unit: UnitState, catalog: Catalog): number =>
+  Math.max(fieldOf(unit, catalog), unit.mark === 'shielded' ? markShield(unit) : 0);
+
+/**
+ * What a unit stands behind as a turn of its own begins. A barrier lasts until then; a shielded elite raises a
+ * new one there. A core's field is whole again while any barrier stands; one that finds nothing standing was
+ * broken, stays down for this round, and is whole at the turn after.
+ */
+function raiseBarrier(state: BattleState, unit: UnitState, catalog: Catalog): void {
+  const field = fieldOf(unit, catalog);
+  const broken = field > 0 && unit.barrier <= 0 && !unit.fieldDown;
+  if (unit.fieldDown) state.events.push({ type: 'fieldUp', unit: unit.id });
+  if (broken) unit.fieldDown = true;
+  else delete unit.fieldDown;
+  unit.barrier = Math.max(broken ? 0 : field, unit.mark === 'shielded' ? markShield(unit) : 0);
 }
 
 function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scale: number, catalog: Catalog, mark?: EnemyMark): UnitState {
@@ -412,10 +456,10 @@ function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scal
     ...(mark ? { mark } : {}),
   }, {
     damage: scale * (mark === 'overclocked' ? MARK.damage : 1), toughness: scale,
-    ...(mark === 'armoured' ? { armour: MARK.armour } : {}), ...(mark === 'swift' ? { evasion: MARK.evasion } : {}),
+    armour: (def.plating ?? 0) + (mark === 'armoured' ? MARK.armour : 0), ...(mark === 'swift' ? { evasion: MARK.evasion } : {}),
     ...(def.tune ? { tune: def.tune } : {}),
   });
-  if (mark === 'shielded') unit.barrier = markShield(unit);
+  unit.barrier = standingBarrier(unit, catalog);
   return unit;
 }
 
@@ -663,8 +707,7 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     unit.guarding = false;
     unit.ironSkin = false;
     unit.deadeye = false;
-    // A barrier lasts until the unit's next turn; a shielded elite raises a new one there.
-    unit.barrier = unit.mark === 'shielded' ? markShield(unit) : 0;
+    raiseBarrier(state, unit, catalog);
     unit.chaff = 0;
     if (unit.painted > 0) unit.painted -= 1;
     if (unit.staggered > 0) {
@@ -1082,6 +1125,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       // thing the pilot does: of the pilot's own end it is not said.
       const overkill = target.side === 'enemy' && damage - absorbed >= OVERKILL * target.parts.core!.maxAp;
       target.barrier -= absorbed;
+      fieldBroken(state, target, absorbed, catalog);
       if (damage > absorbed) damagePart(state, target, appliedTo, damage - absorbed, overkill);
       if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
       if (weapon.trait === 'drain') target.energyDebt += weapon.traitPower ?? 0;
@@ -1116,7 +1160,9 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
     if (target.destroyed) addDrive(unit, DRIVE_GAIN.kill);
   }
   // Closing in to strike is what the boost was spent on: the mech ends up in the enemy's face, not dodging.
-  if (weapon.melee) unit.boosted = false;
+  // Arms with the poise for it strike once and are gone again: the boost is theirs still, until a second blade
+  // follows the first in the same turn. (A blade that a kill readied again is not one that is spent.)
+  if (weapon.melee && !(framePart(unit.build, 'arms', catalog)?.poise && bladesSpent(unit, catalog) <= 1)) unit.boosted = false;
   heatUp(state, unit, weapon.heat);
   checkOutcome(state);
 }
@@ -1156,6 +1202,7 @@ function strike(state: BattleState, target: UnitState, damage: number, impact: n
   const dealt = Math.max(1, Math.round(amount));
   const absorbed = Math.min(target.barrier, dealt);
   target.barrier -= absorbed;
+  fieldBroken(state, target, absorbed, catalog);
   if (dealt > absorbed) damagePart(state, target, 'core', dealt - absorbed);
   addImpact(state, target, Math.round(impact * (target.guarding ? GUARD_IMPACT : 1)));
   checkPhases(state, target, catalog);
@@ -1175,7 +1222,8 @@ function useModule(
       return amount;
     }
     case 'barrier':
-      unit.barrier = power;
+      // In place of whatever stands, unless that is more: a pulse does not take a stronger field down.
+      unit.barrier = Math.max(unit.barrier, power);
       return power;
     case 'overclock':
       unit.energy += power;

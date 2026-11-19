@@ -260,4 +260,45 @@ export const QUEST: Mission[] = [
   },
 ];
 
-export const SIDE_WORK: Mission[] = [...BOUNTIES, ...FAVOURS, ...GUILD_JOBS, ...QUEST];
+const larder = says('Larder', 'portrait-larder');
+const argent = says('Argent', 'portrait-argent');
+
+/**
+ * Two duels, one at a time, once the audit is over. The Coast Circuit duels for standing and not for clients,
+ * and it has heard of the pilot who settled Varn: it sends a sword, and when that one falls, its first. Each
+ * flies a frame no yard in Varn builds, and whoever has beaten one may buy one.
+ */
+export const DUELS: Mission[] = [
+  {
+    id: 'duel-1', phase: 'side', series: 'duel', when: 'verdict', title: 'By Appointment', client: 'Dispatch', portrait: 'portrait-dispatch', reward: 8000, scale: 1.1,
+    briefing: [
+      'Somebody has booked the roof of the freight exchange for an hour at dusk and paid in advance. They asked for you by callsign, and for nobody else.',
+      'Coast Circuit. They duel for standing, not for clients. This one flies a Shrike: light, all blade, and still boosting after it strikes. Hitting it is the whole problem.',
+      'Knock it off balance or take its legs and it folds. I have taken the booking. I have also put a little money on you.',
+    ],
+    debrief: 'Larder limps the Shrike off the roof. By morning a yard on the coast has sent a price list. It is long on zeroes.',
+    battles: [battle(['larder'], 'bg-rooftop', { talk: [
+      larder('start', 'They call me Larder. Ask a shrike what it keeps in one.'),
+      larder(3, 'Varn pilots stand still to shoot. It is the loveliest thing about you.'),
+      dispatch('hurt', 'It goes for whatever is already hurt. Stop giving it somewhere to go.'),
+      larder('win', 'Well. Hung on my own thorn. The yard will want to meet you.'),
+    ] })],
+  },
+  {
+    id: 'duel-2', phase: 'side', series: 'duel', when: 'verdict', title: 'First Sword', client: 'Dispatch', portrait: 'portrait-dispatch', reward: 11000,
+    briefing: [
+      'The Circuit has sent its first sword to put the matter right. Meridian\'s clearing house has stood empty since the audit. They have hired it for an evening.',
+      'It is a Sterling, white as a tooth. Its core raises a field that takes the first of whatever you land. Leave any of it standing and it is whole again by the next round.',
+      'Small fire only feeds it. Break it in one round and it stays down for the next. That round is yours.',
+    ],
+    debrief: 'Argent salutes, which nobody in Varn does, and leaves by the front door. The yard writes again. More zeroes.',
+    battles: [battle(['argent'], 'bg-clearing', { talk: [
+      argent('start', 'You beat a Shrike. Good. I was told Varn made nothing but accountants.'),
+      argent(3, 'Piece by piece will not do it. Nothing worth doing is done piece by piece.'),
+      dispatch('hurt', 'Break the field and hit it in the round it is down. There is no other way through.'),
+      argent('win', 'Yielded. The field is down and so am I. Keep the hall. You have paid for it.'),
+    ] })],
+  },
+];
+
+export const SIDE_WORK: Mission[] = [...BOUNTIES, ...FAVOURS, ...GUILD_JOBS, ...QUEST, ...DUELS];

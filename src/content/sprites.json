@@ -954,6 +954,206 @@
       "hi": 0.491
     }
   },
+  "legs-sterling": {
+    "file": "sprites/legs-sterling.png",
+    "w": 120,
+    "h": 102,
+    "ox": 16,
+    "oy": 52,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "core-sterling": {
+    "file": "sprites/core-sterling.png",
+    "w": 37,
+    "h": 70,
+    "ox": 57,
+    "oy": 22,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "head-sterling": {
+    "file": "sprites/head-sterling.png",
+    "w": 19,
+    "h": 35,
+    "ox": 67,
+    "oy": 2,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-sterling.near": {
+    "file": "sprites/arms-sterling.near.png",
+    "w": 55,
+    "h": 43,
+    "ox": 86,
+    "oy": 21,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-sterling.far": {
+    "file": "sprites/arms-sterling.far.png",
+    "w": 44,
+    "h": 73,
+    "ox": 23,
+    "oy": 13,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "legs-shrike": {
+    "file": "sprites/legs-shrike.png",
+    "w": 117,
+    "h": 98,
+    "ox": 18,
+    "oy": 56,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "core-shrike": {
+    "file": "sprites/core-shrike.png",
+    "w": 60,
+    "h": 51,
+    "ox": 44,
+    "oy": 14,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "head-shrike": {
+    "file": "sprites/head-shrike.png",
+    "w": 21,
+    "h": 31,
+    "ox": 69,
+    "oy": 8,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "arms-shrike.near": {
+    "file": "sprites/arms-shrike.near.png",
+    "w": 53,
+    "h": 44,
+    "ox": 89,
+    "oy": 19,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "arms-shrike.far": {
+    "file": "sprites/arms-shrike.far.png",
+    "w": 45,
+    "h": 73,
+    "ox": 22,
+    "oy": 14,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
   "legs-crawler": {
     "file": "sprites/legs-crawler.png",
     "w": 138,
@@ -1910,6 +2110,16 @@
   },
   "portrait-notary": {
     "file": "sprites/portrait-notary.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-larder": {
+    "file": "sprites/portrait-larder.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-argent": {
+    "file": "sprites/portrait-argent.png",
     "w": 56,
     "h": 56
   },
@@ -3192,6 +3402,222 @@
       "hi": 0.491
     }
   },
+  "legs-sterling.back": {
+    "file": "sprites/legs-sterling.back.png",
+    "w": 90,
+    "h": 80,
+    "ox": 13,
+    "oy": 44,
+    "hx": 49,
+    "hy": 50,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "core-sterling.back": {
+    "file": "sprites/core-sterling.back.png",
+    "w": 29,
+    "h": 35,
+    "ox": 39,
+    "oy": 27,
+    "hx": 19,
+    "hy": 13,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "head-sterling.back": {
+    "file": "sprites/head-sterling.back.png",
+    "w": 17,
+    "h": 22,
+    "ox": 50,
+    "oy": 2,
+    "hx": 10,
+    "hy": 12,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-sterling.near.back": {
+    "file": "sprites/arms-sterling.near.back.png",
+    "w": 44,
+    "h": 33,
+    "ox": 63,
+    "oy": 14,
+    "hx": 24,
+    "hy": 19,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-sterling.far.back": {
+    "file": "sprites/arms-sterling.far.back.png",
+    "w": 29,
+    "h": 55,
+    "ox": 18,
+    "oy": 14,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "legs-shrike.back": {
+    "file": "sprites/legs-shrike.back.png",
+    "w": 95,
+    "h": 79,
+    "ox": 12,
+    "oy": 41,
+    "hx": 63,
+    "hy": 42,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "core-shrike.back": {
+    "file": "sprites/core-shrike.back.png",
+    "w": 48,
+    "h": 36,
+    "ox": 36,
+    "oy": 13,
+    "hx": 22,
+    "hy": 27,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "head-shrike.back": {
+    "file": "sprites/head-shrike.back.png",
+    "w": 17,
+    "h": 13,
+    "ox": 51,
+    "oy": 6,
+    "hx": 9,
+    "hy": 8,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "arms-shrike.near.back": {
+    "file": "sprites/arms-shrike.near.back.png",
+    "w": 46,
+    "h": 37,
+    "ox": 64,
+    "oy": 11,
+    "hx": 24,
+    "hy": 22,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "arms-shrike.far.back": {
+    "file": "sprites/arms-shrike.far.back.png",
+    "w": 32,
+    "h": 54,
+    "ox": 17,
+    "oy": 14,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
   "legs-crawler.back": {
     "file": "sprites/legs-crawler.back.png",
     "w": 101,
@@ -4293,6 +4719,222 @@
       ],
       "lo": 0.005,
       "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "legs-sterling.small": {
+    "file": "sprites/legs-sterling.small.png",
+    "w": 77,
+    "h": 66,
+    "ox": 11,
+    "oy": 34,
+    "hx": 35,
+    "hy": 35,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "core-sterling.small": {
+    "file": "sprites/core-sterling.small.png",
+    "w": 24,
+    "h": 46,
+    "ox": 37,
+    "oy": 14,
+    "hx": 13,
+    "hy": 18,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "head-sterling.small": {
+    "file": "sprites/head-sterling.small.png",
+    "w": 12,
+    "h": 22,
+    "ox": 44,
+    "oy": 2,
+    "hx": 5,
+    "hy": 12,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-sterling.near.small": {
+    "file": "sprites/arms-sterling.near.small.png",
+    "w": 36,
+    "h": 28,
+    "ox": 56,
+    "oy": 13,
+    "hx": 17,
+    "hy": 15,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "arms-sterling.far.small": {
+    "file": "sprites/arms-sterling.far.small.png",
+    "w": 29,
+    "h": 47,
+    "ox": 15,
+    "oy": 9,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.261,
+      "mid": 0.608,
+      "hi": 0.983
+    }
+  },
+  "legs-shrike.small": {
+    "file": "sprites/legs-shrike.small.png",
+    "w": 76,
+    "h": 63,
+    "ox": 12,
+    "oy": 37,
+    "hx": 52,
+    "hy": 31,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "core-shrike.small": {
+    "file": "sprites/core-shrike.small.png",
+    "w": 39,
+    "h": 33,
+    "ox": 29,
+    "oy": 9,
+    "hx": 21,
+    "hy": 23,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "head-shrike.small": {
+    "file": "sprites/head-shrike.small.png",
+    "w": 13,
+    "h": 20,
+    "ox": 45,
+    "oy": 5,
+    "hx": 4,
+    "hy": 9,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "arms-shrike.near.small": {
+    "file": "sprites/arms-shrike.near.small.png",
+    "w": 34,
+    "h": 29,
+    "ox": 58,
+    "oy": 12,
+    "hx": 16,
+    "hy": 16,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
+      "hi": 0.491
+    }
+  },
+  "arms-shrike.far.small": {
+    "file": "sprites/arms-shrike.far.small.png",
+    "w": 30,
+    "h": 47,
+    "ox": 14,
+    "oy": 9,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.158,
       "hi": 0.491
     }
   },

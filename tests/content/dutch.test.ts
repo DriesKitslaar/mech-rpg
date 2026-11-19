@@ -111,10 +111,10 @@ describe('Dutch: titles in the database', () => {
     }
   });
 
-  test('whom somebody works for is said in Dutch, but for the names of the four that are names', () => {
+  test('whom somebody works for is said in Dutch, but for the names of the five that are names', () => {
     // A role may stay, which is why the kind is let off above: a company's name is a name. Anything else is a word.
     const roles = [...new Set(PEOPLE.map((person) => person.role))];
-    expect(roles.filter((role) => !Object.hasOwn(nl, role)).sort()).toEqual(['Dispatch', 'Hadron Mining', 'Lumen Systems', 'Meridian Mutual']);
+    expect(roles.filter((role) => !Object.hasOwn(nl, role)).sort()).toEqual(['Coast Circuit', 'Dispatch', 'Hadron Mining', 'Lumen Systems', 'Meridian Mutual']);
     expect(nl['The Undertow']).toBe('De Undertow');
     expect(nl.Wanted).toBe('Gezocht');
   });

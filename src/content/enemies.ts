@@ -69,6 +69,31 @@ const WANTED: Record<string, EnemyDef> = {
   },
 };
 
+const SHRIKE = { head: 'head-shrike', core: 'core-shrike', arms: 'arms-shrike', legs: 'legs-shrike' };
+const STERLING = { head: 'head-sterling', core: 'core-sterling', arms: 'arms-sterling', legs: 'legs-sterling' };
+
+/**
+ * The two swords of the Coast Circuit, who come to Varn once the audit is over. Each flies a frame no yard in
+ * Varn builds, in its own colours, and is met in a duel and nowhere else. Both are plated to last a duel: twice
+ * the armour of the frame as it is sold, so that the fight is long enough for what the frame does to be seen.
+ * Measured with the game's own automatic pilot and the perks of a pilot who has finished the story: the first is
+ * won nearly always by a quick mech with a blade, about half the time by a Colossus and a quarter by a Ronin
+ * with guns alone; the second nearly always by anything that lands one great blow a round (a rail, two blades),
+ * and one time in four by a Colossus whose beam only ever feeds the field.
+ */
+const CIRCUIT: Record<string, EnemyDef> = {
+  // Boosts in, strikes, and is still boosting: a blade does not cost a Shrike its boost. Goes for whatever is already hurt.
+  larder: {
+    id: 'larder', name: 'Larder', ai: 'bruiser', sprite: 'enemy-rival', composed: true, portrait: 'portrait-larder', plating: 1,
+    build: { ...SHRIKE, generator: 'gen-tidal', booster: 'bst-vector', fcs: 'fcs-surgeon', rightHand: 'wpn-enemy-edge', leftHand: 'wpn-enemy-pinpoint' },
+  },
+  // The first sword's own Sterling: its field is tuned far past what the yard sells. It aims for the core, as a duellist of standing does.
+  argent: {
+    id: 'argent', name: 'Argent', ai: 'gunner', sprite: 'enemy-rival', composed: true, portrait: 'portrait-argent', plating: 1, abilities: { field: 70 },
+    build: { ...STERLING, generator: 'gen-singularity', booster: 'bst-vector', fcs: 'fcs-omni', rightHand: 'wpn-enemy-pinpoint', leftHand: 'wpn-enemy-edge' },
+  },
+};
+
 /** Machines that turn up on open contracts and in the Gauntlet. */
 const FIELD: Record<string, EnemyDef> = {
   // Dug in and slow to aim; what lands, lands hard.
@@ -127,6 +152,7 @@ const FIELD: Record<string, EnemyDef> = {
 
 export const ENEMIES: Record<string, EnemyDef> = {
   ...WANTED,
+  ...CIRCUIT,
   ...FIELD,
   'recon-drone': RECON_DRONE,
   'gun-turret': {

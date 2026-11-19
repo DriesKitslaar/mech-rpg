@@ -1,5 +1,5 @@
 import {
-  aegisFactor, coolCost, boostCost, guardCost, jamOn, objectiveTarget, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type BattleEvent, type UnitState, DRIVE_MAX,
+  aegisFactor, coolCost, boostCost, fieldOf, guardCost, jamOn, objectiveTarget, turnEnergyOf, HEAT_LIMIT, MAX_ENEMIES, type BattleEvent, type UnitState, DRIVE_MAX,
 } from '../core/battle';
 import { weaponIn } from '../core/build';
 import { FRAME_SLOTS, type Catalog, type FrameSlot } from '../core/types';
@@ -1271,6 +1271,8 @@ export class BattleScreen {
       ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor, rank: 6 }] : []),
       ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat, rank: 8 }] : []),
       ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy, rank: 7 }] : []),
+      // A core's field that has been broken: said for as long as nothing stands in its place.
+      ...(unit.barrier === 0 && fieldOf(unit, this.catalog) > 0 ? [{ text: T.fieldDown, color: COLORS.dim, rank: 7 }] : []),
       // An Overdrive that lasts says so for as long as it does.
       ...(unit.ironSkin ? [{ text: T.ironSkin, color: COLORS.accent, rank: 8 }] : []),
       ...(unit.deadeye ? [{ text: T.deadeye, color: COLORS.accent, rank: 8 }] : []),
