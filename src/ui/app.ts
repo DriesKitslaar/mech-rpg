@@ -16,7 +16,7 @@ import {
   TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, learn, newGame, type GameState, type LightDetail, type Settings,
 } from '../core/game';
 import { archetypeOf, recordWinAs } from '../core/archetype';
-import { startMissionBattle } from '../core/mission';
+import { startFight, type Fight } from '../core/mission';
 import { fitSortie, sortieBuilds, type Sortie } from '../core/sortie';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
@@ -225,6 +225,8 @@ export interface AppDeps {
   fast: boolean;
   /** Makes the device vibrate for a number of milliseconds, where it can. */
   vibrate?: (ms: number) => void;
+  /** The time, in milliseconds: for work that is done a little a frame and has to stop when its share of the frame is used up. Without it such work does a fixed amount. */
+  now?: () => number;
   seed: number;
 }
 
@@ -252,26 +254,9 @@ class MissionHost implements Screen {
   private begin(): void {
     const { catalog, sprites, sfx, fast } = this.app.deps;
     const total = this.mission.battles.length;
-    // The pilot's perks apply in every battle of the contract, the first and the carried ones alike.
-    // A drill is fought in the simulator's mech as it comes: the pilot's own build and perks stay outside.
-    const { aim, evasion, energy, cooling, repairs, armour } = this.app.perks();
-    const run = isGauntlet(this.mission) ? this.app.run : null;
-    const drill = isDrill(this.mission) || !!run;
-    // A run of the Gauntlet has an Overdrive only if a warden left it one; a drill only if it teaches it.
-    const fitted = run ? runOverdrive(run) : drill ? undefined : this.app.overdrive();
-    const overdrive = this.mission.overdrive ?? (fitted ? { kind: fitted, drive: 0 } : undefined);
-    const state = startMissionBattle(
-      this.mission.loaner ?? this.app.game!.build, this.mission, this.index, this.app.enemies(), catalog, this.seed, this.index > 0 ? this.flow.state : undefined,
-      {
-        enemyScale: this.enemyScale(),
-        // The pilot's own Overdrive goes with the pilot's own mech; a drill that teaches it brings its own.
-        ...(overdrive ? { overdrive: overdrive.kind, ...(this.index === 0 && overdrive.drive > 0 ? { drive: overdrive.drive } : {}) } : {}),
-        // A run of the Gauntlet has its own boons and arrives as the last floor left it; the pilot's perks stay outside.
-        // The bench's work is on the pilot's own parts: a frame that is lent is as the factory made it.
-        ...(run ? { mods: runMods(run), carry: run.carry ?? undefined } : drill ? {}
-          : { mods: { aim, evasion, energy, cooling, repairs, armour, ...(this.mission.loaner ? {} : this.app.tune()) } }),
-      },
-    );
+    const drill = isDrill(this.mission) || isGauntlet(this.mission);
+    // What the contract is fought with is the app's to say: the odds on the briefing were counted from the same.
+    const state = startFight(this.app.fight(this.mission), this.mission, this.index, catalog, this.seed, this.index > 0 ? this.flow.state : undefined);
     // Each battle of a contract has its own song: the last one may be against a boss.
     this.app.playTrack(battleTrack(this.mission, this.index, this.app.enemies()));
     // Tests play without the talk: it is words to read, and they have nobody reading.
@@ -318,9 +303,9 @@ class MissionHost implements Screen {
     return !!game && game.cycle === 0 && !introductionsDone(game, MISSIONS);
   }
 
-  /** The contract's own scale times the difficulty the player chose. A drill is the same for everyone. */
+  /** How much stronger or weaker than the book the enemy is in this contract. */
   private enemyScale(): number {
-    return (this.mission.scale ?? 1) * (isDrill(this.mission) || isGauntlet(this.mission) ? 1 : DIFFICULTY_SCALE[this.app.settings.difficulty]);
+    return this.app.fight(this.mission).opts.enemyScale ?? 1;
   }
 
   /** True when winning the current battle leads to another one. */
@@ -803,15 +788,46 @@ export class App {
     if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
-  /** The bench's work on the pilot's parts, as a battle takes it: nothing at all when there is none. */
-  tune(): { tune?: Tuning } {
-    const tuning = this.game?.tuning;
+  /** The bench's work on a pilot's parts, as a battle takes it: nothing at all when there is none. */
+  private tune(game: GameState | null): { tune?: Tuning } {
+    const tuning = game?.tuning;
     return tuning && Object.keys(tuning).length > 0 ? { tune: tuning } : {};
   }
 
-  /** Every enemy a battle can field, the opponent of a mirror match made from the pilot's build as it is now. */
-  enemies(): Record<string, EnemyDef> {
-    return this.game ? { ...ALL_ENEMIES, mirror: mirrorEnemy(this.game, STRINGS.arena.mirror.name) } : ALL_ENEMIES;
+  /** Every enemy a battle can field, the opponent of a mirror match made from the pilot's build: the one fitted now, or the one `game` has. */
+  enemies(game: GameState | null = this.game): Record<string, EnemyDef> {
+    return game ? { ...ALL_ENEMIES, mirror: mirrorEnemy(game, STRINGS.arena.mirror.name) } : ALL_ENEMIES;
+  }
+
+  /**
+   * What a contract's battles are fought with. Every battle is started from this, and the odds on a
+   * briefing are counted from it, so that what is counted is the fight that follows. `game` is the game
+   * the contract is flown from: the one kept, or that one with another of the pilot's builds fitted.
+   */
+  fight(mission: Mission, game: GameState | null = this.game): Fight {
+    // The pilot's perks apply in every battle of the contract, the first and the carried ones alike.
+    // A drill is fought in the simulator's mech as it comes: the pilot's own build and perks stay outside.
+    const { aim, evasion, energy, cooling, repairs, armour } = perkEffects(game?.perks ?? {}, PERKS);
+    const run = isGauntlet(mission) ? game?.gauntlet ?? null : null;
+    const drill = isDrill(mission);
+    // A run of the Gauntlet has an Overdrive only if a warden left it one; a drill only if it teaches it.
+    const fitted = run ? runOverdrive(run) : drill || !game ? undefined : fittedOverdrive(game);
+    const overdrive = mission.overdrive ?? (fitted ? { kind: fitted, drive: 0 } : undefined);
+    return {
+      build: mission.loaner ?? game!.build,
+      enemies: this.enemies(game),
+      opts: {
+        // The contract's own scale times the difficulty the player chose. A drill is the same for everyone.
+        enemyScale: (mission.scale ?? 1) * (isDrill(mission) || isGauntlet(mission) ? 1 : DIFFICULTY_SCALE[this.settings.difficulty]),
+        // The pilot's own Overdrive goes with the pilot's own mech; a drill that teaches it brings its own.
+        ...(overdrive ? { overdrive: overdrive.kind } : {}),
+        // A run of the Gauntlet has its own boons and arrives as the last floor left it; the pilot's perks stay outside.
+        // The bench's work is on the pilot's own parts: a frame that is lent is as the factory made it.
+        ...(run ? { mods: runMods(run), carry: run.carry ?? undefined } : drill ? {}
+          : { mods: { aim, evasion, energy, cooling, repairs, armour, ...(mission.loaner ? {} : this.tune(game)) } }),
+      },
+      ...(overdrive && overdrive.drive > 0 ? { drive: overdrive.drive } : {}),
+    };
   }
 
   /** The drills in list order, each with whether it is open yet and whether it has been passed. */
@@ -1016,23 +1032,38 @@ export class App {
     if (fit !== null) {
       // A contract in a lent mech is not flown in any build of the pilot's: nothing is fitted for it.
       const lent = this.offered(missionId, replay)?.loaner !== undefined;
-      const fitted = this.game && !lent ? fitSortie(this.game, fit, tunedCatalog(this.deps.catalog, this.game.tuning)) : null;
+      const fitted = lent ? null : this.fitted(fit);
       if (!fitted) return;
       this.commit(fitted);
     }
     const first = this.offered(missionId, replay);
     const offered = other && first ? this.otherOffer(first) ?? undefined : first;
     if (!offered || (offered.loaner === undefined && this.buildErrors().length > 0)) return;
-    // A second pilot comes along when one was hired who takes calls: their fire, and their share of the fee.
-    const wingman = this.wingmen(offered).find((w) => w.id === wingmanId);
-    const mission = wingman ? withWingman(offered, wingman) : offered;
     this.seed = (this.seed + 101) % 2147483647;
-    this.show('battle', new MissionHost(this, mission, this.seed));
+    this.show('battle', new MissionHost(this, this.crewed(offered, wingmanId), this.seed));
   }
 
-  /** The Overdrive the pilot flies with, once one is open to them. */
-  overdrive(): OverdriveId | undefined {
-    return this.game ? fittedOverdrive(this.game) : undefined;
+  /** The game as it would be kept with one of `sorties()` fitted: itself for the build on the floor, nothing for a slot that cannot be flown from. */
+  fitted(slot: number | null): GameState | null {
+    return this.game ? fitSortie(this.game, slot, tunedCatalog(this.deps.catalog, this.game.tuning)) : null;
+  }
+
+  /** An offer as it is flown: a second pilot comes along when one was hired who takes calls, with their fire and their share of the fee. */
+  crewed(offered: Mission, wingmanId: string | null): Mission {
+    const wingman = this.wingmen(offered).find((w) => w.id === wingmanId);
+    return wingman ? withWingman(offered, wingman) : offered;
+  }
+
+  /**
+   * What accepting an offer would start: the contract as it would be flown, and what its battles would be
+   * fought with in the build of that slot (null for the one on the floor). Nothing for a contract in a lent
+   * mech, a slot that cannot be flown from, or a build that may not deploy.
+   */
+  prospect(offered: Mission, wingmanId: string | null, slot: number | null): { mission: Mission; fight: Fight } | null {
+    const game = offered.loaner === undefined ? this.fitted(slot) : null;
+    if (!game || validatePlayerBuild(game.build, tunedCatalog(this.deps.catalog, game.tuning)).length > 0) return null;
+    const mission = this.crewed(offered, wingmanId);
+    return { mission, fight: this.fight(mission, game) };
   }
 
   /** Chooses the Overdrive to fly with, among those open to the pilot. */

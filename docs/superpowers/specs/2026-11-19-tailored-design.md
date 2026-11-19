@@ -76,12 +76,26 @@ written in the header under the class (`ODDS 17/20`) and on the build's page. Tu
 build, hiring or sending home a wingman, or turning to the other side's offer counts afresh; what
 was counted before is kept for when the pilot turns back.
 
-One flight is flown a frame, so that the briefing goes on writing itself out while the count
-runs; until it is done the header says that it is counting. The flights are always the same
-flights: the same build on the same contract gets the same odds every time it is looked at. In
-the game's hurried mode (the tests', the career bot's) nothing is counted.
+A whole flight is too much to work out between two frames: measured on the build machine one takes
+eleven milliseconds on average and the longest nearly ninety, and the handheld is slower. So a
+count is kept as it stands and moved on a few actions at a time, every frame, while the briefing
+goes on writing itself out: eight steps a go, one go a frame, and where the time can be told as
+many more goes (up to eight) as fit in four milliseconds. However it is sliced, the odds come out
+the same. While it is counted the header shows the count as it rises, dim (`ODDS 9/11`); counted
+out, the odds stand in their colour: good at fifteen of twenty or more, fair from eight, poor
+under that.
 
-Not on a contract flown in a lent mech or a drill.
+The flights are always the same flights: the same build on the same contract gets the same odds
+every time it is looked at. In the game's hurried mode (the tests', the career bot's) nothing is
+counted.
+
+Not on a contract flown in a lent mech or a drill, and not for a build that may not deploy.
+
+The battle and the count are started from the same thing. The app says what a contract is fought
+with (`App.fight`: the build, every enemy with the mirror of that build, the scale, the perks, the
+bench's work, the Overdrive) and what accepting would start (`App.prospect`: the offer with whoever
+was hired, in the build of the slot chosen); the battle is begun from the first and the odds are
+counted from the second, which is made of the first.
 
 ### Work that asks for a class (M3)
 

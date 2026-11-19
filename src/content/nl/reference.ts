@@ -240,6 +240,9 @@ export const REFERENCE_NL: Record<string, string> = {
   CLASSES: 'KLASSEN',
   'A build is one of seven classes, the first it fits: a blade makes a Duellist, a weapon that charges a Sharpshooter, a salvo Artillery, two or more weapons, all energy, a Lancer, a shield or legs of MOB 18 or less a Bastion, legs of MOB 40 or more a Skirmisher, anything else an All-rounder. The garage names yours.':
     'Een build is een van zeven klassen, de eerste die past: een kling maakt een Duellist, een wapen dat laadt een Scherpschutter, een salvo Artillerie, twee of meer wapens, alle energie, een Lansier, een schild of benen tot MOB 18 een Bastion, benen vanaf MOB 40 een Jager, al het andere een Allrounder. De garage noemt de jouwe.',
+  ODDS: 'KANS',
+  'A briefing gives the odds of the contract in the build you have chosen: Auto Turn flies it 20 times with your perks, bench work, Overdrive, wingman and difficulty, and its wins are counted. Another build is another count. The odds are what Auto Turn makes of the fight: flying it yourself, you can do better.':
+    'Een briefing geeft de kans op het contract in de build die je koos: Auto-beurt vliegt het 20 keer met je perks, werkbank, Overdrive, wingman en moeilijkheid, en telt zijn winst. Een andere build is een andere telling. De kans is wat Auto-beurt van het gevecht maakt: zelf vliegen kan beter.',
   'LEVELS AND PERKS': 'LEVELS EN PERKS',
   'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.':
     'Gewonnen contracten zijn ervaring. Elk level geeft een perkpunt; perks koop je op het pilotenscherm en hou je voorgoed. Medailles verdien je met wat je doet, ze betalen een beetje, en staan daar ook.',

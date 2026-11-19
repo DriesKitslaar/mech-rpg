@@ -362,6 +362,8 @@ export const STRINGS_NL = {
     wingmanHint: 'LEFT/RIGHT: kies een wingman',
     build: 'Build', buildOnFloor: 'HUIDIGE BUILD', buildSaved: (slot: number) => `MIJN BUILD ${slot}`,
     buildHint: 'LEFT/RIGHT: andere build', buildNone: 'Bewaar builds in de Garage en kies er hier een.',
+    odds: (won: number, played: number) => `KANS ${won}/${played}`, oddsWait: 'KANS ..',
+    oddsNote: 'dit contract op Auto-beurt',
     aloneText: 'Vlieg alleen en houd het hele loon.',
     wingmanTerms: (damage: number, percent: number) => `Tot ${damage} per ronde vanaf ronde 2. Pakt ${percent}% van loon en XP.`,
     lentNote: 'Je eigen mech kan zo niet uitrukken, dus Dispatch leent je hiervoor een standaardframe. Breng de jouwe in de Garage op orde; tot dan is dit het werk dat er is.',

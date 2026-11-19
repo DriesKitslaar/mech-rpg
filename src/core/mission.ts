@@ -63,10 +63,29 @@ export function startMissionBattle(
   return state;
 }
 
+/**
+ * What a contract's battles are fought with: the mech, every enemy there can be, and what the pilot
+ * brings to each battle. The game starts its battles from one of these, and counts a contract's odds
+ * from the same one, so that the two are the same fight.
+ */
+export interface Fight {
+  build: Build;
+  enemies: Record<string, EnemyDef>;
+  opts: Pick<BattleOptions, 'mods' | 'enemyScale' | 'carry' | 'overdrive'>;
+  /** What the Overdrive's meter stands at as the first battle opens, for a contract that hands it over filled. */
+  drive?: number;
+}
+
+/** Starts battle number `index` of a contract from what it is fought with; after the first, from the battle before it as it ended. */
+export function startFight(fight: Fight, mission: Mission, index: number, catalog: Catalog, seed: number, previous?: BattleState): BattleState {
+  return startMissionBattle(fight.build, mission, index, fight.enemies, catalog, seed, previous,
+    { ...fight.opts, ...(index === 0 && fight.drive ? { drive: fight.drive } : {}) });
+}
+
 /** Plays a whole mission with the given way of playing one battle. Returns the last battle fought. */
 export function playMission(
   build: Build, mission: Mission, enemies: Record<string, EnemyDef>, catalog: Catalog, seed: number,
-  playBattle: (state: BattleState) => BattleState, opts: Pick<BattleOptions, 'mods' | 'enemyScale'> = {},
+  playBattle: (state: BattleState) => BattleState, opts: Pick<BattleOptions, 'mods' | 'enemyScale' | 'overdrive'> = {},
 ): BattleState {
   let state: BattleState | undefined;
   for (let i = 0; i < mission.battles.length; i++) {

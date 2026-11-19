@@ -3,7 +3,9 @@ import { isSwarm } from '../core/board';
 import { computeBuildStats } from '../core/build';
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
+import { advance, counted, newCount, type Count, type Forecast } from '../core/forecast';
 import { groundFor } from '../core/ground';
+import type { Fight } from '../core/mission';
 import type { Sortie } from '../core/sortie';
 import { isDrill } from '../core/training';
 import { tunedCatalog } from '../core/tuning';
@@ -17,7 +19,7 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { briefingTrack } from './soundtrack';
 import { Typewriter } from './typewriter';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
 
 const B = STRINGS.briefing;
 const C = STRINGS.classes;
@@ -26,6 +28,18 @@ const G = STRINGS.garage;
 const MENU_TOP = [216, 216, 210, 204, 202];
 /** What a build carries, as the page about it lists it: what it fights with, and its module. */
 const CARRIED: BuildSlot[] = ['rightHand', 'leftHand', 'shoulder', 'module'];
+/** The share of its flights a build has to win for its odds to be written as good, and as fair; under that they are poor. */
+export const ODDS_GOOD = 0.75;
+export const ODDS_FAIR = 0.4;
+/**
+ * How long the count of the odds may work in one frame, where the time can be told: a quarter of a frame
+ * at sixty a second. It always works one go; on a machine with time to spare it works more, up to `ODDS_GOES`.
+ */
+export const ODDS_BUDGET_MS = 4;
+export const ODDS_GOES = 8;
+/** The colour odds are written in once they are counted: good, fair or poor. */
+export const oddsColor = (odds: Forecast): string =>
+  odds.won >= odds.played * ODDS_GOOD ? COLORS.armor : odds.won >= odds.played * ODDS_FAIR ? COLORS.heat : COLORS.danger;
 
 /** One line per kind of enemy across all of a contract's battles: "Recon Drone x3". */
 export function hostiles(mission: Mission): string[] {
@@ -89,6 +103,12 @@ export class BriefingScreen implements Screen {
    */
   private builds: Sortie[];
   private chosen = 0;
+  /**
+   * The odds of what has been shown, by offer, build and wingman: the contract as accepting would start it,
+   * what it would be fought with, and the count as it stands. A count is moved on a little each frame while
+   * it is the one showing, and kept once it is done. Null where no odds are given.
+   */
+  private counts = new Map<string, { mission: Mission; fight: Fight; count: Count } | null>();
 
   constructor(private app: App, private first: Mission) {
     this.other = app.otherOffer(first);
@@ -139,8 +159,38 @@ export class BriefingScreen implements Screen {
     if (count > 0) this.chosen = (this.chosen + step + count) % count;
   }
 
+  /**
+   * The count for what is showing, begun the first time it is asked for. Nothing in the hurried mode, where
+   * nobody is reading; nothing for a contract flown in a lent mech, or in a build that may not deploy.
+   */
+  private get counting(): { mission: Mission; fight: Fight; count: Count } | null {
+    if (this.app.deps.fast || !this.sortie) return null;
+    const key = `${this.mission === this.other ? 'other' : 'first'}/${this.sortie.slot ?? 'floor'}/${this.wingman?.id ?? 'alone'}`;
+    if (!this.counts.has(key)) {
+      const prospect = this.app.prospect(this.mission, this.wingman?.id ?? null, this.sortie.slot);
+      this.counts.set(key, prospect ? { ...prospect, count: newCount() } : null);
+    }
+    return this.counts.get(key) ?? null;
+  }
+
+  /** The odds as far as they are counted, and whether that is all of them. */
+  private get odds(): (Forecast & { done: boolean }) | null {
+    const counting = this.counting;
+    return counting ? { ...counting.count.tally, done: counted(counting.count) } : null;
+  }
+
   update(dtMs: number): void {
     this.writer.update(dtMs);
+    // A few actions of a flight a frame: the briefing goes on writing itself out while the odds are counted.
+    const counting = this.counting;
+    if (!counting || counted(counting.count)) return;
+    const { now, catalog } = this.app.deps;
+    const until = now ? now() + ODDS_BUDGET_MS : 0;
+    let goes = 0;
+    do {
+      counting.count = advance(counting.count, counting.fight, counting.mission, catalog);
+      goes += 1;
+    } while (now && goes < ODDS_GOES && !counted(counting.count) && now() < until);
   }
 
   onInput(action: InputAction): void {
@@ -174,6 +224,8 @@ export class BriefingScreen implements Screen {
         lent: !isDrill(this.mission) && this.mission.loaner !== undefined,
         // The build it will be taken in: the slot it is saved in (null for the one on the floor), what kind of machine it is, and how many there are to turn through.
         build: this.sortie ? { slot: this.sortie.slot, kind: this.kind, choices: this.builds.length } : null,
+        // How the contract is likely to go in it: flights won of those counted so far, and whether all are counted.
+        odds: this.odds,
         // How many offers there are for this contract, the client of the one showing, and whether that is the other side's.
         offers: this.other ? 2 : 1, client: this.mission.client, turned: this.mission === this.other,
       },
@@ -216,6 +268,11 @@ export class BriefingScreen implements Screen {
       drawText(ctx, sortie.slot === null ? B.buildOnFloor : B.buildSaved(sortie.slot + 1), LOGICAL_W - 12, 9, { align: 'right', color: COLORS.dim, size: 10 });
       drawText(ctx, C.names[kind].toUpperCase(), LOGICAL_W - 12, 19, { align: 'right', color: sortie.slot === null ? COLORS.text : COLORS.accent });
     }
+    // Under it, how the contract is likely to go in that build: dim while it is being counted, then in the colour of the odds.
+    const odds = this.odds;
+    const oddsText = odds ? (odds.played === 0 ? B.oddsWait : B.odds(odds.won, odds.played)) : '';
+    const oddsShade = odds?.done ? oddsColor(odds) : COLORS.dim;
+    if (odds) drawText(ctx, oddsText, LOGICAL_W - 12, 30, { align: 'right', color: oddsShade });
 
     // Body: what the client says, and under it what the contract asks for when that is more than a fight.
     drawPanel(ctx, 4, 72, LOGICAL_W - 8, 122);
@@ -248,6 +305,11 @@ export class BriefingScreen implements Screen {
         drawText(ctx, G.slotTags[slot], 12, row + 1, { color: COLORS.dim, size: 10 });
         drawText(ctx, id !== undefined && Object.hasOwn(catalog, id) ? catalog[id].name : '-', 46, row, { color: id === undefined ? COLORS.dim : COLORS.text });
       });
+      // The odds again, with what they are: the game's own pilot flying the contract in this build.
+      if (odds) {
+        drawText(ctx, oddsText, 12, y + 21 + 6 * LINE, { color: oddsShade });
+        drawText(ctx, `: ${B.oddsNote}`, 12 + Math.round(oddsText.length * CHAR_W), y + 21 + 6 * LINE, { color: COLORS.dim });
+      }
       // With something to turn to, how; with nothing, where builds are saved.
       drawText(ctx, this.builds.length > 1 ? B.buildHint : B.buildNone, 12, 191 - LINE, { color: COLORS.dim });
     }
