@@ -39,7 +39,7 @@ const perks = (ranks: Record<string, number>): object => {
   return { aim, evasion, energy, cooling, repairs, armour };
 };
 /** The build and the pilot a tier is met with: the stages of the story, as the board grows through them. */
-export const stageOf = (tier: number): Stage => (tier <= 2 ? 'early' : tier <= 5 ? 'war' : 'late');
+const stageOf = (tier: number): Stage => (tier <= 2 ? 'early' : tier <= 5 ? 'war' : 'late');
 const pilotOf = (tier: number): object => (tier <= 2 ? {} : tier <= 5 ? perks({ marksman: 1, plating: 1 }) : perks({ marksman: 2, plating: 2, capacitor: 1, heatsinks: 1 }));
 const seedOf = (flight: number): number => (flight % 2 ? flight * 7919 : flight * 104729 + 13);
 

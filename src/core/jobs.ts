@@ -38,8 +38,9 @@ export const JOB_TIER = 1;
 export const isJob = (mission: Pick<Mission, 'id'>): boolean => mission.id.startsWith('open-') && mission.id.endsWith(`-${JOB}`);
 
 /**
- * Which kind is on offer. They turn in order, one step for every battle won, so that four battles
- * won have shown all four; a later telling of the story begins one step on.
+ * Which kind is on offer. They turn in order, one step for every contract won (what the board counts
+ * as `battlesWon` goes up by one with every bill that says won), so that four contracts won have shown
+ * all four; a later telling of the story begins one step on.
  */
 export const jobKind = (battlesWon: number, cycle: number): JobKind => JOB_KINDS[(battlesWon + cycle) % JOB_KINDS.length];
 
@@ -206,7 +207,7 @@ export function makeJob(kind: JobKind, tier: number, seed: number, text: BoardTe
 /**
  * The job on offer beside the board: one battle that asks for something other than everything
  * destroyed. Like the board it is a pure function of the pilot's progress, on dice of its own: the
- * same job after a reload, a new one after every battle won, and the board and the swarm beside it
+ * same job after a reload, a new one after every contract won, and the board and the swarm beside it
  * exactly what they always were. There is none below the board's first tier.
  */
 export function jobContract(battlesWon: number, cycle: number, text: BoardText & JobText, numbers: JobNumbers = JOB_NUMBERS): Mission | null {

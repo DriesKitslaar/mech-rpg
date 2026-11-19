@@ -273,7 +273,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'jobs', title: 'KINDS OF WORK',
-    text: "Once the board has grown a little, a job stands beside its three. Its title says which of four it is. Hit: paid for one machine, over when it falls. Repo: take that machine's arms and legs and leave its core. Escort: whatever stands wears the freight down each round. Hold: last six rounds. They turn with every battle won.",
+    text: "Once the board has grown a little, a job stands beside its three. Its title says which of four it is. Hit: paid for one machine, over when it falls. Repo: take that machine's arms and legs and leave its core. Escort: whatever stands wears the freight down each round. Hold: last six rounds. They turn with every contract won.",
   },
   {
     id: 'range', title: 'THE RANGE',

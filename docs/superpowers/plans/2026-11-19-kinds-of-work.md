@@ -18,7 +18,7 @@
 
 ## Review Focus
 
-- Every progress a pilot can have (battles won 0 to 400, cycles 0 to 3): the job is one the rules take (a hit has two machines or more and names the dearest; a repossession names a machine with arms and legs; an escort's freight starts with something to lose; a holding action's rounds are a number a battle can last), and below the first tier there is none.
+- Every progress a pilot can have (contracts won 0 to 400, cycles 0 to 3): the job is one the rules take (a hit has two machines or more and names the dearest; a repossession names a machine with arms and legs; an escort's freight starts with something to lose; a holding action's rounds are a number a battle can last), and below the first tier there is none.
 - A repossession whose machine is destroyed, by the pilot or by anything else on the pilot's side: lost, and said to be lost for that.
 - A holding action in which everything is destroyed before the rounds are up, reserve included: won.
 - A job with the pilot's own mech unable to deploy: not offered (only the lent patrol is).
@@ -71,4 +71,4 @@
 
 ### Task W3: final check
 
-- [ ] Read through once more; the soak; the last APK; a short Dutch summary.
+- [x] Read through once more; the soak; the last APK; a short Dutch summary.

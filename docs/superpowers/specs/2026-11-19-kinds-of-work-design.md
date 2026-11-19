@@ -19,7 +19,7 @@ finished one; the owner's word on what matters was variety in builds.
 ## Goals
 
 1. **A fourth open contract on the board that asks for something else.** One of four kinds, a new
-   one after every battle won, turning through all four:
+   one after every contract won, turning through all four:
    - **Hit**: one machine is named and paid for; when it falls the job is over. It is an elite.
    - **Repossession**: one machine is wanted back in one piece: its arms and legs gone, its core
      whole. Destroy it and the job is lost.
@@ -55,9 +55,9 @@ finished one; the owner's word on what matters was variety in builds.
 ## How it works
 
 Beside the board's three and the swarm stands one more open contract, from the board's first tier
-on (five battles won). Like them it is a pure function of the pilot's progress, on dice of its
-own: the same job after a reload, a new one after every battle won. Its kind is not on the dice:
-the four turn in order, so that four battles won have shown all four.
+on (five contracts won). Like them it is a pure function of the pilot's progress, on dice of its
+own: the same job after a reload, a new one after every contract won. Its kind is not on the dice:
+the four turn in order, so that four contracts won have shown all four.
 
 Each is one battle, at the board's own tier.
 

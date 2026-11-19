@@ -353,7 +353,7 @@ bepaalde klasse. Je herkent het in de lijst aan een **plus** achter het loon (bi
 
 ### Klussen: werk dat om iets anders vraagt
 
-Heb je vijf gevechten gewonnen, dan staat er tussen de open contracten ook een **klus**. Je herkent
+Heb je vijf contracten gewonnen, dan staat er tussen de open contracten ook een **klus**. Je herkent
 hem aan zijn titel, die begint met de soort: **Hit:**, **Repo:**, **Escort:** of **Hold:**. Bij een
 gewoon contract moet alles kapot; een klus vraagt iets anders. Bovenin het gevecht staat steeds wat
 er gevraagd wordt.
@@ -365,8 +365,8 @@ er gevraagd wordt.
 | **Escort** | Er staat vracht van de klant op het veld (bovenin, bijvoorbeeld **WAGE TRUCK 11/11**). Elke ronde haalt elke vijand die nog staat er één punt af. Op nul verlies je. | Snel opruimen: een Duellist redt het bijna altijd, een Bastion of Lancer veel minder vaak. |
 | **Hold** (standhouden) | Er komt meer dan je kunt verslaan, en wat je sloopt wordt vervangen. Overleef **zes rondes** (**HOLD OUT 1/6**). | Stevig staan: een Bastion of Artillery haalt het altijd, een lichte mecha heeft het zwaar. |
 
-- Na elk gewonnen gevecht is er een **andere soort** klus. Ze wisselen in vaste volgorde, dus na
-  vier gevechten heb je ze alle vier gezien.
+- Na elk gewonnen contract is er een **andere soort** klus. Ze wisselen in vaste volgorde, dus na
+  vier contracten heb je ze alle vier gezien.
 - Kijk bij de briefing naar **ODDS** en blader op de rij **Build** door je bewaarde builds: bij een
   klus scheelt het echt welke je meeneemt.
 - Een klus betaalt per ronde ongeveer wat een gewoon contract betaalt. Geen van de vier is "de

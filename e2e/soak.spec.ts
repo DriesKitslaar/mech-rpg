@@ -31,11 +31,14 @@ const PHASE = Object.fromEntries(MISSIONS.map((m) => [m.id, m.phase as string]))
 
 type Seen = Snap & { list?: string; busy?: boolean; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean } };
 
-/** A pilot with the best gear there is who has done these contracts and has read nothing of the story yet. */
+/**
+ * A pilot with the best gear there is who has done these contracts and has read nothing of the story yet.
+ * The contracts done are contracts won: the board has grown by them, as it would have.
+ */
 function pilot(done: string[]): GameState {
   let g = newGame(CATALOG, STARTER_BUILD);
   for (const id of done) g = completeMission(g, id, MISSIONS);
-  g = { ...g, credits: 999999 };
+  g = { ...g, credits: 999999, battlesWon: done.length };
   for (const [slot, id] of Object.entries(REFERENCE_BUILDS.tier6)) {
     g = buy(g, id, CATALOG);
     g = equip(g, slot as keyof GameState['build'], id, CATALOG);
@@ -103,13 +106,14 @@ async function open(page: Page, save: GameState, settings: Record<string, unknow
   return errors;
 }
 
-interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number }
+interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number; jobs: string[] }
 
 /**
  * Plays: the first swarm that is on offer beside the board (more machines than the field holds,
- * coming on as others fall), the story as far as it goes (of contracts on offer together, the one
- * whose name holds one of `prefer`), then the Gauntlet for a few floors, then a look into every
- * room. Battles are left to Auto Turn. With `other`, a contract the other side has made an offer
+ * coming on as others fall), a job of each kind as the board comes to offer it (a machine to bring
+ * down, one to take whole, freight to keep, rounds to last: each has its own strip on the field),
+ * the story as far as it goes (of contracts on offer together, the one whose name holds one of
+ * `prefer`), then the Gauntlet for a few floors, then a look into every room. Battles are left to Auto Turn. With `other`, a contract the other side has made an offer
  * for is flown for the other side. It stops when all of that is done or its time is up.
  */
 async function play(page: Page, prefer: string[], minutes: number, other = false): Promise<Played> {
@@ -122,6 +126,8 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let floors = 0;
   let runs = 0;
   let swarms = 0;
+  // The kinds of job flown, by the word their titles begin with: each once, won or lost.
+  const jobs: string[] = [];
   let last = '';
   let frames = 0;
   const step = async (ms: number): Promise<void> => { frames += Math.ceil(ms / 16); await adv(page, ms); };
@@ -151,11 +157,13 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     } else if (s.screen === 'hub' && s.list && s.list !== 'main') {
       const story = items.filter((item) => PHASE[item.id] && !['patrol', 'side'].includes(PHASE[item.id]) && (tried.get(item.id) ?? 0) < 3);
       const swarm = swarms < 1 ? items.find((item) => item.id.endsWith('-swarm') && item.enabled) : undefined;
-      const pick = swarm ?? story.find((item) => prefer.some((word) => item.id.includes(word))) ?? story[0];
+      const kindOf = (item: { label: string }): string => item.label.split(':')[0];
+      const job = items.find((item) => item.id.endsWith('-job') && item.enabled && !jobs.includes(kindOf(item)));
+      const pick = swarm ?? job ?? story.find((item) => prefer.some((word) => item.id.includes(word))) ?? story[0];
       if (!pick) { storyOver = true; await tap(page, 'Escape'); }
       else if (cur !== pick.id) await tap(page, 'ArrowDown');
       else {
-        if (pick === swarm) swarms++; else tried.set(pick.id, (tried.get(pick.id) ?? 0) + 1);
+        if (pick === swarm) swarms++; else if (pick === job) jobs.push(kindOf(job)); else tried.set(pick.id, (tried.get(pick.id) ?? 0) + 1);
         await tap(page, 'Enter');
       }
     } else if (s.screen === 'hub') {
@@ -179,7 +187,7 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     }
   }
   const end = await snap(page);
-  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms };
+  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs };
 }
 
 const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean }[] = [
@@ -198,12 +206,15 @@ for (const player of PLAYERS) {
     const errors = await open(page, player.later ? again(player.done) : pilot(player.done), player.settings);
     const played = await play(page, player.prefer, MINUTES, player.later);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
-    console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.swarms} swarm, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
+    console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
     expect(errors).toEqual([]);
     expect(played.frames).toBeGreaterThan(1000);
     // Every one of them flew a swarm: the machines that come on later were on the screen.
     expect(played.swarms).toBe(1);
+    // And jobs, once the board had one to offer: what each kind asks was on the field, with everything drawn.
+    expect(played.jobs.length).toBeGreaterThanOrEqual(1);
+    expect(new Set(played.jobs).size).toBe(played.jobs.length);
     if (player.later) {
       // It did fly for the other side: each of those contracts it finished is remembered as that.
       const kept = await page.evaluate(() => (JSON.parse(window.localStorage.getItem('ironwage-save')!) as { choices?: Record<string, string> }).choices ?? {});

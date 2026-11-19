@@ -4,6 +4,7 @@ import {
   HEAT_LIMIT, MAX_ENEMIES, OVERKILL, SHATTER, activeUnit, applyAction, checkAction, createBattle, guardFactor, previewShot, type BattleState,
 } from '../../src/core/battle';
 import { ASK_BONUS, ASK_TIER, BOARD_SIZE, PAY_PER_HEAD, swarmContract } from '../../src/core/board';
+import { applySettlement } from '../../src/core/economy';
 import { FORECAST_PLAYS } from '../../src/core/forecast';
 import { CHAMPION_RANK } from '../../src/core/arena';
 import { CROWN_BONUS, MASTER_PURSE, askBonus, crownHeld, masterPurse, mastersOpen, recordMasterWin } from '../../src/core/masters';
@@ -121,7 +122,7 @@ describe('the garage', () => {
 describe('the jobs', () => {
   test('the manual says when there is one, how many kinds there are, what each is called and asks, and when they turn, in both languages', () => {
     const text = topic('jobs');
-    // Beside the board's three, once the board has grown: from its first tier, which is five battles won.
+    // Beside the board's three, once the board has grown: from its first tier, which is five contracts won.
     expect(text).toMatch(/^Once the board has grown a little, a job stands beside its three\./);
     expect([BOARD_SIZE, JOB_TIER]).toEqual([3, 1]);
     expect([4, 5].map((wins) => jobContract(wins, 0, BOARD_TEXT) !== null)).toEqual([false, true]);
@@ -147,8 +148,12 @@ describe('the jobs', () => {
     expect(text).toContain(`Hold: last ${count[JOB_NUMBERS.holdRounds]} rounds.`);
     expect(dutch).toContain(`welke van de ${aantal[JOB_KINDS.length]}.`);
     expect(dutch).toContain(`Stand: houd ${aantal[JOB_NUMBERS.holdRounds]} rondes vol.`);
-    // They turn with every battle won.
-    expect(text).toMatch(/They turn with every battle won\.$/);
+    // They turn with every contract won: that is what the board counts, one for each bill that says won.
+    expect(text).toMatch(/They turn with every contract won\.$/);
+    expect(REFERENCE_NL[text]).toMatch(/Ze wisselen na elk gewonnen contract\.$/);
+    const before = newGame(CATALOG, STARTER_BUILD);
+    expect(applySettlement(before, { won: true, reward: 100, ammoCost: 0, repairCost: 0, net: 100, lines: [] }).battlesWon).toBe(before.battlesWon + 1);
+    expect(applySettlement(before, { won: false, reward: 0, ammoCost: 0, repairCost: 0, net: 0, lines: [] }).battlesWon).toBe(before.battlesWon);
     for (let wins = 5; wins < 40; wins++) expect(jobKind(wins + 1, 0)).toBe(JOB_KINDS[(JOB_KINDS.indexOf(jobKind(wins, 0)) + 1) % JOB_KINDS.length]);
   });
 
