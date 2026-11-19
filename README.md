@@ -41,6 +41,9 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 - **Proefveld**: in de simulator probeer je je eigen build gratis uit tegen elke machine die je
   al bent tegengekomen, of je spart tegen een van je eigen bewaarde builds; na afloop zie je wat
   een echte vlucht had gekost.
+- **Soorten werk**: naast de drie open contracten staat er steeds een klus die om iets anders
+  vraagt: één doelwit uitschakelen, een machine heel terugbrengen, vracht beschermen of zes rondes
+  standhouden. Welke build je meeneemt maakt daar echt verschil.
 - **Hangar**: zeven plekken voor bewaarde builds in plaats van drie, genoeg voor een build van
   elke klasse; de garage noemt elke plek naar de klasse van de build die erin zit.
 - **Meesters**: de arena heeft een tweede pagina met zeven meesters, een per klasse. Versla je er

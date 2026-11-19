@@ -876,7 +876,8 @@ describe('a new cycle', () => {
     expect(ids(app)).not.toContain('cycle');
     select(app, 'contracts');
     expect(story(app)).toEqual(['patrol', 'intro-1']);
-    expect(open(app)).toEqual(['open-1-0-0', 'open-1-0-1', 'open-1-0-2', 'open-1-0-swarm']);
+    // The board of a later telling has grown already: its three, the job that asks for something else, and the swarm.
+    expect(open(app)).toEqual(['open-1-0-0', 'open-1-0-1', 'open-1-0-2', 'open-1-0-job', 'open-1-0-swarm']);
     expect(snap(app).menu.items.find((i) => i.id === 'intro-1')!.note).toBe('900');
     expect(snap(app).menu.items.find((i) => i.id === 'patrol')!.note).toBe('400');
   });

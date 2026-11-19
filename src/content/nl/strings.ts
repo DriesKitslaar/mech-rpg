@@ -386,6 +386,7 @@ export const STRINGS_NL = {
     accept: 'Aannemen', back: 'Terug', reward: 'LOON', engagements: (n: number) => (n === 1 ? '1 GEVECHT' : `${n} GEVECHTEN`),
     hostiles: 'VERWACHT', exclusive: 'EXCLUSIEF: de andere twee klanten trekken hun aanbod in.',
     finale: 'LAATSTE ZET VAN DE OORLOG', repeatable: 'DOORLOPEND CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: EEN ELITE', swarm: 'OPEN CONTRACT: EEN ZWERM',
+    jobs: { hit: 'OPEN CONTRACT: DOELWIT', repo: 'OPEN CONTRACT: EEN BESLAG', escort: 'OPEN CONTRACT: EEN ESCORTE', hold: 'OPEN CONTRACT: STANDHOUDEN' },
     verdict: 'VONNIS: je antwoord eindigt het verhaal. Elk ander aanbod vervalt.',
     replay: 'ARCHIEF: minder loon. Het verhaal verandert niet.',
     lent: 'LEENMECH: de jouwe kan niet mee. Rekening blijft van jou.',

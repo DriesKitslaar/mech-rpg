@@ -11,6 +11,7 @@ import { RANGE_MAX, rangeLimit, sparEnemy } from '../../src/core/range';
 import { MASTERS } from '../../src/content/masters';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { LOADOUT_SLOTS, newGame, saveLoadout } from '../../src/core/game';
+import { JOB_KINDS, JOB_NUMBERS, JOB_TIER, jobContract, jobKind } from '../../src/core/jobs';
 import { NAME_AT, RENOWN, renownOf } from '../../src/core/renown';
 import { tallyBattle } from '../../src/core/stats';
 import { drillMission, drillSettlement, recordDrill } from '../../src/core/training';
@@ -114,6 +115,46 @@ describe('the garage', () => {
     flow.onInput('right');
     expect(flow.loadouts.items).toHaveLength(LOADOUT_SLOTS);
     expect(flow.loadouts.items[LOADOUT_SLOTS - 1].label).toBe(`${LOADOUT_SLOTS}  ${STRINGS.classes.names[archetypeOf(STARTER_BUILD, CATALOG)]}`);
+  });
+});
+
+describe('the jobs', () => {
+  test('the manual says when there is one, how many kinds there are, what each is called and asks, and when they turn, in both languages', () => {
+    const text = topic('jobs');
+    // Beside the board's three, once the board has grown: from its first tier, which is five battles won.
+    expect(text).toMatch(/^Once the board has grown a little, a job stands beside its three\./);
+    expect([BOARD_SIZE, JOB_TIER]).toEqual([3, 1]);
+    expect([4, 5].map((wins) => jobContract(wins, 0, BOARD_TEXT) !== null)).toEqual([false, true]);
+    const count = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+    const aantal = ['geen', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven'];
+    expect(text).toContain(`Its title says which of ${count[JOB_KINDS.length]} it is.`);
+    // Each kind by the word its titles begin with, in the order they turn in.
+    const words = { hit: 'Hit', repo: 'Repo', escort: 'Escort', hold: 'Hold' } as const;
+    const woorden = { hit: 'Doelwit', repo: 'Beslag', escort: 'Escorte', hold: 'Stand' } as const;
+    const dutch = REFERENCE_NL[text];
+    let at = -1;
+    let op = -1;
+    for (const kind of JOB_KINDS) {
+      for (const title of BOARD_TEXT.jobs[kind].titles) expect(title.startsWith(`${words[kind]}: `), title).toBe(true);
+      expect(text.indexOf(`${words[kind]}: `)).toBeGreaterThan(at);
+      at = text.indexOf(`${words[kind]}: `);
+      expect(dutch.indexOf(`${woorden[kind]}: `)).toBeGreaterThan(op);
+      op = dutch.indexOf(`${woorden[kind]}: `);
+    }
+    expect(text).toContain('Hit: paid for one machine, over when it falls.');
+    expect(text).toContain("Repo: take that machine's arms and legs and leave its core.");
+    expect(text).toContain('Escort: whatever stands wears the freight down each round.');
+    expect(text).toContain(`Hold: last ${count[JOB_NUMBERS.holdRounds]} rounds.`);
+    expect(dutch).toContain(`welke van de ${aantal[JOB_KINDS.length]}.`);
+    expect(dutch).toContain(`Stand: houd ${aantal[JOB_NUMBERS.holdRounds]} rondes vol.`);
+    // They turn with every battle won.
+    expect(text).toMatch(/They turn with every battle won\.$/);
+    for (let wins = 5; wins < 40; wins++) expect(jobKind(wins + 1, 0)).toBe(JOB_KINDS[(JOB_KINDS.indexOf(jobKind(wins, 0)) + 1) % JOB_KINDS.length]);
+  });
+
+  test('the chapter on a class wanted still says true: it is one of the board\'s three that asks, never the job', () => {
+    expect(topic('asks')).toContain('one of its three open contracts wants a class');
+    for (let wins = 5; wins < 120; wins++) expect(jobContract(wins, 0, BOARD_TEXT)!.asks).toBeUndefined();
   });
 });
 

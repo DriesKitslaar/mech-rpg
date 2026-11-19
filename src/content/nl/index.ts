@@ -63,6 +63,9 @@ function contentTexts(): TextSlot[] {
     ...textsOf('missions', [BOARD_TEXT], { adjectives: 'board.word', nouns: 'board.word', clients: 'client', places: 'briefing', debriefs: 'debrief', swarmTitles: 'mission.title', swarm: 'briefing' }),
     ...textsOf('missions', [BOARD_TEXT.threats], Object.fromEntries(Object.keys(BOARD_TEXT.threats).map((id) => [id, 'briefing']))),
     ...textsOf('missions', [BOARD_TEXT.elite], Object.fromEntries(Object.keys(BOARD_TEXT.elite).map((mark) => [mark, 'briefing']))),
+    // The jobs beside the board: what each can be called, what its kind asks, and what an escort keeps alive.
+    ...textsOf('missions', Object.values(BOARD_TEXT.jobs), { titles: 'mission.title', brief: 'briefing' }),
+    ...textsOf('missions', [BOARD_TEXT], { assets: 'asset' }),
     ...textsOf('missions', WINGMEN, { text: 'briefing' }),
     ...textsOf('missions', WINGMEN.map((w) => w.radio), { start: 'radio', kill: 'radio', cheer: 'radio', warn: 'radio', win: 'radio' }),
     ...textsOf('story', Object.values(ENEMIES).flatMap((e) => e.phases ?? []), { line: 'battle.talk' }),

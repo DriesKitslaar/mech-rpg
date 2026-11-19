@@ -63,11 +63,11 @@
 
 **Steps:**
 
-- [ ] The job on the list and at the briefing: tests with the drawn pages, each kind, both languages.
-- [ ] Each kind flown in the app to its end, won and lost: the hit over when its machine falls; the repossession lost when its machine is destroyed; the escort lost with the freight; the holding action won at its round and won early with nothing left. What the result says each time.
-- [ ] Booked: counted by kind, the medals, a kept game from before.
-- [ ] The manual and the claims that hold it to the rules; Dutch; the guide.
-- [ ] Browser test with pictures. Mutation over the step. APK.
+- [x] The job on the list and at the briefing: tests with the drawn pages, each kind, both languages.
+- [x] Each kind flown in the app to its end, won and lost: the hit over when its machine falls; the repossession lost when its machine is destroyed; the escort lost with the freight; the holding action won at its round and won early with nothing left. What the result says each time.
+- [x] Booked: counted by kind, the medals, a kept game from before.
+- [x] The manual and the claims that hold it to the rules; Dutch; the guide.
+- [x] Browser test with pictures. Mutation over the step. APK.
 
 ### Task W3: final check
 

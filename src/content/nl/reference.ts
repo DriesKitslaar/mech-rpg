@@ -234,6 +234,9 @@ export const REFERENCE_NL: Record<string, string> = {
   'THE GARAGE': 'DE GARAGE',
   'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Left and right open your seven saved builds: room for one of each class, each listed by the class it is.':
     'Een build moet onder het gewicht blijven dat zijn benen dragen en binnen de energie van zijn generator. L1 en R1 wisselen de lak. Links en rechts: je zeven bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd.',
+  'KINDS OF WORK': 'SOORTEN WERK',
+  "Once the board has grown a little, a job stands beside its three. Its title says which of four it is. Hit: paid for one machine, over when it falls. Repo: take that machine's arms and legs and leave its core. Escort: whatever stands wears the freight down each round. Hold: last six rounds. They turn with every battle won.":
+    'Is het bord wat gegroeid, dan staat er een klus naast de drie. De titel zegt welke van de vier. Doelwit: loon voor een machine, klaar als die valt. Beslag: haal armen en benen van die machine, laat de kern heel. Escorte: wat nog staat sloopt elke ronde wat van de vracht. Stand: houd zes rondes vol. Ze wisselen na elk gewonnen gevecht.',
   'LEG TYPES': 'BEENSOORTEN',
   'Reverse legs dodge better when they boost. Four legs are steady and aim shoulder weapons better. Tracks cannot boost, but guard best and are the hardest to stagger. Hover boosts cheaply and is easily knocked off balance.':
     'Omgekeerde benen ontwijken beter als ze boosten. Vier benen staan stevig en richten schouderwapens beter. Rupsbanden kunnen niet boosten, maar dekken het best en wankelen het minst snel. Hover boost goedkoop en raakt makkelijk uit balans.',
@@ -417,6 +420,10 @@ export const REFERENCE_NL: Record<string, string> = {
     'Breng een onderdeel naar stap vijf op de werkbank.',
   Stockpile: 'Voorraad',
   'Own 40 different parts.': 'Bezit 40 verschillende onderdelen.',
+  'Odd Jobs': 'Klusjesman',
+  'Win a job of each of the 4 kinds on the board.': 'Win een klus van elk van de 4 soorten op het bord.',
+  'On Retainer': 'Vaste kracht',
+  'Win 25 jobs.': 'Win 25 klussen.',
   'Second Opinion': 'Tweede mening',
   'Win contracts as 3 classes of machine.': 'Win contracten als 3 klassen machine.',
   Specialist: 'Specialist',

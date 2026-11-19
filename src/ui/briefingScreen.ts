@@ -278,6 +278,7 @@ export class BriefingScreen implements Screen {
       : mission.arenaRank !== undefined || mission.id === MIRROR_ID ? STRINGS.arena.fight
       : mission.replay ? B.replay
       : isSwarm(mission) ? B.swarm
+      : mission.job !== undefined ? B.jobs[mission.job]
       : mission.id.startsWith('open-') ? (mission.elite ? B.openElite : B.open)
       : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict
       : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable
