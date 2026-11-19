@@ -243,7 +243,12 @@ describe('the duel won', () => {
     const shown = drawn(app);
     expect(written(shown, 'THE SEAT IS YOURS')).toMatchObject({ y: 26, size: 16, color: COLORS.accent });
     expect(shown.texts.some((t) => t.text === STRINGS.settlement.won || t.text === STRINGS.settlement.crowned)).toBe(false);
-    expect(shown.texts.filter((t) => t.y >= 144 && t.y < 180).map((t) => t.text).join(' ')).toBe(`"${KEEPER.concede}"`);
+    // The keeper's own words, and after them where the keeper's machine is to be had: in the three rows there are for it.
+    const words = shown.texts.filter((t) => t.y >= 144 && t.y < 180);
+    expect(words.map((t) => t.text).join(' ')).toBe(`"${KEEPER.concede}" ${A.seat.win}`);
+    expect(A.seat.win).toBe('The yard that built its machine takes your order now.');
+    expect(words.length).toBeLessThanOrEqual(3);
+    expect(Math.max(...words.map((t) => t.y))).toBeLessThan(180 - LINE + 2);
     for (const t of shown.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 4);
     // The notice waits its turn behind whatever else is being announced.
     expect([snap(app).toast, ...snap(app).toasts]).toContain('seat');
@@ -325,7 +330,9 @@ describe('in Dutch', () => {
     const made = ended(dutch, true);
     const won = drawn(made.app);
     expect(written(won, 'DE STOEL IS VAN JOU').y).toBe(26);
-    expect(won.texts.filter((t) => t.y >= 144 && t.y < 180).map((t) => t.text).join(' ')).toBe('"Hij werd alleen warm gehouden. Ga zitten, piloot."');
+    const woorden = won.texts.filter((t) => t.y >= 144 && t.y < 180);
+    expect(woorden.map((t) => t.text).join(' ')).toBe('"Hij werd alleen warm gehouden. Ga zitten, piloot." De werf van zijn machine neemt nu jouw order aan.');
+    expect(woorden.length).toBeLessThanOrEqual(3);
     for (let i = 0; i < 40 && snap(made.app).toast !== 'seat'; i++) made.app.update(TOAST_MS + 1);
     const notice = drawn(made.app);
     expect(notice.texts.some((t) => t.text === 'STOEL GEPAKT')).toBe(true);

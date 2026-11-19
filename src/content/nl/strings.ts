@@ -231,7 +231,7 @@ export const STRINGS_NL = {
       tag: 'DE ACHTSTE STOEL: een tegen een, om de stoel',
       held: 'STOEL', count: (held: number, of: number) => `${held}/${of}`,
       locked: 'De achtste stoel heeft een houder, en die neemt een uitdaging aan: van wie alle zeven kronen heeft.',
-      win: 'De stoel is van jou. De werf van zijn machine neemt nu jouw order aan.',
+      win: 'De werf van zijn machine neemt nu jouw order aan.',
       taken: 'STOEL GEPAKT',
     },
     cups: {

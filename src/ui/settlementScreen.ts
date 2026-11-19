@@ -119,8 +119,9 @@ export class SettlementScreen implements Screen {
     }
 
     // After a win, what the client had to say about it; after a defeat, what Dispatch makes of it.
-    // A master who has just lost the crown says so themselves, and so does the keeper who has just lost the seat.
-    const words = s.seated ? `"${KEEPER.concede}"` : s.crowned ? `"${masterOf(s.crowned).concede}"` : s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
+    // A master who has just lost the crown says so themselves, and so does the keeper who has just lost the seat: and
+    // after the keeper's words stands what the arena has to say of it, which is where their machine is to be had.
+    const words = s.seated ? `"${KEEPER.concede}" ${this.mission.debrief}` : s.crowned ? `"${masterOf(s.crowned).concede}"` : s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
     wrap(words, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
       drawText(ctx, line, x + 10, 144 + i * LINE, { color: s.won ? COLORS.dim : COLORS.text }));
 

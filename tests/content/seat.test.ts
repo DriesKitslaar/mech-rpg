@@ -18,6 +18,7 @@ import { MESSAGES, MISSIONS } from '../../src/content/missions';
 import { REFERENCE_NL } from '../../src/content/nl/reference';
 import { STORY_NL } from '../../src/content/nl/story';
 import { STRINGS_NL } from '../../src/content/nl/strings';
+import { STRINGS } from '../../src/content/strings';
 import { CATALOG, DEMO_BUILD, SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../../src/content/parts';
 import { PERKS } from '../../src/content/perks';
 import { KEEPER, SEAT_ENEMIES } from '../../src/content/seat';
@@ -97,7 +98,9 @@ describe('the keeper', () => {
     expect(at.every((index) => index > 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
     expect(wrap(`"${KEEPER.taunt}"`, BRIEFING_CHARS).length).toBeLessThanOrEqual(2);
-    expect(wrap(`"${KEEPER.concede}"`, charsFor(210)).length).toBeLessThanOrEqual(3);
+    // On the bill the keeper's words stand with the arena's after them, in three rows, in both languages.
+    expect(wrap(`"${KEEPER.concede}" ${STRINGS.arena.seat.win}`, charsFor(210)).length).toBeLessThanOrEqual(3);
+    expect(wrap(`"${STORY_NL[KEEPER.concede]}" ${STRINGS_NL.arena.seat.win}`, charsFor(210)).length).toBeLessThanOrEqual(3);
     expect(KEEPER.taunt).toContain('Seven crowns');
   });
 

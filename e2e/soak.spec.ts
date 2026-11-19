@@ -1,7 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ARCHETYPES } from '../src/core/archetype';
 import { completeMission } from '../src/core/campaign';
-import { buy, equip, newGame, type GameState } from '../src/core/game';
+import { BUILD_SLOTS, buy, equip, newGame, type GameState } from '../src/core/game';
+import { xpForLevel } from '../src/core/pilot';
 import { tunable } from '../src/core/tuning';
+import type { Build } from '../src/core/types';
+import { ARCHETYPE_BUILDS } from '../src/content/archetypeBuilds';
 import { FINDS } from '../src/content/finds';
 import { MISSIONS } from '../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
@@ -29,7 +33,9 @@ test.describe.configure({ mode: 'parallel' });
 const ACT_ONE = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1'];
 const PHASE = Object.fromEntries(MISSIONS.map((m) => [m.id, m.phase as string]));
 
-type Seen = Snap & { list?: string; busy?: boolean; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean } };
+const AFTER_THE_WAR = [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
+
+type Seen = Snap & { list?: string; busy?: boolean; page?: string; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean } };
 
 /**
  * A pilot with the best gear there is who has done these contracts and has read nothing of the story yet.
@@ -55,6 +61,38 @@ function again(done: string[]): GameState {
   const g = pilot(done);
   const worked = Object.values(g.build).filter((id): id is string => !!id && tunable(CATALOG[id]));
   return { ...g, cycle: 1, tuning: Object.fromEntries(worked.map((id) => [id, 3])), codex: FINDS.map((find) => find.id) };
+}
+
+/**
+ * A pilot the keeper of the eighth seat takes a challenge from, and loses to: the war and the audit
+ * over, champion of the arena, every crown held, in a build with a veteran's perks and the bench's
+ * last step on all of it. With `seated` the seat is theirs already, and the build is on the
+ * Sovereign's frame in the keeper's paint: the frame is then drawn from behind in every battle.
+ */
+function crowned(seated: boolean): GameState {
+  let g = newGame(CATALOG, STARTER_BUILD, 'VANTA');
+  for (const id of AFTER_THE_WAR) g = completeMission(g, id, MISSIONS);
+  const frame = { head: 'head-sovereign', core: 'core-sovereign', arms: 'arms-sovereign', legs: 'legs-sovereign', generator: 'gen-singularity' };
+  const build: Build = { ...ARCHETYPE_BUILDS.allrounder.late, ...(seated ? frame : {}) };
+  g = { ...g, credits: 9_999_999 };
+  const parts = Object.values(build).filter((id): id is string => id !== undefined);
+  for (const id of new Set(parts)) while ((g.inventory[id] ?? 0) < parts.filter((other) => other === id).length) g = buy(g, id, CATALOG);
+  // (A part may not fit until another has gone on: what does not go on in the first pass goes on in the second.)
+  for (let pass = 0; pass < 2; pass++) {
+    for (const slot of BUILD_SLOTS) {
+      const id = build[slot];
+      try {
+        if (id === undefined && g.build[slot] !== undefined) g = equip(g, slot, null, CATALOG);
+        else if (id !== undefined && g.build[slot] !== id) g = equip(g, slot, id, CATALOG);
+      } catch { /* the next pass */ }
+    }
+  }
+  return {
+    ...g, credits: 64000, xp: xpForLevel(20), cycle: 3, battlesWon: 60, arenaRank: 15, scenes: [], endingSeen: true,
+    perks: { marksman: 3, reflexes: 3, capacitor: 3, heatsinks: 3, fieldTech: 2, plating: 3 },
+    tuning: Object.fromEntries(parts.filter((id) => tunable(CATALOG[id])).map((id) => [id, 5])),
+    masters: [...ARCHETYPES], crowns: [...ARCHETYPES], ...(seated ? { seat: true as const, paint: 'touchstone' } : {}),
+  };
 }
 
 const adv = (page: Page, ms: number): Promise<void> => page.evaluate((n) => (window as any).__game.advance(n), ms);
@@ -106,7 +144,7 @@ async function open(page: Page, save: GameState, settings: Record<string, unknow
   return errors;
 }
 
-interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number; jobs: string[] }
+interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number; jobs: string[]; duel: boolean }
 
 /**
  * Plays: the first swarm that is on offer beside the board (more machines than the field holds,
@@ -114,9 +152,10 @@ interface Played { missions: string[]; screens: string[]; battles: number; floor
  * down, one to take whole, freight to keep, rounds to last: each has its own strip on the field),
  * the story as far as it goes (of contracts on offer together, the one whose name holds one of
  * `prefer`), then the Gauntlet for a few floors, then a look into every room. Battles are left to Auto Turn. With `other`, a contract the other side has made an offer
- * for is flown for the other side. It stops when all of that is done or its time is up.
+ * for is flown for the other side. With `seat`, the duel for the eighth seat of the arena's masters is
+ * flown before anything else. It stops when all of that is done or its time is up.
  */
-async function play(page: Page, prefer: string[], minutes: number, other = false): Promise<Played> {
+async function play(page: Page, prefer: string[], minutes: number, other = false, seat = false): Promise<Played> {
   const tried = new Map<string, number>();
   const screens = new Set<string>();
   const rooms = ['gauntlet', 'training', 'arena', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'];
@@ -126,6 +165,8 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let floors = 0;
   let runs = 0;
   let swarms = 0;
+  // The duel for the eighth seat: entered once, where it is asked for.
+  let duel = false;
   // The kinds of job flown, by the word their titles begin with: each once, won or lost.
   const jobs: string[] = [];
   let last = '';
@@ -168,9 +209,16 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
       }
     } else if (s.screen === 'hub') {
       while (rooms.length > 0 && !has(rooms[0])) rooms.shift();
-      if (!storyOver) await go('contracts');
+      if (seat && !duel) await go('arena');
+      else if (!storyOver) await go('contracts');
       else if (rooms.length > 0) await go(rooms[0]);
       else break;
+    } else if (s.screen === 'arena' && seat && !duel) {
+      // To the masters' page, down to the row under the seven, and in.
+      if (s.page !== 'masters') await tap(page, 'KeyE');
+      else if (cur !== 'arena-seat') await tap(page, 'ArrowDown');
+      else { duel = true; await tap(page, 'Enter'); }
+      await step(160);
     } else if (s.screen === 'gauntlet' && rooms[0] === 'gauntlet' && floors < 4 && !(has('start') && runs >= 1)) {
       if (has('start')) { runs++; await go('start'); }
       else if (s.gauntlet?.drafting) { floors++; await tap(page, 'Enter'); }
@@ -187,24 +235,28 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     }
   }
   const end = await snap(page);
-  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs };
+  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel };
 }
 
-const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean }[] = [
+const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held' }[] = [
   { name: 'from the first contract, in English, with all of the light', done: [], prefer: ['hadron'], settings: {} },
   { name: 'with Hadron through the war and the audit, enforcing', done: ACT_ONE, prefer: ['hadron', 'enforce'], settings: {} },
   { name: 'with Lumen, in Dutch, in a calm picture, defaulting', done: ACT_ONE, prefer: ['lumen', 'default'], settings: { language: 'nl', calm: true } },
   { name: 'with the Undertow, with less light and battles played faster', done: ACT_ONE, prefer: ['undertow', 'enforce'], settings: { detail: 'lean', fastBattles: true } },
   { name: 'a later telling in a frame the bench has worked on, taking the other side\'s offers', done: [], prefer: ['hadron'], settings: {}, later: true },
-  { name: 'the Gauntlet and every room, after the war, with no soft light', done: [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'], prefer: [], settings: { detail: 'bare' } },
+  { name: 'the Gauntlet and every room, after the war, with no soft light', done: AFTER_THE_WAR, prefer: [], settings: { detail: 'bare' } },
+  // The keeper's machine through its three ways, and then the bill, the notice and the rooms of the one who took the seat from it.
+  { name: 'the holder of seven crowns, who takes the eighth seat', done: AFTER_THE_WAR, prefer: [], settings: { difficulty: 'story' }, seat: 'taken' },
+  // The Sovereign from behind in every battle, in the keeper's paint, against its own likeness first.
+  { name: 'the holder of the seat in the Sovereign, in Dutch', done: AFTER_THE_WAR, prefer: [], settings: { difficulty: 'story', language: 'nl' }, seat: 'held' },
 ];
 
 for (const player of PLAYERS) {
   test(`soak: ${player.name}`, async ({ page }) => {
     test.skip(!ASKED, 'a long look: run with SOAK=1');
     test.setTimeout((MINUTES + 2) * 60_000);
-    const errors = await open(page, player.later ? again(player.done) : pilot(player.done), player.settings);
-    const played = await play(page, player.prefer, MINUTES, player.later);
+    const errors = await open(page, player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done), player.settings);
+    const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
     console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
@@ -215,6 +267,14 @@ for (const player of PLAYERS) {
     // And jobs, once the board had one to offer: what each kind asks was on the field, with everything drawn.
     expect(played.jobs.length).toBeGreaterThanOrEqual(1);
     expect(new Set(played.jobs).size).toBe(played.jobs.length);
+    if (player.seat) {
+      // The duel was flown, and the seat is this pilot's: taken in it, or kept through it.
+      expect(played.duel).toBe(true);
+      const kept = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as { seat?: boolean; met?: string[]; medals?: string[] });
+      expect(kept.met).toContain('arena-seat');
+      expect(kept.seat).toBe(true);
+      expect(kept.medals).toContain('seat');
+    }
     if (player.later) {
       // It did fly for the other side: each of those contracts it finished is remembered as that.
       const kept = await page.evaluate(() => (JSON.parse(window.localStorage.getItem('ironwage-save')!) as { choices?: Record<string, string> }).choices ?? {});

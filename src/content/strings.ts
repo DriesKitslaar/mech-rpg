@@ -267,7 +267,8 @@ export const STRINGS = {
       // In the list: the seat held, or how many of the crowns it asks for are.
       held: 'SEAT', count: (held: number, of: number) => `${held}/${of}`,
       locked: 'The eighth seat has a keeper, who takes one challenge: from the pilot who holds all seven crowns.',
-      win: 'The seat is yours. The yard that built its machine takes your order now.',
+      // On the bill of the duel that took it, after the keeper's own words: where the machine is to be had.
+      win: 'The yard that built its machine takes your order now.',
       taken: 'SEAT TAKEN',
     },
     // The cups: three of the ladder back to back.

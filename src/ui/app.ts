@@ -847,7 +847,8 @@ export class App {
 
   /**
    * The duel for the eighth seat, if its keeper takes this pilot's challenge: every crown held. A pilot who
-   * holds the seat hears the arena's usual word after a win; anyone else is told what the seat brings.
+   * holds the seat hears the arena's usual word after a win; anyone else is told, after the keeper's own
+   * words on the bill, where the keeper's machine is to be had.
    */
   private seatFight(): Mission | undefined {
     const game = this.game;

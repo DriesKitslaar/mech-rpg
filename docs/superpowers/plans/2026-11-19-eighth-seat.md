@@ -86,4 +86,4 @@
 
 ### Task E4: final check
 
-- [ ] Read through once more; all tests; the soak with a pilot who holds seven crowns and takes the seat; the last APK; a short Dutch summary.
+- [x] Read through once more; all tests; the soak with a pilot who holds seven crowns and takes the seat; the last APK; a short Dutch summary.
