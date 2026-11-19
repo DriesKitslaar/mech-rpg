@@ -84,4 +84,4 @@
 
 ### Task C3: final check
 
-- [ ] Read through once more; all tests; the soak with a player in a mix; the last APK; a short Dutch summary.
+- [x] Read through once more; all tests; the soak with a player in a mix; the last APK; a short Dutch summary. (The read-through is what changed the page's controls: see the spec. The soak has two players in mixes, one of whom changes a mix on the page.)
