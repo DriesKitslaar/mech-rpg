@@ -1,0 +1,11 @@
+{
+  "id": "core-shrike.back",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/back-shrike.png"
+  ],
+  "prompt": "Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 as the background. Do not move, redraw, rescale or recentre anything. Keep: only the torso seen from behind: the ribbed backpack block with the rust-red vents, the two pointed shoulder guards that stick out from it to the left and to the right, and the narrow dark body under it down to the waist. Erase everything else and fill it with green: the smooth helmet dome that stands on top of the block (that is the head), both arms from the shoulder joints down, the hips and both legs."
+}

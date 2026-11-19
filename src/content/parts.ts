@@ -5,7 +5,7 @@ import type {
 
 const r = (kinetic: number, energy: number, explosive: number): Resist => ({ kinetic, energy, explosive });
 
-type FrameExtra = Pick<FramePart, 'aim' | 'capacity' | 'mobility' | 'legType'>;
+type FrameExtra = Pick<FramePart, 'aim' | 'capacity' | 'mobility' | 'legType' | 'field' | 'poise'>;
 const frame = (
   id: string, name: string, kind: FrameSlot, ap: number, resist: Resist, weight: number, drain: number,
   price: number, vendor: Vendor | undefined, extra: FrameExtra = {},
@@ -95,6 +95,18 @@ export const SHOP_PARTS: Part[] = [
   frame('core-auditor', 'Auditor Core', 'core', 330, r(0.3, 0.3, 0.25), 340, 80, 4000, 'freelance'),
   frame('arms-auditor', 'Auditor Arms', 'arms', 165, r(0.25, 0.25, 0.2), 160, 50, 3000, 'freelance', { aim: 12 }),
   frame('legs-auditor', 'Auditor Greaves', 'legs', 220, r(0.25, 0.25, 0.2), 270, 70, 3600, 'freelance', { capacity: 1500, mobility: 30 }),
+  // Shrike: a duellist's frame from a yard on the coast. Light and quick, and the first blade its arms strike with in a
+  // turn does not cost it the boost. Sold to a pilot who has beaten one in a duel.
+  frame('head-shrike', 'Shrike Mask', 'head', 50, r(0.15, 0.15, 0.1), 20, 30, 2600, 'freelance', { aim: 20 }),
+  frame('core-shrike', 'Shrike Core', 'core', 180, r(0.15, 0.15, 0.15), 150, 55, 3000, 'freelance'),
+  frame('arms-shrike', 'Shrike Talons', 'arms', 100, r(0.15, 0.15, 0.1), 75, 45, 3400, 'freelance', { aim: 18, poise: true }),
+  frame('legs-shrike', 'Shrike Legs', 'legs', 135, r(0.15, 0.15, 0.1), 125, 60, 3000, 'freelance', { capacity: 850, mobility: 56 }),
+  // Sterling: the frame of the Coast Circuit's first sword. Nearly as quick as a Wraith and better plated, and its core
+  // raises a field. Sold to a pilot who has beaten one in a duel.
+  frame('head-sterling', 'Sterling Helm', 'head', 55, r(0.15, 0.2, 0.15), 30, 30, 3200, 'freelance', { aim: 20 }),
+  frame('core-sterling', 'Sterling Core', 'core', 205, r(0.2, 0.25, 0.2), 190, 70, 4400, 'freelance', { field: 25 }),
+  frame('arms-sterling', 'Sterling Arms', 'arms', 100, r(0.15, 0.2, 0.15), 90, 45, 3000, 'freelance', { aim: 14 }),
+  frame('legs-sterling', 'Sterling Greaves', 'legs', 140, r(0.15, 0.2, 0.15), 150, 65, 3600, 'freelance', { capacity: 950, mobility: 52 }),
   // Legs that are not legs. Each changes a rule of its own; see LEG_TYPES.
   frame('legs-crawler', 'Crawler Treads', 'legs', 300, r(0.35, 0.1, 0.25), 420, 50, 2200, 'hadron', { capacity: 2200, mobility: 8, legType: 'tank' }),
   frame('legs-spider', 'Spider Quad', 'legs', 220, r(0.2, 0.2, 0.2), 300, 70, 2800, 'freelance', { capacity: 1500, mobility: 22, legType: 'quad' }),
@@ -374,6 +386,9 @@ export const SHOP_UNLOCKS: Record<string, string> = {
   // More arena prizes.
   'mod-oracle': 'arena:3', 'bst-phase': 'arena:5', 'legs-spider': 'arena:6', 'mod-aegis': 'arena:6', 'fcs-omni': 'arena:7',
   'wpn-gauss': 'arena:8', 'gen-singularity': 'arena:10',
+  // The frames of the Coast Circuit: its yard takes an order from a pilot who has beaten its work in a duel.
+  'head-shrike': 'won:duel-1', 'core-shrike': 'won:duel-1', 'arms-shrike': 'won:duel-1', 'legs-shrike': 'won:duel-1',
+  'head-sterling': 'won:duel-2', 'core-sterling': 'won:duel-2', 'arms-sterling': 'won:duel-2', 'legs-sterling': 'won:duel-2',
   // Meridian's stock comes on the market when the audit is over, whichever way it ended.
   'head-auditor': 'verdict', 'core-auditor': 'verdict', 'arms-auditor': 'verdict', 'legs-auditor': 'verdict',
   'wpn-writ': 'verdict', 'wpn-gavel': 'verdict', 'wpn-decree': 'verdict',

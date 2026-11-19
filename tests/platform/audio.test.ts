@@ -28,6 +28,9 @@ test.each([
   [{ type: 'turnSkipped', unit: 'player' }, 'cool'],
   [{ type: 'repair', unit: 'player', part: 'core', amount: 10 }, 'repair'],
   [{ type: 'overheat', unit: 'player' }, 'overheat'],
+  // A field going out is a hiss; one coming back is heard as a guard going up.
+  [{ type: 'fieldDown', unit: 'player' }, 'cool'],
+  [{ type: 'fieldUp', unit: 'enemy-0' }, 'guard'],
   [{ type: 'outcome', outcome: 'victory' }, 'victory'],
   [{ type: 'outcome', outcome: 'defeat' }, 'defeat'],
 ] as [BattleEvent, SoundName][])('event %j plays %s', (event, name) => {

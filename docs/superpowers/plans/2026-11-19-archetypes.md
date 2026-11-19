@@ -61,7 +61,14 @@
 
 ### Task B3: Sterling and Shrike
 
-- [ ] Parts, drawings, the two rules (a field on the core that renews each round; a blade's strike that keeps the boost), where they are sold and who flies them, each measured against the verdicts, `audit-3` and the back room before it is priced. Detailed when B1 is in.
+**Files:** `src/core/types.ts` (`FramePart.field`, `FramePart.poise`, `Abilities.field`, `EnemyDef.plating`), `src/core/battle.ts` (`fieldOf`, the field raised at a unit's own turn and down a round once broken, events `fieldDown`/`fieldUp`, a blade's strike and the boost), `src/core/campaign.ts` (`won:contract`), `src/core/board.ts`, `src/content/parts.ts` (eight parts, unlocks), `src/content/enemies.ts` (`larder`, `argent`), `src/content/sidework.ts` (`DUELS`), `src/content/codex.ts`, `src/content/nl/*`, `src/ui/partInfo.ts`, `src/ui/battleFlow.ts`, `src/ui/battleFx.ts`, `src/ui/battleScreen.ts`, `src/platform/audio.ts`, `scripts/art/jobs.ts`
+
+- [x] The two rules, with tests (`tests/core/frameRules.test.ts`): the field stands when a battle opens, takes a hit before the armour, is whole again at the unit's own turn while any of it stands, and stays down a round once broken; the first blade of a turn keeps the boost from arms with poise, a second gives it up; an enemy plated beyond its parts; an enemy tuned to raise a field.
+- [x] Parts measured against `audit-3`, both verdicts (also in a second telling) and the back room, in whole frames and mixed onto a Wraith and a Colossus, before they were priced.
+- [x] Drawings: both frames from the front and from behind, two portraits. Heads and bodies from behind redone with their own descriptions.
+- [x] The duels: two contracts once the audit is over, one at a time; a duel won opens its frame for good (`tests/content/duels.test.ts`).
+- [x] How a field is shown, said and heard (`tests/ui/field.test.ts`); a part's own lines; Dutch.
+- [ ] Browser test with pictures; the guide; mutation; APK.
 
 ### Task B2: archetypes
 

@@ -209,6 +209,24 @@ Je vindt ze terug in de **Database** op de pagina **Found**.
 Na de tien rangen van de ladder is er voor de kampioen nog een achterkamer met vijf piloten.
 Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen mecha.
 
+## Twee duels na het einde
+
+Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appointment**. Win je
+dat, dan volgt een tweede: **First Sword**. Het zijn gevechten van één tegen één, tegen piloten van
+buiten de stad, elk in een mecha die niemand in Varn bouwt. Wie zo'n duel wint, mag die mecha
+daarna in de **Shop** kopen. Dat recht raak je niet meer kwijt, ook niet in een nieuwe cyclus.
+
+| Mecha | Wat hem bijzonder maakt | Hoe je hem verslaat |
+|---|---|---|
+| **Shrike** (grijs, licht) | Zijn armen: de eerste slag met een zwaard per beurt kost hem zijn Boost niet. Hij slaat toe en blijft moeilijk te raken. | Breng hem aan het wankelen of schiet zijn benen kapot: dan ontwijkt hij niet meer. |
+| **Sterling** (wit, snel) | Zijn kern wekt een veld op dat de eerste schade opvangt. Blijft er iets van staan, dan is het de volgende ronde weer heel. | Breek het veld in één ronde met een harde klap, of met alles tegelijk. Dan ligt het de ronde daarna plat en is hij kwetsbaar. Losse, kleine treffers voeden het veld alleen maar. |
+
+Vlieg je ze zelf, dan gelden dezelfde regels voor jou. Op het onderdeel staat het erbij: **POISE**
+bij de armen van de Shrike, **FIELD** bij de kern van de Sterling (bij jou vangt het veld 25 schade
+op; dat van de tegenstander is veel sterker). Met twee zwaarden kost de tweede slag je wel je
+Boost. Staat er **FIELD DOWN** in je statusregel, dan is je veld gebroken en komt het een beurt
+later terug.
+
 ## Opslaan
 
 Het spel slaat vanzelf op na alles wat telt. Er zijn drie opslagplekken; op het titelscherm kies je

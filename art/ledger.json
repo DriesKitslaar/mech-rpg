@@ -4237,5 +4237,605 @@
    },
    "total_tokens": 2494
   }
+ },
+ {
+  "id": "family-sterling",
+  "at": "2026-11-19T02:51:28.829Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0192,
+  "usage": {
+   "input_tokens": 1246,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 222
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1442
+  }
+ },
+ {
+  "id": "family-shrike",
+  "at": "2026-11-19T02:51:41.288Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0191,
+  "usage": {
+   "input_tokens": 1230,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 206
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1426
+  }
+ },
+ {
+  "id": "portrait-larder",
+  "at": "2026-11-19T02:51:52.828Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 111,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 111
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 307
+  }
+ },
+ {
+  "id": "portrait-argent",
+  "at": "2026-11-19T02:52:04.573Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 101,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 101
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 297
+  }
+ },
+ {
+  "id": "legs-sterling",
+  "at": "2026-11-19T02:52:31.549Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1128,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 104
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1324
+  }
+ },
+ {
+  "id": "core-sterling",
+  "at": "2026-11-19T02:52:42.135Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1134,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 110
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1330
+  }
+ },
+ {
+  "id": "head-sterling",
+  "at": "2026-11-19T02:52:50.449Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0185,
+  "usage": {
+   "input_tokens": 1116,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1312
+  }
+ },
+ {
+  "id": "arms-sterling.near",
+  "at": "2026-11-19T02:52:59.299Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-sterling.far",
+  "at": "2026-11-19T02:53:07.153Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1139,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 115
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1335
+  }
+ },
+ {
+  "id": "legs-shrike",
+  "at": "2026-11-19T02:53:15.355Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1128,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 104
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1324
+  }
+ },
+ {
+  "id": "core-shrike",
+  "at": "2026-11-19T02:53:24.474Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1134,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 110
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1330
+  }
+ },
+ {
+  "id": "head-shrike",
+  "at": "2026-11-19T02:53:32.935Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0185,
+  "usage": {
+   "input_tokens": 1116,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1312
+  }
+ },
+ {
+  "id": "arms-shrike.near",
+  "at": "2026-11-19T02:53:40.959Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-shrike.far",
+  "at": "2026-11-19T02:53:48.605Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1139,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 115
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1335
+  }
+ },
+ {
+  "id": "back-sterling",
+  "at": "2026-11-19T02:53:56.360Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0298,
+  "usage": {
+   "input_tokens": 2350,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 302
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2546
+  }
+ },
+ {
+  "id": "back-shrike",
+  "at": "2026-11-19T02:54:08.410Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0298,
+  "usage": {
+   "input_tokens": 2334,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 286
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2530
+  }
+ },
+ {
+  "id": "legs-sterling.back",
+  "at": "2026-11-19T02:54:26.581Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-sterling.back",
+  "at": "2026-11-19T02:54:37.441Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-sterling.back",
+  "at": "2026-11-19T02:54:45.896Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-sterling.near.back",
+  "at": "2026-11-19T02:54:54.488Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-sterling.far.back",
+  "at": "2026-11-19T02:55:06.162Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-shrike.back",
+  "at": "2026-11-19T02:55:14.232Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-shrike.back",
+  "at": "2026-11-19T02:55:25.793Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-shrike.back",
+  "at": "2026-11-19T02:55:35.873Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1150,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 126
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1346
+  }
+ },
+ {
+  "id": "arms-shrike.near.back",
+  "at": "2026-11-19T02:55:43.866Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-shrike.far.back",
+  "at": "2026-11-19T02:55:50.967Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "core-sterling.back",
+  "at": "2026-11-19T02:57:39.765Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1197,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 173
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1393
+  }
+ },
+ {
+  "id": "head-sterling.back",
+  "at": "2026-11-19T02:57:48.862Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1170,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 146
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1366
+  }
+ },
+ {
+  "id": "core-shrike.back",
+  "at": "2026-11-19T02:57:56.364Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1187,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 163
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1383
+  }
+ },
+ {
+  "id": "head-shrike.back",
+  "at": "2026-11-19T02:58:04.609Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1158,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 134
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1354
+  }
  }
 ]

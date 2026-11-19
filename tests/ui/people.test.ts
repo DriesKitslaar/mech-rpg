@@ -31,7 +31,7 @@ describe('the people of Varn', () => {
     expect(Object.keys(SPRITES)).toContain('portrait-recorder');
     expect(new Set(PEOPLE.map((p) => p.id)).size).toBe(PEOPLE.length);
     expect(new Set(PEOPLE.map((p) => p.name)).size).toBe(PEOPLE.length);
-    expect(PEOPLE).toHaveLength(19);
+    expect(PEOPLE).toHaveLength(21);
   });
 
   test.each(['en', 'nl'] as const)('every name fits the list, every role the line beside the face, and every text the page under it (%s)', (language) => {
@@ -72,7 +72,7 @@ describe('the people of Varn', () => {
     const { app } = inHub({ ...done('intro-1', 'intro-2'), met: ['recon-drone', 'lark'] });
     people(app);
     expect(snap(app).menu.items).toHaveLength(PEOPLE.length);
-    expect(db(app).count).toBe('KNOWN 7/19');
+    expect(db(app).count).toBe('KNOWN 7/21');
     expect(db(app).detail).toMatchObject({ title: 'DISPATCH', portrait: 'portrait-dispatch', role: 'Dispatch' });
     expect(db(app).detail!.lines.join(' ')).toBe(PEOPLE[0].text);
     point(app, 'lark');
@@ -117,6 +117,6 @@ describe('the people of Varn', () => {
       set: (t, name: string, value) => { t[name] = value; return true; },
     }) as unknown as CanvasRenderingContext2D;
     app.draw(ctx);
-    expect(said).toEqual(expect.arrayContaining(['PEOPLE', 'DIRECTOR BRENN', 'HADRON MINING', 'Director Brenn', 'KNOWN 6/19', ...wrap(PEOPLE[1].text, PAGE_CHARS)]));
+    expect(said).toEqual(expect.arrayContaining(['PEOPLE', 'DIRECTOR BRENN', 'HADRON MINING', 'Director Brenn', 'KNOWN 6/21', ...wrap(PEOPLE[1].text, PAGE_CHARS)]));
   });
 });

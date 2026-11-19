@@ -251,6 +251,14 @@ function backLayer(id: string, fromFamily: string, which: Layer, keep: string = 
  * that backpack on every other family's back.
  */
 const HEAD_FROM_BEHIND: Record<string, string> = {
+  sterling:
+    'only the head itself: the white helm at the very top of the mecha with its single tall curved crest fin, and ' +
+    'nothing below the neck. Erase everything else: in particular the round white backpack drum with the vertical vent ' +
+    'that lies directly below the helm, both large ribbed pauldrons, the arms, the coat vanes and the legs.',
+  shrike:
+    'only the head itself: the small smooth dark helmet dome at the very top of the mecha. Erase everything else: in ' +
+    'particular the ribbed backpack block with the rust-red vents that lies directly below the helmet, both pointed ' +
+    'shoulder guards beside it, the arms, the torso and the legs.',
   dozer:
     'only the head itself: the small cage-like cab of red bars at the very top of the mecha. Erase everything else: ' +
     'in particular the large grey steel backpack plate that lies directly below the cage, both grey shoulder blocks, ' +
@@ -276,6 +284,16 @@ const HEAD_FROM_BEHIND: Record<string, string> = {
 
 /** Torsos that came away from behind with the head still standing on them: each is told which part that is. */
 const CORE_FROM_BEHIND: Record<string, string> = {
+  sterling:
+    'only the torso seen from behind: the round white backpack drum with the vertical vent in its middle and the ' +
+    'narrow white body directly under it down to the waist. Erase everything else and fill it with green: the helm with ' +
+    'its tall curved crest fin that stands on top of the drum (that is the head), both large ribbed pauldrons with the ' +
+    'round joints beside the drum (those belong to the arms), both arms, the hips, the long coat vanes and both legs.',
+  shrike:
+    'only the torso seen from behind: the ribbed backpack block with the rust-red vents, the two pointed shoulder ' +
+    'guards that stick out from it to the left and to the right, and the narrow dark body under it down to the waist. ' +
+    'Erase everything else and fill it with green: the smooth helmet dome that stands on top of the block (that is the ' +
+    'head), both arms from the shoulder joints down, the hips and both legs.',
   dozer:
     'only the torso seen from behind: the big grey steel backpack plate in the middle and the narrow red body ' +
     'directly around and under it, from the waist up to the top edge of that plate, and nothing wider than the ' +
@@ -409,6 +427,19 @@ const DESIGNS: Record<string, string> = {
     'and shoulders, white stencilled numbers and small yellow work lights: short thick limbs, big square fists, wide ' +
     'flat feet, a heavy bumper-like chest plate, and a low cage-like cab head with a single round lamp. Bulkier and ' +
     'lower than the first image, crude, dented and second-hand.',
+  // The two frames of the Coast Circuit. Designs of this game's own: a knight in white plate with a coat of thruster
+  // vanes, and a masked butcher bird with blades along its forearms.
+  sterling:
+    'a slim, upright knightly duelling mecha in pearl-white armour with brushed silver edges, thin gold seam lines and ' +
+    'a few small pale gold lights: smooth layered pauldrons, a narrow waist, long elegant greaves, and a narrow closed ' +
+    'helm with a single vertical visor slit glowing pale gold and a short silver crest fin. Behind its shoulders a fan ' +
+    'of four long silver thruster vanes hangs down like the tails of a coat. Slimmer and taller-looking than the ' +
+    'first image, immaculate and proud.',
+  shrike:
+    'a lean, forward-hunched light duelling mecha in matte ash-grey and charcoal armour with rust-red edge marks and ' +
+    'small amber lights: long forearms with a slim blade housing along each, a narrow chest, sharp knee guards, small ' +
+    'swept-back shoulder guards, and a small wedge-shaped head with a black band across a narrow amber visor, like a ' +
+    'mask. Slimmer and lighter than the first image, quick and predatory.',
   auditor:
     'a tall, severe corporate enforcement mecha in glossy black lacquer armour with fine gold trim lines and a few small ' +
     'white lights: long coat-like armour skirts hanging from the hips at the front and back, narrow shoulders with upright ' +
@@ -434,6 +465,9 @@ const DRAWN: ArtJob[] = [
   // The two frames a pilot can start in beside the salvaged one: salvage too, of the other two powers.
   family('courier', 'ronin', DESIGNS.courier),
   family('dozer', 'ronin', DESIGNS.dozer),
+  // The two frames for the end of the game: what the swords of the Coast Circuit fly.
+  family('sterling', 'ronin', DESIGNS.sterling),
+  family('shrike', 'ronin', DESIGNS.shrike),
   // Free-standing lower bodies: a family drawing with only the legs replaced, from which the legs layer is cut.
   lowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
@@ -455,6 +489,8 @@ const DRAWN: ArtJob[] = [
   ...layersOf('auditor', { legs: 'legs-auditor', core: 'core-auditor', head: 'head-auditor', arms: 'arms-auditor' }),
   ...layersOf('courier', { legs: 'legs-courier', core: 'core-courier', head: 'head-courier', arms: 'arms-courier' }),
   ...layersOf('dozer', { legs: 'legs-dozer', core: 'core-dozer', head: 'head-dozer', arms: 'arms-dozer' }),
+  ...layersOf('sterling', { legs: 'legs-sterling', core: 'core-sterling', head: 'head-sterling', arms: 'arms-sterling' }),
+  ...layersOf('shrike', { legs: 'legs-shrike', core: 'core-shrike', head: 'head-shrike', arms: 'arms-shrike' }),
   layer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   layer('legs-spider', 'spider', 'legs',
@@ -664,6 +700,9 @@ const DRAWN: ArtJob[] = [
   portrait('portrait-hollow', 'a gaunt hollow-cheeked salvage cutter with sunken eyes and a shaved head, a breathing mask hanging loose at the throat, wearing an oil-stained leather apron over a sickly yellow-green coverall'),
   portrait('portrait-paragon', 'a proud weathered former officer in his fifties with a square greying moustache and a black eye patch, wearing a sun-yellow and orange dress uniform jacket crowded with mismatched medals'),
   portrait('portrait-notary', 'a severe pale bureaucrat with slicked silver hair and thin lips, a round brass seal lens over one eye like a monocle, wearing a glossy black high-collared robe with a heavy brass seal on a chain'),
+  // The two swords of the Coast Circuit.
+  portrait('portrait-larder', 'a lean, sharp-eyed duellist in their thirties with close-cropped ash-grey hair and a band of black paint across the eyes like a mask, wearing a high-collared charcoal flight jacket with three rust-red talon marks stitched on one shoulder'),
+  portrait('portrait-argent', 'a composed, upright older duellist with silver hair tied back and a calm level gaze, wearing a pearl-white dress flight coat with silver buttons, thin gold piping and a small gold sword pin at the collar'),
   portrait('portrait-guild', 'a sly night-market broker of uncertain age in a hooded patchwork cloak, half of the face hidden behind a lacquered dark red trader mask, fingers heavy with mismatched rings, lit by warm lantern light'),
   // Not a face: the recorder behind the seat of the pilot's own frame, which has a voice of a kind.
   { id: 'portrait-recorder', kind: 'portrait',
@@ -738,6 +777,8 @@ const DRAWN: ArtJob[] = [
   backFamily('auditor', 'ronin'),
   backFamily('courier', 'ronin'),
   backFamily('dozer', 'ronin'),
+  backFamily('sterling', 'ronin'),
+  backFamily('shrike', 'ronin'),
   backLowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
     'with hazard stripes on the track guards. No legs and no feet.'),
@@ -757,6 +798,8 @@ const DRAWN: ArtJob[] = [
   ...backLayersOf('auditor', { legs: 'legs-auditor', core: 'core-auditor', head: 'head-auditor', arms: 'arms-auditor' }),
   ...backLayersOf('courier', { legs: 'legs-courier', core: 'core-courier', head: 'head-courier', arms: 'arms-courier' }),
   ...backLayersOf('dozer', { legs: 'legs-dozer', core: 'core-dozer', head: 'head-dozer', arms: 'arms-dozer' }),
+  ...backLayersOf('sterling', { legs: 'legs-sterling', core: 'core-sterling', head: 'head-sterling', arms: 'arms-sterling' }),
+  ...backLayersOf('shrike', { legs: 'legs-shrike', core: 'core-shrike', head: 'head-shrike', arms: 'arms-shrike' }),
   backLayer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   backLayer('legs-spider', 'spider', 'legs',

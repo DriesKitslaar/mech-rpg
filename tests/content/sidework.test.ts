@@ -74,7 +74,8 @@ describe('the bounty board', () => {
     const story = MISSIONS.filter((m) => m.phase !== 'side' && m.phase !== 'patrol' && (!m.faction || m.faction === 'lumen') && m.verdict !== 'default');
     const g = done(...story.map((m) => m.id));
     expect(campaignComplete(g, MISSIONS)).toBe(true);
-    expect(side(g)).toEqual(['bounty-1']);
+    // With the audit over, somebody from the coast has booked a roof: the first duel is on offer beside the first notice.
+    expect(side(g)).toEqual(['bounty-1', 'duel-1']);
     const again = startNewCycle(completeMission(g, 'bounty-1', MISSIONS), MISSIONS);
     expect(again.completed).toEqual([]);
     expect(availableMissions(again, MISSIONS).map((m) => m.id)).toEqual(['patrol', 'intro-1']);
@@ -171,8 +172,8 @@ describe('how hard the side work is', () => {
 
   test('a bounty is not for a new pilot: the starter mech loses the first notice more often than it wins it', () => {
     expect(wins('bounty-1', 'starter')).toBeLessThan(0.5);
-    // Six notices, seven favours, four jobs for the Guild, and three contracts nobody posted.
-    expect(SIDE_WORK).toHaveLength(20);
+    // Six notices, seven favours, four jobs for the Guild, three contracts nobody posted, and two duels.
+    expect(SIDE_WORK).toHaveLength(22);
   });
 });
 

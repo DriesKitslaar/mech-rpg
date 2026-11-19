@@ -97,15 +97,48 @@ What building it turned up:
 
 ### Two frames for the end (B3)
 
-- **Sterling**: pearl white and silver, slim, long thruster fins on its back. Nearly as quick as a
-  Wraith, better armoured, and its core carries a field that takes the first part of the damage of
-  every round. A knight: it is hard to hit and forgives being hit.
-- **Shrike**: gunmetal and steel blue, light, built forward. The fastest arms there are, and a
-  blade's strike from it does not spend the boost: it strikes and is still not there.
+Both are designs of this game's own, with their own names, made as the other frames were made
+(one drawing in the shared pose, cut into layers, the same from behind): a knight in white plate
+with a coat of thruster vanes, and a masked butcher bird with blades along its forearms.
 
-Both are sold only at the very end (the back room of the arena, whose last pilots fly them, so a
-pilot meets each on the field before owning it). Figures, prices and the size of the field are
-settled by measurement against the verdicts, the third audit contract and the back room itself.
+- **Sterling**: pearl white with gold seams, slim. Nearly as quick as a Wraith, better plated, and
+  its core raises a **field**: a barrier of 25 that takes the first of whatever lands. While any of
+  it stands at the pilot's own turn it is whole again; a field that was broken stays down for a
+  round, and is whole the turn after. It is hard to hit and forgives being hit a little.
+- **Shrike**: ash grey with rust-red edges, light. The best arms there are for a hand weapon, and
+  they have **poise**: the first blade to strike in a turn does not give up the boost that carried
+  the mech in. A second blade after it does, as any blade does from other arms.
+
+**How a pilot comes by them.** Once the audit is over, two duels are posted, one at a time
+(`duel-1` By Appointment, `duel-2` First Sword): the Coast Circuit duels for standing, and sends a
+sword, then its first, for the pilot who settled Varn. Larder flies a Shrike, Argent a Sterling.
+A duel won opens its frame in the shop (`won:duel-N`, a new condition: a contract that has left a
+rank). Ranks are kept through the cycles, so a duel won is won for good; and unlike what a
+client's contract opens, the frames are not handed to a later telling that never fought for them.
+So a pilot meets each frame on the field before owning it.
+
+**What measuring changed.**
+
+- A field of 50 a round, as first drawn, made both verdicts and half the back room a formality:
+  a quick mech is seldom hit, and the field ate what did land. A flat 25 was still too much
+  (verdict Default in a second telling went from 35 wins in 100 to 88). The rule became the one
+  above: under steady fire the field works every other round. With it a Sterling with two guns
+  wins that verdict 62 times in 100, the audit's third contract 95, and still loses to Longshot,
+  Brother Rust and the Founder nearly every time.
+- Poise as first written (every blade keeps the boost) took a Shrike with two blades past the
+  Founder 67 times in 100, where the best build there was won 37. Once a turn, it wins 10.
+- The Sterling's core on a Colossus is worse than the Colossus's own in the back room: what it
+  gives in field it takes in plate. Mixing is a choice, not an upgrade.
+- The two pilots: with the frames as sold and a contract's scale, a duel was over in two rounds.
+  They are **plated** (a new figure on an enemy: armour beyond its parts, which a scale would
+  also turn into damage and balance): twice the frame's armour. Argent aimed at the head at
+  first, which blinds a heavy mech in two rounds; he aims for the core now. His field is 70,
+  tuned past what the yard sells (an enemy may raise more than its core is sold with).
+- With the perks of a pilot who has finished the story, the automatic pilot wins the first duel
+  nearly always in a quick mech with a blade, about half the time in a Colossus; the second
+  nearly always with anything that lands one great blow a round, and one time in four with a
+  Colossus whose beam only feeds the field. The second duel is meant to be answered with a
+  different build, and its briefing says so.
 
 ### Archetypes the game knows (B2)
 

@@ -34,7 +34,7 @@ export const STRINGS = {
   },
   tags: {
     boost: 'BOOST', guard: 'GUARD', stagger: 'STAGGER', charged: 'CHARGED', charging: 'CHARGING', painted: 'PAINTED',
-    barrier: (n: number) => `BARRIER ${n}`, chaff: 'CHAFF', stability: 'STAB',
+    barrier: (n: number) => `BARRIER ${n}`, fieldDown: 'FIELD DOWN', chaff: 'CHAFF', stability: 'STAB',
     fuse: (n: number) => `FUSE ${n}`, aegis: 'AEGIS', jammer: 'JAMMER', mender: 'MENDER', carrier: 'CARRIER', shaken: 'SHAKEN',
     covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`, ironSkin: 'IRON SKIN', deadeye: 'DEADEYE',
     // What sets an elite enemy apart.
@@ -94,6 +94,9 @@ export const STRINGS = {
   guard: (unit: string) => does(unit, 'braces', 'brace'),
   stagger: (unit: string) => does(unit, 'is STAGGERED', 'are STAGGERED'),
   recover: (unit: string) => does(unit, 'steadies', 'steady'),
+  // The field of a core that raises one: broken by what it took, and whole again a round later.
+  fieldDown: (unit: string) => does(unit, 'loses its field', 'lose your field'),
+  fieldUp: (unit: string) => does(unit, 'has its field back', 'have your field back'),
   charge: (unit: string, weapon: string) => does(unit, `charges ${weapon}`, `charge ${weapon}`),
   barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} hits ${obj(target)} - barrier -${absorbed}`,
   module: {
@@ -443,6 +446,9 @@ export const STRINGS = {
     guard: (blocked: number) => `GUARD: blocks ${blocked}%`, guardShort: 'GUARD',
     versus: (name: string) => `VS ${name}`,
     charge: 'CHARGE: fires a turn later', melee: 'MELEE: spends your Boost',
+    // What a part of a frame does that no other part does: a core's field, and arms that strike and are gone again.
+    field: (n: number) => `FIELD: absorbs ${n} a round`, fieldBreak: 'Broken, it is down a turn',
+    poise: 'POISE: 1st blade keeps Boost',
     traits: {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',
@@ -470,6 +476,7 @@ export const STRINGS = {
   },
   fx: {
     miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', shaken: 'SHAKEN', block: (n: number) => `BLOCK ${n}`,
+    fieldDown: 'FIELD DOWN', fieldUp: 'FIELD UP',
     // Over a machine that went up to far more than was needed, over the pilot as a run goes on, over a machine that leaves.
     overkill: 'OVERKILL', chain: (n: number) => `CHAIN x${n}`, rout: 'ROUT', offline: 'OFFLINE',
     phase: (n: number) => `PHASE ${n}`,
