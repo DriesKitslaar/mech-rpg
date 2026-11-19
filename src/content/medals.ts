@@ -5,6 +5,7 @@ import { FACTORY_PAINT, type GameState } from '../core/game';
 import { JOB_KINDS, jobsWon, kindsOfJob } from '../core/jobs';
 import { crownsHeld } from '../core/masters';
 import { seatHeld } from '../core/seat';
+import { ALL_STRIPES, stripesHeld } from '../core/stripes';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
 import { TUNE_MAX, stepOf, tunable } from '../core/tuning';
@@ -106,6 +107,9 @@ const EARNED: Medal[] = [
   { id: 'class-3', name: 'Second Opinion', text: 'Win contracts as 3 classes of machine.', tier: 1, progress: count(3, (g) => kindsWon(g)) },
   { id: 'class-25', name: 'Specialist', text: 'Win 25 contracts as one class of machine.', tier: 2, progress: count(25, mostWonAs) },
   { id: 'class-all', name: 'Full Hangar', text: `Win 5 contracts as each of the ${ARCHETYPES.length} classes.`, tier: 3, progress: count(ARCHETYPES.length, (g) => kindsWon(g, 5)) },
+  // Stripes: what a class gives at three, eight and fifteen contracts won as it.
+  { id: 'stripe-1', name: 'Earned It', text: 'Earn a stripe as any class.', tier: 1, progress: count(1, stripesHeld) },
+  { id: 'stripe-all', name: 'Full Dress', text: 'Earn all three stripes of every class.', tier: 3, progress: count(ALL_STRIPES, stripesHeld) },
   // The jobs on the board that ask for something else: for trying each kind, and for living off them.
   { id: 'job-each', name: 'Odd Jobs', text: `Win a job of each of the ${JOB_KINDS.length} kinds on the board.`, tier: 1, progress: count(JOB_KINDS.length, kindsOfJob) },
   { id: 'job-25', name: 'On Retainer', text: 'Win 25 jobs.', tier: 2, progress: count(25, (g) => jobsWon(g)) },

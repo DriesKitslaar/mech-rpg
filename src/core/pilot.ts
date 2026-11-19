@@ -1,5 +1,6 @@
 import { OVERDRIVES, type OverdriveId } from './battle';
 import type { GameState } from './game';
+import { stripePoints } from './stripes';
 
 export const MAX_LEVEL = 20;
 
@@ -57,10 +58,10 @@ export type PerkRefusal = 'unknown' | 'maxed' | 'noPoints';
 
 const rankOf = (state: GameState, perkId: string): number => (Object.hasOwn(state.perks, perkId) ? state.perks[perkId] : 0);
 
-/** Points not yet spent: one per level above the first, less the ranks bought. */
+/** Points not yet spent: one per level above the first and one for every five stripes held (see stripes.ts), less the ranks bought. */
 export function perkPoints(state: GameState, perks: Perk[]): number {
   const spent = perks.reduce((sum, perk) => sum + rankOf(state, perk.id), 0);
-  return levelFor(state.xp) - 1 - spent;
+  return levelFor(state.xp) - 1 + stripePoints(state) - spent;
 }
 
 export function checkBuyPerk(state: GameState, perkId: string, perks: Perk[]): PerkRefusal | null {

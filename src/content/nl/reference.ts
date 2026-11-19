@@ -286,6 +286,13 @@ export const REFERENCE_NL: Record<string, string> = {
   "Take a master's crown in the arena.": 'Pak in de arena de kroon van een meester.',
   'Seven Crowns': 'Zeven kronen',
   'Hold the crown of every class.': 'Houd de kroon van elke klasse.',
+  'Earned It': 'Verdiend',
+  'Earn a stripe as any class.': 'Verdien een streep in een klasse.',
+  'Full Dress': 'Groot tenue',
+  'Earn all three stripes of every class.': 'Verdien alle drie de strepen van elke klasse.',
+  STRIPES: 'STREPEN',
+  "A class gives you a stripe at 3, at 8 and at 15 contracts won flying it: three a class, twenty-one in all. Every fifth stripe you hold, of whatever classes, is a perk point: the first is soonest had by flying five kinds of machine. The CLASS page shows them, and a briefing's Build row how near the next is.":
+    'Een klasse geeft je een streep bij 3, bij 8 en bij 15 contracten die je erin wint: drie per klasse, eenentwintig in totaal. Elke vijfde streep, van welke klasse ook, is een perkpunt: het eerste komt het vlugst met vijf soorten machines. De pagina KLASSE toont ze, de rij Build van een briefing hoe ver de volgende is.',
   'True Metal': 'Echt metaal',
   "Take the eighth seat at the masters' table.": 'Pak de achtste stoel aan de meestertafel.',
   'THE EIGHTH SEAT': 'DE ACHTSTE STOEL',

@@ -201,6 +201,20 @@ export function drawCrown(ctx: CanvasRenderingContext2D, x: number, y: number): 
   ctx.fillRect(x + 7, y + 1, 2, 3);
 }
 
+/** How wide a class's three stripes are drawn, side by side, and how tall. */
+export const STRIPES_W = 8;
+export const STRIPES_H = 7;
+/** The colour of a stripe that is held. One still to earn is drawn in the colour of an empty meter. */
+export const STRIPE_COLOR = COLORS.heat;
+
+/** A class's stripes: `of` upright bars side by side from `x`, the first `held` of them lit. */
+export function drawStripes(ctx: CanvasRenderingContext2D, x: number, y: number, held: number, of = 3): void {
+  for (let i = 0; i < of; i++) {
+    ctx.fillStyle = i < held ? STRIPE_COLOR : COLORS.empty;
+    ctx.fillRect(x + i * 3, y, 2, STRIPES_H);
+  }
+}
+
 /** A medal nine pixels square: a ribbon and a disc in the metal of its tier, or its outline while it is not earned. */
 export function drawMedal(ctx: CanvasRenderingContext2D, x: number, y: number, tier: 1 | 2 | 3, earned: boolean): void {
   // The ribbon: one band in two colours, narrowing to where the disc hangs.

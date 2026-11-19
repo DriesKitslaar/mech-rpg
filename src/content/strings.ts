@@ -297,6 +297,26 @@ export const STRINGS = {
     noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
     pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDALS', record: 'RECORD', classes: 'CLASS' },
   },
+  // Stripes: what was won as each class, read as something earned, and every fifth of them a perk point (see core/stripes.ts).
+  stripes: {
+    // Under the classes: how many are held of those there are, and how many the next point asks for.
+    held: (have: number, of: number) => `STRIPES ${have}/${of}`,
+    nextPoint: (at: number) => `POINT AT ${at}`,
+    allPoints: 'EVERY POINT HAD',
+    // In the panel of a class: the contracts won as it at which its next stripe comes.
+    nextStripe: (at: number) => `NEXT STRIPE AT ${at} WON`,
+    allThree: 'ALL THREE STRIPES',
+    // On the perks page: how many of the points stripes have brought, and when the next comes.
+    points: (have: number, of: number, points: number, next: number | null) =>
+      `Stripes ${have}/${of}: ${points === 1 ? '1 point' : `${points} points`} so far${next === null ? '' : `, the next at ${next}`}.`,
+    // The notice: the class and which of its three; and what a fifth stripe brings.
+    earned: 'STRIPE EARNED',
+    title: (kind: string, stripe: number) => `${kind} ${'I'.repeat(stripe)}`,
+    point: '+1 POINT',
+    // On a briefing's page of the build: the contracts won as its class of those its next stripe asks, and when this one would be the last of them.
+    towards: (won: number, at: number) => `NEXT STRIPE ${won}/${at}`,
+    thisWin: 'WIN THIS FOR A STRIPE',
+  },
   // What kind of machine a build is: what each kind is called, what makes one, what it is good at, and one to try.
   classes: {
     heading: 'A MACHINE IS THE FIRST OF THESE IT FITS', won: 'WON', yours: 'YOURS NOW',

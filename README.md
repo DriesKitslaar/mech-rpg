@@ -60,6 +60,10 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 - **Lancering**: elk contract vanuit de hangar opent met je eigen mecha op de katapult: drie lampen,
   en weg is hij, de tunnel uit het licht in. Anderhalve seconde, en met één druk op A of B sla je
   het over.
+- **Strepen**: een klasse geeft je een streep bij 3, 8 en 15 gewonnen contracten, en elke vijfde
+  streep is een perkpunt. Eerste strepen komen het snelst, dus wie veel soorten machines vliegt
+  heeft zijn punten het eerst; met twintig strepen heb je eindelijk elke rang van elke perk. Bij
+  de briefing zie je per build hoe ver zijn klasse van de volgende streep is.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.
@@ -73,7 +77,7 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   spiegelgevecht tegen je eigen mecha. Na het verhaal: twee duels, elk om een mecha die je
   daarna zelf mag kopen.
 - **Training**: dertien oefeningen in een geleende mecha die elk één ding uitleggen.
-- **Piloot**: niveaus en acht vaardigheden, 69 medailles en een logboek.
+- **Piloot**: niveaus en acht vaardigheden, 71 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
 - **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,

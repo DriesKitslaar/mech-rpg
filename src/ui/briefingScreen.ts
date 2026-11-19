@@ -1,4 +1,4 @@
-import { archetypeOf, type Archetype } from '../core/archetype';
+import { archetypeOf, wonAs, type Archetype } from '../core/archetype';
 import { isSwarm } from '../core/board';
 import { computeBuildStats } from '../core/build';
 import { MIRROR_ID } from '../core/arena';
@@ -10,6 +10,7 @@ import { isSeat } from '../core/seat';
 import type { Fight } from '../core/mission';
 import type { Sortie } from '../core/sortie';
 import { isRange, parseSpar } from '../core/range';
+import { countsForClass, nextStripeAt, stripesOf } from '../core/stripes';
 import { isDrill } from '../core/training';
 import { tunedCatalog } from '../core/tuning';
 import type { BuildSlot } from '../core/game';
@@ -22,11 +23,14 @@ import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { briefingTrack } from './soundtrack';
 import { Typewriter } from './typewriter';
-import { CHAR_W, COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, LINE, STRIPES_W, STRIPE_COLOR, charsFor, drawList, drawPanel, drawPortrait, drawStripes, drawText, wrap } from './widgets';
 
 const B = STRINGS.briefing;
 const C = STRINGS.classes;
 const G = STRINGS.garage;
+const S = STRINGS.stripes;
+/** How wide a letter of the small print is. */
+const SMALL_W = 4;
 /** Where the footer's menu starts, by how many rows it has: half a line higher for each row more, and no higher than the footer has room. */
 const MENU_TOP = [216, 216, 210, 204, 202];
 /** What a build carries, as the page about it lists it: what it fights with, and its module. */
@@ -160,6 +164,18 @@ export class BriefingScreen implements Screen {
   }
 
   /**
+   * How near the class of that build is to its next stripe: the stripes it has given, the contracts
+   * won as it, and how many its next stripe asks (null once it has given all three). Null where a
+   * win would count for no class: the simulator's fights.
+   */
+  private get stripe(): { kind: Archetype; held: number; won: number; next: number | null } | null {
+    const game = this.app.game;
+    const kind = this.kind;
+    if (!game || !kind || !countsForClass(this.mission)) return null;
+    return { kind, held: stripesOf(game, kind), won: wonAs(game, kind), next: nextStripeAt(game, kind) };
+  }
+
+  /**
    * The first of the pilot's saved builds that is of the class the contract asks for, by its slot: the one
    * to turn to for what the contract pays more. Null when it asks for nothing, or nothing saved is of it.
    */
@@ -242,6 +258,8 @@ export class BriefingScreen implements Screen {
         build: this.sortie ? { slot: this.sortie.slot, kind: this.kind, choices: this.builds.length } : null,
         // How the contract is likely to go in it: flights won of those counted so far, and whether all are counted.
         odds: this.odds,
+        // How near the class of that build is to its next stripe, where a win counts for a class.
+        stripe: this.stripe,
         // The class the contract asks for, when it asks, and whether the build chosen is of it.
         // And the slot of the first saved build that is of it, for the pilot who would rather be paid for it.
         asks: this.mission.asks ? { kind: this.mission.asks, met: this.kind === this.mission.asks, fits: this.fits } : null,
@@ -344,6 +362,14 @@ export class BriefingScreen implements Screen {
       const stats = computeBuildStats(sortie.build, catalog);
       const armour = (['head', 'core', 'arms', 'legs'] as const).reduce((sum, slot) => sum + (catalog[sortie.build[slot]!] as { ap: number }).ap, 0);
       drawText(ctx, sortie.slot === null ? B.buildOnFloor : B.buildSaved(sortie.slot + 1), 12, y, { color: COLORS.accent });
+      // At the end of that row, the stripes of its class and how near the next is: lit when this contract, won, is the one that earns it.
+      const stripe = this.stripe;
+      if (stripe) {
+        const last = stripe.next !== null && stripe.won + 1 >= stripe.next;
+        const words = stripe.next === null ? S.allThree : last ? S.thisWin : S.towards(stripe.won, stripe.next);
+        drawText(ctx, words, LOGICAL_W - 12, y + 1, { align: 'right', color: stripe.next === null || last ? STRIPE_COLOR : COLORS.dim, size: 10 });
+        drawStripes(ctx, LOGICAL_W - 12 - words.length * SMALL_W - 4 - STRIPES_W, y + 2, stripe.held);
+      }
       drawText(ctx, C.garage(C.names[kind], C.tags[kind]), 12, y + 15);
       drawText(ctx, `${G.armour} ${armour}   ${G.mobility} ${stats.mobility}   ${G.energy} ${stats.turnEnergy}`, 12, y + 15 + LINE, { color: COLORS.dim });
       CARRIED.forEach((slot, i) => {

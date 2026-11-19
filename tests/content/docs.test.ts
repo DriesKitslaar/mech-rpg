@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { ARCHETYPES } from '../../src/core/archetype';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
+import { startNewCycle } from '../../src/core/campaign';
 import { launches } from '../../src/core/launch';
+import { MAX_LEVEL } from '../../src/core/pilot';
 import { SEAT_PURSE, seatPurse } from '../../src/core/seat';
+import { ALL_STRIPES, MAX_STRIPE_POINTS, STRIPES_AT, STRIPES_A_POINT, countsForClass, stripePoints, stripesHeld } from '../../src/core/stripes';
 import type { FramePart, Weapon } from '../../src/core/types';
 import { ARENA } from '../../src/content/arena';
 import { MANUAL } from '../../src/content/codex';
@@ -168,5 +171,97 @@ describe('what is said of the launch is so', () => {
     expect(FAST_BATTLE_SPEED).toBe(2.5);
     expect(README).toContain('**Lancering**: elk contract vanuit de hangar opent met je eigen mecha op de katapult: drie lampen,');
     expect(LAMPS_AT).toHaveLength(3);
+  });
+});
+
+describe('what is said of stripes is so', () => {
+  const chapter = MANUAL.find((entry) => entry.id === 'stripes')!;
+  const medal = (id: string) => MEDALS.find((entry) => entry.id === id)!;
+  /** The fewest contracts that must be won to hold so many stripes, and over how many classes that is spread. */
+  function cheapest(stripes: number): { won: number; classes: number } {
+    // What each stripe costs on top of the one before it in its class, cheapest first: the first of every class, then the seconds, then the thirds.
+    const steps = ARCHETYPES.flatMap(() => STRIPES_AT.map((at, i) => ({ cost: at - (STRIPES_AT[i - 1] ?? 0), first: i === 0 }))).sort((a, b) => a.cost - b.cost);
+    const taken = steps.slice(0, stripes);
+    return { won: taken.reduce((sum, step) => sum + step.cost, 0), classes: taken.filter((step) => step.first).length };
+  }
+
+  test('the manual: when a class gives them, how many there are, what a fifth is worth and how the first point is soonest had', () => {
+    expect(chapter.title).toBe('STRIPES');
+    expect(chapter.text).toContain('A class gives you a stripe at 3, at 8 and at 15 contracts won flying it: three a class, twenty-one in all.');
+    expect([...STRIPES_AT]).toEqual([3, 8, 15]);
+    expect(ARCHETYPES.length * STRIPES_AT.length).toBe(21);
+    expect(ALL_STRIPES).toBe(21);
+    expect(chapter.text).toContain('Every fifth stripe you hold, of whatever classes, is a perk point: the first is soonest had by flying five kinds of machine.');
+    expect(STRIPES_A_POINT).toBe(5);
+    // Five stripes are cheapest as the first of five classes: each later stripe of a class costs more than a first.
+    expect(STRIPES_AT[1] - STRIPES_AT[0]).toBeGreaterThan(STRIPES_AT[0]);
+    expect(STRIPES_AT[2] - STRIPES_AT[1]).toBeGreaterThan(STRIPES_AT[0]);
+    expect(cheapest(STRIPES_A_POINT)).toEqual({ won: 15, classes: 5 });
+    expect(chapter.text).toContain(`The ${STRINGS.pilot.pages.classes} page shows them, and a briefing's ${STRINGS.briefing.build} row how near the next is.`);
+    const dutch = REFERENCE_NL[chapter.text];
+    expect(dutch).toContain('een streep bij 3, bij 8 en bij 15 contracten die je erin wint: drie per klasse, eenentwintig in totaal.');
+    expect(dutch).toContain('Elke vijfde streep, van welke klasse ook, is een perkpunt: het eerste komt het vlugst met vijf soorten machines.');
+    expect(dutch).toContain(`De pagina ${STRINGS_NL.pilot.pages.classes} toont ze, de rij ${STRINGS_NL.briefing.build} van een briefing hoe ver de volgende is.`);
+    expect(REFERENCE_NL[chapter.title]).toBe('STREPEN');
+  });
+
+  test('the guide: the thresholds, the count, the points and why only stripes fill every perk', () => {
+    const section = GUIDE.slice(GUIDE.indexOf('### Strepen'), GUIDE.indexOf('Alle zeven zijn doorgemeten'));
+    expect(section.length).toBeGreaterThan(400);
+    expect(section).toContain('een **streep** bij 3, bij 8 en bij 15 contracten die je in die klasse wint: drie per klasse, eenentwintig in totaal.');
+    // What the page says, quoted as the page says it.
+    expect(section).toContain(`(**${STRINGS.stripes.held(10, ALL_STRIPES)}**)`);
+    expect(section).toContain(`(**${STRINGS.stripes.nextStripe(8)}**)`);
+    expect(section).toContain(`(**${STRINGS.stripes.nextPoint(15)}**)`);
+    expect(section).toContain(`**${STRINGS.stripes.point}** erbij als het de vijfde was`);
+    expect(section).toContain('**Elke vijfde streep is een perkpunt**, van welke klassen ze ook komen: vier punten bij twintig strepen.');
+    expect(MAX_STRIPE_POINTS).toBe(4);
+    expect(MAX_STRIPE_POINTS * STRIPES_A_POINT).toBe(20);
+    // Nineteen from the levels, twenty-three ranks to buy: the four that stripes bring are what is short.
+    expect(section).toContain('Je levels geven er negentien en alle perks samen hebben drieëntwintig rangen: pas met strepen krijg je ze dus allemaal vol.');
+    expect(MAX_LEVEL - 1).toBe(19);
+    const ranks = PERKS.reduce((sum, perk) => sum + perk.maxRank, 0);
+    expect(ranks).toBe(23);
+    expect(MAX_LEVEL - 1 + MAX_STRIPE_POINTS).toBe(ranks);
+    expect(section).toContain('De eerste streep van een klasse kost het minst (drie contracten), dus je eerste punt heb je het snelst door vijf soorten machines te vliegen: vijftien contracten.');
+    expect(cheapest(STRIPES_A_POINT)).toEqual({ won: 15, classes: 5 });
+    expect(Math.min(...STRIPES_AT)).toBe(3);
+    expect(section).toContain(`het blad **${capital(STRINGS.pilot.pages.perks.toLowerCase())}** zegt hoeveel punten je strepen al hebben opgebracht`);
+    expect(section).toContain(`Op het blad **${capital(STRINGS.pilot.pages.classes.toLowerCase())}** staan ze als drie streepjes`);
+  });
+
+  test('the guide: a stripe is kept through a new telling of the story, and there are two medals for them', () => {
+    const section = GUIDE.slice(GUIDE.indexOf('### Strepen'), GUIDE.indexOf('Alle zeven zijn doorgemeten'));
+    expect(section).toContain('Een streep raak je niet meer kwijt, ook niet als je het verhaal opnieuw begint.');
+    // The record of what was won as each class is carried into the next telling whole.
+    const record = { wonAs: { lancer: 15, bastion: 8, duellist: 3, marksman: 3 } };
+    const told = { completed: ['the-end'], read: [], scenes: [], choices: {}, endingSeen: true, cycle: 0, ...record } as unknown as Parameters<typeof startNewCycle>[0];
+    const again = startNewCycle(told, [{ id: 'the-end', phase: 'finale' }] as unknown as Parameters<typeof startNewCycle>[1]);
+    expect(again.cycle).toBe(1);
+    expect(again.wonAs).toEqual(record.wonAs);
+    expect([stripesHeld(again), stripePoints(again)]).toEqual([7, 1]);
+    expect(section).toContain('Er zijn twee medailles: voor je eerste streep en voor alle eenentwintig.');
+    expect(MEDALS.filter((entry) => entry.id.startsWith('stripe')).map((entry) => entry.id)).toEqual(['stripe-1', 'stripe-all']);
+    expect(medal('stripe-1').progress({ wonAs: {} } as never).need).toBe(1);
+    expect(medal('stripe-all').progress({ wonAs: {} } as never).need).toBe(21);
+  });
+
+  test('the guide: the briefing\'s page of the build says how near the next stripe is, quoted as it says it, and not in the simulator', () => {
+    const section = GUIDE.slice(GUIDE.indexOf('### Strepen'), GUIDE.indexOf('Alle zeven zijn doorgemeten'));
+    expect(section).toContain(`Ga op de rij **${STRINGS.briefing.build}** staan: rechts van de naam van de build staan de streepjes van zijn klasse`);
+    // Six of eight is on the way to a second stripe.
+    expect(section).toContain(`met **${STRINGS.stripes.towards(6, 8)}** (zes van de acht contracten gewonnen)`);
+    expect(STRIPES_AT[1]).toBe(8);
+    expect(section).toContain(`Is dit contract het laatste dat nog ontbreekt, dan staat er **${STRINGS.stripes.thisWin}**.`);
+    expect(section).toContain('In de simulator staat er niets: die telt niet mee.');
+    for (const id of ['drill-basics', 'range-1-heavy-mech', 'range-spar-1']) expect(countsForClass({ id }), id).toBe(false);
+    expect(countsForClass({ id: 'patrol' })).toBe(true);
+    expect(README).toContain('Bij de briefing zie je per build hoe ver zijn klasse van de volgende streep is.');
+  });
+
+  test('the README says the same in a line', () => {
+    expect(README).toContain('**Strepen**: een klasse geeft je een streep bij 3, 8 en 15 gewonnen contracten, en elke vijfde streep is een perkpunt.');
+    expect(README).toContain('met twintig strepen heb je eindelijk elke rang van elke perk.');
+    expect(MAX_STRIPE_POINTS * STRIPES_A_POINT).toBe(20);
   });
 });

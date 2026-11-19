@@ -344,9 +344,11 @@ describe('the page can be read', () => {
         expect(text.right, `${kind}: ${text.text}`).toBeLessThanOrEqual(LOGICAL_W - 4);
       }
       for (const a of texts) for (const b of texts) if (a !== b) expect(overlap(a, b), `${kind}: "${a.text}" and "${b.text}"`).toBe(false);
-      // The build to try ends above the hint at the foot of the screen.
-      const hint = texts.reduce((low, t) => (t.y > low.y ? t : low));
-      expect(texts.filter((t) => t !== hint).every((t) => t.y + LINE <= hint.y), kind).toBe(true);
+      // The build to try ends above the foot of the screen: the hint, with the count of stripes and their next point either side of it.
+      const hint = texts.find((t) => t.text === STRINGS.pilot.pageHint)!;
+      const foot = texts.filter((t) => t.y >= hint.y);
+      expect(foot, kind).toHaveLength(3);
+      expect(texts.filter((t) => !foot.includes(t)).every((t) => t.y + LINE <= hint.y), kind).toBe(true);
     }
   });
 
