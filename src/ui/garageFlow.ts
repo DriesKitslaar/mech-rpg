@@ -286,7 +286,7 @@ export class GarageFlow {
       case 'slots':
         if (action === 'cancel') return 'exit';
         if (action === 'prev' || action === 'next') { this.stepPaint(action === 'next' ? 1 : -1); return 'changed'; }
-        // The panel's three pages stand in a ring: the paint to the left of the parts, the saved builds to the right.
+        // The parts are the panel's middle page: the paint shop is to their left, the saved builds to their right.
         if (action === 'left') { this.mode = 'paint'; return 'stay'; }
         if (action === 'right') { this.mode = 'loadouts'; return 'stay'; }
         if (action === 'confirm') {
@@ -329,8 +329,7 @@ export class GarageFlow {
         return 'changed';
       }
       case 'loadouts':
-        if (action === 'cancel' || action === 'left') { this.mode = 'slots'; return 'stay'; }
-        if (action === 'right') { this.mode = 'paint'; return 'stay'; }
+        if (action === 'cancel' || action === 'left' || action === 'right') { this.mode = 'slots'; return 'stay'; }
         if (action === 'confirm') {
           const items = this.loadoutMenuItems(this.loadoutIndex);
           this.loadoutMenu = new MenuList(items, items.findIndex((item) => item.enabled));
@@ -338,10 +337,11 @@ export class GarageFlow {
         }
         return 'stay';
       case 'paint': {
-        if (action === 'cancel' || action === 'right') { this.mode = 'slots'; return 'stay'; }
-        if (action === 'left') { this.mode = 'loadouts'; return 'stay'; }
-        if (action !== 'prev' && action !== 'next') return 'stay';
-        const step = action === 'next' ? 1 : -1;
+        if (action === 'cancel') { this.mode = 'slots'; return 'stay'; }
+        // A row is changed with left and right, which go on while they are held; L1 and R1 do the same, as they
+        // change the paint on the parts, and A is a step on, as it is in the options.
+        const step = action === 'right' || action === 'next' || action === 'confirm' ? 1 : action === 'left' || action === 'prev' ? -1 : 0;
+        if (step === 0) return 'stay';
         const row = this.paintRows.selected!.id;
         if (row === 'paint') {
           this.stepPaint(step);

@@ -265,9 +265,10 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
       await tap(page, 'ArrowLeft');
       for (let row = 0; row < 5; row++) {
         await tap(page, 'ArrowDown');
-        for (let i = 0; i < 3; i++) { await tap(page, 'KeyE'); await step(160); }
+        for (let i = 0; i < 3; i++) { await tap(page, 'ArrowRight'); await step(160); }
       }
-      await tap(page, 'ArrowRight');
+      // B is the way back to the parts.
+      await tap(page, 'Escape');
       await step(240);
     } else {
       // A room: a look round it, touching nothing that is bought, sold or set, and out again.

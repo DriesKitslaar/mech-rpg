@@ -257,7 +257,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'paint', title: 'THE PAINT SHOP',
-    text: "Twelve paints come ready, and a master's crown brings theirs. MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake. Up and down choose a row; L1 and R1 change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows. A mix is kept as you leave it.",
+    text: "Twelve paints come ready, and a master's crown brings theirs. MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake. Up and down choose a row, left and right change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows. A mix is kept as you leave it.",
   },
   {
     id: 'legs', title: 'LEG TYPES',

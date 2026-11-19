@@ -152,15 +152,17 @@ test('the page of paint: a mix is set a step at a time and the machine changes w
   await adv(page, 300);
   expect(await garage(page)).toMatchObject({ mode: 'paint', mix: DEFAULT_MIXES[0] });
   await page.screenshot({ path: shot('paint-page') });
-  // Down to the armour's colour, and round the wheel to a red; then a vivid finish and gold trim.
+  // Down to the armour's colour, and round the wheel to a red with the D-pad; then a vivid finish with the shoulder
+  // button, a middle shade with A, and round the trim's wheel the short way to gold.
   await tap(page, 'ArrowDown');
-  for (let i = 0; i < 10; i++) await tap(page, 'e');
+  for (let i = 0; i < 10; i++) await tap(page, 'ArrowRight');
+  expect((await garage(page)).mode).toBe('paint');
   await tap(page, 'ArrowDown');
   for (let i = 0; i < 3; i++) await tap(page, 'e');
   await tap(page, 'ArrowDown');
-  for (let i = 0; i < 2; i++) await tap(page, 'e');
+  for (let i = 0; i < 2; i++) await tap(page, 'Enter');
   await tap(page, 'ArrowDown');
-  for (let i = 0; i < 14; i++) await tap(page, 'e');
+  for (let i = 0; i < 10; i++) await tap(page, 'ArrowLeft');
   await adv(page, 400);
   const made = (await garage(page)).mix!;
   expect(made).toEqual({ slot: 1, hue: 0, finish: 3, shade: 2, trim: 3, glow: 2 });
@@ -171,14 +173,16 @@ test('the page of paint: a mix is set a step at a time and the machine changes w
   expect(game.mixes).toEqual([mixId(made), mixId(DEFAULT_MIXES[1]), mixId(DEFAULT_MIXES[2])]);
   // A ready paint: the five rows are dim, and the page says how to come by a mix.
   for (let i = 0; i < 4; i++) await tap(page, 'ArrowUp');
-  await tap(page, 'q');
+  await tap(page, 'ArrowLeft');
   await adv(page, 400);
   expect(await garage(page)).toMatchObject({ mode: 'paint', mix: null });
   await page.screenshot({ path: shot('paint-page-ready') });
-  // Out of the garage and in again: the hangar shows the machine in what it wears.
-  await tap(page, 'e');
+  // The mix again; then B to the parts and B out of the garage: the hangar shows the machine in what it wears.
+  await tap(page, 'ArrowRight');
   await adv(page, 300);
+  expect(await garage(page)).toMatchObject({ mode: 'paint', mix: made });
   await tap(page, 'Escape');
+  expect((await garage(page)).mode).toBe('slots');
   await tap(page, 'Escape');
   await adv(page, 600);
   expect((await snap(page)).screen).toBe('hub');

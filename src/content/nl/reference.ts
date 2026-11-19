@@ -235,8 +235,8 @@ export const REFERENCE_NL: Record<string, string> = {
   'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Right opens your seven saved builds: room for one of each class, each listed by the class it is. Left opens the paint shop.':
     'Een build moet onder het gewicht blijven dat zijn benen dragen en binnen de energie van zijn generator. L1 en R1 wisselen de lak. Rechts: je zeven bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd. Links: de spuiterij.',
   'THE PAINT SHOP': 'DE SPUITERIJ',
-  "Twelve paints come ready, and a master's crown brings theirs. MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake. Up and down choose a row; L1 and R1 change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows. A mix is kept as you leave it.":
-    'Twaalf lakken zijn kant en klaar; de kroon van een meester geeft de zijne. MIX 1, 2 en 3 meng je zelf: trek er een aan en vijf rijen ontwaken. Omhoog en omlaag kiezen een rij, L1 en R1 wijzigen hem: de kleur van het pantser, hoe sterk en donker, de kleur van de bies en hoe fel die gloeit. Je mengsel blijft bewaard.',
+  "Twelve paints come ready, and a master's crown brings theirs. MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake. Up and down choose a row, left and right change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows. A mix is kept as you leave it.":
+    'Twaalf lakken zijn kant en klaar; de kroon van een meester geeft de zijne. MIX 1, 2 en 3 meng je zelf: trek er een aan en vijf rijen ontwaken. Op en neer kies je een rij, links en rechts wijzig je hem: de kleur van het pantser, hoe sterk en donker, de kleur van de bies en hoe fel die gloeit. Je mengsel blijft bewaard.',
   'Own Colours': 'Eigen kleuren',
   'Wear a paint of your own mixing.': 'Draag een lak die je zelf mengde.',
   'KINDS OF WORK': 'SOORTEN WERK',

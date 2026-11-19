@@ -72,19 +72,27 @@ every change in the garage is.
 
 ### The page
 
-The garage's panel has had two pages: the parts, and the saved builds. It gets a third, and the
-three stand in a ring: PAINT, PARTS, BUILDS. Left and right go round it. (Left on the parts used
-to open the saved builds, as right did: it opens the paint now, and the foot of the screen says
-which way each is.)
+The garage's panel has had two pages: the parts, and the saved builds. It gets a third. The parts
+are the middle one: the paint shop is to their left and the saved builds to their right, and B
+comes back from either. (Left on the parts used to open the saved builds, as right did: it opens
+the paint shop now, and the foot of the screen says which way each is.)
 
 The page has six rows:
 
-- **PAINT**: the paint the machine wears. L1 and R1 go through them all, as they do on the parts
-  page.
+- **PAINT**: the paint the machine wears. Left and right go through them all, as L1 and R1 do on
+  the parts page.
 - **ARMOUR**, **FINISH**, **SHADE**, **TRIM**, **GLOW**: each a strip of its steps in the colours
-  they would give, with the one chosen marked, and for the three that have names the name. L1 and
-  R1 change the row under the cursor, round and round. They are dim, and do nothing, while the
-  machine wears a paint that is not a mix: a line under them says to choose MIX 1, 2 or 3.
+  they would give, with the one chosen marked, and for the three that have names the name. Left
+  and right change the row under the cursor, round and round, and go on while they are held. They
+  are dim, and do nothing, while the machine wears a paint that is not a mix: a line under them
+  says to choose MIX 1, 2 or 3.
+
+L1 and R1 change a row as left and right do, and A takes it a step on, as it does in the options.
+
+This was first built with the three pages in a ring that left and right went round, and L1 and R1
+alone to change a row, as they change the paint on the parts. Reading it through, a strip of
+colours is a thing a hand goes left and right along: a pilot who did so was put on another page.
+So left and right are the row's, and the way out of the page is B.
 
 ### Against a copy of itself
 

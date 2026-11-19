@@ -491,9 +491,9 @@ lakken, de lakken die je in de arena verdient, en als laatste **Mix 1**, **Mix 2
 drie zijn van jou. Zolang je er niets aan verandert zijn het een witte mecha met blauwe lichten, een
 zwarte met rode, en een marineblauwe met goud.
 
-Druk in de garage op **links**: dan sta je in de **PAINT SHOP**. Naar rechts ga je naar je bewaarde
-builds; de drie pagina's staan in een kring. Bovenaan staat welke lak je draagt. Draag je een van
-je drie mengsels, dan stel je de vijf rijen eronder in:
+Druk in de garage op **links**: dan sta je in de **PAINT SHOP**. Met **B** ga je terug naar de
+onderdelen. Bovenaan staat welke lak je draagt. Draag je een van je drie mengsels, dan stel je de
+vijf rijen eronder in:
 
 | Rij | Stappen | Wat je kiest |
 |---|---|---|
@@ -503,8 +503,9 @@ je drie mengsels, dan stel je de vijf rijen eronder in:
 | **TRIM** | 24 | De kleur van de lichten en de sierstrips. |
 | **GLOW** | 3 | Hoe fel die branden: Soft, Clear, Bright. |
 
-Met **omhoog/omlaag** kies je een rij, met **L1/R1** verander je hem. Je mecha ernaast verandert
-bij elke druk mee. **Steel** met **Pale** geeft een witte mecha, **Steel** met **Deep** een zwarte.
+Met **omhoog/omlaag** kies je een rij, met **links/rechts** verander je hem: houd de knop
+ingedrukt en hij loopt door. **L1/R1** doen hetzelfde, en **A** gaat een stap verder. Je mecha
+ernaast verandert bij elke druk mee. **Steel** met **Pale** geeft een witte mecha, **Steel** met **Deep** een zwarte.
 Een mengsel blijft bewaard zoals je het achterlaat, en je draagt het overal: in de hangar, in het
 gevecht en bij de lancering. Wapens houden hun eigen kleur.
 

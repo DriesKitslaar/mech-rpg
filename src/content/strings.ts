@@ -540,11 +540,11 @@ export const STRINGS = {
     weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', cooling: 'Cooling',
     evasion: 'Boost evade', volley: 'Volley EN', back: 'B: back',
     factoryPaint: 'Factory', paint: (name: string) => `L1/R1 PAINT: ${name}`,
-    // Which way the panel's other pages are, at the foot of the parts and of the paint: they stand in a ring, paint, parts, builds.
-    pages: { slots: 'LEFT: PAINT  RIGHT: BUILDS', paint: 'LEFT: BUILDS  RIGHT: PARTS' },
+    // Which way the panel's other pages are, at the foot of the parts: the paint shop to the left, the saved builds to the right.
+    pages: 'LEFT: PAINT  RIGHT: BUILDS',
     // The page of paint: the paint that is worn, and the five things a mix of the pilot's own sets (see core/mix.ts).
     mixer: {
-      heading: 'PAINT SHOP', change: 'L1/R1: CHANGE',
+      heading: 'PAINT SHOP', change: 'LEFT/RIGHT: CHANGE',
       rows: { paint: 'PAINT', hue: 'ARMOUR', finish: 'FINISH', shade: 'SHADE', trim: 'TRIM', glow: 'GLOW' },
       finish: ['Steel', 'Matte', 'Rich', 'Vivid'], shade: ['Pale', 'Light', 'Middle', 'Dark', 'Deep'], glow: ['Soft', 'Clear', 'Bright'],
       ready: 'A paint as it comes. Choose MIX 1, 2 or 3 to mix your own.',

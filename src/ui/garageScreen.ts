@@ -214,9 +214,7 @@ export class GarageScreen implements Screen {
     } else if (flow.mode === 'slots') {
       // With nothing wrong, the foot of the panel says what the shoulder buttons and the D-pad do here.
       drawText(ctx, G.paint(flow.paintName), 8, STATS_Y + 61, { color: COLORS.dim, size: 10 });
-      drawText(ctx, G.pages.slots, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
-    } else if (flow.mode === 'paint') {
-      drawText(ctx, G.pages.paint, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
+      drawText(ctx, G.pages, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
     }
   }
 

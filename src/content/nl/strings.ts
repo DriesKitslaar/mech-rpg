@@ -471,9 +471,9 @@ export const STRINGS_NL = {
     weight: 'Gewicht', energy: 'Energie', mobility: 'Mobiliteit', armour: 'Pantser', stability: 'Stabiliteit', cooling: 'Koeling',
     evasion: 'Boost ontwijk', volley: 'Salvo EN', back: 'B: terug',
     factoryPaint: 'Fabriek', paint: (name: string) => `L1/R1 LAK: ${name}`,
-    pages: { slots: 'LEFT: LAK  RIGHT: BUILDS', paint: 'LEFT: BUILDS  RIGHT: DELEN' },
+    pages: 'LEFT: LAK  RIGHT: BUILDS',
     mixer: {
-      heading: 'SPUITERIJ', change: 'L1/R1: WIJZIG',
+      heading: 'SPUITERIJ', change: 'LEFT/RIGHT: WIJZIG',
       rows: { paint: 'LAK', hue: 'PANTSER', finish: 'STERKTE', shade: 'TINT', trim: 'BIES', glow: 'GLOED' },
       finish: ['Staal', 'Mat', 'Vol', 'Sterk'], shade: ['Bleek', 'Licht', 'Midden', 'Donker', 'Diep'], glow: ['Zacht', 'Helder', 'Fel'],
       ready: 'Een lak zoals hij komt. Kies MIX 1, 2 of 3 en meng je eigen.',

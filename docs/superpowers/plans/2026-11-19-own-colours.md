@@ -18,7 +18,7 @@
 - Untouched, the three are: white with cyan lights, black with red, navy with gold.
 - A paint the game does not know is worn as factory colours, as now; a kept game is never refused for it.
 - The pictures of at most four mixes are kept: `MIX_KEPT = 4`.
-- The garage's pages stand in a ring, PAINT, PARTS, BUILDS: left and right go round it.
+- The parts are the garage's middle page: the paint shop is to their left, the saved builds to their right, and B comes back from either. On the paint shop left and right change the row under the cursor (and go on while held); L1, R1 and A change it too.
 - Every new text has its Dutch; interface strings at most two letters longer than the English.
 - No rule of combat and no number changes.
 
@@ -76,7 +76,7 @@
 
 **Steps:**
 
-- [x] The ring and the page in the flow: left and right from each of the three, up and down the rows, L1 and R1 on each row, the dim rows, what is kept. Tests.
+- [x] The pages and the paint shop in the flow: left and right from the parts and B back, up and down the rows, what changes each row, the dim rows, what is kept. Tests. (First built as a ring that left and right went round, with L1 and R1 alone to change a row: see the spec for why that was changed.)
 - [x] Drawing it: the rows, the strips in the colours they would give, the mark on the chosen step, the names, the line under them; nothing over anything, in both languages. Tests.
 - [x] The words, the medal, the manual's chapter and the garage's own, the guide, the README: with claim tests.
 - [x] In a browser: the page in both languages, a white machine in the hangar, behind it in a battle and in the launch; every other browser test still passing.

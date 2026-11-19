@@ -269,6 +269,7 @@ describe('what is said of stripes is so', () => {
 
 describe('what is said of the paint shop is so', () => {
   const M = STRINGS.garage.mixer;
+  const dutchOf = (text: string): string => REFERENCE_NL[text];
   const chapter = MANUAL.find((entry) => entry.id === 'paint')!;
   const garage = MANUAL.find((entry) => entry.id === 'garage')!;
   const section = GUIDE.slice(GUIDE.indexOf('## De spuiterij: je eigen lak'), GUIDE.indexOf('## Moeilijkheid'));
@@ -281,7 +282,8 @@ describe('what is said of the paint shop is so', () => {
     expect(chapter.text).toContain('MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake.');
     expect(MIX_SLOTS).toBe(3);
     expect(MIX_KEYS).toHaveLength(5);
-    expect(chapter.text).toContain("Up and down choose a row; L1 and R1 change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows.");
+    expect(chapter.text).toContain("Up and down choose a row, left and right change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows.");
+    expect(dutchOf(chapter.text)).toContain('Op en neer kies je een rij, links en rechts wijzig je hem:');
     expect(chapter.text).toMatch(/A mix is kept as you leave it\.$/);
     const dutch = REFERENCE_NL[chapter.text];
     expect(dutch).toContain('Twaalf lakken zijn kant en klaar; de kroon van een meester geeft de zijne.');
@@ -311,8 +313,10 @@ describe('what is said of the paint shop is so', () => {
     expect(light(black)).toBeLessThan(0.25);
     expect([white.accentHue, black.accentHue, navy.accentHue]).toEqual([195, 0, 45]);
     expect(navy.hue).toBe(210);
-    expect(section).toContain(`Druk in de garage op **links**: dan sta je in de **${M.heading}**.`);
-    expect(section).toContain("Naar rechts ga je naar je bewaarde builds; de drie pagina's staan in een kring.");
+    expect(section).toContain(`Druk in de garage op **links**: dan sta je in de **${M.heading}**. Met **B** ga je terug naar de onderdelen.`);
+    // How a row is changed: the D-pad, which goes on while it is held, the shoulder buttons, and A.
+    expect(section).toContain('met **links/rechts** verander je hem: houd de knop ingedrukt en hij loopt door. **L1/R1** doen hetzelfde, en **A** gaat een stap verder.');
+    expect(M.change).toBe('LEFT/RIGHT: CHANGE');
   });
 
   test('the guide\'s table: each row by its name, in its number of steps, with the names its steps have', () => {
