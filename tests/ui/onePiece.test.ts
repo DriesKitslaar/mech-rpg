@@ -8,6 +8,7 @@ import { MISSIONS } from '../../src/content/missions';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import SPRITES from '../../src/content/sprites.json';
 import { STRINGS } from '../../src/content/strings';
+import { rollShows } from '../../src/ui/creditsScreen';
 import { done, fresh, inHub, press, select, snap, strong } from '../helpers/app';
 import { record } from '../helpers/canvas';
 
@@ -97,6 +98,19 @@ describe('the end roll', () => {
       expect(t.y, t.text).toBeGreaterThanOrEqual(0);
       expect(t.y + (t.size ?? 12), t.text).toBeLessThanOrEqual(270);
     }
+  });
+
+  test('what is whole and what is cut is settled to the pixel', () => {
+    // Standing still: a line a single row over either edge is left out.
+    expect(rollShows(0, 11, true)).toBe(true);
+    expect(rollShows(-1, 11, true)).toBe(false);
+    expect(rollShows(270 - 11, 11, true)).toBe(true);
+    expect(rollShows(270 - 10, 11, true)).toBe(false);
+    // Climbing: a line is drawn for as long as a row of it is on screen.
+    expect(rollShows(-10, 11, false)).toBe(true);
+    expect(rollShows(-11, 11, false)).toBe(false);
+    expect(rollShows(269, 11, false)).toBe(true);
+    expect(rollShows(270, 11, false)).toBe(false);
   });
 
   test('while it climbs, a line still leaves by the top edge a row at a time', () => {

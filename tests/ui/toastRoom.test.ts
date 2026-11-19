@@ -54,6 +54,23 @@ describe('an announcement', () => {
     },
   );
 
+  test('that steps aside goes back to the head of what is waiting: it is the first shown again, ahead of what had not been up yet', () => {
+    // Two things to announce: a rank in the arena and the pages the database opens with.
+    const { app } = inHub(strong({ ...done('intro-1', 'intro-2'), arenaRank: 1 }));
+    app.update(16);
+    const first = snap(app).toast!;
+    const behind = snap(app).toasts;
+    expect(behind.length).toBeGreaterThanOrEqual(1);
+    select(app, 'garage');
+    app.update(16);
+    expect(snap(app).toast).toBeNull();
+    expect(snap(app).toasts).toEqual([first, ...behind]);
+    press(app, 'cancel');
+    app.update(16);
+    expect(snap(app).toast).toBe(first);
+    expect(snap(app).toasts).toEqual(behind);
+  });
+
   test('waits on a briefing, where it would lie over what the contract is expected to bring', () => {
     const { app, due } = arrived();
     const shown = foot(app);

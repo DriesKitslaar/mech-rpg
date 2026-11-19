@@ -73,6 +73,14 @@ export const creditsHeight = (lines: CreditLine[]): number => lines.reduce((sum,
 export const CREDITS_SPEED = 18;
 export const CREDITS_HOLD_MS = 600;
 
+/**
+ * Whether a line of the roll at `y`, `h` high, is drawn. While the roll climbs: any line with a part of it on
+ * screen, so that a line leaves by the top edge a row at a time. Once it stands still: only a line that is
+ * wholly on screen, so that none stands there cut in half.
+ */
+export const rollShows = (y: number, h: number, still: boolean): boolean =>
+  (still ? y >= 0 && y + h <= LOGICAL_H : y > -h && y < LOGICAL_H);
+
 /** The end roll. It climbs by itself and stops with its last line in the middle of the screen; a press of A or B skips to there, the next leaves. */
 export class CreditsScreen implements Screen {
   private lines: CreditLine[];
@@ -123,10 +131,7 @@ export class CreditsScreen implements Screen {
     for (const line of this.lines) {
       y += line.gap ?? 0;
       const h = Math.max(11, (line.size ?? 12) + 1);
-      // Only what is on screen is drawn. While the roll climbs a line leaves by the top edge a row at a time;
-      // once it stands still, a line the edge would cut in half is left out.
-      const whole = y >= 0 && y + h <= LOGICAL_H;
-      if (this.done ? whole : y > -h && y < LOGICAL_H) drawText(ctx, line.text, LOGICAL_W / 2, y, { align: 'center', size: line.size, color: line.color });
+      if (rollShows(y, h, this.done)) drawText(ctx, line.text, LOGICAL_W / 2, y, { align: 'center', size: line.size, color: line.color });
       y += h;
     }
     if (this.done && Math.floor(this.clock / 420) % 2 === 0) {
