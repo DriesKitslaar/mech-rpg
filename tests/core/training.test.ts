@@ -64,9 +64,9 @@ describe('a drill', () => {
 });
 
 describe('the drills', () => {
-  test('are eleven, each with an id of its own, and three are open from the start', () => {
-    expect(DRILLS).toHaveLength(11);
-    expect(new Set(DRILLS.map((d) => d.id)).size).toBe(11);
+  test('are thirteen, each with an id of its own, and three are open from the start', () => {
+    expect(DRILLS).toHaveLength(13);
+    expect(new Set(DRILLS.map((d) => d.id)).size).toBe(13);
     for (const drill of DRILLS) expect(drill.id).toMatch(/^drill-[a-z]+$/);
     expect(DRILLS.filter((d) => d.after === 'start').map((d) => d.id)).toEqual(['drill-aim', 'drill-heat', 'drill-boost']);
     const known = new Set(['start', 'choice', 'finale', 'verdict', ...MISSIONS.map((m) => m.id)]);
@@ -108,12 +108,14 @@ describe('what the drills teach', () => {
     return { type: 'endTurn' };
   }
   const SEEDS = 40;
-  /** The drill as the simulator sets it up: its own scale, its own objective, and the Overdrive it lends, if it lends one. */
+  /**
+   * The drill as the simulator sets it up: its own scale, its own objective, what it holds back, whether it
+   * is an open battle, and the Overdrive it lends, if it lends one.
+   */
   const begin = (drillId: string, seed: number, lend = true): BattleState => {
-    const drill = DRILLS.find((d) => d.id === drillId)!;
-    return createBattle(drill.build, drill.battle.enemies.map((id) => ALL_ENEMIES[id]), CATALOG, seed * 7919, {
-      enemyScale: drill.scale ?? 1, ...(drill.battle.objective ? { objective: drill.battle.objective } : {}),
-      ...(lend && drill.overdrive ? { overdrive: drill.overdrive.kind, drive: drill.overdrive.drive } : {}),
+    const mission = drillMission(fresh(), DRILLS.find((d) => d.id === drillId)!, 'Training Simulator');
+    return startMissionBattle(mission.loaner!, mission, 0, ALL_ENEMIES, CATALOG, seed * 7919, undefined, {
+      enemyScale: mission.scale ?? 1, ...(lend && mission.overdrive ? { overdrive: mission.overdrive.kind, drive: mission.overdrive.drive } : {}),
     });
   };
   const rate = (drillId: string, policy: (s: BattleState, c: Catalog) => Action): number => {
@@ -158,6 +160,99 @@ describe('what the drills teach', () => {
       return sum / SEEDS;
     };
     expect(rounds(true)).toBeLessThan(rounds(false) - 1);
+  });
+
+  describe('Follow Through', () => {
+    const drill = DRILLS.find((d) => d.id === 'drill-momentum')!;
+    const lance = WEAPON_SLOTS.filter((slot) => weaponIn(drill.build, slot, CATALOG));
+
+    test('lends one weapon, so that a second shot in a turn can only be one a kill gave back', () => {
+      expect(lance).toEqual(['rightHand']);
+    });
+
+    test('the aiming line promises both drones and not the enforcer, and seldom misses a drone', () => {
+      const s = begin('drill-momentum', 1);
+      const at = (kind: string) => s.units.filter((u) => u.kind === kind).map((u) => previewShot(s, 'player', 'rightHand', u.id, 'core', CATALOG));
+      expect(at('recon-drone')).toHaveLength(2);
+      for (const shot of at('recon-drone')) {
+        expect(shot).toMatchObject({ shatter: true, kills: true });
+        expect(shot.hitChance).toBeGreaterThanOrEqual(90);
+      }
+      expect(at('heavy-mech')).toHaveLength(1);
+      expect(at('heavy-mech')[0]).toMatchObject({ shatter: false, kills: false });
+      // The lance would need the whole of its magazine and more to break the enforcer the plain way.
+      const enforcer = s.units.find((u) => u.kind === 'heavy-mech')!;
+      expect(at('heavy-mech')[0].damage * (weaponIn(drill.build, 'rightHand', CATALOG)!.ammo ?? 0)).toBeLessThan(enforcer.parts.core!.ap * 1.2);
+    });
+
+    test('is passed nine times in ten by a pilot who does what it teaches, in the first round or the second', () => {
+      let wins = 0;
+      let rounds = 0;
+      for (let seed = 1; seed <= SEEDS; seed++) {
+        const end = runBattle(begin('drill-momentum', seed), CATALOG, chooseAutoPlayerAction);
+        if (end.outcome !== 'victory') continue;
+        wins += 1;
+        rounds += end.round;
+        // Won the way it teaches: two kills gave the lance back, the enforcer lost its nerve and left unbroken.
+        const enforcer = end.units.find((u) => u.kind === 'heavy-mech')!;
+        expect(end.events.filter((e) => e.type === 'momentum').length, `seed ${seed}`).toBeGreaterThanOrEqual(1);
+        expect(end.events.some((e) => e.type === 'shaken' && e.unit === enforcer.id), `seed ${seed}`).toBe(true);
+        expect(end.events.some((e) => e.type === 'rout' && e.unit === enforcer.id), `seed ${seed}`).toBe(true);
+        expect(end.events.some((e) => e.type === 'unitDestroyed' && e.unit === enforcer.id), `seed ${seed}`).toBe(false);
+      }
+      expect(wins / SEEDS).toBeGreaterThanOrEqual(0.9);
+      expect(rounds / wins).toBeLessThanOrEqual(1.5);
+    });
+
+    test('cannot be passed where no kill gives anything back: it is the rule that wins it', () => {
+      const mission = drillMission(fresh(), drill, 'x');
+      const closed = { ...mission, battles: [{ ...mission.battles[0], closed: true as const }] };
+      let wins = 0;
+      for (let seed = 1; seed <= SEEDS; seed++) {
+        const start = startMissionBattle(closed.loaner!, closed, 0, ALL_ENEMIES, CATALOG, seed * 7919, undefined, { enemyScale: closed.scale ?? 1 });
+        expect(start.open).toBe(false);
+        if (runBattle(start, CATALOG, chooseAutoPlayerAction).outcome === 'victory') wins += 1;
+      }
+      expect(wins).toBe(0);
+    });
+
+    test('is failed more often than not by a pilot who fires at the big one', () => {
+      // The enforcer stands first: it is what a pilot who only ever fires at the first thing fires at.
+      expect(drill.battle.enemies[0]).toBe('heavy-mech');
+      expect(rate('drill-momentum', naive)).toBeLessThanOrEqual(0.4);
+    });
+  });
+
+  describe('The Nest', () => {
+    const drill = DRILLS.find((d) => d.id === 'drill-swarm')!;
+
+    test('is a swarm: three on the field, five more to come, all of them light', () => {
+      const s = begin('drill-swarm', 1);
+      expect(s.units.filter((u) => u.side === 'enemy')).toHaveLength(3);
+      expect(s.reserve).toHaveLength(5);
+      const light = new Set(['recon-drone', 'bomb-crawler']);
+      for (const id of [...drill.battle.enemies, ...(drill.battle.reserve ?? [])]) expect(light.has(id), id).toBe(true);
+      // The lent salvo fires at all three at once.
+      expect(weaponIn(drill.build, 'shoulder', CATALOG)!.trait).toBe('salvo');
+    });
+
+    test('is passed nearly always, in a handful of rounds, with every machine accounted for', () => {
+      let wins = 0;
+      let rounds = 0;
+      for (let seed = 1; seed <= SEEDS; seed++) {
+        const end = runBattle(begin('drill-swarm', seed), CATALOG, chooseAutoPlayerAction);
+        if (end.outcome !== 'victory') continue;
+        wins += 1;
+        rounds += end.round;
+        expect(end.reserve ?? [], `seed ${seed}`).toHaveLength(0);
+        expect(end.events.filter((e) => e.type === 'arrive'), `seed ${seed}`).toHaveLength(5);
+        // Eight machines: each was destroyed, left, or went off.
+        const gone = end.units.filter((u) => u.side === 'enemy' && u.destroyed).length;
+        expect(gone, `seed ${seed}`).toBe(8);
+      }
+      expect(wins / SEEDS).toBeGreaterThanOrEqual(0.95);
+      expect(rounds / wins).toBeLessThanOrEqual(6);
+    });
   });
 
   // The others teach something that helps without being the only way through.
@@ -250,7 +345,7 @@ const AS_IT_WAS: [string, number, string, number, number, number, number][] = [
   ['drill-overdrive', 3, 'victory', 6, 50, 150, -2023389401],
 ];
 
-describe('a drill is never an open battle', () => {
+describe('a drill is an open battle only where that is its lesson', () => {
   const started = (id: string, seed: number): BattleState => {
     const mission = drillMission(fresh(), DRILLS.find((drill) => drill.id === id)!, 'Training Simulator');
     return startMissionBattle(mission.loaner!, mission, 0, ALL_ENEMIES, CATALOG, seed, undefined, {
@@ -258,8 +353,16 @@ describe('a drill is never an open battle', () => {
     });
   };
 
-  test('every drill there is has its three lines above', () => {
-    expect([...new Set(AS_IT_WAS.map(([id]) => id))]).toEqual(DRILLS.map((drill) => drill.id));
+  test('every drill that is not open has its three lines above, and two say of themselves that they are open', () => {
+    expect([...new Set(AS_IT_WAS.map(([id]) => id))]).toEqual(DRILLS.filter((drill) => !drill.open).map((drill) => drill.id));
+    expect(DRILLS.filter((drill) => drill.open).map((drill) => drill.id)).toEqual(['drill-momentum', 'drill-swarm']);
+    // A drill that is open is handed to the battle as it is written; one that is not is marked.
+    const battles = (id: string) => drillMission(fresh(), DRILLS.find((drill) => drill.id === id)!, 'x').battles;
+    expect(battles('drill-momentum')).toEqual([DRILLS.find((drill) => drill.id === 'drill-momentum')!.battle]);
+    expect(battles('drill-momentum')[0].closed).toBeUndefined();
+    expect(battles('drill-guard')[0].closed).toBe(true);
+    expect(started('drill-momentum', 1).open).toBe(true);
+    expect(started('drill-swarm', 1).open).toBe(true);
   });
 
   test.each(AS_IT_WAS)('%s from seed %i plays to its last event as it did before', (id, seed, outcome, round, events, core, rng) => {

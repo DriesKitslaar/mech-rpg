@@ -77,6 +77,8 @@ export interface GameState {
   codex: string[];
   /** The songs the pilot has heard: the database's jukebox plays them again. */
   heard?: string[];
+  /** What the pilot has been told once and is not told again: ids of lessons (see `Lesson`). Kept across cycles. */
+  lessons?: string[];
   /** Bench work: the step each part stands at, by part id (see tuning.ts). Kept across cycles. */
   tuning?: Tuning;
 }
@@ -283,6 +285,13 @@ export function equip(state: GameState, slot: BuildSlot, partId: string | null, 
   return { ...state, build };
 }
 
+/** Remembers what the pilot has now been told, so that it is not said again. The same game when none of it is new. */
+export function learn(state: GameState, lessons: readonly string[]): GameState {
+  const known = state.lessons ?? [];
+  const fresh = [...new Set(lessons)].filter((id) => !known.includes(id));
+  return fresh.length === 0 ? state : { ...state, lessons: [...known, ...fresh] };
+}
+
 const isWholeNonNegative = (n: unknown): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
 const isTextList = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
 /** More copies than this of one part is not something play can produce. */
@@ -330,6 +339,8 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const furthest = tuneCap(value.cycle);
   if (tuning !== undefined && (!isRecord(tuning) || Object.keys(tuning).length > MAX_TUNED
     || !Object.entries(tuning).every(([id, step]) => /^[a-z0-9-]{1,64}$/.test(id) && isWholeNonNegative(step) && step >= 1 && step <= furthest))) return false;
+  // What the pilot has been told. An id this version does not know is kept: a later one may.
+  if (value.lessons !== undefined && !(isTextList(value.lessons) && value.lessons.length <= 32 && value.lessons.every((id) => /^[a-z-]{1,24}$/.test(id)))) return false;
   const { choices } = value;
   if (choices !== undefined && (!isRecord(choices) || Object.keys(choices).length > 64
     || !Object.entries(choices).every(([k, v]) => /^[a-z-]{1,24}$/.test(k) && typeof v === 'string' && /^[a-z-]{1,24}$/.test(v)))) return false;

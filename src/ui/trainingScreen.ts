@@ -11,7 +11,7 @@ import { COLORS, LINE, charsFor, drawList, drawPanel, drawText, wrap } from './w
 
 const T = STRINGS.training;
 
-/** The simulator: ten drills, each shown with the mech it lends. Passing one pays once; none of them costs anything. */
+/** The simulator: the drills, each shown with the mech it lends. Passing one pays once; none of them costs anything. */
 export class TrainingScreen implements Screen {
   private list: MenuList;
   private clock = 0;

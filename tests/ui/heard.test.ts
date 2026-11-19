@@ -1,4 +1,5 @@
 import { createBattle } from '../../src/core/battle';
+import { LESSONS } from '../../src/core/campaign';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { SCENES } from '../../src/content/scenes';
@@ -277,8 +278,9 @@ describe('the music while the last machine is looked at', () => {
     expect(HUSH).toBeGreaterThanOrEqual(0.25);
     expect(HUSH).toBeLessThanOrEqual(0.5);
     const music = { enabled: true, tense: false, hush: 1, play: () => undefined };
-    // Every page of story is behind this pilot: nothing stands between the title and the hub.
-    const { app } = inHub({ ...strong(done('intro-1', 'intro-2')), scenes: SCENES.map((scene) => scene.id) }, 5, { fast: false, music: music as never, sprites });
+    // Every page of story is behind this pilot, and everything that is explained once: nothing stands between
+    // the title and the hub, and nothing is said over the battle.
+    const { app } = inHub({ ...strong(done('intro-1', 'intro-2')), scenes: SCENES.map((scene) => scene.id), lessons: [...LESSONS] }, 5, { fast: false, music: music as never, sprites });
     expect(music.hush).toBe(1);
     select(app, 'contracts');
     select(app, ids(app).find((id) => id !== 'back')!);
