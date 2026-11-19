@@ -15,7 +15,7 @@ describe('hiring a wingman from the briefing', () => {
     const { app } = inHub(strong(done('intro-1')));
     select(app, 'contracts');
     select(app, 'patrol');
-    expect(ids(app)).toEqual(['accept', 'back']);
+    expect(ids(app)).toEqual(['accept', 'build', 'back']);
     expect(hire(app).wingman).toBeNull();
   });
 
@@ -23,7 +23,7 @@ describe('hiring a wingman from the briefing', () => {
     const { app } = inHub(met());
     select(app, 'contracts');
     select(app, 'patrol');
-    expect(ids(app)).toEqual(['accept', 'wingman', 'back']);
+    expect(ids(app)).toEqual(['accept', 'build', 'wingman', 'back']);
     expect(hire(app)).toMatchObject({ wingman: { id: null, name: STRINGS.briefing.alone, open: 1 }, reward: 400 });
     toRow(app, 'wingman');
     press(app, 'right');
@@ -87,10 +87,13 @@ describe('hiring a wingman from the briefing', () => {
     const { app } = inHub(met());
     select(app, 'arena');
     press(app, 'confirm');
-    if (snap(app).screen === 'briefing') expect(ids(app)).toEqual(['accept', 'back']);
+    // An arena fight is flown in the pilot's own build, and says which; a drill is flown in the simulator's.
+    expect(snap(app).screen).toBe('briefing');
+    expect(ids(app)).toEqual(['accept', 'build', 'back']);
     app.go('training');
     press(app, 'confirm');
-    if (snap(app).screen === 'briefing') expect(ids(app)).toEqual(['accept', 'back']);
+    expect(snap(app).screen).toBe('briefing');
+    expect(ids(app)).toEqual(['accept', 'back']);
   });
 
   test('while an enemy is aimed at, the battle says what it is about to do', () => {

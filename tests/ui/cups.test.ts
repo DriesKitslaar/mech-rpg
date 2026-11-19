@@ -66,7 +66,7 @@ describe('a cup in the arena', () => {
     expect(snap(app).menu.items.slice(-3).map((i) => [i.enabled, i.note])).toEqual([[true, '2500'], [false, A.locked], [false, A.locked]]);
     select(app, 'cup-bronze');
     expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'cup-bronze', reward: 2500 } });
-    expect(ids(app)).toEqual(['accept', 'back']);
+    expect(ids(app)).toEqual(['accept', 'build', 'back']);
     press(app, 'cancel');
     expect(snap(app).screen).toBe('arena');
     expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('cup-bronze');

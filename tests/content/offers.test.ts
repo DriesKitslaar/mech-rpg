@@ -319,7 +319,7 @@ describe('the other offer in the game', () => {
     }
   });
 
-  test('a contract with nobody for hire and one offer has two rows, and one with somebody for hire and two offers has four: all of them inside the footer', () => {
+  test('a contract with nobody for hire and one offer has three rows, and one with somebody for hire and two offers has five: all of them inside the footer', () => {
     const rowsOf = (app: Parameters<typeof snap>[0]) => {
       const labels = snap(app).menu.items.map((item) => item.label);
       const texts = record((ctx) => app.draw(ctx)).texts.filter((t) => labels.includes(t.text) && t.x >= 240);
@@ -329,8 +329,9 @@ describe('the other offer in the game', () => {
         expect(t.y + 11, t.text).toBeLessThanOrEqual(264);
         expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 6);
       }
-      // The block of rows stays in the middle of the footer: each row more starts it half a line higher.
-      expect(texts[0].y).toBe(216 - 6 * (labels.length - 2));
+      // The block of rows stays in the middle of the footer: each row more starts it half a line higher, until five
+      // rows, which start as high as the footer has room for.
+      expect(texts[0].y).toBe([216, 210, 204, 202][labels.length - 2]);
       texts.forEach((t, i) => expect(t.y, t.text).toBe(texts[0].y + i * 11));
       return labels;
     };
@@ -340,19 +341,19 @@ describe('the other offer in the game', () => {
         const { app } = open(told(later(), language), 'hadron-1');
         const B = STRINGS.briefing;
         expect(B.firstOffer).toBe(language === 'nl' ? 'Eerste bod' : 'First offer');
-        expect(rowsOf(app)).toEqual([B.accept, B.wingman, B.otherOffer, B.back]);
+        expect(rowsOf(app)).toEqual([B.accept, B.build, B.wingman, B.otherOffer, B.back]);
         select(app, 'other');
-        expect(rowsOf(app)).toEqual([B.accept, B.firstOffer, B.back]);
+        expect(rowsOf(app)).toEqual([B.accept, B.build, B.firstOffer, B.back]);
         const second = open(told(did(later(), 'hadron-1'), language), 'hadron-2').app;
         select(second, 'other');
-        expect(rowsOf(second)).toEqual([B.accept, B.wingman, B.firstOffer, B.back]);
+        expect(rowsOf(second)).toEqual([B.accept, B.build, B.wingman, B.firstOffer, B.back]);
         // The cursor is on the row that turned the page, whichever row of the menu that is.
-        expect(snap(second).menu.cursor).toBe(2);
+        expect(snap(second).menu.cursor).toBe(3);
         const plain = open(told(later(0), language), 'hadron-1').app;
-        expect(rowsOf(plain)).toEqual([B.accept, B.wingman, B.back]);
+        expect(rowsOf(plain)).toEqual([B.accept, B.build, B.wingman, B.back]);
         // The first contract of all: nobody is for hire yet, and nobody else is offering.
         const bare = open(told(fresh(0), language), 'intro-1').app;
-        expect(rowsOf(bare)).toEqual([B.accept, B.back]);
+        expect(rowsOf(bare)).toEqual([B.accept, B.build, B.back]);
       } finally {
         setLanguage('en');
       }

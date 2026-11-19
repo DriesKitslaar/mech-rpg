@@ -1,8 +1,13 @@
+import { archetypeOf, type Archetype } from '../core/archetype';
 import { isSwarm } from '../core/board';
+import { computeBuildStats } from '../core/build';
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
 import { groundFor } from '../core/ground';
+import type { Sortie } from '../core/sortie';
 import { isDrill } from '../core/training';
+import { tunedCatalog } from '../core/tuning';
+import type { BuildSlot } from '../core/game';
 import { feeAfter, takesWingman, type Wingman } from '../core/wingman';
 import { ALL_ENEMIES } from '../content/arena';
 import { STRINGS } from '../content/strings';
@@ -15,6 +20,12 @@ import { Typewriter } from './typewriter';
 import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawText, wrap } from './widgets';
 
 const B = STRINGS.briefing;
+const C = STRINGS.classes;
+const G = STRINGS.garage;
+/** Where the footer's menu starts, by how many rows it has: half a line higher for each row more, and no higher than the footer has room. */
+const MENU_TOP = [216, 216, 210, 204, 202];
+/** What a build carries, as the page about it lists it: what it fights with, and its module. */
+const CARRIED: BuildSlot[] = ['rightHand', 'leftHand', 'shoulder', 'module'];
 
 /** One line per kind of enemy across all of a contract's battles: "Recon Drone x3". */
 export function hostiles(mission: Mission): string[] {
@@ -72,9 +83,16 @@ export class BriefingScreen implements Screen {
   private mission!: Mission;
   /** What the other side offers for this contract, when they do. */
   private other: Mission | null;
+  /**
+   * What the contract can be taken in, the build on the floor first, and which of them is chosen. Empty for a
+   * contract that is flown in a mech that is lent: the patrol of a pilot whose own cannot deploy, and every drill.
+   */
+  private builds: Sortie[];
+  private chosen = 0;
 
   constructor(private app: App, private first: Mission) {
     this.other = app.otherOffer(first);
+    this.builds = first.loaner === undefined ? app.sorties() : [];
     this.turnTo(first);
   }
 
@@ -88,6 +106,7 @@ export class BriefingScreen implements Screen {
     this.hired = -1;
     const items = [
       { id: 'accept', label: B.accept, enabled: true },
+      ...(this.builds.length > 0 ? [{ id: 'build', label: B.build, enabled: true }] : []),
       ...(this.hires.length > 0 ? [{ id: 'wingman', label: B.wingman, enabled: true }] : []),
       ...(this.other ? [{ id: 'other', label: mission === this.other ? B.firstOffer : B.otherOffer, enabled: true }] : []),
       { id: 'back', label: B.back, enabled: true },
@@ -106,6 +125,20 @@ export class BriefingScreen implements Screen {
     this.hired = ((this.hired + 1 + step + count) % count) - 1;
   }
 
+  /** The build the contract will be taken in, when it is taken in one of the pilot's. */
+  private get sortie(): Sortie | undefined { return this.builds[this.chosen]; }
+
+  /** What kind of machine that build is. */
+  private get kind(): Archetype | null {
+    return this.sortie ? archetypeOf(this.sortie.build, this.app.deps.catalog) : null;
+  }
+
+  /** Walks through the builds there are to take, round and round. */
+  private turnBuild(step: number): void {
+    const count = this.builds.length;
+    if (count > 0) this.chosen = (this.chosen + step + count) % count;
+  }
+
   update(dtMs: number): void {
     this.writer.update(dtMs);
   }
@@ -115,9 +148,11 @@ export class BriefingScreen implements Screen {
     else if (action === 'down') this.list.move(1);
     else if (action === 'cancel') this.app.closeBriefing(this.first);
     else if (this.list.selected?.id === 'wingman' && (action === 'left' || action === 'right' || action === 'confirm')) this.choose(action === 'left' ? -1 : 1);
+    else if (this.list.selected?.id === 'build' && (action === 'left' || action === 'right' || action === 'confirm')) this.turnBuild(action === 'left' ? -1 : 1);
     else if (action === 'confirm') {
       const id = this.list.selected?.id;
-      if (id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay, this.wingman?.id ?? null, this.mission === this.other);
+      // Accepting fits the build that was chosen, if it is not the one on the floor already, and starts the contract in it.
+      if (id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay, this.wingman?.id ?? null, this.mission === this.other, this.sortie?.slot ?? null);
       // The other side's offer and back: the cursor stays on the row that turns the page, and the song is the client's whose page it is.
       else if (id === 'other' && this.other) {
         this.turnTo(this.mission === this.other ? this.first : this.other, 'other');
@@ -137,6 +172,8 @@ export class BriefingScreen implements Screen {
         wingman: this.hires.length === 0 ? null
           : { id: this.wingman?.id ?? null, name: this.wingman?.name ?? B.alone, share: Math.round((this.wingman?.share ?? 0) * 100), open: this.hires.length },
         lent: !isDrill(this.mission) && this.mission.loaner !== undefined,
+        // The build it will be taken in: the slot it is saved in (null for the one on the floor), what kind of machine it is, and how many there are to turn through.
+        build: this.sortie ? { slot: this.sortie.slot, kind: this.kind, choices: this.builds.length } : null,
         // How many offers there are for this contract, the client of the one showing, and whether that is the other side's.
         offers: this.other ? 2 : 1, client: this.mission.client, turned: this.mission === this.other,
       },
@@ -171,6 +208,14 @@ export class BriefingScreen implements Screen {
       : this.other ? (mission === this.other ? B.otherTag : B.twoOffers) : '';
     wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
       drawText(ctx, line, 72, 40 + i * 11, { color: decisive ? COLORS.danger : COLORS.dim }));
+    // What it will be taken in, in the corner the title leaves free: which build, and what kind of machine that is.
+    // A saved build that was turned to stands out: it is not the one on the floor, and accepting will fit it.
+    const sortie = this.sortie;
+    const kind = this.kind;
+    if (sortie && kind) {
+      drawText(ctx, sortie.slot === null ? B.buildOnFloor : B.buildSaved(sortie.slot + 1), LOGICAL_W - 12, 9, { align: 'right', color: COLORS.dim, size: 10 });
+      drawText(ctx, C.names[kind].toUpperCase(), LOGICAL_W - 12, 19, { align: 'right', color: sortie.slot === null ? COLORS.text : COLORS.accent });
+    }
 
     // Body: what the client says, and under it what the contract asks for when that is more than a fight.
     drawPanel(ctx, 4, 72, LOGICAL_W - 8, 122);
@@ -178,6 +223,7 @@ export class BriefingScreen implements Screen {
     const ground = groundLines(mission);
     const lastRow = 78 + (briefingRows(mission) - 1) * LINE;
     const onHire = this.list.selected?.id === 'wingman';
+    const onBuild = this.list.selected?.id === 'build' && !!sortie && !!kind;
     const written = this.writer.visible();
     let at = 0;
     let y = 78;
@@ -188,7 +234,24 @@ export class BriefingScreen implements Screen {
       if (this.wingman) drawText(ctx, B.wingmanTerms(this.wingman.damage, Math.round(this.wingman.share * 100)), 12, y + 15 + 3 * LINE, { color: COLORS.heat });
       drawText(ctx, B.wingmanHint, 12, 191 - LINE, { color: COLORS.dim });
     }
-    for (const paragraph of onHire ? [] : this.rows) {
+    if (onBuild) {
+      // On the build's row the client makes way for the build: which it is, what kind of machine, its figures and what it carries.
+      const catalog = tunedCatalog(this.app.deps.catalog, this.app.game?.tuning);
+      const stats = computeBuildStats(sortie.build, catalog);
+      const armour = (['head', 'core', 'arms', 'legs'] as const).reduce((sum, slot) => sum + (catalog[sortie.build[slot]!] as { ap: number }).ap, 0);
+      drawText(ctx, sortie.slot === null ? B.buildOnFloor : B.buildSaved(sortie.slot + 1), 12, y, { color: COLORS.accent });
+      drawText(ctx, C.garage(C.names[kind], C.tags[kind]), 12, y + 15);
+      drawText(ctx, `${G.armour} ${armour}   ${G.mobility} ${stats.mobility}   ${G.energy} ${stats.turnEnergy}`, 12, y + 15 + LINE, { color: COLORS.dim });
+      CARRIED.forEach((slot, i) => {
+        const id = sortie.build[slot];
+        const row = y + 19 + (i + 2) * LINE;
+        drawText(ctx, G.slotTags[slot], 12, row + 1, { color: COLORS.dim, size: 10 });
+        drawText(ctx, id !== undefined && Object.hasOwn(catalog, id) ? catalog[id].name : '-', 46, row, { color: id === undefined ? COLORS.dim : COLORS.text });
+      });
+      // With something to turn to, how; with nothing, where builds are saved.
+      drawText(ctx, this.builds.length > 1 ? B.buildHint : B.buildNone, 12, 191 - LINE, { color: COLORS.dim });
+    }
+    for (const paragraph of onHire || onBuild ? [] : this.rows) {
       for (const _full of paragraph) {
         const line = written[at++];
         if (y > lastRow) break;
@@ -199,7 +262,7 @@ export class BriefingScreen implements Screen {
     }
     // What the contract asks for appears when the client has finished talking.
     // What the ground does comes last, in the colour of the weather.
-    if (this.writer.done && !onHire) {
+    if (this.writer.done && !onHire && !onBuild) {
       const under = [...objectives.map((text) => ({ text, color: COLORS.heat })), ...ground.map((text) => ({ text, color: COLORS.energy }))];
       under.forEach((line, i) => drawText(ctx, line.text, 12, 191 - (under.length - i) * LINE, { color: line.color }));
     }
@@ -215,8 +278,9 @@ export class BriefingScreen implements Screen {
     }
     drawText(ctx, B.hostiles, 104, 203, { color: COLORS.dim });
     hostiles(mission).slice(0, 5).forEach((line, i) => drawText(ctx, line, 104, 213 + i * 10));
-    // Three rows as a rule; a contract with somebody for hire and a second offer has four, and room for them.
+    // Three rows as a rule (take it, the build, leave it); a contract with somebody for hire and a second offer has
+    // five, and room for them: the block stays in the middle of the footer until it would reach the footer's edge.
     const rows = this.list.items.length;
-    drawList(ctx, this.list, 236, rows >= 4 ? 204 : rows >= 3 ? 210 : 216, 56, Math.max(3, rows));
+    drawList(ctx, this.list, 236, MENU_TOP[Math.min(rows, MENU_TOP.length) - 1], 56, Math.max(3, rows));
   }
 }

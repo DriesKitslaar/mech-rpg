@@ -269,6 +269,20 @@ voor 25 contracten in één klasse, en voor vijf contracten in elk van de zeven.
 
 Alle zeven zijn doorgemeten: met elk kun je het hele verhaal uitspelen, ook op Veteran.
 
+### Je build kiezen bij de briefing
+
+Je hoeft niet terug naar de garage om van build te wisselen. Bij de briefing van een contract staat
+rechtsboven waarin je het gaat vliegen: **CURRENT BUILD** en de klasse. In het menu staat onder
+**Accept** de rij **Build**. Ga erop staan en je ziet de build zelf (klasse, pantser, mobiliteit,
+energie, wapens); met links en rechts blader je naar je bewaarde builds (**SAVED BUILD 1** tot en
+met **3**). Kies je **Accept**, dan wordt de gekozen build gemonteerd en begint het contract. Hij
+blijft daarna gemonteerd, net als wanneer je hem in de garage laadt.
+
+- Een bewaarde build staat er alleen bij als je alle onderdelen nog bezit en hij mag uitrukken
+  (niet te zwaar, genoeg energie, een wapen).
+- Builds bewaar je in de **Garage**: links of rechts, een plek kiezen, **Save current build**.
+- Bij een geleende mecha, de training en de Gauntlet is er niets te kiezen.
+
 ## De werkbank
 
 In de **Garage** kun je onderdelen die je bezit sterker laten maken. Kies een vak, ga op een

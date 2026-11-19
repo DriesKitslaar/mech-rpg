@@ -51,12 +51,21 @@ test('a wingman is hired from the briefing, fires in the battle, and the enemy a
   const briefing = async () => (await snap(page) as unknown as { briefing: { reward: number; wingman: { id: string | null; open: number } } }).briefing;
   // Kite at his full rate, and Marrow as a friend.
   expect((await briefing()).wingman).toMatchObject({ id: null, open: 2 });
-  await press(page, 'ArrowDown');
+  // Down to the wingman's row, past the build's, and back up to accept: by the rows' names, whatever stands between them.
+  const toRow = async (id: string, key: 'ArrowDown' | 'ArrowUp') => {
+    for (let i = 0; i < 8; i++) {
+      const s = await snap(page);
+      if (s.menu.items[s.menu.cursor]?.id === id) return;
+      await press(page, key);
+    }
+    throw new Error(`no row ${id}`);
+  };
+  await toRow('wingman', 'ArrowDown');
   await press(page, 'ArrowRight');
   await press(page, 'ArrowRight');
   expect(await briefing()).toMatchObject({ reward: 320, wingman: { id: 'marrow', share: 20 } });
   await page.screenshot({ path: shot('briefing-wingman') });
-  await press(page, 'ArrowUp');
+  await toRow('accept', 'ArrowUp');
   await press(page, 'Enter');
   await waitForPhase(page, 'action');
   const battle = async () => (await snap(page)).battle as unknown as { support: string | null; intent: string | null; phase: string };
