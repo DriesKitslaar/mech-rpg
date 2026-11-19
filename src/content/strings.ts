@@ -161,6 +161,8 @@ export const STRINGS = {
     slot: (n: number, callsign: string, level: number) => `${n}  ${callsign}  LV ${level}`,
     progress: (done: number, cycle: number, time: string) => `${done} done  ${cycle > 0 ? `C${cycle + 1}  ` : ''}${time}`,
   },
+  // The frames a new pilot chooses between. Their figures go by the garage's own names.
+  starter: { heading: 'CHOOSE A FRAME', hint: 'A: take this one   B: back', credits: 'Credits' },
   callsign: {
     heading: 'YOUR CALLSIGN', hint: 'A: pick   B: erase', del: 'DEL', ok: 'OK',
     rows: ['ABCDEFGHI', 'JKLMNOPQR', 'STUVWXYZ0', '123456789'],

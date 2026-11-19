@@ -89,7 +89,8 @@ function inHub(saved?: GameState, seed?: number) {
 }
 /** Accepts the callsign on offer and reads past the pages of story that come up between contracts. */
 function skipScenes(app: App): void {
-  for (let i = 0; i < 120 && ['callsign', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
+  // The frame to start in is the one under the cursor: the Hauler every pilot used to start in.
+  for (let i = 0; i < 120 && ['callsign', 'starter', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
 }
 /** From the hub into a contract's first battle. */
 function accept(app: App, missionId: string): void {
@@ -131,13 +132,19 @@ describe('title', () => {
     expect(snap(app).message).toBe('');
   });
 
-  test('a new game asks for a callsign, is saved at once and opens on the first page of the story, then the hub', () => {
+  test('a new game asks for a callsign and a frame, is saved at once and opens on the first page of the story, then the hub', () => {
     const { app, store } = makeApp();
     press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'callsign', entry: { name: 'PILOT', at: 'ok', slot: 0 } });
     expect(store.data[SAVE_KEY]).toBeUndefined();
     press(app, 'confirm');
+    // The frames there are to start in, with the one every pilot used to start in under the cursor. Nothing is kept yet.
+    expect(snap(app)).toMatchObject({ screen: 'starter', credits: null });
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('hauler');
+    expect(store.data[SAVE_KEY]).toBeUndefined();
+    press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'act-1', credits: 1200 });
+    expect(snap(app).build).toEqual(STARTER_BUILD);
     expect(JSON.parse(store.data[SAVE_KEY]).callsign).toBe('PILOT');
     expect(JSON.parse(store.data[SAVE_KEY]).credits).toBe(1200);
     press(app, 'confirm');
@@ -147,7 +154,7 @@ describe('title', () => {
 
   test('a page of story is shown once: the next time the game is opened it goes straight to the hub', () => {
     const { app, store } = makeApp();
-    press(app, 'confirm', 'confirm', 'confirm');
+    press(app, 'confirm', 'confirm', 'confirm', 'confirm');
     expect(snap(app).screen).toBe('hub');
     const again = new App({ catalog: CATALOG, save: new SaveFile(store, CATALOG), sprites, fast: true, seed: 1 });
     press(again, 'confirm');
@@ -283,6 +290,9 @@ describe('title', () => {
     for (let i = 0; i < 9; i++) press(app, 'confirm');
     expect(snap(app).entry).toMatchObject({ name: 'ABBBBBBB' });
     press(app, 'up', 'right', 'confirm');
+    // The name is taken; the frame is chosen next, and with it the game is kept.
+    expect(snap(app).screen).toBe('starter');
+    press(app, 'confirm');
     expect(snap(app).screen).toBe('scene');
     expect(JSON.parse(store.data[SAVE_KEY]).callsign).toBe('ABBBBBBB');
   });
@@ -619,11 +629,12 @@ describe('shop', () => {
   test('a client\'s gear is only in stock after working for them', () => {
     const before = inHub().app;
     select(before, 'shop');
-    expect(ids(before)).toEqual(['head-scout-mk1']);
+    // Salvage is always on the shelf: the frame the pilot started in and the two that were not taken.
+    expect(ids(before)).toEqual(['head-scout-mk1', 'head-courier', 'head-dozer']);
 
     const after = inHub(done('intro-1', 'intro-2', 'lumen-1')).app;
     select(after, 'shop');
-    expect(ids(after)).toEqual(['head-scout-mk1', 'head-halo']);
+    expect(ids(after)).toEqual(['head-scout-mk1', 'head-courier', 'head-dozer', 'head-halo']);
   });
 
   test('a part bought in the shop can be fitted in the garage and taken into battle', () => {
@@ -965,6 +976,8 @@ describe('options', () => {
     expect(tracks.at(-1)).toBe('title');
     press(app, 'confirm');
     expect(tracks.at(-1)).toBe('title'); // naming the pilot is still the title
+    press(app, 'confirm');
+    expect(tracks.at(-1)).toBe('title'); // and so is choosing a frame
     press(app, 'confirm');
     expect(tracks.at(-1)).toBe('briefing'); // the first page of the story
     skipScenes(app);

@@ -22,6 +22,8 @@ type Entry = {
   gx?: number; gy?: number; mx?: number; my?: number;
   /** On a frame layer that can be hit in its view: where in it a hit lands. */
   hx?: number; hy?: number;
+  /** On an arm whose fist was not drawn where its view has the fist: where in it that fist is. */
+  fx?: number; fy?: number;
 };
 
 /** The view a layer's drawing is for, and the part of the frame it is hit as, if it is one that is: both are in its name. */
@@ -47,6 +49,22 @@ const LEGS_DROP: Record<string, number> = { 'legs-crawler': 28 };
 const LEGS_FROM_BEHIND: Record<string, { drop: number; lower?: number }> = {
   'legs-crawler.back': { drop: 22 }, 'legs-spider.back': { drop: 12 }, 'legs-glide.back': { drop: 20, lower: 20 },
 };
+
+/**
+ * Arms whose fist was not drawn where the pose has it, and where in the pose box of their view the hand is,
+ * measured from the proof sheet. The pose is shared and nearly every arm kept it to a pixel; a squat frame carries
+ * its shoulders low, and from behind its arms came out lower than the others: the one stretched forward reaches
+ * out level where the others are raised, the one held back hangs longer. Drawn again with the fist raised the
+ * arm lost its shoulder, so both stay as they were drawn and say where their hands are.
+ */
+export const FISTS: Record<string, { x: number; y: number }> = {
+  'arms-dozer.near.back': { x: 103, y: 46 }, 'arms-dozer.far.back': { x: 22, y: 70 },
+};
+/** What a layer's entry says of its fist: where in its own picture it is, for a layer whose corner is at (ox, oy) of the pose box; nothing for a layer that names none. */
+export function fistEntry(id: string, ox: number, oy: number): { fx?: number; fy?: number } {
+  const fist = FISTS[id];
+  return fist ? { fx: fist.x - ox, fy: fist.y - oy } : {};
+}
 
 export async function decode(input: string | Buffer | Sharp): Promise<RawImage> {
   const s = typeof input === 'string' || Buffer.isBuffer(input) ? sharp(input) : input;
@@ -98,7 +116,10 @@ async function processLayer(job: ArtJob, palette: RGB[]): Promise<Entry> {
   const hit = hitPartOf(job.id);
   const aim = hit && VIEWS[hit.view].hit?.[hit.part];
   const spot = aim ? hitSpot(cut, { x: aim.x - box.x, y: aim.y - oy }) : null;
-  return { file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy, ...(drop ? { drop } : {}), ...(spot ? { hx: spot.x, hy: spot.y } : {}) };
+  return {
+    file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy, ...(drop ? { drop } : {}), ...(spot ? { hx: spot.x, hy: spot.y } : {}),
+    ...fistEntry(job.id, box.x, oy),
+  };
 }
 
 /** How much smaller than from the front a weapon is drawn in each view: as much as the mech that carries it. */

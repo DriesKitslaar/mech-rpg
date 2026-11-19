@@ -810,4 +810,18 @@ export const REFERENCE_NL: Record<string, string> = {
     "Negen op het bord",
   "Hold nine lamp checks.":
     "Bezit negen lampenpenningen.",
+
+  // The frames a new pilot chooses between.
+  "The workhorse":
+    "Het werkpaard",
+  "The runner":
+    "De renner",
+  "The wall":
+    "De muur",
+  "An Undertow dock frame, patched more often than painted. It does everything well enough and has room for three guns. It comes with a rifle.":
+    "Een dokframe van de Undertow, vaker gelapt dan geverfd. Het kan alles redelijk en heeft plek voor drie wapens. Er zit een geweer bij.",
+  "What is left of a Lumen courier: quick on its feet, hard to hit, thin where it counts. It cannot carry much. It comes with a pistol that never runs dry.":
+    "Wat er over is van een koerier van Lumen: snel ter been, lastig te raken, dun waar het telt. Kan weinig dragen. Er zit een pistool bij dat nooit leeg raakt.",
+  "A Hadron yard dozer with plate welded over the cab. Slow, hard to hurt, and it carries the most by far. It comes with a rifle and a plate to guard behind.":
+    "Een werfdozer van Hadron met plaat over de cabine gelast. Traag, taai, en hij draagt verreweg het meest. Er zit een geweer bij, en een plaat om achter te schuilen.",
 };

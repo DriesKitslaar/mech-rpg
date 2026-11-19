@@ -37,7 +37,8 @@ export function battleTrack(mission: Mission, index: number, enemies: Record<str
 export function trackFor(screen: ScreenName, settlement?: { won: boolean }): TrackName {
   switch (screen) {
     case 'title':
-    case 'callsign': return 'title';
+    case 'callsign':
+    case 'starter': return 'title';
     case 'briefing':
     case 'scene': return 'briefing';
     case 'ending':

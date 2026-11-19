@@ -40,20 +40,33 @@ describe('a picture and what the manifest says of it', () => {
     expect('hy' in spriteOf(image, { file: 'f', w: 80, h: 60, hy: 38 })).toBe(false);
   });
 
+  test('an arm that names its own fist says where: both numbers, or neither', () => {
+    expect(spriteOf(image, { file: 'f', w: 43, h: 34, ox: 67, oy: 23, fx: 36, fy: 23 })).toMatchObject({ fx: 36, fy: 23 });
+    expect(spriteOf(image, { file: 'f', w: 43, h: 34, fx: 0, fy: 0 })).toMatchObject({ fx: 0, fy: 0 });
+    expect('fx' in spriteOf(image, { file: 'f', w: 43, h: 34, fx: 36 })).toBe(false);
+    expect('fy' in spriteOf(image, { file: 'f', w: 43, h: 34, fy: 23 })).toBe(false);
+    // And an arm that names none has none: its fist is where its view has it.
+    expect(Object.keys(spriteOf(image, { file: 'f', w: 43, h: 34, ox: 67, oy: 23, hx: 20, hy: 10 })).sort()).toEqual(['h', 'hx', 'hy', 'image', 'ox', 'oy', 'w']);
+  });
+
   test('everything the shipped manifest says to lay a mech out by comes through, for every picture there is', () => {
-    const counts = { drop: 0, held: 0, hit: 0 };
+    const counts = { drop: 0, held: 0, hit: 0, fist: 0 };
     for (const [id, entry] of Object.entries(MANIFEST)) {
       const sprite = spriteOf(image, entry);
       expect([sprite.w, sprite.h, sprite.ox, sprite.oy], id).toEqual([entry.w, entry.h, entry.ox, entry.oy]);
-      for (const key of ['drop', 'gx', 'gy', 'mx', 'my', 'hx', 'hy'] as const) expect(sprite[key], `${id} ${key}`).toBe(entry[key]);
+      for (const key of ['drop', 'gx', 'gy', 'mx', 'my', 'hx', 'hy', 'fx', 'fy'] as const) expect(sprite[key], `${id} ${key}`).toBe(entry[key]);
       if (entry.drop) counts.drop++;
       if (entry.gx !== undefined) counts.held++;
       if (entry.hx !== undefined) counts.hit++;
+      if (entry.fx !== undefined) counts.fist++;
     }
     // Three lower bodies that lower what stands on them, in three views; every weapon a pilot can carry, from behind; every layer that can be hit.
     expect(counts.drop).toBeGreaterThanOrEqual(5);
     expect(counts.held).toBeGreaterThanOrEqual(24);
-    expect(counts.hit).toBe(70);
+    // Ten frames of four parts each, the arms in two layers, the three lower bodies that are not legs: from behind, and far off.
+    expect(counts.hit).toBe(86);
+    // The two arms of one frame, from behind, whose fists were drawn away from where the pose has them.
+    expect(counts.fist).toBe(2);
   });
 });
 

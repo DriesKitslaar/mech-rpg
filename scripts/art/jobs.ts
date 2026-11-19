@@ -251,6 +251,14 @@ function backLayer(id: string, fromFamily: string, which: Layer, keep: string = 
  * that backpack on every other family's back.
  */
 const HEAD_FROM_BEHIND: Record<string, string> = {
+  dozer:
+    'only the head itself: the small cage-like cab of red bars at the very top of the mecha. Erase everything else: ' +
+    'in particular the large grey steel backpack plate that lies directly below the cage, both grey shoulder blocks, ' +
+    'the arms, the torso and the legs.',
+  courier:
+    'only the head itself: the small rounded helmet with its short stub antenna, at the very top of the mecha. Erase ' +
+    'everything else: in particular the backpack and the shoulders that lie below the helmet, the arms, the torso ' +
+    'and the legs.',
   ronin:
     'only the helmet itself: the rounded helmet dome with its single tall curved crest and the short flared neck guard ' +
     'directly under the dome. It is the small part at the very top of the mecha. Erase everything else: in particular ' +
@@ -266,23 +274,44 @@ const HEAD_FROM_BEHIND: Record<string, string> = {
     'torso and the legs.',
 };
 
+/** Torsos that came away from behind with the head still standing on them: each is told which part that is. */
+const CORE_FROM_BEHIND: Record<string, string> = {
+  dozer:
+    'only the torso seen from behind: the big grey steel backpack plate in the middle and the narrow red body ' +
+    'directly around and under it, from the waist up to the top edge of that plate, and nothing wider than the ' +
+    'plate with its red rim. Erase everything else and fill it with green: the small cage of red bars that stands ' +
+    'on top of the plate (that cage is the head), the whole arm on the left with its grey shoulder block, the whole ' +
+    'arm on the right with its grey shoulder block and its round black joint, the hips and both legs.',
+};
+
 /** The five layers of one family from behind, named after the parts that use them. */
 function backLayersOf(fromFamily: string, ids: { legs: string; core: string; head: string; arms: string }): ArtJob[] {
   return [
     backLayer(ids.legs, fromFamily, 'legs'),
-    backLayer(ids.core, fromFamily, 'torso'),
+    backLayer(ids.core, fromFamily, 'torso', CORE_FROM_BEHIND[fromFamily]),
     backLayer(ids.head, fromFamily, 'head', HEAD_FROM_BEHIND[fromFamily]),
     backLayer(`${ids.arms}.near`, fromFamily, 'armNear'),
     backLayer(`${ids.arms}.far`, fromFamily, 'armFar'),
   ];
 }
 
+/**
+ * Heads that came away from the front with the chest and shoulders under them: each is told what its own
+ * head is and what lies under it.
+ */
+const HEAD_FROM_FRONT: Record<string, string> = {
+  dozer:
+    'only the head itself: the small cage-like cab of red bars with the single round yellow lamp inside it, at the ' +
+    'very top of the mecha. Erase everything else: in particular the wide grey steel chest plate with the grille ' +
+    'that lies directly below the cage, both grey shoulder blocks, the arms, the torso and the legs.',
+};
+
 /** The five layers of one family, named after the parts that use them. */
 function layersOf(fromFamily: string, ids: { legs: string; core: string; head: string; arms: string }): ArtJob[] {
   return [
     layer(ids.legs, fromFamily, 'legs'),
     layer(ids.core, fromFamily, 'torso'),
-    layer(ids.head, fromFamily, 'head'),
+    layer(ids.head, fromFamily, 'head', HEAD_FROM_FRONT[fromFamily]),
     layer(`${ids.arms}.near`, fromFamily, 'armNear'),
     layer(`${ids.arms}.far`, fromFamily, 'armFar'),
   ];
@@ -370,6 +399,16 @@ const DESIGNS: Record<string, string> = {
     'reverse-jointed grasshopper legs whose knees bend backwards and end in two-toed clawed feet (hips and feet stay ' +
     'where they are in the first image), a narrow waist, forearms with a folded blade-like fin along each, small ' +
     'angular shoulders, and a triangular head with two short antennae and a wide lime visor. Lean and agile.',
+  courier:
+    'a stripped-down light courier mecha in chipped off-white panels over a dark grey frame, with faded sky-blue ' +
+    'stripes and a few small orange marker lights: thin limbs with some armour panels missing so that the dark frame ' +
+    'shows, narrow shoulders, a small rounded head with a wide dark visor band and a short stub antenna, and one ' +
+    'mismatched grey replacement panel on a thigh. Slimmer and lighter than the first image, worn and second-hand.',
+  dozer:
+    'a squat dock-yard loader mecha in flat oxide-red primer paint with bare grey steel plates welded over its chest ' +
+    'and shoulders, white stencilled numbers and small yellow work lights: short thick limbs, big square fists, wide ' +
+    'flat feet, a heavy bumper-like chest plate, and a low cage-like cab head with a single round lamp. Bulkier and ' +
+    'lower than the first image, crude, dented and second-hand.',
   auditor:
     'a tall, severe corporate enforcement mecha in glossy black lacquer armour with fine gold trim lines and a few small ' +
     'white lights: long coat-like armour skirts hanging from the hips at the front and back, narrow shoulders with upright ' +
@@ -392,6 +431,9 @@ const DRAWN: ArtJob[] = [
 
   family('mantis', 'ronin', DESIGNS.mantis),
   family('auditor', 'ronin', DESIGNS.auditor),
+  // The two frames a pilot can start in beside the salvaged one: salvage too, of the other two powers.
+  family('courier', 'ronin', DESIGNS.courier),
+  family('dozer', 'ronin', DESIGNS.dozer),
   // Free-standing lower bodies: a family drawing with only the legs replaced, from which the legs layer is cut.
   lowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
@@ -411,6 +453,8 @@ const DRAWN: ArtJob[] = [
   ...layersOf('colossus', { legs: 'legs-colossus', core: 'core-colossus', head: 'head-colossus', arms: 'arms-colossus' }),
   ...layersOf('mantis', { legs: 'legs-mantis', core: 'core-mantis', head: 'head-mantis', arms: 'arms-mantis' }),
   ...layersOf('auditor', { legs: 'legs-auditor', core: 'core-auditor', head: 'head-auditor', arms: 'arms-auditor' }),
+  ...layersOf('courier', { legs: 'legs-courier', core: 'core-courier', head: 'head-courier', arms: 'arms-courier' }),
+  ...layersOf('dozer', { legs: 'legs-dozer', core: 'core-dozer', head: 'head-dozer', arms: 'arms-dozer' }),
   layer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   layer('legs-spider', 'spider', 'legs',
@@ -469,6 +513,8 @@ const DRAWN: ArtJob[] = [
     `a shoulder-mounted rack for a robot in a retro video game, ${WEAPON_STYLE}: a wide flat patched box with sixteen small round tubes in two rows of eight on its right face, with a mounting bracket underneath, exactly horizontal. The unit only, no mecha.`),
   item('wpn-sunlance', 'shoulderWeapon', 'halo',
     `a shoulder-mounted beam projector for a robot in a retro video game, ${WEAPON_STYLE}: a long barrel ringed by three glowing focusing rings, a round capacitor at the back and a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no mecha.`),
+  item('shd-plate', 'shield', 'dozer',
+    `a crude scrap shield for a robot in a retro video game: a dented rectangular slab cut from the side plate of a yard machine, flat oxide-red primer paint with bare grey steel showing at the edges, one corner torn off, a faded white stencilled number and a row of rivets, seen from the front and standing upright. The shield only, no hand, no mecha.`),
   item('shd-riot', 'shield', 'bulwark',
     `a tall rectangular riot shield for a robot in a retro video game, ${WEAPON_STYLE}: a thick slab of plate armour with a narrow viewing slit near the top, hazard stripes along the bottom edge and rivets around the rim, seen from the front and standing upright. The shield only, no hand, no mecha.`),
 
@@ -690,6 +736,8 @@ const DRAWN: ArtJob[] = [
   backFamily('colossus', 'ronin'),
   backFamily('mantis', 'ronin'),
   backFamily('auditor', 'ronin'),
+  backFamily('courier', 'ronin'),
+  backFamily('dozer', 'ronin'),
   backLowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
     'with hazard stripes on the track guards. No legs and no feet.'),
@@ -707,6 +755,8 @@ const DRAWN: ArtJob[] = [
   ...backLayersOf('colossus', { legs: 'legs-colossus', core: 'core-colossus', head: 'head-colossus', arms: 'arms-colossus' }),
   ...backLayersOf('mantis', { legs: 'legs-mantis', core: 'core-mantis', head: 'head-mantis', arms: 'arms-mantis' }),
   ...backLayersOf('auditor', { legs: 'legs-auditor', core: 'core-auditor', head: 'head-auditor', arms: 'arms-auditor' }),
+  ...backLayersOf('courier', { legs: 'legs-courier', core: 'core-courier', head: 'head-courier', arms: 'arms-courier' }),
+  ...backLayersOf('dozer', { legs: 'legs-dozer', core: 'core-dozer', head: 'head-dozer', arms: 'arms-dozer' }),
   backLayer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   backLayer('legs-spider', 'spider', 'legs',

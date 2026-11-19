@@ -10,9 +10,12 @@ test('buy a weapon, fit it, fight, get paid, and find it all saved after a reloa
   await open(page);
   await page.screenshot({ path: shot('title') });
   await choose(page, 'new');
-  // A new game asks what the pilot is called, then opens on the first page of the story.
+  // A new game asks what the pilot is called and which frame they start in, then opens on the first page of the story.
   await waitForScreen(page, 'callsign');
   await page.screenshot({ path: shot('callsign') });
+  await press(page, 'Enter');
+  // The frame under the cursor is the one every pilot used to start in: the rest of this is flown in it.
+  await waitForScreen(page, 'starter');
   await press(page, 'Enter');
   await waitForScreen(page, 'scene');
   expect((await snap(page)).scene).toBe('act-1');

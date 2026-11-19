@@ -37,6 +37,7 @@ import { MESSAGES, MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
 import { SCENES } from '../content/scenes';
 import { SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../content/parts';
+import { starterOf } from '../content/starters';
 import { SONGS } from '../content/songs';
 import { STRINGS } from '../content/strings';
 import type { Sfx, SoundName } from '../platform/audio';
@@ -47,6 +48,7 @@ import { ArenaScreen, MIRROR } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
 import { BriefingScreen } from './briefingScreen';
 import { CallsignScreen } from './callsignScreen';
+import { StarterScreen } from './starterScreen';
 import { CreditsScreen } from './creditsScreen';
 import { DatabaseScreen } from './databaseScreen';
 import { LOGICAL_H, LOGICAL_W } from './display';
@@ -96,7 +98,7 @@ export interface Screen {
 }
 
 export type ScreenName =
-  | 'title' | 'callsign' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
+  | 'title' | 'callsign' | 'starter' | 'hub' | 'garage' | 'shop' | 'messages' | 'briefing' | 'battle' | 'settlement' | 'scene' | 'ending'
   | 'arena' | 'pilot' | 'options' | 'database' | 'training' | 'credits' | 'gauntlet';
 
 /** One of the kept games as the title shows it: empty, unreadable, or a game. */
@@ -646,17 +648,26 @@ export class App {
     return kept.includes(last) ? last : kept[0] ?? null;
   }
 
-  /** Asks what the new pilot is called before the game in that slot begins. */
-  askCallsign(slot: number): void {
-    this.show('callsign', new CallsignScreen(this, slot));
+  /** Asks what the new pilot is called before the game in that slot begins. `name` is what was typed, for a pilot coming back to it. */
+  askCallsign(slot: number, name?: string): void {
+    this.show('callsign', new CallsignScreen(this, slot, name));
   }
 
-  /** Starts a new game in a slot, over whatever was kept there. */
-  startNewGame(slot = 0, callsign?: string): void {
+  /** Shows the new pilot the frames there are to start in. */
+  chooseStarter(slot: number, callsign: string): void {
+    this.show('starter', new StarterScreen(this, slot, callsign));
+  }
+
+  /**
+   * Starts a new game in a slot, over whatever was kept there, in the frame that was chosen: the one
+   * every pilot used to start in, when none is named.
+   */
+  startNewGame(slot = 0, callsign?: string, starter?: string): void {
     this.file = this.deps.save.forSlot(slot);
     this.file.rememberSlot();
     this.played = 0;
-    this.commit({ ...newGame(this.deps.catalog, STARTER_BUILD, callsign), settings: { ...this.settings } });
+    const kit = starterOf(starter);
+    this.commit({ ...newGame(this.deps.catalog, kit.build, callsign), credits: kit.credits, settings: { ...this.settings } });
     this.go('hub');
   }
 
@@ -1153,7 +1164,7 @@ export class App {
       this.deps.music.tense = this.current instanceof MissionHost && this.current.tense;
       this.deps.music.hush = this.current instanceof MissionHost && this.current.closeLook ? HUSH : 1;
     }
-    if (this.game && this.name !== 'title' && this.name !== 'callsign') this.played += dtMs;
+    if (this.game && this.name !== 'title' && this.name !== 'callsign' && this.name !== 'starter') this.played += dtMs;
     this.stepToast(dtMs);
   }
 

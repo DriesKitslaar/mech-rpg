@@ -14,9 +14,11 @@ export type SpriteSlot = 'armFar' | 'legs' | 'core' | 'head' | 'armNear' | 'righ
  * `gx`/`gy` and `mx`/`my`, on a weapon that was turned for its view, are where in its picture it is
  * held and where it fires from: turned, those are no longer where its corners would put them.
  * `hx`/`hy`, on a frame layer that can be hit in its view, is where in its own picture a hit on it lands (see `hitOn`).
+ * `fx`/`fy`, on an arm whose fist was not drawn where its view has the fist, is where in its own picture that fist is (see `fistOf`).
  */
 export type SpriteSize = {
   w: number; h: number; ox?: number; oy?: number; drop?: number; gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number;
+  fx?: number; fy?: number;
 };
 export type DrawCmd = { slot: SpriteSlot; x: number; y: number };
 export type MechView = 'front' | 'back' | 'small';
@@ -83,7 +85,7 @@ export const VIEWS: Record<MechView, ViewLayout> = {
 export const BACK_JOINTS = {
   neck: { x: 57, y: 16, w: 7, h: 12 },
   shoulders: { x: 36, y: 24, w: 46, h: 6 },
-  waist: { x: 55, y: 44, w: 8, h: 14 },
+  waist: { x: 55, y: 44, w: 8, h: 18 },
 };
 
 const FRAME: SpriteSlot[] = ['armFar', 'legs', 'core', 'head', 'armNear'];
@@ -104,6 +106,26 @@ function heldAt(slot: SpriteSlot, size: SpriteSize): Pt {
   return { x: 0.2 * size.w, y: 0.5 * size.h };
 }
 
+/**
+ * The fist of a hand before the legs have lowered anything. The pose is shared, so a view says where each fist
+ * is; but a squat frame's arm reaches forward lower than the others do, and an arm like that says where its own
+ * fist was drawn (`fx`/`fy`). What it holds is held there, or it would hang in the air over its hand.
+ */
+function fist(sizes: Partial<Record<SpriteSlot, SpriteSize>>, hand: 'rightHand' | 'leftHand', layout: ViewLayout): Pt {
+  const arm = sizes[hand === 'rightHand' ? 'armNear' : 'armFar'];
+  if (arm && arm.fx !== undefined && arm.fy !== undefined) return { x: (arm.ox ?? 0) + arm.fx, y: (arm.oy ?? 0) + arm.fy };
+  return hand === 'rightHand' ? layout.nearFist : layout.farFist;
+}
+
+/**
+ * Where the fist of a hand is, inside the pose box of a view: where its arm says, or where the view has it
+ * (and there too when the arm is gone). What the legs lower is in the point already.
+ */
+export function fistOf(sizes: Partial<Record<SpriteSlot, SpriteSize>>, hand: 'rightHand' | 'leftHand', view: MechView = 'front'): Pt {
+  const at = fist(sizes, hand, VIEWS[view]);
+  return { x: at.x, y: at.y + dropOf(sizes) };
+}
+
 /** Returns top-left corners inside the pose box of a view, in draw order (back to front). */
 export function layoutMech(sizes: Partial<Record<SpriteSlot, SpriteSize>>, view: MechView = 'front'): DrawCmd[] {
   const layout = VIEWS[view];
@@ -122,8 +144,8 @@ export function layoutMech(sizes: Partial<Record<SpriteSlot, SpriteSize>>, view:
     put(slot, at.x - grip.x, at.y - grip.y);
   };
   // Without the arm there is nothing to hold a hand weapon.
-  if (sizes.rightHand && sizes.armNear) hold('rightHand', layout.nearFist);
-  if (sizes.leftHand && sizes.armFar) hold('leftHand', layout.farFist);
+  if (sizes.rightHand && sizes.armNear) hold('rightHand', fist(sizes, 'rightHand', layout));
+  if (sizes.leftHand && sizes.armFar) hold('leftHand', fist(sizes, 'leftHand', layout));
   if (sizes.shoulder) hold('shoulder', layout.mount);
 
   return layout.order.flatMap((slot) => placed.get(slot) ?? []);

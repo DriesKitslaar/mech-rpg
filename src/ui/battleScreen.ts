@@ -15,7 +15,7 @@ import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
 import { BattleFx, HARDEST_JOLT, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
 import { Camera, applyView, atHome, seenBy, type View } from './camera';
-import { MECH_BOX, VIEWS, dropOf, hitOn, muzzleOf, type MechView } from './mechLayout';
+import { MECH_BOX, VIEWS, dropOf, fistOf, hitOn, muzzleOf, type MechView } from './mechLayout';
 import { HitStop } from './hitStop';
 import { eyeLight, eyeOf } from './eyes';
 import { MAX_LIGHTS, chosenLights, disc, drawAll, drawGlow, drawGlows, drawShadow, lightRoom, type Glow, type Pt } from './light';
@@ -1334,9 +1334,9 @@ export class BattleScreen {
     const firesFrom = (parts: MechSprites, weapon: 'rightHand' | 'leftHand' | 'shoulder', view: MechView): Pt => {
       const end = muzzleOf(parts, weapon, view);
       if (end) return end;
-      const { nearFist, farFist, mount } = VIEWS[view];
-      const from = weapon === 'rightHand' ? nearFist : weapon === 'leftHand' ? farFist : mount;
-      return { x: from.x, y: from.y + dropOf(parts) };
+      if (weapon !== 'shoulder') return fistOf(parts, weapon, view);
+      const { mount } = VIEWS[view];
+      return { x: mount.x, y: mount.y + dropOf(parts) };
     };
     return {
       muzzle: (id, weapon) => {

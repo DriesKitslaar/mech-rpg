@@ -52,7 +52,8 @@ export const select = (app: App, id: string) => {
 /** Accepts the callsign on offer and reads past the pages of story that come up between contracts. */
 export function skipScenes(app: App): void {
   // A conversation takes a press for each thing said, and the first answer on offer is the one given.
-  for (let i = 0; i < 120 && ['callsign', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
+  // The frame to start in is the one under the cursor: the Hauler every pilot used to start in.
+  for (let i = 0; i < 120 && ['callsign', 'starter', 'scene', 'ending', 'credits'].includes(snap(app).screen); i++) press(app, 'confirm');
 }
 /** Sits through whatever conversations and pages about the pilot's decisions are due, giving the first answer on offer. */
 export function skipTalks(app: App): void {
