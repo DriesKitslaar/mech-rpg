@@ -429,8 +429,6 @@ describe('what is written at the right of a row', () => {
 
   test('a note that would run into the name beside it is written smaller, and then stands clear of it', () => {
     const page = record((ctx) => drawList(ctx, new MenuList(rows('after Hot Barrel')), 156, 96, 140, 10));
-    const roomy = noteOn(page, 'Arena');
-    expect(roomy.note).toMatchObject({ text: 'after Hot Barrel', size: 12, right: 296, y: roomy.name.y });
     const tight = noteOn(page, 'The Gauntlet');
     expect(tight.note).toMatchObject({ text: 'after Hot Barrel', size: 10, right: 296, y: tight.name.y + 1 });
     // At the usual size it would have touched; now there is more than a letter's width between them.
@@ -438,10 +436,37 @@ describe('what is written at the right of a row', () => {
     expect(tight.note.left - tight.name.right).toBeGreaterThan(CHAR_W);
   });
 
+  test('where one row needs that, every note of the list is written so: the same words are not in two sizes on two rows', () => {
+    const page = record((ctx) => drawList(ctx, new MenuList(rows('after Hot Barrel')), 156, 96, 140, 10));
+    // Beside "Arena" the note had room at the usual size; it is written as the one under it is.
+    const roomy = noteOn(page, 'Arena');
+    expect(296 - 'after Hot Barrel'.length * CHAR_W).toBeGreaterThan(roomy.name.right + CHAR_W);
+    expect(roomy.note).toMatchObject({ text: 'after Hot Barrel', size: 10, right: 296, y: roomy.name.y + 1 });
+    expect(noteOn(page, 'The Gauntlet').note.size).toBe(10);
+  });
+
+  test('that holds whichever rows are in view: scrolling a list does not change the size its notes are written at', () => {
+    const many = [
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `s${i}`, label: `Row ${i}`, enabled: true, note: '150' })),
+      { id: 'long', label: 'A Name As Long As This One', enabled: true, note: '150' },
+    ];
+    // Three rows in view from the top: the long name is four rows further down.
+    const top = record((ctx) => drawList(ctx, new MenuList(many, 0), 156, 96, 140, 3));
+    expect(top.texts.some((t) => t.text === 'A Name As Long As This One')).toBe(false);
+    expect(top.texts.filter((t) => t.text === '150').map((t) => t.size)).toEqual([10, 10, 10]);
+    const foot = record((ctx) => drawList(ctx, new MenuList(many, 6), 156, 96, 140, 3));
+    expect(foot.texts.some((t) => t.text === 'A Name As Long As This One')).toBe(true);
+    expect(foot.texts.filter((t) => t.text === '150').map((t) => t.size)).toEqual([10, 10, 10]);
+    // A list in which nothing is tight is left at the usual size.
+    const easy = record((ctx) => drawList(ctx, new MenuList(many.slice(0, 6), 0), 156, 96, 140, 3));
+    expect(easy.texts.filter((t) => t.text === '150').map((t) => t.size)).toEqual([12, 12, 12]);
+  });
+
   test('one that fits with a letter to spare is left at its size', () => {
     // Twelve letters of name from 164 end at 221.6: a note may start at 226.4 or later, which is fourteen letters.
     const fits = record((ctx) => drawList(ctx, new MenuList(rows('12345678901234')), 156, 96, 140, 10));
     expect(noteOn(fits, 'The Gauntlet').note.size).toBe(12);
+    expect(noteOn(fits, 'Arena').note.size).toBe(12);
     const over = record((ctx) => drawList(ctx, new MenuList(rows('123456789012345')), 156, 96, 140, 10));
     expect(noteOn(over, 'The Gauntlet').note.size).toBe(10);
   });

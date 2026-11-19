@@ -31,9 +31,11 @@ export class ArenaScreen implements Screen {
   constructor(private app: App, at?: string) {
     const game = app.game!;
     this.shown = shownRanks(game);
+    // The numbers are written to one width, so that the names under each other begin under each other.
+    const digits = String(this.shown).length;
     const items = [
       ...ARENA.slice(0, this.shown).map((o) => ({
-        id: `rank-${o.rank}`, label: `${o.rank}. ${o.name}`, enabled: checkChallenge(game, o.rank) === null,
+        id: `rank-${o.rank}`, label: `${String(o.rank).padStart(digits)}. ${o.name}`, enabled: checkChallenge(game, o.rank) === null,
         note: String(arenaPurse(game, o)),
       })),
       { id: MIRROR, label: A.mirror.title, enabled: mirrorOpen(game), note: mirrorOpen(game) ? String(mirrorPurse(game)) : A.locked },

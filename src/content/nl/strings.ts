@@ -371,7 +371,7 @@ export const STRINGS_NL = {
     weight: 'Gewicht', energy: 'Energie', mobility: 'Mobiliteit', armour: 'Pantser', stability: 'Stabiliteit', cooling: 'Koeling',
     evasion: 'Boost ontwijk', volley: 'Salvo EN', back: 'B: terug',
     factoryPaint: 'Fabriek', paint: (name: string) => `L1/R1 LAK: ${name}`, toLoadouts: 'LEFT/RIGHT: MIJN BUILDS',
-    loadouts: 'MIJN BUILDS', emptyLoadout: '(leeg)', load: 'Laad', save: 'Bewaar deze build', clear: 'Wis', backItem: 'Terug',
+    loadouts: 'MIJN BUILDS', emptyLoadout: 'Leeg', load: 'Laad', save: 'Bewaar deze build', clear: 'Wis', backItem: 'Terug',
     missing: (name: string) => `Ontbreekt: ${name}`,
     slotTags: {
       head: 'HOOFD', core: 'KERN', arms: 'ARMEN', legs: 'BENEN', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
@@ -383,7 +383,7 @@ export const STRINGS_NL = {
     benchAtLimit: 'Niet verder deze cyclus', benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
   },
   shop: {
-    heading: 'WINKEL', buy: 'KOOP', sell: 'VERK.', credits: 'CR',
+    heading: 'WINKEL', buy: 'KOOP', sell: 'VERK.', credits: 'c',
     tabs: {
       head: 'Hoofd', core: 'Kern', arms: 'Armen', legs: 'Benen', generator: 'Gen', booster: 'Bst', fcs: 'FCS', module: 'Mod',
       hand: 'Hand', shoulder: 'Schdr',

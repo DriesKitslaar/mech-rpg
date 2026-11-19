@@ -11,6 +11,8 @@ export const BOARD_TEXT: BoardText = {
     'Furnace', 'Audit', 'Freight', 'Static', 'Verdict',
   ],
   clients: ['Dispatch', 'Varn Freight Union', 'District Council', 'Anonymous Client', 'Insurance Desk 9', 'Night Market Guild'],
+  // Dispatch is somebody the pilot knows by sight; the rest are letterheads.
+  faces: { Dispatch: 'portrait-dispatch' },
   backgrounds: ['bg-neon-district', 'bg-mine', 'bg-plaza', 'bg-undercity'],
   places: [
     'Trouble in the freight lanes of the neon district. The client wants it gone before the morning shift.',

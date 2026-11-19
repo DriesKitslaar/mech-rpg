@@ -123,8 +123,10 @@ export class CreditsScreen implements Screen {
     for (const line of this.lines) {
       y += line.gap ?? 0;
       const h = Math.max(11, (line.size ?? 12) + 1);
-      // Only what is on screen is drawn.
-      if (y > -h && y < LOGICAL_H) drawText(ctx, line.text, LOGICAL_W / 2, y, { align: 'center', size: line.size, color: line.color });
+      // Only what is on screen is drawn. While the roll climbs a line leaves by the top edge a row at a time;
+      // once it stands still, a line the edge would cut in half is left out.
+      const whole = y >= 0 && y + h <= LOGICAL_H;
+      if (this.done ? whole : y > -h && y < LOGICAL_H) drawText(ctx, line.text, LOGICAL_W / 2, y, { align: 'center', size: line.size, color: line.color });
       y += h;
     }
     if (this.done && Math.floor(this.clock / 420) % 2 === 0) {

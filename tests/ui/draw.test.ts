@@ -8,6 +8,7 @@ import { SCENE_HOLD_MS } from '../../src/ui/sceneScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { WORLD } from '../../src/content/codex';
 import { MISSIONS } from '../../src/content/missions';
+import { STRINGS } from '../../src/content/strings';
 import { TALKS } from '../../src/content/talks';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
@@ -414,13 +415,24 @@ describe('the screens the three-act story added', () => {
     expect(skipped).toBe(false);
   });
 
-  test('the banner says what the battle asks for, in the words of the briefing', () => {
-    const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['recon-drone']], CATALOG, 7, { objective: { type: 'protect', name: 'Ore Train', hp: 12 } });
-    const screen = new BattleScreen(new BattleFlow(state, CATALOG, { quiet: true }), sprites, CATALOG, { fast: false, title: 'OVERBURDEN' });
-    screen.update(300);
-    const { ctx, calls } = recorder();
-    screen.draw(ctx);
-    expect(texts(calls)).toEqual(expect.arrayContaining(['OVERBURDEN', 'Protect: Ore Train', 'ORE TRAIN 12/12']));
+  test('the banner says what the battle asks for, in the words of the briefing, in capitals like the rest of it', () => {
+    const banner = (objective?: BattleOptions['objective']): string[] => {
+      const state = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES['recon-drone']], CATALOG, 7, objective ? { objective } : {});
+      const screen = new BattleScreen(new BattleFlow(state, CATALOG, { quiet: true }), sprites, CATALOG, { fast: false, title: 'OVERBURDEN' });
+      screen.update(300);
+      const { ctx, calls } = recorder();
+      screen.draw(ctx);
+      return texts(calls);
+    };
+    const protect = banner({ type: 'protect', name: 'Ore Train', hp: 12 });
+    expect(protect).toEqual(expect.arrayContaining(['OVERBURDEN', 'PROTECT: ORE TRAIN', 'ORE TRAIN 12/12']));
+    // The briefing's own words, which are not in capitals there, are not on the banner as they stand.
+    expect(STRINGS.objectives.brief.protect('Ore Train')).toBe('Protect: Ore Train');
+    expect(protect).not.toContain('Protect: Ore Train');
+    expect(banner({ type: 'survive', rounds: 6 })).toContain('HOLD OUT FOR 6 ROUNDS');
+    // A battle that asks for nothing but the field cleared has always said so in capitals.
+    expect(banner()).toContain(STRINGS.battleIntro.destroy);
+    expect(STRINGS.battleIntro.destroy).toBe(STRINGS.battleIntro.destroy.toUpperCase());
   });
 
   test('a speaker\'s face is drawn at its own size, and a line may run to four rows beside it', () => {

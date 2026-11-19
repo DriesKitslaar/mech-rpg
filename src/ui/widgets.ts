@@ -270,6 +270,10 @@ export function drawList(
   x: number, y: number, width: number, rows: number,
 ): void {
   const { items, offset } = list.visible(rows);
+  // A note that would run into the name beside it is written smaller, so that the two stand apart. Where one
+  // row of a list needs that, every row's note is written so: the notes are one column, whichever rows are in view.
+  const all = list.items as { label: string; note?: string }[];
+  const tight = all.some((item) => !!item.note && x + width - item.note.length * CHAR_W < x + 8 + (item.label.length + 1) * CHAR_W);
   items.forEach((item, i) => {
     const selected = offset + i === list.cursor;
     const color = !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text;
@@ -279,8 +283,6 @@ export function drawList(
     }
     drawText(ctx, item.label, x + 8, y + i * LINE, { color });
     if (item.note) {
-      // A note that would run into the name beside it is written smaller, so that the two stand apart.
-      const tight = x + width - item.note.length * CHAR_W < x + 8 + (item.label.length + 1) * CHAR_W;
       drawText(ctx, item.note, x + width, y + i * LINE + (tight ? 1 : 0), { color: item.enabled ? COLORS.dim : COLORS.danger, align: 'right', size: tight ? 10 : 12 });
     }
   });
