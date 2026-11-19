@@ -4837,5 +4837,145 @@
    },
    "total_tokens": 1354
   }
+ },
+ {
+  "id": "asset-wage-truck",
+  "at": "2026-11-19T14:02:37.230Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1185,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 161
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1381
+  }
+ },
+ {
+  "id": "asset-ore-lift",
+  "at": "2026-11-19T14:03:37.045Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1182,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 158
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1378
+  }
+ },
+ {
+  "id": "asset-motorcade",
+  "at": "2026-11-19T14:03:49.004Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1177,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 153
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1373
+  }
+ },
+ {
+  "id": "asset-pump-barge",
+  "at": "2026-11-19T14:03:59.147Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1183,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 159
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1379
+  }
+ },
+ {
+  "id": "asset-ore-train",
+  "at": "2026-11-19T14:04:11.153Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1177,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 153
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1373
+  }
+ },
+ {
+  "id": "asset-core-stack",
+  "at": "2026-11-19T14:04:22.076Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1175,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 151
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1371
+  }
+ },
+ {
+  "id": "asset-convoy",
+  "at": "2026-11-19T14:06:43.250Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1172,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 148
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1368
+  }
  }
 ]

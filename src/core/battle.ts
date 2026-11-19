@@ -99,8 +99,8 @@ export type EnemyMark = 'armoured' | 'overclocked' | 'swift' | 'shielded';
 export const MARKS: EnemyMark[] = ['armoured', 'overclocked', 'swift', 'shielded'];
 export const MARK = { armour: 0.4, damage: 1.25, evasion: 15, shield: 0.1 } as const;
 
-/** Something the player has to keep from being worn down; see the `protect` objective. */
-export interface Asset { name: string; hp: number; maxHp: number }
+/** Something the player has to keep from being worn down; see the `protect` objective. `sprite` is its picture on the field, where it has one. */
+export interface Asset { name: string; hp: number; maxHp: number; sprite?: string }
 
 /** The most enemies that stand on the field at once. A carrier launches no more than this allows. */
 export const MAX_ENEMIES = 3;
@@ -847,7 +847,7 @@ export function createBattle(player: Build, enemies: EnemyDef[], catalog: Catalo
     units, round: 1, order: [], turn: 0, rng: seed | 0, events: [], outcome: 'ongoing', objective, enemyScale,
     open: !opts.closed && all.length > 1 && !enemies.some((def, i) => leads(def, opts.marks?.[i], named(i))) && !reserve.some((def) => leads(def)),
     reserve,
-    ...(objective.type === 'protect' ? { asset: { name: objective.name, hp: objective.hp, maxHp: objective.hp } } : {}),
+    ...(objective.type === 'protect' ? { asset: { name: objective.name, hp: objective.hp, maxHp: objective.hp, ...(objective.sprite ? { sprite: objective.sprite } : {}) } } : {}),
     ...(opts.support ? { support: { ...opts.support } } : {}),
     ...(opts.ground ? { ground: opts.ground } : {}),
   };

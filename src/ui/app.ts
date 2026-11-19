@@ -445,6 +445,9 @@ class MissionHost implements Screen {
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         // Why the battle ended as it did, where what it asked for decided it.
         note: flow.resultNote || null,
+        // What is being kept alive: what is left of it, and its picture on the field where it has one and is still to be seen.
+        asset: flow.state.asset ? { hp: flow.state.asset.hp, max: flow.state.asset.maxHp } : null,
+        freight: this.screen.freight,
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
         support: flow.state.support?.name ?? null,
         // What the hired wingman is saying on the radio, if anything.

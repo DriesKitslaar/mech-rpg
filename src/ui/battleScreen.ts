@@ -13,7 +13,7 @@ import type { Sfx } from '../platform/audio';
 import { soundsForEvent } from '../platform/audio';
 import { drawAmbience } from './ambience';
 import { ApDisplay } from './apDisplay';
-import { BattleFx, HARDEST_JOLT, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
+import { BattleFx, FREIGHT, HARDEST_JOLT, HIT_MS, MELEE_MS, PROJECTILE_MS, WRECK_AT, flightFor, type Scene } from './battleFx';
 import { Camera, applyView, atHome, seenBy, type View } from './camera';
 import { MECH_BOX, VIEWS, dropOf, fistOf, hitOn, muzzleOf, type MechView } from './mechLayout';
 import { HitStop } from './hitStop';
@@ -30,7 +30,7 @@ import { Puppet, ShownStance, shatter, type Pose, type Stance } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 import {
   ENEMY_LEFT, ENEMY_RIGHT, FAR_LINE, FIELD, FIELD_Y, FLYERS, HERO, HERO_FEET, NEAR_LINE, PANEL_Y, SMALL_MIDDLE, depthOf, duelAt, enemySpots, farToNear, horizonOf, pictureTop,
-  placeBars,
+  freightAt, freightSpot, placeBars,
   placeFor, standAt, type Place, type Spot,
 } from './stage';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
@@ -73,6 +73,8 @@ const ACROSS: Pt = { x: (ENEMY_LEFT + ENEMY_RIGHT) / 2, y: (FAR_LINE + NEAR_LINE
 export const GENERATOR = { x: 58, y: 37, r: 10, color: '#ffb060', alpha: 0.2, dazed: 0.06 };
 /** How many times as bright as it is a unit is drawn: when it is hit, when it is hit in a calm picture, and while its own gun lights it. */
 export const BRIGHT = { hit: 2.6, calm: 1.4, glare: 1.35 };
+/** What is fought over burns from here down: this share of what it could take, as one over it. A third. */
+export const FREIGHT_BURNS = 3;
 /** How far the camera pushes in on what happens: a bullet or a beam that lands, a shell, a blade, a machine going up, an Overdrive going off. */
 export const PUSH = { shot: 0.06, shell: 0.09, blade: 0.12, wreck: 0.12, surge: 0.08 };
 /** Where the strip the wingman's line is written on starts, and how far under the top of the field it and the new pilot's line are. */
@@ -326,9 +328,10 @@ export class BattleScreen {
     if (rumble > 0) this.opts.rumble?.(rumble);
     if (this.flow.phase !== 'animating') this.shownAp.sync(this.flow.state.units);
     if (this.flow.phase !== 'animating') { this.timer = 0; return; }
-    // Nothing more is said while the last machine goes down: what comes next waits for it.
+    // Nothing more is said while the last machine goes down: what comes next waits for it. And what comes after the
+    // loss of what was fought over is the end of the battle: it waits until that has been seen to go up.
     if (!this.finish) this.timer += dtMs;
-    if (this.opts.fast || this.timer >= MESSAGE_MS) {
+    if (this.opts.fast || (this.timer >= MESSAGE_MS && !this.freightGoing())) {
       this.timer = 0;
       this.flow.advance();
       // A line of talk may have come up with that step: it gets its writer before anything is drawn.
@@ -536,7 +539,9 @@ export class BattleScreen {
     const weight = lightRoom(MAX_LIGHTS) > 0 ? MAX_LIGHTS / lightRoom(MAX_LIGHTS) : 1;
     const room = (): number => (finish && !calm ? MAX_LIGHTS / 2 : MAX_LIGHTS) - this.standing * weight;
     this.drawShadows(ctx);
-    // What is furthest off is drawn first: the enemies from the back to the front, and the pilot's mech, the nearest of all, last.
+    // What is furthest off is drawn first: what is fought over, on the farthest line; the enemies from the back to the
+    // front; and the pilot's mech, the nearest of all, last.
+    this.drawFreight(ctx);
     this.drawEnemies(ctx);
     // What the pilot's mech fires from the hand on its far side comes out from behind it: it is drawn before the mech
     // is, and its light with it. They are lights of the battle like any other and count among the sixteen, after what
@@ -782,6 +787,49 @@ export class BattleScreen {
       const t = this.fx.transform(enemy.id);
       drawShadow(ctx, r.x + r.w / 2 + t.dx, r.ground - 1, r.w * (lifted ? 0.7 : 0.9), Math.max(5, r.w * (lifted ? 0.12 : 0.16)), (lifted ? 0.35 : 0.45) * t.alpha);
     }
+    // What is fought over stands on the floor like a machine: its shadow goes where it is thrown and goes when it does.
+    const freight = this.freightRect();
+    if (freight) {
+      const t = this.fx.transform(FREIGHT);
+      drawShadow(ctx, freight.x + freight.w / 2 + t.dx, freight.ground - 1, freight.w * 0.9, Math.max(5, freight.w * 0.16), 0.45 * t.alpha);
+    }
+  }
+
+  /**
+   * What the battle is fought to keep alive, where it has a picture: the box it is drawn in, on the farthest line of
+   * the floor. Null where it has none, and once it is lost and has been seen to go up (a hurried screen does not wait
+   * to see, and a battle that is over shows what is left).
+   */
+  private freightRect(): { x: number; y: number; w: number; h: number; ground: number; sprite: Sprite } | null {
+    const asset = this.flow.state.asset;
+    if (!asset?.sprite) return null;
+    // It stands for as long as it has been said to: the rules have it lost a message before the screen does.
+    if ((this.flow.assetLeft ?? 0) <= 0 && (this.opts.fast || this.fx.isGone(FREIGHT) || (this.flow.phase === 'result' && !this.fx.busy))) return null;
+    const sprite = this.sprites.get(asset.sprite, { w: 48, h: 32, label: asset.name });
+    return { ...freightAt(freightSpot(this.place), sprite), w: sprite.w, h: sprite.h, sprite };
+  }
+
+  /** True while what was fought over is being seen to go up: lost, as the message bar has said, and not yet gone. */
+  private freightGoing(): boolean {
+    return !this.opts.fast && !!this.flow.state.asset?.sprite && (this.flow.assetLeft ?? 0) <= 0 && !this.fx.isGone(FREIGHT);
+  }
+
+  /** What is fought over as the field shows it: its picture's name and the box it is drawn in. Null when there is none to be seen. */
+  get freight(): { sprite: string; x: number; y: number; w: number; h: number } | null {
+    const r = this.freightRect();
+    const sprite = this.flow.state.asset?.sprite;
+    return r && sprite ? { sprite, x: r.x, y: r.y, w: r.w, h: r.h } : null;
+  }
+
+  /**
+   * What is fought over, as it stands: one picture, thrown and lit when it is struck as a machine
+   * that is hit is, and fading as it goes up. Drawn before every machine: whatever stands nearer
+   * stands in front of it.
+   */
+  private drawFreight(ctx: CanvasRenderingContext2D): void {
+    const r = this.freightRect();
+    if (!r) return;
+    this.withTransform(ctx, { id: FREIGHT, destroyed: false }, 0, (dx, dy, lift) => ctx.drawImage(r.sprite.image, r.x + dx, r.y + dy + lift, r.w, r.h));
   }
 
   /** A machine close to its heat limit glows from inside, and the air over it wavers. */
@@ -854,6 +902,26 @@ export class BattleScreen {
       }
       ctx.globalAlpha = 1;
     }
+    // What is fought over burns once it is worn down to a third of what it could take: smoke off its top, thicker
+    // than a wound's so that it is seen from where the pilot stands, and a lick of flame under the smoke.
+    const freight = this.freightRect();
+    const asset = this.flow.state.asset;
+    const left = this.flow.assetLeft ?? 0;
+    if (freight && asset && left > 0 && left * FREIGHT_BURNS <= asset.maxHp) {
+      const x = freight.x + freight.w / 2;
+      const y = freight.y + 3;
+      for (let i = 0; i < 4; i++) {
+        const age = (this.clock / 1700 + i / 4) % 1;
+        ctx.globalAlpha = 0.6 * (1 - age);
+        disc(ctx, x + Math.sin(age * 5 + i * 1.7) * 4, y - age * 30, 2 + age * 5, i % 2 ? '#5c5868' : '#757083');
+      }
+      ctx.globalAlpha = 1;
+      const lick = Math.floor(this.clock / 90) % 3;
+      ctx.fillStyle = '#ff8a3c';
+      ctx.fillRect(Math.round(x) - 2 + lick, y, 3, 2);
+      ctx.fillStyle = '#ffe9a8';
+      ctx.fillRect(Math.round(x) - 1 + (lick % 2), y - 1, 1, 2);
+    }
     for (const unit of this.flow.state.units) {
       if (unit.destroyed || this.hidden(unit)) continue;
       for (const slot of FRAME_SLOTS) {
@@ -916,6 +984,26 @@ export class BattleScreen {
     if (event.type === 'boost') {
       const c = scene.centre(event.unit);
       this.particles.emit('dust', { x: c.x, y: ground(event.unit) }, scene.facing(event.unit));
+    }
+    if (event.type === 'asset' && event.lost > 0) {
+      // What is fought over is struck where it stands, if it stands on the field: bits come off it; and with nothing
+      // left it goes up a moment later, the camera pushed in on it, and what is left of it smokes from then on.
+      const freight = scene.freight?.() ?? null;
+      if (freight) {
+        const floor = freightSpot(this.place).y - 1;
+        this.particles.emit('debris', freight.at, 1, 0, floor);
+        if (event.hp <= 0) {
+          this.hitStop.strike(90);
+          this.camera.push(freight.at, PUSH.wreck, HIT_MS);
+          // Heard to go up as it is seen to: the sound of a machine that does.
+          this.opts.sfx?.play('unitDestroyed', HIT_MS);
+          this.particles.emit('debris', freight.at, 1, HIT_MS, floor);
+          this.particles.emit('fire', freight.at, 1, HIT_MS);
+          this.particles.emit('embers', freight.at, 1, HIT_MS + 60);
+          this.particles.emit('smoke', freight.at, 1, HIT_MS + 120);
+          this.leaveWreck({ x: freight.at.x, y: Math.min(PANEL_Y - 14, freight.at.y + 6) });
+        }
+      }
     }
     if (event.type === 'partDestroyed') {
       const at = scene.hitPoint(event.unit, event.part);
@@ -1003,7 +1091,7 @@ export class BattleScreen {
    * down the whole of it has moved: a lunge and a kick go along the line to what they are aimed at.
    */
   private withTransform(
-    ctx: CanvasRenderingContext2D, unit: UnitState, idleDy: number,
+    ctx: CanvasRenderingContext2D, unit: Pick<UnitState, 'id' | 'destroyed'>, idleDy: number,
     draw: (dx: number, dy: number, lift: number, mech: MechPainter) => void,
   ): void {
     const t = this.fx.transform(unit.id);
@@ -1373,6 +1461,11 @@ export class BattleScreen {
         return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
       },
       facing: (id) => (isPlayer(id) ? 1 : -1),
+      // What is fought over, where it has a picture and still stands: the middle of it, and its top.
+      freight: () => {
+        const r = this.freightRect();
+        return r ? { at: { x: r.x + r.w / 2, y: r.y + r.h / 2 }, top: r.y } : null;
+      },
       // The pilot's mech is as near as anything is; an enemy is as far off as the line of the floor it stands on or hangs over.
       depth: (id) => (isPlayer(id) ? 0 : depthOf(rectOf(id).ground)),
       // Where each stands on the floor: the pilot's mech on the nearest line, an enemy on the line under it.

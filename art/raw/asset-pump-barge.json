@@ -1,0 +1,11 @@
+{
+  "id": "asset-pump-barge",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-dozer.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, pixel size, outline weight and shading. Draw: a flat-bottomed pump barge in the same rust-red plating with amber lamps: a low wide hull with a large round pump housing on its deck, two thick ribbed hoses coiled over its side, a short funnel and one amber lamp. The whole barge, nothing else, no water, no mecha. It is unarmed civilian equipment: no guns, no barrels. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

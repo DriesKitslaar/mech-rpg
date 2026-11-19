@@ -241,7 +241,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'objectives', title: 'OBJECTIVES',
-    text: 'Not every battle is won by destroying everything. Some ask you to outlast a number of rounds, to protect something, to take out one leader, to disable a machine without destroying it, or to drive a pilot off. The line at the top of the field says which.',
+    text: 'Not every battle is won by destroying everything. Some ask you to outlast a number of rounds, to protect something, to take out one leader, to disable a machine without destroying it, or to drive a pilot off. The line at the top of the field says which. Freight you guard stands on the field; if it burns, a third or less is left.',
   },
   {
     id: 'ranks', title: 'RANKS',

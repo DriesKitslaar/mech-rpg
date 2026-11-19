@@ -1,0 +1,11 @@
+{
+  "id": "asset-core-stack",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-courier.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, pixel size, outline weight and shading. Draw: a rack of data cores in the same bone-white and grey plating: a squat armoured cabinet holding six glowing cyan cylinders in two rows behind a wire cage, with thick cables coiled at its foot and a small status lamp. The whole cabinet, nothing else, no mecha. It is unarmed civilian equipment: no guns, no barrels. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

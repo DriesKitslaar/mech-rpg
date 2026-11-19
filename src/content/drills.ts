@@ -190,7 +190,7 @@ export const DRILLS: Drill[] = [
       rightHand: 'wpn-needler', leftHand: 'wpn-pulse-carbine', shoulder: 'wpn-micro-salvo',
     },
     battle: {
-      enemies: ['recon-drone', 'gunship', 'recon-drone'], background: HALL, objective: { type: 'protect', name: 'Convoy', hp: 10 },
+      enemies: ['recon-drone', 'gunship', 'recon-drone'], background: HALL, objective: { type: 'protect', name: 'Convoy', hp: 10, sprite: 'asset-convoy' },
       talk: [
         sim('start', 'The convoy\'s armour is at the top of the field. Three hostiles standing means three points gone when the next round starts.'),
       ],

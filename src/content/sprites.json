@@ -1785,6 +1785,41 @@
       "hi": 0.412
     }
   },
+  "asset-wage-truck": {
+    "file": "sprites/asset-wage-truck.png",
+    "w": 56,
+    "h": 35
+  },
+  "asset-ore-lift": {
+    "file": "sprites/asset-ore-lift.png",
+    "w": 44,
+    "h": 38
+  },
+  "asset-motorcade": {
+    "file": "sprites/asset-motorcade.png",
+    "w": 56,
+    "h": 15
+  },
+  "asset-pump-barge": {
+    "file": "sprites/asset-pump-barge.png",
+    "w": 56,
+    "h": 26
+  },
+  "asset-ore-train": {
+    "file": "sprites/asset-ore-train.png",
+    "w": 56,
+    "h": 29
+  },
+  "asset-convoy": {
+    "file": "sprites/asset-convoy.png",
+    "w": 56,
+    "h": 18
+  },
+  "asset-core-stack": {
+    "file": "sprites/asset-core-stack.png",
+    "w": 41,
+    "h": 38
+  },
   "boss-scrap-king": {
     "file": "sprites/boss-scrap-king.png",
     "w": 136,

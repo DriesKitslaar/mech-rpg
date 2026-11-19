@@ -74,6 +74,21 @@ describe('protect', () => {
     expect(s.asset!.hp).toBe(2);
   });
 
+  test('the asset carries the picture the objective names for it, and none where it names none', () => {
+    const pictured = battle(['recon-drone', 'gun-turret'], { type: 'protect', name: 'Convoy', hp: 7, sprite: 'asset-convoy' });
+    expect(pictured.asset).toEqual({ name: 'Convoy', hp: 7, maxHp: 7, sprite: 'asset-convoy' });
+    const plain = battle(['recon-drone', 'gun-turret'], { type: 'protect', name: 'Convoy', hp: 7 });
+    expect(plain.asset).toEqual({ name: 'Convoy', hp: 7, maxHp: 7 });
+    expect('sprite' in plain.asset!).toBe(false);
+    // It is the same battle with the picture as without: the rules do not look at it.
+    expect({ ...pictured, asset: null, objective: null }).toEqual({ ...plain, asset: null, objective: null });
+    const later = passRound(pictured);
+    expect(later.asset).toEqual({ name: 'Convoy', hp: 5, maxHp: 7, sprite: 'asset-convoy' });
+    expect(later.outcome).toBe(passRound(plain).outcome);
+    // A name that is no name is no picture.
+    expect('sprite' in battle(['recon-drone'], { type: 'protect', name: 'Convoy', hp: 7, sprite: '' }).asset!).toBe(false);
+  });
+
   test('is lost when the asset is gone', () => {
     let s = start();
     for (let i = 0; i < 3 && s.outcome === 'ongoing'; i++) s = passRound(s);

@@ -139,12 +139,12 @@ export const FAVOURS: Mission[] = [
     ],
     debrief: 'Every truck came out the far side. Old Sixty does not say anything for a while, and then pays in full.',
     battles: [
-      battle(['recon-drone', 'bomb-crawler', 'gunship'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 12 }, talk: [
+      battle(['recon-drone', 'bomb-crawler', 'gunship'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 12, sprite: 'asset-convoy' }, talk: [
         sixty('start', 'Same road. Same hour, near enough. I am on the radio and nowhere else. Bring them all through.'),
         again(recorder(2, 'Lead, where are you.')),
         again(sixty(3, '...Whose voice is that on your radio, youngster. No. Do not tell me. I know whose.')),
       ] }),
-      battle(['heavy-mech', 'recon-drone'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 10 }, talk: [sixty('last', 'One left. That is further than I got.')] }),
+      battle(['heavy-mech', 'recon-drone'], 'bg-sluice', { objective: { type: 'protect', name: 'Convoy', hp: 10, sprite: 'asset-convoy' }, talk: [sixty('last', 'One left. That is further than I got.')] }),
     ],
   },
   {
