@@ -362,6 +362,7 @@ export const STRINGS = {
     rangeWon: 'RANGE CLEARED', rangeLost: 'SHOT DOWN',
     rangeEmpty: 'Nothing met yet. Fly a contract and come back.',
     rangeHint: 'LEFT/RIGHT: how many   A: briefing   B: back',
+    rangeShut: (why: string) => `CLOSED: your mech cannot deploy (${why}).`,
     rangeCount: (n: number) => `x${n}`,
     // Where a contract's briefing says what it pays.
     rangePays: 'FREE',

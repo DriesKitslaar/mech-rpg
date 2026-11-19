@@ -153,6 +153,34 @@ test('a fight on the range is fought in the pilot\'s own build and booked nowher
   expect(errors).toEqual([]);
 });
 
+test('the range is closed while the pilot\'s own mech cannot deploy, and says why', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // Every weapon taken off the mech on the floor.
+  const base = pilot();
+  await load(page, { ...base, build: { ...base.build, rightHand: undefined, leftHand: undefined, shoulder: undefined } }, '/?seed=7');
+  await choose(page, 'training');
+  await waitForScreen(page, 'training');
+  await press(page, 'KeyE');
+  // What could be fielded is there to be read, the saved build too, and none of it can be chosen.
+  const rows = (await snap(page)).menu.items;
+  expect(rows[0]).toMatchObject({ id: 'spar-0', enabled: false });
+  expect(rows.length).toBeGreaterThan(5);
+  expect(rows.every((item) => !item.enabled)).toBe(true);
+  await toRow(page, 'tank');
+  await press(page, 'ArrowRight');
+  expect(await range(page)).toEqual({ kind: 'tank', count: 1, limit: 3 });
+  await press(page, 'Enter');
+  await settle(page, 20);
+  expect((await snap(page)).screen).toBe('training');
+  await page.screenshot({ path: shot('range-closed') });
+  // The drills lend a mech of their own: they are as they were.
+  await press(page, 'KeyQ');
+  expect((await snap(page)).page).toBe('drills');
+  expect((await snap(page)).menu.items[0]).toMatchObject({ id: 'drill-aim', enabled: true });
+  expect(errors).toEqual([]);
+});
+
 test('the range in Dutch', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

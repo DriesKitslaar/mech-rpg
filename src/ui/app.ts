@@ -872,8 +872,13 @@ export class App {
     return [...spars, ...rangeKinds(game, UNITS.map((unit) => unit.id)).map((kind) => ({ kind, name: ALL_ENEMIES[kind].name, limit: rangeLimit(kind) }))];
   }
 
-  /** A fight on the range as a contract, if what is asked for is on the range's list: a machine met, or a saved build that can be sparred with. */
+  /**
+   * A fight on the range as a contract, if what is asked for is on the range's list: a machine met, or a saved
+   * build that can be sparred with. The range is flown in the pilot's own mech: while that may not deploy it
+   * is closed, as the arena is, and no fight on it is on offer.
+   */
   private rangeFight(kind: string, count: number): Mission | undefined {
+    if (this.buildErrors().length > 0) return undefined;
     const entry = this.rangeList().find((machine) => machine.kind === kind);
     if (!entry) return undefined;
     const T = STRINGS.training;
@@ -1079,13 +1084,13 @@ export class App {
    * Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends
    * no mech of its own. With `other` it is flown as the other side offers it, if they do. With `fit`
    * the saved build in that slot is fitted first, as the garage would load it: a slot that cannot be
-   * flown from starts nothing.
+   * flown from starts nothing, and nothing is fitted for a contract that is not on offer.
    */
   startMission(missionId: string, replay = false, wingmanId: string | null = null, other = false, fit: number | null = null): void {
     if (fit !== null) {
-      // A contract in a lent mech is not flown in any build of the pilot's: nothing is fitted for it.
-      const lent = this.offered(missionId, replay)?.loaner !== undefined;
-      const fitted = lent ? null : this.fitted(fit);
+      // A contract in a lent mech is not flown in any build of the pilot's: nothing is fitted for it either.
+      const asked = this.offered(missionId, replay);
+      const fitted = asked && asked.loaner === undefined ? this.fitted(fit) : null;
       if (!fitted) return;
       this.commit(fitted);
     }

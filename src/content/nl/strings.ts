@@ -321,6 +321,7 @@ export const STRINGS_NL = {
     rangeWon: 'VELD SCHOON', rangeLost: 'NEERGEHAALD',
     rangeEmpty: 'Nog niets gezien. Vlieg eerst een contract.',
     rangeHint: 'LEFT/RIGHT: hoeveel   A: briefing   B: terug',
+    rangeShut: (why: string) => `DICHT: je mech kan niet uitrukken (${why}).`,
     rangeCount: (n: number) => `x${n}`,
     rangePays: 'GRATIS',
     spar: (slot: number) => `Mijn build ${slot}`,

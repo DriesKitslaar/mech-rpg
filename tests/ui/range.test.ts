@@ -9,7 +9,7 @@ import { UNITS, WORLD } from '../../src/content/codex';
 import { setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
 import { STRINGS_NL } from '../../src/content/nl/strings';
-import { CATALOG } from '../../src/content/parts';
+import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { STRINGS } from '../../src/content/strings';
 import type { App } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
@@ -188,6 +188,13 @@ describe('the simulator has two pages', () => {
     expect(written(shown, T.rangeHint)).toMatchObject({ y: 255, color: COLORS.dim });
     const panel = shown.texts.filter((t) => t.y >= 184);
     for (const a of panel) for (const b of panel) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
+    // How many, at the right of the name: lit where it can be set, dim where one is all there may be.
+    const many = (): Written => drawn(app).texts.filter((t) => t.y === 191 && /^x\d$/.test(t.text))[0];
+    expect(many()).toMatchObject({ text: 'x1', right: LOGICAL_W - 12, color: COLORS.text });
+    press(app, 'right');
+    expect(many()).toMatchObject({ text: 'x2', color: COLORS.text });
+    toRow(app, 'heavy-mech');
+    expect(many()).toMatchObject({ text: 'x1', color: COLORS.dim });
   });
 });
 
@@ -404,6 +411,171 @@ describe('nothing of it is kept', () => {
     press(app, 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'training', page: 'range' });
     expect(rangeOf(app)).toEqual({ kind: 'gun-turret', count: 2, limit: 3 });
+  });
+});
+
+describe('while the pilot\'s own mech cannot deploy', () => {
+  /** The pilot with every weapon taken off the mech on the floor: a saved build is still there, and fit to fly. */
+  function unarmed(extra: Partial<GameState> = {}): GameState {
+    const base = pilot(extra);
+    return { ...base, build: { ...base.build, rightHand: undefined, leftHand: undefined, shoulder: undefined } };
+  }
+  const SHUT = 'CLOSED: your mech cannot deploy (No weapon).';
+
+  test('the range is closed: what it could field is listed and dim, A and left and right do nothing, and the page says why where the hint stood', () => {
+    const { app } = onRange(unarmed());
+    expect(app.buildErrors()).toEqual(['noWeapon']);
+    expect(T.rangeShut(STRINGS.buildErrors.noWeapon)).toBe(SHUT);
+    // The saved build and the machines met are all there to be read, and none of them can be chosen.
+    const rows = snap(app).menu.items;
+    expect(rows.map((item) => item.id)).toEqual(['spar-0', ...listed(app)]);
+    expect(rows.every((item) => !item.enabled)).toBe(true);
+    // No row carries a note: a list writes the note of a row that cannot be chosen in red, and what is wrong is said once.
+    expect(rows.every((item) => item.note === undefined)).toBe(true);
+    expect(drawn(app).texts.filter((t) => t.color === COLORS.danger).map((t) => t.text)).toEqual([SHUT]);
+    expect(snap(app).count).toBe(`SEEN ${listed(app).length}/${ORDER.length}`);
+    for (const id of ['spar-0', 'gun-turret', 'heavy-mech']) {
+      toRow(app, id);
+      press(app, 'confirm');
+      expect(snap(app).screen, id).toBe('training');
+      press(app, 'right');
+      expect(rangeOf(app), id).toMatchObject({ kind: id, count: 1 });
+      press(app, 'left');
+      expect(rangeOf(app), id).toMatchObject({ kind: id, count: 1 });
+      const shown = drawn(app);
+      // Why, in the colour of what is wrong, in the middle of the row where the keys are otherwise named.
+      const why = written(shown, SHUT);
+      expect(why).toMatchObject({ y: 255, color: COLORS.danger, align: 'center', x: LOGICAL_W / 2 });
+      expect(why.left).toBeGreaterThanOrEqual(12);
+      expect(why.right).toBeLessThanOrEqual(LOGICAL_W - 12);
+      expect(shown.texts.some((t) => t.text === T.rangeHint || t.text === T.hint), id).toBe(false);
+      // How many would stand there is still said of a machine, dimly: it is not to be set.
+      if (id !== 'spar-0') expect(written(shown, 'x1').color, id).toBe(COLORS.dim);
+    }
+    // The pages still turn, and B still leaves.
+    press(app, 'prev');
+    expect(snap(app).page).toBe('drills');
+    press(app, 'next', 'cancel');
+    expect(snap(app).screen).toBe('hub');
+  });
+
+  test('it says the first thing that is wrong, as the hub does', () => {
+    // The juggernaut's frame on the legs the pilot began with, and no weapon on it: too heavy, and unarmed.
+    const { app } = inHub(wearing(pilot(), { ...JUGGERNAUT, legs: STARTER_BUILD.legs, rightHand: undefined, leftHand: undefined, shoulder: undefined }));
+    expect(app.buildErrors()).toEqual(['overweight', 'noWeapon']);
+    expect(snap(app).menu.items.find((item) => item.id === 'contracts')!.note).toBe('Overweight');
+    select(app, 'training');
+    press(app, 'next');
+    const shown = drawn(app);
+    expect(written(shown, 'CLOSED: your mech cannot deploy (Overweight).').y).toBe(255);
+    expect(shown.texts.some((t) => t.text.includes('No weapon'))).toBe(false);
+  });
+
+  test('the drills are as they were: each lends a mech of its own', () => {
+    const { app } = inHub(unarmed());
+    select(app, 'training');
+    expect(snap(app).page).toBe('drills');
+    expect(snap(app).menu.items[0]).toMatchObject({ id: 'drill-aim', enabled: true });
+    const shown = drawn(app);
+    expect(written(shown, T.hint).y).toBe(255);
+    expect(shown.texts.some((t) => t.text === SHUT)).toBe(false);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'drill-aim' } });
+  });
+
+  test('with nothing met the page says both: that there is nothing to field, and why it is closed', () => {
+    const base = quiet(fresh());
+    const { app } = onRange({ ...base, build: { ...base.build, rightHand: undefined, leftHand: undefined, shoulder: undefined } });
+    expect(ids(app)).toEqual([]);
+    const shown = drawn(app);
+    expect(shown.texts.some((t) => t.text === T.rangeEmpty)).toBe(true);
+    expect(written(shown, SHUT)).toMatchObject({ y: 255, color: COLORS.danger });
+    expect(shown.texts.some((t) => t.text === T.hint)).toBe(false);
+  });
+
+  test('no fight on the range starts, by any road, and nothing is fitted for one', () => {
+    const { app, store } = onRange(unarmed());
+    const before = savedGame(store);
+    const floor = { ...app.game!.build };
+    app.openRangeBriefing('tank', 1);
+    expect(snap(app).screen).toBe('training');
+    app.openRangeBriefing('spar-0', 1);
+    expect(snap(app).screen).toBe('training');
+    app.openBriefing('range-1-tank');
+    expect(snap(app).screen).toBe('training');
+    app.startMission('range-1-tank');
+    expect(snap(app).screen).toBe('training');
+    app.startMission('range-spar-0');
+    expect(snap(app).screen).toBe('training');
+    // Nor with a saved build named to fly it in: the fight is not on offer, so nothing is fitted for it.
+    app.startMission('range-1-tank', false, null, false, 0);
+    expect(snap(app).screen).toBe('training');
+    app.startMission('range-spar-0', false, null, false, 0);
+    expect(snap(app).screen).toBe('training');
+    expect(app.game!.build).toEqual(floor);
+    expect(savedGame(store)).toEqual(before);
+    // No odds either: nothing would start.
+    expect(Object.keys(app.enemies()).filter((id) => id.startsWith('spar-'))).toEqual(['spar-0']);
+  });
+
+  test('put right in the garage, the range is open again: the saved build loaded is a mech that may deploy', () => {
+    const { app } = onRange(unarmed());
+    expect(snap(app).menu.items.every((item) => !item.enabled)).toBe(true);
+    app.commit(app.fitted(0)!);
+    expect(app.buildErrors()).toEqual([]);
+    press(app, 'cancel');
+    select(app, 'training');
+    press(app, 'next');
+    expect(snap(app).menu.items.every((item) => item.enabled)).toBe(true);
+    expect(snap(app).menu.items.map((item) => item.note).slice(0, 2)).toEqual(['Bastion', 'x1']);
+    expect(written(drawn(app), T.hint).y).toBe(255);
+    toRow(app, 'tank');
+    expect(written(drawn(app), T.rangeHint).y).toBe(255);
+    press(app, 'right', 'confirm');
+    expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'range-2-tank' } });
+  });
+
+  test('in Dutch', () => {
+    const base = unarmed();
+    const { app } = onRange({ ...base, settings: { ...base.settings, language: 'nl' } });
+    const said = 'DICHT: je mech kan niet uitrukken (Geen wapen).';
+    expect(STRINGS_NL.training.rangeShut(STRINGS_NL.buildErrors.noWeapon)).toBe(said);
+    const why = written(drawn(app), said);
+    expect(why).toMatchObject({ y: 255, color: COLORS.danger });
+    expect(why.left).toBeGreaterThanOrEqual(12);
+    expect(why.right).toBeLessThanOrEqual(LOGICAL_W - 12);
+    // The longest thing that can be wrong still fits the row, in both languages.
+    for (const strings of [STRINGS, STRINGS_NL]) {
+      for (const error of Object.values(strings.buildErrors)) {
+        expect(strings.training.rangeShut(error).length * 4.8, error).toBeLessThanOrEqual(LOGICAL_W - 24);
+      }
+    }
+  });
+});
+
+describe('the screen holds what it was opened with', () => {
+  test('the app is not asked for its lists again with every frame, nor for every key', () => {
+    const { app } = inHub(pilot());
+    select(app, 'training');
+    const range = vi.spyOn(app, 'rangeList');
+    const drills = vi.spyOn(app, 'drillList');
+    const errors = vi.spyOn(app, 'buildErrors');
+    for (const page of ['drills', 'range'] as const) {
+      expect(snap(app).page).toBe(page);
+      for (let frame = 0; frame < 5; frame++) {
+        app.update(16);
+        drawn(app);
+        snap(app);
+        press(app, 'down', 'right', 'left');
+      }
+      press(app, 'next');
+    }
+    expect(range).not.toHaveBeenCalled();
+    expect(drills).not.toHaveBeenCalled();
+    expect(errors).not.toHaveBeenCalled();
+    // What it shows is still what the app would say now.
+    press(app, 'next');
+    expect(snap(app).menu.items.map((item) => item.id)).toEqual(app.rangeList().map((entry) => entry.kind));
   });
 });
 

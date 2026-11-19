@@ -332,6 +332,11 @@ in **je eigen build**.
   Kies er een en de simulator vliegt die build tegen je: dezelfde onderdelen, met het werk van de
   werkbank, in andere kleuren. Zo zie je welke van je builds de andere verslaat; de winkans in de
   briefing zegt het al vooraf.
+- Het proefveld vlieg je in je eigen mecha. Kan die niet uitrukken (te zwaar, te weinig energie,
+  geen wapen), dan is het proefveld **dicht**: de lijst staat er nog, maar grijs, en onderaan staat
+  waarom (**CLOSED: your mech cannot deploy**). Breng je mecha in de **Garage** in orde, of laad
+  daar een bewaarde build, en het is weer open. De oefeningen kun je altijd doen: die lenen je een
+  mecha.
 
 ## De werkbank
 
