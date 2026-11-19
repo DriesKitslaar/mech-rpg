@@ -1,5 +1,7 @@
+import { ARCHETYPES, type Archetype } from './archetype';
 import { MARKS, MAX_ENEMIES, type EnemyMark } from './battle';
 import type { Mission } from './campaign';
+import type { Settlement } from './economy';
 import { nextRandom } from './rng';
 
 /** What each enemy costs out of a battle's budget. */
@@ -57,6 +59,12 @@ export const PAY_PER_BATTLE = 200;
  */
 export const ELITE_TIER = 3;
 export const ELITE_PAY = 400;
+/**
+ * From this tier on, one of the board's three contracts asks for a class of machine. It can be won
+ * as anything; won in a build of that class it pays this much more of its fee.
+ */
+export const ASK_TIER = 2;
+export const ASK_BONUS = 0.25;
 
 /** A client's face, for the contract, where the client has one. */
 const faceOf = (text: BoardText, client: string): { portrait?: string } =>
@@ -202,7 +210,23 @@ export function generateBoard(battlesWon: number, cycle: number, text: BoardText
     heaviest.reward += ELITE_PAY;
     heaviest.briefing = [...heaviest.briefing, text.elite[mark]];
   }
+  // Which contract asks for a class, and for which, is on dice of its own as well.
+  if (boardTier(battlesWon, cycle) >= ASK_TIER) {
+    const wish = new Dice(((battlesWon + 1) * 49979687 + cycle * 15485867 + 29) | 0);
+    board[wish.roll(BOARD_SIZE)].asks = wish.pick([...ARCHETYPES]);
+  }
   return board;
+}
+
+/**
+ * The settlement of a contract that asked for a class, for a pilot who won it as that class: a share
+ * of the fee as it was paid, on top, and the class it was paid for. Any other settlement is returned
+ * as it is: lost, won as another class or in a lent mech (no class at all), or nothing asked.
+ */
+export function askSettlement(settlement: Settlement, mission: Pick<Mission, 'asks'>, flownAs: Archetype | null): Settlement {
+  if (!settlement.won || mission.asks === undefined || mission.asks !== flownAs) return settlement;
+  const bonus = Math.round(settlement.reward * ASK_BONUS);
+  return { ...settlement, asked: { kind: mission.asks, bonus }, net: settlement.net + bonus };
 }
 
 /**

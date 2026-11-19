@@ -161,3 +161,94 @@ test('the build row in Dutch, and with nothing saved', async ({ page }) => {
   await page.screenshot({ path: shot('nl-briefing-build') });
   expect(errors).toEqual([]);
 });
+
+type Asks = { kind: string; met: boolean };
+const asks = async (page: Page): Promise<Asks | null> => (await snap(page) as unknown as { briefing: { asks: Asks | null } }).briefing.asks;
+
+test('work that asks for a class: a plus on the list, a line in the briefing that lights up for a build of the class', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // After twenty contracts won the board's second contract wants a bastion; this pilot has one saved.
+  await load(page, threeBuilds());
+  await choose(page, 'contracts');
+  const notes = Object.fromEntries((await snap(page)).menu.items.map((item) => [item.id, item.note]));
+  expect(notes).toMatchObject({ 'open-0-20-0': '1200', 'open-0-20-1': '2900+', 'open-0-20-2': '2100' });
+  await toRow(page, 'open-0-20-1');
+  for (let i = 0; i < 6; i++) await nextFrame(page);
+  await page.screenshot({ path: shot('contracts-asks') });
+  await press(page, 'Enter');
+  await waitForScreen(page, 'briefing');
+  await written(page);
+  // In the duellist on the floor it is a notice: the contract can be flown, and pays what it says.
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: false });
+  await page.screenshot({ path: shot('briefing-asks') });
+  // Turned to the bastion saved first, the line is lit; the odds beside it say whether the bastion can do it.
+  await toRow(page, 'build');
+  await press(page, 'ArrowRight');
+  expect(await chosen(page)).toMatchObject({ slot: 0, kind: 'bastion' });
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: true });
+  await counted(page);
+  await page.screenshot({ path: shot('briefing-asks-met') });
+  // The sharpshooter is not what was asked for either.
+  await press(page, 'ArrowRight');
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: false });
+  expect(errors).toEqual([]);
+});
+
+test('won as the class asked for, the contract pays a quarter more, on a row of its own', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const save = threeBuilds();
+  // Hurried: this is about the bill, not the fight.
+  await page.addInitScript(({ data, settings }) => {
+    if (!window.localStorage.getItem('ironwage-save')) window.localStorage.setItem('ironwage-save', data);
+    if (!window.localStorage.getItem('ironwage-settings')) window.localStorage.setItem('ironwage-settings', settings);
+  }, { data: JSON.stringify(save), settings: JSON.stringify({ ...save.settings, fastBattles: true }) });
+  await open(page);
+  await choose(page, 'continue');
+  await waitForScreen(page, 'hub');
+  await choose(page, 'contracts');
+  await choose(page, 'open-0-20-1');
+  await waitForScreen(page, 'briefing');
+  await toRow(page, 'build');
+  await press(page, 'ArrowRight');
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: true });
+  await toRow(page, 'accept');
+  await press(page, 'Enter');
+  await waitForScreen(page, 'battle');
+  // Auto Turn flies it: every turn, through both engagements.
+  for (let i = 0; i < 4000; i++) {
+    const s = await snap(page);
+    if (s.screen !== 'battle') break;
+    if (s.battle?.phase === 'action') await choose(page, 'auto');
+    else if (s.battle?.phase === 'result' || s.battle?.spoken) await press(page, 'Enter');
+    else await nextFrame(page);
+  }
+  await waitForScreen(page, 'settlement');
+  const bill = (await snap(page)).settlement as unknown as { won: boolean; reward: number; asked: { kind: string; bonus: number } | null };
+  expect(bill).toMatchObject({ won: true, reward: 2900, asked: { kind: 'bastion', bonus: 725 } });
+  for (let i = 0; i < 90; i++) await nextFrame(page);
+  await page.screenshot({ path: shot('settlement-asks') });
+  expect((await kept(page)).build).toEqual(BASTION);
+  expect(errors).toEqual([]);
+});
+
+test('the class wanted, in Dutch', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const base = threeBuilds();
+  await load(page, { ...base, settings: { ...base.settings, language: 'nl' } });
+  await choose(page, 'contracts');
+  await choose(page, 'open-0-20-1');
+  await waitForScreen(page, 'briefing');
+  await written(page);
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: false });
+  await toRow(page, 'build');
+  await press(page, 'ArrowRight');
+  expect(await asks(page)).toEqual({ kind: 'bastion', met: true });
+  await counted(page);
+  await page.screenshot({ path: shot('nl-briefing-asks') });
+  expect(errors).toEqual([]);
+});

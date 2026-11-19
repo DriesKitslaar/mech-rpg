@@ -299,6 +299,20 @@ en de moeilijkheid. Je ziet het tellen (grijs, de teller loopt op) terwijl je de
   dat je mecha sterker moet worden voor dit contract.
 - Bij een geleende mecha en de training staat er geen kans.
 
+### Een contract dat een klasse zoekt
+
+Heb je tien contracten gewonnen, dan zoekt een van de drie open contracten op het bord telkens een
+bepaalde klasse. Je herkent het in de lijst aan een **plus** achter het loon (bijvoorbeeld
+`2400+`), en in de briefing aan de regel onder de opdrachtgever: **WANTS A BASTION: +25% PAY**.
+
+- Je mag het met elke build vliegen. Win je het in een build van de gevraagde klasse, dan krijg je
+  **een kwart meer loon**. Op de afrekening staat dat als een eigen regel, bijvoorbeeld
+  **Bastion bonus +600**.
+- De regel in de briefing is **geel** zolang je gekozen build niet van die klasse is, en wordt
+  **groen** zodra je op de rij **Build** naar een build van die klasse bladert.
+- Na elk gewonnen contract hangt er een nieuw bord, met een andere vraag. Zo loont het om meer dan
+  een soort build bewaard te hebben.
+
 ## De werkbank
 
 In de **Garage** kun je onderdelen die je bezit sterker laten maken. Kies een vak, ga op een

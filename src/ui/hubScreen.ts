@@ -77,7 +77,8 @@ export class HubScreen implements Screen {
     // bounty either: side work is chosen, never fallen into.
     const story = missions.findIndex((m) => m.phase !== 'patrol' && m.phase !== 'side');
     this.sub = new MenuList([
-      ...missions.map((m) => ({ id: m.id, label: m.title, enabled: true, note: String(m.reward) })),
+      // A contract that asks for a class pays more to a pilot who wins it as one: a plus after what it pays.
+      ...missions.map((m) => ({ id: m.id, label: m.title, enabled: true, note: m.asks ? `${m.reward}+` : String(m.reward) })),
       ...(done > 0 ? [{ id: ARCHIVE, label: H.archive, enabled: true, note: String(done) }] : []),
     ], Math.max(0, story));
   }

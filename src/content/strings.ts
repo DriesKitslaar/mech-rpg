@@ -410,6 +410,12 @@ export const STRINGS = {
     // How the contract is likely to go in that build: what the game's own pilot wins of it, flight by flight as it is counted.
     odds: (won: number, played: number) => `ODDS ${won}/${played}`, oddsWait: 'ODDS ..',
     oddsNote: 'this contract flown on Auto Turn',
+    // An open contract that asks for a class of machine: the line under its client, and each class as it is asked for.
+    asks: (wanted: string, percent: number) => `WANTS ${wanted}: +${percent}% PAY`,
+    wanted: {
+      duellist: 'A DUELLIST', marksman: 'A SHARPSHOOTER', artillery: 'ARTILLERY', lancer: 'A LANCER', bastion: 'A BASTION',
+      skirmisher: 'A SKIRMISHER', allrounder: 'AN ALL-ROUNDER',
+    },
     lentNote: 'Your own mech cannot deploy as it stands, so Dispatch lends you a stock frame for this one. Put yours right in the Garage; until then this is the work there is.',
     support: (name: string) => `Fire support: ${name}`,
     // In a later telling some contracts can be flown for the other side: the row in the menu, and the line under the client.
@@ -427,6 +433,8 @@ export const STRINGS = {
   settlement: {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
+    // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
+    askBonus: (name: string) => `${name} bonus`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
     relief: (credits: number) => `Debt limit reached: ${credits} written off`,
   },

@@ -1,5 +1,5 @@
 import { archetypeOf, type Archetype } from '../core/archetype';
-import { isSwarm } from '../core/board';
+import { ASK_BONUS, isSwarm } from '../core/board';
 import { computeBuildStats } from '../core/build';
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
@@ -226,6 +226,8 @@ export class BriefingScreen implements Screen {
         build: this.sortie ? { slot: this.sortie.slot, kind: this.kind, choices: this.builds.length } : null,
         // How the contract is likely to go in it: flights won of those counted so far, and whether all are counted.
         odds: this.odds,
+        // The class the contract asks for, when it asks, and whether the build chosen is of it.
+        asks: this.mission.asks ? { kind: this.mission.asks, met: this.kind === this.mission.asks } : null,
         // How many offers there are for this contract, the client of the one showing, and whether that is the other side's.
         offers: this.other ? 2 : 1, client: this.mission.client, turned: this.mission === this.other,
       },
@@ -258,12 +260,17 @@ export class BriefingScreen implements Screen {
       : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict
       : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable
       : this.other ? (mission === this.other ? B.otherTag : B.twoOffers) : '';
-    wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
-      drawText(ctx, line, 72, 40 + i * 11, { color: decisive ? COLORS.danger : COLORS.dim }));
-    // What it will be taken in, in the corner the title leaves free: which build, and what kind of machine that is.
-    // A saved build that was turned to stands out: it is not the one on the floor, and accepting will fit it.
     const sortie = this.sortie;
     const kind = this.kind;
+    wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
+      drawText(ctx, line, 72, 40 + i * 11, { color: decisive ? COLORS.danger : COLORS.dim }));
+    // An open contract that asks for a class says so on the second line, which its one-line tag leaves free:
+    // a notice, and lit in the colour of pay when the build chosen is of that class.
+    if (mission.asks) {
+      drawText(ctx, B.asks(B.wanted[mission.asks], Math.round(ASK_BONUS * 100)), 72, 51, { color: kind === mission.asks ? COLORS.armor : COLORS.heat });
+    }
+    // What it will be taken in, in the corner the title leaves free: which build, and what kind of machine that is.
+    // A saved build that was turned to stands out: it is not the one on the floor, and accepting will fit it.
     if (sortie && kind) {
       drawText(ctx, sortie.slot === null ? B.buildOnFloor : B.buildSaved(sortie.slot + 1), LOGICAL_W - 12, 9, { align: 'right', color: COLORS.dim, size: 10 });
       drawText(ctx, C.names[kind].toUpperCase(), LOGICAL_W - 12, 19, { align: 'right', color: sortie.slot === null ? COLORS.text : COLORS.accent });
