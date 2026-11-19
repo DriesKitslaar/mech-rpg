@@ -27,16 +27,27 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 
 1. Kies **New Game** en geef je piloot een roepnaam. (Heb je al een spel staan, dan kies je eerst
    een opslagplek.)
-2. In het hoofdkwartier kies je **Contracts**. De cursor staat al op **Shakedown Run**, het eerste
+2. Kies de mecha waarin je begint. Er staan er drie, en met omhoog en omlaag bekijk je ze één voor
+   één; A neemt degene die in beeld staat, B gaat terug naar je roepnaam.
+
+   | Mecha | Wat het is | Begint met |
+   |---|---|---|
+   | **Hauler** | Het werkpaard: kan alles redelijk en heeft plaats voor drie wapens. | Een geweer en 1200 credits |
+   | **Courier** | De renner: snel en moeilijk te raken, maar dun en hij kan weinig dragen. | Een pistool dat nooit leeg raakt en 900 credits |
+   | **Dozer** | De muur: traag, taai, en hij draagt verreweg het meest. | Een geweer, een schild om achter te schuilen en 900 credits |
+
+   Je zit er niet aan vast: de onderdelen van de twee die je laat staan liggen vanaf het begin in
+   de winkel, en je mag ze door elkaar gebruiken. Wie zonder kijken op A drukt krijgt de Hauler.
+3. In het hoofdkwartier kies je **Contracts**. De cursor staat al op **Shakedown Run**, het eerste
    contract van het verhaal; de patrouille erboven is er voor als je geld nodig hebt.
-3. In het gevecht kies je **Fire**, een wapen en een onderdeel van de vijand. De kern (Core) is
+4. In het gevecht kies je **Fire**, een wapen en een onderdeel van de vijand. De kern (Core) is
    het makkelijkst te raken en de enige die een vijand uitschakelt. Staan er meer vijanden, dan
    wissel je met L1/R1 van doelwit; het spel mikt vanzelf op het doel van de opdracht, of op wie je
    het laatst beschoot.
-4. Na het gevecht zie je de afrekening: loon, min munitie en reparaties.
-5. Koop in de **Shop** een tweede wapen en zet het in de **Garage** op je mecha (kopen alleen
+5. Na het gevecht zie je de afrekening: loon, min munitie en reparaties.
+6. Koop in de **Shop** een tweede wapen en zet het in de **Garage** op je mecha (kopen alleen
    is niet genoeg).
-6. Doe daarna een paar oefeningen onder **Training**. Ze kosten niets en leggen elk één ding uit.
+7. Doe daarna een paar oefeningen onder **Training**. Ze kosten niets en leggen elk één ding uit.
 
 ## Het hoofdkwartier
 

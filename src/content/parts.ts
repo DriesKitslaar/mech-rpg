@@ -48,6 +48,16 @@ export const SHOP_PARTS: Part[] = [
   frame('core-hauler', 'Hauler Core', 'core', 220, r(0.2, 0.1, 0.15), 260, 60, 300, 'undertow'),
   frame('arms-rigger', 'Rigger Arms', 'arms', 110, r(0.15, 0.1, 0.1), 120, 40, 300, 'undertow', { aim: 5 }),
   frame('legs-strider', 'Strider Legs', 'legs', 150, r(0.15, 0.1, 0.1), 200, 50, 300, 'undertow', { capacity: 1000, mobility: 30 }),
+  // Courier: what is left of a Lumen courier. Light and quick, thin where it counts, and it carries little. A frame to start in.
+  frame('head-courier', 'Courier Visor', 'head', 40, r(0.05, 0.12, 0.05), 30, 20, 300, 'lumen', { aim: 10 }),
+  frame('core-courier', 'Courier Core', 'core', 155, r(0.1, 0.12, 0.1), 190, 55, 300, 'lumen'),
+  frame('arms-courier', 'Courier Arms', 'arms', 75, r(0.05, 0.12, 0.05), 90, 35, 300, 'lumen', { aim: 6 }),
+  frame('legs-courier', 'Courier Legs', 'legs', 105, r(0.05, 0.12, 0.05), 150, 50, 300, 'lumen', { capacity: 800, mobility: 40 }),
+  // Dozer: a Hadron yard dozer with plate welded over it. Slow, hard to hurt, and it carries a great deal. A frame to start in.
+  frame('head-dozer', 'Dozer Cab', 'head', 75, r(0.2, 0.12, 0.15), 60, 15, 300, 'hadron', { aim: 8 }),
+  frame('core-dozer', 'Dozer Core', 'core', 275, r(0.25, 0.12, 0.15), 380, 60, 300, 'hadron'),
+  frame('arms-dozer', 'Dozer Arms', 'arms', 135, r(0.2, 0.12, 0.15), 180, 40, 300, 'hadron', { aim: 5 }),
+  frame('legs-dozer', 'Dozer Legs', 'legs', 195, r(0.2, 0.12, 0.15), 300, 50, 300, 'hadron', { capacity: 1400, mobility: 18 }),
   // Halo: light, quick, shrugs off energy weapons.
   frame('head-halo', 'Halo Visor', 'head', 45, r(0.05, 0.25, 0.05), 25, 25, 900, 'lumen', { aim: 18 }),
   frame('core-halo', 'Halo Core', 'core', 170, r(0.1, 0.3, 0.1), 180, 50, 1400, 'lumen'),
@@ -126,6 +136,8 @@ export const SHOP_PARTS: Part[] = [
   // Meridian's sidearms, on the market once the audit is over.
   weapon('wpn-writ', 'Writ Rifle', 'hand', 'kinetic', 70, 88, 120, 26, 16, 55, 120, 3800, 'freelance', 'pierce'),
   weapon('wpn-gavel', 'Gavel', 'hand', 'kinetic', 105, 90, 120, 12, null, 0, 150, 3600, 'freelance', undefined, undefined, { melee: true, impact: 180 }),
+  // Salvage: a plate off a yard machine with a grip welded on. Better than nothing to guard behind.
+  shield('shd-plate', 'Scrap Plate', 0.5, 80, 300, 'hadron'),
   shield('shd-riot', 'Riot Shield', 0.4, 90, 1100, 'hadron'),
   shield('shd-barrier', 'Barrier Emitter', 0.32, 50, 2200, 'lumen'),
   shield('shd-tower', 'Tower Shield', 0.25, 190, 2600, 'hadron'),

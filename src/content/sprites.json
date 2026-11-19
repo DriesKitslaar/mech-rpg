@@ -759,6 +759,201 @@
       "hi": 0.524
     }
   },
+  "legs-courier": {
+    "file": "sprites/legs-courier.png",
+    "w": 114,
+    "h": 89,
+    "ox": 19,
+    "oy": 64,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "core-courier": {
+    "file": "sprites/core-courier.png",
+    "w": 37,
+    "h": 47,
+    "ox": 57,
+    "oy": 27,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "head-courier": {
+    "file": "sprites/head-courier.png",
+    "w": 23,
+    "h": 25,
+    "ox": 68,
+    "oy": 7,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-courier.near": {
+    "file": "sprites/arms-courier.near.png",
+    "w": 52,
+    "h": 37,
+    "ox": 89,
+    "oy": 26,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-courier.far": {
+    "file": "sprites/arms-courier.far.png",
+    "w": 40,
+    "h": 63,
+    "ox": 23,
+    "oy": 24,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "legs-dozer": {
+    "file": "sprites/legs-dozer.png",
+    "w": 122,
+    "h": 86,
+    "ox": 16,
+    "oy": 66,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "core-dozer": {
+    "file": "sprites/core-dozer.png",
+    "w": 59,
+    "h": 63,
+    "ox": 48,
+    "oy": 24,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "head-dozer": {
+    "file": "sprites/head-dozer.png",
+    "w": 26,
+    "h": 19,
+    "ox": 66,
+    "oy": 14,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "arms-dozer.near": {
+    "file": "sprites/arms-dozer.near.png",
+    "w": 53,
+    "h": 45,
+    "ox": 91,
+    "oy": 26,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "arms-dozer.far": {
+    "file": "sprites/arms-dozer.far.png",
+    "w": 42,
+    "h": 72,
+    "ox": 19,
+    "oy": 21,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
   "legs-crawler": {
     "file": "sprites/legs-crawler.png",
     "w": 138,
@@ -939,6 +1134,11 @@
     "file": "sprites/wpn-sunlance.png",
     "w": 44,
     "h": 25
+  },
+  "shd-plate": {
+    "file": "sprites/shd-plate.png",
+    "w": 34,
+    "h": 47
   },
   "shd-riot": {
     "file": "sprites/shd-riot.png",
@@ -2777,6 +2977,221 @@
       "hi": 0.524
     }
   },
+  "legs-courier.back": {
+    "file": "sprites/legs-courier.back.png",
+    "w": 87,
+    "h": 76,
+    "ox": 12,
+    "oy": 49,
+    "hx": 59,
+    "hy": 39,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "core-courier.back": {
+    "file": "sprites/core-courier.back.png",
+    "w": 44,
+    "h": 47,
+    "ox": 33,
+    "oy": 17,
+    "hx": 25,
+    "hy": 23,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "head-courier.back": {
+    "file": "sprites/head-courier.back.png",
+    "w": 19,
+    "h": 17,
+    "ox": 48,
+    "oy": 4,
+    "hx": 12,
+    "hy": 10,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-courier.near.back": {
+    "file": "sprites/arms-courier.near.back.png",
+    "w": 39,
+    "h": 24,
+    "ox": 69,
+    "oy": 25,
+    "hx": 19,
+    "hy": 11,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-courier.far.back": {
+    "file": "sprites/arms-courier.far.back.png",
+    "w": 27,
+    "h": 53,
+    "ox": 18,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "legs-dozer.back": {
+    "file": "sprites/legs-dozer.back.png",
+    "w": 93,
+    "h": 66,
+    "ox": 13,
+    "oy": 56,
+    "hx": 59,
+    "hy": 38,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "core-dozer.back": {
+    "file": "sprites/core-dozer.back.png",
+    "w": 36,
+    "h": 50,
+    "ox": 35,
+    "oy": 30,
+    "hx": 23,
+    "hy": 10,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "head-dozer.back": {
+    "file": "sprites/head-dozer.back.png",
+    "w": 22,
+    "h": 11,
+    "ox": 46,
+    "oy": 16,
+    "hx": 12,
+    "hy": 2,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "arms-dozer.near.back": {
+    "file": "sprites/arms-dozer.near.back.png",
+    "w": 43,
+    "h": 34,
+    "ox": 67,
+    "oy": 23,
+    "hx": 20,
+    "hy": 10,
+    "fx": 36,
+    "fy": 23,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "arms-dozer.far.back": {
+    "file": "sprites/arms-dozer.far.back.png",
+    "w": 29,
+    "h": 53,
+    "ox": 13,
+    "oy": 24,
+    "fx": 9,
+    "fy": 46,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
   "legs-crawler.back": {
     "file": "sprites/legs-crawler.back.png",
     "w": 101,
@@ -3670,6 +4085,217 @@
       "hi": 0.524
     }
   },
+  "legs-courier.small": {
+    "file": "sprites/legs-courier.small.png",
+    "w": 74,
+    "h": 59,
+    "ox": 13,
+    "oy": 41,
+    "hx": 51,
+    "hy": 31,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "core-courier.small": {
+    "file": "sprites/core-courier.small.png",
+    "w": 24,
+    "h": 30,
+    "ox": 37,
+    "oy": 18,
+    "hx": 13,
+    "hy": 14,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "head-courier.small": {
+    "file": "sprites/head-courier.small.png",
+    "w": 15,
+    "h": 17,
+    "ox": 44,
+    "oy": 4,
+    "hx": 5,
+    "hy": 10,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-courier.near.small": {
+    "file": "sprites/arms-courier.near.small.png",
+    "w": 34,
+    "h": 24,
+    "ox": 58,
+    "oy": 17,
+    "hx": 12,
+    "hy": 10,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "arms-courier.far.small": {
+    "file": "sprites/arms-courier.far.small.png",
+    "w": 26,
+    "h": 41,
+    "ox": 15,
+    "oy": 15,
+    "paint": {
+      "accent": [
+        0,
+        1,
+        3,
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.261,
+      "hi": 0.844
+    }
+  },
+  "legs-dozer.small": {
+    "file": "sprites/legs-dozer.small.png",
+    "w": 79,
+    "h": 56,
+    "ox": 11,
+    "oy": 43,
+    "hx": 28,
+    "hy": 29,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "core-dozer.small": {
+    "file": "sprites/core-dozer.small.png",
+    "w": 39,
+    "h": 41,
+    "ox": 31,
+    "oy": 16,
+    "hx": 19,
+    "hy": 16,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "head-dozer.small": {
+    "file": "sprites/head-dozer.small.png",
+    "w": 17,
+    "h": 13,
+    "ox": 43,
+    "oy": 9,
+    "hx": 6,
+    "hy": 6,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "arms-dozer.near.small": {
+    "file": "sprites/arms-dozer.near.small.png",
+    "w": 34,
+    "h": 29,
+    "ox": 59,
+    "oy": 17,
+    "hx": 15,
+    "hy": 10,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
+  "arms-dozer.far.small": {
+    "file": "sprites/arms-dozer.far.small.png",
+    "w": 27,
+    "h": 46,
+    "ox": 12,
+    "oy": 14,
+    "paint": {
+      "accent": [
+        1,
+        5,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.202,
+      "hi": 0.491
+    }
+  },
   "legs-crawler.small": {
     "file": "sprites/legs-crawler.small.png",
     "w": 90,
@@ -4081,6 +4707,20 @@
     "gy": 9,
     "mx": 36,
     "my": 6
+  },
+  "shd-plate.small": {
+    "file": "sprites/shd-plate.small.png",
+    "w": 22,
+    "h": 30
+  },
+  "shd-plate.back": {
+    "file": "sprites/shd-plate.back.png",
+    "w": 27,
+    "h": 37,
+    "gx": 14,
+    "gy": 22,
+    "mx": 14,
+    "my": 22
   },
   "shd-riot.small": {
     "file": "sprites/shd-riot.small.png",

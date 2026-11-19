@@ -146,8 +146,8 @@ describe('the screens the three-act story added', () => {
   test('a page of story draws its heading, title and picture, and waits a moment before it can be closed', () => {
     const { ctx, calls } = recorder();
     const app = new App({ catalog: CATALOG, save: new SaveFile(store(), CATALOG), sprites, fast: false, seed: 3 });
-    // New game, then the callsign on offer.
-    press(app, 'confirm', 'confirm');
+    // New game, then the callsign on offer, then the frame on offer.
+    press(app, 'confirm', 'confirm', 'confirm');
     expect(snap(app).screen).toBe('scene');
     app.draw(ctx);
     expect(texts(calls)).toContain('ACT I');
@@ -171,8 +171,8 @@ describe('the screens the three-act story added', () => {
 
   test('a button mashed through a page of story still leaves it up long enough to be noticed', () => {
     const app = new App({ catalog: CATALOG, save: new SaveFile(store(), CATALOG), sprites, fast: false, seed: 3 });
-    // A new game: the callsign on offer is taken, and the first page of the story comes up.
-    press(app, 'confirm', 'confirm');
+    // A new game: the callsign and the frame on offer are taken, and the first page of the story comes up.
+    press(app, 'confirm', 'confirm', 'confirm');
     expect(snap(app).screen).toBe('scene');
     let up = 0;
     for (let i = 0; i < 200 && snap(app).screen === 'scene'; i++) {

@@ -1,0 +1,11 @@
+{
+  "id": "family-courier",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-ronin.png"
+  ],
+  "prompt": "The first image shows a mecha in a combat stance. Redraw it as a different mecha design in exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, elbows, hands, hips, knees, feet) stays in the same place. The new design is: a stripped-down light courier mecha in chipped off-white panels over a dark grey frame, with faded sky-blue stripes and a few small orange marker lights: thin limbs with some armour panels missing so that the dark frame shows, narrow shoulders, a small rounded head with a wide dark visor band and a short stub antenna, and one mismatched grey replacement panel on a thigh. Slimmer and lighter than the first image, worn and second-hand. Keep the same proportions between joints. No weapons, empty hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

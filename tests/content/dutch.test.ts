@@ -25,6 +25,8 @@ const ROOM: Record<string, { width?: number; max?: number; lines?: number }> = {
   'message.subject': { max: 30 },
   'page.title': { max: 24 }, 'page.text': { width: PAGE_CHARS },
   'drill.lesson': { max: 24 },
+  // A frame to start in: the kind of machine it is, beside its name in the list; and what it is, in the panel under it.
+  'starter.role': { max: 24 }, 'starter.text': { width: charsFor(LOGICAL_W - 28) },
   'perk.name': { max: 18 }, 'perk.text': { width: charsFor(LOGICAL_W - 28) },
   'medal.name': { max: 20 }, 'medal.text': { width: charsFor(LOGICAL_W - 60) },
   'arena.style': { width: charsFor(LOGICAL_W - 28) }, 'arena.taunt': { width: BRIEFING_CHARS - 2 },

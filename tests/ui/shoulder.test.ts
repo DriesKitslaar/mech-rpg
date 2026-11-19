@@ -58,10 +58,9 @@ function solidAt(drawn: Pictured, at: { x: number; y: number }): boolean {
 /** Every part of the frame there is a drawing of, by the kind of part: eleven lower bodies, and eight each of the others. */
 const partsOf = (kind: 'legs' | 'core' | 'head' | 'arms'): string[] =>
   Object.keys(MANIFEST).flatMap((id) => new RegExp(`^(${kind}-[a-z0-9-]+?)(\\.near)?\\.back$`).exec(id)?.[1] ?? []).filter((id, i, all) => all.indexOf(id) === i).sort();
-/** Eleven mechs that between them wear every part there is: each pair of legs once, the other parts in turn. */
-const WARDROBE: Build[] = partsOf('legs').map((legs, i) => ({
-  ...DEMO_BUILD, legs, core: partsOf('core')[i % 8], head: partsOf('head')[(i + 3) % 8], arms: partsOf('arms')[(i + 5) % 8],
-}));
+/** Mechs that between them wear every part there is: each pair of legs once, the other parts in turn (there are more legs than of any other part). */
+const turn = (kind: 'core' | 'head' | 'arms', i: number): string => partsOf(kind)[i % partsOf(kind).length];
+const WARDROBE: Build[] = partsOf('legs').map((legs, i) => ({ ...DEMO_BUILD, legs, core: turn('core', i), head: turn('head', i + 3), arms: turn('arms', i + 5) }));
 /** The layer a hit on a part is seen on, for a build in a view. */
 const hitLayer = (build: Build, part: FrameSlot, suffix: string): string => (part === 'arms' ? `${build.arms}.near${suffix}` : `${build[part]}${suffix}`);
 
@@ -295,9 +294,45 @@ describe('what is fired', () => {
     expect(tracked.screen.motion.at.muzzle('player', 'shoulder')).toEqual({ x: HERO.x + mount.x, y: HERO.y + mount.y + MANIFEST['legs-crawler.back'].drop! });
   });
 
+  test('a mech whose arms name their own fists holds its weapons in those fists and fires from there: a Dozer\'s arms hang lower than the pose', () => {
+    const build: Build = { ...DEMO_BUILD, arms: 'arms-dozer' };
+    const { screen, page } = screenOf(['gun-turret'], { build });
+    const own = ownOf(page());
+    const usual = screenOf(['gun-turret']);
+    const hands = [['rightHand', 'arms-dozer.near.back', VIEWS.back.nearFist], ['leftHand', 'arms-dozer.far.back', VIEWS.back.farFist]] as const;
+    for (const [hand, layer, pose] of hands) {
+      const entry = MANIFEST[layer];
+      const id = `${build[hand]}.back`;
+      const arm = own.find((image) => idOf(image) === layer)!;
+      const held = own.find((image) => idOf(image) === id)!;
+      const grip = { x: held.x + MANIFEST[id].gx!, y: held.y + MANIFEST[id].gy! };
+      // Its grip is on the fist of the arm as it was drawn: on a pixel of the hand.
+      expect(grip, hand).toEqual({ x: arm.x + entry.fx!, y: arm.y + entry.fy! });
+      expect(solidAt(arm, grip), hand).toBe(true);
+      // Another frame holds the same weapon where the pose has the fist: this one lower, by what its fist is lower.
+      const other = ownOf(usual.page()).find((image) => idOf(image) === id)!;
+      expect({ x: held.x - other.x, y: held.y - other.y }, hand).toEqual({ x: entry.ox! + entry.fx! - pose.x, y: entry.oy! + entry.fy! - pose.y });
+      expect(held.y - other.y, hand).toBeGreaterThanOrEqual(6);
+      // What is fired leaves the weapon where it is drawn.
+      expect(screen.motion.at.muzzle('player', hand), hand).toEqual({ x: held.x + MANIFEST[id].mx!, y: held.y + MANIFEST[id].my! });
+    }
+    // What the shoulder carries is where it is on any frame: the mount is the pose's, not the arm's.
+    expect(screen.motion.at.muzzle('player', 'shoulder')).toEqual(usual.screen.motion.at.muzzle('player', 'shoulder'));
+    // With nothing in a hand a shot leaves the fist itself; on tracks the fist comes down with the arm.
+    const { rightHand: _right, leftHand: _left, ...bare } = build;
+    const empty = screenOf(['gun-turret'], { build: bare as Build });
+    const tracked = screenOf(['gun-turret'], { build: { ...bare, legs: 'legs-crawler' } as Build });
+    for (const [hand, layer] of hands) {
+      const entry = MANIFEST[layer];
+      const fist = { x: HERO.x + entry.ox! + entry.fx!, y: HERO.y + entry.oy! + entry.fy! };
+      expect(empty.screen.motion.at.muzzle('player', hand), hand).toEqual(fist);
+      expect(tracked.screen.motion.at.muzzle('player', hand), hand).toEqual({ x: fist.x, y: fist.y + MANIFEST['legs-crawler.back'].drop! });
+    }
+  });
+
   test('lands on the pilot\'s mech on the part that is hit, on a pixel of its drawing: whatever it wears, tracks, four legs and a hover unit among it', () => {
-    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([11, 8, 8, 8]);
-    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(35);
+    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([13, 10, 10, 10]);
+    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(43);
     let lowered = 0;
     for (const build of WARDROBE) {
       for (const id of [build.legs!, build.core, build.head!, build.arms!]) expect(CATALOG[id], id).toBeDefined();
@@ -312,7 +347,8 @@ describe('what is fired', () => {
         // Near where the view has that part, wherever the legs have lowered the body to.
         const aim = VIEWS.back.hit![part];
         const off = Math.hypot(hit.x - (HERO.x + aim.x), hit.y - (HERO.y + aim.y + (part === 'legs' ? 0 : legs.drop ?? 0)));
-        expect(off, `${part} of ${build.legs}`).toBeLessThanOrEqual({ core: 0, head: 2, arms: 7, legs: 20 }[part]);
+        // A squat frame carries its head a little lower than the others: the hit is on the head it has, not over it.
+        expect(off, `${part} of ${build.legs}`).toBeLessThanOrEqual({ core: 0, head: 5, arms: 7, legs: 20 }[part]);
       }
       // Its middle is under its body, at its waist or a little over it, and the floor under it is the line its feet are on.
       const core = own.find((image) => idOf(image) === `${build.core}.back`)!;
@@ -323,7 +359,7 @@ describe('what is fired', () => {
       expect(middle.y, build.core).toBeLessThan(core.y + core.h + 16);
       expect(screen.motion.at.floor('player')).toBe(HERO_FEET - 2);
     }
-    // Three of the eleven lower bodies carry what stands on them lower.
+    // Three of the lower bodies carry what stands on them lower.
     expect(lowered).toBe(3);
   });
 

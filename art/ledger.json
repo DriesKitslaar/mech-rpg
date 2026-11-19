@@ -3637,5 +3637,605 @@
    },
    "total_tokens": 336
   }
+ },
+ {
+  "id": "family-courier",
+  "at": "2026-11-19T01:11:13.234Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0191,
+  "usage": {
+   "input_tokens": 1232,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 208
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1428
+  }
+ },
+ {
+  "id": "family-dozer",
+  "at": "2026-11-19T01:11:25.172Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0191,
+  "usage": {
+   "input_tokens": 1228,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 204
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1424
+  }
+ },
+ {
+  "id": "legs-courier",
+  "at": "2026-11-19T01:11:58.391Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1128,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 104
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1324
+  }
+ },
+ {
+  "id": "core-courier",
+  "at": "2026-11-19T01:12:08.657Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1134,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 110
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1330
+  }
+ },
+ {
+  "id": "head-courier",
+  "at": "2026-11-19T01:12:34.545Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0185,
+  "usage": {
+   "input_tokens": 1116,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1312
+  }
+ },
+ {
+  "id": "arms-courier.near",
+  "at": "2026-11-19T01:13:06.457Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-courier.far",
+  "at": "2026-11-19T01:13:14.391Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1139,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 115
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1335
+  }
+ },
+ {
+  "id": "legs-dozer",
+  "at": "2026-11-19T01:13:24.032Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1128,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 104
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1324
+  }
+ },
+ {
+  "id": "core-dozer",
+  "at": "2026-11-19T01:13:32.169Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1134,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 110
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1330
+  }
+ },
+ {
+  "id": "head-dozer",
+  "at": "2026-11-19T01:14:06.433Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0185,
+  "usage": {
+   "input_tokens": 1116,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1312
+  }
+ },
+ {
+  "id": "arms-dozer.near",
+  "at": "2026-11-19T01:14:14.339Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-dozer.far",
+  "at": "2026-11-19T01:14:21.793Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1139,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 115
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1335
+  }
+ },
+ {
+  "id": "back-courier",
+  "at": "2026-11-19T01:14:30.466Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0298,
+  "usage": {
+   "input_tokens": 2336,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 288
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2532
+  }
+ },
+ {
+  "id": "back-dozer",
+  "at": "2026-11-19T01:14:42.826Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0297,
+  "usage": {
+   "input_tokens": 2332,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 284
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2528
+  }
+ },
+ {
+  "id": "head-dozer",
+  "at": "2026-11-19T01:15:27.637Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0188,
+  "usage": {
+   "input_tokens": 1166,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 142
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1362
+  }
+ },
+ {
+  "id": "shd-plate",
+  "at": "2026-11-19T01:15:36.967Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1188,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 164
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1384
+  }
+ },
+ {
+  "id": "legs-courier.back",
+  "at": "2026-11-19T01:15:45.887Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-courier.back",
+  "at": "2026-11-19T01:15:55.396Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-courier.back",
+  "at": "2026-11-19T01:16:03.719Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1149,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 125
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1345
+  }
+ },
+ {
+  "id": "arms-courier.near.back",
+  "at": "2026-11-19T01:16:12.051Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-courier.far.back",
+  "at": "2026-11-19T01:16:20.534Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "legs-dozer.back",
+  "at": "2026-11-19T01:16:30.037Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1132,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 108
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1328
+  }
+ },
+ {
+  "id": "core-dozer.back",
+  "at": "2026-11-19T01:16:40.961Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1138,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 114
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1334
+  }
+ },
+ {
+  "id": "head-dozer.back",
+  "at": "2026-11-19T01:16:49.053Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0187,
+  "usage": {
+   "input_tokens": 1154,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 130
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1350
+  }
+ },
+ {
+  "id": "arms-dozer.near.back",
+  "at": "2026-11-19T01:16:56.143Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1137,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 113
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1333
+  }
+ },
+ {
+  "id": "arms-dozer.far.back",
+  "at": "2026-11-19T01:17:03.303Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0186,
+  "usage": {
+   "input_tokens": 1133,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 109
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1329
+  }
+ },
+ {
+  "id": "core-dozer.back",
+  "at": "2026-11-19T01:17:54.378Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0189,
+  "usage": {
+   "input_tokens": 1179,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 155
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1375
+  }
+ },
+ {
+  "id": "core-dozer.back",
+  "at": "2026-11-19T01:18:19.569Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.019,
+  "usage": {
+   "input_tokens": 1213,
+   "input_tokens_details": {
+    "image_tokens": 1024,
+    "text_tokens": 189
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 1409
+  }
+ },
+ {
+  "id": "arms-dozer.near.back",
+  "at": "2026-11-19T01:40:52.431Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0294,
+  "usage": {
+   "input_tokens": 2270,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 222
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2466
+  }
+ },
+ {
+  "id": "arms-dozer.near.back",
+  "at": "2026-11-19T01:42:11.299Z",
+  "method": "edit",
+  "quality": "low",
+  "usd": 0.0296,
+  "usage": {
+   "input_tokens": 2298,
+   "input_tokens_details": {
+    "image_tokens": 2048,
+    "text_tokens": 250
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 2494
+  }
  }
 ]

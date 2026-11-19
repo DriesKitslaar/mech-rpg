@@ -129,7 +129,8 @@ export function playCareer(options: CareerOptions): CareerReport {
   const toHub = (): void => {
     for (let i = 0; i < 80 && snap().screen !== 'hub'; i++) {
       const s = snap();
-      if (!['callsign', 'scene', 'ending', 'credits', 'settlement'].includes(s.screen)) throw new Stuck(`cannot get to the hub from ${s.screen}`);
+      // The frame to start in is taken as it is offered: the Hauler, which the careers have always been flown from.
+      if (!['callsign', 'starter', 'scene', 'ending', 'credits', 'settlement'].includes(s.screen)) throw new Stuck(`cannot get to the hub from ${s.screen}`);
       // A conversation that is asking has its answers for a menu: the one this pilot was told to give is given, else the first.
       const wanted = s.screen === 'scene' ? options.answers?.[s.scene ?? ''] : undefined;
       if (wanted !== undefined && s.menu.items.some((item) => item.id === wanted)) select(wanted);

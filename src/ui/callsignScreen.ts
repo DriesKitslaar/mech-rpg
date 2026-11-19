@@ -16,12 +16,15 @@ const COLS = ROWS[0].length;
  * callsign already in place and the cursor on OK, so one press is enough for a pilot in a hurry.
  */
 export class CallsignScreen implements Screen {
-  private name = DEFAULT_CALLSIGN;
+  private name: string;
   /** The cursor: a row of the grid and a column in it. The last row holds the two keys. */
   private row: number = ROWS.length;
   private col = 1;
 
-  constructor(private app: App, private slot: number) {}
+  /** `name` is what stands in place as it opens: the callsign on offer, or what the pilot typed before going on and coming back. */
+  constructor(private app: App, private slot: number, name: string = DEFAULT_CALLSIGN) {
+    this.name = name;
+  }
 
   /** What the cursor is on: a letter, or one of the keys. */
   private get at(): string {
@@ -58,7 +61,8 @@ export class CallsignScreen implements Screen {
     if (action !== 'confirm') return;
     const at = this.at;
     if (at === 'del') this.name = this.name.slice(0, -1);
-    else if (at === 'ok') { if (isCallsign(this.name)) this.app.startNewGame(this.slot, this.name); }
+    // With a name, on to the frames there are to start in.
+    else if (at === 'ok') { if (isCallsign(this.name)) this.app.chooseStarter(this.slot, this.name); }
     else if (this.name.length < CALLSIGN_MAX) this.name += at;
   }
 

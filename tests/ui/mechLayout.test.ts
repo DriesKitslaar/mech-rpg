@@ -1,4 +1,4 @@
-import { BACK_BOX, BACK_JOINTS, BACK_MOUNT, FAR_FIST, HIT_LAYER, MECH_BOX, NEAR_FIST, SMALL_BOX, VIEWS, hitOn, layoutMech, muzzleOf, type HitPart } from '../../src/ui/mechLayout';
+import { BACK_BOX, BACK_JOINTS, BACK_MOUNT, FAR_FIST, HIT_LAYER, MECH_BOX, NEAR_FIST, SMALL_BOX, VIEWS, fistOf, hitOn, layoutMech, muzzleOf, type HitPart, type MechView } from '../../src/ui/mechLayout';
 
 /** Frame layers carry their own position inside the pose; weapons only have a size. */
 const layers = {
@@ -260,5 +260,85 @@ describe('where a hit on a part of the frame lands', () => {
       expect(hit!.core.y).toBeLessThan(hit!.legs.y);
       expect(hit!.arms.x).toBeGreaterThan(hit!.core.x + 15);
     }
+  });
+});
+
+describe('an arm that says where its own fist is', () => {
+  // A squat frame's arm reaches forward lower than the pose has it: its fist is 13 under the fist of the view from behind.
+  const squat = { w: 43, h: 34, ox: 67, oy: 23, fx: 36, fy: 23 };
+  const rifle = { w: 45, h: 18, gx: 10, gy: 12, mx: 46, my: 4 };
+  const shield = { w: 26, h: 40, gx: 13, gy: 25, mx: 20, my: 10 };
+  const pod = { w: 33, h: 24, gx: 19, gy: 13, mx: 34, my: 8 };
+  const at = (cmds: ReturnType<typeof layoutMech>, slot: string) => cmds.find((c) => c.slot === slot)!;
+
+  test('holds what it holds in that fist, not where the view has one; the other hand and the mount are where they were', () => {
+    const usual = layoutMech({ ...layers, rightHand: rifle, leftHand: shield, shoulder: pod }, 'back');
+    const cmds = layoutMech({ ...layers, armNear: squat, rightHand: rifle, leftHand: shield, shoulder: pod }, 'back');
+    expect(at(cmds, 'rightHand')).toEqual({ slot: 'rightHand', x: 67 + 36 - 10, y: 23 + 23 - 12 });
+    expect(at(cmds, 'rightHand')).toEqual({ slot: 'rightHand', x: at(usual, 'rightHand').x, y: at(usual, 'rightHand').y + 13 });
+    for (const slot of ['leftHand', 'shoulder', 'armFar', 'legs', 'core', 'head']) expect(at(cmds, slot), slot).toEqual(at(usual, slot));
+    // The arm itself lies where it was drawn.
+    expect(at(cmds, 'armNear')).toEqual({ slot: 'armNear', x: 67, y: 23 });
+  });
+
+  test('the arm that is held back may say so as well: the left hand is on its fist', () => {
+    const back = { w: 30, h: 40, ox: 20, oy: 40, fx: 4, fy: 31 };
+    const cmds = layoutMech({ ...layers, armFar: back, rightHand: rifle, leftHand: shield }, 'back');
+    expect(at(cmds, 'leftHand')).toEqual({ slot: 'leftHand', x: 20 + 4 - 13, y: 40 + 31 - 25 });
+    expect(at(cmds, 'rightHand')).toEqual({ slot: 'rightHand', x: VIEWS.back.nearFist.x - 10, y: VIEWS.back.nearFist.y - 12 });
+  });
+
+  test('in every view, and for a weapon that was not turned: gripped a fifth of the way along, on that fist', () => {
+    for (const view of ['front', 'back', 'small'] as MechView[]) {
+      const cmds = layoutMech({ ...layers, armNear: squat, ...weapons }, view);
+      expect(at(cmds, 'rightHand'), view).toEqual({ slot: 'rightHand', x: 67 + 36 - 14, y: 23 + 23 - 10 });
+    }
+  });
+
+  test('what it holds fires from where the weapon then is: its far end comes down with the fist', () => {
+    const usual = muzzleOf({ ...layers, rightHand: rifle }, 'rightHand', 'back')!;
+    expect(muzzleOf({ ...layers, armNear: squat, rightHand: rifle }, 'rightHand', 'back')).toEqual({ x: usual.x, y: usual.y + 13 });
+    expect(muzzleOf({ ...layers, armNear: squat, rightHand: rifle }, 'rightHand', 'back')).toEqual({ x: 67 + 36 - 10 + 46, y: 23 + 23 - 12 + 4 });
+    // One that was not turned fires from four fifths of its length past that fist, a little above it.
+    expect(muzzleOf({ ...layers, armNear: squat, ...weapons }, 'rightHand')).toEqual({ x: Math.round(103 + 0.8 * 70), y: 46 - 2 });
+  });
+
+  test('low legs bring that fist down with the arm it is on', () => {
+    const tracks = { ...layers.legs, drop: 22 };
+    const cmds = layoutMech({ ...layers, legs: tracks, armNear: squat, rightHand: rifle }, 'back');
+    expect(at(cmds, 'rightHand')).toEqual({ slot: 'rightHand', x: 93, y: 34 + 22 });
+    expect(fistOf({ ...layers, legs: tracks, armNear: squat }, 'rightHand', 'back')).toEqual({ x: 103, y: 46 + 22 });
+  });
+
+  test('an arm that names half a point has not said where its fist is: it is where the view has it', () => {
+    for (const half of [{ fx: 36 }, { fy: 23 }]) {
+      const arm = { w: 43, h: 34, ox: 67, oy: 23, ...half };
+      expect(at(layoutMech({ ...layers, armNear: arm, rightHand: rifle }, 'back'), 'rightHand')).toEqual({ slot: 'rightHand', x: VIEWS.back.nearFist.x - 10, y: VIEWS.back.nearFist.y - 12 });
+      expect(fistOf({ ...layers, armNear: arm }, 'rightHand', 'back')).toEqual(VIEWS.back.nearFist);
+    }
+    // A fist in the very corner of its picture is a fist that was named.
+    const corner = { w: 43, h: 34, ox: 67, oy: 23, fx: 0, fy: 0 };
+    expect(fistOf({ ...layers, armNear: corner }, 'rightHand', 'back')).toEqual({ x: 67, y: 23 });
+  });
+});
+
+describe('where a hand is', () => {
+  test('where the view has that fist: the right hand on the arm stretched towards the enemy, the left on the one held back', () => {
+    for (const view of ['front', 'back', 'small'] as MechView[]) {
+      expect(fistOf(layers, 'rightHand', view), view).toEqual(VIEWS[view].nearFist);
+      expect(fistOf(layers, 'leftHand', view), view).toEqual(VIEWS[view].farFist);
+    }
+    expect(fistOf(layers, 'rightHand')).toEqual(NEAR_FIST);
+  });
+
+  test('with the arm gone it is where the fist would be; on low legs it is lower by as much', () => {
+    expect(fistOf({}, 'rightHand', 'back')).toEqual(VIEWS.back.nearFist);
+    expect(fistOf({ legs: { ...layers.legs, drop: 20 } }, 'leftHand', 'back')).toEqual({ x: VIEWS.back.farFist.x, y: VIEWS.back.farFist.y + 20 });
+  });
+
+  test('the fist an arm names is its own hand only: the near arm says nothing of the left hand', () => {
+    const squat = { w: 43, h: 34, ox: 67, oy: 23, fx: 36, fy: 23 };
+    expect(fistOf({ ...layers, armNear: squat }, 'leftHand', 'back')).toEqual(VIEWS.back.farFist);
+    expect(fistOf({ ...layers, armNear: squat }, 'rightHand', 'back')).toEqual({ x: 103, y: 46 });
   });
 });

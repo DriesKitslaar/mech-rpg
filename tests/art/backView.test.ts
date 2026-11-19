@@ -1,8 +1,8 @@
 import { SHOP_PARTS } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
 import { hitSpot } from '../../scripts/art/imageOps';
-import { hitPartOf } from '../../scripts/art/process';
-import { BACK_BOX, BACK_JOINTS, HIT_LAYER, VIEWS, type HitPart, type MechView } from '../../src/ui/mechLayout';
+import { FISTS, fistEntry, hitPartOf } from '../../scripts/art/process';
+import { BACK_BOX, BACK_JOINTS, HIT_LAYER, VIEWS, fistOf, type HitPart, type MechView } from '../../src/ui/mechLayout';
 import { readPng } from '../helpers/png';
 
 /**
@@ -11,7 +11,7 @@ import { readPng } from '../helpers/png';
  * shipped and see that every mix makes one figure, and that what is carried is held.
  */
 
-interface Entry { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number }
+interface Entry { file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number; fx?: number; fy?: number }
 const MANIFEST = SPRITES as Record<string, Entry>;
 
 /** Room round the pose box for what reaches out of it (an arm, a crest), and under it for legs that lower the body. */
@@ -81,8 +81,8 @@ describe('the mech from behind, from the pictures that are shipped', () => {
   const JOINTS = joints();
   const solid = new Map([...HEADS, ...CORES, ...LEGS, ...ARMS].map((id) => [id, mask(id)]));
 
-  test('there are eight heads, eight bodies, eleven pairs of legs and eight pairs of arms, and each layer is one piece that lies in reach of the pose box', () => {
-    expect([HEADS.length, CORES.length, LEGS.length, ARMS.length]).toEqual([8, 8, 11, 16]);
+  test('there are ten heads, ten bodies, thirteen pairs of legs and ten pairs of arms, and each layer is one piece that lies in reach of the pose box', () => {
+    expect([HEADS.length, CORES.length, LEGS.length, ARMS.length]).toEqual([10, 10, 13, 20]);
     for (const [id, layer] of solid) {
       const entry = MANIFEST[id];
       expect(entry.ox! >= -MARGIN && entry.oy! >= -MARGIN && entry.ox! + entry.w <= BACK_BOX + MARGIN && entry.oy! + entry.h <= BACK_BOX + MARGIN - (entry.drop ?? 0), id).toBe(true);
@@ -205,11 +205,14 @@ describe('where a mech holds what it carries', () => {
 
   test('the two fists are the hands at the ends of the arms as they were drawn, and the mount is on the far shoulder: from behind and small, for every pair of arms', () => {
     for (const view of ['back', 'small'] as MechView[]) {
-      const { suffix, nearFist, farFist, mount } = VIEWS[view];
+      const { suffix, mount } = VIEWS[view];
       const families = Object.keys(MANIFEST).flatMap((id) => (id.startsWith('arms-') && id.endsWith(`.near${suffix}`) ? [id.slice(0, -`.near${suffix}`.length)] : []));
-      expect(families, view).toHaveLength(8);
+      expect(families, view).toHaveLength(10);
       for (const arms of families) {
         const [near, far] = [`${arms}.near${suffix}`, `${arms}.far${suffix}`];
+        // Where the game has each hand: where the view has that fist, or where the arm says its own was drawn.
+        const nearFist = fistOf({ armNear: MANIFEST[near] }, 'rightHand', view);
+        const farFist = fistOf({ armFar: MANIFEST[far] }, 'leftHand', view);
         // On the arm, to a pixel.
         expect(off(near, nearFist), near).toBeLessThanOrEqual(1);
         expect(off(far, farFist), far).toBeLessThanOrEqual(1);
@@ -220,13 +223,67 @@ describe('where a mech holds what it carries', () => {
         expect(n.ox! + n.w - nearFist.x, near).toBeLessThanOrEqual(8);
         expect(f.oy! + f.h - farFist.y, far).toBeGreaterThanOrEqual(3);
         expect(f.oy! + f.h - farFist.y, far).toBeLessThanOrEqual(9);
-        // What the shoulder carries rests on the shoulder of the arm that is held back: within a few pixels of that arm,
-        // and far over its fist.
-        expect(off(far, mount), `${far} mount`).toBeLessThanOrEqual(3);
-        expect(mount.y, `${far} mount`).toBeLessThan(farFist.y - 25);
-        expect(Math.abs(mount.x - farFist.x), `${far} mount`).toBeLessThanOrEqual(12);
+        // What the shoulder carries rests on the shoulder of the arm that is held back: within a few pixels of that arm
+        // (a squat frame carries its shoulders lowest, and what lies on them reaches down to them), and far over the
+        // fist of the pose.
+        expect(off(far, mount), `${far} mount`).toBeLessThanOrEqual(5);
+        expect(mount.y, `${far} mount`).toBeLessThan(VIEWS[view].farFist.y - 25);
+        expect(Math.abs(mount.x - VIEWS[view].farFist.x), `${far} mount`).toBeLessThanOrEqual(12);
       }
     }
+  });
+});
+
+describe('an arm that names its own fist', () => {
+  const named = Object.keys(MANIFEST).filter((id) => MANIFEST[id].fx !== undefined || MANIFEST[id].fy !== undefined);
+
+  test('says it from the corner of its own picture: the point in the pose box less where the layer lies; a layer that names no fist says nothing', () => {
+    expect(fistEntry('arms-dozer.near.back', 67, 23)).toEqual({ fx: 36, fy: 23 });
+    expect(fistEntry('arms-dozer.near.back', 60, 30)).toEqual({ fx: 43, fy: 16 });
+    expect(fistEntry('arms-dozer.far.back', 13, 24)).toEqual({ fx: 9, fy: 46 });
+    for (const id of ['arms-dozer.near', 'arms-dozer.near.small', 'arms-bulwark.near.back', 'core-dozer.back']) expect(fistEntry(id, 5, 5), id).toEqual({});
+    // And that is what the shipped manifest holds for each, from where each layer lies.
+    for (const id of Object.keys(FISTS)) {
+      const { ox, oy, fx, fy } = MANIFEST[id];
+      expect({ fx, fy }, id).toEqual(fistEntry(id, ox!, oy!));
+    }
+  });
+
+  test('is one whose hand was drawn away from where the pose has it: the two arms of the Dozer from behind, and no other', () => {
+    expect(named.sort()).toEqual(['arms-dozer.far.back', 'arms-dozer.near.back']);
+    expect(Object.keys(FISTS).sort()).toEqual(named);
+    for (const id of named) expect([MANIFEST[id].fx, MANIFEST[id].fy].every((n) => Number.isInteger(n)), id).toBe(true);
+  });
+
+  test.each(named)('%s: the point it names is in the middle of its hand, at the end of the arm, lower than the pose has that fist and not far from it', (id) => {
+    const entry = MANIFEST[id];
+    const near = id.includes('.near');
+    const usual = near ? VIEWS.back.nearFist : VIEWS.back.farFist;
+    const own = { x: entry.ox! + entry.fx!, y: entry.oy! + entry.fy! };
+    // What the pictures were made with is what the game is told.
+    expect(own).toEqual(FISTS[id]);
+    // In a hand: solid for three pixels every way.
+    const picture = readPng(`public/${entry.file}`);
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) expect(picture.at(entry.fx! + dx, entry.fy! + dy)[3], `${dx},${dy}`).toBeGreaterThan(0);
+    // The hand of the arm stretched forward is its right end, that of the arm held back its lower end.
+    expect(near ? entry.w - entry.fx! : entry.h - entry.fy!).toBeGreaterThanOrEqual(3);
+    expect(near ? entry.w - entry.fx! : entry.h - entry.fy!).toBeLessThanOrEqual(8);
+    // It is the same hand of the same pose, lower: under a sixth of the box from where the others have it.
+    expect(own.y - usual.y).toBeGreaterThanOrEqual(6);
+    expect(Math.hypot(own.x - usual.x, own.y - usual.y)).toBeLessThan(BACK_BOX / 6);
+  });
+
+  test('the arm stretched forward has nothing where the pose has its fist: what was held there hung in the air over the hand', () => {
+    const entry = MANIFEST['arms-dozer.near.back'];
+    const picture = readPng(`public/${entry.file}`);
+    const { nearFist } = VIEWS.back;
+    let nearest = Infinity;
+    for (let py = 0; py < picture.h; py++) {
+      for (let px = 0; px < picture.w; px++) if (picture.at(px, py)[3] > 0) nearest = Math.min(nearest, Math.hypot(px + entry.ox! - nearFist.x, py + entry.oy! - nearFist.y));
+    }
+    expect(nearest).toBeGreaterThan(3);
+    // Straight under it: the arm reaches as far forward as any, only lower.
+    expect(entry.ox! + entry.fx!).toBe(nearFist.x);
   });
 });
 
@@ -298,9 +355,9 @@ describe('where a hit lands on each part of a mech that is fought', () => {
     expect(hitPartOf('arms-rigger.far')).toBeNull();
   });
 
-  test('every layer that can be hit says where: eleven pairs of legs and eight each of bodies, heads and near arms, from behind and small', () => {
+  test('every layer that can be hit says where: thirteen pairs of legs and ten each of bodies, heads and near arms, from behind and small', () => {
     const count = (view: MechView, part: HitPart): number => layers.filter((layer) => layer.view === view && layer.part === part).length;
-    for (const view of ['back', 'small'] as MechView[]) expect([count(view, 'legs'), count(view, 'core'), count(view, 'head'), count(view, 'arms')], view).toEqual([11, 8, 8, 8]);
+    for (const view of ['back', 'small'] as MechView[]) expect([count(view, 'legs'), count(view, 'core'), count(view, 'head'), count(view, 'arms')], view).toEqual([13, 10, 10, 10]);
     for (const { id } of layers) expect([typeof MANIFEST[id].hx, typeof MANIFEST[id].hy], id).toEqual(['number', 'number']);
     // No other picture says so: nothing from the front (nothing is fought from the front), no far arm, nothing carried, no machine.
     const said = Object.keys(MANIFEST).filter((id) => MANIFEST[id].hx !== undefined || MANIFEST[id].hy !== undefined);
@@ -318,10 +375,11 @@ describe('where a hit lands on each part of a mech that is fought', () => {
       // On the thing: the pixel is solid, and so are the two beside it every way.
       const solid = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < picture.width && y < picture.height && picture.data[(y * picture.width + x) * 4 + 3] >= 128;
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) expect(solid(entry.hx! + dx, entry.hy! + dy), `${id} at ${dx},${dy}`).toBe(true);
-      // And near where the view has the part: a body is hit where it always was, a head within a pixel or two of it, an
-      // arm within a few, a pair of legs on the leg nearest the middle between them.
+      // And near where the view has the part: a body is hit where it always was, a head within a few pixels of it (a
+      // squat frame carries its head lower than the rest), an arm within a few more, a pair of legs on the leg nearest
+      // the middle between them.
       const off = Math.hypot(entry.hx! - aim.x, entry.hy! - aim.y);
-      expect(off, id).toBeLessThanOrEqual({ core: 0, head: 2, arms: 7, legs: 20 }[part]);
+      expect(off, id).toBeLessThanOrEqual({ core: 0, head: 5, arms: 7, legs: 20 }[part]);
       if (off > 0) moved++;
     }
     // Most pairs of legs have nothing between them, and some slim arms miss the view's spot: these are what it is for.

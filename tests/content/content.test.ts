@@ -64,15 +64,15 @@ describe('shop catalogue', () => {
 
   test('the shelf: frame parts, generators, weapons, shields, boosters, fire control and modules', () => {
     const count = (kind: string) => SHOP_PARTS.filter((p) => p.kind === kind).length;
-    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([8, 8, 8, 11]);
+    expect([count('head'), count('core'), count('arms'), count('legs')]).toEqual([10, 10, 10, 13]);
     expect(count('generator')).toBe(8);
     expect(count('booster')).toBe(7);
     expect(count('fcs')).toBe(7);
     expect(count('module')).toBe(11);
     expect(weapons.filter((w) => w.mount === 'hand')).toHaveLength(24);
     expect(weapons.filter((w) => w.mount === 'shoulder')).toHaveLength(17);
-    expect(count('shield')).toBe(3);
-    expect(SHOP_PARTS).toHaveLength(112);
+    expect(count('shield')).toBe(4);
+    expect(SHOP_PARTS).toHaveLength(121);
   });
 
   test('every trait has what it needs, and each trait is used', () => {

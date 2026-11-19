@@ -1,0 +1,11 @@
+{
+  "id": "head-dozer",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-dozer.png"
+  ],
+  "prompt": "Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 as the background. Do not move, redraw, rescale or recentre anything. Keep: only the head itself: the small cage-like cab of red bars with the single round yellow lamp inside it, at the very top of the mecha. Erase everything else: in particular the wide grey steel chest plate with the grille that lies directly below the cage, both grey shoulder blocks, the arms, the torso and the legs."
+}

@@ -1,0 +1,11 @@
+{
+  "id": "shd-plate",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-dozer.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, glowing accents, pixel size, outline weight and shading. Draw: a crude scrap shield for a robot in a retro video game: a dented rectangular slab cut from the side plate of a yard machine, flat oxide-red primer paint with bare grey steel showing at the edges, one corner torn off, a faded white stencilled number and a row of rivets, seen from the front and standing upright. The shield only, no hand, no mecha. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

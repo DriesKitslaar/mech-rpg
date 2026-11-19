@@ -1,0 +1,11 @@
+{
+  "id": "core-dozer.back",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/back-dozer.png"
+  ],
+  "prompt": "Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 as the background. Do not move, redraw, rescale or recentre anything. Keep: only the torso seen from behind: the big grey steel backpack plate in the middle and the narrow red body directly around and under it, from the waist up to the top edge of that plate, and nothing wider than the plate with its red rim. Erase everything else and fill it with green: the small cage of red bars that stands on top of the plate (that cage is the head), the whole arm on the left with its grey shoulder block, the whole arm on the right with its grey shoulder block and its round black joint, the hips and both legs."
+}

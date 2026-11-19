@@ -9,6 +9,7 @@ import { MEDALS } from '../medals';
 import { ENDINGS, EPILOGUES, MESSAGES, MISSIONS } from '../missions';
 import { PERKS } from '../perks';
 import { SCENES } from '../scenes';
+import { STARTERS } from '../starters';
 import { STRINGS } from '../strings';
 import { REMEMBERED } from '../talks';
 import { WINGMEN } from '../wingmen';
@@ -51,6 +52,8 @@ function contentTexts(): TextSlot[] {
     ...textsOf('reference', JUKEBOX, { title: 'page.title', text: 'page.text' }),
     ...textsOf('reference', PEOPLE, { name: 'who', role: 'person.role', text: 'page.text' }),
     ...textsOf('missions', DRILLS, { title: 'mission.title', lesson: 'drill.lesson', briefing: 'briefing', debrief: 'debrief' }),
+    // The frames a new pilot chooses between: what kind of machine each is, and what it is. Their names are names.
+    ...textsOf('reference', STARTERS, { role: 'starter.role', text: 'starter.text' }),
     ...textsOf('reference', PERKS, { name: 'perk.name', description: 'perk.text' }),
     ...textsOf('reference', MEDALS, { name: 'medal.name', text: 'medal.text' }),
     ...textsOf('story', ARENA, { style: 'arena.style', taunt: 'arena.taunt' }),
