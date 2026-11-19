@@ -141,14 +141,14 @@ export const MISSIONS: Mission[] = [
     debrief: 'The train rolls. Brenn sends a bonus and an invoice for one dented wagon. They cancel out.',
     battles: [
       battle(['recon-drone', 'bomb-crawler', 'recon-drone'], MINE, {
-        objective: { type: 'protect', name: 'Ore Train', hp: 12 },
+        objective: { type: 'protect', name: 'Ore Train', hp: 12, sprite: 'asset-ore-train' },
         talk: [
           dispatch('start', 'Count the hostiles. That is what the train loses every round. And mind the one with the fuse.'),
           dispatch('last', 'Funny. For a full ore train, those wagons ride very high on their springs.'),
         ],
       }),
       battle(['tank', 'bomb-crawler'], MINE, {
-        objective: { type: 'protect', name: 'Ore Train', hp: 9 },
+        objective: { type: 'protect', name: 'Ore Train', hp: 9, sprite: 'asset-ore-train' },
         talk: [brenn('start', 'The train is insured, pilot. You are not. Stand where that suggests.')],
       }),
     ],
@@ -446,10 +446,10 @@ export const MISSIONS: Mission[] = [
     debrief: 'The stack hums on, intact. Varga sends a number with more digits than usual and no words.',
     battles: [
       battle(['bomb-crawler', 'gunship', 'bomb-crawler'], VAULT, {
-        objective: { type: 'protect', name: 'Core Stack', hp: 11 },
+        objective: { type: 'protect', name: 'Core Stack', hp: 11, sprite: 'asset-core-stack' },
         talk: [varga('start', 'The stack holds every forecast we have made of this city. Yours is among them. You would not enjoy it.')],
       }),
-      battle(['tank', 'repair-drone', 'gunship'], VAULT, { objective: { type: 'protect', name: 'Core Stack', hp: 12 } }),
+      battle(['tank', 'repair-drone', 'gunship'], VAULT, { objective: { type: 'protect', name: 'Core Stack', hp: 12, sprite: 'asset-core-stack' } }),
     ],
   },
 

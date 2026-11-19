@@ -1,0 +1,11 @@
+{
+  "id": "asset-ore-lift",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/family-dozer.png"
+  ],
+  "prompt": "16-bit pixel art, crisp pixels, no anti-aliasing, no text. Strict side view facing right. The attached image is the style reference: match its colours, pixel size, outline weight and shading. Draw: a mine ore lift in the same rust-red plating with amber lamps: an open steel hopper heaped with pale glowing ore, slung in a square hoist frame on a low wheeled sled, with a winch drum on one side and two amber lamps. The whole machine, nothing else, no mecha. It is unarmed civilian equipment: no guns, no barrels. Show only this single object, centred, filling most of the frame. Solid pure green #00FF00 background, no green on the subject itself."
+}

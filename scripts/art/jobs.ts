@@ -7,7 +7,7 @@
  */
 export type JobKind =
   | 'family' | 'layer' | 'handWeapon' | 'shoulderWeapon' | 'shield' | 'enemy' | 'enemyMech' | 'boss' | 'portrait' | 'background'
-  | 'still' | 'icon';
+  | 'still' | 'icon' | 'asset';
 export type Layer = 'legs' | 'torso' | 'head' | 'armNear' | 'armFar';
 
 export interface ArtJob {
@@ -56,6 +56,8 @@ export const BOX: Record<Exclude<JobKind, 'family' | 'layer'>, { w: number; h: n
   shoulderWeapon: { w: 44, h: 26 },
   shield: { w: 34, h: 52 },
   enemy: { w: 64, h: 64 },
+  // What an escort keeps alive: it stands on the far line of the floor, left of the enemy's, so it is no larger than the room there.
+  asset: { w: 56, h: 38 },
   enemyMech: { w: 104, h: 104 },
   // A machine that fills the enemy's half of the field on its own.
   boss: { w: 136, h: 128 },
@@ -371,6 +373,20 @@ function item(id: string, kind: 'handWeapon' | 'shoulderWeapon' | 'shield' | 'en
   };
 }
 
+/**
+ * Something a pilot is paid to keep alive: a vehicle or a thing, from the side, facing the enemy. It
+ * takes the colours of a frame no enemy machine wears, so that freight is not taken for a target.
+ */
+function asset(id: string, styleFrom: string, subject: string): ArtJob {
+  return {
+    id, kind: 'asset', references: [familyFile(styleFrom)],
+    prompt:
+      `${PIXEL} Strict side view facing right. The attached image is the style reference: match its colours, ` +
+      `pixel size, outline weight and shading. Draw: ${subject} It is unarmed civilian equipment: no guns, no barrels. ` +
+      `Show only this single object, centred, filling most of the frame. ${GREEN}`,
+  };
+}
+
 const WEAPON_STYLE = 'gunmetal body with the accent colours and glowing lights of the reference';
 
 function portrait(id: string, who: string): ArtJob {
@@ -652,6 +668,22 @@ const DRAWN: ArtJob[] = [
     'a field energy pylon in the same white and navy armour with cyan lights: a slim armoured column on a round base with three curved prongs at the top holding a crackling ball of cyan lightning between them. The whole pylon, nothing else, no mecha.', true),
   item('enemy-longshot', 'enemy', 'auditor',
     'a hovering sniper drone in the same glossy black armour with fine gold trim: a long thin body with two ducted fans at the back, one very long slender rail barrel pointing right, and a single white scope lens on top. The whole drone, nothing else, no mecha.', true),
+
+  // What an escort keeps alive. The city's is in the Courier's bone white, the pits' in the Dozer's rust red.
+  asset('asset-wage-truck', 'courier',
+    'an armoured payroll truck in the same bone-white and grey plating: a tall boxy armoured van body on six small wheels, a narrow slit windscreen, a barred side hatch, a heavy rear door with a wheel lock, and one amber beacon lamp on the roof. The whole vehicle, nothing else, no mecha.'),
+  asset('asset-ore-lift', 'dozer',
+    'a mine ore lift in the same rust-red plating with amber lamps: an open steel hopper heaped with pale glowing ore, slung in a square hoist frame on a low wheeled sled, with a winch drum on one side and two amber lamps. The whole machine, nothing else, no mecha.'),
+  asset('asset-motorcade', 'courier',
+    'a long low armoured limousine in the same bone-white and grey plating: a very long sleek car body with armoured skirts over its wheels, dark slit windows, a small pennant mast on the front wing and two amber running lights. The whole car, nothing else, no mecha.'),
+  asset('asset-pump-barge', 'dozer',
+    'a flat-bottomed pump barge in the same rust-red plating with amber lamps: a low wide hull with a large round pump housing on its deck, two thick ribbed hoses coiled over its side, a short funnel and one amber lamp. The whole barge, nothing else, no water, no mecha.'),
+  asset('asset-ore-train', 'dozer',
+    'a short armoured ore train in the same rust-red plating with amber lamps: a small blunt locomotive with a headlamp and a stubby funnel, pulling one open hopper wagon heaped with pale ore, on small wheels. The whole train, nothing else, no rails, no mecha.'),
+  asset('asset-convoy', 'dozer',
+    'two squat cargo trucks nose to tail in the same rust-red plating with amber lamps: each a short cab with a headlamp and a canvas-covered load bed on four chunky wheels, the second close behind the first. The two trucks, nothing else, no mecha.'),
+  asset('asset-core-stack', 'courier',
+    'a rack of data cores in the same bone-white and grey plating: a squat armoured cabinet holding six glowing cyan cylinders in two rows behind a wire cage, with thick cables coiled at its foot and a small status lamp. The whole cabinet, nothing else, no mecha.'),
 
   // Machines that are a battle on their own.
   boss('boss-scrap-king', 'salvage',

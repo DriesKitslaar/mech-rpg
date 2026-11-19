@@ -302,11 +302,13 @@ describe('an escort', () => {
   test('is the board\'s kind of battle with freight in it: named for the place, taking what the machines against it cost', () => {
     expect(JOB_NUMBERS).toMatchObject({ escortPoint: 1.5, escortFlat: 2 });
     expect(BOARD_TEXT.assets).toHaveLength(BOARD_TEXT.backgrounds.length);
+    expect(BOARD_TEXT.assetSprites).toHaveLength(BOARD_TEXT.backgrounds.length);
     for (const { wins, cycle, mission } of escorts()) {
       const [battle] = mission.battles;
       expect(cost(battle.enemies)).toBeLessThanOrEqual(budgetFor(boardTier(wins, cycle)));
       const place = BOARD_TEXT.backgrounds.indexOf(battle.background);
-      expect(battle.objective).toEqual({ type: 'protect', name: BOARD_TEXT.assets[place], hp: Math.ceil(1.5 * cost(battle.enemies)) + 2 });
+      // With its picture: the one that goes with the place, as its name does.
+      expect(battle.objective).toEqual({ type: 'protect', name: BOARD_TEXT.assets[place], hp: Math.ceil(1.5 * cost(battle.enemies)) + 2, sprite: BOARD_TEXT.assetSprites[place] });
       expect(mission.briefing[0]).toBe(BOARD_TEXT.places[place]);
       expect(mission.scale).toBe(scaleFor(boardTier(wins, cycle)));
       expect(battle.marks).toBeUndefined();
@@ -332,7 +334,7 @@ describe('an escort', () => {
     const mission = escorts().map((made) => made.mission).find((made) => made.battles[0].enemies.length === 3)!;
     const hp = (mission.battles[0].objective as { hp: number }).hp;
     let state = startMissionBattle(DEMO_BUILD, mission, 0, ENEMIES, CATALOG, 3);
-    expect(state.asset).toEqual({ name: (mission.battles[0].objective as { name: string }).name, hp, maxHp: hp });
+    expect(state.asset).toEqual({ name: (mission.battles[0].objective as { name: string }).name, hp, maxHp: hp, sprite: (mission.battles[0].objective as { sprite: string }).sprite });
     // Nobody shoots: three a round from the second round on.
     const idle = (s: BattleState): BattleState => { let next = s; const round = next.round; while (next.outcome === 'ongoing' && next.round === round) next = applyAction(next, { type: 'endTurn' }, CATALOG); return next; };
     for (const unit of state.units) if (unit.side === 'enemy') for (const slot of Object.keys(unit.ammo)) unit.ammo[slot as keyof typeof unit.ammo] = 0;

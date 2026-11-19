@@ -2,7 +2,7 @@
 
 **Goal:** What an escort keeps alive stands on the field as a picture of its own, and what happens to it is seen on it: struck as a round begins, smoking when it is nearly gone, coming apart when it is lost.
 
-**Architecture:** A `protect` objective may name a sprite; `createBattle` carries it on the battle's `asset`. The stage gains one spot for freight (on the far line, left of the enemy's line), the battle screen draws it there before the enemies and the pilot's mech, and the battle's effects turn the `asset` event the rules already send into a jolt, a flash, sparks and a figure at that spot. Six sprites are made by the art pipeline as a new kind, `asset`. A battle whose freight names no sprite is drawn exactly as before.
+**Architecture:** A `protect` objective may name a sprite; `createBattle` carries it on the battle's `asset`. The stage gains one spot for freight (on the far line, left of the enemy's line), the battle screen draws it there before the enemies and the pilot's mech, and the battle's effects turn the `asset` event the rules already send into a jolt, a flash, sparks and a figure at that spot. Seven sprites are made by the art pipeline as a new kind, `asset`. A battle whose freight names no sprite is drawn exactly as before.
 
 **Tech Stack:** TypeScript, Canvas 2D, vitest, Playwright; the art scripts in `scripts/art` (image service through the proxy, lowest quality only).
 
@@ -35,13 +35,13 @@
 
 - `Objective` of type `protect`: `sprite?: string`. `Asset`: `sprite?: string`, copied from the objective when the battle is made.
 - `JobText.assetSprites: string[]`: one for each background, same order as `assets`.
-- Sprite ids: `asset-wage-truck`, `asset-ore-lift`, `asset-motorcade`, `asset-pump-barge`, `asset-ore-train`, `asset-core-stack`; art kind `asset`, box 44 by 30.
+- Sprite ids: `asset-wage-truck`, `asset-ore-lift`, `asset-motorcade`, `asset-pump-barge`, `asset-convoy`, `asset-ore-train`, `asset-core-stack`; art kind `asset`, box 56 by 38.
 
 **Steps:**
 
-- [ ] The six jobs in `scripts/art/jobs.ts` and the kind's box; generate at `low`; process; look at each at the game's size and redo what does not read.
-- [ ] The objective and the asset carry the sprite: tests in the rules (made with one, made without, a later telling's tougher escort keeps it).
-- [ ] The board's escorts and the story's two name theirs: tests that every escort there is names a sprite that is in the sheet, and that the hangar names none.
+- [x] The seven jobs in `scripts/art/jobs.ts` and the kind's box; generate at `low`; process; look at each at the game's size and redo what does not read.
+- [x] The objective and the asset carry the sprite: tests in the rules (made with one, made without, a later telling's tougher escort keeps it).
+- [x] The board's escorts, the story's two and the convoys name theirs: tests that every escort there is names a sprite that is in the sheet, and that the hangar and a wingman's frame name none.
 
 ### Task V2: on the field
 

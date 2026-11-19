@@ -85,4 +85,5 @@ export const BOARD_TEXT: BoardText & JobText = {
   },
   // What an escort keeps alive, by the place: the freight lanes, the mine, the plaza, the undercity.
   assets: ['Wage Truck', 'Ore Lift', 'Motorcade', 'Pump Barge'],
+  assetSprites: ['asset-wage-truck', 'asset-ore-lift', 'asset-motorcade', 'asset-pump-barge'],
 };

@@ -15,8 +15,9 @@ finished one.
 ## Goals
 
 1. **What an escort keeps alive stands on the field**: a picture of its own for each of the four
-   things a job can ask a pilot to guard (a wage truck, an ore lift, a motorcade, a pump barge)
-   and for the two the story has that are things and not places (the ore train, the core stack).
+   things a job can ask a pilot to guard (a wage truck, an ore lift, a motorcade, a pump barge),
+   for the two the story has that are things and not places (the ore train, the core stack), and
+   for the convoy of a drill and a favour.
 2. **Its state is seen on it.** It is struck when the round begins and the machines against it
    take their piece: it shakes, it flashes, and what it lost is written at it. Worn down to a
    third it smokes. Lost, it comes apart.
@@ -26,7 +27,7 @@ finished one.
 ## Not goals
 
 - No picture for the hangar the story has a pilot defend: that fight is inside it, and the place
-  is the picture.
+  is the picture. None for a wingman's frame either, which would be a mech and not a thing.
 - Nothing aims at the freight and nothing can be done to it by the pilot: it is not a unit.
 - No change to the strip that names it and counts it down.
 
@@ -74,7 +75,7 @@ Dutch field would find nothing), or a picture named beside it (chosen).
 
 ## Constraints
 
-- Six pictures at the service's lowest quality, inside the budget the ledger keeps.
+- Seven pictures at the service's lowest quality, inside the budget the ledger keeps (they came to thirteen cents).
 - A kept game loads and is as it was. Nothing is merged without the owner's word.
 
 ## Left to the builder

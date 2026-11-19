@@ -186,8 +186,11 @@ export type Objective =
   | { type: 'destroy' }
   /** Still be standing when the given number of rounds is over. */
   | { type: 'survive'; rounds: number }
-  /** Destroy every enemy before they wear the named asset down: it loses 1 for each living enemy at every new round. */
-  | { type: 'protect'; name: string; hp: number }
+  /**
+   * Destroy every enemy before they wear the named asset down: it loses 1 for each living enemy at every new round.
+   * `sprite` is the picture of it that stands on the field, where it has one.
+   */
+  | { type: 'protect'; name: string; hp: number; sprite?: string }
   /** Destroy one enemy; the rest give up. */
   | { type: 'leader'; target: number }
   /** Destroy one enemy's legs and arms and leave its core standing. */

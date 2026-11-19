@@ -54,6 +54,8 @@ export interface JobText {
   }>;
   /** What an escort keeps alive, one for each background, same order. */
   assets: string[];
+  /** The picture of each on the field, by its sprite's name, same order: not words, and the same in every language. */
+  assetSprites: string[];
 }
 
 /**
@@ -170,7 +172,7 @@ function make(kind: JobKind, dice: Dice, tier: number, place: number, text: Boar
     case 'escort': {
       const enemies = rollEnemies(dice, budget);
       return {
-        battle: { enemies, objective: { type: 'protect', name: text.assets[place], hp: Math.ceil(n.escortPoint * costOf(enemies)) + n.escortFlat } },
+        battle: { enemies, objective: { type: 'protect', name: text.assets[place], hp: Math.ceil(n.escortPoint * costOf(enemies)) + n.escortFlat, sprite: text.assetSprites[place] } },
         reward: rounded(boardFee(enemies) * (1 + n.escortPay)), scale,
         briefing: [text.places[place], text.jobs.escort.brief, text.threats[enemies[dearest(enemies)]]],
       };
