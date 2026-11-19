@@ -86,6 +86,16 @@ describe('a redline weapon', () => {
     expect(shot.damage).toBe(worth(cold, REDLINE, 'enemy-0', 1.3));
     expect(shot.lift).toBe(130);
     expect(player(after).heat).toBe(50 + REDLINE.heat);
+    // What is said of it is to the nearest whole number: 101.8 is 102, and 114.99999999999999 is 115.
+    expect(shots(applyAction(at(3), fire('rightHand', 'enemy-0'), KINDS, hit), cold.events.length)[0].lift).toBe(102);
+    expect(shots(applyAction(at(25), fire('rightHand', 'enemy-0'), KINDS, hit), cold.events.length)[0].lift).toBe(115);
+  });
+
+  test('pushes as it is sold to push, whatever the heat', () => {
+    expect(unit(cold, 'enemy-0').staggerMax).toBeGreaterThan(2 * impactOf(REDLINE));
+    for (const heat of [0, 50, 100]) {
+      expect(unit(applyAction(at(heat), fire('rightHand', 'enemy-0'), KINDS, hit), 'enemy-0').stagger, `heat ${heat}`).toBe(impactOf(REDLINE));
+    }
   });
 
   test('a miss says nothing of what the heat would have made of it', () => {
@@ -166,6 +176,14 @@ describe('a surge weapon', () => {
     // Half the energy, half the blow.
     const half = withEnergy(had / 2);
     expect(shots(applyAction(half, fire('rightHand', 'enemy-0'), KINDS, hit), half.events.length)[0].damage).toBe(worth(full, SURGE, 'enemy-0', had / 200));
+  });
+
+  test('what is said of the energy it took is that energy, to the point', () => {
+    // 113 in a hundred is 1.13, and 1.13 times a hundred is not quite 113 to a machine that counts in halves.
+    expect((113 / 100) * 100).not.toBe(113);
+    const odd = withEnergy(113);
+    expect(shots(applyAction(odd, fire('rightHand', 'enemy-0'), KINDS, hit), odd.events.length)[0].lift).toBe(113);
+    expect(weaponNow(odd, 'player', 'rightHand', KINDS)).toEqual({ energy: 113, shots: 1, lift: 113 });
   });
 
   test('with exactly a hundred it does what it is listed at, and nothing is said of it', () => {
@@ -466,12 +484,17 @@ describe('what a weapon would do now', () => {
     expect(weaponNow(full, 'player', 'rightHand', KINDS)).toEqual({ energy: had, shots: 1, lift: had });
     const less = edit(full, (d) => { player(d).energy = 150; });
     expect(weaponNow(less, 'player', 'rightHand', KINDS)).toEqual({ energy: 150, shots: 1, lift: 150 });
+    // With less than it asks it cannot be fired: what is said is what it would take to fire it.
+    const short = edit(full, (d) => { player(d).energy = 30; });
+    expect(weaponNow(short, 'player', 'rightHand', KINDS)).toEqual({ energy: SURGE.energy, shots: 1, lift: SURGE.energy });
   });
 
   test('a redline: what its machine\'s heat adds, up to the limit', () => {
     const cold = field(REDLINE, ['heavy-mech']);
     expect(weaponNow(cold, 'player', 'rightHand', KINDS)).toEqual({ energy: REDLINE.energy, shots: 1, lift: 100 });
     expect(weaponNow(edit(cold, (d) => { player(d).heat = 45; }), 'player', 'rightHand', KINDS).lift).toBe(127);
+    expect(weaponNow(edit(cold, (d) => { player(d).heat = 3; }), 'player', 'rightHand', KINDS).lift).toBe(102);
+    expect(weaponNow(edit(cold, (d) => { player(d).heat = 25; }), 'player', 'rightHand', KINDS).lift).toBe(115);
     expect(weaponNow(edit(cold, (d) => { player(d).heat = 130; }), 'player', 'rightHand', KINDS).lift).toBe(160);
   });
 

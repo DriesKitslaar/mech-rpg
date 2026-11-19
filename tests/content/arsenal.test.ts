@@ -188,6 +188,12 @@ describe('what the shop and the garage say of them', () => {
         expect(labels(...pair).filter((label) => ['DMG', 'EN', 'IMP'].includes(label)), id).toEqual([]);
       }
     }
+    // Less heat and less weight are for the better, and a truer aim is.
+    const sluice = weapon('wpn-sluice');
+    const better = (label: string, mine: number, theirs: number, more: boolean): boolean => (mine > theirs) === more;
+    expect(Object.fromEntries(compareParts(sluice, lance).flat().map((chip) => [chip.text.split(' ')[0], chip.good]))).toEqual({
+      ACC: better('ACC', sluice.accuracy, lance.accuracy, true), HEAT: better('HEAT', sluice.heat, lance.heat, false), WT: better('WT', sluice.weight, lance.weight, false),
+    });
     // Two weapons of other kinds are still compared by all of it.
     expect(labels(weapon('wpn-slagcaster'), lance)).toEqual(expect.arrayContaining(['DMG', 'EN', 'IMP']));
     // And a spool by the shots it is sold with.

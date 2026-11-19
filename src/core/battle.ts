@@ -1189,7 +1189,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   if (weapon.charge) unit.charged = unit.charged.filter((slot) => slot !== action.weapon);
   else unit.energy -= taken;
   unit.fired.push(action.weapon);
-  if (!unit.spun.includes(action.weapon)) unit.spun.push(action.weapon);
+  unit.spun.push(action.weapon);
   const ammo = unit.ammo[action.weapon];
   if (typeof ammo === 'number') unit.ammo[action.weapon] = ammo - 1;
 
@@ -1206,7 +1206,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
   // least it asks, not all it took: the great shot of a turn is its first.)
   let repaid = false;
   const chainBefore = unit.chain;
-  // Who is fired at, in order, and at what. `via` marks what has leapt on from a fork's hit: one bolt for a share
+  // Who is fired at, in order, and at what. `via` marks what has leapt on from a fork's hit: a bolt for a share
   // of the weapon's damage, which is not rolled for.
   const aims: { target: UnitState; part: FrameSlot; share: number; via?: string }[] =
     [{ target: primary, part: action.part, share: 1 }, ...others.map((target) => ({ target, part: 'core' as const, share: 1 }))];
@@ -1214,7 +1214,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
     const { target, part: aimed, share, via } = aims[at];
     // Each shot is rolled and previewed on its own, because an earlier one may have destroyed
     // the part (or the target) the next was aimed at.
-    for (let i = 0; i < (via ? 1 : pulls) && !target.destroyed; i++) {
+    for (let i = 0; i < pulls && !target.destroyed; i++) {
       const { hitChance, damage, shatter, lift, push } = shotOn(state, unit, action.weapon, weapon, target, aimed, catalog, taken, share);
       let hit = true;
       if (!via) {
@@ -1228,7 +1228,7 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       state.events.push({
         type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: aimed, appliedTo, hit,
         damage: hit ? damage - absorbed : 0, ...(absorbed > 0 ? { absorbed } : {}), ...(hit && shatter ? { shatter: true as const } : {}),
-        ...(via ? { via } : {}), ...(hit && !via && lift !== 100 ? { lift } : {}),
+        ...(via ? { via } : {}), ...(hit && lift !== 100 ? { lift } : {}),
       });
       if (!hit) continue;
       struck.add(target);
