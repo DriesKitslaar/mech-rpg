@@ -57,6 +57,14 @@ export async function waitForScreen(page: Page, screen: string): Promise<void> {
   await page.waitForFunction((name) => (window as any).__game.snapshot().screen === name, screen);
 }
 
+/** Waits until the briefing on screen has counted the odds it gives: at once where it gives none. */
+export async function oddsCounted(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const briefing = (window as any).__game.snapshot().briefing;
+    return !!briefing && (!briefing.odds || briefing.odds.done);
+  }, undefined, { timeout: 60_000 });
+}
+
 export async function waitForPhase(page: Page, phase: string): Promise<void> {
   await page.waitForFunction((name) => (window as any).__game.snapshot().battle?.phase === name, phase);
 }

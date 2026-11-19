@@ -283,6 +283,21 @@ blijft daarna gemonteerd, net als wanneer je hem in de garage laadt.
 - Builds bewaar je in de **Garage**: links of rechts, een plek kiezen, **Save current build**.
 - Bij een geleende mecha, de training en de Gauntlet is er niets te kiezen.
 
+### Je winkans
+
+Onder de klasse staat rechtsboven **ODDS**, bijvoorbeeld **ODDS 17/20**. Het spel vliegt het
+contract zelf twintig keer op **Auto Turn** in de build die je gekozen hebt, en telt hoe vaak dat
+goed afloopt. Alles van jou telt mee: je perks, het werk van de werkbank, je Overdrive, je wingman
+en de moeilijkheid. Je ziet het tellen (grijs, de teller loopt op) terwijl je de briefing leest.
+
+- **Groen** is goed (15 van de 20 of meer), **geel** is twijfelachtig, **rood** is slecht (7 of minder).
+- Blader op de rij **Build** naar een andere build en het spel telt opnieuw, voor die build. Zo zie
+  je meteen welke van je builds het best bij dit contract past. Huur je een wingman, dan telt het
+  ook opnieuw.
+- Het is wat Auto Turn ervan maakt. Speel je zelf goed, dan haal je meer; 0/20 betekent meestal
+  dat je mecha sterker moet worden voor dit contract.
+- Bij een geleende mecha en de training staat er geen kans.
+
 ## De werkbank
 
 In de **Garage** kun je onderdelen die je bezit sterker laten maken. Kies een vak, ga op een

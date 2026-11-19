@@ -7,7 +7,7 @@ import { WORLD } from '../src/content/codex';
 import { MISSIONS } from '../src/content/missions';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
 import { SCENES } from '../src/content/scenes';
-import { choose, nextFrame, open, press, snap, waitForScreen } from './helpers';
+import { choose, nextFrame, oddsCounted, open, press, snap, waitForScreen } from './helpers';
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
@@ -54,10 +54,23 @@ async function load(page: Page, save: GameState): Promise<void> {
 const kept = (page: Page): Promise<GameState> => page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as GameState);
 type Chosen = { slot: number | null; kind: string; choices: number };
 const chosen = async (page: Page): Promise<Chosen> => (await snap(page) as unknown as { briefing: { build: Chosen } }).briefing.build;
-/** Waits until the briefing has written itself out and the wipe that brought it has gone by. */
+type Odds = { played: number; won: number; done: boolean };
+const odds = async (page: Page): Promise<Odds | null> => (await snap(page) as unknown as { briefing: { odds: Odds | null } }).briefing.odds;
+/** Waits until the briefing has written itself out, the wipe that brought it has gone by, and the odds it gives are counted. */
 async function written(page: Page): Promise<void> {
   for (let i = 0; i < 80 && (await snap(page) as unknown as { typing?: boolean }).typing; i++) await page.waitForTimeout(100);
   for (let i = 0; i < 60; i++) await nextFrame(page);
+  await oddsCounted(page);
+}
+/** The odds showing, once they are counted: twenty flights, and so many of them won. */
+async function counted(page: Page): Promise<number> {
+  await oddsCounted(page);
+  const o = await odds(page);
+  expect(o).toMatchObject({ played: 20, done: true });
+  expect(o!.won).toBeGreaterThanOrEqual(0);
+  expect(o!.won).toBeLessThanOrEqual(20);
+  for (let i = 0; i < 4; i++) await nextFrame(page);
+  return o!.won;
 }
 /** Reads past whatever is being said over a battle, until the pilot may act. A line still being written takes a press to finish and another to go on. */
 async function toAction(page: Page): Promise<void> {
@@ -90,18 +103,29 @@ test('the build is chosen at the briefing: the corner says what will be flown, t
   await written(page);
   expect((await snap(page)).menu.items.map((item) => item.id)).toEqual(['accept', 'build', 'wingman', 'back']);
   expect(await chosen(page)).toEqual({ slot: null, kind: 'duellist', choices: 3 });
+  // Under the kind of machine, the odds of this contract in it: the game's own pilot has flown it twenty times.
+  const onFloor = await counted(page);
   await page.screenshot({ path: shot('briefing-build') });
-  // On the row, the client makes way for the build on the floor.
+  // On the row, the client makes way for the build on the floor, and the odds are there with what they are.
   await toRow(page, 'build');
   for (let i = 0; i < 6; i++) await nextFrame(page);
   await page.screenshot({ path: shot('briefing-build-page') });
-  // Right turns to the first saved build, a bastion; right again to the second, a sharpshooter.
+  // Right turns to the first saved build, a bastion; right again to the second, a sharpshooter. Each has odds of its own.
   await press(page, 'ArrowRight');
   expect(await chosen(page)).toMatchObject({ slot: 0, kind: 'bastion' });
+  const asBastion = await counted(page);
+  await page.screenshot({ path: shot('briefing-odds-bastion') });
   await press(page, 'ArrowRight');
   expect(await chosen(page)).toMatchObject({ slot: 1, kind: 'marksman' });
-  for (let i = 0; i < 6; i++) await nextFrame(page);
+  const asSharp = await counted(page);
   await page.screenshot({ path: shot('briefing-build-saved') });
+  // Round to the build on the floor: what was counted for it is shown at once, and it is the same count.
+  await press(page, 'ArrowRight');
+  expect(await odds(page)).toEqual({ played: 20, won: onFloor, done: true });
+  await press(page, 'ArrowLeft');
+  expect(await odds(page)).toEqual({ played: 20, won: asSharp, done: true });
+  // The three do not fare alike in this one.
+  expect(new Set([onFloor, asBastion, asSharp]).size).toBeGreaterThan(1);
   // Nothing is fitted until the contract is accepted.
   expect((await kept(page)).build).toEqual(DUELLIST);
   await toRow(page, 'accept');
@@ -128,6 +152,8 @@ test('the build row in Dutch, and with nothing saved', async ({ page }) => {
   await waitForScreen(page, 'briefing');
   await written(page);
   expect(await chosen(page)).toEqual({ slot: null, kind: 'duellist', choices: 1 });
+  // The patrol is no trouble to a machine of the war.
+  expect(await counted(page)).toBeGreaterThanOrEqual(15);
   await toRow(page, 'build');
   await press(page, 'ArrowRight');
   expect(await chosen(page)).toEqual({ slot: null, kind: 'duellist', choices: 1 });

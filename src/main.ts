@@ -63,7 +63,7 @@ async function start(): Promise<void> {
   // Where sound needs no first input (the Android shell allows it), the title has its song from the start.
   // A browser that does need one keeps the engine asleep until the first press wakes it.
   if (!fast) sfx.unlock();
-  const app = new App({ catalog: CATALOG, save: new SaveFile(openStore(), CATALOG), sprites, sfx, music, fast, seed, vibrate });
+  const app = new App({ catalog: CATALOG, save: new SaveFile(openStore(), CATALOG), sprites, sfx, music, fast, seed, vibrate, now: () => performance.now() });
 
   const mapper = new InputMapper();
   const input = attachInput(window, mapper);

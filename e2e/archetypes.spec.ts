@@ -8,7 +8,7 @@ import { CATALOG, STARTER_BUILD } from '../src/content/parts';
 import { REFERENCE_BUILDS } from '../src/content/referenceBuilds';
 import { SCENES } from '../src/content/scenes';
 import { STARTERS } from '../src/content/starters';
-import { acceptContract, choose, enterHub, finishMission, nextFrame, open, press, snap, waitForPhase, waitForScreen } from './helpers';
+import { acceptContract, choose, enterHub, finishMission, nextFrame, oddsCounted, open, press, snap, waitForPhase, waitForScreen } from './helpers';
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
@@ -200,6 +200,8 @@ test('once the audit is over a duel is posted: a Shrike on a roof at dusk, and w
   await choose(page, 'duel-1');
   await waitForScreen(page, 'briefing');
   for (let i = 0; i < 40 && (await snap(page) as unknown as { typing?: boolean }).typing; i++) await page.waitForTimeout(100);
+  await oddsCounted(page);
+  for (let i = 0; i < 4; i++) await nextFrame(page);
   await page.screenshot({ path: shot('duel-briefing') });
   await choose(page, 'accept');
   // Larder has a word to say as it opens.

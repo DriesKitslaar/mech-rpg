@@ -4,6 +4,7 @@ import {
   HEAT_LIMIT, MAX_ENEMIES, OVERKILL, SHATTER, activeUnit, applyAction, checkAction, createBattle, guardFactor, previewShot, type BattleState,
 } from '../../src/core/battle';
 import { PAY_PER_HEAD, swarmContract } from '../../src/core/board';
+import { FORECAST_PLAYS } from '../../src/core/forecast';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { newGame } from '../../src/core/game';
 import { NAME_AT, RENOWN, renownOf } from '../../src/core/renown';
@@ -46,6 +47,20 @@ describe('the action that sheds heat', () => {
     for (const text of [...MANUAL.map((t) => t.text), ...DRILLS.flatMap((d) => [...d.briefing, d.debrief, ...(d.battle.talk ?? []).map((l) => l.text)])]) {
       expect(text).not.toMatch(/\bCool (sheds|down|off)\b/);
     }
+  });
+});
+
+describe('the odds', () => {
+  test('the manual says how many times the contract is flown, by whom, and with what', () => {
+    const text = topic('odds');
+    // The number of flights is the number the count flies.
+    expect(text).toContain(`${STRINGS.actions.auto} flies it ${FORECAST_PLAYS} times`);
+    // What the page calls the pilot is what the battle's own row calls it, and the page about the build says the same.
+    expect(STRINGS.briefing.oddsNote).toContain(STRINGS.actions.auto);
+    // Each thing it says is counted is a thing a fight is started from.
+    expect(text).toContain('with your perks, bench work, Overdrive, wingman and difficulty');
+    expect(text).toMatch(/Another build is another count\./);
+    expect(text).toMatch(/flying it yourself, you can do better\.$/);
   });
 });
 

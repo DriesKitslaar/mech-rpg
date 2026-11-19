@@ -407,6 +407,9 @@ export const STRINGS = {
     // The build the contract is taken in: the row in the briefing's menu, which build it is, and how to turn to another.
     build: 'Build', buildOnFloor: 'CURRENT BUILD', buildSaved: (slot: number) => `SAVED BUILD ${slot}`,
     buildHint: 'LEFT/RIGHT: another build', buildNone: 'Save builds in the Garage to choose one here.',
+    // How the contract is likely to go in that build: what the game's own pilot wins of it, flight by flight as it is counted.
+    odds: (won: number, played: number) => `ODDS ${won}/${played}`, oddsWait: 'ODDS ..',
+    oddsNote: 'this contract flown on Auto Turn',
     lentNote: 'Your own mech cannot deploy as it stands, so Dispatch lends you a stock frame for this one. Put yours right in the Garage; until then this is the work there is.',
     support: (name: string) => `Fire support: ${name}`,
     // In a later telling some contracts can be flown for the other side: the row in the menu, and the line under the client.

@@ -1,6 +1,6 @@
 import { archetypeOf, type Archetype } from '../../src/core/archetype';
 import { computeBuildStats } from '../../src/core/build';
-import { BUILD_SLOTS, buy, equip, saveLoadout, type GameState } from '../../src/core/game';
+import { saveLoadout, type GameState } from '../../src/core/game';
 import type { Build, FramePart } from '../../src/core/types';
 import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
 import { WORLD } from '../../src/content/codex';
@@ -12,6 +12,7 @@ import { STRINGS } from '../../src/content/strings';
 import { LOGICAL_W } from '../../src/ui/display';
 import { COLORS, LINE } from '../../src/ui/widgets';
 import { done, fresh, ids, inHub, press, savedGame, select, snap } from '../helpers/app';
+import { wearing } from '../helpers/builds';
 import { overlap, record, type Drawn, type Written } from '../helpers/canvas';
 
 /**
@@ -30,23 +31,6 @@ const C = STRINGS.classes;
 const quiet = (base: GameState): GameState => ({ ...base, codex: WORLD.map((entry) => entry.id), scenes: ['act-1'] });
 const armourOf = (build: Build): number => (['head', 'core', 'arms', 'legs'] as const).reduce((sum, slot) => sum + (CATALOG[build[slot]!] as FramePart).ap, 0);
 
-/** The game with a build bought and fitted, whatever it costs. */
-function wearing(base: GameState, build: Build): GameState {
-  let game: GameState = { ...base, credits: 9_999_999 };
-  const parts = Object.values(build).filter((id): id is string => id !== undefined);
-  for (const id of new Set(parts)) while ((game.inventory[id] ?? 0) < parts.filter((other) => other === id).length) game = buy(game, id, CATALOG);
-  for (let pass = 0; pass < 2; pass++) {
-    for (const slot of BUILD_SLOTS) {
-      const id = build[slot];
-      try {
-        if (id === undefined && game.build[slot] !== undefined) game = equip(game, slot, null, CATALOG);
-        else if (id !== undefined && game.build[slot] !== id) game = equip(game, slot, id, CATALOG);
-      } catch { /* the next pass */ }
-    }
-  }
-  expect(game.build).toEqual(build);
-  return { ...game, credits: base.credits };
-}
 const DUELLIST = ARCHETYPE_BUILDS.duellist.war;
 const BASTION = ARCHETYPE_BUILDS.bastion.war;
 const SHARP = ARCHETYPE_BUILDS.marksman.war;

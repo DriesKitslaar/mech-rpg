@@ -306,13 +306,18 @@ function autoChoice(state: BattleState, catalog: Catalog): Action {
   return choice;
 }
 
-/** Plays the battle to its outcome: the policy acts for the player, the profiles for enemies. */
+/** One action of a battle: whoever's turn it is acts, the policy for the player and the profiles for enemies. */
+export function stepBattle(
+  state: BattleState, catalog: Catalog, playerPolicy: (s: BattleState, c: Catalog) => Action,
+): BattleState {
+  const choose = activeUnit(state).side === 'player' ? playerPolicy : chooseEnemyAction;
+  return applyAction(state, choose(state, catalog), catalog);
+}
+
+/** Plays the battle to its outcome, action by action. */
 export function runBattle(
   state: BattleState, catalog: Catalog, playerPolicy: (s: BattleState, c: Catalog) => Action,
 ): BattleState {
-  while (state.outcome === 'ongoing') {
-    const choose = activeUnit(state).side === 'player' ? playerPolicy : chooseEnemyAction;
-    state = applyAction(state, choose(state, catalog), catalog);
-  }
+  while (state.outcome === 'ongoing') state = stepBattle(state, catalog, playerPolicy);
   return state;
 }
