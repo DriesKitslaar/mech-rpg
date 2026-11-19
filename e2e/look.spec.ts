@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { completeMission } from '../src/core/campaign';
+import { LESSONS, completeMission } from '../src/core/campaign';
 import { newGame, type GameState } from '../src/core/game';
 import { MISSIONS } from '../src/content/missions';
 import { SCENES } from '../src/content/scenes';
@@ -17,11 +17,14 @@ const shot = (name: string) => `docs/screenshots/${name}.png`;
 /** The field, without the panel under it. */
 const FIELD = { x: 0, y: 0, width: 1240, height: 712 };
 
-/** A pilot past the introductions, in a mech with a gun of each kind: bullets, a beam and shells. */
+/**
+ * A pilot past the introductions, in a mech with a gun of each kind: bullets, a beam and shells. Every page of
+ * story is behind them, and so is everything that is explained once: nothing is said over what is photographed.
+ */
 function gunner(): GameState {
   let g = newGame(CATALOG, DEMO_BUILD);
   for (const id of ['intro-1', 'intro-2']) g = completeMission(g, id, MISSIONS);
-  return { ...g, scenes: SCENES.map((s) => s.id) };
+  return { ...g, scenes: SCENES.map((s) => s.id), lessons: [...LESSONS] };
 }
 
 const adv = (page: Page, ms: number): Promise<void> => page.evaluate((n) => (window as any).__game.advance(n), ms);
