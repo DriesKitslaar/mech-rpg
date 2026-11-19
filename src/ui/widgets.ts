@@ -189,6 +189,18 @@ export function drawTabs(ctx: CanvasRenderingContext2D, right: number, y: number
 /** What a medal of each tier is made of: bronze, silver, gold. */
 export const MEDAL_COLORS: Record<1 | 2 | 3, string> = { 1: '#c0773c', 2: '#c3c9d6', 3: '#f2c744' };
 
+/** The colour of a crown of the arena's masters: gold, as the highest medal is. */
+export const CROWN_COLOR = MEDAL_COLORS[3];
+
+/** A crown nine pixels wide and seven tall: three points over a band. It marks a class whose crown the pilot holds. */
+export function drawCrown(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.fillStyle = CROWN_COLOR;
+  ctx.fillRect(x, y + 4, 9, 3);
+  ctx.fillRect(x, y + 1, 2, 3);
+  ctx.fillRect(x + 3, y, 3, 4);
+  ctx.fillRect(x + 7, y + 1, 2, 3);
+}
+
 /** A medal nine pixels square: a ribbon and a disc in the metal of its tier, or its outline while it is not earned. */
 export function drawMedal(ctx: CanvasRenderingContext2D, x: number, y: number, tier: 1 | 2 | 3, earned: boolean): void {
   // The ribbon: one band in two colours, narrowing to where the disc hangs.

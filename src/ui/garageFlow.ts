@@ -9,12 +9,11 @@ import { FRAME_SLOTS, WEAPON_SLOTS, type Build, type BuildError, type BuildStats
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import { MenuList, type ListItem } from './menuList';
-import { PAINTS, paintById } from './paint';
+import { paintById, paintsFor } from './paint';
 
 const G = STRINGS.garage;
 const NONE = '(none)';
 /** Factory colours first, then every scheme: the order L1 and R1 step through. */
-const PAINT_ORDER = [FACTORY_PAINT, ...PAINTS.map((p) => p.id)];
 
 /** What the bench has to say about the part on it: where it stands, what the next step would make of it, and what that costs. */
 export interface BenchInfo {
@@ -229,10 +228,15 @@ export class GarageFlow {
     return FRAME_SLOTS.reduce((sum, slot) => sum + (framePart(build, slot, this.catalog)?.ap ?? 0), 0);
   }
 
+  /**
+   * On to the next paint the pilot may wear, or back to the one before. A paint that is not among them (one
+   * this version does not know, or a master's whose crown the pilot does not hold) is stepped away from as
+   * factory colours are, and is not come back to.
+   */
   private stepPaint(step: number): void {
-    const n = PAINT_ORDER.length;
-    const at = Math.max(0, PAINT_ORDER.indexOf(this.game.paint));
-    this.game = setPaint(this.game, PAINT_ORDER[(at + step + n) % n]);
+    const order = paintsFor(this.game);
+    const at = Math.max(0, order.indexOf(this.game.paint));
+    this.game = setPaint(this.game, order[(at + step + order.length) % order.length]);
   }
 
   /** Runs the chosen entry of a saved build's menu. */

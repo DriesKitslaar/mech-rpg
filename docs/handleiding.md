@@ -231,6 +231,19 @@ dan kun je ze wel bekijken.
 - Een kroon raak je niet meer kwijt, ook niet als je het verhaal opnieuw begint. Je kunt een
   meester zo vaak opnieuw uitdagen als je wilt.
 
+**Wat een kroon je geeft:**
+
+- **De titel.** Onder **Pilot**, pagina **CLASS**, staat een kroontje bij elke klasse waarvan je
+  de kroon hebt, en bovenaan hoeveel je er hebt (**CROWNS 2/7**). Sta je op zo'n klasse, dan
+  heet je daar zoals de meester heette: **MASTER BASTION**.
+- **De lak van de meester.** In de **Garage** wissel je met **L1/R1** van lak. Na de twaalf
+  gewone kleuren komen de kleuren van de meesters die je versloeg in hun eigen klasse. Alleen
+  jij en die meester dragen ze.
+- **Meer loon.** Een open contract dat een klasse zoekt, betaalt normaal een kwart extra als je
+  het in zo'n build wint. Heb je de kroon van die klasse, dan is dat de **helft extra**. In de
+  briefing staat het bedrag dat voor jou geldt (**+50% PAY**).
+- **Twee medailles:** een voor je eerste kroon, een voor alle zeven.
+
 ## Twee duels na het einde
 
 Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appointment**. Win je

@@ -1,5 +1,6 @@
 import { ARCHETYPES, CLASS_AI, type Archetype } from './archetype';
 import { CHAMPION_RANK } from './arena';
+import { ASK_BONUS } from './board';
 import type { Mission } from './campaign';
 import type { Settlement } from './economy';
 import type { GameState } from './game';
@@ -53,6 +54,11 @@ export const masterBeaten = (state: Kept, kind: Archetype): boolean => (state.ma
 export const crownHeld = (state: Kept, kind: Archetype): boolean => (state.crowns ?? []).includes(kind);
 /** How many crowns the pilot holds: one a class at most, whatever the kept list says. */
 export const crownsHeld = (state: Kept): number => ARCHETYPES.filter((kind) => crownHeld(state, kind)).length;
+
+/** What a contract that asks for a class pays on top to the holder of that class's crown, as a share of the fee: twice what it pays anyone else. */
+export const CROWN_BONUS = 0.5;
+/** The share of the fee a contract that asks for a class adds for this pilot, won as that class: the crown's for its holder, the board's for anyone else. */
+export const askBonus = (state: Kept, kind: Archetype): number => (crownHeld(state, kind) ? CROWN_BONUS : ASK_BONUS);
 
 /** The purse of a duel with the master of a class: in full until that master has been beaten, a quarter after. */
 export const masterPurse = (state: Kept, kind: Archetype): number => (masterBeaten(state, kind) ? Math.round(MASTER_PURSE / 4) : MASTER_PURSE);

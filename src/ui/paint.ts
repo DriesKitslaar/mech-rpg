@@ -4,6 +4,8 @@
  * `analyse` to record, per family, what is armour and what is trim.
  */
 import type { Archetype } from '../core/archetype';
+import type { GameState } from '../core/game';
+import { crownHeld } from '../core/masters';
 
 export type RGB = [number, number, number];
 
@@ -61,6 +63,13 @@ export const CROWN_PAINTS: (PaintScheme & { crown: Archetype })[] = [
   { id: 'kingfisher', name: 'Kingfisher', crown: 'skirmisher', hue: 194, sat: 0.62, accentHue: 28, accentSat: 0.95, shade: -0.08 },
   { id: 'patina', name: 'Patina', crown: 'allrounder', hue: 176, sat: 0.42, accentHue: 22, accentSat: 0.85, shade: 0.03 },
 ];
+
+/**
+ * The paints a pilot may wear, in the order the garage steps through them: factory colours, the
+ * schemes anyone may wear, and after them the paint of each crown the pilot holds.
+ */
+export const paintsFor = (state: Pick<GameState, 'crowns'>): string[] =>
+  [FACTORY, ...PAINTS.map((paint) => paint.id), ...CROWN_PAINTS.filter((paint) => crownHeld(state, paint.crown)).map((paint) => paint.id)];
 
 export const paintById = (id: string): PaintScheme | undefined => PAINTS.find((p) => p.id === id) ?? CROWN_PAINTS.find((p) => p.id === id);
 

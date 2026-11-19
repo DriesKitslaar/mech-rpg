@@ -16,7 +16,7 @@ import {
   TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, learn, newGame, type GameState, type LightDetail, type Settings,
 } from '../core/game';
 import { ARCHETYPES, archetypeOf, recordWinAs, type Archetype } from '../core/archetype';
-import { crownHeld, crownSettlement, isMaster, masterMission, mastersOpen, parseMaster, recordMasterWin } from '../core/masters';
+import { askBonus, crownHeld, crownSettlement, isMaster, masterMission, mastersOpen, parseMaster, recordMasterWin } from '../core/masters';
 import { startFight, type Fight } from '../core/mission';
 import { fitSortie, sortieBuilds, type Sortie } from '../core/sortie';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
@@ -356,7 +356,10 @@ class MissionHost implements Screen {
     // A contract that asked for a class pays more to a pilot who won it as one; a master beaten in a machine of
     // their own class gives up the crown, which the bill says before the win is written down.
     const flown = this.app.flownAs(this.mission);
-    const settlement = crownSettlement(askSettlement(rankSettlement(bill, performance), this.mission, flown), this.mission, flown, this.app.game!);
+    const game = this.app.game!;
+    // The holder of a class's crown is paid more for a contract that asks for that class.
+    const asked = askSettlement(rankSettlement(bill, performance), this.mission, flown, this.mission.asks ? askBonus(game, this.mission.asks) : undefined);
+    const settlement = crownSettlement(asked, this.mission, flown, game);
     this.count();
     const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state), overdrives: this.overdrives });
     // What the debt limit wrote off is shown with the bill.

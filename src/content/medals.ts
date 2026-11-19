@@ -2,6 +2,7 @@ import { ARCHETYPES, kindsWon, mostWonAs } from '../core/archetype';
 import { ARENA_RANKS, CHAMPION_RANK } from '../core/arena';
 import { checksHeld, papersFound } from '../core/codex';
 import { FACTORY_PAINT, type GameState } from '../core/game';
+import { crownsHeld } from '../core/masters';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
 import { TUNE_MAX, stepOf, tunable } from '../core/tuning';
@@ -74,6 +75,9 @@ const EARNED: Medal[] = [
   { id: 'apex', name: 'Last One Standing', text: 'Beat everyone in the back room of the arena.', tier: 3, secret: true, progress: count(ARENA_RANKS, (g) => g.arenaRank) },
   { id: 'cup', name: 'Silverware', text: 'Win an arena cup.', tier: 2, progress: count(1, (g) => (g.cups ?? []).length) },
   { id: 'cups', name: 'Full Cabinet', text: 'Win all three arena cups.', tier: 3, progress: count(3, (g) => (g.cups ?? []).length) },
+  // The masters: a crown is a master beaten in a machine of their own class.
+  { id: 'crown-1', name: 'Uneasy Head', text: "Take a master's crown in the arena.", tier: 2, progress: count(1, crownsHeld) },
+  { id: 'crown-all', name: 'Seven Crowns', text: 'Hold the crown of every class.', tier: 3, progress: count(ARCHETYPES.length, crownsHeld) },
   { id: 'overdrive', name: 'Redline', text: 'Set off an Overdrive.', tier: 1, progress: count(1, (g) => g.overdrives ?? 0) },
   { id: 'overdrive-50', name: 'Past the Stop', text: 'Set off 50 Overdrives.', tier: 2, progress: count(50, (g) => g.overdrives ?? 0) },
   // The Gauntlet.

@@ -275,7 +275,14 @@ export const REFERENCE_NL: Record<string, string> = {
   'ARENA CUPS': 'ARENABEKERS',
   'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.':
     'Een beker is drie van de ranglijst achter elkaar, met alleen veldonderhoud ertussen. Hij opent zodra je zijn drie hebt verslagen. De pot is voor alle drie of voor geen: eerst volledig, daarna een kwart.',
+  CROWNS: 'KRONEN',
+  "A crown is kept for good, through every telling. It is marked on your page of classes, and its holder is called by the master's title there. The garage offers the holder the master's own paint. A contract on the board that asks for that class pays the holder half as much again, where it pays anyone else a quarter more.":
+    'Een kroon houd je voorgoed, door elke vertelling heen. Hij staat op je klassenpagina, waar de houder de titel van de meester draagt. De garage biedt de houder de lak van de meester aan. Een contract op het bord dat die klasse zoekt, betaalt de houder de helft extra, waar het een ander een kwart extra betaalt.',
   'THE MASTERS': 'DE MEESTERS',
+  'Uneasy Head': 'Wankele kroon',
+  "Take a master's crown in the arena.": 'Pak in de arena de kroon van een meester.',
+  'Seven Crowns': 'Zeven kronen',
+  'Hold the crown of every class.': 'Houd de kroon van elke klasse.',
   "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, a quarter after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.":
     'De tweede pagina van de arena (L1/R1): zeven meesters, een per klasse, die alleen de kampioen aannemen. Elke build mag vechten, om een pot: eerst volledig, daarna een kwart. Versla een meester in een build van zijn eigen klasse en de kroon van die klasse is van jou. De briefing zegt welke build dat is.',
   CONTROLS: 'BESTURING',

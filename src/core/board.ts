@@ -221,11 +221,13 @@ export function generateBoard(battlesWon: number, cycle: number, text: BoardText
 /**
  * The settlement of a contract that asked for a class, for a pilot who won it as that class: a share
  * of the fee as it was paid, on top, and the class it was paid for. Any other settlement is returned
- * as it is: lost, won as another class or in a lent mech (no class at all), or nothing asked.
+ * as it is: lost, won as another class or in a lent mech (no class at all), or nothing asked. The
+ * share is the board's unless another is given: the holder of that class's crown is paid more (see
+ * `askBonus` in masters.ts).
  */
-export function askSettlement(settlement: Settlement, mission: Pick<Mission, 'asks'>, flownAs: Archetype | null): Settlement {
+export function askSettlement(settlement: Settlement, mission: Pick<Mission, 'asks'>, flownAs: Archetype | null, share = ASK_BONUS): Settlement {
   if (!settlement.won || mission.asks === undefined || mission.asks !== flownAs) return settlement;
-  const bonus = Math.round(settlement.reward * ASK_BONUS);
+  const bonus = Math.round(settlement.reward * share);
   return { ...settlement, asked: { kind: mission.asks, bonus }, net: settlement.net + bonus };
 }
 
