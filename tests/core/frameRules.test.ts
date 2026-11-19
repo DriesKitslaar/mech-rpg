@@ -78,6 +78,16 @@ describe('a core that raises a field', () => {
     expect(player(s).parts.core!.ap).toBe(armour - Math.max(0, dealt - 50));
   });
 
+  test('a hit that leaves any of it standing is not the end of it: nothing is said', () => {
+    let s = edit(toPlayer(battle(['gun-turret'], build)), (d) => { player(d).barrier = 500; });
+    s = shootPlayer(act(s, END));
+    const [shot] = shots(s).slice(-1);
+    expect(shot).toMatchObject({ target: 'player', hit: true, damage: 0 });
+    expect(shot.absorbed).toBeGreaterThan(0);
+    expect(player(s).barrier).toBe(500 - shot.absorbed!);
+    expect(said(s, 'fieldDown')).toEqual([]);
+  });
+
   test('what is left of it meets the next hit: a second hit in a round gets only what the first left, and breaks it', () => {
     let s = edit(toPlayer(battle(['gun-turret'], build)), (d) => { player(d).barrier = 12; });
     const armour = player(s).parts.core!.ap;
@@ -116,6 +126,8 @@ describe('a core that raises a field', () => {
     expect(shots(hurt).slice(-1)[0]).toMatchObject({ target: 'player', hit: true });
     expect(shots(hurt).slice(-1)[0].absorbed).toBeUndefined();
     expect(player(hurt).parts.core!.ap).toBe(armour - shots(hurt).slice(-1)[0].damage);
+    // It went down once, and that was said then: a blow on a machine with no field standing does not say it again.
+    expect(said(hurt, 'fieldDown')).toEqual([]);
     // The turn after: whole again, and that is said.
     s = quietRound(s);
     expect(player(s).barrier).toBe(50);
@@ -176,6 +188,23 @@ describe('a core that raises a field', () => {
     // A shielded elite: a share of all its armour is more than fifty here, and that is what stands.
     const elite = battle([fielded], DEMO_BUILD, { marks: { 0: 'shielded' } });
     expect(unit(elite, 'enemy-0').barrier).toBeGreaterThan(50);
+  });
+
+  test('a blow that is no shot breaks it too, and says so: a shock pulse on a machine with the last of its field standing', () => {
+    const tuned: EnemyDef = { ...ENEMIES['heavy-mech'], id: 'tuned', abilities: { field: 70 } };
+    let s = edit(toPlayer(battle([tuned], { ...DEMO_BUILD, module: 'mod-t-shock' })), (d) => { unit(d, 'enemy-0').barrier = 1; });
+    const armour = unit(s, 'enemy-0').parts.core!.ap;
+    s = act(s, { type: 'module' });
+    expect(unit(s, 'enemy-0').barrier).toBe(0);
+    expect(unit(s, 'enemy-0').parts.core!.ap).toBeLessThan(armour);
+    expect(said(s, 'fieldDown')).toEqual([{ type: 'fieldDown', unit: 'enemy-0' }]);
+    // With more of it standing than the pulse takes, the pulse is the field's and nothing is said.
+    let t = edit(toPlayer(battle([tuned], { ...DEMO_BUILD, module: 'mod-t-shock' })), (d) => { unit(d, 'enemy-0').barrier = 70; });
+    t = act(t, { type: 'module' });
+    expect(unit(t, 'enemy-0').barrier).toBeGreaterThan(0);
+    expect(unit(t, 'enemy-0').barrier).toBeLessThan(70);
+    expect(unit(t, 'enemy-0').parts.core!.ap).toBe(armour);
+    expect(said(t, 'fieldDown')).toEqual([]);
   });
 
   test('a barrier that is no field says nothing when it goes: only a core\'s field is called down', () => {
@@ -299,6 +328,11 @@ describe('arms that strike without giving up the boost', () => {
     const mixed = act(act(armed, fire('rightHand')), fire('leftHand'));
     expect(shots(mixed).filter((shot) => shot.unit === 'player').map((shot) => shot.weapon)).toEqual(['rightHand', 'leftHand']);
     expect(player(mixed).boosted).toBe(true);
+    // The gun first and the blade after it: the blade is still the first blade of the turn.
+    const gunFirst = act(act(armed, fire('leftHand')), fire('rightHand'));
+    expect(shots(gunFirst).filter((shot) => shot.unit === 'player').map((shot) => shot.weapon)).toEqual(['leftHand', 'rightHand']);
+    expect(player(gunFirst).fired).toEqual(['leftHand', 'rightHand']);
+    expect(player(gunFirst).boosted).toBe(true);
   });
 
   test('a blade that a kill readied again is not spent: in an open battle the mech that cuts its way on is still boosting', () => {

@@ -72,6 +72,22 @@ describe('the duels with the Coast Circuit', () => {
     expect(duel(1).reward).toBeGreaterThan(Math.max(...others));
   });
 
+  test('each sword has a word as the duel opens, another when it has gone on a while and a last one on losing; Dispatch speaks up when the pilot is hurt', () => {
+    for (const [mission, who, portrait] of [[duel(1), 'Larder', 'portrait-larder'], [duel(2), 'Argent', 'portrait-argent']] as const) {
+      const talk = mission.battles[0].talk ?? [];
+      // In this order: the opening, the third round, the pilot hurt, the duel won.
+      expect(talk.map((line) => [line.at, line.who]), mission.id).toEqual([['start', who], [3, who], ['hurt', 'Dispatch'], ['win', who]]);
+      for (const line of talk) {
+        expect(line.portrait, `${mission.id} ${line.at}`).toBe(line.who === 'Dispatch' ? 'portrait-dispatch' : portrait);
+        expect(line.text.length, `${mission.id} ${line.at}`).toBeGreaterThan(20);
+      }
+      // No line is said twice, in one duel or across the two.
+      expect(new Set(talk.map((line) => line.text)).size).toBe(talk.length);
+    }
+    const all = DUELS.flatMap((mission) => (mission.battles[0].talk ?? []).map((line) => line.text));
+    expect(new Set(all).size).toBe(all.length);
+  });
+
   test('the two pilots are met in their duels and nowhere else: not in the story, not on the board, not in the arena', () => {
     const elsewhere = MISSIONS.filter((m) => m.series !== 'duel').flatMap((m) => m.battles.flatMap((b) => [...b.enemies, ...(b.reserve ?? [])]));
     for (const id of ['larder', 'argent']) {

@@ -68,7 +68,7 @@
 - [x] Drawings: both frames from the front and from behind, two portraits. Heads and bodies from behind redone with their own descriptions.
 - [x] The duels: two contracts once the audit is over, one at a time; a duel won opens its frame for good (`tests/content/duels.test.ts`).
 - [x] How a field is shown, said and heard (`tests/ui/field.test.ts`); a part's own lines; Dutch.
-- [ ] Browser test with pictures; the guide; mutation; APK.
+- [x] Browser test with pictures; the guide; mutation (a hundred faults: ninety-eight found once seven tests were added, two in figures nothing reads); APK.
 
 ### Task B2: archetypes
 

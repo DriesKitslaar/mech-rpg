@@ -204,6 +204,8 @@ test('once the audit is over a duel is posted: a Shrike on a roof at dusk, and w
   // Larder has a word to say as it opens.
   await page.waitForFunction(() => (window as any).__game.snapshot().battle?.spoken);
   expect((await snap(page)).battle?.spoken).toContain('Larder');
+  // The shutter opens on the roof and the line is written out before the picture is taken.
+  for (let i = 0; i < 150; i++) await nextFrame(page);
   await page.screenshot({ path: shot('duel-shrike-word') });
   await toAction(page);
   expect((await snap(page)).battle?.enemies).toEqual(['larder']);
@@ -282,6 +284,8 @@ test('the two frames as their owner has them: in the garage, and in a battle beh
   await load(page, { ...owner, completed: [...owner.completed, 'duel-1', 'duel-2'] });
   await choose(page, 'garage');
   await waitForScreen(page, 'garage');
+  // The garage has come in once the wipe that brings it has gone by.
+  for (let i = 0; i < 90; i++) await nextFrame(page);
   await page.screenshot({ path: shot('garage-sterling') });
   await choose(page, 'core');
   await page.screenshot({ path: shot('garage-sterling-core') });

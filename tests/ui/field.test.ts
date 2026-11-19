@@ -7,9 +7,11 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
+import { BattleFx, type Fx, type Scene } from '../../src/ui/battleFx';
 import { BattleScreen } from '../../src/ui/battleScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { PANEL_Y } from '../../src/ui/stage';
+import { COLORS } from '../../src/ui/widgets';
 import { record } from '../helpers/canvas';
 
 /**
@@ -162,6 +164,36 @@ describe('a field that is broken, and comes back', () => {
     expect(m.shown.has(STRINGS.fx.fieldUp)).toBe(true);
     expect(m.heard).toContain('guard');
     expect(m.flow.state.events.filter((e) => e.type === 'fieldUp')).toHaveLength(1);
+  });
+
+  test('over the machine it goes out in sparks of its own colour under the words FIELD DOWN, and comes back as a guard goes up, under FIELD UP', () => {
+    const scene: Scene = {
+      muzzle: () => ({ x: 100, y: 50 }), hitPoint: () => ({ x: 80, y: 70 }),
+      centre: (id) => (id === 'player' ? { x: 80, y: 80 } : { x: 240, y: 60 }),
+      facing: (id) => (id === 'player' ? 1 : -1), damageType: () => 'kinetic', isMelee: () => false,
+    };
+    const shows = (type: 'fieldDown' | 'fieldUp', unit: string): Fx[] => {
+      const fx = new BattleFx(scene);
+      fx.onEvent({ type, unit });
+      fx.update(1);
+      return (fx as unknown as { effects: Fx[] }).effects;
+    };
+    // The words are these, whichever language the rest is in; each is over the machine the field is on.
+    expect([STRINGS.fx.fieldDown, STRINGS.fx.fieldUp]).toEqual(['FIELD DOWN', 'FIELD UP']);
+    for (const unit of ['player', 'enemy-0']) {
+      const at = scene.centre(unit);
+      // A word floats up from just over the middle of the machine.
+      const over = { x: at.x, y: at.y - 10 };
+      const down = shows('fieldDown', unit);
+      expect(down.map((fx) => fx.kind).sort()).toEqual(['sparks', 'text']);
+      expect(down.find((fx) => fx.kind === 'sparks')).toMatchObject({ at, color: COLORS.energy });
+      expect(down.find((fx) => fx.kind === 'text')).toMatchObject({ at: over, text: 'FIELD DOWN', color: COLORS.energy });
+      const up = shows('fieldUp', unit);
+      expect(up.map((fx) => fx.kind).sort()).toEqual(['shield', 'text']);
+      // The guard stands on the side the machine faces: towards the other side of the field.
+      expect(up.find((fx) => fx.kind === 'shield')).toMatchObject({ at, aim: { x: unit === 'player' ? 1 : -1, y: 0 } });
+      expect(up.find((fx) => fx.kind === 'text')).toMatchObject({ at: over, text: 'FIELD UP', color: COLORS.energy });
+    }
   });
 
   test('of an enemy it is said by name', () => {
