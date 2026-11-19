@@ -214,6 +214,42 @@ describe('the seventh place', () => {
   });
 });
 
+describe('seven saved, in Dutch', () => {
+  const dutch = (): GameState => {
+    const base = hangar();
+    return { ...wearing(base, late('lancer')), settings: { ...base.settings, language: 'nl' } };
+  };
+
+  test('at the briefing the seventh goes by its number in the corner of the header, and nothing runs off the page', () => {
+    const { app } = inHub(dutch());
+    select(app, 'contracts');
+    select(app, 'patrol');
+    for (let i = 0; i < 8 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'build'; i++) press(app, 'down');
+    press(app, 'left');
+    expect((snap(app).briefing as unknown as { build: { slot: number; kind: string } }).build).toMatchObject({ slot: 6, kind: 'allrounder' });
+    const shown = drawn(app);
+    expect(STRINGS_NL.briefing.buildSaved(7)).toBe('MIJN BUILD 7');
+    expect(shown.texts.filter((t) => t.text === 'MIJN BUILD 7' && t.y === 9).map((t) => t.right)).toEqual([LOGICAL_W - 12]);
+    for (const t of shown.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 2);
+  });
+
+  test('on the range every saved build heads the list by its number, with its class clear of it', () => {
+    const { app } = inHub(dutch());
+    select(app, 'training');
+    press(app, 'next');
+    const rows = snap(app).menu.items.filter((item) => item.id.startsWith('spar-'));
+    expect(rows.map((row) => [row.label, row.note])).toEqual(ARCHETYPES.map((kind, slot) => [`Mijn build ${slot + 1}`, STRINGS_NL.classes.names[kind]]));
+    const shown = drawn(app);
+    for (const row of rows) {
+      const label = written(shown, row.label);
+      const note = shown.texts.filter((t) => t.text === row.note && t.align === 'right' && t.y >= label.y && t.y <= label.y + 1);
+      expect(note, row.label).toHaveLength(1);
+      expect(note[0].left, row.label).toBeGreaterThanOrEqual(label.right + 4);
+    }
+    for (const t of shown.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 2);
+  });
+});
+
 describe('a game kept when there were three places', () => {
   /** As an older version wrote it: a list of three, the second filled. */
   function kept(): GameState {

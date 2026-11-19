@@ -55,9 +55,10 @@ class and tied to it (a build that changes class when a weapon is swapped would 
 a pilot with two bastions has nowhere for the second), or seven free places (chosen).
 
 For the kept game: a new save version with a step that pads the list (the pattern the storage
-has, but it turns away a game from a newer version on an older build, and nothing else about the
-game's shape changes), or the same version with a shorter list read as places that are empty
-(chosen): older and newer builds of the game read each other's games as far as they can.
+has, for a change that is one list growing longer and nothing else about the game's shape), or
+the same version with a shorter list read as places that are empty (chosen). Either way an older
+build of the game turns away a game this one has written: its list is longer than that build
+takes. Nothing is lost by that which a new version would have kept.
 
 For what a row says: the core, as it was (seven rows of `Colossus Core` and `Ronin Core` say
 little), the weapons (too long for the row), or the class and the frame (chosen).
