@@ -243,7 +243,8 @@ describe('bonds in the briefing', () => {
       select(app, mission);
       const seen: { id: string | null; share: number }[] = [];
       if (!snap(app).menu.items.some((i) => i.id === 'wingman')) return seen;
-      press(app, 'down');
+      // Down to the row for hiring, wherever it stands in the menu.
+      for (let i = 0; i < 6 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'wingman'; i++) press(app, 'down');
       for (let i = 0; i < 3; i++) {
         press(app, 'right');
         const w = (snap(app).briefing as unknown as { wingman: { id: string | null; share: number } }).wingman;

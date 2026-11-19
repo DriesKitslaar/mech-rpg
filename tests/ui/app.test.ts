@@ -376,7 +376,7 @@ describe('contracts and briefings', () => {
     select(app, 'contracts');
     select(app, 'intro-1');
     expect(snap(app).screen).toBe('briefing');
-    expect(ids(app)).toEqual(['accept', 'back']);
+    expect(ids(app)).toEqual(['accept', 'build', 'back']);
     select(app, 'back');
     expect(snap(app).screen).toBe('hub');
     expect(ids(app)).toEqual(['patrol', 'intro-1']);

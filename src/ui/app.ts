@@ -17,6 +17,7 @@ import {
 } from '../core/game';
 import { archetypeOf, recordWinAs } from '../core/archetype';
 import { startMissionBattle } from '../core/mission';
+import { fitSortie, sortieBuilds, type Sortie } from '../core/sortie';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
 import { intentOf } from '../core/intent';
@@ -1000,11 +1001,25 @@ export class App {
     return this.game ? otherOffer(this.game, mission, MISSIONS) : null;
   }
 
+  /** What a contract can be taken in now: the build on the floor, and the saved builds that can be fitted and may deploy. */
+  sorties(): Sortie[] {
+    return this.game ? sortieBuilds(this.game, tunedCatalog(this.deps.catalog, this.game.tuning)) : [];
+  }
+
   /**
    * Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends
-   * no mech of its own. With `other` it is flown as the other side offers it, if they do.
+   * no mech of its own. With `other` it is flown as the other side offers it, if they do. With `fit`
+   * the saved build in that slot is fitted first, as the garage would load it: a slot that cannot be
+   * flown from starts nothing.
    */
-  startMission(missionId: string, replay = false, wingmanId: string | null = null, other = false): void {
+  startMission(missionId: string, replay = false, wingmanId: string | null = null, other = false, fit: number | null = null): void {
+    if (fit !== null) {
+      // A contract in a lent mech is not flown in any build of the pilot's: nothing is fitted for it.
+      const lent = this.offered(missionId, replay)?.loaner !== undefined;
+      const fitted = this.game && !lent ? fitSortie(this.game, fit, tunedCatalog(this.deps.catalog, this.game.tuning)) : null;
+      if (!fitted) return;
+      this.commit(fitted);
+    }
     const first = this.offered(missionId, replay);
     const offered = other && first ? this.otherOffer(first) ?? undefined : first;
     if (!offered || (offered.loaner === undefined && this.buildErrors().length > 0)) return;
