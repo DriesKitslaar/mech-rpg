@@ -3,6 +3,7 @@ import { ARCHETYPES } from '../src/core/archetype';
 import { completeMission } from '../src/core/campaign';
 import { BUILD_SLOTS, buy, equip, newGame, type GameState } from '../src/core/game';
 import { xpForLevel } from '../src/core/pilot';
+import { stripesEarned } from '../src/core/stripes';
 import { tunable } from '../src/core/tuning';
 import type { Build } from '../src/core/types';
 import { ARCHETYPE_BUILDS } from '../src/content/archetypeBuilds';
@@ -35,7 +36,7 @@ const PHASE = Object.fromEntries(MISSIONS.map((m) => [m.id, m.phase as string]))
 
 const AFTER_THE_WAR = [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
 
-type Seen = Snap & { list?: string; busy?: boolean; page?: string; launch?: unknown; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean } };
+type Seen = Snap & { list?: string; busy?: boolean; page?: string; launch?: unknown; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean }; toasts?: string[] };
 
 /**
  * A pilot with the best gear there is who has done these contracts and has read nothing of the story yet.
@@ -144,7 +145,16 @@ async function open(page: Page, save: GameState, settings: Record<string, unknow
   return errors;
 }
 
-interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number; jobs: string[]; duel: boolean; launches: number; flown: number }
+/** How long a bill is left on the screen while there is something being announced over it: four notices' worth. */
+const BILL_MS = 11_000;
+
+interface Played {
+  missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number; jobs: string[]; duel: boolean; launches: number; flown: number;
+  /** The stripes that were announced while it played, and whatever was still waiting to be said when it stopped. */
+  stripes: string[]; waiting: string[];
+  /** How many notices came up over a screen in all: medals, stripes, crowns, new pages of the database. */
+  notices: number;
+}
 
 /**
  * Plays: the first swarm that is on offer beside the board (more machines than the field holds,
@@ -171,6 +181,11 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let flown = 0;
   let launches = 0;
   let launching = false;
+  // The stripes announced, as each comes up: one may be said again after stepping aside for a screen with no room for it.
+  const stripes = new Set<string>();
+  // Every notice that came up, and how long the bill on the screen has been left standing for them.
+  const notices = new Set<string>();
+  let read = 0;
   // The kinds of job flown, by the word their titles begin with: each once, won or lost.
   const jobs: string[] = [];
   let last = '';
@@ -181,6 +196,9 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     screens.add(s.screen);
     if (!!s.launch && !launching) launches++;
     launching = !!s.launch;
+    if (s.toast?.startsWith('stripe:')) stripes.add(s.toast);
+    if (s.toast) notices.add(s.toast);
+    if (s.screen !== 'settlement') read = 0;
     const items = s.menu?.items ?? [];
     const cur = items[s.menu?.cursor ?? 0]?.id;
     const has = (id: string): boolean => items.some((item) => item.id === id && item.enabled);
@@ -188,6 +206,10 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     if (s.busy) { await step(96); continue; }
     if (s.screen === 'title') {
       await (s.mode && s.mode !== 'main' ? tap(page, 'Enter') : go(has('continue') ? 'continue' : 'new'));
+    } else if (s.screen === 'settlement' && (s.toast || (s.toasts?.length ?? 0) > 0) && read < BILL_MS) {
+      // A bill is read as a person reads it: what is announced over it is let slide up, stand and go, for as long as a person would stay.
+      read += 320;
+      await step(320);
     } else if (['callsign', 'scene', 'ending', 'credits', 'settlement'].includes(s.screen)) {
       await tap(page, 'Enter');
       await step(320);
@@ -241,8 +263,9 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
       rooms.shift();
     }
   }
-  const end = await snap(page);
-  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel, launches, flown };
+  const end = await snap(page) as Seen;
+  const waiting = [end.toast, ...(end.toasts ?? [])].filter((id): id is string => !!id);
+  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel, launches, flown, stripes: [...stripes], waiting, notices: notices.size };
 }
 
 const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held' }[] = [
@@ -262,10 +285,11 @@ for (const player of PLAYERS) {
   test(`soak: ${player.name}`, async ({ page }) => {
     test.skip(!ASKED, 'a long look: run with SOAK=1');
     test.setTimeout((MINUTES + 2) * 60_000);
-    const errors = await open(page, player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done), player.settings);
+    const start = player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done);
+    const errors = await open(page, start, player.settings);
     const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
-    console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.flown} contracts flown, ${played.launches} launches, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
+    console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.flown} contracts flown, ${played.launches} launches, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, ${played.notices} notices, stripes ${played.stripes.join(' ') || 'none'}, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
     expect(errors).toEqual([]);
     expect(played.frames).toBeGreaterThan(1000);
@@ -274,6 +298,13 @@ for (const player of PLAYERS) {
     expect(played.flown).toBeGreaterThanOrEqual(5);
     if (player.settings.fastBattles) expect(played.launches).toBe(0);
     else expect([played.flown, played.flown - 1]).toContain(played.launches);
+    // The stripes the kept game has now and had not when it was opened are the ones that were announced, or are waiting
+    // for a screen with room to be: none earned in silence, and none announced that the record does not bear out.
+    const record = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as { wonAs?: GameState['wonAs'] });
+    const earned = stripesEarned(start, record).map(({ kind, stripe }) => `stripe:${kind}:${stripe}`);
+    for (const id of earned) expect([...played.stripes, ...played.waiting], id).toContain(id);
+    for (const id of played.stripes) expect(earned, id).toContain(id);
+    console.log(`${player.name}: stripes earned ${earned.join(' ') || 'none'}, of which still waiting ${earned.filter((id) => !played.stripes.includes(id)).join(' ') || 'none'}`);
     // Every one of them flew a swarm: the machines that come on later were on the screen.
     expect(played.swarms).toBe(1);
     // And jobs, once the board had one to offer: what each kind asks was on the field, with everything drawn.
