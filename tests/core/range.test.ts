@@ -5,7 +5,7 @@ import { settle } from '../../src/core/economy';
 import { startMissionBattle } from '../../src/core/mission';
 import { CLASS_AI, archetypeOf } from '../../src/core/archetype';
 import { MIRROR_SCALE } from '../../src/core/arena';
-import { buy, newGame, type GameState } from '../../src/core/game';
+import { LOADOUT_SLOTS, buy, newGame, saveLoadout, type GameState } from '../../src/core/game';
 import {
   RANGE_HALL, RANGE_MAX, SPAR_ENEMY, isRange, parseRange, parseSpar, rangeId, rangeKinds, rangeLimit, rangeMission, rangeSettlement, sparEnemy, sparId,
   sparMission, sparSlots, type RangeText, type SparText,
@@ -118,8 +118,11 @@ describe('sparring: a saved build of the pilot\'s own as the opponent', () => {
 
   test('a spar is a fight on the range with an id of its own, which no fight against a machine can have', () => {
     expect(sparId(2)).toBe('range-spar-2');
-    expect([0, 1, 2].map((slot) => parseSpar(sparId(slot)))).toEqual([0, 1, 2]);
-    for (const id of ['range-spar-3', 'range-spar-', 'range-spar-x', 'range-spar-01', 'range-1-tank', 'spar-1', 'arrange-spar-1', '']) expect(parseSpar(id), id).toBeNull();
+    // One for every place a build can be kept in, and none past the last.
+    expect(LOADOUT_SLOTS).toBe(7);
+    expect([0, 1, 2, 3, 4, 5, 6].map((slot) => parseSpar(sparId(slot)))).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(sparId(6)).toBe('range-spar-6');
+    for (const id of ['range-spar-7', 'range-spar-8', 'range-spar-9', 'range-spar-', 'range-spar-x', 'range-spar-01', 'range-spar-10', 'range-1-tank', 'spar-1', 'arrange-spar-1', '']) expect(parseSpar(id), id).toBeNull();
     expect(isRange({ id: sparId(0) })).toBe(true);
     expect(parseRange(sparId(0))).toBeNull();
     expect(SPAR_ENEMY(1)).toBe('spar-1');
@@ -135,6 +138,12 @@ describe('sparring: a saved build of the pilot\'s own as the opponent', () => {
     // The very build the pilot is flying can be sparred with: it is a mirror.
     expect(sparSlots({ ...game, loadouts: [game.build, null, null] }, CATALOG)).toEqual([0]);
     expect(sparSlots({ ...game, loadouts: [null, null, null] }, CATALOG)).toEqual([]);
+    // Every place counts, the seventh as the first; a place a short list does not name is not there to spar with.
+    let full = game;
+    for (let slot = 0; slot < 7; slot++) full = saveLoadout(full, slot);
+    expect(sparSlots(full, CATALOG)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(sparSlots(saveLoadout(game, 6), CATALOG)).toEqual([0, 2, 6]);
+    expect(sparEnemy(saveLoadout(game, 6), 6, 'x', CATALOG)).toMatchObject({ id: 'spar-6', build: game.build });
     // Fit to fly is judged with the bench's work counted: a generator the bench has worked on carries what it could not as sold.
     const hungry: Build = { ...STARTER_BUILD, head: 'head-auditor', core: 'core-sterling', arms: 'arms-shrike', fcs: 'fcs-omni', rightHand: undefined, shoulder: 'wpn-sunlance' };
     let owner: GameState = { ...newGame(CATALOG, STARTER_BUILD), credits: 9_999_999 };

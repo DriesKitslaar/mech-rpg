@@ -1,5 +1,5 @@
 import { archetypeOf } from '../core/archetype';
-import type { BuildSlot } from '../core/game';
+import { LOADOUT_SLOTS, type BuildSlot } from '../core/game';
 import type { BuildStats } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -16,6 +16,9 @@ const G = STRINGS.garage;
 const C = STRINGS.classes;
 const LIST_X = 162;
 const LIST_W = LOGICAL_W - LIST_X;
+/** Where the list of saved builds begins, and where the menu of the one chosen is ruled off under its last row. */
+const LOADOUTS_Y = 40;
+const LOADOUT_MENU_Y = LOADOUTS_Y + LOADOUT_SLOTS * LINE + 4;
 const STATS_Y = 196;
 
 /** Draws the garage and passes its results to the app: every change is saved at once. */
@@ -96,14 +99,14 @@ export class GarageScreen implements Screen {
       });
     } else if (flow.mode === 'loadouts' || flow.mode === 'loadoutMenu') {
       drawText(ctx, G.loadouts, LIST_X + 6, 24, { color: COLORS.dim });
-      drawList(ctx, flow.loadouts, LIST_X + 6, 40, LIST_W - 18, 3);
+      drawList(ctx, flow.loadouts, LIST_X + 6, LOADOUTS_Y, LIST_W - 18, LOADOUT_SLOTS);
       if (flow.mode === 'loadoutMenu') {
         ctx.fillStyle = COLORS.border;
-        ctx.fillRect(LIST_X + 6, 80, LIST_W - 12, 1);
+        ctx.fillRect(LIST_X + 6, LOADOUT_MENU_Y, LIST_W - 12, 1);
         // The load entry's note says which part is missing; it gets a line of its own so it fits.
         flow.loadoutMenu.items.forEach((item, i) => {
           const selected = i === flow.loadoutMenu.cursor;
-          const y = 88 + i * 13;
+          const y = LOADOUT_MENU_Y + 6 + i * 13;
           if (selected) {
             drawRowLight(ctx, LIST_X + 3, y + 1, LIST_W - 15);
             drawText(ctx, '>', LIST_X + 6, y, { color: COLORS.accent });
@@ -111,7 +114,7 @@ export class GarageScreen implements Screen {
           drawText(ctx, item.label, LIST_X + 14, y, { color: !item.enabled ? COLORS.dim : selected ? COLORS.accent : COLORS.text });
         });
         const missing = flow.loadoutMenu.items[0].note;
-        if (missing) drawText(ctx, missing, LIST_X + 6, 146, { color: COLORS.danger });
+        if (missing) drawText(ctx, missing, LIST_X + 6, LOADOUT_MENU_Y + 6 + flow.loadoutMenu.items.length * 13, { color: COLORS.danger });
       }
     } else if (flow.mode === 'bench') {
       this.drawBench(ctx);

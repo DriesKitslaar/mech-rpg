@@ -1,9 +1,12 @@
+import { ARCHETYPES, archetypeOf } from '../../src/core/archetype';
 import { buy, equip, newGame, saveLoadout, sell, type GameState } from '../../src/core/game';
 import type { Shield } from '../../src/core/types';
+import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import type { InputAction } from '../../src/platform/input';
 import { GarageFlow } from '../../src/ui/garageFlow';
 import { PAINTS } from '../../src/ui/paint';
+import { wearing } from '../helpers/builds';
 
 const fresh = (credits = 1200): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), credits });
 const rich = (...ids: string[]): GameState => ids.reduce((g, id) => buy(g, id, CATALOG), fresh(50000));
@@ -229,10 +232,15 @@ describe('saved builds', () => {
     return flow.onInput('confirm');
   };
 
-  test('left or right from the slot list opens three slots, empty at first', () => {
+  test('left or right from the slot list opens seven slots, empty at first', () => {
     const flow = new GarageFlow(fresh(), CATALOG);
     toLoadouts(flow);
-    expect(flow.loadouts.items.map((i) => [i.id, i.label])).toEqual([['0', '1  Empty'], ['1', '2  Empty'], ['2', '3  Empty']]);
+    expect(flow.loadouts.items.map((i) => [i.id, i.label, i.note])).toEqual([
+      ['0', '1  Empty', undefined], ['1', '2  Empty', undefined], ['2', '3  Empty', undefined], ['3', '4  Empty', undefined], ['4', '5  Empty', undefined],
+      ['5', '6  Empty', undefined], ['6', '7  Empty', undefined],
+    ]);
+    // An empty slot can be chosen: that is how it is saved to.
+    expect(flow.loadouts.items.every((i) => i.enabled)).toBe(true);
     flow.onInput('cancel');
     expect(flow.mode).toBe('slots');
     flow.onInput('left');
@@ -250,13 +258,13 @@ describe('saved builds', () => {
     expect(flow.loadoutMenu.selected?.id).toBe('save');
   });
 
-  test('saving names the slot after its core; loading brings the build back', () => {
+  test('saving names the slot after the class of the build, with the frame its core is from; loading brings the build back', () => {
     const flow = new GarageFlow(rich('core-bulwark', 'wpn-arc-pistol'), CATALOG);
     toLoadouts(flow);
     flow.onInput('confirm');
     expect(choose(flow, 'save')).toBe('changed');
     expect(flow.mode).toBe('loadouts');
-    expect(flow.loadouts.items[0].label).toBe('1  Hauler Core');
+    expect(flow.loadouts.items[0]).toMatchObject({ label: '1  All-rounder', note: 'Hauler' });
     flow.onInput('cancel');
 
     // Change the mech, then load the saved one.
@@ -300,11 +308,59 @@ describe('saved builds', () => {
   test('clearing empties the slot', () => {
     const flow = new GarageFlow(saveLoadout(fresh(), 2), CATALOG);
     toLoadouts(flow);
-    flow.onInput('up');
+    flow.onInput('down');
+    flow.onInput('down');
     flow.onInput('confirm');
     expect(choose(flow, 'clear')).toBe('changed');
-    expect(flow.game.loadouts).toEqual([null, null, null]);
+    expect(flow.game.loadouts).toEqual([null, null, null, null, null, null, null]);
     expect(flow.loadouts.items[2].label).toBe('3  Empty');
+  });
+
+  test('the seventh slot is a slot like the first: saved to, named, loaded from and cleared', () => {
+    const flow = new GarageFlow(rich('wpn-arc-pistol'), CATALOG);
+    toLoadouts(flow);
+    flow.onInput('up');
+    expect(flow.loadouts.selected?.id).toBe('6');
+    flow.onInput('confirm');
+    expect(choose(flow, 'save')).toBe('changed');
+    expect(flow.game.loadouts[6]).toEqual(flow.game.build);
+    expect(flow.game.loadouts.slice(0, 6)).toEqual([null, null, null, null, null, null]);
+    expect(flow.loadouts.items[6]).toMatchObject({ label: '7  All-rounder', note: 'Hauler' });
+    flow.onInput('confirm');
+    expect(flow.loadoutMenu.items.map((i) => [i.id, i.enabled])).toEqual([['load', true], ['save', true], ['clear', true], ['back', true]]);
+    expect(choose(flow, 'clear')).toBe('changed');
+    expect(flow.loadouts.items[6]).toMatchObject({ label: '7  Empty' });
+    expect(flow.loadouts.items[6].note).toBeUndefined();
+  });
+
+  test('one of each class saved: every row says what kind of machine is kept there, and what frame its core is from', () => {
+    let game = { ...fresh(), credits: 9_999_999 };
+    ARCHETYPES.forEach((kind, slot) => { game = saveLoadout(wearing(game, ARCHETYPE_BUILDS[kind].late), slot); });
+    const flow = new GarageFlow(game, CATALOG);
+    toLoadouts(flow);
+    expect(flow.loadouts.items.map((i) => [i.label, i.note])).toEqual([
+      ['1  Duellist', 'Wraith'], ['2  Sharpshooter', 'Ronin'], ['3  Artillery', 'Colossus'], ['4  Lancer', 'Ronin'], ['5  Bastion', 'Colossus'],
+      ['6  Skirmisher', 'Wraith'], ['7  All-rounder', 'Ronin'],
+    ]);
+    for (const [slot, kind] of ARCHETYPES.entries()) {
+      expect(archetypeOf(game.loadouts[slot]!, CATALOG), kind).toBe(kind);
+      expect(CATALOG[game.loadouts[slot]!.core].name.split(' ')[0]).toBe(flow.loadouts.items[slot].note);
+    }
+  });
+
+  test('a game kept when there were three places shows seven rows: what it does not name is empty, and offers only saving', () => {
+    const old = { ...saveLoadout(fresh(), 1), loadouts: [null, fresh().build, null] };
+    const flow = new GarageFlow(old, CATALOG);
+    toLoadouts(flow);
+    expect(flow.loadouts.items.map((i) => i.label)).toEqual(['1  Empty', '2  All-rounder', '3  Empty', '4  Empty', '5  Empty', '6  Empty', '7  Empty']);
+    for (let i = 0; i < 5; i++) flow.onInput('down');
+    expect(flow.loadouts.selected?.id).toBe('5');
+    // The mech shown for a place with nothing in it is the one on the floor.
+    expect(flow.previewBuild).toEqual(old.build);
+    flow.onInput('confirm');
+    expect(flow.loadoutMenu.items.map((i) => [i.id, i.enabled])).toEqual([['load', false], ['save', true], ['clear', false], ['back', true]]);
+    expect(choose(flow, 'save')).toBe('changed');
+    expect(flow.game.loadouts).toEqual([null, old.build, null, null, null, old.build, null]);
   });
 
   test('back and cancel leave the menu without changing anything', () => {

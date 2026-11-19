@@ -136,7 +136,7 @@ test('the build is chosen at the briefing: the corner says what will be flown, t
   // It is flown in the sharpshooter, and that is the build the game is kept with; the saved builds are as they were.
   const after = await kept(page);
   expect(after.build).toEqual(SHARP);
-  expect(after.loadouts).toEqual([BASTION, SHARP, null]);
+  expect(after.loadouts).toEqual([BASTION, SHARP, null, null, null, null, null]);
   await toAction(page);
   await page.screenshot({ path: shot('battle-saved-build') });
   expect(errors).toEqual([]);

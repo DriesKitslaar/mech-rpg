@@ -1,3 +1,4 @@
+import { archetypeOf } from '../core/archetype';
 import { boostProfile, computeBuildStats, framePart, generatorOf, validatePlayerBuild, weaponIn } from '../core/build';
 import {
   BUILD_SLOTS, FACTORY_PAINT, LOADOUT_SLOTS, OPTIONAL_SLOTS, checkEquip, checkLoadout, clearLoadout, equip, fits, loadLoadout,
@@ -117,16 +118,21 @@ export class GarageFlow {
     return [...(OPTIONAL_SLOTS.includes(slot) ? [{ id: NONE, label: G.none, enabled: true }] : []), ...owned];
   }
 
-  /** One row per saved build, named after its core. */
+  /**
+   * One row per place a build can be kept in. A build kept there goes by what kind of machine it is, with
+   * the frame its core is from beside it: seven rows of cores would say little. A place the kept list
+   * does not name (a game from when there were fewer) is empty.
+   */
   private loadoutItems(): ListItem[] {
     return Array.from({ length: LOADOUT_SLOTS }, (_, i) => {
       const build = this.game.loadouts[i];
-      return { id: String(i), label: `${i + 1}  ${build ? this.nameOf(build.core) : G.emptyLoadout}`, enabled: true };
+      if (!build) return { id: String(i), label: `${i + 1}  ${G.emptyLoadout}`, enabled: true };
+      return { id: String(i), label: `${i + 1}  ${STRINGS.classes.names[archetypeOf(build, this.factory)]}`, enabled: true, note: this.nameOf(build.core).split(' ')[0] };
     });
   }
 
   private loadoutMenuItems(index: number): ListItem[] {
-    const saved = this.game.loadouts[index] !== null;
+    const saved = !!this.game.loadouts[index];
     const refused = checkLoadout(this.game, index, this.catalog);
     return [
       { id: 'load', label: G.load, enabled: refused === null, note: refused?.part ? G.missing(this.catalog[refused.part]?.name ?? refused.part) : undefined },

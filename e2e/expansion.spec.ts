@@ -63,7 +63,7 @@ test('arena, pilot, options, open contracts and a new cycle', async ({ page }) =
   await press(page, 'ArrowRight');
   await press(page, 'Enter');
   await choose(page, 'save');
-  expect((await snap(page) as any).loadouts).toEqual([true, false, false]);
+  expect((await snap(page) as any).loadouts).toEqual([true, false, false, false, false, false, false]);
   await page.screenshot({ path: shot('garage-builds') });
   await press(page, 'Escape');
   await press(page, 'Escape');
@@ -112,7 +112,7 @@ test('arena, pilot, options, open contracts and a new cycle', async ({ page }) =
   await choose(page, 'continue');
   await waitForScreen(page, 'hub');
   expect(await snap(page) as any).toMatchObject({
-    cycle: 1, arenaRank: 4, xp: cycled.xp, settings: { fastBattles: true }, paint: 'crimson', loadouts: [true, false, false],
+    cycle: 1, arenaRank: 4, xp: cycled.xp, settings: { fastBattles: true }, paint: 'crimson', loadouts: [true, false, false, false, false, false, false],
   });
   expect(errors).toEqual([]);
 });

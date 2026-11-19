@@ -42,7 +42,11 @@ export interface GameState {
   settings: Settings;
   /** The paint scheme of the mech: `factory`, or the id of a scheme. */
   paint: string;
-  /** Saved builds, one per slot; an empty slot is null. */
+  /**
+   * Saved builds, one per slot; an empty slot is null. A game kept when there were fewer places has a
+   * shorter list (never fewer than `LOADOUT_SLOTS_MIN`): the places it does not name are empty, and it is
+   * brought to full length when it is loaded and whenever a place is written.
+   */
   loadouts: (Build | null)[];
   /** The best rank earned on each story contract, by contract id. Kept across cycles. */
   ranks: Record<string, Rank>;
@@ -91,7 +95,10 @@ export interface GameState {
 }
 
 export const FACTORY_PAINT = 'factory';
-export const LOADOUT_SLOTS = 3;
+/** How many builds a pilot can keep: one for each class of machine, though no place is tied to a class. */
+export const LOADOUT_SLOTS = 7;
+/** How many places the first games to keep builds had: the fewest a kept game may name. */
+export const LOADOUT_SLOTS_MIN = 3;
 
 /** How tough enemies are: `story` for the tale, `veteran` for a fight. */
 export type Difficulty = 'story' | 'standard' | 'veteran';
@@ -176,8 +183,9 @@ export function setPaint(state: GameState, paint: string): GameState {
 
 export type LoadoutRefusal = 'unknown' | 'empty' | 'missingPart';
 const isSlot = (index: number): boolean => Number.isInteger(index) && index >= 0 && index < LOADOUT_SLOTS;
+/** The game with one place written: always the full list, whatever length it was kept at. */
 const withLoadout = (state: GameState, index: number, build: Build | null): GameState =>
-  ({ ...state, loadouts: state.loadouts.map((saved, i) => (i === index ? build : saved)) });
+  ({ ...state, loadouts: Array.from({ length: LOADOUT_SLOTS }, (_, i) => (i === index ? build : state.loadouts[i] ?? null)) });
 
 /** Keeps a copy of the current build in a slot, replacing what was there. */
 export function saveLoadout(state: GameState, index: number): GameState {
@@ -365,7 +373,8 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!isRecord(stats) || Object.keys(stats).length !== STAT_KEYS.length || !STAT_KEYS.every((key) => isWholeNonNegative(stats[key]))) return false;
   // The scheme itself is the screen's business; here it only has to be a plain short word.
   if (typeof paint !== 'string' || !/^[a-z]{1,24}$/.test(paint)) return false;
-  if (!Array.isArray(loadouts) || loadouts.length !== LOADOUT_SLOTS) return false;
+  // A game kept when there were fewer places for a build names fewer; one that names more is not this game's.
+  if (!Array.isArray(loadouts) || loadouts.length < LOADOUT_SLOTS_MIN || loadouts.length > LOADOUT_SLOTS) return false;
   for (const saved of loadouts) {
     if (saved === null) continue;
     if (!isRecord(saved)) return false;
