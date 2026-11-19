@@ -160,7 +160,7 @@ test('part descriptions cover every kind of part', () => {
   expect(partLines(CATALOG['core-hauler'])).toHaveLength(2);
   // What a part of a frame does that no other does is its last line or two: a core's field, and arms that keep their boost.
   expect(partLines(CATALOG['core-sterling'])).toEqual(['AP 205  WT 190  DRAIN 70', 'RES K/E/X 20/25/20', 'FIELD: absorbs 25 a round', 'Broken, it is down a turn']);
-  expect(partLines(CATALOG['arms-shrike'])).toEqual(['AP 100  WT 75  DRAIN 45', 'RES K/E/X 15/15/10', 'AIM +18', 'POISE: 1st blade keeps Boost']);
+  expect(partLines(CATALOG['arms-shrike'])).toEqual(['AP 100  WT 75  DRAIN 45', 'RES K/E/X 15/15/10', 'AIM +18', 'POISE: 1 blade keeps Boost']);
   expect(partLines(CATALOG['arms-sterling'])).toEqual(['AP 100  WT 90  DRAIN 45', 'RES K/E/X 15/20/15', 'AIM +14']);
   expect(partLines(CATALOG['core-shrike'])).toHaveLength(2);
 });
@@ -169,7 +169,7 @@ test('in Dutch a part\'s lines are as short: what a frame does that no other doe
   setLanguage('nl');
   try {
     expect(partLines(CATALOG['core-sterling']).slice(2)).toEqual(['VELD: vangt 25 per ronde', 'Gebroken: een beurt weg']);
-    expect(partLines(CATALOG['arms-shrike']).slice(3)).toEqual(['BALANS: 1e kling houdt Boost']);
+    expect(partLines(CATALOG['arms-shrike']).slice(3)).toEqual(['BALANS: 1 kling houdt Boost']);
     for (const part of SHOP_PARTS) for (const line of partLines(part)) expect(line.length, `${part.id}: ${line}`).toBeLessThanOrEqual(28);
   } finally {
     setLanguage('en');

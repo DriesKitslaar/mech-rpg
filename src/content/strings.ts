@@ -448,7 +448,7 @@ export const STRINGS = {
     charge: 'CHARGE: fires a turn later', melee: 'MELEE: spends your Boost',
     // What a part of a frame does that no other part does: a core's field, and arms that strike and are gone again.
     field: (n: number) => `FIELD: absorbs ${n} a round`, fieldBreak: 'Broken, it is down a turn',
-    poise: 'POISE: 1st blade keeps Boost',
+    poise: 'POISE: 1 blade keeps Boost',
     traits: {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',

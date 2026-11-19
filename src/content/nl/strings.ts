@@ -406,7 +406,7 @@ export const STRINGS_NL = {
     versus: (name: string) => `VS ${name}`,
     charge: 'LADEN: vuurt een beurt later', melee: 'MELEE: verbruikt je Boost',
     field: (n: number) => `VELD: vangt ${n} per ronde`, fieldBreak: 'Gebroken: een beurt weg',
-    poise: 'BALANS: 1e kling houdt Boost',
+    poise: 'BALANS: 1 kling houdt Boost',
     traits: {
       twin: () => 'DUO: vuurt tweemaal',
       pierce: () => 'DOORBOOR: halve weerstand',
