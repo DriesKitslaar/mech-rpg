@@ -57,6 +57,9 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   mag de houder van die stoel uitdagen, in welke build ook. Zijn machine, de Sovereign, vecht op
   drie manieren en wisselt als hij geraakt wordt. Win je, dan mag je de Sovereign zelf kopen en is
   de lak van de houder van jou.
+- **Lancering**: elk contract vanuit de hangar opent met je eigen mecha op de katapult: drie lampen,
+  en weg is hij, de tunnel uit het licht in. Anderhalve seconde, en met één druk op A of B sla je
+  het over.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.

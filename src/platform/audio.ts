@@ -8,7 +8,7 @@ export type SoundName =
   | 'partDestroyed' | 'unitDestroyed' | 'boost' | 'cool' | 'repair' | 'overheat' | 'victory' | 'defeat'
   | 'guard' | 'stagger' | 'charge' | 'module'
   | 'type' | 'blast' | 'launch' | 'mend' | 'alarm' | 'support' | 'fuse' | 'asset' | 'stamp' | 'banner' | 'warning' | 'medal' | 'entry' | 'overdrive' | 'radio' | 'relic'
-  | 'thunder' | 'sign' | 'slam' | 'ready' | 'chain2' | 'chain3';
+  | 'thunder' | 'sign' | 'slam' | 'ready' | 'chain2' | 'chain3' | 'lamp' | 'catapult';
 
 /** One synthesised note or burst. Times are in seconds, frequencies in hertz. */
 export interface Tone {
@@ -71,6 +71,10 @@ export const SOUNDS: Record<SoundName, Tone[]> = {
   asset: [t('triangle', 196, 0, 0.18, 0.4, 130), t('noise', 0, 0, 0.1, 0.2)],
   // The rank coming down on the settlement.
   stamp: [t('noise', 0, 0, 0.06, 0.6), t('triangle', 110, 0, 0.16, 0.6, 55), t('square', 660, 0.08, 0.1, 0.2)],
+  // A lamp of the launch tunnel coming on.
+  lamp: [t('square', 520, 0, 0.06, 0.2), t('triangle', 1040, 0, 0.05, 0.12)],
+  // The catapult firing: the shot of it, a low thump, and the whine of the machine getting away down the tunnel.
+  catapult: [t('noise', 0, 0, 0.16, 0.5), t('triangle', 80, 0, 0.3, 0.55, 38), t('sawtooth', 110, 0.02, 0.7, 0.3, 760), dark(0.08, 0.62, 0.5, 1100)],
   // The banner that opens a battle.
   banner: [t('noise', 0, 0, 0.22, 0.18), t('triangle', 330, 0, 0.22, 0.2, 660)],
   // The warning that opens a battle with a boss.

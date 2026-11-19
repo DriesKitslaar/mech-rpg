@@ -4,7 +4,7 @@ import {
 } from '../core/arena';
 import { askSettlement, generateBoard, swarmContract } from '../core/board';
 import { jobContract, recordJob } from '../core/jobs';
-import { validatePlayerBuild } from '../core/build';
+import { computeBuildStats, validatePlayerBuild } from '../core/build';
 import {
   archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, otherOffer, markRead,
   markSceneSeen, startNewCycle, stockFor, unreadMessages, LESSONS,
@@ -19,6 +19,7 @@ import {
 import { ARCHETYPES, archetypeOf, recordWinAs, type Archetype } from '../core/archetype';
 import { askBonus, crownHeld, crownSettlement, isMaster, masterMission, mastersOpen, parseMaster, recordMasterWin } from '../core/masters';
 import { SEAT_ID, isSeat, recordSeatWin, seatHeld, seatMission, seatOpen, seatSettlement } from '../core/seat';
+import { launchRumble, launches } from '../core/launch';
 import { startFight, type Fight } from '../core/mission';
 import { fitSortie, sortieBuilds, type Sortie } from '../core/sortie';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
@@ -56,6 +57,7 @@ import type { InputAction } from '../platform/input';
 import { MAX_TRIES, SLOTS, type SaveFile } from '../platform/storage';
 import { ArenaScreen, MIRROR } from './arenaScreen';
 import { BattleFlow, BattleScreen } from './battleScreen';
+import { LAUNCH_GLOW_MS, LaunchScene, drawLaunchVeil } from './launch';
 import { BriefingScreen } from './briefingScreen';
 import { CallsignScreen } from './callsignScreen';
 import { StarterScreen } from './starterScreen';
@@ -256,9 +258,31 @@ class MissionHost implements Screen {
   private tip: Advice | null = null;
   /** What the contract's battles are fought with, as the app said when the battle on screen began. */
   private fought!: Fight;
+  /** The launch the contract opens with, while it is on the screen: the battle under it does not move until it is over. */
+  private launch: LaunchScene | null = null;
+  /** What is left of the light the machine went into, which lies over the battle as it opens. */
+  private glow = 0;
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
+    this.launch = this.launching();
+  }
+
+  /**
+   * The launch this contract opens with, if it has one: a contract flown from the hangar, in a game
+   * that is not hurried, for a player who has not asked for faster battles. It shows the machine
+   * the first battle is flown in, in the paint it wears.
+   */
+  private launching(): LaunchScene | null {
+    const { catalog, sprites, sfx, fast } = this.app.deps;
+    const game = this.app.game;
+    if (fast || this.app.settings.fastBattles || !game || !launches(this.mission)) return null;
+    const { build } = this.flow.state.units[0];
+    return new LaunchScene(sprites, build, game.paint, {
+      calm: this.app.settings.calm === true, sfx, rumble: (ms) => this.app.rumble(ms), rumbleMs: launchRumble(computeBuildStats(build, catalog).weight),
+      callsign: game.callsign ?? '', kind: STRINGS.classes.names[archetypeOf(build, catalog)].toUpperCase(),
+      bay: STRINGS.catapult.bay, go: STRINGS.catapult.go,
+    });
   }
 
   private begin(): void {
@@ -379,6 +403,16 @@ class MissionHost implements Screen {
   }
 
   update(dtMs: number): void {
+    if (this.launch) {
+      // The battle does not move while the machine is still on its way to it.
+      this.launch.update(dtMs);
+      if (!this.launch.done) return;
+      // It opens out of the light the machine went into.
+      this.glow = LAUNCH_GLOW_MS;
+      this.launch = null;
+      return;
+    }
+    this.glow = Math.max(0, this.glow - dtMs);
     this.screen.update(dtMs);
     this.keepLessons();
     this.bookIfOver();
@@ -392,7 +426,11 @@ class MissionHost implements Screen {
     this.app.learn(this.flow.taught);
   }
 
-  draw(ctx: CanvasRenderingContext2D): void { this.screen.draw(ctx); }
+  draw(ctx: CanvasRenderingContext2D): void {
+    if (this.launch) return this.launch.draw(ctx);
+    this.screen.draw(ctx);
+    if (this.glow > 0) drawLaunchVeil(ctx, this.glow / LAUNCH_GLOW_MS, this.app.settings.calm === true);
+  }
 
   /** True while the last machine of a battle is looked at from close by: the music is turned down for it. */
   get closeLook(): boolean {
@@ -406,6 +444,12 @@ class MissionHost implements Screen {
   }
 
   onInput(action: InputAction): void {
+    if (this.launch) {
+      // A or B cuts the launch short: the battle is simply there, with no light over it. That is all the press
+      // does, and no other button does anything: nothing under the launch is pressed.
+      if (action === 'confirm' || action === 'cancel') this.launch = null;
+      return;
+    }
     if (this.flow.phase !== 'result') {
       this.screen.onInput(action);
       this.bookIfOver();
@@ -434,15 +478,19 @@ class MissionHost implements Screen {
         damage: player.mods.damage,
       },
       message: flow.message,
-      // A line of talk holds its place for a moment: a press then is passed over, not refused.
-      busy: this.screen.holding,
+      // A line of talk holds its place for a moment: a press then is passed over, not refused. (Not while the launch
+      // is on: the battle's first line has not been said yet, and a press is taken, to cut the launch short.)
+      busy: !this.launch && this.screen.holding,
+      // The launch the contract opens with, while it is on the screen: how far in it is, and how many lamps are on.
+      launch: this.launch ? this.launch.view() : null,
       battle: {
         banner: this.screen.banner, typing: this.screen.typing,
         // The options the battle is fought with, as they reached the field.
         calm: this.screen.calm, pace: this.screen.pace,
         // What is being staged: the Overdrive's band while it is up, and the close look at the last machine to fall.
         cutIn: this.screen.motion.cutIn, finish: this.screen.motion.finish !== null,
-        phase: flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
+        // (While the machine is still on its way the battle has not begun: it is not in any phase of its own yet.)
+        phase: this.launch ? 'launch' : flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,

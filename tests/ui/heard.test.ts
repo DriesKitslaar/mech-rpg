@@ -12,7 +12,7 @@ import { setDetail } from '../../src/ui/light';
 import { SIGN_STRIKES, logoLevel, signStrikes } from '../../src/ui/logo';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { LIGHTNING_MS, THUNDER_AFTER_MS, lightning, strokeBegan } from '../../src/ui/weather';
-import { done, ids, inHub, memoryStore, press, select, snap, strong } from '../helpers/app';
+import { done, ids, inHub, memoryStore, pastLaunch, press, select, snap, strong } from '../helpers/app';
 import { record } from '../helpers/canvas';
 
 /**
@@ -286,6 +286,7 @@ describe('the music while the last machine is looked at', () => {
     select(app, ids(app).find((id) => id !== 'back')!);
     select(app, 'accept');
     expect(snap(app).screen).toBe('battle');
+    pastLaunch(app);
     // The battle is played a frame at a time; how loud the music is to be is written down after each.
     const levels: number[] = [];
     for (let i = 0; i < 60_000 && snap(app).battle?.phase !== 'result'; i++) {

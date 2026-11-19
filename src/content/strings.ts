@@ -65,6 +65,8 @@ export const STRINGS = {
   },
   // `open` is on the banner of a battle against ordinary machines: the rule that holds there, by the name the manual has it under.
   battleIntro: { warning: 'WARNING', destroy: 'DESTROY ALL HOSTILES', open: 'MOMENTUM' },
+  // The launch that opens a contract flown from the hangar: where it is, and the word as the catapult fires.
+  catapult: { bay: 'CATAPULT', go: 'LAUNCH' },
   yourTurn: (round: number) => `Round ${round} - your move`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} misses ${obj(target)}`,

@@ -8,6 +8,7 @@ import { SCENE_HOLD_MS } from '../../src/ui/sceneScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
 import { WORLD } from '../../src/content/codex';
 import { MISSIONS } from '../../src/content/missions';
+import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
 import { TALKS } from '../../src/content/talks';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
@@ -16,6 +17,7 @@ import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/stora
 import type { InputAction } from '../../src/platform/input';
 import { App, SHUTTER_MS } from '../../src/ui/app';
 import type { SpriteStore } from '../../src/ui/sprites';
+import { pastLaunch } from '../helpers/app';
 import { record, signCount, signIn } from '../helpers/canvas';
 
 /** A canvas context that accepts anything and remembers what was called. */
@@ -87,6 +89,7 @@ test('an enemy mech that fights alone is drawn mirrored from its parts, with its
   select(app, 'contracts');
   select(app, 'finale-undertow');
   select(app, 'accept');
+  pastLaunch(app);
   app.update(16);
   app.draw(ctx);
   expect(calls.some((c) => c.name === 'scale' && c.args[0] === -1 && c.args[1] === 1)).toBe(true);
@@ -106,6 +109,7 @@ test('the same kind of enemy among others is drawn as its single sprite', () => 
   select(app, 'contracts');
   select(app, 'undertow-1');
   select(app, 'accept');
+  pastLaunch(app);
   app.update(16);
   app.draw(ctx);
   const drawn = calls.filter((c) => c.name === 'drawImage').map((c) => (c.args[0] as { id: string }).id);
@@ -196,6 +200,8 @@ describe('the screens the three-act story added', () => {
     app.draw(ctx);
     expect(texts(calls)).toEqual(expect.arrayContaining(['1: Protect: Ore Train', '2: Protect: Ore Train']));
     select(app, 'accept');
+    // (The launch it opens with is for its own tests.)
+    pastLaunch(app);
     // The battle opens with a banner: the contract and what it asks for. Nothing else is up yet.
     calls.length = 0;
     app.update(16);
@@ -576,17 +582,39 @@ describe('the screens the three-act story added', () => {
     for (const line of after) expect(line.h).toBe(1);
   });
 
-  test('nothing is pressed on a battle the shutter still hides: the banner is there when it has opened', () => {
+  test('nothing is pressed on a contract the shutter still hides: the launch is there when it has opened, and the banner after it', () => {
     const app = new App({ catalog: CATALOG, save: new SaveFile(store(done('intro-1')), CATALOG), sprites, fast: false, seed: 3 });
     press(app, 'confirm');
     select(app, 'contracts');
     select(app, 'patrol');
     select(app, 'accept');
     app.update(48);
-    expect(snap(app)).toMatchObject({ screen: 'battle', busy: true, battle: { banner: true } });
+    expect(snap(app)).toMatchObject({ screen: 'battle', busy: true, launch: { stage: 'ready' }, battle: { banner: true, phase: 'launch' } });
+    // Behind the shutter a press cuts nothing short.
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ launch: { stage: 'ready' }, battle: { banner: true } });
+    // Once it has opened, one press cuts the launch and the next dismisses the banner, as a press always did.
+    app.update(SHUTTER_MS);
+    expect(snap(app).busy).toBe(false);
+    press(app, 'confirm');
+    expect(snap(app)).toMatchObject({ launch: null, battle: { banner: true } });
+    press(app, 'confirm');
+    expect(snap(app).battle).toMatchObject({ banner: false });
+  });
+
+  test('a fight that has no launch is behind the shutter as it ever was: the banner is there when it has opened', () => {
+    const base = done('intro-1', 'intro-2', 'hadron-1', 'hadron-2');
+    const app = new App({ catalog: CATALOG, save: new SaveFile(store({ ...base, scenes: SCENES.map((scene) => scene.id), codex: WORLD.map((entry) => entry.id) }), CATALOG), sprites, fast: false, seed: 3 });
+    press(app, 'confirm');
+    select(app, 'arena');
+    app.update(400);
+    press(app, 'confirm');
+    app.update(400);
+    select(app, 'accept');
+    app.update(48);
+    expect(snap(app)).toMatchObject({ screen: 'battle', busy: true, launch: null, battle: { banner: true } });
     press(app, 'confirm');
     expect(snap(app).battle).toMatchObject({ banner: true });
-    // Once it has opened, a press dismisses the banner as before.
     app.update(SHUTTER_MS);
     expect(snap(app).busy).toBe(false);
     press(app, 'confirm');

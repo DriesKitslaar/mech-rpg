@@ -60,6 +60,7 @@ export const STRINGS_NL = {
     },
   },
   battleIntro: { warning: 'ALARM', destroy: 'VERNIETIG ELKE VIJAND', open: 'DOORSTOTEN' },
+  catapult: { bay: 'KATAPULT', go: 'START' },
   yourTurn: (round: number) => `Ronde ${round} - jouw zet`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} raakt ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} mist ${obj(target)}`,

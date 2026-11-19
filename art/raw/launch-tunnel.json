@@ -1,0 +1,9 @@
+{
+  "id": "launch-tunnel",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art background, no anti-aliasing: the inside of a long, wide launch tunnel for giant machines, seen from its back wall looking straight down its length in strict one-point perspective to a small bright white rectangular opening exactly in the centre of the upper half of the picture, rows of amber and cyan strip lights along both walls and along the ceiling all converging on that opening, one wide steel catapult rail with yellow and black hazard stripes at its edges running down the middle of the floor from the bottom edge of the picture to the opening, dark blue-grey steel ribs and panels, the floor filling the lower third, symmetrical. No characters, no robots, no vehicles in the foreground, no readable text."
+}
