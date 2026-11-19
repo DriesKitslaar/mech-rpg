@@ -478,8 +478,9 @@ class MissionHost implements Screen {
         damage: player.mods.damage,
       },
       message: flow.message,
-      // A line of talk holds its place for a moment: a press then is passed over, not refused.
-      busy: this.screen.holding,
+      // A line of talk holds its place for a moment: a press then is passed over, not refused. (Not while the launch
+      // is on: the battle's first line has not been said yet, and a press is taken, to cut the launch short.)
+      busy: !this.launch && this.screen.holding,
       // The launch the contract opens with, while it is on the screen: how far in it is, and how many lamps are on.
       launch: this.launch ? this.launch.view() : null,
       battle: {

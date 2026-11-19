@@ -35,7 +35,7 @@ const PHASE = Object.fromEntries(MISSIONS.map((m) => [m.id, m.phase as string]))
 
 const AFTER_THE_WAR = [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
 
-type Seen = Snap & { list?: string; busy?: boolean; page?: string; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean } };
+type Seen = Snap & { list?: string; busy?: boolean; page?: string; launch?: unknown; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean } };
 
 /**
  * A pilot with the best gear there is who has done these contracts and has read nothing of the story yet.
@@ -144,7 +144,7 @@ async function open(page: Page, save: GameState, settings: Record<string, unknow
   return errors;
 }
 
-interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number; jobs: string[]; duel: boolean }
+interface Played { missions: string[]; screens: string[]; battles: number; floors: number; frames: number; swarms: number; jobs: string[]; duel: boolean; launches: number; flown: number }
 
 /**
  * Plays: the first swarm that is on offer beside the board (more machines than the field holds,
@@ -167,6 +167,10 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let swarms = 0;
   // The duel for the eighth seat: entered once, where it is asked for.
   let duel = false;
+  // The contracts taken from the hangar's list, and the launches watched: each as it comes on, and none of them cut short.
+  let flown = 0;
+  let launches = 0;
+  let launching = false;
   // The kinds of job flown, by the word their titles begin with: each once, won or lost.
   const jobs: string[] = [];
   let last = '';
@@ -175,6 +179,8 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   while (Date.now() < until) {
     const s = await snap(page) as Seen;
     screens.add(s.screen);
+    if (!!s.launch && !launching) launches++;
+    launching = !!s.launch;
     const items = s.menu?.items ?? [];
     const cur = items[s.menu?.cursor ?? 0]?.id;
     const has = (id: string): boolean => items.some((item) => item.id === id && item.enabled);
@@ -205,6 +211,7 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
       else if (cur !== pick.id) await tap(page, 'ArrowDown');
       else {
         if (pick === swarm) swarms++; else if (pick === job) jobs.push(kindOf(job)); else tried.set(pick.id, (tried.get(pick.id) ?? 0) + 1);
+        flown++;
         await tap(page, 'Enter');
       }
     } else if (s.screen === 'hub') {
@@ -235,7 +242,7 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     }
   }
   const end = await snap(page);
-  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel };
+  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel, launches, flown };
 }
 
 const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held' }[] = [
@@ -258,10 +265,15 @@ for (const player of PLAYERS) {
     const errors = await open(page, player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done), player.settings);
     const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
-    console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
+    console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.flown} contracts flown, ${played.launches} launches, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
     expect(errors).toEqual([]);
     expect(played.frames).toBeGreaterThan(1000);
+    // Every contract flown from the hangar opened with its launch, watched to the end: but for the player who asked
+    // for faster battles, who was shown none. (The last contract taken may still be at its briefing when the time is up.)
+    expect(played.flown).toBeGreaterThanOrEqual(5);
+    if (player.settings.fastBattles) expect(played.launches).toBe(0);
+    else expect([played.flown, played.flown - 1]).toContain(played.launches);
     // Every one of them flew a swarm: the machines that come on later were on the screen.
     expect(played.swarms).toBe(1);
     // And jobs, once the board had one to offer: what each kind asks was on the field, with everything drawn.

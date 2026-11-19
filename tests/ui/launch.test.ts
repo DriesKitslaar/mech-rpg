@@ -361,6 +361,7 @@ type Launch = { ms: number; stage: string; lamps: number } | null;
 const launchOf = (app: App): Launch => (snap(app) as unknown as { launch: Launch }).launch;
 const phase = (app: App): string => snap(app).battle!.phase;
 const banner = (app: App): boolean => (snap(app).battle as unknown as { banner: boolean }).banner;
+const spoken = (app: App): string | null => (snap(app).battle as unknown as { spoken: string | null }).spoken;
 const pilot = (extra: Partial<GameState> = {}): GameState => ({
   ...strong(done('intro-1', 'intro-2', 'hadron-1')), callsign: 'VANTA', lessons: ['momentum', 'rout', 'swarm'],
   // Every page of story read: an unhurried game holds each for a moment, and these tests are not about them.
@@ -474,6 +475,27 @@ describe('a contract opens with it', () => {
     fly(app, 'patrol');
     for (let ms = 0; ms < 720; ms += 16) app.update(16);
     expect(buzz).toEqual([]);
+  });
+
+  test('a contract that opens with something said is launched like any other: nothing of that is said, held or heard until the battle begins', () => {
+    // The ore train's contract: Dispatch speaks as its first battle opens.
+    const { app } = unhurried(pilot());
+    fly(app, 'hadron-2');
+    expect(launchOf(app)).not.toBeNull();
+    // Once the doors are open the screen is not holding anything: a press is taken, and it cuts the launch.
+    app.update(SHUTTER_MS);
+    expect(snap(app).busy).toBe(false);
+    // (The line is the battle's first thing to say, and waits: no word of it is on the screen.)
+    expect(spoken(app)).toBeTruthy();
+    expect(record((ctx) => app.draw(ctx)).texts.some((t) => t.text === 'DISPATCH' || spoken(app)!.startsWith(t.text))).toBe(false);
+    for (let ms = SHUTTER_MS; ms < 1000; ms += 16) { app.update(16); expect(snap(app).busy).toBe(false); }
+    press(app, 'confirm');
+    expect(launchOf(app)).toBeNull();
+    expect(banner(app)).toBe(true);
+    // The banner runs, and then Dispatch says what there was to say.
+    for (let ms = 0; ms < INTRO_MS + 64; ms += 16) app.update(16);
+    expect(phase(app)).toBe('talk');
+    expect(record((ctx) => app.draw(ctx)).texts.some((t) => t.text === 'DISPATCH')).toBe(true);
   });
 
   test('it is drawn in the paint the pilot wears, and in a calm picture as a calm picture has it', () => {
