@@ -31,6 +31,8 @@ export interface Settlement {
   simulated?: true;
   /** The class whose crown this duel took from its master; see masters.ts. */
   crowned?: Archetype;
+  /** Set on the bill of the duel that took the eighth seat from its keeper; see seat.ts. */
+  seated?: true;
 }
 
 /** Pilot perks that change the bill: a fraction more pay, a fraction off ammunition and repairs. */

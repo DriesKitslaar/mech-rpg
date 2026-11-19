@@ -91,8 +91,9 @@ test('the masters: the arena\'s second page lists the seven classes, each with i
   await press(page, 'KeyE');
   expect((await snap(page)).page).toBe('masters');
   const rows = (await snap(page)).menu.items;
-  expect(rows.map((row) => row.label)).toEqual(['Duellist', 'Sharpshooter', 'Artillery', 'Lancer', 'Bastion', 'Skirmisher', 'All-rounder']);
-  expect(rows.every((row) => row.enabled && row.note === '9000')).toBe(true);
+  // (Under the seven is the eighth seat, which is no class's: e2e/seat.spec.ts.)
+  expect(rows.map((row) => row.label)).toEqual(['Duellist', 'Sharpshooter', 'Artillery', 'Lancer', 'Bastion', 'Skirmisher', 'All-rounder', 'The Eighth Seat']);
+  expect(rows.slice(0, 7).every((row) => row.enabled && row.note === '9000')).toBe(true);
   expect(await master(page)).toEqual({ kind: 'duellist', state: 'open' });
   // Each of the seven, as they stand beside the list.
   for (const kind of ['duellist', 'marksman', 'artillery', 'lancer', 'bastion', 'skirmisher', 'allrounder']) {
@@ -185,7 +186,7 @@ test('the masters are locked to a pilot who is not champion, and the page says w
   await waitForScreen(page, 'arena');
   await press(page, 'KeyE');
   const rows = (await snap(page)).menu.items;
-  expect(rows.every((row) => !row.enabled && row.note === 'LOCKED')).toBe(true);
+  expect(rows.slice(0, 7).every((row) => !row.enabled && row.note === 'LOCKED')).toBe(true);
   expect(await master(page)).toEqual({ kind: 'duellist', state: 'locked' });
   await press(page, 'Enter');
   await settle(page, 20);

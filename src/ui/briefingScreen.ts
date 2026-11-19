@@ -6,6 +6,7 @@ import type { Mission } from '../core/campaign';
 import { advance, counted, newCount, type Count, type Forecast } from '../core/forecast';
 import { groundFor } from '../core/ground';
 import { askBonus, crownHeld, isMaster } from '../core/masters';
+import { isSeat } from '../core/seat';
 import type { Fight } from '../core/mission';
 import type { Sortie } from '../core/sortie';
 import { isRange, parseSpar } from '../core/range';
@@ -274,6 +275,7 @@ export class BriefingScreen implements Screen {
       : isRange(mission) ? STRINGS.training.rangeTag
       : mission.loaner !== undefined ? B.lent
       : mission.id.startsWith('cup-') ? STRINGS.arena.cups.tag
+      : isSeat(mission) ? STRINGS.arena.seat.tag
       : isMaster(mission) ? STRINGS.arena.masters.tag
       : mission.arenaRank !== undefined || mission.id === MIRROR_ID ? STRINGS.arena.fight
       : mission.replay ? B.replay

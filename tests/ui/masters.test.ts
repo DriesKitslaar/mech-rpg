@@ -1,6 +1,7 @@
 import { ARCHETYPES, archetypeOf, type Archetype } from '../../src/core/archetype';
 import { DIFFICULTY_SCALE, saveLoadout, type GameState } from '../../src/core/game';
 import { crownHeld, crownsHeld, masterBeaten, masterId } from '../../src/core/masters';
+import { SEAT_ID } from '../../src/core/seat';
 import { xpForLevel } from '../../src/core/pilot';
 import { tunable } from '../../src/core/tuning';
 import type { Build } from '../../src/core/types';
@@ -134,10 +135,11 @@ describe('the arena has two pages', () => {
 
   test('the masters\' page lists the seven classes in the order the rules ask about them, each with the purse of its master', () => {
     const { app } = atMasters(champion(late('duellist')));
+    // (Under the seven is the eighth seat, which is no class's: tests/ui/seat.test.ts.)
     const rows = snap(app).menu.items;
-    expect(rows.map((row) => row.id)).toEqual(ARCHETYPES.map(masterId));
-    expect(rows.map((row) => row.label)).toEqual(['Duellist', 'Sharpshooter', 'Artillery', 'Lancer', 'Bastion', 'Skirmisher', 'All-rounder']);
-    expect(rows.every((row) => row.enabled && row.note === '9000')).toBe(true);
+    expect(rows.map((row) => row.id)).toEqual([...ARCHETYPES.map(masterId), SEAT_ID]);
+    expect(rows.map((row) => row.label)).toEqual(['Duellist', 'Sharpshooter', 'Artillery', 'Lancer', 'Bastion', 'Skirmisher', 'All-rounder', 'The Eighth Seat']);
+    expect(rows.slice(0, 7).every((row) => row.enabled && row.note === '9000')).toBe(true);
     expect(masterShown(app)).toEqual({ kind: 'duellist', state: 'open' });
     toRow(app, masterId('bastion'));
     expect(masterShown(app)).toEqual({ kind: 'bastion', state: 'open' });
@@ -201,8 +203,8 @@ describe('the masters take challenges from the champion', () => {
   test('before that the page is there to be read, every row locked, and it says why', () => {
     const { app } = atMasters(champion(late('duellist'), { arenaRank: 9 }));
     const rows = snap(app).menu.items;
-    expect(rows.map((row) => row.id)).toEqual(ARCHETYPES.map(masterId));
-    expect(rows.every((row) => !row.enabled && row.note === 'LOCKED')).toBe(true);
+    expect(rows.map((row) => row.id)).toEqual([...ARCHETYPES.map(masterId), SEAT_ID]);
+    expect(rows.slice(0, 7).every((row) => !row.enabled && row.note === 'LOCKED')).toBe(true);
     expect(masterShown(app)).toEqual({ kind: 'duellist', state: 'locked' });
     const shown = drawn(app);
     // The master is there to be looked at: their name and what they are the master of.
@@ -473,7 +475,7 @@ describe('in Dutch', () => {
     shown = drawn(app);
     expect(shown.texts.filter((t) => t.y === 1).map((t) => t.text)).toEqual(expect.arrayContaining(['LADDER', 'MEESTERS']));
     expect(written(shown, 'KRONEN 1/7').y).toBe(22);
-    expect(snap(app).menu.items.map((row) => row.label)).toEqual(['Duellist', 'Scherpschutter', 'Artillerie', 'Lansier', 'Bastion', 'Jager', 'Allrounder']);
+    expect(snap(app).menu.items.map((row) => row.label)).toEqual(['Duellist', 'Scherpschutter', 'Artillerie', 'Lansier', 'Bastion', 'Jager', 'Allrounder', 'De achtste stoel']);
     expect(written(shown, 'MEESTERDUELLIST').y).toBe(207);
     expect(written(shown, N.back).y).toBe(253);
     for (const kind of ARCHETYPES) {

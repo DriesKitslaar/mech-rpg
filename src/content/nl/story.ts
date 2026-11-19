@@ -405,6 +405,13 @@ export const STORY_NL: Record<string, string> = {
     'Een Auditor met van elk soort een wapen: Writ Rifle, Pulse Carbine en een Howler die je omver slaat, en nanites die pantser herstellen. Geen truc, en geen zwakke plek.',
   'Thirty years, and they still call me Journeyman.': 'Dertig jaar, en ze noemen me nog steeds Journeyman.',
   'Now there is nothing left to learn from me. Take the crown.': 'Nu valt er niets meer van mij te leren. Neem de kroon.',
+  // The keeper of the eighth seat.
+  'The Sovereign fights three ways, changing as it is hurt: a charging rail and a howler that knocks you flat, then light that drains you, then two blades.':
+    'De Sovereign vecht op drie manieren en wisselt bij schade: een oplaadrail en een howler die je omver blaast, dan licht dat je leegtrekt, dan twee klingen.',
+  'Seven crowns. Let us see which of them is you.': 'Zeven kronen. Eens zien welke daarvan jij bent.',
+  'It was only ever kept warm. Sit down, pilot.': 'Hij werd alleen warm gehouden. Ga zitten, piloot.',
+  'Range is answered. Now the light: mind your generator.': 'Afstand is beantwoord. Nu het licht: let op je generator.',
+  'Guns down. What is left is what you are.': 'Wapens neer. Wat overblijft, dat ben jij.',
 
   // What named enemies say when they change tactics.
   'Witnessed, sealed, and now enforced.': 'Gezien, verzegeld, en nu ten uitvoer gelegd.',

@@ -18,6 +18,7 @@ import {
 } from '../core/game';
 import { ARCHETYPES, archetypeOf, recordWinAs, type Archetype } from '../core/archetype';
 import { askBonus, crownHeld, crownSettlement, isMaster, masterMission, mastersOpen, parseMaster, recordMasterWin } from '../core/masters';
+import { SEAT_ID, isSeat, recordSeatWin, seatHeld, seatMission, seatOpen, seatSettlement } from '../core/seat';
 import { startFight, type Fight } from '../core/mission';
 import { fitSortie, sortieBuilds, type Sortie } from '../core/sortie';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
@@ -36,6 +37,7 @@ import { tunedCatalog, type Tuning } from '../core/tuning';
 import type { BuildError, Catalog, EnemyDef, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { masterOf } from '../content/masters';
+import { KEEPER } from '../content/seat';
 import { BOARD_TEXT } from '../content/board';
 import { UNITS, WORLD } from '../content/codex';
 import { FINDS } from '../content/finds';
@@ -360,7 +362,8 @@ class MissionHost implements Screen {
     const game = this.app.game!;
     // The holder of a class's crown is paid more for a contract that asks for that class.
     const asked = askSettlement(rankSettlement(bill, performance), this.mission, flown, this.mission.asks ? askBonus(game, this.mission.asks) : undefined);
-    const settlement = crownSettlement(asked, this.mission, flown, game);
+    // The duel that takes the eighth seat says so on its bill, as one that takes a crown does.
+    const settlement = seatSettlement(crownSettlement(asked, this.mission, flown, game), this.mission, game);
     this.count();
     const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state), overdrives: this.overdrives });
     // What the debt limit wrote off is shown with the bill.
@@ -736,7 +739,10 @@ export class App {
     // A crown that has just been taken is said once, by what its holder is now called.
     const crownToasts: Toast[] = !before ? [] : ARCHETYPES.filter((kind) => crownHeld(game, kind) && !crownHeld(before, kind))
       .map((kind) => ({ id: `crown:${kind}`, heading: STRINGS.arena.masters.taken, title: STRINGS.arena.masters.titles[kind], sound: 'medal' }));
-    this.toasts.push(...crownToasts, ...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
+    // The eighth seat, taken, is said once as well: after the crowns, which came before it.
+    const seatToasts: Toast[] = before && seatHeld(game) && !seatHeld(before)
+      ? [{ id: 'seat', heading: STRINGS.arena.seat.taken, title: STRINGS.arena.seat.row, sound: 'medal' }] : [];
+    this.toasts.push(...crownToasts, ...seatToasts, ...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
     this.game = game;
     this.saveFailed = !this.file.save(game);
     // Options that could not be stored when they were changed go with the next thing that can be.
@@ -836,6 +842,22 @@ export class App {
 
   openMasterBriefing(kind: Archetype): void {
     const mission = this.masterFight(kind);
+    if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
+  }
+
+  /**
+   * The duel for the eighth seat, if its keeper takes this pilot's challenge: every crown held. A pilot who
+   * holds the seat hears the arena's usual word after a win; anyone else is told what the seat brings.
+   */
+  private seatFight(): Mission | undefined {
+    const game = this.game;
+    if (!game || !this.sideWorkOpen() || !seatOpen(game)) return undefined;
+    const A = STRINGS.arena;
+    return seatMission(game, KEEPER, { client: A.client, win: seatHeld(game) ? A.win : A.seat.win });
+  }
+
+  openSeatBriefing(): void {
+    const mission = this.seatFight();
     if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
   }
 
@@ -1062,7 +1084,7 @@ export class App {
   closeBriefing(mission: Mission): void {
     if (isDrill(mission) || isRange(mission)) this.show('training', new TrainingScreen(this, mission.id));
     else if (mission.id === MIRROR_ID) this.show('arena', new ArenaScreen(this, MIRROR));
-    else if (isCup(mission) || isMaster(mission)) this.show('arena', new ArenaScreen(this, mission.id));
+    else if (isCup(mission) || isMaster(mission) || isSeat(mission)) this.show('arena', new ArenaScreen(this, mission.id));
     else if (mission.arenaRank !== undefined) this.show('arena', new ArenaScreen(this, `rank-${mission.arenaRank}`));
     else this.openHub(mission.replay ? 'archive' : 'contracts', mission.id);
   }
@@ -1098,6 +1120,7 @@ export class App {
     if (missionId.startsWith('cup-')) return this.cupFight(missionId);
     const master = parseMaster(missionId);
     if (master) return this.masterFight(master);
+    if (missionId === SEAT_ID) return this.seatFight();
     const arena = /^arena-(\d+)$/.exec(missionId);
     return arena ? this.arenaFight(Number(arena[1])) : this.missions().find((m) => m.id === missionId);
   }
@@ -1232,6 +1255,8 @@ export class App {
       else if (isCup(mission)) next = recordCupWin(next, mission.id);
       // A master beaten is beaten whatever was flown; the crown goes with the class of the build it was flown in.
       else if (mission.crown !== undefined) next = recordMasterWin(next, mission.crown, kind);
+      // The seat is taken in whatever was flown.
+      else if (isSeat(mission)) next = recordSeatWin(next);
       // A job done is counted by its kind, whatever it was flown in.
       else if (mission.job !== undefined) next = recordJob(next, mission.job);
       else if (MISSIONS.some((m) => m.id === mission.id)) {

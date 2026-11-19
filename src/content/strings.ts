@@ -260,6 +260,16 @@ export const STRINGS = {
       win: 'The purse is yours. The crown goes to whoever beats them at their own game.',
       taken: 'CROWN TAKEN',
     },
+    // The eighth seat: the one place at the masters' table that is not a class's. Its keeper takes a challenge from the holder of every crown.
+    seat: {
+      row: 'The Eighth Seat', title: 'Keeper of the Eighth Seat',
+      tag: 'THE EIGHTH SEAT: one against one, for the seat',
+      // In the list: the seat held, or how many of the crowns it asks for are.
+      held: 'SEAT', count: (held: number, of: number) => `${held}/${of}`,
+      locked: 'The eighth seat has a keeper, who takes one challenge: from the pilot who holds all seven crowns.',
+      win: 'The seat is yours. The yard that built its machine takes your order now.',
+      taken: 'SEAT TAKEN',
+    },
     // The cups: three of the ladder back to back.
     cups: {
       tag: 'ARENA CUP: three fights, no rest',
@@ -474,8 +484,8 @@ export const STRINGS = {
   scene: { continue: 'Press A to continue', yourCall: 'YOUR CALL', answer: 'UP/DOWN: choose   A: answer. It stands.' },
   settlement: {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
-    // The heading of a duel that took a master's crown.
-    crowned: 'THE CROWN IS YOURS',
+    // The heading of a duel that took a master's crown, and of the one that took the eighth seat.
+    crowned: 'THE CROWN IS YOURS', seated: 'THE SEAT IS YOURS',
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
     askBonus: (name: string) => `${name} bonus`,

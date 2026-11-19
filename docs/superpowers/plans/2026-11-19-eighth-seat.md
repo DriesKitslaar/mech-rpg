@@ -62,10 +62,10 @@
 
 **Steps:**
 
-- [ ] The rules: open on seven crowns, the purse, the contract, the win written once: tests, with the Review Focus's lines.
-- [ ] Touchstone: the build, the two changes (at two thirds and at one third of the core) with their weapons, flying and lines; the measurement added to `scripts/masters.ts`; scale and plating set by it; tests that hold the measure as ranges and that the duel does not drag.
-- [ ] The row, the panel under it and the picture; the briefing with its tag and no line that asks for a class; arena music; the bill and its word; back to the row after it: tests on the recorded canvas and through the app, in both languages.
-- [ ] Browser test with pictures: the row locked, open, the briefing, each of the three ways on the field, the bill, the row held. Mutation over the step. APK.
+- [x] The rules: open on seven crowns, the purse, the contract, the win written once: tests, with the Review Focus's lines.
+- [x] Touchstone: the build, the two changes (at two thirds and at one third of the core) with their weapons, flying and lines; the measurement added to `scripts/masters.ts`; scale set by it (0.8, no plating; the first loadout a charging rail with a howler, which is what keeps a marksman's own charges from deciding it); tests that hold the measure as ranges and that the duel does not drag.
+- [x] The row, the panel under it and the picture; the briefing with its tag and no line that asks for a class; the bill and its word; back to the row from the briefing: tests on the recorded canvas and through the app, in both languages. (The duel is fought to the boss's song, as every fight with a machine that changes is: nothing was added for it.)
+- [x] Browser test with pictures: the row locked, open, the briefing, each of the three ways on the field, the bill, the row held. Mutation over the step. APK.
 
 ### Task E3: what the seat gives
 
