@@ -113,11 +113,12 @@ describe('the garage', () => {
     const count = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][LOADOUT_SLOTS];
     const aantal = ['geen', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen'][LOADOUT_SLOTS];
     expect(LOADOUT_SLOTS).toBe(ARCHETYPES.length);
-    expect(text).toMatch(new RegExp(` Left and right open your ${count} saved builds: room for one of each class, each listed by the class it is\\.$`));
-    expect(REFERENCE_NL[text]).toMatch(new RegExp(` Links en rechts: je ${aantal} bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd\\.$`));
-    // As many rows as it says, and a build kept in one goes by the class it is.
+    expect(text).toContain(` Right opens your ${count} saved builds: room for one of each class, each listed by the class it is.`);
+    expect(REFERENCE_NL[text]).toContain(` Rechts: je ${aantal} bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd.`);
+    // As many rows as it says, to the right as it says, and a build kept in one goes by the class it is.
     const flow = new GarageFlow(saveLoadout(newGame(CATALOG, STARTER_BUILD), LOADOUT_SLOTS - 1), CATALOG);
     flow.onInput('right');
+    expect(flow.mode).toBe('loadouts');
     expect(flow.loadouts.items).toHaveLength(LOADOUT_SLOTS);
     expect(flow.loadouts.items[LOADOUT_SLOTS - 1].label).toBe(`${LOADOUT_SLOTS}  ${STRINGS.classes.names[archetypeOf(STARTER_BUILD, CATALOG)]}`);
   });

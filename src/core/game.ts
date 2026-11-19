@@ -2,6 +2,7 @@ import type { Archetype } from './archetype';
 import { OVERDRIVES, type OverdriveId } from './battle';
 import type { Run } from './gauntlet';
 import type { JobKind } from './jobs';
+import { MIX_SHAPE } from './mix';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
 import { MAX_TUNED, tuneCap, type Tuning } from './tuning';
@@ -41,8 +42,10 @@ export interface GameState {
   /** How many times the campaign has been finished and started again. */
   cycle: number;
   settings: Settings;
-  /** The paint scheme of the mech: `factory`, or the id of a scheme. */
+  /** The paint scheme of the mech: `factory`, the id of a scheme, or the name of a mix of the pilot's own (see mix.ts). */
   paint: string;
+  /** The pilot's three mixes, by the names they have as paints. A game that keeps none has them as they come. */
+  mixes?: string[];
   /**
    * Saved builds, one per slot; an empty slot is null. A game kept when there were fewer places has a
    * shorter list (never fewer than `LOADOUT_SLOTS_MIN`): the places it does not name are empty, and it is
@@ -378,8 +381,10 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   if (!isCallsign(callsign) || !isTextList(medals) || !isTextList(met) || !isTextList(drills) || !isTextList(codex)) return false;
   // The record holds exactly the counters there are, each a whole number that is not negative.
   if (!isRecord(stats) || Object.keys(stats).length !== STAT_KEYS.length || !STAT_KEYS.every((key) => isWholeNonNegative(stats[key]))) return false;
-  // The scheme itself is the screen's business; here it only has to be a plain short word.
-  if (typeof paint !== 'string' || !/^[a-z]{1,24}$/.test(paint)) return false;
+  // The scheme itself is the screen's business; here it only has to be a plain short word, or of the shape a mix's name has.
+  if (typeof paint !== 'string' || !(/^[a-z]{1,24}$/.test(paint) || MIX_SHAPE.test(paint))) return false;
+  // The mixes kept: names of that shape, no more than a game could come to hold. Whether each is a mix is the reader's business.
+  if (value.mixes !== undefined && !(isTextList(value.mixes) && value.mixes.length <= 8 && value.mixes.every((name) => MIX_SHAPE.test(name)))) return false;
   // A game kept when there were fewer places for a build names fewer; one that names more is not this game's.
   if (!Array.isArray(loadouts) || loadouts.length < LOADOUT_SLOTS_MIN || loadouts.length > LOADOUT_SLOTS) return false;
   for (const saved of loadouts) {

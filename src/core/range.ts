@@ -1,4 +1,5 @@
 import { CLASS_AI, archetypeOf } from './archetype';
+import { likenessPaint } from './mix';
 import { MIRROR_SCALE } from './arena';
 import { MAX_ENEMIES } from './battle';
 import { MECH_ENEMIES, STORY_ENEMIES } from './board';
@@ -93,7 +94,7 @@ export function sparEnemy(game: GameState, slot: number, name: string, catalog: 
   const build = { ...game.loadouts[slot]! };
   return {
     id: SPAR_ENEMY(slot), name, ai: CLASS_AI[archetypeOf(build, catalog)], sprite: 'enemy-rival', composed: true, build,
-    paint: game.paint === 'obsidian' ? 'bone' : 'obsidian',
+    paint: likenessPaint(game.paint),
     ...(game.tuning && Object.keys(game.tuning).length > 0 ? { tune: { ...game.tuning } } : {}),
   };
 }

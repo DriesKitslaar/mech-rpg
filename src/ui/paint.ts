@@ -6,6 +6,7 @@
 import type { Archetype } from '../core/archetype';
 import type { GameState } from '../core/game';
 import { crownHeld } from '../core/masters';
+import { MIX_STEPS, mixId, mixesOf, parseMix, type Mix, type MixKey } from '../core/mix';
 import { seatHeld } from '../core/seat';
 
 export type RGB = [number, number, number];
@@ -72,16 +73,41 @@ export const CROWN_PAINTS: (PaintScheme & { crown: Archetype })[] = [
 export const SEAT_PAINT: PaintScheme = { id: 'touchstone', name: 'Touchstone', hue: 240, sat: 0.05, accentHue: 46, accentSat: 0.9, shade: 0.22 };
 
 /**
- * The paints a pilot may wear, in the order the garage steps through them: factory colours, the
- * schemes anyone may wear, after them the paint of each crown the pilot holds, and last the keeper's,
- * for the pilot who has taken the eighth seat.
+ * What the steps of a mix of the pilot's own are (see core/mix.ts): how strong the armour's colour is,
+ * from steel that has hardly any to vivid; how light or dark it is, from pale to deep; and how hard the
+ * lights and trim burn. None goes further than a ready paint already does, so a mixed machine reads in
+ * a fight as the ready ones do. The colours themselves go round the wheel in equal steps.
  */
-export const paintsFor = (state: Pick<GameState, 'crowns' | 'seat'>): string[] => [
+export const MIX_FINISH = [0.08, 0.3, 0.55, 0.8];
+export const MIX_SHADE = [-0.16, -0.08, 0, 0.1, 0.2];
+export const MIX_GLOW = [0.6, 0.8, 0.95];
+const HUE_STEP = 360 / MIX_STEPS.hue;
+
+/** A mix as a scheme: it goes by its own name as a paint, and is called by the place it is kept in. */
+export function schemeOfMix(mix: Mix): PaintScheme {
+  return {
+    id: mixId(mix), name: `Mix ${mix.slot}`, hue: mix.hue * HUE_STEP, sat: MIX_FINISH[mix.finish],
+    accentHue: mix.trim * HUE_STEP, accentSat: MIX_GLOW[mix.glow], shade: MIX_SHADE[mix.shade],
+  };
+}
+
+/**
+ * The paints a pilot may wear, in the order the garage steps through them: factory colours, the
+ * schemes anyone may wear, after them the paint of each crown the pilot holds, the keeper's for the
+ * pilot who has taken the eighth seat, and last the pilot's own three mixes.
+ */
+export const paintsFor = (state: Pick<GameState, 'crowns' | 'seat' | 'mixes'>): string[] => [
   FACTORY, ...PAINTS.map((paint) => paint.id), ...CROWN_PAINTS.filter((paint) => crownHeld(state, paint.crown)).map((paint) => paint.id),
-  ...(seatHeld(state) ? [SEAT_PAINT.id] : []),
+  ...(seatHeld(state) ? [SEAT_PAINT.id] : []), ...mixesOf(state).map(mixId),
 ];
 
-export const paintById = (id: string): PaintScheme | undefined => PAINTS.find((p) => p.id === id) ?? CROWN_PAINTS.find((p) => p.id === id) ?? (id === SEAT_PAINT.id ? SEAT_PAINT : undefined);
+/** A paint by its name: a ready one, or a mix, whose name says what it is. */
+export function paintById(id: string): PaintScheme | undefined {
+  const ready = PAINTS.find((p) => p.id === id) ?? CROWN_PAINTS.find((p) => p.id === id) ?? (id === SEAT_PAINT.id ? SEAT_PAINT : undefined);
+  if (ready) return ready;
+  const mix = parseMix(id);
+  return mix ? schemeOfMix(mix) : undefined;
+}
 
 /** Hue in degrees, saturation and lightness in 0..1. */
 export function toHsl(r: number, g: number, b: number): [number, number, number] {
@@ -186,4 +212,25 @@ export function recolour(data: Uint8ClampedArray, scheme: PaintScheme, info: Pai
     out[i + 2] = colour[2];
   }
   return out;
+}
+
+/** A colour as a canvas takes one: a hash and two figures for each of red, green and blue. */
+export const hex = (rgb: RGB): string => `#${rgb.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+/** The colour on a scheme's ramp that a strip shows it by: the lighter of its middle two. */
+const SHOWN = 4;
+
+/**
+ * The colours of the steps of one of the five things a mix sets, as a strip on the paint page shows
+ * them. The two wheels are the same whatever the mix is: a chart to pick a colour from. The other
+ * three are in the colours the mix itself would have at each step: the armour at each finish and at
+ * each shade, and the trim at each glow.
+ */
+export function mixSwatches(mix: Mix, key: MixKey): string[] {
+  const steps = Array.from({ length: MIX_STEPS[key] }, (_, step) => step);
+  switch (key) {
+    case 'hue': return steps.map((step) => hex(fromHsl(step * HUE_STEP, 0.7, 0.5)));
+    case 'trim': return steps.map((step) => hex(fromHsl(step * HUE_STEP, 0.9, 0.55)));
+    case 'glow': return steps.map((step) => hex(fromHsl(mix.trim * HUE_STEP, MIX_GLOW[step], 0.55)));
+    default: return steps.map((step) => hex(rampOf(schemeOfMix({ ...mix, [key]: step }))[SHOWN]));
+  }
 }

@@ -59,7 +59,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
 | Training | Dertien oefeningen in een geleende mecha, en het proefveld voor je eigen build. |
 | The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
-| Garage | Onderdelen wisselen, verf kiezen (L1/R1), zeven builds bewaren (links/rechts). |
+| Garage | Onderdelen wisselen, verf kiezen (L1/R1), je eigen lak mengen (links), zeven builds bewaren (rechts). |
 | Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
 | Pilot | Niveau en vaardigheden, medailles, een logboek van alles wat je gedaan hebt, en de zeven klassen (**Class**). |
 | Messages | Berichten van je opdrachtgevers. |
@@ -386,7 +386,7 @@ blijft daarna gemonteerd, net als wanneer je hem in de garage laadt.
 
 - Een bewaarde build staat er alleen bij als je alle onderdelen nog bezit en hij mag uitrukken
   (niet te zwaar, genoeg energie, een wapen).
-- Builds bewaar je in de **Garage**: links of rechts, een plek kiezen, **Save current build**.
+- Builds bewaar je in de **Garage**: naar rechts, een plek kiezen, **Save current build**.
   Er zijn **zeven plekken**: genoeg voor een build van elke klasse. Een plek zit niet aan een
   klasse vast; je mag ook zeven duellisten bewaren. In de lijst staat bij elke plek wat voor
   machine erin zit en van welk frame de kern is, bijvoorbeeld `2  Bastion   Colossus`.
@@ -483,6 +483,33 @@ onderdeel staan en druk op **R1**: het ligt op de werkbank.
   draagt zoals het nu is.
 - In de eerste cyclus gaat de werkbank twee stappen. Elke keer dat je met **New Cycle** opnieuw
   begint, kan er één stap bij, tot vijf. Achter de naam staat hoe ver een onderdeel is: `+2`.
+
+## De spuiterij: je eigen lak
+
+In de **Garage** wissel je met **L1/R1** van lak: de kleuren van de fabriek, twaalf kant-en-klare
+lakken, de lakken die je in de arena verdient, en als laatste **Mix 1**, **Mix 2** en **Mix 3**. Die
+drie zijn van jou. Zolang je er niets aan verandert zijn het een witte mecha met blauwe lichten, een
+zwarte met rode, en een marineblauwe met goud.
+
+Druk in de garage op **links**: dan sta je in de **PAINT SHOP**. Met **B** ga je terug naar de
+onderdelen. Bovenaan staat welke lak je draagt. Draag je een van je drie mengsels, dan stel je de
+vijf rijen eronder in:
+
+| Rij | Stappen | Wat je kiest |
+|---|---|---|
+| **ARMOUR** | 24 | De kleur van het pantser. |
+| **FINISH** | 4 | Hoe sterk die kleur is: Steel (bijna geen kleur), Matte, Rich, Vivid. |
+| **SHADE** | 5 | Hoe licht of donker: Pale, Light, Middle, Dark, Deep. |
+| **TRIM** | 24 | De kleur van de lichten en de sierstrips. |
+| **GLOW** | 3 | Hoe fel die branden: Soft, Clear, Bright. |
+
+Met **omhoog/omlaag** kies je een rij, met **links/rechts** verander je hem: houd de knop
+ingedrukt en hij loopt door. **L1/R1** doen hetzelfde, en **A** gaat een stap verder. Je mecha
+ernaast verandert bij elke druk mee. **Steel** met **Pale** geeft een witte mecha, **Steel** met **Deep** een zwarte.
+Een mengsel blijft bewaard zoals je het achterlaat, en je draagt het overal: in de hangar, in het
+gevecht en bij de lancering. Wapens houden hun eigen kleur.
+
+Het kost niets. Er is een medaille voor wie een eigen mengsel draagt.
 
 ## Moeilijkheid
 

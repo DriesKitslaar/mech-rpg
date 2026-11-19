@@ -232,8 +232,13 @@ export const REFERENCE_NL: Record<string, string> = {
   'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying, and you can owe 2000 at most: what a bill adds beyond that, Dispatch writes off.':
     'Reparaties kosten 0.8 credits per punt pantser en elk schot kost geld. Een onderdeel verkopen geeft terug wat je betaalde, dus iets uitproberen kost niets. Schuld belet kopen, nooit vliegen, en je schuld is hooguit 2000: wat een rekening daarboven toevoegt, schrijft Dispatch af.',
   'THE GARAGE': 'DE GARAGE',
-  'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Left and right open your seven saved builds: room for one of each class, each listed by the class it is.':
-    'Een build moet onder het gewicht blijven dat zijn benen dragen en binnen de energie van zijn generator. L1 en R1 wisselen de lak. Links en rechts: je zeven bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd.',
+  'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Right opens your seven saved builds: room for one of each class, each listed by the class it is. Left opens the paint shop.':
+    'Een build moet onder het gewicht blijven dat zijn benen dragen en binnen de energie van zijn generator. L1 en R1 wisselen de lak. Rechts: je zeven bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd. Links: de spuiterij.',
+  'THE PAINT SHOP': 'DE SPUITERIJ',
+  "Twelve paints come ready, and a master's crown brings theirs. MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake. Up and down choose a row, left and right change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows. A mix is kept as you leave it.":
+    'Twaalf lakken zijn kant en klaar; de kroon van een meester geeft de zijne. MIX 1, 2 en 3 meng je zelf: trek er een aan en vijf rijen ontwaken. Op en neer kies je een rij, links en rechts wijzig je hem: de kleur van het pantser, hoe sterk en donker, de kleur van de bies en hoe fel die gloeit. Je mengsel blijft bewaard.',
+  'Own Colours': 'Eigen kleuren',
+  'Wear a paint of your own mixing.': 'Draag een lak die je zelf mengde.',
   'KINDS OF WORK': 'SOORTEN WERK',
   "Once the board has grown a little, a job stands beside its three. Its title says which of four it is. Hit: paid for one machine, over when it falls. Repo: take that machine's arms and legs and leave its core. Escort: whatever stands wears the freight down each round. Hold: last six rounds. They turn with every contract won.":
     'Is het bord wat gegroeid, dan staat er een klus naast de drie. De titel zegt welke van de vier. Doelwit: loon voor een machine, klaar als die valt. Beslag: haal armen en benen van die machine, laat de kern heel. Escorte: wat nog staat sloopt elke ronde wat van de vracht. Stand: houd zes rondes vol. Ze wisselen na elk gewonnen contract.',

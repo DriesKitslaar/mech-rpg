@@ -297,9 +297,9 @@ async function toRow(page: Page, id: string): Promise<void> {
 }
 /** Through the rooms that say what the holder of the seat has, with a picture of each. */
 async function tour(page: Page, tag: string): Promise<void> {
-  // The garage: one step back from the factory's colours is the last paint there is, the keeper's.
+  // The garage: back from the factory's colours, past the pilot's own three mixes, is the last paint that is won: the keeper's.
   await into(page, 'garage');
-  await tap(page, 'q');
+  for (let i = 0; i < 4; i++) await tap(page, 'q');
   await adv(page, 400);
   expect((await kept(page)).paint).toBe('touchstone');
   await page.screenshot({ path: shot(`seat-paint${tag}`) });

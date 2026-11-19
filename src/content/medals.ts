@@ -4,6 +4,7 @@ import { checksHeld, papersFound } from '../core/codex';
 import { FACTORY_PAINT, type GameState } from '../core/game';
 import { JOB_KINDS, jobsWon, kindsOfJob } from '../core/jobs';
 import { crownsHeld } from '../core/masters';
+import { isMix } from '../core/mix';
 import { seatHeld } from '../core/seat';
 import { ALL_STRIPES, stripesHeld } from '../core/stripes';
 import type { Medal } from '../core/medals';
@@ -99,6 +100,7 @@ const EARNED: Medal[] = [
   { id: 'drills', name: 'Qualified', text: 'Pass every training drill.', tier: 2, progress: count(DRILLS.length, (g) => DRILLS.filter((d) => g.drills.includes(d.id)).length) },
   // The hangar.
   { id: 'painted', name: 'Company Colours', text: 'Repaint your mech.', tier: 1, progress: once((g) => g.paint !== FACTORY_PAINT) },
+  { id: 'mixed', name: 'Own Colours', text: 'Wear a paint of your own mixing.', tier: 1, progress: once((g) => isMix(g.paint)) },
   { id: 'loadout', name: 'Spare Suit', text: 'Save a build in the garage.', tier: 1, progress: once((g) => g.loadouts.some((build) => build !== null)) },
   { id: 'bench-1', name: 'Off the Jig', text: 'Have the bench work on a part.', tier: 1, progress: count(1, benchSteps) },
   { id: 'bench-5', name: 'Blueprinted', text: 'Take a part to the fifth step at the bench.', tier: 3, progress: count(TUNE_MAX, furthestStep) },

@@ -1,4 +1,5 @@
 import type { Mission } from './campaign';
+import { likenessPaint } from './mix';
 import type { GameState } from './game';
 import type { EnemyDef } from './types';
 
@@ -68,7 +69,7 @@ export const mirrorPurse = (state: GameState): number => (state.stats.mirrors > 
 export function mirrorEnemy(state: GameState, name: string): EnemyDef {
   return {
     id: 'mirror', name, ai: 'gunner', sprite: 'enemy-rival', composed: true, build: { ...state.build },
-    paint: state.paint === 'obsidian' ? 'bone' : 'obsidian',
+    paint: likenessPaint(state.paint),
     // The copy is the pilot's mech as it flies: with the bench's work on it.
     ...(state.tuning && Object.keys(state.tuning).length > 0 ? { tune: { ...state.tuning } } : {}),
   };

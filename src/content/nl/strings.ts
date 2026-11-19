@@ -470,7 +470,15 @@ export const STRINGS_NL = {
     heading: 'GARAGE', empty: 'Leeg', none: '(geen)', inUse: 'Gebruikt', fitted: '*',
     weight: 'Gewicht', energy: 'Energie', mobility: 'Mobiliteit', armour: 'Pantser', stability: 'Stabiliteit', cooling: 'Koeling',
     evasion: 'Boost ontwijk', volley: 'Salvo EN', back: 'B: terug',
-    factoryPaint: 'Fabriek', paint: (name: string) => `L1/R1 LAK: ${name}`, toLoadouts: 'LEFT/RIGHT: MIJN BUILDS',
+    factoryPaint: 'Fabriek', paint: (name: string) => `L1/R1 LAK: ${name}`,
+    pages: 'LEFT: LAK  RIGHT: BUILDS',
+    mixer: {
+      heading: 'SPUITERIJ', change: 'LEFT/RIGHT: WIJZIG',
+      rows: { paint: 'LAK', hue: 'PANTSER', finish: 'STERKTE', shade: 'TINT', trim: 'BIES', glow: 'GLOED' },
+      finish: ['Staal', 'Mat', 'Vol', 'Sterk'], shade: ['Bleek', 'Licht', 'Midden', 'Donker', 'Diep'], glow: ['Zacht', 'Helder', 'Fel'],
+      ready: 'Een lak zoals hij komt. Kies MIX 1, 2 of 3 en meng je eigen.',
+      yours: 'Jouw mengsel: het blijft zoals je het laat.',
+    },
     loadouts: 'MIJN BUILDS', emptyLoadout: 'Leeg', load: 'Laad', save: 'Bewaar deze build', clear: 'Wis', backItem: 'Terug',
     missing: (name: string) => `Ontbreekt: ${name}`,
     slotTags: {

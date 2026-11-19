@@ -253,7 +253,11 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'garage', title: 'THE GARAGE',
-    text: 'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Left and right open your seven saved builds: room for one of each class, each listed by the class it is.',
+    text: 'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Right opens your seven saved builds: room for one of each class, each listed by the class it is. Left opens the paint shop.',
+  },
+  {
+    id: 'paint', title: 'THE PAINT SHOP',
+    text: "Twelve paints come ready, and a master's crown brings theirs. MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake. Up and down choose a row, left and right change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows. A mix is kept as you leave it.",
   },
   {
     id: 'legs', title: 'LEG TYPES',

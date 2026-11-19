@@ -1,4 +1,6 @@
+import { isMix } from '../core/mix';
 import { paintById, recolour, type PaintInfo } from './paint';
+import { MIX_KEPT, PaintedCache } from './paintedCache';
 import { COLORS, FONT } from './widgets';
 
 export type SpriteManifest = Record<string, {
@@ -80,7 +82,8 @@ export async function loadSprites(manifest: SpriteManifest): Promise<SpriteStore
     loaded.set(id, spriteOf(image, entry));
   }));
   const placeholders = new Map<string, Sprite>();
-  const paintedSprites = new Map<string, Sprite>();
+  // Coloured once for each paint and kept: but for the pilot's own mixes, of which only the last few asked for are.
+  const paintedSprites = new PaintedCache<Sprite>(MIX_KEPT, isMix);
   // The one sheet that is lent out: made when it is first asked for, null when the browser would not give one.
   let lent: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null | undefined;
   const get: SpriteStore['get'] = (id, fallback) => {
@@ -96,9 +99,7 @@ export async function loadSprites(manifest: SpriteManifest): Promise<SpriteStore
       const scheme = paintById(paint);
       const info = Object.hasOwn(manifest, id) ? manifest[id].paint : undefined;
       if (!base || !scheme || !info) return get(id, fallback);
-      const key = `${id}|${scheme.id}`;
-      if (!paintedSprites.has(key)) paintedSprites.set(key, repaint(base, (pixels) => recolour(pixels, scheme, info)));
-      return paintedSprites.get(key)!;
+      return paintedSprites.get(id, scheme.id, () => repaint(base, (pixels) => recolour(pixels, scheme, info)));
     },
     sheet(w, h) {
       try {

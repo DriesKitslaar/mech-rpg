@@ -5,6 +5,7 @@ import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import type { InputAction } from '../../src/platform/input';
 import { GarageFlow } from '../../src/ui/garageFlow';
+import { DEFAULT_MIXES, mixId } from '../../src/core/mix';
 import { PAINTS } from '../../src/ui/paint';
 import { wearing } from '../helpers/builds';
 
@@ -202,10 +203,19 @@ describe('paint', () => {
     expect(flow.game.paint).toBe(PAINTS[0].id);
     expect(flow.paintName).toBe(PAINTS[0].name);
     expect(flow.onInput('prev')).toBe('changed');
+    expect(flow.game.paint).toBe('factory');
+    // Back from factory colours come the pilot's own three mixes, the last first, and then the schemes again.
+    for (const own of [...DEFAULT_MIXES].reverse()) {
+      expect(flow.onInput('prev')).toBe('changed');
+      expect(flow.game.paint).toBe(mixId(own));
+      expect(flow.paintName).toBe(`Mix ${own.slot}`);
+    }
     expect(flow.onInput('prev')).toBe('changed');
     expect(flow.game.paint).toBe(PAINTS.at(-1)!.id);
     for (let i = 0; i < PAINTS.length; i++) flow.onInput('prev');
     expect(flow.game.paint).toBe('factory');
+    // Going through them changes none of them: nothing is kept but which is worn.
+    expect(flow.game.mixes).toBeUndefined();
   });
 
   test('a scheme this version does not know is shown as factory and steps on from there', () => {
@@ -232,7 +242,7 @@ describe('saved builds', () => {
     return flow.onInput('confirm');
   };
 
-  test('left or right from the slot list opens seven slots, empty at first', () => {
+  test('right from the slot list opens seven slots, empty at first', () => {
     const flow = new GarageFlow(fresh(), CATALOG);
     toLoadouts(flow);
     expect(flow.loadouts.items.map((i) => [i.id, i.label, i.note])).toEqual([
@@ -243,7 +253,8 @@ describe('saved builds', () => {
     expect(flow.loadouts.items.every((i) => i.enabled)).toBe(true);
     flow.onInput('cancel');
     expect(flow.mode).toBe('slots');
-    flow.onInput('left');
+    // Left from the saved builds is back to the parts; left from the parts is the page of paint (see paintPage.test.ts).
+    flow.onInput('right');
     expect(flow.mode).toBe('loadouts');
     flow.onInput('left');
     expect(flow.mode).toBe('slots');
