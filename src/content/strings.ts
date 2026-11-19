@@ -352,6 +352,19 @@ export const STRINGS = {
     lockedNote: 'The simulator opens this drill once Dispatch has finished introducing you.',
     tag: 'TRAINING: a lent mech in the simulator. It costs nothing.',
     won: 'DRILL PASSED', lost: 'DRILL FAILED',
+    // The simulator's second page: the pilot's own build against any machine met, for nothing.
+    pages: { drills: 'DRILLS', range: 'TEST RANGE' },
+    rangeTitle: 'Test Range',
+    rangeBriefing: (fielded: string) => `The simulator fields ${fielded} against your own machine, as the book has it and as hard as the game is set.`,
+    rangeFree: 'Nothing here is billed, paid or counted. Afterwards you see what a real flight would have cost.',
+    rangeDebrief: 'The simulator resets. Your machine is as it was.',
+    rangeTag: 'RANGE: your own mech in the simulator. Nothing is billed or counted.',
+    rangeWon: 'RANGE CLEARED', rangeLost: 'SHOT DOWN',
+    rangeEmpty: 'Nothing met yet. Fly a contract and come back.',
+    rangeHint: 'LEFT/RIGHT: how many   A: briefing   B: back',
+    rangeCount: (n: number) => `x${n}`,
+    // Where a contract's briefing says what it pays.
+    rangePays: 'FREE',
   },
   credits: {
     flownBy: 'FLOWN BY', level: (n: number) => `PILOT LEVEL ${n}`, record: 'THE RECORD', stat: (label: string, value: string) => `${label}  ${value}`,
@@ -438,6 +451,8 @@ export const STRINGS = {
     // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
     askBonus: (name: string) => `${name} bonus`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
+    // On the bill of a fight on the range, where the net stands on one that is paid: what it would have come to.
+    wouldCost: 'WOULD HAVE COST',
     relief: (credits: number) => `Debt limit reached: ${credits} written off`,
   },
   /** What Dispatch says after a lost battle; `adviceAfter` picks which. Each fits three lines of the settlement. */

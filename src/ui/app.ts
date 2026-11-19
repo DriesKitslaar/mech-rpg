@@ -26,12 +26,13 @@ import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } fr
 import { nameRank } from '../core/renown';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
+import { isRange, parseRange, rangeKinds, rangeLimit, rangeMission, rangeSettlement } from '../core/range';
 import { drillMission, drillOpen, drillPassed, drillSettlement, isDrill, recordDrill, type Drill } from '../core/training';
 import { tunedCatalog, type Tuning } from '../core/tuning';
 import type { BuildError, Catalog, EnemyDef, Part } from '../core/types';
 import { ALL_ENEMIES, ARENA } from '../content/arena';
 import { BOARD_TEXT } from '../content/board';
-import { WORLD } from '../content/codex';
+import { UNITS, WORLD } from '../content/codex';
 import { FINDS } from '../content/finds';
 import { DRILLS, LESSON_LINES } from '../content/drills';
 import { MEDALS } from '../content/medals';
@@ -256,7 +257,10 @@ class MissionHost implements Screen {
   private begin(): void {
     const { catalog, sprites, sfx, fast } = this.app.deps;
     const total = this.mission.battles.length;
-    const drill = isDrill(this.mission) || isGauntlet(this.mission);
+    // A drill and a floor of the Gauntlet are flown in a machine that is not the pilot's. The range is flown in
+    // the pilot's own, and like those two it has the simulator's voice and nobody else's.
+    const lent = isDrill(this.mission) || isGauntlet(this.mission);
+    const drill = lent || isRange(this.mission);
     // What the contract is fought with is the app's to say: the odds on the briefing were counted from the same.
     this.fought = this.app.fight(this.mission);
     const state = startFight(this.fought, this.mission, this.index, catalog, this.seed, this.index > 0 ? this.flow.state : undefined);
@@ -279,7 +283,7 @@ class MissionHost implements Screen {
     const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
     if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
-      fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: drill ? undefined : this.app.game!.paint,
+      fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: lent ? undefined : this.app.game!.paint,
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
       ...(boss ? { boss: boss.name } : {}),
       ...(known && game?.callsign ? { pilot: STRINGS.renown.banner(game.callsign, known) } : {}),
@@ -338,6 +342,11 @@ class MissionHost implements Screen {
       return;
     }
     const { payBonus, costDiscount } = this.app.perks();
+    if (isRange(this.mission)) {
+      // The range bills, pays and counts nothing: the bill is what a real flight would have cost, and it is only shown.
+      this.settlement = rangeSettlement(settle(this.flow.state, 0, this.app.deps.catalog, { payBonus: 0, costDiscount }));
+      return;
+    }
     const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
     // A contract that asked for a class pays more to a pilot who won it as one.
@@ -846,6 +855,28 @@ export class App {
     return entry?.open ? drillMission(this.game!, entry.drill, STRINGS.training.client) : undefined;
   }
 
+  /** The machines the range can field: every kind the database has a page for that the pilot has met, with how many of it at most. */
+  rangeList(): { kind: string; name: string; limit: number }[] {
+    const game = this.game;
+    return game ? rangeKinds(game, UNITS.map((unit) => unit.id)).map((kind) => ({ kind, name: ALL_ENEMIES[kind].name, limit: rangeLimit(kind) })) : [];
+  }
+
+  /** A fight on the range as a contract, if the machine is one the pilot has met. */
+  private rangeFight(kind: string, count: number): Mission | undefined {
+    const entry = this.rangeList().find((machine) => machine.kind === kind);
+    if (!entry) return undefined;
+    const T = STRINGS.training;
+    return rangeMission(kind, count, entry.name, {
+      title: T.rangeTitle, client: T.client, free: T.rangeFree, debrief: T.rangeDebrief,
+      briefing: (name, fielded) => T.rangeBriefing(fielded > 1 ? `${name} ${T.rangeCount(fielded)}` : name),
+    });
+  }
+
+  openRangeBriefing(kind: string, count: number): void {
+    const mission = this.rangeFight(kind, count);
+    if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
+  }
+
   openDrillBriefing(drillId: string): void {
     const mission = this.drillFight(drillId);
     if (mission) this.show('briefing', new BriefingScreen(this, mission), briefingTrack(mission));
@@ -968,13 +999,13 @@ export class App {
   /** Leaves a settlement: a drill for the training list, anything else for the hub. */
   leaveSettlement(mission: Mission): void {
     if (isGauntlet(mission)) this.go('gauntlet');
-    else if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
+    else if (isDrill(mission) || isRange(mission)) this.show('training', new TrainingScreen(this, mission.id));
     else this.go('hub');
   }
 
   /** Leaves a briefing for the list it was opened from. */
   closeBriefing(mission: Mission): void {
-    if (isDrill(mission)) this.show('training', new TrainingScreen(this, mission.id));
+    if (isDrill(mission) || isRange(mission)) this.show('training', new TrainingScreen(this, mission.id));
     else if (mission.id === MIRROR_ID) this.show('arena', new ArenaScreen(this, MIRROR));
     else if (isCup(mission)) this.show('arena', new ArenaScreen(this, mission.id));
     else if (mission.arenaRank !== undefined) this.show('arena', new ArenaScreen(this, `rank-${mission.arenaRank}`));
@@ -1003,6 +1034,8 @@ export class App {
   private offered(missionId: string, replay: boolean): Mission | undefined {
     if (replay) return this.archive().find((m) => m.id === missionId);
     if (missionId.startsWith('drill-')) return this.drillFight(missionId);
+    const range = parseRange(missionId);
+    if (range) return this.rangeFight(range.kind, range.count);
     if (missionId.startsWith('gauntlet-')) return this.gauntletFloor()?.id === missionId ? this.gauntletFloor() : undefined;
     if (missionId === MIRROR_ID) return this.mirrorFight();
     if (missionId.startsWith('cup-')) return this.cupFight(missionId);

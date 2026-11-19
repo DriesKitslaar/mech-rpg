@@ -5,6 +5,7 @@ import {
 } from '../../src/core/battle';
 import { ASK_BONUS, ASK_TIER, BOARD_SIZE, PAY_PER_HEAD, swarmContract } from '../../src/core/board';
 import { FORECAST_PLAYS } from '../../src/core/forecast';
+import { RANGE_MAX, rangeLimit } from '../../src/core/range';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { newGame } from '../../src/core/game';
 import { NAME_AT, RENOWN, renownOf } from '../../src/core/renown';
@@ -61,6 +62,22 @@ describe('the odds', () => {
     expect(text).toContain('with your perks, bench work, Overdrive, wingman and difficulty');
     expect(text).toMatch(/Another build is another count\./);
     expect(text).toMatch(/flying it yourself, you can do better\.$/);
+  });
+});
+
+describe('the range', () => {
+  test('the manual says where it is, what can be fielded and how many, that the fight is real, and that nothing of it is kept', () => {
+    const text = topic('range');
+    expect(text).toMatch(/^The simulator's second page \(L1\/R1\) is the range: your own build against any machine you have met/);
+    // Three of a light machine, one of a mech or of anything that belongs to the story.
+    expect(RANGE_MAX).toBe(3);
+    expect(text).toContain('up to three of the lighter ones, one of a mech or anything of the story\'s');
+    expect([rangeLimit('recon-drone'), rangeLimit('heavy-mech'), rangeLimit('leviathan')]).toEqual([3, 1, 1]);
+    expect(text).toContain('A real fight: perks, bench work, Overdrive and difficulty all count.');
+    expect(text).toMatch(/Nothing is billed, paid or counted; afterwards you see what it would have cost\.$/);
+    // The page it names is on the simulator's own tabs, and the briefing says the same of the bill.
+    expect(STRINGS.training.pages.range).toBe('TEST RANGE');
+    expect(STRINGS.training.rangeFree).toContain('Nothing here is billed, paid or counted.');
   });
 });
 

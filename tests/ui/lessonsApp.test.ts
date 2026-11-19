@@ -234,6 +234,25 @@ describe('where nothing is explained', () => {
     expect(savedGame(m.store).lessons).toBeUndefined();
   });
 
+  test('nor on the range, though the machine flown there is the pilot\'s own', () => {
+    const m = lucky((seed) => {
+      const made = slowHub(strong(done('intro-1', 'intro-2')), seed);
+      select(made.app, 'training');
+      press(made.app, 'next');
+      // Two drones at once are an open battle.
+      for (let i = 0; i < 60 && snap(made.app).menu.items[snap(made.app).menu.cursor]?.id !== 'recon-drone'; i++) press(made.app, 'down');
+      press(made.app, 'right', 'confirm');
+      expect(snap(made.app).briefing!.mission).toBe('range-2-recon-drone');
+      select(made.app, 'accept');
+      expect(snap(made.app).screen).toBe('battle');
+      listen(made.app);
+      const after = fire(made.app);
+      return standing(made.app) === 1 && battle(made.app).message === STRINGS.momentum.ready(emitter.name) ? { ...made, after } : null;
+    });
+    expect(m.after).toEqual([]);
+    expect(savedGame(m.store).lessons).toBeUndefined();
+  });
+
   test('nor is anything in the Gauntlet, where open floors are the rule', () => {
     const m = lucky((seed) => {
       const made = slowHub(strong(done('intro-1', 'intro-2')), seed);

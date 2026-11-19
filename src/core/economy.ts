@@ -27,6 +27,8 @@ export interface Settlement {
   bonus?: number;
   /** What a contract that asked for a class added to the fee of a pilot who won it as one, and which class that was; see board.ts. */
   asked?: { kind: Archetype; bonus: number };
+  /** Set on the bill of a fight on the range: it is what a real flight would have cost, shown and not booked; see range.ts. */
+  simulated?: true;
 }
 
 /** Pilot perks that change the bill: a fraction more pay, a fraction off ammunition and repairs. */
