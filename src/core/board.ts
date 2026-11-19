@@ -45,7 +45,7 @@ export const HARMLESS = ['jammer'];
 export const marksFor = (id: string): EnemyMark[] =>
   MARKS.filter((mark) => !(mark === 'swift' && ROOTED.includes(id)) && !(mark === 'overclocked' && HARMLESS.includes(id)));
 /** Enemies that open contracts may field. */
-const POOL = Object.keys(ENEMY_COST).filter((id) => !STORY_ENEMIES.includes(id));
+export const POOL = Object.keys(ENEMY_COST).filter((id) => !STORY_ENEMIES.includes(id));
 
 export const MAX_TIER = 8;
 export const MAX_BUDGET = 8;
@@ -67,7 +67,7 @@ export const ASK_TIER = 2;
 export const ASK_BONUS = 0.25;
 
 /** A client's face, for the contract, where the client has one. */
-const faceOf = (text: BoardText, client: string): { portrait?: string } =>
+export const faceOf = (text: BoardText, client: string): { portrait?: string } =>
   (text.faces && Object.hasOwn(text.faces, client) ? { portrait: text.faces[client] } : {});
 
 /** The words open contracts are written with. */

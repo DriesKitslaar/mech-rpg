@@ -63,7 +63,7 @@ Each is one battle, at the board's own tier.
 
 | kind | on the field | asks | made harder by |
 | --- | --- | --- | --- |
-| Hit | the board's roll, never fewer than two | the dearest machine destroyed | that machine carries an elite's mark; the job has a scale of its own |
+| Hit | the board's roll less anything that mends, never fewer than two | the dearest machine that fights destroyed | that machine is overclocked; the job has a scale of its own |
 | Repossession | a mech, and what is left of the budget in machines that are not | its arms and legs gone, its core whole | nothing: the care it takes is the difficulty |
 | Escort | the board's roll | all of them destroyed before the freight is gone | how little the freight can take |
 | Holding action | a roll on a larger budget, and a reserve behind it | six rounds outlasted | a scale of its own |
@@ -71,8 +71,14 @@ Each is one battle, at the board's own tier.
 The numbers (scales, what the freight takes, the reserve, the pay) are set by measurement: every
 class's build for the stage, flown by the game's own pilot on both difficulties, as the masters
 were set. The targets: no class under one win in three on Standard at the stage it meets the job,
-no kind on which every class wins nine in ten on Veteran, and pay for a round of fighting within
-half as much again of the board's own contracts.
+no kind on which every class wins nine in ten on Veteran, and pay for a round of fighting, over the
+classes and the stages together, within half as much again of the board's own contracts.
+
+As measured (see the numbers and what is said beside them in `src/core/jobs.ts`): a hit's machine
+is overclocked and no other mark, since the marks that make a machine last longer made a hit a
+slower job than the board's whole contract; nothing that mends flies with it, since the game's own
+pilot could not finish one that did; the freight goes by what the machines against it cost and not
+by how many they are; and a holding action pays for its rounds and not for its machines.
 
 A job is told from the rest of the board by its title, which begins with its kind (`Hit:`,
 `Repo:`, `Escort:`, `Hold:`) as a wanted notice begins with `Wanted:`. Its briefing is headed

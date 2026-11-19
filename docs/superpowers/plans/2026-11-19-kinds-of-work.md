@@ -13,7 +13,7 @@
 - No rule of combat changes; the board's three contracts, the swarm and the patrol are what they were for every progress a pilot can have.
 - A kept game loads and is as it was; the count of jobs won is a field a kept game may lack.
 - Every new English text has its Dutch, inside the room its kind has: a title eighteen letters, an asset twelve, an interface string at most two letters longer than the English.
-- The targets the numbers are set to: no class under one win in three on Standard at the stage it meets a job; no kind on which every class wins nine in ten on Veteran; pay for a round of fighting within half as much again of the board's own contracts.
+- The targets the numbers are set to: no class under one win in three on Standard at the stage it meets a job; no kind on which every class wins nine in ten on Veteran; pay for a round of fighting, over the classes and the stages together, within half as much again of the board's own contracts.
 - Nothing is merged without the owner's word.
 
 ## Review Focus
@@ -43,11 +43,11 @@
 
 **Steps:**
 
-- [ ] `scripts/jobs.ts`: every kind at tiers 1 to 8, flown by each class's build for the stage on Auto Turn on both difficulties: wins, rounds, and what a round of it pays against the board's own. Set the numbers from it.
-- [ ] The generator, with tests: pure; null below the tier; the kinds in turn; for every progress a job the rules take (the Review Focus's first line, by starting the battle); the board and the swarm beside it unchanged.
-- [ ] The count in the kept game, with tests: recorded by kind, read, valid and invalid shapes, a kept game without it.
-- [ ] How hard, as tests that hold the numbers to the targets (fewer flights than the script, the same builds).
-- [ ] Mutation over the step.
+- [x] `scripts/jobs.ts`: every kind at tiers 1 to 8, flown by each class's build for the stage on Auto Turn on both difficulties: wins, rounds, and what a round of it pays against the board's own. Set the numbers from it.
+- [x] The generator, with tests: pure; null below the tier; the kinds in turn; for every progress a job the rules take (the Review Focus's first line, by starting the battle); the board and the swarm beside it unchanged.
+- [x] The count in the kept game, with tests: recorded by kind, read, valid and invalid shapes, a kept game without it.
+- [x] How hard, as tests that hold the numbers to the targets (fewer flights than the script, the same builds).
+- [x] Mutation over the step.
 
 ### Task W2: in the game
 
