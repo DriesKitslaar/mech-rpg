@@ -18,7 +18,7 @@ import { TOAST_MS, type App } from '../../src/ui/app';
 import { LOGICAL_W } from '../../src/ui/display';
 import { battleTrack } from '../../src/ui/soundtrack';
 import type { SpriteStore } from '../../src/ui/sprites';
-import { COLORS, LINE, charsFor, wrap } from '../../src/ui/widgets';
+import { COLORS, CROWN_COLOR, LINE, charsFor, wrap } from '../../src/ui/widgets';
 import { autoBattle, done, inHub, press, savedGame, select, snap } from '../helpers/app';
 import { wearing } from '../helpers/builds';
 import { overlap, record, type Drawn, type Written } from '../helpers/canvas';
@@ -330,5 +330,69 @@ describe('in Dutch', () => {
     const notice = drawn(made.app);
     expect(notice.texts.some((t) => t.text === 'STOEL GEPAKT')).toBe(true);
     expect(notice.texts.some((t) => t.text === 'De achtste stoel')).toBe(true);
+  });
+});
+
+describe('where the seat is seen and what comes of it', () => {
+  function onClasses(saved: GameState): App {
+    const { app } = inHub(saved);
+    select(app, 'pilot');
+    for (let i = 0; i < 6 && snap(app).page !== 'classes'; i++) press(app, 'next');
+    expect(snap(app).page).toBe('classes');
+    return app;
+  }
+
+  test('the pilot\'s page of classes says so where the crowns were counted: every row has its crown, and the count has nothing left to say', () => {
+    const before = drawn(onClasses(champion(late('marksman'), CROWNED)));
+    expect(written(before, 'CROWNS 7/7')).toMatchObject({ right: 273, y: 22, size: 10, color: COLORS.dim });
+    expect(before.texts.some((t) => t.text === 'THE EIGHTH SEAT')).toBe(false);
+    const held = drawn(onClasses(champion(late('marksman'), { ...CROWNED, seat: true })));
+    expect(written(held, 'THE EIGHTH SEAT')).toMatchObject({ right: 273, y: 22, size: 10, color: CROWN_COLOR });
+    expect(held.texts.some((t) => /^CROWNS /.test(t.text))).toBe(false);
+    // Nothing in that row of the page runs into anything else, in either language.
+    const header = held.texts.filter((t) => t.y === 22);
+    for (const a of header) for (const b of header) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
+    const base = champion(late('marksman'), { ...CROWNED, seat: true });
+    const dutch = drawn(onClasses({ ...base, settings: { ...base.settings, language: 'nl' } }));
+    expect(written(dutch, 'DE ACHTSTE STOEL')).toMatchObject({ right: 273, y: 22, color: CROWN_COLOR });
+    const kop = dutch.texts.filter((t) => t.y === 22);
+    for (const a of kop) for (const b of kop) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
+  });
+
+  test('taking it earns the medal and brings the yard\'s letter; the keeper\'s paint is in the garage and the Sovereign in the shop', () => {
+    const { app, store } = ended(champion(late('marksman'), CROWNED), true);
+    const kept = savedGame(store);
+    expect(kept.medals).toContain('seat');
+    press(app, 'confirm');
+    expect(snap(app).screen).toBe('hub');
+    // The letter is among the messages, unread.
+    select(app, 'messages');
+    expect(snap(app).menu.items.map((item) => item.id)).toContain('seat-yard');
+    press(app, 'cancel');
+    // The garage: L1 from the factory's colours is the last paint there is, which is the keeper's now.
+    select(app, 'garage');
+    press(app, 'prev');
+    expect(savedGame(store).paint).toBe('touchstone');
+    expect(drawn(app).texts.some((t) => t.text === STRINGS.garage.paint('Touchstone'))).toBe(true);
+    press(app, 'cancel');
+    // The shop: the four parts, at the prices the yard asks.
+    select(app, 'shop');
+    expect(snap(app).menu.items.find((item) => item.id === 'head-sovereign')).toMatchObject({ label: 'Sovereign Crest' });
+  });
+
+  test('a pilot with seven crowns and no seat has the invitation and none of the rest', () => {
+    const { app, store } = inHub(champion(late('marksman'), CROWNED));
+    expect(savedGame(store).medals ?? []).not.toContain('seat');
+    select(app, 'messages');
+    const letters = snap(app).menu.items.map((item) => item.id);
+    expect(letters).toContain('seat-open');
+    expect(letters).not.toContain('seat-yard');
+    press(app, 'cancel');
+    select(app, 'garage');
+    press(app, 'prev');
+    expect(savedGame(store).paint).not.toBe('touchstone');
+    press(app, 'cancel');
+    select(app, 'shop');
+    expect(snap(app).menu.items.some((item) => item.id === 'head-sovereign')).toBe(false);
   });
 });

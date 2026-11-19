@@ -272,3 +272,88 @@ test('with seven crowns the seat opens: the briefing, the duel in its three ways
   await page.screenshot({ path: shot('seat-shop') });
   expect(errors).toEqual([]);
 });
+
+// ---- What the seat gives.
+
+const kept = (page: Page): Promise<GameState> => page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as GameState);
+/** Out of a room, back to the hangar. */
+async function out(page: Page): Promise<void> {
+  for (let i = 0; i < 40; i++) {
+    const s = await snap(page) as Seen;
+    if (s.screen === 'hub' && !s.busy) return;
+    if (s.busy) await adv(page, 96);
+    else { await tap(page, 'Escape'); await adv(page, 320); }
+  }
+  throw new Error('never came back to the hangar');
+}
+/** Down a list to a row, without going into it. */
+async function toRow(page: Page, id: string): Promise<void> {
+  for (let i = 0; i < 80; i++) {
+    const s = await snap(page) as Seen;
+    if (s.menu.items[s.menu.cursor]?.id === id) return;
+    await tap(page, 'ArrowDown');
+  }
+  throw new Error(`no row ${id}`);
+}
+/** Through the rooms that say what the holder of the seat has, with a picture of each. */
+async function tour(page: Page, tag: string): Promise<void> {
+  // The garage: one step back from the factory's colours is the last paint there is, the keeper's.
+  await into(page, 'garage');
+  await tap(page, 'q');
+  await adv(page, 400);
+  expect((await kept(page)).paint).toBe('touchstone');
+  await page.screenshot({ path: shot(`seat-paint${tag}`) });
+  await out(page);
+  // The pilot's page of classes: where the crowns were counted, the seat is named.
+  await into(page, 'pilot');
+  for (let i = 0; i < 6 && (await snap(page) as Seen & { page?: string }).page !== 'classes'; i++) { await tap(page, 'e'); await adv(page, 200); }
+  expect((await snap(page) as Seen & { page?: string }).page).toBe('classes');
+  await adv(page, 400);
+  await page.screenshot({ path: shot(`seat-pilot${tag}`) });
+  await out(page);
+  // The two letters from the arena's office: the invitation, and the yard's.
+  await into(page, 'messages');
+  const letters = (await snap(page)).menu.items.map((item) => item.id);
+  expect(letters).toEqual(expect.arrayContaining(['seat-open', 'seat-yard']));
+  await pick(page, 'seat-open');
+  // (When the letter has been written out.)
+  await adv(page, 12000);
+  await page.screenshot({ path: shot(`seat-letter-open${tag}`) });
+  await tap(page, 'Escape');
+  await adv(page, 300);
+  await pick(page, 'seat-yard');
+  await adv(page, 12000);
+  await page.screenshot({ path: shot(`seat-letter-yard${tag}`) });
+  await out(page);
+  // The manual has a chapter for it.
+  await into(page, 'database');
+  for (let i = 0; i < 6 && (await snap(page) as Seen & { page?: string }).page !== 'manual'; i++) { await tap(page, 'e'); await adv(page, 200); }
+  expect((await snap(page) as Seen & { page?: string }).page).toBe('manual');
+  await toRow(page, 'seat');
+  await adv(page, 400);
+  await page.screenshot({ path: shot(`seat-manual${tag}`) });
+  await out(page);
+  // And the medals' page of the pilot's has it.
+  expect((await kept(page)).medals).toContain('seat');
+}
+
+test('what the seat gives: the keeper\'s paint on the Sovereign, the words on the pilot\'s page, two letters and a chapter of the manual', async ({ page }) => {
+  test.setTimeout(240_000);
+  const build = { ...ARCHETYPE_BUILDS.allrounder.late, ...SOVEREIGN, generator: 'gen-singularity' };
+  const errors = await open(page, pilot(build, { ...CROWNED, seat: true }));
+  await tour(page, '');
+  expect(errors).toEqual([]);
+});
+
+test('and in Dutch: the same rooms, with nothing run over anything', async ({ page }) => {
+  test.setTimeout(240_000);
+  const build = { ...ARCHETYPE_BUILDS.allrounder.late, ...SOVEREIGN, generator: 'gen-singularity' };
+  const base = pilot(build, { ...CROWNED, seat: true });
+  const errors = await open(page, { ...base, settings: { ...base.settings, language: 'nl' } }, { language: 'nl' });
+  await tour(page, '-nl');
+  // The arena's page too: the row and what is under it, in Dutch.
+  await toSeat(page);
+  await adv(page, 2600);
+  await page.screenshot({ path: shot('seat-held-nl') });
+  expect(errors).toEqual([]);
+});

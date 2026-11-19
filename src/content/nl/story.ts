@@ -321,6 +321,19 @@ export const STORY_NL: Record<string, string> = {
   'Any machine may challenge one, for a purse. Beat a master in a machine of their own class and their title is yours: the office keeps a crown for each.':
     'Elke machine mag er een uitdagen, om een pot. Versla een meester in zijn eigen klasse en zijn titel is van jou: het kantoor bewaart voor elk een kroon.',
   'They are on the arena list, on the page beside the ladder.': 'Ze staan op de arenalijst, op de pagina naast de ranglijst.',
+  'The eighth seat': 'De achtste stoel',
+  'Seven crowns on one head. The office has never had to write this letter.': 'Zeven kronen op een hoofd. Deze brief heeft het kantoor nog nooit geschreven.',
+  'The masters keep a table of eight seats. The eighth has a keeper, Touchstone, who takes one challenge: from the pilot who holds all seven crowns. That is you.':
+    'De meesters hebben een tafel met acht stoelen. De achtste heeft een houder, Touchstone, en die neemt een uitdaging aan: van wie alle zeven kronen heeft. Jij dus.',
+  "Bring any machine: no class is asked for. The seat is on the masters' page, under the seven.":
+    'Kom in welke machine ook: er wordt geen klasse gevraagd. De stoel staat bij de meesters, onder de zeven.',
+  'An order book': 'Een orderboek',
+  "Touchstone's yard has sent word. The Sovereign was built for whoever keeps the eighth seat, and that is you now.":
+    'De werf van Touchstone liet iets weten. De Sovereign is gebouwd voor wie de achtste stoel houdt, en dat ben jij nu.',
+  "Its head, core, arms and legs are on the shop's list. They ask us to say that nothing about it is cheap.":
+    'Hoofd, kern, armen en benen staan in de winkel. We moeten erbij zeggen dat niets eraan goedkoop is.',
+  "The keeper's paint is in your garage with the others. Touchstone says it suits whoever earned it.":
+    'De lak van de houder staat in je garage bij de rest. Touchstone zegt dat hij staat bij wie hem verdiend heeft.',
   "Meridian's stock": 'Meridians inboedel',
   'Whatever else happened, a great deal of black and gold equipment is suddenly on the market.':
     'Wat er verder ook gebeurde, er is opeens heel veel zwart-gouden materieel op de markt.',

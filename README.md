@@ -27,9 +27,9 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 ## Wat er in zit
 
 - **Mecha**: elf sloten (kop, romp, armen, benen, generator, booster, vuurleiding, module, twee
-  handen, schouder) en 129 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
-  niet overschrijden en de generator moet alles kunnen voeden. Twaalf verfschema's en drie
-  opgeslagen builds. Je begint in een van drie mecha's naar keuze.
+  handen, schouder) en 133 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
+  niet overschrijden en de generator moet alles kunnen voeden. Twaalf verfschema's, acht die je in
+  de arena verdient, en zeven opgeslagen builds. Je begint in een van drie mecha's naar keuze.
 - **Zeven klassen**: elke build is een Duellist, Sharpshooter, Artillery, Lancer, Bastion,
   Skirmisher of All-rounder. De garage zegt welke, het pilotenscherm houdt bij wat je als elke
   klasse hebt gewonnen en stelt een build voor die je nu kunt kopen. Met elk van de zeven is het
@@ -53,6 +53,10 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   een in een build van zijn eigen klasse, dan is de kroon van die klasse van jou. Een kroon geeft
   je de titel en de lak van de meester, en contracten die die klasse zoeken betalen je de helft
   extra in plaats van een kwart.
+- **De achtste stoel**: onder de zeven meesters staat een achtste rij. Wie alle zeven kronen heeft,
+  mag de houder van die stoel uitdagen, in welke build ook. Zijn machine, de Sovereign, vecht op
+  drie manieren en wisselt als hij geraakt wordt. Win je, dan mag je de Sovereign zelf kopen en is
+  de lak van de houder van jou.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.
@@ -66,11 +70,11 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   spiegelgevecht tegen je eigen mecha. Na het verhaal: twee duels, elk om een mecha die je
   daarna zelf mag kopen.
 - **Training**: dertien oefeningen in een geleende mecha die elk één ding uitleggen.
-- **Piloot**: niveaus en acht vaardigheden, 64 medailles en een logboek.
+- **Piloot**: niveaus en acht vaardigheden, 69 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
 - **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,
-  drie moeilijkheden, muziek per scherm (tien nummers, zonder audiobestanden), trillen bij zware
+  drie moeilijkheden, muziek per scherm (zestien nummers, zonder audiobestanden), trillen bij zware
   treffers, en een schuldplafond zodat een reeks nederlagen nooit het einde van een spel is.
 
 ![Arena](docs/screenshots/arena.png)

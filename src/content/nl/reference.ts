@@ -270,7 +270,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'A wingman is hired in the briefing for a share of fee and experience, and fires once a round from round 2. In battle the Wing row gives orders for nothing: strike the strongest, strike what you fired at last, or cover you, which takes a share off every shot at you while they hold fire.':
     'Een wingman huur je in de briefing in voor een deel van loon en ervaring; die vuurt een keer per ronde vanaf ronde 2. In het gevecht geeft de rij Wing gratis orders: de sterkste aanvallen, aanvallen waar jij het laatst op vuurde, of jou dekken, wat van elk schot op jou een deel afhaalt zolang de wingman niet vuurt.',
   'THE GAUNTLET': 'DE GAUNTLET',
-  'ELITES AND RELICS': 'ELITES EN RELIKWIEEN',
+  'ELITES AND RELICS': 'ELITES, RELIKWIEEN',
   'A run of floors in a stock frame, with none of your own parts or perks. Most floors have two doors: pick your fight. After each floor take one thing on offer: a part, a full service, or a boon for the run. Every fifth floor has a warden. Falling, retreating or closing the game on a floor ends the run. It pays by floors cleared.':
     'Een reeks etages in een standaardframe, zonder je eigen onderdelen of perks. De meeste etages hebben twee deuren: kies je gevecht. Kies na elke etage iets uit het aanbod: onderdeel, groot onderhoud of reeksbonus. Elke vijfde etage heeft een bewaker. Vallen, Aftocht of afsluiten op een etage eindigt de reeks. Loon per gehaalde etage.',
   'An elite is a machine with a mark. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. The Gauntlet hides one behind some doors: beat it for one more thing on offer. Some open contracts have one, and pay more. A warden beaten leaves one of two relics.':
@@ -286,6 +286,11 @@ export const REFERENCE_NL: Record<string, string> = {
   "Take a master's crown in the arena.": 'Pak in de arena de kroon van een meester.',
   'Seven Crowns': 'Zeven kronen',
   'Hold the crown of every class.': 'Houd de kroon van elke klasse.',
+  'True Metal': 'Echt metaal',
+  "Take the eighth seat at the masters' table.": 'Pak de achtste stoel aan de meestertafel.',
+  'THE EIGHTH SEAT': 'DE ACHTSTE STOEL',
+  "Under the seven masters is a seat that is no class's. Its keeper takes one challenge: from the pilot who holds all seven crowns, in any build. The keeper's machine fights three ways and changes as it is hurt. Take the seat and its frame, the Sovereign, is on the shop's list, and the keeper's paint is yours.":
+    'Onder de zeven meesters staat een stoel die van geen klasse is. De houder neemt een uitdaging aan: van wie alle zeven kronen heeft, in welke build ook. Zijn machine vecht op drie manieren en wisselt bij schade. Pak de stoel en zijn frame, de Sovereign, staat in de winkel, en de lak van de houder is van jou.',
   "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, a quarter after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.":
     'De tweede pagina van de arena (L1/R1): zeven meesters, een per klasse, die alleen de kampioen aannemen. Elke build mag vechten, om een pot: eerst volledig, daarna een kwart. Versla een meester in een build van zijn eigen klasse en de kroon van die klasse is van jou. De briefing zegt welke build dat is.',
   CONTROLS: 'BESTURING',

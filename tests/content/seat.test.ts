@@ -1,22 +1,31 @@
 import { chooseAutoPlayerAction, runBattle, stepBattle } from '../../src/core/ai';
-import { CLASS_AI, archetypeOf, type Archetype } from '../../src/core/archetype';
+import { ARCHETYPES, CLASS_AI, archetypeOf, type Archetype } from '../../src/core/archetype';
 import { createBattle, type BattleState } from '../../src/core/battle';
 import { computeBuildStats, validatePlayerBuild } from '../../src/core/build';
+import { arrivedMessages, reached, stockFor } from '../../src/core/campaign';
 import { newGame } from '../../src/core/game';
+import { awardMedals, medalProgress } from '../../src/core/medals';
 import { playMission } from '../../src/core/mission';
 import { perkEffects } from '../../src/core/pilot';
-import { SEAT_ID, keeperEnemy, seatMission } from '../../src/core/seat';
+import { SEAT_ID, keeperEnemy, seatMission, seatOpen } from '../../src/core/seat';
 import type { Build, FramePart } from '../../src/core/types';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
+import { MANUAL } from '../../src/content/codex';
 import { MASTERS } from '../../src/content/masters';
-import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
+import { MEDALS } from '../../src/content/medals';
+import { MESSAGES, MISSIONS } from '../../src/content/missions';
+import { REFERENCE_NL } from '../../src/content/nl/reference';
+import { STORY_NL } from '../../src/content/nl/story';
+import { STRINGS_NL } from '../../src/content/nl/strings';
+import { CATALOG, DEMO_BUILD, SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../../src/content/parts';
 import { PERKS } from '../../src/content/perks';
 import { KEEPER, SEAT_ENEMIES } from '../../src/content/seat';
 import { TALK_CHARS } from '../../src/ui/battleScreen';
 import { BRIEFING_CHARS } from '../../src/ui/briefingScreen';
 import { LOGICAL_W } from '../../src/ui/display';
-import { CROWN_PAINTS, PAINTS, SEAT_PAINT, paintById, rampOf } from '../../src/ui/paint';
+import { GarageFlow } from '../../src/ui/garageFlow';
+import { CROWN_PAINTS, PAINTS, SEAT_PAINT, paintById, paintsFor, rampOf } from '../../src/ui/paint';
 import { charsFor, wrap } from '../../src/ui/widgets';
 
 /**
@@ -213,5 +222,143 @@ describe('how hard the duel is', () => {
     expect(KEEPER.scale).toBeLessThanOrEqual(Math.max(...MASTERS.map((master) => master.scale)));
     expect(seatMission(game, KEEPER, { client: '', win: '' }).reward).toBe(15000);
     expect(seatMission(game, KEEPER, { client: '', win: '' }).scale).toBe(KEEPER.scale);
+  });
+});
+
+describe('what the seat gives', () => {
+  const seated = { ...game, crowns: [...ARCHETYPES], masters: [...ARCHETYPES], seat: true as const };
+  const crowned = { ...game, crowns: [...ARCHETYPES], masters: [...ARCHETYPES] };
+
+  test('the keeper\'s paint is the holder\'s to wear, after the crowns\' paints, and nobody else\'s', () => {
+    const free = ['factory', ...PAINTS.map((paint) => paint.id)];
+    expect(paintsFor(game)).toEqual(free);
+    expect(paintsFor(crowned)).toEqual([...free, ...CROWN_PAINTS.map((paint) => paint.id)]);
+    expect(paintsFor(seated)).toEqual([...free, ...CROWN_PAINTS.map((paint) => paint.id), 'touchstone']);
+    // It goes with the seat and not with the crowns: a seat held with fewer crowns kept still has it, and something odd in the seat's place has not.
+    expect(paintsFor({ crowns: ['bastion'], seat: true })).toEqual([...free, 'basalt', 'touchstone']);
+    expect(paintsFor({ crowns: [...ARCHETYPES], seat: 'yes' as unknown as true })).not.toContain('touchstone');
+  });
+
+  test('the garage steps to it and names it for the holder; worn by anyone else it is named, stepped away from and not come back to', () => {
+    const held = new GarageFlow(seated, CATALOG);
+    held.onInput('prev');
+    expect(held.game.paint).toBe('touchstone');
+    expect(held.paintName).toBe('Touchstone');
+    held.onInput('prev');
+    expect(held.game.paint).toBe(CROWN_PAINTS.at(-1)!.id);
+    held.onInput('next');
+    held.onInput('next');
+    expect(held.game.paint).toBe('factory');
+    const other = new GarageFlow({ ...crowned, paint: 'touchstone' }, CATALOG);
+    expect(other.paintName).toBe('Touchstone');
+    other.onInput('next');
+    expect(other.game.paint).toBe(PAINTS[0].id);
+    for (let i = 0; i < 40; i++) { other.onInput('next'); expect(other.game.paint).not.toBe('touchstone'); }
+  });
+
+  test('a medal of the highest kind, for taking it: the last of the arena\'s, and one the medal for all the others asks for', () => {
+    const medal = MEDALS.find((entry) => entry.id === 'seat')!;
+    expect(medal).toMatchObject({ name: 'True Metal', text: "Take the eighth seat at the masters' table.", tier: 3 });
+    expect(medal.secret).toBeUndefined();
+    expect([REFERENCE_NL[medal.name], REFERENCE_NL[medal.text]]).toEqual(['Echt metaal', 'Pak de achtste stoel aan de meestertafel.']);
+    expect(medalProgress(medal, game)).toEqual({ have: 0, need: 1, earned: false });
+    expect(medalProgress(medal, crowned)).toEqual({ have: 0, need: 1, earned: false });
+    // What it takes is there with the seat; it is the pilot's once it has been awarded.
+    expect(medalProgress(medal, seated)).toEqual({ have: 1, need: 1, earned: false });
+    expect(medalProgress(medal, { ...seated, seat: 'yes' as unknown as true })).toEqual({ have: 0, need: 1, earned: false });
+    // It stands after the two that count crowns.
+    const ids = MEDALS.map((entry) => entry.id);
+    expect(ids.indexOf('seat')).toBe(ids.indexOf('crown-all') + 1);
+    expect(ids.at(-1)).toBe('all');
+    // Awarded when the seat is held, once.
+    const awarded = awardMedals(seated, MEDALS);
+    expect(awarded.earned.map((entry) => entry.id)).toContain('seat');
+    expect(medalProgress(medal, awarded.game)).toEqual({ have: 1, need: 1, earned: true });
+    expect(awardMedals(awarded.game, MEDALS).earned.map((entry) => entry.id)).not.toContain('seat');
+    expect(awardMedals(crowned, MEDALS).earned.map((entry) => entry.id)).not.toContain('seat');
+    // The medal for all the others is not had without it.
+    const all = MEDALS.find((entry) => entry.id === 'all')!;
+    const others = MEDALS.filter((entry) => entry.id !== 'all').map((entry) => entry.id);
+    expect(all.progress({ ...seated, medals: others })).toEqual({ have: others.length, need: others.length });
+    expect(all.progress({ ...seated, medals: others.filter((id) => id !== 'seat') })).toEqual({ have: others.length - 1, need: others.length });
+  });
+
+  test('`crowns:N` is reached with that many crowns held: of classes there are, each counted once', () => {
+    const with_ = (crowns: string[]) => ({ ...game, crowns });
+    expect(reached(with_([]), 'crowns:1', MISSIONS)).toBe(false);
+    expect(reached(with_(['bastion']), 'crowns:1', MISSIONS)).toBe(true);
+    expect(reached(with_(['bastion', 'bastion', 'nobody']), 'crowns:2', MISSIONS)).toBe(false);
+    expect(reached(with_(ARCHETYPES.slice(0, 6)), 'crowns:7', MISSIONS)).toBe(false);
+    expect(reached(with_([...ARCHETYPES]), 'crowns:7', MISSIONS)).toBe(true);
+    expect(reached(with_([...ARCHETYPES]), 'crowns:7&!seat', MISSIONS)).toBe(true);
+    expect(reached(seated, 'crowns:7&!seat', MISSIONS)).toBe(false);
+  });
+
+  test('two letters from the arena office: one when the seventh crown is taken, one when the seat is, and each says what is so', () => {
+    const ids = MESSAGES.map((message) => message.id);
+    expect([ids.indexOf('seat-open'), ids.indexOf('seat-yard')]).toEqual([ids.indexOf('masters') + 1, ids.indexOf('masters') + 2]);
+    const [invitation, yard] = [MESSAGES.find((m) => m.id === 'seat-open')!, MESSAGES.find((m) => m.id === 'seat-yard')!];
+    expect([invitation.from, invitation.after, yard.from, yard.after]).toEqual(['Arena Office', 'crowns:7', 'Arena Office', 'seat']);
+    const arrived = (state: typeof game): string[] => arrivedMessages(state, MESSAGES, MISSIONS).map((m) => m.id).filter((id) => id.startsWith('seat-'));
+    expect(arrived(game)).toEqual([]);
+    expect(arrived({ ...game, crowns: ARCHETYPES.slice(0, 6) })).toEqual([]);
+    expect(arrived(crowned)).toEqual(['seat-open']);
+    expect(arrived(seated)).toEqual(['seat-open', 'seat-yard']);
+    // The invitation: who keeps the seat, whom they take, that no class is asked for, and where it is.
+    const asked = invitation.body.join(' ');
+    expect(asked).toContain(`a keeper, ${KEEPER.name}, who takes one challenge: from the pilot who holds all seven crowns`);
+    expect(ARCHETYPES).toHaveLength(7);
+    expect(asked).toContain('Bring any machine: no class is asked for.');
+    expect(seatMission(game, KEEPER, { client: '', win: '' }).crown).toBeUndefined();
+    expect(asked).toMatch(/on the masters' page, under the seven\.$/);
+    // The yard's: that the Sovereign's four parts are in the shop, and the keeper's paint in the garage, for the one who has the letter.
+    const sent = yard.body.join(' ');
+    expect(sent).toContain('Its head, core, arms and legs are on the shop\'s list.');
+    const shelf = stockFor(seated, SHOP_PARTS, SHOP_UNLOCKS, MISSIONS).map((part) => part.id).filter((id) => id.endsWith('-sovereign'));
+    expect(shelf).toEqual(['head-sovereign', 'core-sovereign', 'arms-sovereign', 'legs-sovereign']);
+    expect(sent).toContain("The keeper's paint is in your garage with the others.");
+    expect(paintsFor(seated)).toContain(KEEPER.paint);
+    expect(sent).toContain('nothing about it is cheap');
+    // And the Dutch of both says the same: all seven, any machine, the four parts, the shop and the garage.
+    const [gevraagd, gestuurd] = [invitation, yard].map((message) => message.body.map((paragraph) => STORY_NL[paragraph]).join(' '));
+    expect(gevraagd).toContain(`een houder, ${KEEPER.name}, en die neemt een uitdaging aan: van wie alle zeven kronen heeft`);
+    expect(gevraagd).toContain('Kom in welke machine ook: er wordt geen klasse gevraagd.');
+    expect(gevraagd).toMatch(/bij de meesters, onder de zeven\.$/);
+    expect(gestuurd).toContain('Hoofd, kern, armen en benen staan in de winkel.');
+    expect(gestuurd).toContain('De lak van de houder staat in je garage bij de rest.');
+    expect(gestuurd).toContain('niets eraan goedkoop');
+    expect([STORY_NL[invitation.subject], STORY_NL[yard.subject]]).toEqual(['De achtste stoel', 'Een orderboek']);
+    // Each fits the inbox: a subject of a line, a body of fourteen rows at most.
+    for (const message of [invitation, yard]) {
+      expect(message.subject.length).toBeLessThanOrEqual(30);
+      const rows = message.body.reduce((sum, paragraph) => sum + wrap(paragraph, BRIEFING_CHARS).length, 0) + (message.body.length - 1) * 0.5;
+      expect(rows, message.id).toBeLessThanOrEqual(14);
+    }
+  });
+
+  test('the manual has a chapter for it that says what the rules are, in both languages', () => {
+    const topic = MANUAL.find((entry) => entry.id === 'seat')!;
+    expect(topic.title).toBe('THE EIGHTH SEAT');
+    expect(MANUAL.findIndex((entry) => entry.id === 'seat')).toBe(MANUAL.findIndex((entry) => entry.id === 'masters') + 1);
+    const count = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+    const aantal = ['geen', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven'];
+    const text = topic.text;
+    const dutch = REFERENCE_NL[text];
+    // Whom the keeper takes: every crown there is, in any build.
+    expect(text).toContain(`Under the ${count[ARCHETYPES.length]} masters is a seat that is no class's.`);
+    expect(text).toContain(`from the pilot who holds all ${count[ARCHETYPES.length]} crowns, in any build.`);
+    expect(dutch).toContain(`Onder de ${aantal[ARCHETYPES.length]} meesters`);
+    expect(dutch).toContain(`van wie alle ${aantal[ARCHETYPES.length]} kronen heeft, in welke build ook.`);
+    expect(seatOpen({ crowns: [...ARCHETYPES] })).toBe(true);
+    expect(seatOpen({ crowns: ARCHETYPES.slice(1) })).toBe(false);
+    // How its machine fights: as many ways as it has changes, and one.
+    expect(text).toContain(`The keeper's machine fights ${count[KEEPER.phases.length + 1]} ways and changes as it is hurt.`);
+    expect(dutch).toContain(`vecht op ${aantal[KEEPER.phases.length + 1]} manieren`);
+    // What the seat brings: the frame on the shop's list, and the keeper's paint.
+    expect(text).toMatch(/Take the seat and its frame, the Sovereign, is on the shop's list, and the keeper's paint is yours\.$/);
+    expect(dutch).toMatch(/staat in de winkel, en de lak van de houder is van jou\.$/);
+    expect(SHOP_UNLOCKS['core-sovereign']).toBe('seat');
+    expect(paintsFor(seated).at(-1)).toBe(KEEPER.paint);
+    expect(STRINGS_NL.arena.seat.row.toUpperCase()).toBe(REFERENCE_NL[topic.title]);
   });
 });

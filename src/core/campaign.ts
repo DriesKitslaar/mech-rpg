@@ -3,6 +3,7 @@ import type { EnemyMark, OverdriveId } from './battle';
 import type { Support } from './battle';
 import type { GameState } from './game';
 import type { JobKind } from './jobs';
+import { crownsHeld } from './masters';
 import { seatHeld } from './seat';
 import type { Build, Objective, Part } from './types';
 
@@ -155,8 +156,8 @@ export interface Message {
  * (`chose:question=answer`), an arena rank (`arena:N`), the cycle (`cycle:N`: the second telling is
  * cycle 1), an S rank on a contract (`s:contract`), a contract won at some time, in this telling of
  * the story or an earlier one (`won:contract`), the deepest floor of the Gauntlet (`floor:N`),
- * checks held (`checks:N`), or the eighth seat of the arena's masters held (`seat`). Conditions can
- * be joined: `a&b` is both, `a|b` is either, `!a` is not;
+ * checks held (`checks:N`), crowns of the arena's masters held (`crowns:N`), or their eighth seat held
+ * (`seat`). Conditions can be joined: `a&b` is both, `a|b` is either, `!a` is not;
  * `|` binds loosest, so `a|b&c` is a, or b and c.
  */
 export type Condition = 'start' | 'choice' | 'finale' | 'verdict' | string;
@@ -424,6 +425,8 @@ export function reached(state: GameState, condition: Condition, missions: Missio
   if (condition.startsWith('checks:')) return checksHeld(state) >= Number(condition.slice(7));
   // "seat": the pilot holds the eighth seat of the arena's masters.
   if (condition === 'seat') return seatHeld(state);
+  // "crowns:N": the pilot holds at least N of the masters' crowns.
+  if (condition.startsWith('crowns:')) return crownsHeld(state) >= Number(condition.slice(7));
   return state.completed.includes(condition);
 }
 

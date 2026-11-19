@@ -76,13 +76,13 @@
 - `paint.ts`: `SEAT_PAINT: PaintScheme` (id `touchstone`), in `paintsFor` after the crowns' paints when the seat is held, found by `paintById`.
 - `Condition` `'crowns:N'`.
 - Medal `seat` (tier 3); messages `seat-open` (after `crowns:7`) and `seat-yard` (after `seat`); a toast when the seat is taken.
-- The manual's chapter on the masters says what the eighth row asks and what it gives.
+- The manual says what the eighth row asks and what it gives, in a chapter of its own after the masters' (theirs has no room left in it).
 
 **Steps:**
 
-- [ ] The paint and who may wear it; the pilot's page; the toast: tests.
-- [ ] The medal, the two messages, the manual, Dutch, the guide and the README: tests and claims.
-- [ ] Mutation over the step.
+- [x] The paint and who may wear it; the pilot's page; the toast: tests.
+- [x] The medal, the two messages, the manual, Dutch, the guide and the README: tests and claims.
+- [x] Mutation over the step.
 
 ### Task E4: final check
 

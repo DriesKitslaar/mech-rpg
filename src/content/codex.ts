@@ -336,6 +336,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, a quarter after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.",
   },
   {
+    id: 'seat', title: 'THE EIGHTH SEAT',
+    text: "Under the seven masters is a seat that is no class's. Its keeper takes one challenge: from the pilot who holds all seven crowns, in any build. The keeper's machine fights three ways and changes as it is hurt. Take the seat and its frame, the Sovereign, is on the shop's list, and the keeper's paint is yours.",
+  },
+  {
     id: 'controls', title: 'CONTROLS',
     text: 'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive.',
   },

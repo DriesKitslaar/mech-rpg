@@ -1055,6 +1055,22 @@ export const MESSAGES: Message[] = [
     ],
   },
   {
+    ...OFFICE, id: 'seat-open', subject: 'The eighth seat', after: 'crowns:7',
+    body: [
+      'Seven crowns on one head. The office has never had to write this letter.',
+      'The masters keep a table of eight seats. The eighth has a keeper, Touchstone, who takes one challenge: from the pilot who holds all seven crowns. That is you.',
+      'Bring any machine: no class is asked for. The seat is on the masters\' page, under the seven.',
+    ],
+  },
+  {
+    ...OFFICE, id: 'seat-yard', subject: 'An order book', after: 'seat',
+    body: [
+      'Touchstone\'s yard has sent word. The Sovereign was built for whoever keeps the eighth seat, and that is you now.',
+      'Its head, core, arms and legs are on the shop\'s list. They ask us to say that nothing about it is cheap.',
+      'The keeper\'s paint is in your garage with the others. Touchstone says it suits whoever earned it.',
+    ],
+  },
+  {
     id: 'meridian-stock', from: 'Dispatch', portrait: 'portrait-dispatch', subject: 'Meridian\'s stock', after: 'verdict',
     body: [
       'Whatever else happened, a great deal of black and gold equipment is suddenly on the market.',
