@@ -3,7 +3,7 @@ import { ARCHETYPES, QUICK_LEGS, SLOW_LEGS, archetypeOf } from '../../src/core/a
 import {
   HEAT_LIMIT, MAX_ENEMIES, OVERKILL, SHATTER, activeUnit, applyAction, checkAction, createBattle, guardFactor, previewShot, type BattleState,
 } from '../../src/core/battle';
-import { PAY_PER_HEAD, swarmContract } from '../../src/core/board';
+import { ASK_BONUS, ASK_TIER, BOARD_SIZE, PAY_PER_HEAD, swarmContract } from '../../src/core/board';
 import { FORECAST_PLAYS } from '../../src/core/forecast';
 import { computeBuildStats, weaponIn } from '../../src/core/build';
 import { newGame } from '../../src/core/game';
@@ -61,6 +61,23 @@ describe('the odds', () => {
     expect(text).toContain('with your perks, bench work, Overdrive, wingman and difficulty');
     expect(text).toMatch(/Another build is another count\./);
     expect(text).toMatch(/flying it yourself, you can do better\.$/);
+  });
+});
+
+describe('the class wanted', () => {
+  test('the manual says how many contracts ask, how the list and the briefing say so, and what it pays', () => {
+    const text = topic('asks');
+    // Not on the first boards; from then on one of the board's three.
+    expect(ASK_TIER).toBeGreaterThan(0);
+    expect(text).toMatch(/^Once the board has grown a little, one of its three open contracts wants a class/);
+    expect(BOARD_SIZE).toBe(3);
+    // A plus on the list, the class in the briefing.
+    expect(text).toContain('its pay on the list ends in a plus, and its briefing says which');
+    // Anything wins it; the class it wants is paid a quarter more.
+    expect(text).toContain('It can be won as anything; won in a build of that class it pays a quarter more');
+    expect(ASK_BONUS).toBe(0.25);
+    // The row it sends the pilot to goes by the row's own name.
+    expect(text).toContain(`on the ${STRINGS.briefing.build} row`);
   });
 });
 

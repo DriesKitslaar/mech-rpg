@@ -268,6 +268,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'A briefing gives the odds of the contract in the build you have chosen: Auto Turn flies it 20 times with your perks, bench work, Overdrive, wingman and difficulty, and its wins are counted. Another build is another count. The odds are what Auto Turn makes of the fight: flying it yourself, you can do better.',
   },
   {
+    id: 'asks', title: 'CLASS WANTED',
+    text: 'Once the board has grown a little, one of its three open contracts wants a class: its pay on the list ends in a plus, and its briefing says which. It can be won as anything; won in a build of that class it pays a quarter more. Turn to such a build on the Build row and the line lights up.',
+  },
+  {
     id: 'pilot', title: 'LEVELS AND PERKS',
     text: 'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.',
   },

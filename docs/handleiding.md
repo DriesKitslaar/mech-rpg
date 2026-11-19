@@ -215,8 +215,9 @@ Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen
 
 Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appointment**. Win je
 dat, dan volgt een tweede: **First Sword**. Het zijn gevechten van één tegen één, tegen piloten van
-buiten de stad, elk in een mecha die niemand in Varn bouwt. Wie zo'n duel wint, mag die mecha
-daarna in de **Shop** kopen. Dat recht raak je niet meer kwijt, ook niet in een nieuwe cyclus.
+buiten de stad, elk in een mecha die niemand in Varn bouwt. Een wingman kun je er niet voor huren:
+ze vroegen om jou alleen. Wie zo'n duel wint, mag die mecha daarna in de **Shop** kopen. Dat recht
+raak je niet meer kwijt, ook niet in een nieuwe cyclus.
 
 | Mecha | Wat hem bijzonder maakt | Hoe je hem verslaat |
 |---|---|---|
@@ -297,6 +298,21 @@ en de moeilijkheid. Je ziet het tellen (grijs, de teller loopt op) terwijl je de
 - Het is wat Auto Turn ervan maakt. Speel je zelf goed, dan haal je meer; 0/20 betekent meestal
   dat je mecha sterker moet worden voor dit contract.
 - Bij een geleende mecha en de training staat er geen kans.
+
+### Een contract dat een klasse zoekt
+
+Heb je tien contracten gewonnen, dan zoekt een van de drie open contracten op het bord telkens een
+bepaalde klasse. Je herkent het in de lijst aan een **plus** achter het loon (bijvoorbeeld
+`2400+`), en in de briefing aan de regel onder de opdrachtgever: **WANTS A BASTION: +25% PAY**.
+
+- Je mag het met elke build vliegen. Win je het in een build van de gevraagde klasse, dan krijg je
+  **een kwart meer loon**. Op de afrekening staat dat als een eigen regel, bijvoorbeeld
+  **Bastion bonus +600**.
+- De regel in de briefing is **geel** zolang je gekozen build niet van die klasse is, en wordt
+  **groen** zodra je op de rij **Build** naar een build van die klasse bladert. Heb je zo'n build
+  bewaard, dan staat erachter welke: **(BUILD 1)**.
+- Na elk gewonnen contract hangt er een nieuw bord, met een andere vraag. Zo loont het om meer dan
+  een soort build bewaard te hebben.
 
 ## De werkbank
 

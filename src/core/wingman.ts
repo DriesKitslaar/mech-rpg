@@ -56,12 +56,13 @@ export function wingmanFor(game: GameState, wingman: Wingman, missions: Mission[
 export const wingmanOpen = (game: GameState, wingman: Wingman, missions: Mission[]): boolean => reached(game, wingman.after, missions);
 
 /**
- * Whether a second pilot can be brought along at all: not into the arena, where fights are one
- * against one, not into the simulator or in a lent mech, and not on a contract whose every battle
- * already has an ally of the story: there would be nothing for them to do but be paid.
+ * Whether a second pilot can be brought along at all: not into the arena or to a duel, where fights
+ * are one against one, not into the simulator or in a lent mech, and not on a contract whose every
+ * battle already has an ally of the story: there would be nothing for them to do but be paid.
  */
 export const takesWingman = (mission: Mission): boolean =>
   mission.arenaRank === undefined && mission.loaner === undefined && !mission.id.startsWith('arena-') && !mission.id.startsWith('cup-') && !mission.id.startsWith('drill-')
+  && mission.series !== 'duel'
   && mission.battles.some((battle) => !battle.support);
 
 /** What the pilot is left with of a fee after the wingman's share. Shares are whole percents, so this is exact. */

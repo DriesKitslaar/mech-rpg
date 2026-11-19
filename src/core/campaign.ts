@@ -1,3 +1,4 @@
+import type { Archetype } from './archetype';
 import type { EnemyMark, OverdriveId } from './battle';
 import type { Support } from './battle';
 import type { GameState } from './game';
@@ -93,6 +94,8 @@ export interface Mission {
   scale?: number;
   /** Set on an open contract with an elite in it: the mark the elite carries. */
   elite?: EnemyMark;
+  /** The class of machine an open contract asks for: won in a build of that class it pays more. */
+  asks?: Archetype;
   /** Set on an arena fight: the rank of the opponent. */
   arenaRank?: number;
   /** Set on a training drill: the mech that is lent for it. See training.ts. */

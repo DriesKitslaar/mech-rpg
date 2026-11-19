@@ -99,9 +99,28 @@ counted from the second, which is made of the first.
 
 ### Work that asks for a class (M3)
 
-Each time the board is posted, one of its open contracts asks for a class, drawn with the board's
-own dice. Its row and its briefing say so. Won in a build of that class it pays a quarter more;
-won as anything else it pays what it says. The swarm and the patrol never ask.
+Once the board has grown two stages (ten contracts won; at once in a later cycle), one of its three
+open contracts asks for a class each time it is posted. Which contract and which class are drawn on
+dice of their own, so that every board is otherwise exactly the board it always was (a test holds
+1440 contracts to that). The swarm and the patrol never ask.
+
+- **The list:** the contract's pay ends in a plus (`2900+`).
+- **The briefing:** a line under the contract's tag, `WANTS A BASTION: +25% PAY`. It is a notice in
+  amber while the build chosen is of another class, and stands in the colour of pay once a build
+  of that class is turned to on the Build row. While it is a notice it points to the first saved
+  build of that class, when the pilot has one that can be flown: `... (BUILD 1)`. With the odds
+  beside it, the briefing then answers both questions: does it pay to switch, and can that build
+  do it.
+- **The settlement:** won in a build of that class, a quarter of the fee as it was paid (after a
+  wingman's share and the pilot's pay perk; not of what the rank added) on a row of its own,
+  `Bastion bonus +725`. Won as anything else, or lost, it pays what it says. With the rank's row
+  and the class's row both there, a repair line makes way so that the bill still ends above the
+  client's words.
+
+It can always be flown in anything: asking is an offer, never a condition.
+
+A duel, found on the way: its briefing says the other side asked for the pilot "and for nobody
+else", yet a wingman could be hired for it. A duel now takes no wingman.
 
 ## Approaches considered
 

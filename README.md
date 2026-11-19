@@ -36,7 +36,8 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   hele verhaal uit te spelen.
 - **Op maat**: bij de briefing kies je in welke van je bewaarde builds je vertrekt, en het spel
   rekent voor die build je winkans uit (het vliegt het contract twintig keer zelf, met al jouw
-  perks, werkbank, Overdrive en wingman).
+  perks, werkbank, Overdrive en wingman). Een van de open contracten zoekt telkens een klasse en
+  betaalt een kwart meer als je het in zo'n build wint.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.

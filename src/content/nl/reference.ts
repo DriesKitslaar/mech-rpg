@@ -243,6 +243,9 @@ export const REFERENCE_NL: Record<string, string> = {
   ODDS: 'KANS',
   'A briefing gives the odds of the contract in the build you have chosen: Auto Turn flies it 20 times with your perks, bench work, Overdrive, wingman and difficulty, and its wins are counted. Another build is another count. The odds are what Auto Turn makes of the fight: flying it yourself, you can do better.':
     'Een briefing geeft de kans op het contract in de build die je koos: Auto-beurt vliegt het 20 keer met je perks, werkbank, Overdrive, wingman en moeilijkheid, en telt zijn winst. Een andere build is een andere telling. De kans is wat Auto-beurt van het gevecht maakt: zelf vliegen kan beter.',
+  'CLASS WANTED': 'KLASSE GEZOCHT',
+  'Once the board has grown a little, one of its three open contracts wants a class: its pay on the list ends in a plus, and its briefing says which. It can be won as anything; won in a build of that class it pays a quarter more. Turn to such a build on the Build row and the line lights up.':
+    "Is het bord wat gegroeid, dan zoekt een van de drie open contracten een klasse: het loon in de lijst eindigt op een plus en de briefing zegt welke. Winnen kan met alles; in een build van die klasse betaalt het een kwart meer. Ga op de rij Build naar zo'n build en de regel licht op.",
   'LEVELS AND PERKS': 'LEVELS EN PERKS',
   'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.':
     'Gewonnen contracten zijn ervaring. Elk level geeft een perkpunt; perks koop je op het pilotenscherm en hou je voorgoed. Medailles verdien je met wat je doet, ze betalen een beetje, en staan daar ook.',

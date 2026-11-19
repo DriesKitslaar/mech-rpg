@@ -38,10 +38,14 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief } = this.settlement;
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked } = this.settlement;
     return {
       menu: { items: [], cursor: 0 },
-      settlement: { net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0, relief: relief ?? 0, tip: won ? null : this.tip },
+      settlement: {
+        net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0, relief: relief ?? 0, tip: won ? null : this.tip,
+        // What the contract paid on top for being won as the class it asked for, and which class.
+        asked: asked ?? null,
+      },
     };
   }
 
@@ -82,7 +86,8 @@ export class SettlementScreen implements Screen {
       }
     }
 
-    // Four rows and four repair lines, a line apart, end just above what the client says.
+    // Eight rows, a line apart, end just above what the client says: the fee, what was added to it, the bill, and
+    // as many repair lines as that leaves room for.
     let y = 55;
     const row = (label: string, amount: number, color: string = COLORS.text): void => {
       drawText(ctx, label, x + 10, y, { color: COLORS.text });
@@ -91,10 +96,12 @@ export class SettlementScreen implements Screen {
     };
     row(S.reward, s.reward, s.reward > 0 ? COLORS.armor : COLORS.dim);
     if (s.rank && s.bonus) row(S.rankBonus(s.rank), s.bonus, COLORS.armor);
+    // What a contract that asked for a class paid for being won as one.
+    if (s.asked) row(S.askBonus(STRINGS.classes.names[s.asked.kind]), s.asked.bonus, COLORS.armor);
     row(S.ammo, -s.ammoCost, s.ammoCost > 0 ? COLORS.danger : COLORS.dim);
     row(S.repairs, -s.repairCost, s.repairCost > 0 ? COLORS.danger : COLORS.dim);
-    // Four repair lines fit; the total above always covers all of them.
-    for (const line of s.lines.slice(0, 4)) {
+    // Four repair lines fit, three when both the rank and the class paid; the total above always covers all of them.
+    for (const line of s.lines.slice(0, Math.min(4, (143 - y) / LINE))) {
       drawText(ctx, `  ${catalog[line.partId]?.name ?? line.partId}`, x + 10, y, { color: COLORS.dim });
       drawText(ctx, String(-line.cost), right, y, { align: 'right', color: COLORS.dim });
       y += LINE;

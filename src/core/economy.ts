@@ -1,3 +1,4 @@
+import type { Archetype } from './archetype';
 import type { BattleState } from './battle';
 import { framePart, weaponIn } from './build';
 import type { GameState, Rank } from './game';
@@ -24,6 +25,8 @@ export interface Settlement {
   rank?: Rank;
   score?: number;
   bonus?: number;
+  /** What a contract that asked for a class added to the fee of a pilot who won it as one, and which class that was; see board.ts. */
+  asked?: { kind: Archetype; bonus: number };
 }
 
 /** Pilot perks that change the bill: a fraction more pay, a fraction off ammunition and repairs. */

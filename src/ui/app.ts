@@ -2,7 +2,7 @@ import { adviceAfter, type Advice } from '../core/advice';
 import {
   CUPS, MIRROR_ID, arenaMission, checkChallenge, cupMission, cupOpen, isCup, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordCupWin, recordMirrorWin,
 } from '../core/arena';
-import { generateBoard, swarmContract } from '../core/board';
+import { askSettlement, generateBoard, swarmContract } from '../core/board';
 import { validatePlayerBuild } from '../core/build';
 import {
   archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, otherOffer, markRead,
@@ -15,7 +15,7 @@ import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import {
   TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, learn, newGame, type GameState, type LightDetail, type Settings,
 } from '../core/game';
-import { archetypeOf, recordWinAs } from '../core/archetype';
+import { archetypeOf, recordWinAs, type Archetype } from '../core/archetype';
 import { startFight, type Fight } from '../core/mission';
 import { fitSortie, sortieBuilds, type Sortie } from '../core/sortie';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
@@ -246,6 +246,8 @@ class MissionHost implements Screen {
   private overdrives = 0;
   /** What there is to say about the battle the contract was lost in; null after a win or a retreat. */
   private tip: Advice | null = null;
+  /** What the contract's battles are fought with, as the app said when the battle on screen began. */
+  private fought!: Fight;
 
   constructor(private app: App, private mission: Mission, private seed: number) {
     this.begin();
@@ -256,7 +258,8 @@ class MissionHost implements Screen {
     const total = this.mission.battles.length;
     const drill = isDrill(this.mission) || isGauntlet(this.mission);
     // What the contract is fought with is the app's to say: the odds on the briefing were counted from the same.
-    const state = startFight(this.app.fight(this.mission), this.mission, this.index, catalog, this.seed, this.index > 0 ? this.flow.state : undefined);
+    this.fought = this.app.fight(this.mission);
+    const state = startFight(this.fought, this.mission, this.index, catalog, this.seed, this.index > 0 ? this.flow.state : undefined);
     // Each battle of a contract has its own song: the last one may be against a boss.
     this.app.playTrack(battleTrack(this.mission, this.index, this.app.enemies()));
     // Tests play without the talk: it is words to read, and they have nobody reading.
@@ -305,7 +308,7 @@ class MissionHost implements Screen {
 
   /** How much stronger or weaker than the book the enemy is in this contract. */
   private enemyScale(): number {
-    return this.app.fight(this.mission).opts.enemyScale ?? 1;
+    return this.fought.opts.enemyScale ?? 1;
   }
 
   /** True when winning the current battle leads to another one. */
@@ -337,7 +340,8 @@ class MissionHost implements Screen {
     const { payBonus, costDiscount } = this.app.perks();
     const bill = settle(this.flow.state, this.mission.reward, this.app.deps.catalog, { payBonus, costDiscount });
     const performance = performanceOf(this.flow.state, this.rounds + this.flow.state.round, missionPar(this.mission));
-    const settlement = rankSettlement(bill, performance);
+    // A contract that asked for a class pays more to a pilot who won it as one.
+    const settlement = askSettlement(rankSettlement(bill, performance), this.mission, this.app.flownAs(this.mission));
     this.count();
     const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state), overdrives: this.overdrives });
     // What the debt limit wrote off is shown with the bill.
@@ -1120,15 +1124,16 @@ export class App {
     const relief = debtRelief(this.game!, settlement);
     let next = applySettlement(this.game!, settlement);
     next = addXp(next, xpForContract(mission.reward, settlement.won));
-    const pay = settlement.reward + (settlement.bonus ?? 0);
+    const pay = settlement.reward + (settlement.bonus ?? 0) + (settlement.asked?.bonus ?? 0);
     next = {
       ...next,
       stats: addStats(next.stats, contractStats(fought.tally, { won: settlement.won, retreated: fought.retreated, pay })),
       met: [...next.met, ...fought.met.filter((kind) => !next.met.includes(kind))],
       ...(fought.overdrives ? { overdrives: (next.overdrives ?? 0) + fought.overdrives } : {}),
     };
-    // A win in the pilot's own build is a win for the kind of machine that build is. A mech that was lent is nobody's kind.
-    if (settlement.won && mission.loaner === undefined) next = recordWinAs(next, archetypeOf(next.build, this.deps.catalog));
+    // A win in the pilot's own build is a win for the kind of machine that build is.
+    const kind = this.flownAs(mission);
+    if (settlement.won && kind) next = recordWinAs(next, kind);
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
       else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);
@@ -1143,6 +1148,11 @@ export class App {
     }
     this.commit(next);
     return relief;
+  }
+
+  /** The kind of machine a contract is flown as: that of the build on the floor. A mech that was lent is nobody's kind. */
+  flownAs(mission: Mission): Archetype | null {
+    return this.game && mission.loaner === undefined ? archetypeOf(this.game.build, this.deps.catalog) : null;
   }
 
   /** Shows a settlement that has already been booked. */
