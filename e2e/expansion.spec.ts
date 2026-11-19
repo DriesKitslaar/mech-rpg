@@ -72,8 +72,8 @@ test('arena, pilot, options, open contracts and a new cycle', async ({ page }) =
   // Open contracts sit on the list under the story ones.
   await choose(page, 'contracts');
   const list = (await snap(page)).menu.items.map((i) => i.id);
-  // Three of the board and the swarm beside it.
-  expect(list.filter((id) => id.startsWith('open-')).map((id) => id.split('-').at(-1))).toEqual(['0', '1', '2', 'swarm']);
+  // Three of the board, and beside them the job that asks for something else and the swarm.
+  expect(list.filter((id) => id.startsWith('open-')).map((id) => id.split('-').at(-1))).toEqual(['0', '1', '2', 'job', 'swarm']);
   await page.screenshot({ path: shot('contracts-open') });
   await choose(page, list.find((id) => id.startsWith('open-'))!);
   await waitForScreen(page, 'briefing');

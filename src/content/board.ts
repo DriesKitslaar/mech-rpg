@@ -1,7 +1,8 @@
 import type { BoardText } from '../core/board';
+import type { JobText } from '../core/jobs';
 import { STRINGS } from './strings';
 
-export const BOARD_TEXT: BoardText = {
+export const BOARD_TEXT: BoardText & JobText = {
   adjectives: [
     'Cold', 'Silent', 'Broken', 'Burning', 'Empty', 'Rusted', 'Neon', 'Blind', 'Late', 'Buried', 'Crooked', 'Paper',
     'Black', 'Second', 'Quiet', 'Glass',
@@ -63,4 +64,25 @@ export const BOARD_TEXT: BoardText = {
     swift: 'Among them: a swift elite, much harder to hit. Pays extra.',
     shielded: 'Among them: an elite behind a renewing barrier. Pays extra.',
   },
+  // Work that asks for something else. A title begins with its kind, as a wanted notice begins with what it is.
+  jobs: {
+    hit: {
+      titles: ['Hit: Loose End', 'Hit: Quiet Word', 'Hit: Night Clerk', 'Hit: Old Account', 'Hit: Key Witness'],
+      brief: 'The fee is for one machine, marked on the field: overclocked, and hitting hard. When it falls the job is done. The rest is nobody\'s business.',
+    },
+    repo: {
+      titles: ['Repo: Late Fees', 'Repo: Bad Paper', 'Repo: Lost Lease', 'Repo: Final Demand', 'Repo: Skipped Town'],
+      brief: 'The client wants one machine back in one piece. Take its arms and legs and leave the core. Destroy it and nobody is paid.',
+    },
+    escort: {
+      titles: ['Escort: Wage Run', 'Escort: Last Mile', 'Escort: Day Shift', 'Escort: Cold Chain', 'Escort: Fragile'],
+      brief: 'The client\'s freight is under fire. Every round, each machine left standing takes a piece of it. Clear them first.',
+    },
+    hold: {
+      titles: ['Hold: Gate Nine', 'Hold: No Relief', 'Hold: Long Shift', 'Hold: Dead Hours', 'Hold: Overtime'],
+      brief: 'More is coming than the fee could ask you to beat. Last the rounds and relief takes over. What you break is replaced.',
+    },
+  },
+  // What an escort keeps alive, by the place: the freight lanes, the mine, the plaza, the undercity.
+  assets: ['Wage Truck', 'Ore Lift', 'Motorcade', 'Pump Barge'],
 };

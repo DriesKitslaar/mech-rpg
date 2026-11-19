@@ -3,6 +3,7 @@ import {
   CUPS, MIRROR_ID, arenaMission, checkChallenge, cupMission, cupOpen, isCup, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordCupWin, recordMirrorWin,
 } from '../core/arena';
 import { askSettlement, generateBoard, swarmContract } from '../core/board';
+import { jobContract, recordJob } from '../core/jobs';
 import { validatePlayerBuild } from '../core/build';
 import {
   archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, otherOffer, markRead,
@@ -442,6 +443,8 @@ class MissionHost implements Screen {
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
+        // Why the battle ended as it did, where what it asked for decided it.
+        note: flow.resultNote || null,
         enemies: flow.state.units.filter((u) => u.side === 'enemy' && !u.destroyed).map((u) => u.kind ?? u.id),
         support: flow.state.support?.name ?? null,
         // What the hired wingman is saying on the radio, if anything.
@@ -745,7 +748,8 @@ export class App {
 
   /**
    * The contracts on offer now: the patrol, the story contracts as this cycle offers them, and,
-   * once the introductions are done, three open contracts that change with every battle won.
+   * once the introductions are done, the open contracts, which change with every battle won: the
+   * board's three, the job that asks for something else, and the swarm.
    */
   missions(): Mission[] {
     const game = this.game;
@@ -756,7 +760,10 @@ export class App {
       return MISSIONS.filter((m) => m.id === 'patrol').map((m) => lentPatrol(m, STARTER_BUILD, STRINGS.briefing.lentNote));
     }
     const story = availableMissions(game, MISSIONS).map((m) => forCycle(m, game.cycle));
-    return this.sideWorkOpen() ? [...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT), swarmContract(game.battlesWon, game.cycle, BOARD_TEXT)] : story;
+    if (!this.sideWorkOpen()) return story;
+    // Beside the board's three: the job that asks for something else, once the board has grown to have one, and the swarm.
+    const job = jobContract(game.battlesWon, game.cycle, BOARD_TEXT);
+    return [...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT), ...(job ? [job] : []), swarmContract(game.battlesWon, game.cycle, BOARD_TEXT)];
   }
 
   /** True once the arena and the open contracts are available. */
@@ -1222,6 +1229,8 @@ export class App {
       else if (isCup(mission)) next = recordCupWin(next, mission.id);
       // A master beaten is beaten whatever was flown; the crown goes with the class of the build it was flown in.
       else if (mission.crown !== undefined) next = recordMasterWin(next, mission.crown, kind);
+      // A job done is counted by its kind, whatever it was flown in.
+      else if (mission.job !== undefined) next = recordJob(next, mission.job);
       else if (MISSIONS.some((m) => m.id === mission.id)) {
         // Flown for the other side, it is remembered as that: an answer, like the story's other decisions.
         if (mission.turned && !mission.replay) next = decide(next, mission.turned.question, mission.turned.answer);

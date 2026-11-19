@@ -434,6 +434,8 @@ export const STRINGS = {
     accept: 'Accept', back: 'Back', reward: 'PAYS', engagements: (n: number) => (n === 1 ? '1 ENGAGEMENT' : `${n} ENGAGEMENTS`),
     hostiles: 'EXPECTED', exclusive: 'EXCLUSIVE: the other two clients will withdraw their offers.',
     finale: 'THE LAST MOVE OF THE WAR', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: AN ELITE', swarm: 'OPEN CONTRACT: A SWARM',
+    // The open contract that asks for something else, by its kind.
+    jobs: { hit: 'OPEN CONTRACT: A HIT', repo: 'OPEN CONTRACT: A REPOSSESSION', escort: 'OPEN CONTRACT: AN ESCORT', hold: 'OPEN CONTRACT: A HOLDING ACTION' },
     verdict: 'VERDICT: your answer ends the story. Every other offer is withdrawn.',
     replay: 'ARCHIVE: pays less. Nothing in the story changes.',
     lent: 'LENT MECH: yours cannot deploy. The bill is still yours.',

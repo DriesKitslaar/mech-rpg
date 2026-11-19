@@ -55,7 +55,7 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 
 | Menu | Wat je er doet |
 |---|---|
-| Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld), drie wisselende losse contracten en één zwerm. Onderaan staat het archief. |
+| Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld), drie wisselende losse contracten, één klus met een eigen doel en één zwerm. Onderaan staat het archief. |
 | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
 | Training | Dertien oefeningen in een geleende mecha, en het proefveld voor je eigen build. |
 | The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
@@ -350,6 +350,28 @@ bepaalde klasse. Je herkent het in de lijst aan een **plus** achter het loon (bi
   bewaard, dan staat erachter welke: **(BUILD 1)**.
 - Na elk gewonnen contract hangt er een nieuw bord, met een andere vraag. Zo loont het om meer dan
   een soort build bewaard te hebben.
+
+### Klussen: werk dat om iets anders vraagt
+
+Heb je vijf contracten gewonnen, dan staat er tussen de open contracten ook een **klus**. Je herkent
+hem aan zijn titel, die begint met de soort: **Hit:**, **Repo:**, **Escort:** of **Hold:**. Bij een
+gewoon contract moet alles kapot; een klus vraagt iets anders. Bovenin het gevecht staat steeds wat
+er gevraagd wordt.
+
+| Soort | Wat je moet doen | Wat helpt |
+| --- | --- | --- |
+| **Hit** (doelwit) | Eén machine is aangewezen (**TARGET**), en die is **OVERCLOCKED**: hij slaat harder. Valt hij, dan is de klus klaar, ook als de rest nog staat. | Veel schade in één keer: een Duellist of Sharpshooter is zo klaar. |
+| **Repo** (beslag) | De klant wil één machine heel terug. Schiet zijn **armen en benen** eraf en laat de **kern** heel. Vernietig je hem, dan verlies je. Het spel richt bij die machine vanzelf eerst op een arm of been. | Rustig mikken. Het duurt wat langer en betaalt wat meer. |
+| **Escort** | Er staat vracht van de klant op het veld (bovenin, bijvoorbeeld **WAGE TRUCK 11/11**). Elke ronde haalt elke vijand die nog staat er één punt af. Op nul verlies je. | Snel opruimen: een Duellist redt het bijna altijd, een Bastion of Lancer veel minder vaak. |
+| **Hold** (standhouden) | Er komt meer dan je kunt verslaan, en wat je sloopt wordt vervangen. Overleef **zes rondes** (**HOLD OUT 1/6**). | Stevig staan: een Bastion of Artillery haalt het altijd, een lichte mecha heeft het zwaar. |
+
+- Na elk gewonnen contract is er een **andere soort** klus. Ze wisselen in vaste volgorde, dus na
+  vier contracten heb je ze alle vier gezien.
+- Kijk bij de briefing naar **ODDS** en blader op de rij **Build** door je bewaarde builds: bij een
+  klus scheelt het echt welke je meeneemt.
+- Een klus betaalt per ronde ongeveer wat een gewoon contract betaalt. Geen van de vier is "de
+  beste manier om geld te verdienen".
+- **Twee medailles:** één voor een klus van elke soort, één voor 25 klussen.
 
 ### Het proefveld: je build gratis uitproberen
 

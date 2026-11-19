@@ -2,6 +2,7 @@ import type { Archetype } from './archetype';
 import type { EnemyMark, OverdriveId } from './battle';
 import type { Support } from './battle';
 import type { GameState } from './game';
+import type { JobKind } from './jobs';
 import type { Build, Objective, Part } from './types';
 
 export type Faction = 'hadron' | 'lumen' | 'undertow';
@@ -96,6 +97,8 @@ export interface Mission {
   elite?: EnemyMark;
   /** The class of machine an open contract asks for: won in a build of that class it pays more. */
   asks?: Archetype;
+  /** Set on the open contract that asks for something other than everything destroyed: which of the four kinds it is; see jobs.ts. */
+  job?: JobKind;
   /** Set on a duel with a master of the arena: the class whose crown is fought for. Won in a build of that class, the crown is the pilot's; see masters.ts. */
   crown?: Archetype;
   /** Set on an arena fight: the rank of the opponent. */

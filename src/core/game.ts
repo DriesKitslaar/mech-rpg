@@ -1,6 +1,7 @@
 import type { Archetype } from './archetype';
 import { OVERDRIVES, type OverdriveId } from './battle';
 import type { Run } from './gauntlet';
+import type { JobKind } from './jobs';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
 import { MAX_TUNED, tuneCap, type Tuning } from './tuning';
@@ -72,6 +73,8 @@ export interface GameState {
   relicsHeld?: number;
   /** Contracts won as each kind of machine, in the pilot's own build. Kept through the cycles. Absent in a game from before the kinds had names. */
   wonAs?: Partial<Record<Archetype, number>>;
+  /** Jobs won, by their kind (see jobs.ts). Kept through the cycles. Absent in a game from before the board had jobs. */
+  jobs?: Partial<Record<JobKind, number>>;
   /** What the pilot decided when the story asked, by question, in this cycle. Absent in a game from before there were questions. */
   choices?: Record<string, string>;
   /** What the pilot is called. */
@@ -353,9 +356,11 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   // More than there are relics today, so that a relic added later does not make an old best unreadable.
   if (value.relicsHeld !== undefined && !(isWholeNonNegative(value.relicsHeld) && value.relicsHeld <= 99)) return false;
   // Wins by kind of machine: whole counts against plain names. A kind this version does not know is kept: a later one may.
-  const { wonAs } = value;
-  if (wonAs !== undefined && (!isRecord(wonAs) || Object.keys(wonAs).length > 32
-    || !Object.entries(wonAs).every(([kind, count]) => /^[a-z]{1,24}$/.test(kind) && isWholeNonNegative(count) && count <= 1_000_000))) return false;
+  // Counts by a plain short word: of machines flown, of jobs done. Which words there are is the reader's business.
+  for (const counts of [value.wonAs, value.jobs]) {
+    if (counts !== undefined && (!isRecord(counts) || Object.keys(counts).length > 32
+      || !Object.entries(counts).every(([kind, count]) => /^[a-z]{1,24}$/.test(kind) && isWholeNonNegative(count) && count <= 1_000_000))) return false;
+  }
   // Bench work: whole steps against plain ids, no further than the bench goes in this telling. A part
   // this version does not know is kept: it is simply never fitted.
   const { tuning } = value;
