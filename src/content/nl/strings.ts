@@ -171,7 +171,7 @@ export const STRINGS_NL = {
     doors: ['Linkerdeur', 'Rechterdeur'], elite: 'ELITE', otherDoor: 'L1/R1: andere deur',
     relicHeading: 'VAN DE BEWAKER', revived: 'RESERVEKERN OP',
     relics: {
-      redline: { name: 'Redline-kern', short: 'REDLINE', note: 'Het frame krijgt een Overdrive: Tweede Adem. R1 als de meter vol is.' },
+      redline: { name: 'Drive-kern', short: 'DRIVE', note: 'Het frame krijgt een Overdrive: Tweede Adem. R1 als de meter vol is.' },
       rig: { name: 'Bergingsrig', short: 'RIG', note: 'Tussen etages twee keer zoveel pantser opgelapt.' },
       key: { name: 'Magazijnpas', short: 'PAS', note: 'Na elke etage een keuze meer.' },
       spare: { name: 'Reservekern', short: 'RESERVE', note: 'Een verloren etage mag een keer over, mech weer heel.' },

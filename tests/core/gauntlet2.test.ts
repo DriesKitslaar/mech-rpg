@@ -261,7 +261,7 @@ describe('relics', () => {
     expect(RELIC_IDS.map((id) => STRINGS.gauntlet.relics[id].short).join('  ').length).toBeLessThanOrEqual(72);
   });
 
-  test('Redline Core: the frame has Second Wind, and its meter goes from floor to floor, through a warden\'s service too', () => {
+  test('Drive Core: the frame has Second Wind, and its meter goes from floor to floor, through a warden\'s service too', () => {
     expect(runOverdrive(fresh())).toBeUndefined();
     const run = withRelics(fresh(5, 2), 'redline');
     expect(runOverdrive(run)).toBe('second-wind');

@@ -237,7 +237,7 @@ describe('relics, through the app', () => {
     expect(battle(glass.app).player.damage).toBe(1.3);
   });
 
-  test('Redline Core: a full service taken after a floor leaves the meter where it was, and the next floor starts with it', () => {
+  test('Drive Core: a full service taken after a floor leaves the meter where it was, and the next floor starts with it', () => {
     const carry = { ap: { core: 20, legs: 20 }, heat: 0, ammo: {}, restocked: {}, destroyed: false, drive: 80 };
     const { app, store } = room({ floor: 7, relics: ['redline'], drafting: true, carry, boons: MIGHTY });
     expect(g(app).wear).toBeGreaterThan(25);
@@ -250,7 +250,7 @@ describe('relics, through the app', () => {
     expect(battle(app).battle.drive).toEqual({ kind: 'second-wind', value: 80 });
   });
 
-  test('Redline Core: the Spare Core keeps the meter too', () => {
+  test('Drive Core: the Spare Core keeps the meter too', () => {
     const carry = { ap: { core: 20 }, heat: 0, ammo: {}, restocked: {}, destroyed: false, drive: 55 };
     const { app, store } = room({ floor: 7, relics: ['redline', 'spare'], carry });
     select(app, 'door-0');

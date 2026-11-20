@@ -268,7 +268,7 @@ describe('what a warden leaves', () => {
     expect(ids(app)[0]).toBe('offer-0');
   });
 
-  test('Redline Core: the frame is flown with Second Wind, and one set off down there counts for the pilot', () => {
+  test('Drive Core: the frame is flown with Second Wind, and one set off down there counts for the pilot', () => {
     const { app, store } = room({ floor: 2, boons: MIGHTY, relics: ['redline'], carry: { ap: {}, heat: 0, ammo: {}, restocked: {}, destroyed: false, drive: 100 } });
     select(app, 'door-0');
     const drive = () => (snap(app).battle as unknown as { drive: { kind: string; value: number } | null }).drive;

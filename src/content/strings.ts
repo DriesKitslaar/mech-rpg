@@ -203,7 +203,8 @@ export const STRINGS = {
     doors: ['Left door', 'Right door'], elite: 'ELITE', otherDoor: 'L1/R1: other door',
     relicHeading: 'THE WARDEN LEFT', revived: 'SPARE CORE SPENT',
     relics: {
-      redline: { name: 'Redline Core', short: 'REDLINE', note: 'The frame gets an Overdrive: Second Wind. R1 when the meter is full.' },
+      // (Its name in the rules is older than the kind of weapon called a redline: on the screen it is not called that.)
+      redline: { name: 'Drive Core', short: 'DRIVE', note: 'The frame gets an Overdrive: Second Wind. R1 when the meter is full.' },
       rig: { name: 'Salvage Rig', short: 'RIG', note: 'Twice as much armour is patched between floors.' },
       key: { name: 'Quartermaster Key', short: 'KEY', note: 'One more thing on offer after every floor.' },
       spare: { name: 'Spare Core', short: 'SPARE', note: 'Once, a floor lost is fought again in a whole mech.' },

@@ -6,10 +6,13 @@ import { stockFor } from '../../src/core/campaign';
 import { newGame, type GameState } from '../../src/core/game';
 import type { Part, Weapon } from '../../src/core/types';
 import { setLanguage } from '../../src/content/language';
+import { WEAPON_KINDS } from '../../src/content/medals';
 import '../../src/content/nl';
+import { STRINGS_NL } from '../../src/content/nl/strings';
 import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, SHOP_PARTS, SHOP_UNLOCKS, STARTER_BUILD } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
+import { STRINGS } from '../../src/content/strings';
 import { COMPARE_LINE_CHARS, PART_LINE_CHARS, compareParts, partLines } from '../../src/ui/partInfo';
 
 const KINDS = ['redline', 'surge', 'punish', 'fork', 'spool'] as const;
@@ -182,6 +185,22 @@ describe('what the shop and the garage say of them', () => {
     expect(lines('wpn-headsman')).toContain(`STRAF: +${weapon('wpn-headsman').traitPower}% op wankelend`);
     expect(lines('wpn-thunderhead')).toContain(`VONK: ${weapon('wpn-thunderhead').traitPower}% slaat over`);
     expect(lines('wpn-thresher')).toContain(`OPTOEREN: ${SPOOL_BASE}-${SPOOL_BASE + weapon('wpn-thresher').traitPower!}x, +1/beurt`);
+  });
+
+  test('nothing the Gauntlet\'s wardens leave is called what a kind of weapon is called, in either language', () => {
+    // (A relic was called the Redline Core before there was a kind of weapon called a redline.)
+    const kinds = [STRINGS, STRINGS_NL].flatMap((text) => WEAPON_KINDS.map((kind) => text.partInfo.traits[kind](1).split(':')[0]));
+    expect(kinds).toEqual(['REDLINE', 'SURGE', 'PUNISH', 'FORK', 'SPOOL', 'WITHEET', 'PIEK', 'STRAF', 'VONK', 'OPTOEREN']);
+    for (const text of [STRINGS, STRINGS_NL]) {
+      const relics = Object.values(text.gauntlet.relics);
+      expect(relics).toHaveLength(6);
+      for (const relic of relics) {
+        for (const kind of kinds) {
+          expect(relic.short.toUpperCase(), relic.name).not.toContain(kind);
+          expect(relic.name.toUpperCase(), relic.name).not.toContain(kind);
+        }
+      }
+    }
   });
 
   test('a surge\'s energy is marked as the least it takes; nothing else has the mark', () => {
