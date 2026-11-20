@@ -33,7 +33,7 @@ describe('the kinds there are', () => {
 describe('what a machine fights with', () => {
   test('a blade in either hand makes a duellist, whatever else it carries and whatever it stands on', () => {
     const blades = weapons.filter((weapon) => weapon.melee).map((weapon) => weapon.id);
-    expect(blades.sort()).toEqual(['wpn-arc-blade', 'wpn-breach-pick', 'wpn-gavel', 'wpn-ram-fist', 'wpn-thermal-cutter']);
+    expect(blades.sort()).toEqual(['wpn-arc-blade', 'wpn-breach-pick', 'wpn-gavel', 'wpn-headsman', 'wpn-ram-fist', 'wpn-thermal-cutter']);
     for (const blade of blades) {
       expect(kind(armed({ rightHand: blade })), blade).toBe('duellist');
       expect(kind(armed({ leftHand: blade, rightHand: 'wpn-rivet-rifle' })), blade).toBe('duellist');

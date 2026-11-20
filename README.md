@@ -27,7 +27,7 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 ## Wat er in zit
 
 - **Mecha**: elf sloten (kop, romp, armen, benen, generator, booster, vuurleiding, module, twee
-  handen, schouder) en 133 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
+  handen, schouder) en 143 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
   niet overschrijden en de generator moet alles kunnen voeden. Twaalf verfschema's, acht die je in
   de arena verdient, drie die je zelf mengt, en zeven opgeslagen builds. Je begint in een van drie mecha's naar keuze.
 - **Zeven klassen**: elke build is een Duellist, Sharpshooter, Artillery, Lancer, Bastion,
@@ -67,6 +67,10 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 - **Eigen lak**: in de garage meng je je eigen lak, in vijf rijen: de kleur van het pantser, hoe
   sterk en hoe donker die is, en de kleur en de felheid van de lichten. Je mecha verandert bij
   elke druk mee, en drie mengsels blijven bewaard.
+- **Arsenaal**: tien wapens van vijf soorten die iets van je terugvragen. Een witheet wapen raakt
+  harder naarmate je mecha heter is, een piekwapen neemt al je energie in één schot, een
+  strafwapen doet dubbele schade tegen een wankelende machine, een vonk slaat over op een tweede
+  vijand, en een optoerwapen vuurt elke beurt op rij een schot meer.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.
@@ -80,7 +84,7 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   spiegelgevecht tegen je eigen mecha. Na het verhaal: twee duels, elk om een mecha die je
   daarna zelf mag kopen.
 - **Training**: dertien oefeningen in een geleende mecha die elk één ding uitleggen.
-- **Piloot**: niveaus en acht vaardigheden, 72 medailles en een logboek.
+- **Piloot**: niveaus en acht vaardigheden, 73 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
 - **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,
@@ -107,6 +111,7 @@ npm run dev
 | `npm run typecheck` | Typecontrole |
 | `npm run simulate -- --table` | Speelt elk contract honderden keren automatisch en toont de winstkans per referentiebuild (`--arena`, `--board`, `--cycle 1`, `--why`) |
 | `npm run career -- --all` | Laat een piloot hele loopbanen zelf uitspelen: elke route, elke moeilijkheid. Hij vecht alleen met Auto Turn en koopt onderdelen via de spelregels, niet via de winkelschermen |
+| `npm run bench -- --build tier4 --slot rightHand --with =,wpn-slagcaster` | Zet wapens naast elkaar: vliegt contracten in één build met één slot gewisseld en toont hoe vaak elke keuze wint (`--set`, `--only`, `--arena`, `--board`) |
 | `npm run build` | Bouwt de webversie in `dist/` |
 
 De APK wordt bij elke push gebouwd door de workflow in `.github/workflows/android.yml`.

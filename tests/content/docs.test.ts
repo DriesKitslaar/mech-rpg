@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { ARCHETYPES } from '../../src/core/archetype';
+import { ARCHETYPES, archetypeOf } from '../../src/core/archetype';
+import { SPOOL_BASE, SURGE_UNIT } from '../../src/core/battle';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
 import { startNewCycle } from '../../src/core/campaign';
 import { launches } from '../../src/core/launch';
@@ -13,7 +14,7 @@ import { MANUAL } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { MASTERS } from '../../src/content/masters';
-import { MEDALS } from '../../src/content/medals';
+import { MEDALS, WEAPON_KINDS } from '../../src/content/medals';
 import { REFERENCE_NL } from '../../src/content/nl/reference';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { CATALOG, SHOP_PARTS, SHOP_UNLOCKS } from '../../src/content/parts';
@@ -339,5 +340,98 @@ describe('what is said of the paint shop is so', () => {
     expect(README).toContain('en drie mengsels blijven bewaard.');
     expect(GUIDE).toContain('| Garage | Onderdelen wisselen, verf kiezen (L1/R1), je eigen lak mengen (links), zeven builds bewaren (rechts). |');
     expect(GUIDE).toContain('- Builds bewaar je in de **Garage**: naar rechts, een plek kiezen, **Save current build**.');
+  });
+});
+
+describe('what is said of the five kinds of weapon is so', () => {
+  const chapter = MANUAL.find((entry) => entry.id === 'kinds')!;
+  const dutch = REFERENCE_NL[chapter.text];
+  const section = GUIDE.slice(GUIDE.indexOf('## Vijf soorten wapens die iets van je vragen'), GUIDE.indexOf('## De werkbank'));
+  const weapons = SHOP_PARTS.filter((part): part is Weapon => part.kind === 'weapon');
+  const ofKind = (kind: string): Weapon[] => weapons.filter((weapon) => weapon.trait === kind);
+  /** What the guide calls each kind, and what it says of where a weapon is carried and what puts it on the shelf. */
+  const NAMES: Record<string, string> = { redline: 'witheet', surge: 'piek', punish: 'straf', fork: 'vonk', spool: 'optoeren' };
+  const AFTER: Record<string, string> = {
+    'undertow-1': 'je eerste contract voor de Undertow', 'lumen-1': 'je eerste contract voor Lumen', 'hadron-1': 'je eerste contract voor Hadron',
+    choice: 'het exclusieve contract', verdict: 'het einde van de audit',
+  };
+  const after = (condition: string): string => (condition.startsWith('arena:') ? `arenarang ${condition.slice(6)}` : AFTER[condition]);
+
+  test('the manual: five kinds, the hundred a surge counts by, the two shots a spool begins with', () => {
+    expect(chapter.title).toBe('FIVE KINDS');
+    expect(REFERENCE_NL[chapter.title]).toBe('VIJF SOORTEN');
+    expect(chapter.text).toMatch(/^Five kinds of weapon ask something of you\./);
+    expect(WEAPON_KINDS).toEqual(['redline', 'surge', 'punish', 'fork', 'spool']);
+    // Each by the name its line has in the shop, in the order the lines are written in.
+    const named = [...chapter.text.matchAll(/\b(REDLINE|SURGE|PUNISH|FORK|SPOOL)\b/g)].map((match) => match[1].toLowerCase());
+    expect(named).toEqual(WEAPON_KINDS);
+    for (const kind of WEAPON_KINDS) expect(STRINGS.partInfo.traits[kind](1), kind).toMatch(new RegExp(`^${kind.toUpperCase()}:`));
+    expect(chapter.text).toContain(`SURGE takes all the energy you have left and hits for every ${SURGE_UNIT} of it.`);
+    expect(chapter.text).toContain(`SPOOL fires ${SPOOL_BASE} shots, and one more for every turn in a row.`);
+    expect(chapter.text).toContain('REDLINE hits harder the hotter you run: fire it last.');
+    expect(chapter.text).toContain('FORK: a hit leaps to the next machine.');
+    // In Dutch by the names the Dutch lines have.
+    const dutchNamed = [...dutch.matchAll(/\b(WITHEET|PIEK|STRAF|VONK|OPTOEREN)\b/g)].map((match) => match[1]);
+    expect(dutchNamed).toEqual(['WITHEET', 'PIEK', 'STRAF', 'VONK', 'OPTOEREN']);
+    WEAPON_KINDS.forEach((kind, at) => expect(STRINGS_NL.partInfo.traits[kind](1), kind).toMatch(new RegExp(`^${dutchNamed[at]}:`)));
+    expect(dutch).toContain(`PIEK neemt al je energie en telt per ${SURGE_UNIT}.`);
+    expect(dutch).toContain(`OPTOEREN vuurt ${SPOOL_BASE} schoten, en elke beurt op rij een meer.`);
+  });
+
+  test('the guide: what each kind does, by the figures of the rules', () => {
+    expect(section.length).toBeGreaterThan(1500);
+    expect(section).toContain('Tien wapens zijn van een soort die iets van jou terugvraagt');
+    expect(weapons.filter((weapon) => (WEAPON_KINDS as string[]).includes(weapon.trait ?? ''))).toHaveLength(10);
+    expect(section).toContain(`| **SURGE** | PIEK | Neemt alle energie die je nog hebt. De schade die erbij staat geldt voor elke ${SURGE_UNIT} energie die het neemt. |`);
+    expect(section).toContain(`| **SPOOL** | OPTOEREN | Begint met ${SPOOL_BASE} schoten en krijgt er elke beurt op rij een bij. Sla je een beurt over, dan begint het weer bij ${SPOOL_BASE}. |`);
+    // Twice as much: of both the weapons that punish.
+    expect(section).toContain('| **PUNISH** | STRAF | Dubbele schade tegen een mecha die wankelt. Zelf duwt het nauwelijks. |');
+    expect(ofKind('punish').map((weapon) => weapon.traitPower)).toEqual([100, 100]);
+    expect(section).toContain('| **REDLINE** | WITHEET | Hoe heter je eigen mecha is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de grens van 100. |');
+    expect(STRINGS.partInfo.traits.redline(8)).toBe('REDLINE: +8% per 10 heat');
+    expect(section).toContain('| **FORK** | VONK | Een treffer slaat over op de volgende vijand in de rij, voor een deel van de schade. Wat overslaat mist nooit. |');
+    for (const weapon of ofKind('fork')) expect(weapon.traitPower, weapon.id).toBeLessThan(100);
+    // The words the battle writes, as it writes them.
+    expect(section).toContain(`**${STRINGS.meters.energy} ${STRINGS.weaponMenu.all} 230**`);
+    expect(section).toContain(`**${STRINGS.weaponMenu.shots(4)}**`);
+    expect(section).toContain(`**${STRINGS.fx.kinds.redline(36)}**, **${STRINGS.fx.kinds.surge('2.3')}**, **${STRINGS.fx.kinds.punish}**`);
+    expect(section).toContain(`staat **${STRINGS.preview.fork}** (Nederlands **${STRINGS_NL.preview.fork}**) boven de machine waar het naartoe springt`);
+  });
+
+  test('the guide: the ten weapons, each with its kind, where it is carried and what puts it on the shelf', () => {
+    const rows = weapons.filter((weapon) => (WEAPON_KINDS as string[]).includes(weapon.trait ?? ''));
+    for (const weapon of rows) {
+      const where = weapon.melee ? 'hand (kling)' : weapon.mount === 'hand' ? 'hand' : 'schouder';
+      expect(section, weapon.id).toContain(`| ${weapon.name} | ${NAMES[weapon.trait!]} | ${where} | ${after(SHOP_UNLOCKS[weapon.id])} |`);
+    }
+    // And no row for a weapon that is not one of them.
+    expect(section.split('| hand').length + section.split('| schouder |').length - 2).toBe(rows.length);
+  });
+
+  test('the guide: none of them changes what class a build is, and a blade is a blade', () => {
+    expect(section).toContain('een Headsman is een kling en maakt je een Duellist, zoals elke kling');
+    const frame = { head: 'head-scout-mk1', core: 'core-hauler', arms: 'arms-rigger', legs: 'legs-strider', generator: 'gen-kd1' };
+    expect(archetypeOf({ ...frame, rightHand: 'wpn-headsman' }, CATALOG)).toBe('duellist');
+    // A gun of each of the other kinds leaves the stock frame the all-rounder it is.
+    for (const id of ['wpn-slagcaster', 'wpn-flywheel', 'wpn-spike-driver', 'wpn-thresher', 'wpn-thunderhead', 'wpn-crucible', 'wpn-spillway']) {
+      const slot = (CATALOG[id] as Weapon).mount === 'hand' ? 'rightHand' : 'shoulder';
+      expect(archetypeOf({ ...frame, rightHand: 'wpn-rivet-rifle', [slot]: id }, CATALOG), id).toBe('allrounder');
+    }
+  });
+
+  test('the README: ten weapons of five kinds, and what each kind is; and the medal for owning one of each', () => {
+    expect(README).toContain('- **Arsenaal**: tien wapens van vijf soorten die iets van je terugvragen.');
+    expect(README).toContain('een strafwapen doet dubbele schade tegen een wankelende machine');
+    expect(README).toContain(`${MEDALS.length} medailles`);
+    const medal = MEDALS.find((entry) => entry.id === 'arsenal')!;
+    expect(medal).toMatchObject({ name: 'Full Rack', tier: 2 });
+    const fresh = { inventory: {} } as never;
+    expect(medal.progress(fresh)).toEqual({ have: 0, need: 5 });
+    // One of each kind, whichever of the two it is; two of a kind are one kind; and something that is no part, or is owned no more, is nothing.
+    const owns = (ids: string[], count = 1) => medal.progress({ inventory: Object.fromEntries(ids.map((id) => [id, count])) } as never).have;
+    expect(owns(['wpn-slagcaster', 'wpn-sluice', 'wpn-spike-driver', 'wpn-forkbolt', 'wpn-flywheel'])).toBe(5);
+    expect(owns(['wpn-crucible', 'wpn-spillway', 'wpn-headsman', 'wpn-thunderhead', 'wpn-thresher'])).toBe(5);
+    expect(owns(['wpn-crucible', 'wpn-slagcaster', 'wpn-rivet-rifle', 'toString'])).toBe(1);
+    expect(owns(['wpn-crucible', 'wpn-spillway'], 0)).toBe(0);
   });
 });

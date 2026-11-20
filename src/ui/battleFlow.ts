@@ -1,6 +1,6 @@
 import { chooseAutoPlayerAction, chooseEnemyAction } from '../core/ai';
 import {
-  activeUnit, applyAction, checkAction, objectiveTarget, previewShot, HEAT_LIMIT, ROUND_LIMIT,
+  activeUnit, applyAction, checkAction, objectiveTarget, previewShot, weaponNow, HEAT_LIMIT, ROUND_LIMIT,
   type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState, ORDERS,
 } from '../core/battle';
 import { moduleOf, weaponIn } from '../core/build';
@@ -346,6 +346,8 @@ export class BattleFlow {
         const weapon = weaponIn(attacker.build, event.weapon, this.catalog)?.name ?? event.weapon;
         if (!event.hit) return STRINGS.miss(weapon, name(event.target));
         if (event.shatter) return STRINGS.shatter(weapon, name(event.target));
+        // What leapt on from a fork's hit is said as that, unless a barrier took all of it.
+        if (event.via && event.damage > 0) return STRINGS.leap(name(event.target), part(event.target, event.appliedTo), event.damage);
         // A hit the barrier took whole shows what the barrier lost instead of armour.
         return event.damage === 0 && event.absorbed
           ? STRINGS.barrierHit(weapon, name(event.target), event.absorbed)
@@ -515,7 +517,12 @@ export class BattleFlow {
     const refusal = this.weaponRefusal(slot);
     if (refusal) return { id: slot, label, enabled: false, note: W.reasons[refusal as keyof typeof W.reasons] ?? refusal };
     const { energy, heat } = STRINGS.meters;
-    let note = `${energy} ${weapon.energy}  ${heat} ${weapon.heat}`;
+    // What the weapon's kind makes of this turn is said with what it costs: all the energy a surge would take, the
+    // shots a spool has wound up to, what a redline's heat adds as the machine stands.
+    const now = weaponNow(this.state, this.player.id, slot, this.catalog);
+    const cost = weapon.trait === 'surge' ? `${energy} ${W.all} ${now.energy}` : `${energy} ${weapon.energy}`;
+    const kind = weapon.trait === 'spool' ? `  ${W.shots(now.shots)}` : weapon.trait === 'redline' && now.lift > 100 ? `  +${now.lift - 100}%` : '';
+    let note = `${cost}  ${heat} ${weapon.heat}${kind}`;
     if (weapon.charge) {
       note = this.player.charged.includes(slot) ? `${W.ready}  ${heat} ${weapon.heat}` : `${W.charge}  ${energy} ${weapon.energy}`;
     }

@@ -266,14 +266,19 @@ describe('what a run pays and how far it gets', () => {
     // cleared 7.35 floors on average and eleven reached the tenth; with them it clears 7.9 and fourteen do. (A player
     // who takes the second life gets about a floor further than before: 9.6 for 8.6.) The floors with a warden or an
     // elite on them are the fights they were.
+    //
+    // The ten weapons of the five kinds are offered like anything the market sells, and what is offered when is
+    // drawn from all of it: with them on the shelf these same forty runs are other runs. They clear 9.1 and
+    // twenty-two reach the tenth. Over four hundred runs it is 8.8 floors with the ten for 8.5 without (171
+    // reaching the tenth for 156): a third of a floor, which is about what four hundred runs differ by.
     const depths = Array.from({ length: 40 }, (_, i) => floorsCleared(play((i + 1) * 7919 + 1, 60)));
     const mean = depths.reduce((sum, depth) => sum + depth, 0) / depths.length;
-    expect(mean).toBeGreaterThan(7.4);
-    expect(mean).toBeLessThan(8.5);
-    // The deep floors stay rare: ten is reached by fewer than half, twenty by nobody here.
+    expect(mean).toBeGreaterThan(8.6);
+    expect(mean).toBeLessThan(9.6);
+    // The deep floors stay hard to reach: twenty is reached by nobody here.
     const tenth = depths.filter((depth) => depth >= 10).length;
-    expect(tenth).toBeGreaterThanOrEqual(11);
-    expect(tenth).toBeLessThanOrEqual(17);
+    expect(tenth).toBeGreaterThanOrEqual(20);
+    expect(tenth).toBeLessThanOrEqual(28);
     expect(depths.filter((depth) => depth >= 20).length).toBe(0);
   });
 });

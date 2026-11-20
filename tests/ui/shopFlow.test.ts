@@ -33,10 +33,10 @@ test('each tab lists its stock with the price', () => {
   expect(flow.list.items.slice(0, 3).map((i) => i.note)).toEqual(['300', '300', '300']);
   expect(flow.list.items[3]).toMatchObject({ label: 'Halo Visor', note: '900', enabled: true });
   toTab(flow, 'hand');
-  expect(flow.list.items).toHaveLength(28);
+  expect(flow.list.items).toHaveLength(34);
   expect(flow.list.items.slice(-4).map((i) => i.id)).toEqual(['shd-plate', 'shd-riot', 'shd-barrier', 'shd-tower']);
   toTab(flow, 'shoulder');
-  expect(flow.list.items).toHaveLength(17);
+  expect(flow.list.items).toHaveLength(21);
   toTab(flow, 'generator');
   expect(flow.list.items).toHaveLength(8);
   toTab(flow, 'booster');

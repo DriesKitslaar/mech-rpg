@@ -479,6 +479,8 @@ class MissionHost implements Screen {
         maxAp: Object.values(player.parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0), repairsLeft: player.repairsLeft,
         // How hard the mech hits, against the plain figure: 1 unless something about the run or the contract changes it.
         damage: player.mods.damage,
+        // What the turn has left to spend and how warm the machine is: a surge and a redline are fired by these.
+        energy: player.energy, heat: player.heat,
       },
       message: flow.message,
       // A line of talk holds its place for a moment: a press then is passed over, not refused. (Not while the launch
@@ -496,6 +498,11 @@ class MissionHost implements Screen {
         phase: this.launch ? 'launch' : flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
+        // While a fork is aimed: the machine its hit would leap on to. And while the weapons are listed, what is said under each.
+        fork: flow.preview?.fork ?? null,
+        weapons: flow.phase === 'weapon' ? flow.menu.items.map((item) => ({ slot: item.id, note: item.note ?? '' })) : null,
+        // The words over the field as this is asked: a test cannot read a canvas.
+        words: this.screen.words,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         // Why the battle ended as it did, where what it asked for decided it.
         note: flow.resultNote || null,

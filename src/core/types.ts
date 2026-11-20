@@ -136,11 +136,19 @@ export interface Weapon {
   price: number;
   vendor?: Vendor;
   /**
-   * A special effect: `pierce` halves the target's resistance; `thermal` adds `traitPower` heat on a hit;
+   * The kind of weapon it is. `pierce` halves the target's resistance; `thermal` adds `traitPower` heat on a hit;
    * `drain` takes `traitPower` from the target's next turn of energy on a hit; `twin` fires two shots and
    * `burst` fires `traitPower` shots; `salvo` fires one shot at every enemy.
+   *
+   * Five kinds ask something of the machine that carries them. `redline` does `traitPower` in a thousand more
+   * for every point of heat its own machine carries as it fires, up to the limit. `surge` asks `energy` at the
+   * least and takes all there is: its damage and its push are what it is listed at for every hundred it took.
+   * `punish` does `traitPower` in a hundred more to a staggered machine, on top of what every weapon does to
+   * one. A hit of a `fork` goes on to the next enemy along the line, at its core, for `traitPower` in a hundred
+   * of the damage and the push, and is not rolled for. `spool` fires two shots, and one more for every turn in a
+   * row it has been fired, up to `traitPower` more.
    */
-  trait?: 'pierce' | 'thermal' | 'drain' | 'twin' | 'burst' | 'salvo';
+  trait?: 'pierce' | 'thermal' | 'drain' | 'twin' | 'burst' | 'salvo' | 'redline' | 'surge' | 'punish' | 'fork' | 'spool';
   traitPower?: number;
   /** How hard a hit pushes the target off balance; derived from damage and type when absent. */
   impact?: number;

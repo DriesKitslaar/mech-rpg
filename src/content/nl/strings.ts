@@ -23,9 +23,10 @@ export const STRINGS_NL = {
     you: 'JOUW MECH', target: 'DOELWIT', weapons: 'WAPENS', repair: 'WAT REPAREREN?', paint: 'WIE MARKEREN?',
     targetOf: (n: number, of: number) => `DOELWIT ${n}/${of}  L1/R1`,
   },
-  preview: { hit: 'TREF', damage: 'SCH.', all: 'ALLE', kills: 'VERNIETIGT' },
+  preview: { hit: 'TREF', damage: 'SCH.', all: 'ALLE', kills: 'VERNIETIGT', fork: 'VONK' },
   weaponMenu: {
     charge: 'LADEN', ready: 'KLAAR',
+    all: 'ALLES', shots: (count: number) => `${count} SCHOTEN`,
     reasons: {
       alreadyFired: 'gevuurd', noAmmo: 'geen mun.', noEnergy: 'geen EN', weaponDisabled: 'armen kapot', needsBoost: 'Boost nodig',
       alreadyUsed: 'geladen', notCharged: 'niet geladen', invalidTarget: 'geen doel',
@@ -64,6 +65,7 @@ export const STRINGS_NL = {
   yourTurn: (round: number) => `Ronde ${round} - jouw zet`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} raakt ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} mist ${obj(target)}`,
+  leap: (target: string, part: string, damage: number) => `Slaat over op ${obj(target)} - ${part} -${damage}`,
   shatter: (weapon: string, target: string) => `${weapon} VERMORZELT ${obj(target)}`,
   partDestroyed: (unit: string, part: string) => `${subj(unit)}: ${part} vernietigd`,
   unitDestroyed: (unit: string) => does(unit, 'vernietigd', 'bent vernietigd'),
@@ -169,7 +171,7 @@ export const STRINGS_NL = {
     doors: ['Linkerdeur', 'Rechterdeur'], elite: 'ELITE', otherDoor: 'L1/R1: andere deur',
     relicHeading: 'VAN DE BEWAKER', revived: 'RESERVEKERN OP',
     relics: {
-      redline: { name: 'Redline-kern', short: 'REDLINE', note: 'Het frame krijgt een Overdrive: Tweede Adem. R1 als de meter vol is.' },
+      redline: { name: 'Drive-kern', short: 'DRIVE', note: 'Het frame krijgt een Overdrive: Tweede Adem. R1 als de meter vol is.' },
       rig: { name: 'Bergingsrig', short: 'RIG', note: 'Tussen etages twee keer zoveel pantser opgelapt.' },
       key: { name: 'Magazijnpas', short: 'PAS', note: 'Na elke etage een keuze meer.' },
       spare: { name: 'Reservekern', short: 'RESERVE', note: 'Een verloren etage mag een keer over, mech weer heel.' },
@@ -519,6 +521,11 @@ export const STRINGS_NL = {
       drain: (power: number) => `AFTAP: -${power} energie bij doel`,
       burst: (power: number) => `STOOT: vuurt ${power} keer`,
       salvo: () => 'SALVO: raakt elke vijand',
+      redline: (power: number) => `WITHEET: +${power}% per 10 hitte`,
+      surge: () => 'PIEK: alle EN, SCH per 100',
+      punish: (power: number) => `STRAF: +${power}% op wankelend`,
+      fork: (power: number) => `VONK: ${power}% slaat over`,
+      spool: (most: number) => `OPTOEREN: 2-${most}x, +1/beurt`,
     },
     legTypes: {
       biped: '', reverse: 'OMGEKEERD: boost +8 ontwijk', quad: 'QUAD: stevig, schouder +6',
@@ -541,6 +548,7 @@ export const STRINGS_NL = {
     miss: 'MIS', overheat: 'OVERVERHIT', stagger: 'WANKELT', shaken: 'PANIEK', block: (n: number) => `BLOK ${n}`,
     fieldDown: 'VELD WEG', fieldUp: 'VELD TERUG',
     overkill: 'OVERKILL', chain: (n: number) => `REEKS x${n}`, rout: 'VLUCHT', offline: 'UIT',
+    kinds: { redline: (percent: number) => `WITHEET +${percent}%`, surge: (times: string) => `PIEK x${times}`, punish: 'STRAF' },
     phase: (n: number) => `FASE ${n}`,
     modules: {
       coolant: 'KOELING', barrier: 'BARRIERE', overclock: 'OVERKLOK', painter: 'GEMERKT', nanites: 'NANITES', shock: 'SCHOK',

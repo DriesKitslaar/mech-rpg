@@ -1,5 +1,5 @@
 import {
-  activeUnit, applyAction, boostCost, checkAction, guardFactor, mendablePart, objectiveTarget, previewShot, HEAT_LIMIT, LIMITER_HEAT,
+  activeUnit, applyAction, boostCost, checkAction, forkTarget, guardCost, guardFactor, mendablePart, objectiveTarget, previewShot, HEAT_LIMIT, LIMITER_HEAT,
   OVERCLOCK_HEAT,
   type Action, type BattleState, type UnitState,
 } from './battle';
@@ -22,6 +22,47 @@ function usableWeapons(state: BattleState, catalog: Catalog, targetId: string, o
 /** Puts blades first. A unit that boosted to close in kept energy back for the strike; a gun must not take it. */
 function bladesFirst(usable: Usable[]): Usable[] {
   return [...usable.filter((u) => u.weapon.melee), ...usable.filter((u) => !u.weapon.melee)];
+}
+
+/**
+ * The order to fire in. Blades first, as ever; and where the unit carries a weapon whose kind asks for it, by what
+ * that kind asks. A spool that has wound up is worth keeping wound, so it goes before everything (one that has not
+ * is the least of what the unit carries, and waits its turn). A punish waits for whatever else there is to knock a
+ * steady machine off balance, a redline for whatever else heats its own machine, and a surge, which takes all the
+ * energy that is left, goes last of all.
+ *
+ * What comes later must still be paid for, and still fit under the heat limit, when its turn comes. So the weapons
+ * are first gone through in the order they would otherwise be fired in (but a wound spool straight after the
+ * blades), and those the energy and the heat run to are the ones fired now, in the order their kinds ask (a surge
+ * among them is counted at the least it asks, and gets what the rest leave). When none fits, the old order stands,
+ * and the unit vents or stops as it always did. A unit that carries none of these kinds fires as it always did.
+ */
+function fireOrder(state: BattleState, usable: Usable[], target: UnitState): Usable[] {
+  const inOrder = bladesFirst(usable);
+  const unit = activeUnit(state);
+  const wound = (u: Usable): boolean => u.weapon.trait === 'spool' && (unit.spool[u.slot] ?? 0) > 0;
+  const when = (u: Usable): number => {
+    switch (u.weapon.trait) {
+      case 'spool': return wound(u) ? -1 : 0;
+      case 'punish': return target.staggered === 0 ? 1 : 0;
+      case 'redline': return 2;
+      case 'surge': return 3;
+      default: return 0;
+    }
+  };
+  if (inOrder.every((u) => when(u) === 0)) return inOrder;
+  // (A sort leaves what ranks alike in the order it was in.)
+  const sorted = (list: Usable[], rank: (u: Usable) => number): Usable[] => [...list].sort((a, b) => rank(a) - rank(b));
+  let { energy, heat } = unit;
+  const fits = sorted(inOrder, (u) => (u.weapon.melee ? 0 : wound(u) ? 1 : 2)).filter((u) => {
+    // A charged weapon was paid for when it was charged.
+    const cost = u.weapon.charge ? 0 : u.weapon.energy;
+    if (cost > energy || heat + u.weapon.heat > HEAT_LIMIT) return false;
+    energy -= cost;
+    heat += u.weapon.heat;
+    return true;
+  });
+  return fits.length === 0 ? inOrder : sorted(fits, when);
 }
 
 /** Shared shape of both policies: cool if a shot would overheat, else fire a safe weapon, else stop. */
@@ -72,7 +113,14 @@ function moduleAction(state: BattleState, catalog: Catalog, foe: UnitState): Act
   const core = unit.parts.core!;
   let wanted: boolean;
   switch (module.effect) {
-    case 'coolant': wanted = unit.heat >= 50; break;
+    // Heat is what a redline hits with: a machine that carries one keeps it until its next shot would be one too many.
+    case 'coolant': {
+      const carried = WEAPON_SLOTS.flatMap((slot) => weaponIn(unit.build, slot, catalog) ?? []);
+      wanted = carried.some((weapon) => weapon.trait === 'redline')
+        ? carried.some((weapon) => unit.heat + weapon.heat > HEAT_LIMIT)
+        : unit.heat >= 50;
+      break;
+    }
     case 'barrier': wanted = core.ap < core.maxAp * 0.5; break;
     case 'chaff': wanted = core.ap < core.maxAp * 0.7; break;
     case 'nanites': wanted = armourShare(unit) < 0.6; break;
@@ -138,7 +186,7 @@ export function chooseEnemyAction(state: BattleState, catalog: Catalog): Action 
   if (charge) return charge;
   if (shouldCloseIn(state, catalog)) return { type: 'boost' };
 
-  const usable = bladesFirst(usableWeapons(state, catalog, player.id, ['shoulder', 'rightHand', 'leftHand']));
+  const usable = fireOrder(state, usableWeapons(state, catalog, player.id, ['shoulder', 'rightHand', 'leftHand']), player);
   const first = coolOrFire(state, catalog, usable, player.id, 'core');
   if (first.type === 'cool') return first;
   if (first.type === 'fire') {
@@ -277,8 +325,10 @@ function autoChoice(state: BattleState, catalog: Catalog): Action {
   // in its rack when that hit could be the one that finishes the machine.
   const wanted = state.objective.type === 'disable' ? objectiveTarget(state) : undefined;
   if (wanted && !wanted.destroyed && wanted.id !== target.id) {
-    usable = usable.filter((u) =>
-      u.weapon.trait !== 'salvo' || previewShot(state, me.id, u.slot, wanted.id, 'core', catalog).damage < wanted.parts.core!.ap);
+    // And what leaps on from a fork lands on a core as well: of the machine next along the line.
+    const lands = (u: Usable): number => (u.weapon.trait === 'salvo' ? 1
+      : u.weapon.trait === 'fork' && forkTarget(state, me.id, target.id)?.id === wanted.id ? (u.weapon.traitPower ?? 0) / 100 : 0);
+    usable = usable.filter((u) => Math.ceil(previewShot(state, me.id, u.slot, wanted.id, 'core', catalog).damage * lands(u)) < wanted.parts.core!.ap);
   }
   // A target that will outlast this turn's volley, and that the volley can knock off balance, gets the
   // hardest-pushing weapons first, so the rest land on a staggered mech. Small fry is shot as it comes.
@@ -288,7 +338,21 @@ function autoChoice(state: BattleState, catalog: Catalog): Action {
   if (target.staggered === 0 && damage < target.parts[part]!.ap && push >= target.staggerMax - target.stagger) {
     usable.sort((a, b) => impactOf(b.weapon) - impactOf(a.weapon));
   }
-  const choice = coolOrFire(state, catalog, bladesFirst(usable), target.id, part);
+  const choice = coolOrFire(state, catalog, fireOrder(state, usable, target), target.id, part);
+  // A surge leaves nothing over for a stance: the stance is taken first, where the surge still gets the least it
+  // asks. (Flown without one, a machine that carries a surge is hit far more than it need be.)
+  if (choice.type === 'fire' && weaponIn(me.build, choice.weapon, catalog)!.trait === 'surge') {
+    const least = weaponIn(me.build, choice.weapon, catalog)!.energy;
+    const boost: Action = { type: 'boost' };
+    const guard: Action = { type: 'guard' };
+    const leaves = (action: Action): boolean =>
+      can(state, action, catalog) && me.energy - (action.type === 'boost' ? boostCost(me, catalog) : guardCost(me, catalog)) >= least;
+    // The stance it would take with energy to spare; failing that the other one, which is better than none. (One
+    // stance a turn: a machine that has taken its own is refused both.)
+    const first = stance(state, me, enemies, catalog);
+    const braced = first && [first, first.type === 'boost' ? guard : boost].find(leaves);
+    if (braced) return braced;
+  }
   if (choice.type === 'fire' && !limb) {
     const legs = target.parts.legs;
     const odds = previewShot(state, me.id, choice.weapon, target.id, 'core', catalog).hitChance;

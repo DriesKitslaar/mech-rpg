@@ -194,7 +194,7 @@ export function runMods(run: Run): Partial<UnitMods> {
   return mods as Partial<UnitMods>;
 }
 
-/** The Overdrive the run's frame has: none without the Redline Core. */
+/** The Overdrive the run's frame has: none without the relic `redline` (the Drive Core, as the screen calls it). */
 export const runOverdrive = (run: Run): OverdriveId | undefined => (hasRelic(run, 'redline') ? RELIC_OVERDRIVE : undefined);
 
 /** How worn the mech is: the share of its armour that is gone, from 0 to 1. Fresh when nothing is carried. */

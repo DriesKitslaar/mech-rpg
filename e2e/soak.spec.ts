@@ -37,17 +37,21 @@ const PHASE = Object.fromEntries(MISSIONS.map((m) => [m.id, m.phase as string]))
 
 const AFTER_THE_WAR = [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
 
-type Seen = Snap & { list?: string; busy?: boolean; page?: string; launch?: unknown; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean }; toasts?: string[] };
+type Seen = Snap & {
+  list?: string; busy?: boolean; page?: string; launch?: unknown; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean }; toasts?: string[];
+  player?: { heat: number };
+};
 
 /**
  * A pilot with the best gear there is who has done these contracts and has read nothing of the story yet.
  * The contracts done are contracts won: the board has grown by them, as it would have.
  */
-function pilot(done: string[]): GameState {
+function pilot(done: string[], wears: Partial<Build> = {}): GameState {
   let g = newGame(CATALOG, STARTER_BUILD);
   for (const id of done) g = completeMission(g, id, MISSIONS);
   g = { ...g, credits: 999999, battlesWon: done.length };
-  for (const [slot, id] of Object.entries(REFERENCE_BUILDS.tier6)) {
+  // The frame first, then what it carries: weapons other than the build's own, where the player wears them.
+  for (const [slot, id] of [...Object.entries(REFERENCE_BUILDS.tier6), ...Object.entries(wears)]) {
     g = buy(g, id, CATALOG);
     g = equip(g, slot as keyof GameState['build'], id, CATALOG);
   }
@@ -155,6 +159,8 @@ interface Played {
   stripes: string[]; waiting: string[];
   /** How many notices came up over a screen in all: medals, stripes, crowns, new pages of the database. */
   notices: number;
+  /** What was seen of the five kinds of weapon, where it was looked at: words over the field, lines of the bar, marks, rows of the list. */
+  kinds: string[];
 }
 
 /**
@@ -164,9 +170,12 @@ interface Played {
  * the story as far as it goes (of contracts on offer together, the one whose name holds one of
  * `prefer`), then the Gauntlet for a few floors, then a look into every room. Battles are left to Auto Turn. With `other`, a contract the other side has made an offer
  * for is flown for the other side. With `seat`, the duel for the eighth seat of the arena's masters is
- * flown before anything else. It stops when all of that is done or its time is up.
+ * flown before anything else. With `hand`, the pilot opens the list of weapons once a turn, while the machine is
+ * cool, and aims and fires the last weapon on it that can be fired (the one on the shoulder) for themselves, at the
+ * second machine where there is one; Auto Turn has the rest of the turn. It stops when all of that is done or its
+ * time is up.
  */
-async function play(page: Page, prefer: string[], minutes: number, other = false, seat = false): Promise<Played> {
+async function play(page: Page, prefer: string[], minutes: number, other = false, seat = false, hand = false): Promise<Played> {
   const tried = new Map<string, number>();
   const screens = new Set<string>();
   const rooms = ['gauntlet', 'training', 'arena', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'];
@@ -191,6 +200,9 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let read = 0;
   // The kinds of job flown, by the word their titles begin with: each once, won or lost.
   const jobs: string[] = [];
+  // What was seen of the five kinds of weapon, and the turn that has had its shot aimed by hand.
+  const kinds = new Set<string>();
+  let aimed = '';
   let last = '';
   let frames = 0;
   const step = async (ms: number): Promise<void> => { frames += Math.ceil(ms / 16); await adv(page, ms); };
@@ -222,9 +234,38 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     } else if (s.screen === 'battle') {
       const b = s.battle!;
       if (`${b.mission}/${b.index}/${b.round > 1}` !== last && b.round === 1) { battles++; last = `${b.mission}/${b.index}/false`; }
-      if (b.phase === 'action') await go('auto');
-      else if (b.phase === 'talk' || b.phase === 'result') { await tap(page, 'Enter'); await step(160); }
-      else if (b.phase === 'weapon' || b.phase === 'target') await tap(page, 'Escape');
+      const fought = b as unknown as { words?: string[]; fork?: string | null; weapons?: { note: string }[] | null };
+      for (const word of fought.words ?? []) {
+        const kind = /^(REDLINE|SURGE|PUNISH|WITHEET|PIEK|STRAF)\b/.exec(word);
+        if (kind) kinds.add(kind[1]);
+      }
+      if (/^(It leaps on to|Slaat over op) /.test(b.message)) kinds.add('leap');
+      if (fought.fork) kinds.add('mark');
+      for (const row of fought.weapons ?? []) {
+        const said = / (ALL|ALLES) \d+ /.test(row.note) ? 'row:surge' : / \d+ (SHOTS|SCHOTEN)$/.test(row.note) ? 'row:spool' : / \+\d+%$/.test(row.note) ? 'row:redline' : null;
+        if (said) kinds.add(said);
+      }
+      const turn = `${b.mission}/${b.index}/${b.round}`;
+      if (b.phase === 'action') {
+        const look = hand && aimed !== turn && has('fire') && (s.player?.heat ?? 0) <= 50;
+        aimed = turn;
+        await go(look ? 'fire' : 'auto');
+        // (The cursor may still be on its way to the row: the turn has its look when the list opens.)
+        if (look && cur !== 'fire') aimed = '';
+      } else if (b.phase === 'talk' || b.phase === 'result') { await tap(page, 'Enter'); await step(160); }
+      else if (b.phase === 'weapon' && hand) {
+        // The rows are read, and the last that can be fired is taken.
+        await step(320);
+        const last = items.map((item) => item.enabled).lastIndexOf(true);
+        if (last < 0) await tap(page, 'Escape');
+        else await tap(page, (s.menu?.cursor ?? 0) === last ? 'Enter' : 'ArrowDown');
+      } else if (b.phase === 'target' && hand) {
+        // Aimed at the machine the game chose and then at the next one: the mark of where a fork would go on to moves with it.
+        await step(320);
+        await tap(page, 'KeyE');
+        await step(320);
+        await tap(page, 'Enter');
+      } else if (b.phase === 'weapon' || b.phase === 'target') await tap(page, 'Escape');
       else await step(160);
     } else if (s.screen === 'hub' && s.list && s.list !== 'main') {
       const story = items.filter((item) => PHASE[item.id] && !['patrol', 'side'].includes(PHASE[item.id]) && (tried.get(item.id) ?? 0) < 3);
@@ -280,13 +321,25 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   }
   const end = await snap(page) as Seen;
   const waiting = [end.toast, ...(end.toasts ?? [])].filter((id): id is string => !!id);
-  return { missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel, launches, flown, stripes: [...stripes], waiting, notices: notices.size };
+  return {
+    missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel, launches, flown, stripes: [...stripes], waiting, notices: notices.size,
+    kinds: [...kinds].sort(),
+  };
 }
 
 /** A mix that is none of the three as they come: orange armour, vivid and dark, with violet trim. */
 const OWN: Mix = { slot: 3, hue: 2, finish: 3, shade: 3, trim: 19, glow: 1 };
 
-const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held'; mix?: Mix }[] = [
+/** Three of the five kinds of weapon in one machine: a surge and a spool in its hands, a fork on its shoulder. */
+const THREE_KINDS: Partial<Build> = { rightHand: 'wpn-sluice', leftHand: 'wpn-flywheel', shoulder: 'wpn-thunderhead' };
+/** And the other two: a redline and a punish, with a howler to knock a machine off balance for the punish. */
+const TWO_KINDS: Partial<Build> = { rightHand: 'wpn-slagcaster', leftHand: 'wpn-spike-driver', shoulder: 'wpn-howler' };
+
+const PLAYERS: {
+  name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held'; mix?: Mix;
+  /** Weapons worn in place of the build's own, and whether one of them is aimed by hand each turn. */
+  wears?: Partial<Build>; hand?: boolean;
+}[] = [
   // In the white mix as it comes: the launch and every battle from the first contract on show a mixed machine from behind.
   { name: 'from the first contract, in English, with all of the light', done: [], prefer: ['hadron'], settings: {}, mix: DEFAULT_MIXES[0] },
   { name: 'with Hadron through the war and the audit, enforcing', done: ACT_ONE, prefer: ['hadron', 'enforce'], settings: {} },
@@ -299,16 +352,20 @@ const PLAYERS: { name: string; done: string[]; prefer: string[]; settings: Recor
   { name: 'the holder of seven crowns, who takes the eighth seat', done: AFTER_THE_WAR, prefer: [], settings: { difficulty: 'story' }, seat: 'taken' },
   // The Sovereign from behind in every battle, in the keeper's paint, against its own likeness first.
   { name: 'the holder of the seat in the Sovereign, in Dutch', done: AFTER_THE_WAR, prefer: [], settings: { difficulty: 'story', language: 'nl' }, seat: 'held' },
+  // The five kinds of weapon that ask something of their machine: the list of weapons and the aiming line by hand, a
+  // bolt that leaps on, a spool winding up and a surge emptying the cell; and what Auto Turn makes of a redline and a punish.
+  { name: 'with a surge, a spool and a fork, one weapon aimed by hand each turn', done: ACT_ONE, prefer: ['lumen', 'enforce'], settings: {}, wears: THREE_KINDS, hand: true },
+  { name: 'with a redline and a punish, in Dutch, left to Auto Turn', done: ACT_ONE, prefer: ['hadron', 'default'], settings: { language: 'nl' }, wears: TWO_KINDS },
 ];
 
 for (const player of PLAYERS) {
   test(`soak: ${player.name}`, async ({ page }) => {
     test.skip(!ASKED, 'a long look: run with SOAK=1');
     test.setTimeout((MINUTES + 2) * 60_000);
-    const made = player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done);
+    const made = player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done, player.wears);
     const start = player.mix ? setMix(made, player.mix) : made;
     const errors = await open(page, start, player.settings);
-    const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat);
+    const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat, !!player.hand);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
     console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.flown} contracts flown, ${played.launches} launches, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, ${played.notices} notices, stripes ${played.stripes.join(' ') || 'none'}, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
@@ -338,6 +395,11 @@ for (const player of PLAYERS) {
         expect(worn.mixes?.[player.mix.slot - 1]).toBe(mixId(turned));
       }
     }
+    // A machine that carries the new kinds was seen to use them: the words they write over the field, and for the one
+    // who aims by hand the rows of the list, the mark over the next machine and the line of what leapt on.
+    if (player.wears) console.log(`${player.name}: of the five kinds, seen ${played.kinds.join(' ') || 'nothing'}`);
+    if (player.wears === THREE_KINDS) expect(played.kinds).toEqual(expect.arrayContaining(['SURGE', 'leap', 'mark', 'row:spool', 'row:surge']));
+    if (player.wears === TWO_KINDS) expect(played.kinds).toEqual(expect.arrayContaining(['STRAF', 'WITHEET']));
     // Every one of them flew a swarm: the machines that come on later were on the screen.
     expect(played.swarms).toBe(1);
     // And jobs, once the board had one to offer: what each kind asks was on the field, with everything drawn.

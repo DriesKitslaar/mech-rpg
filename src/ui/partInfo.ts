@@ -1,4 +1,4 @@
-import { shotsOf } from '../core/battle';
+import { SPOOL_BASE, shotsOf } from '../core/battle';
 import { impactOf } from '../core/build';
 import type { Build, Catalog, Part } from '../core/types';
 import { STRINGS } from '../content/strings';
@@ -18,11 +18,12 @@ export function partLines(part: Part): string[] {
     case 'weapon':
       return [
         `${I.types[part.damageType]}  ${I.damage} ${part.damage}  ${I.accuracy} ${part.accuracy}`,
-        `${I.energy} ${part.energy}  ${I.heat} ${part.heat}  ${I.impact} ${impactOf(part)}`,
+        // A surge asks this much at the least, and takes whatever more there is.
+        `${I.energy} ${part.energy}${part.trait === 'surge' ? '+' : ''}  ${I.heat} ${part.heat}  ${I.impact} ${impactOf(part)}`,
         part.ammo === null
           ? `${I.weight} ${part.weight}  ${I.ammo} ${I.unlimited}`
           : `${I.weight} ${part.weight}  ${I.ammo} ${part.ammo}  ${part.costPerShot}${I.perShot}`,
-        ...(part.trait ? [I.traits[part.trait](part.traitPower ?? 0)] : []),
+        ...(part.trait ? [I.traits[part.trait](part.trait === 'spool' ? SPOOL_BASE + (part.traitPower ?? 0) : part.traitPower ?? 0)] : []),
         ...(part.charge ? [I.charge] : []),
         ...(part.melee ? [I.melee] : []),
       ];
@@ -71,6 +72,10 @@ type Fact = [string, number, number, boolean, string?];
 function facts(part: Part, fitted: Part): Fact[] {
   const D = STRINGS.partInfo;
   if (part.kind === 'weapon' && fitted.kind === 'weapon') {
+    // What a surge does and takes is by the energy it finds: none of it can be set beside a fixed figure.
+    if (part.trait === 'surge' || fitted.trait === 'surge') {
+      return [[D.accuracy, part.accuracy, fitted.accuracy, true], [D.heat, part.heat, fitted.heat, false], [D.weight, part.weight, fitted.weight, false]];
+    }
     // Damage and push are compared by the pull of the trigger: three shots of 20 are more than one of 38.
     return [
       [D.damage, part.damage * shotsOf(part), fitted.damage * shotsOf(fitted), true], [D.accuracy, part.accuracy, fitted.accuracy, true],

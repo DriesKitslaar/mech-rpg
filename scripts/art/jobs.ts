@@ -646,6 +646,28 @@ const DRAWN: ArtJob[] = [
   item('wpn-decree', 'shoulderWeapon', 'auditor',
     `a shoulder-mounted beam projector for a toy robot in a retro video game, ${WEAPON_STYLE}: a long black tapering barrel with three thin gold rings and a white glowing lens at its tip, on a black housing with a mounting bracket underneath, exactly horizontal, pointing right. The unit only, no robot.`),
 
+  // The kinds that ask something of their machine: what each is shows in what it looks like.
+  item('wpn-slagcaster', 'handWeapon', 'salvage',
+    `a stubby handheld industrial blowtorch for a toy robot in a retro video game, ${WEAPON_STYLE}: one short thick pipe whose open end glows orange-hot, a soot-blackened slotted heat shroud around it and a small round melting pot on top, patched and worn, lying exactly horizontal, glowing end pointing right. The object only, no hand, no robot.`),
+  item('wpn-forkbolt', 'handWeapon', 'halo',
+    `a slim handheld energy device for a toy robot in a retro video game, ${WEAPON_STYLE}: a sleek short body ending in a two-pronged metal tuning fork with a bright cyan spark jumping between the two prongs, lying exactly horizontal, prongs pointing right. The object only, no hand, no robot.`),
+  item('wpn-flywheel', 'handWeapon', 'bulwark',
+    `a heavy handheld rotary device for a toy robot in a retro video game, ${WEAPON_STYLE}: three short thin tubes in a tight cluster at the front of a boxy body with one large exposed spoked wheel on its side, lying exactly horizontal, tubes pointing right. The object only, no hand, no robot.`),
+  item('wpn-sluice', 'handWeapon', 'halo',
+    `a long handheld energy lance for a toy robot in a retro video game, ${WEAPON_STYLE}: a slender straight tube that widens at its right end into an open rectangular gate with three upright slats glowing bright cyan, and a round glass bulb at the back, lying exactly horizontal, gate pointing right. The object only, no hand, no robot.`),
+  item('wpn-spike-driver', 'handWeapon', 'salvage',
+    `a chunky handheld pneumatic tool for a toy robot in a retro video game, ${WEAPON_STYLE}: a thick piston housing with one long bare steel spike sticking out of its right end and a small pressure tank underneath, patched and worn, lying exactly horizontal, spike pointing right. The object only, no hand, no robot.`),
+  item('wpn-headsman', 'handWeapon', 'auditor',
+    `a broad ceremonial chopping blade for a toy robot in a retro video game, ${WEAPON_STYLE}: a short black grip with gold bands and a very wide flat black blade with a square blunt tip and a thin gold edge, lying exactly horizontal, blade pointing right. The object only, no hand, no robot.`),
+  item('wpn-thresher', 'shoulderWeapon', 'bulwark',
+    `a shoulder-mounted threshing machine for a toy robot in a retro video game, ${WEAPON_STYLE}: six long thin rods in a ring around a central spindle, on a wide drum with one large toothed cogwheel on its side and a mounting bracket underneath, exactly horizontal, rods pointing right. The unit only, no robot.`),
+  item('wpn-thunderhead', 'shoulderWeapon', 'wraith',
+    `a shoulder-mounted emitter for a toy robot in a retro video game, ${WEAPON_STYLE}: a dark anvil-shaped housing with two long horns curving forward and a ball of crackling violet-white light held between their tips, with a mounting bracket underneath, horns pointing right. The unit only, no robot.`),
+  item('wpn-crucible', 'shoulderWeapon', 'colossus',
+    `a shoulder-mounted heat projector for a toy robot in a retro video game, ${WEAPON_STYLE}: a short very wide barrel shaped like a tipped smelting pot, glowing white-orange inside its mouth, with a row of thick cooling fins along the top and a mounting bracket underneath, exactly horizontal, mouth pointing right. The unit only, no robot.`),
+  item('wpn-spillway', 'shoulderWeapon', 'wraith',
+    `a shoulder-mounted beam projector for a toy robot in a retro video game, ${WEAPON_STYLE}: a wide flat rectangular mouth like an open dam gate with a bright cyan-white glow inside, fed by two thick cables from a round tank at the back, with a mounting bracket underneath, exactly horizontal, mouth pointing right. The unit only, no robot.`),
+
   // Enemy-only weapons borrow the look of a shop weapon.
   { id: 'wpn-enemy-longbow', kind: 'handWeapon', source: 'wpn-longbow', prompt: '' },
   { id: 'wpn-enemy-claw', kind: 'handWeapon', source: 'wpn-thermal-cutter', prompt: '' },

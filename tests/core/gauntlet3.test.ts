@@ -34,7 +34,7 @@ function win(run: Run): BattleState {
   return end;
 }
 
-describe('the Redline Core\'s meter', () => {
+describe('the Drive Core\'s meter', () => {
   const run: Run = { ...fresh(5, 7), relics: ['redline'], drafting: true, carry: worn(80) };
 
   test('is still there after a full service taken in the draft: the mech is whole, the meter where it was', () => {
