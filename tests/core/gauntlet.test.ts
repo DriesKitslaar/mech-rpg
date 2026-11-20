@@ -269,8 +269,8 @@ describe('what a run pays and how far it gets', () => {
     //
     // The ten weapons of the five kinds are offered like anything the market sells, and what is offered when is
     // drawn from all of it: with them on the shelf these same forty runs are other runs. They clear 9.1 and
-    // twenty-four reach the tenth. Over two hundred runs it is 8.7 with the ten for 8.4 without, and that is
-    // within what two hundred runs differ by: a run is not made easier by them.
+    // twenty-two reach the tenth. Over four hundred runs it is 8.8 floors with the ten for 8.5 without (171
+    // reaching the tenth for 156): a third of a floor, which is about what four hundred runs differ by.
     const depths = Array.from({ length: 40 }, (_, i) => floorsCleared(play((i + 1) * 7919 + 1, 60)));
     const mean = depths.reduce((sum, depth) => sum + depth, 0) / depths.length;
     expect(mean).toBeGreaterThan(8.6);

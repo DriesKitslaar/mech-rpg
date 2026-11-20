@@ -159,12 +159,13 @@ export const SHOP_PARTS: Part[] = [
   // Five kinds that ask something of the machine that carries them (see `Weapon.trait`), two of each: a redline wants
   // heat, a fork a crowd, a spool a long fight, a surge energy left over, a punish a machine knocked off balance first.
   // These are the hand weapons; all but the second punish, which is a blade, have a shoulder weapon further down.
-  weapon('wpn-slagcaster', 'Slagcaster', 'hand', 'explosive', 44, 68, 70, 22, 14, 40, 105, 1300, 'undertow', 'redline', 6),
-  weapon('wpn-forkbolt', 'Forkbolt', 'hand', 'energy', 34, 80, 100, 24, null, 0, 65, 1500, 'lumen', 'fork', 50),
-  weapon('wpn-flywheel', 'Flywheel Carbine', 'hand', 'kinetic', 16, 72, 80, 20, 18, 32, 115, 1400, 'hadron', 'spool', 3),
-  weapon('wpn-sluice', 'Sluice Lance', 'hand', 'energy', 30, 80, 100, 28, null, 0, 85, 2400, 'lumen', 'surge'),
-  weapon('wpn-spike-driver', 'Spike Driver', 'hand', 'kinetic', 58, 84, 90, 18, 14, 45, 110, 2000, 'undertow', 'punish', 50, { impact: 10 }),
-  weapon('wpn-headsman', 'Headsman', 'hand', 'kinetic', 88, 90, 110, 12, null, 0, 120, 3200, 'freelance', 'punish', 60, { melee: true, impact: 40 }),
+  // What each is worth was set by flying contracts with it: see the plan of the round, and balance5.test.ts.
+  weapon('wpn-slagcaster', 'Slagcaster', 'hand', 'explosive', 44, 68, 70, 22, 14, 40, 105, 1300, 'undertow', 'redline', 8),
+  weapon('wpn-forkbolt', 'Forkbolt', 'hand', 'energy', 36, 80, 100, 24, null, 0, 65, 1500, 'lumen', 'fork', 65),
+  weapon('wpn-flywheel', 'Flywheel Carbine', 'hand', 'kinetic', 12, 72, 90, 22, 18, 32, 115, 1400, 'hadron', 'spool', 4),
+  weapon('wpn-sluice', 'Sluice Lance', 'hand', 'energy', 30, 80, 100, 28, null, 0, 80, 2400, 'lumen', 'surge'),
+  weapon('wpn-spike-driver', 'Spike Driver', 'hand', 'kinetic', 50, 84, 90, 18, 14, 45, 110, 2000, 'undertow', 'punish', 100, { impact: 10 }),
+  weapon('wpn-headsman', 'Headsman', 'hand', 'kinetic', 74, 90, 85, 12, null, 0, 120, 3200, 'freelance', 'punish', 100, { melee: true, impact: 40 }),
   // Salvage: a plate off a yard machine with a grip welded on. Better than nothing to guard behind.
   shield('shd-plate', 'Scrap Plate', 0.5, 80, 300, 'hadron'),
   shield('shd-riot', 'Riot Shield', 0.4, 90, 1100, 'hadron'),
@@ -188,10 +189,10 @@ export const SHOP_PARTS: Part[] = [
   weapon('wpn-gauss', 'Gauss Driver', 'shoulder', 'kinetic', 210, 86, 200, 50, 6, 160, 280, 4200, 'freelance', 'pierce', undefined, { charge: true }),
   weapon('wpn-decree', 'Decree Lance', 'shoulder', 'energy', 185, 90, 180, 42, null, 0, 170, 4400, 'freelance', 'drain', 60, { charge: true }),
   // The shoulder weapons of the kinds that ask something of their machine: a spool, a fork, a redline and a surge.
-  weapon('wpn-thresher', 'Thresher', 'shoulder', 'kinetic', 20, 68, 130, 34, 12, 85, 220, 2900, 'hadron', 'spool', 4),
-  weapon('wpn-thunderhead', 'Thunderhead', 'shoulder', 'energy', 62, 84, 160, 36, null, 0, 140, 3300, 'freelance', 'fork', 60),
-  weapon('wpn-crucible', 'Crucible', 'shoulder', 'energy', 66, 80, 150, 30, null, 0, 150, 3400, 'freelance', 'redline', 6),
-  weapon('wpn-spillway', 'Spillway', 'shoulder', 'energy', 36, 84, 140, 36, null, 0, 170, 4200, 'freelance', 'surge'),
+  weapon('wpn-thresher', 'Thresher', 'shoulder', 'kinetic', 18, 68, 120, 26, 16, 85, 220, 2900, 'hadron', 'spool', 5),
+  weapon('wpn-thunderhead', 'Thunderhead', 'shoulder', 'energy', 70, 84, 160, 36, null, 0, 140, 3300, 'freelance', 'fork', 75),
+  weapon('wpn-crucible', 'Crucible', 'shoulder', 'energy', 50, 80, 150, 32, null, 0, 150, 3400, 'freelance', 'redline', 6),
+  weapon('wpn-spillway', 'Spillway', 'shoulder', 'energy', 32, 84, 140, 36, null, 0, 170, 4200, 'freelance', 'surge'),
 
   // Boosters: thrust is the evasion a boost gives, cost the share of a turn's energy it takes.
   // The stock parts weigh and drain nothing: they are what every mech had built in.

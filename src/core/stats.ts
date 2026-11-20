@@ -55,8 +55,12 @@ export function tallyBattle(state: BattleState): Stats {
     switch (event.type) {
       case 'shot':
         if (!isEnemy(event.unit)) {
-          tally.shots += 1;
-          if (event.hit) { tally.hits += 1; tally.damage += event.damage; }
+          // What leapt on from a fork's hit was not a shot of its own: only the armour it took off is counted.
+          if (!event.via) {
+            tally.shots += 1;
+            if (event.hit) tally.hits += 1;
+          }
+          if (event.hit) tally.damage += event.damage;
         } else if (event.hit && !isEnemy(event.target)) tally.taken += event.damage;
         break;
       case 'blast':

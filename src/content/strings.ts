@@ -24,9 +24,12 @@ export const STRINGS = {
     // With more than one enemy to aim at: which one this is, and the buttons that go to the next.
     targetOf: (n: number, of: number) => `TARGET ${n}/${of}  L1/R1`,
   },
-  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL', kills: 'DESTROYS' },
+  // `fork` is written over the machine a fork's hit would leap on to.
+  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL', kills: 'DESTROYS', fork: 'FORK' },
   weaponMenu: {
     charge: 'CHARGE', ready: 'READY',
+    // Of a surge, beside the energy it would take now; of a spool, the shots it has wound up to.
+    all: 'ALL', shots: (count: number) => `${count} SHOTS`,
     reasons: {
       alreadyFired: 'fired', noAmmo: 'no ammo', noEnergy: 'no energy', weaponDisabled: 'arms destroyed', needsBoost: 'needs Boost',
       alreadyUsed: 'charged', notCharged: 'not charged', invalidTarget: 'no target',
@@ -70,6 +73,8 @@ export const STRINGS = {
   yourTurn: (round: number) => `Round ${round} - your move`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} hits ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} misses ${obj(target)}`,
+  // What goes on from a fork's hit to the next machine along the line.
+  leap: (target: string, part: string, damage: number) => `It leaps on to ${obj(target)} - ${part} -${damage}`,
   // A hit that took half of an ordinary machine's core in one blow, and so all of it.
   shatter: (weapon: string, target: string) => `${weapon} SHATTERS ${obj(target)}`,
   partDestroyed: (unit: string, part: string) => `${unit}: ${part} destroyed`,
@@ -621,6 +626,8 @@ export const STRINGS = {
     fieldDown: 'FIELD DOWN', fieldUp: 'FIELD UP',
     // Over a machine that went up to far more than was needed, over the pilot as a run goes on, over a machine that leaves.
     overkill: 'OVERKILL', chain: (n: number) => `CHAIN x${n}`, rout: 'ROUT', offline: 'OFFLINE',
+    // Where a weapon's kind did its work: over a redline fired hot and a surge, what it added; over a machine a punish caught reeling.
+    kinds: { redline: (percent: number) => `REDLINE +${percent}%`, surge: (times: string) => `SURGE x${times}`, punish: 'PUNISH' },
     phase: (n: number) => `PHASE ${n}`,
     modules: {
       coolant: 'COOLANT', barrier: 'BARRIER', overclock: 'OVERCLOCK', painter: 'PAINTED', nanites: 'NANITES', shock: 'SHOCK',

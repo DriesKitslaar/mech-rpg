@@ -23,9 +23,10 @@ export const STRINGS_NL = {
     you: 'JOUW MECH', target: 'DOELWIT', weapons: 'WAPENS', repair: 'WAT REPAREREN?', paint: 'WIE MARKEREN?',
     targetOf: (n: number, of: number) => `DOELWIT ${n}/${of}  L1/R1`,
   },
-  preview: { hit: 'TREF', damage: 'SCH.', all: 'ALLE', kills: 'VERNIETIGT' },
+  preview: { hit: 'TREF', damage: 'SCH.', all: 'ALLE', kills: 'VERNIETIGT', fork: 'VONK' },
   weaponMenu: {
     charge: 'LADEN', ready: 'KLAAR',
+    all: 'ALLES', shots: (count: number) => `${count} SCHOTEN`,
     reasons: {
       alreadyFired: 'gevuurd', noAmmo: 'geen mun.', noEnergy: 'geen EN', weaponDisabled: 'armen kapot', needsBoost: 'Boost nodig',
       alreadyUsed: 'geladen', notCharged: 'niet geladen', invalidTarget: 'geen doel',
@@ -64,6 +65,7 @@ export const STRINGS_NL = {
   yourTurn: (round: number) => `Ronde ${round} - jouw zet`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} raakt ${obj(target)} - ${part} -${damage}`,
   miss: (weapon: string, target: string) => `${weapon} mist ${obj(target)}`,
+  leap: (target: string, part: string, damage: number) => `Slaat over op ${obj(target)} - ${part} -${damage}`,
   shatter: (weapon: string, target: string) => `${weapon} VERMORZELT ${obj(target)}`,
   partDestroyed: (unit: string, part: string) => `${subj(unit)}: ${part} vernietigd`,
   unitDestroyed: (unit: string) => does(unit, 'vernietigd', 'bent vernietigd'),
@@ -546,6 +548,7 @@ export const STRINGS_NL = {
     miss: 'MIS', overheat: 'OVERVERHIT', stagger: 'WANKELT', shaken: 'PANIEK', block: (n: number) => `BLOK ${n}`,
     fieldDown: 'VELD WEG', fieldUp: 'VELD TERUG',
     overkill: 'OVERKILL', chain: (n: number) => `REEKS x${n}`, rout: 'VLUCHT', offline: 'UIT',
+    kinds: { redline: (percent: number) => `WITHEET +${percent}%`, surge: (times: string) => `PIEK x${times}`, punish: 'STRAF' },
     phase: (n: number) => `FASE ${n}`,
     modules: {
       coolant: 'KOELING', barrier: 'BARRIERE', overclock: 'OVERKLOK', painter: 'GEMERKT', nanites: 'NANITES', shock: 'SCHOK',

@@ -212,6 +212,9 @@ export const REFERENCE_NL: Record<string, string> = {
   "Guard costs a fifth of a turn's energy. Until your next turn it stops 40% of the damage and half the push of every hit. A shield in the left hand stops more, and so do tracks.":
     'Dekking kost een vijfde van een beurt energie. Tot je volgende beurt stopt ze 40% van de schade en de halve duw van elke treffer. Een schild links stopt meer, rupsbanden ook.',
   'CHARGED WEAPONS': 'LAADWAPENS',
+  'FIVE KINDS': 'VIJF SOORTEN',
+  'Five kinds of weapon ask something of you. REDLINE hits harder the hotter you run: fire it last. SURGE takes all the energy you have left and hits for every 100 of it. PUNISH does far more to a staggered machine. FORK: a hit leaps to the next machine. SPOOL fires 2 shots, and one more for every turn in a row.':
+    'Vijf soorten wapens vragen iets van jou. WITHEET slaat harder naarmate je heter draait: vuur het als laatste. PIEK neemt al je energie en telt per 100. STRAF doet veel meer tegen een wankelende machine. VONK: een treffer slaat over op de volgende. OPTOEREN vuurt 2 schoten, en elke beurt op rij een meer.',
   'Some weapons charge for a turn before they fire. When an enemy has one loaded, the turn before it fires is the time to guard or boost.':
     'Sommige wapens laden een beurt op voor ze vuren. Heeft een vijand er een geladen, kies dan de beurt voor het schot Dekking of Boost.',
   'One module fits each mech: a coolant flush, a barrier, an overclock, a target painter and others. A module has a few uses per battle and costs no energy. The shop and the garage say what each one does.':
@@ -437,6 +440,8 @@ export const REFERENCE_NL: Record<string, string> = {
     'Breng een onderdeel naar stap vijf op de werkbank.',
   Stockpile: 'Voorraad',
   'Own 40 different parts.': 'Bezit 40 verschillende onderdelen.',
+  'Full Rack': 'Vol rek',
+  'Own a weapon of each of the five kinds the manual names.': 'Bezit van elk van de vijf soorten uit het handboek een wapen.',
   'Odd Jobs': 'Klusjesman',
   'Win a job of each of the 4 kinds on the board.': 'Win een klus van elk van de 4 soorten op het bord.',
   'On Retainer': 'Vaste kracht',

@@ -79,10 +79,13 @@ turn is the great one.
 
 ### Punish
 
-*Half as much again against a machine that is off balance.*
+*Twice as much against a machine that is off balance.*
 
 Every weapon does more against a staggered machine. A punish weapon does more still, by a set
-percentage on top of that. It pushes little itself.
+percentage on top of that: both that are sold do twice as much. It pushes little itself.
+
+(The first draft said half as much again. Measured, a machine is off balance for too little of a
+fight for that to be worth a slot: see the plan.)
 
 What it changes: a build of two parts, one weapon that knocks a machine off balance and one that is
 fired at it while it reels, and the order they are fired in.
@@ -146,10 +149,15 @@ Each has a picture of its own, drawn the way the other weapons' were.
 ## How the game flies them
 
 The automatic pilot (Auto Turn, the odds, a sparring partner, the mirror) fires in an order that
-suits what it carries: whatever staggers before a punish weapon, whatever heats before a redline
-weapon, and a surge weapon last of all, after it has taken its stance if there is energy for both.
-It does not vent heat it is about to use, and it does not fire a fork at a machine beside one the
-client wants in one piece when the leap could finish that one.
+suits what it carries: a spool that has wound up before anything, so that it does not miss a turn;
+whatever staggers before a punish weapon; whatever heats before a redline weapon; and a surge
+weapon last of all, after it has taken its stance if there is energy for both. Before it orders
+anything it settles what the turn's energy and the room under the heat limit run to, so that the
+weapon kept for last can still be fired when its turn comes. It does not vent heat it is about to
+use, and it does not fire a fork at a machine beside one the client wants in one piece when the
+leap could finish that one.
+
+A machine that carries none of the five kinds is flown exactly as it was.
 
 ## Measuring
 
@@ -162,6 +170,17 @@ it, and an ordinary one in which it only replaces a weapon of its price.
 - In the build made for it, it wins more often than that build does with the best weapon there was
   before, in the kind of fight it is for; and not in every kind of fight.
 - No test of the balance of what exists changes.
+
+## As built
+
+The numbers and what was measured are in the plan. In short: in an ordinary build of the stage it
+is sold at, none of the ten is better than the best weapon there was. A spool is clearly better in
+a long fight, a surge on a large generator, a redline in a machine that runs hot, and a punishing
+blade after a blade that staggers. Two have no edge that the automatic pilot can show: the fork in
+a hand is as good as a carbine against a crowd and no better (damage spread over two machines
+finishes neither sooner), and the punish gun is as good as a rail lance beside a weapon that
+staggers and no better. Both are fair, and neither is the weapon its kind is best seen in: those
+are the Thunderhead, which clears a swarm as fast as anything that is not charged, and the Headsman.
 
 ## Approaches considered
 

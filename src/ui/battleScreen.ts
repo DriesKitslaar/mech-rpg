@@ -60,6 +60,8 @@ export const WARNING_MS = 1700;
 const HOT = 0.75;
 const DEFAULT_BACKGROUND = 'bg-neon-district';
 const MENU_W = 154;
+/** The letters that fit under a weapon's name in the list of weapons: its row is written small, from a little way in. */
+export const WEAPON_NOTE_CHARS = Math.floor((MENU_W - 6 - 14 - 6) / 4);
 /**
  * Where the middle of the pilot's mech is, inside its pose box from behind; and of a mech built
  * from parts that is fought alone, inside its small box as it is drawn from the front. Where a hit
@@ -968,8 +970,8 @@ export class BattleScreen {
     const ground = (id: string): number => this.floorUnder(id);
     if (event.type === 'shot') {
       const dtype = scene.damageType(event.unit, event.weapon);
-      // A gun that fires bullets throws a casing; whatever lands throws sparks in its own colour.
-      if (!melee && dtype === 'kinetic') this.particles.emit('casing', scene.muzzle(event.unit, event.weapon), scene.facing(event.unit), 0, ground(event.unit));
+      // A gun that fires bullets throws a casing (not for what leaps on from a hit: nothing was fired for it); whatever lands throws sparks in its own colour.
+      if (!melee && !event.via && dtype === 'kinetic') this.particles.emit('casing', scene.muzzle(event.unit, event.weapon), scene.facing(event.unit), 0, ground(event.unit));
       if (event.hit) {
         const at = scene.hitPoint(event.target, event.appliedTo);
         // The camera pushes in on the blow as it lands: most for a blade, more for a shell than for a bullet or a beam.
@@ -1063,7 +1065,8 @@ export class BattleScreen {
     if (event.type === 'shot') {
       const shooter = unit(event.unit);
       const kick = melee ? 'strike' : event.weapon === 'rightHand' ? 'fireNear' : event.weapon === 'leftHand' ? 'fireFar' : 'fireShoulder';
-      if (shooter) this.puppet(shooter).play(kick);
+      // What leaps on from a fork's hit was not fired: the one who fired the hit stands as they stood.
+      if (shooter && !event.via) this.puppet(shooter).play(kick);
       const target = unit(event.target);
       if (event.hit && target) this.puppet(target).play('hit', flight);
     } else if (event.type === 'boost') {
@@ -1269,6 +1272,8 @@ export class BattleScreen {
   private drawEnemyMarks(ctx: CanvasRenderingContext2D): void {
     const enemies = this.flow.state.units.slice(1).filter((enemy) => !this.hidden(enemy));
     const marked = this.flow.objective?.target;
+    // While a fork is aimed: the machine its hit would leap on to.
+    const forked = this.flow.phase === 'target' ? this.flow.preview?.fork : undefined;
     // Each machine's bars are under it; where machines stand so close that their bars would lie on one another, they are stacked.
     // A machine has them until it has been seen to go: the rules can be a turn ahead of the screen.
     const standing = enemies.filter((enemy) => !this.fallen(enemy));
@@ -1281,7 +1286,8 @@ export class BattleScreen {
       drawMeter(ctx, bar.x, bar.y, bar.w, 2, this.shownAp.ap(enemy.id, 'core'), core.maxAp, COLORS.armor);
       // Under the armour line, how much balance the enemy has left.
       drawMeter(ctx, bar.x, bar.y + 3, bar.w, 1, enemy.staggerMax - enemy.stagger, enemy.staggerMax, COLORS.heat);
-      const mark = this.fieldMark(enemy) ?? (enemy.id === marked ? { text: STRINGS.objectives.mark, color: COLORS.heat } : null);
+      const mark = this.fieldMark(enemy) ?? (enemy.id === marked ? { text: STRINGS.objectives.mark, color: COLORS.heat } : null)
+        ?? (enemy.id === forked ? { text: STRINGS.preview.fork, color: COLORS.energy } : null);
       if (mark) {
         // Above the unit, unless that is where the bars of one standing higher up are: then on the unit, on a dark
         // ground. (Its own bars are under its feet: they are never where its mark would go.)
@@ -1296,6 +1302,8 @@ export class BattleScreen {
       // The enemy the objective is about wears small amber corners all battle long.
       if (enemy.id === marked) this.drawBrackets(ctx, r.x - 1, r.y - 1, r.w + 2, r.h + 2, COLORS.heat, 3);
       if (this.flow.phase === 'target' && this.flow.targetId === enemy.id) this.drawBrackets(ctx, r.x - 2, r.y - 2, r.w + 4, r.h + 4);
+      // Small corners in the colour of the bolt on the one it would go on to: inside any the objective gives it.
+      if (enemy.id === forked) this.drawBrackets(ctx, r.x, r.y, r.w, r.h, COLORS.energy, 3);
     }
   }
 
@@ -1484,6 +1492,10 @@ export class BattleScreen {
       isMelee: (id, weapon) => {
         const unit = this.flow.state.units.find((u) => u.id === id)!;
         return !!weaponIn(unit.build, weapon, this.catalog)?.melee;
+      },
+      kind: (id, weapon) => {
+        const unit = this.flow.state.units.find((u) => u.id === id)!;
+        return weaponIn(unit.build, weapon, this.catalog)?.trait;
       },
       // The pilot's mech is seen from behind and a little from its right: its left hand is on the far side of its body.
       hidden: (id, weapon) => isPlayer(id) && weapon === 'leftHand',

@@ -468,6 +468,45 @@ in **je eigen build**.
   daar een bewaarde build, en het is weer open. De oefeningen kun je altijd doen: die lenen je een
   mecha.
 
+## Vijf soorten wapens die iets van je vragen
+
+De meeste wapens doen gewoon wat erop staat. Tien wapens zijn van een soort die iets van jou
+terugvraagt: wie zijn mecha eromheen bouwt en zijn beurt erop inricht, haalt er meer uit dan uit
+een gewoon wapen van dezelfde prijs, en wie dat niet doet minder. In de winkel en de garage staat
+de soort op de onderste regel van het onderdeel.
+
+| Soort | In het Nederlands | Wat het doet | Zo haal je er het meeste uit |
+|---|---|---|---|
+| **REDLINE** | WITHEET | Hoe heter je eigen mecha is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de grens van 100. | Vuur eerst je andere wapens (die maken hitte) en dit als laatste. Een generator die slecht koelt is hier ineens een voordeel. Koel niet te vroeg. |
+| **SURGE** | PIEK | Neemt alle energie die je nog hebt. De schade die erbij staat geldt voor elke 100 energie die het neemt. | Doe eerst al het andere (Boost of Dekking, je andere wapens) en schiet dan leeg. Hoe groter je generator, hoe harder de klap. |
+| **PUNISH** | STRAF | Dubbele schade tegen een mecha die wankelt. Zelf duwt het nauwelijks. | Neem er een wapen bij dat hard duwt (een Howler, een hamer, een vuist) en vuur dat eerst. |
+| **FORK** | VONK | Een treffer slaat over op de volgende vijand in de rij, voor een deel van de schade. Wat overslaat mist nooit. | Voor gevechten tegen meerdere vijanden. Bij het mikken staat **FORK** (Nederlands **VONK**) boven de machine waar het naartoe springt. |
+| **SPOOL** | OPTOEREN | Begint met 2 schoten en krijgt er elke beurt op rij een bij. Sla je een beurt over, dan begint het weer bij 2. | Voor lange gevechten tegen een grote machine. Houd je hitte laag, zodat je elke beurt kunt vuren. |
+
+In een gevecht zegt de regel onder het wapen wat het deze beurt doet: **EN ALL 230** bij een
+piekwapen (het neemt dan 230 energie), **4 SHOTS** bij een optoerwapen, **+36%** bij een witheet
+wapen. De richtlijn rekent de schade al voor je uit, met de hitte, de energie en het evenwicht van
+dat moment. Boven de mecha verschijnt een woord als de soort zijn werk doet: **REDLINE +36%**,
+**SURGE x2.3**, **PUNISH**.
+
+| Wapen | Soort | Waar | Te koop na |
+|---|---|---|---|
+| Slagcaster | witheet | hand | je eerste contract voor de Undertow |
+| Forkbolt | vonk | hand | je eerste contract voor Lumen |
+| Flywheel Carbine | optoeren | hand | je eerste contract voor Hadron |
+| Sluice Lance | piek | hand | het exclusieve contract |
+| Spike Driver | straf | hand | het exclusieve contract |
+| Thresher | optoeren | schouder | het exclusieve contract |
+| Thunderhead | vonk | schouder | arenarang 5 |
+| Crucible | witheet | schouder | arenarang 6 |
+| Spillway | piek | schouder | arenarang 9 |
+| Headsman | straf | hand (kling) | het einde van de audit |
+
+Aan de klasse van je build veranderen ze niets: een Headsman is een kling en maakt je een
+Duellist, zoals elke kling. **Auto Turn** en de winkans bij de briefing vliegen ze zoals het hoort:
+wat duwt voor een strafwapen, wat hitte maakt voor een witheet wapen, een opgetoerd wapen eerst, en
+een piekwapen als laatste, nadat de piloot eerst zijn Boost of Dekking heeft genomen.
+
 ## De werkbank
 
 In de **Garage** kun je onderdelen die je bezit sterker laten maken. Kies een vak, ga op een

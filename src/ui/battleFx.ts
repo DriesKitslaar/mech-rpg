@@ -1,5 +1,5 @@
 import type { BattleEvent } from '../core/battle';
-import type { DamageType, FrameSlot, WeaponSlot } from '../core/types';
+import type { DamageType, FrameSlot, Weapon, WeaponSlot } from '../core/types';
 import { STRINGS } from '../content/strings';
 import { TYPE_COLOR, lightsOf, paintFx } from './fxPaint';
 import { LOGICAL_W } from './display';
@@ -31,6 +31,8 @@ export interface Scene {
   damageType(unitId: string, weapon: WeaponSlot): DamageType;
   /** True when the weapon is a blade or a ram: it is swung, not fired. */
   isMelee(unitId: string, weapon: WeaponSlot): boolean;
+  /** The kind of weapon it is, where it is of a kind. A scene that does not say has no word for what a kind made of a hit. */
+  kind?(unitId: string, weapon: WeaponSlot): Weapon['trait'];
   /**
    * Where what the battle is fought to keep alive stands on the field: the middle of its picture, and its top. Null,
    * and in a scene that does not say, it has no picture: what happens to it is then written by the strip that names it.
@@ -208,6 +210,23 @@ export class BattleFx {
     this.add(delay, TEXT_MS, { kind: 'text', at: { x, y: at.y - 10 }, text, color, ...how });
   }
 
+  /**
+   * The word for what a weapon's kind made of a hit, where it made something of it: over the one who fired, of a
+   * redline fired warm and of a surge; over the machine it landed on, clear of the figure, of a punish.
+   */
+  private sayKind(event: Extract<BattleEvent, { type: 'shot' }>, flight: number, target: Pt): void {
+    if (event.lift === undefined) return;
+    const K = STRINGS.fx.kinds;
+    const own = this.scene.centre(event.unit);
+    const over = { x: own.x, y: own.y - WORD_GAP };
+    switch (this.scene.kind?.(event.unit, event.weapon)) {
+      case 'redline': return this.say(0, over, K.redline(event.lift - 100), COLORS.heat);
+      case 'surge': return this.say(0, over, K.surge((event.lift / 100).toFixed(1)), COLORS.energy);
+      case 'punish': return this.say(flight, { x: target.x, y: target.y - WORD_GAP }, K.punish, COLORS.accent);
+      default:
+    }
+  }
+
   /** Shakes the whole field by up to `amount` pixels for `dur`, starting after `delay`: never by more than the hardest jolt there is. */
   private jolt(delay: number, amount: number, dur: number): void {
     this.jolts.push({ start: this.now + delay, dur, amount: Math.min(HARDEST_JOLT, amount), felt: false });
@@ -256,15 +275,18 @@ export class BattleFx {
     switch (event.type) {
       case 'shot': {
         const dtype = s.damageType(event.unit, event.weapon);
-        const from = s.muzzle(event.unit, event.weapon);
+        // What leapt on from a fork's hit comes from where that hit landed, not from the barrel.
+        const from = event.via ? s.hitPoint(event.via, 'core') : s.muzzle(event.unit, event.weapon);
         const target = s.hitPoint(event.target, event.appliedTo);
         const dir = s.facing(event.unit);
         const melee = s.isMelee(event.unit, event.weapon);
         const flight = melee ? MELEE_MS : flightFor(dtype);
         // What happens at the target is as large as the target is far off; what leaves the barrel, as the one who fires.
-        const near = this.sizeOf(event.unit);
+        const near = this.sizeOf(event.via ?? event.unit);
         const far = this.sizeOf(event.target);
-        if (melee) {
+        if (event.via) {
+          this.add(0, flight, { kind: 'projectile', from, to: target, dtype, grow: [near, far] });
+        } else if (melee) {
           // A blade is carried to the target by the mech itself, over the floor between the two.
           this.add(0, LUNGE_MS, { kind: 'lunge', unit: event.unit, from: s.centre(event.unit), aim: this.wayTo(event.unit, event.target, target) });
           this.add(flight, SLASH_MS, { kind: 'slash', at: target, dir, color: TYPE_COLOR[dtype] });
@@ -291,6 +313,7 @@ export class BattleFx {
             this.blocked = { unit: event.target, at: this.now + flight };
           }
           if (event.damage > 0 || !event.absorbed) this.say(flight, target, `-${event.damage}`, '#ffffff');
+          this.sayKind(event, flight, target);
         } else {
           this.say(flight, target, STRINGS.fx.miss, '#c9c6e8');
         }
@@ -522,6 +545,11 @@ export class BattleFx {
   /** A unit whose destruction, or whose leaving, has finished playing; the screen stops drawing it. */
   isGone(unitId: string): boolean {
     return this.gone.has(unitId);
+  }
+
+  /** What is in the air now: where each thing fired comes from and where it is going. */
+  flights(): { from: Pt; to: Pt }[] {
+    return this.active().flatMap(({ fx }) => (fx.kind === 'projectile' ? [{ from: fx.from, to: fx.to }] : []));
   }
 
   kinds(): string[] {

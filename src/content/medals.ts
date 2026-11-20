@@ -10,6 +10,7 @@ import { ALL_STRIPES, stripesHeld } from '../core/stripes';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
 import { TUNE_MAX, stepOf, tunable } from '../core/tuning';
+import type { Weapon } from '../core/types';
 import { DRILLS } from './drills';
 import { ENEMIES } from './enemies';
 import { CATALOG } from './parts';
@@ -32,6 +33,12 @@ const steps = (game: GameState): number[] => Object.keys(game.tuning ?? {})
   .filter((id) => Object.hasOwn(CATALOG, id) && tunable(CATALOG[id])).map((id) => stepOf(game.tuning, id));
 const benchSteps = (game: GameState): number => steps(game).reduce((sum, step) => sum + step, 0);
 const furthestStep = (game: GameState): number => Math.max(0, ...steps(game));
+/** The kinds of weapon that ask something of their machine, and how many of them the pilot owns a weapon of. */
+export const WEAPON_KINDS: NonNullable<Weapon['trait']>[] = ['redline', 'surge', 'punish', 'fork', 'spool'];
+const kindsOwned = (game: GameState): number => WEAPON_KINDS.filter((kind) => Object.keys(game.inventory).some((id) => {
+  const part = game.inventory[id] > 0 && Object.hasOwn(CATALOG, id) ? CATALOG[id] : undefined;
+  return part?.kind === 'weapon' && part.trait === kind;
+})).length;
 const KINDS = Object.keys(ENEMIES);
 const kindsMet = (game: GameState): number => KINDS.filter((id) => game.met.includes(id)).length;
 
@@ -105,6 +112,7 @@ const EARNED: Medal[] = [
   { id: 'bench-1', name: 'Off the Jig', text: 'Have the bench work on a part.', tier: 1, progress: count(1, benchSteps) },
   { id: 'bench-5', name: 'Blueprinted', text: 'Take a part to the fifth step at the bench.', tier: 3, progress: count(TUNE_MAX, furthestStep) },
   { id: 'parts-40', name: 'Stockpile', text: 'Own 40 different parts.', tier: 2, progress: count(40, (g) => Object.keys(g.inventory).length) },
+  { id: 'arsenal', name: 'Full Rack', text: 'Own a weapon of each of the five kinds the manual names.', tier: 2, progress: count(WEAPON_KINDS.length, kindsOwned) },
   // The kinds of machine: for trying another, for staying with one, and for knowing them all.
   { id: 'class-3', name: 'Second Opinion', text: 'Win contracts as 3 classes of machine.', tier: 1, progress: count(3, (g) => kindsWon(g)) },
   { id: 'class-25', name: 'Specialist', text: 'Win 25 contracts as one class of machine.', tier: 2, progress: count(25, mostWonAs) },

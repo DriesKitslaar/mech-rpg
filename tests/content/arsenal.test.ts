@@ -56,8 +56,10 @@ describe('the ten weapons of the five kinds', () => {
   test('each is sold with what its kind needs', () => {
     for (const id of [...TEN.redline, ...TEN.punish, ...TEN.fork]) {
       expect(weapon(id).traitPower, id).toBeGreaterThan(0);
-      expect(weapon(id).traitPower, id).toBeLessThan(100);
+      expect(weapon(id).traitPower, id).toBeLessThanOrEqual(100);
     }
+    // What leaps on from a fork is less than the hit it leaps on from.
+    for (const id of TEN.fork) expect(weapon(id).traitPower, id).toBeLessThan(100);
     // A spool winds some way, and not for ever.
     for (const id of TEN.spool) {
       expect(weapon(id).traitPower, id).toBeGreaterThanOrEqual(2);

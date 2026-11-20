@@ -496,6 +496,9 @@ class MissionHost implements Screen {
         phase: this.launch ? 'launch' : flow.phase, outcome: flow.state.outcome, round: flow.state.round, message: flow.message,
         mission: this.mission.id, index: this.index, of: this.mission.battles.length, enemyScale: this.enemyScale(),
         targetId: flow.targetId, targetPart: flow.targetPart, shown: flow.eventsShown,
+        // While a fork is aimed: the machine its hit would leap on to. And while the weapons are listed, what is said under each.
+        fork: flow.phase === 'target' ? flow.preview?.fork ?? null : null,
+        weapons: flow.phase === 'weapon' ? flow.menu.items.map((item) => ({ slot: item.id, note: item.note ?? '' })) : null,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
         // Why the battle ended as it did, where what it asked for decided it.
         note: flow.resultNote || null,
