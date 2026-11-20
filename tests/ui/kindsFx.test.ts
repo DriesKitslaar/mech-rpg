@@ -2,7 +2,8 @@ import type { BattleEvent } from '../../src/core/battle';
 import type { Weapon } from '../../src/core/types';
 import { setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
-import { BattleFx, PROJECTILE_MS, WORD_GAP, type Scene } from '../../src/ui/battleFx';
+import { BattleFx, PROJECTILE_MS, WORD_GAP, sizeAt, type Scene } from '../../src/ui/battleFx';
+import { COLORS } from '../../src/ui/widgets';
 
 type Shot = Extract<BattleEvent, { type: 'shot' }>;
 /** A field of three: the pilot on the left, two machines on the right, one above the other. */
@@ -31,8 +32,25 @@ describe('what leaps on from a fork\'s hit', () => {
   const leap = shot({ target: 'enemy-1', via: 'enemy-0', damage: 15 });
 
   test('is drawn from where the hit landed to the second machine, not from the barrel', () => {
-    expect(after(shot()).flights()).toEqual([{ from: { x: 100, y: 50 }, to: AT['enemy-0'] }]);
-    expect(after(leap).flights()).toEqual([{ from: AT['enemy-0'], to: AT['enemy-1'] }]);
+    expect(after(shot()).flights()).toEqual([{ from: { x: 100, y: 50 }, to: AT['enemy-0'], grow: [1, 1] }]);
+    expect(after(leap).flights()).toEqual([{ from: AT['enemy-0'], to: AT['enemy-1'], grow: [1, 1] }]);
+  });
+
+  test('sets out from the middle of the machine the hit landed on, whatever part of the second it strikes', () => {
+    const parts: Scene = { ...scene(), hitPoint: (unit, part) => (part === 'core' ? AT[unit] : { x: AT[unit].x, y: AT[unit].y + 20 }) };
+    const fx = new BattleFx(parts);
+    fx.onEvent({ ...leap, part: 'legs', appliedTo: 'legs' });
+    fx.update(20);
+    expect(fx.flights()).toEqual([{ from: AT['enemy-0'], to: { x: AT['enemy-1'].x, y: AT['enemy-1'].y + 20 }, grow: [1, 1] }]);
+  });
+
+  test('is as large where it sets out as the machine it sets out from is far off, not as the one who fired', () => {
+    const DEPTH: Record<string, number> = { player: 0, 'enemy-0': 0.5, 'enemy-1': 1 };
+    const deep = new BattleFx({ ...scene(), depth: (unit) => DEPTH[unit] });
+    deep.onEvent(leap);
+    deep.update(20);
+    expect(deep.flights()[0].grow).toEqual([sizeAt(0.5), sizeAt(1)]);
+    expect(sizeAt(0.5)).not.toBe(sizeAt(0));
   });
 
   test('is not fired: nothing flashes at the barrel and the one who fired does not kick back', () => {
@@ -89,7 +107,17 @@ describe('the word for what a weapon\'s kind made of a hit', () => {
     expect(words(shot({ lift: 200 }), 'punish')).toEqual(['-30', 'STRAF']);
   });
 
-  test('the words stand clear of the figure of the hit: a line above where the machine is', () => {
+  test('a redline\'s word and a surge\'s are over the one who fired, each in the colour of what it is made of', () => {
+    const over = { x: AT.player.x, y: AT.player.y - WORD_GAP - 10 };
+    expect(after(shot({ lift: 148 }), 'redline').written()).toContainEqual({ text: 'REDLINE +48%', at: over, color: COLORS.heat });
+    expect(after(shot({ lift: 340 }), 'surge').written()).toContainEqual({ text: 'SURGE x3.4', at: over, color: COLORS.energy });
+  });
+
+  test('a punish\'s word is over the machine it landed on, a line above the figure of the hit so that both can be read', () => {
+    const written = after(shot({ lift: 200 }), 'punish', PROJECTILE_MS + 20).written();
+    const figure = written.find((word) => word.text === '-30')!;
+    expect(figure.at).toEqual({ x: AT['enemy-0'].x, y: AT['enemy-0'].y - 10 });
+    expect(written).toContainEqual({ text: 'PUNISH', at: { x: figure.at.x, y: figure.at.y - WORD_GAP }, color: COLORS.accent });
     expect(WORD_GAP).toBeGreaterThanOrEqual(10);
   });
 });

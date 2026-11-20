@@ -1,8 +1,9 @@
-import { activeUnit, applyAction, createBattle, type Action, type BattleEvent, type BattleState, type UnitState } from '../../src/core/battle';
+import { activeUnit, applyAction, createBattle, type Action, type BattleEvent, type BattleOptions, type BattleState, type UnitState } from '../../src/core/battle';
 import { tallyBattle } from '../../src/core/stats';
 import type { Build, Catalog, Weapon } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { setLanguage } from '../../src/content/language';
+import { STRINGS } from '../../src/content/strings';
 import '../../src/content/nl';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
@@ -26,14 +27,17 @@ const PUNISH = made('wpn-t-punish', { trait: 'punish', traitPower: 50, damage: 3
 const FORK = made('wpn-t-fork', { trait: 'fork', traitPower: 50, damageType: 'energy', damage: 30, accuracy: 999, energy: 60, heat: 10 });
 const SPOOL = made('wpn-t-spool', { trait: 'spool', traitPower: 3, damage: 5, energy: 70, heat: 10, mount: 'shoulder' });
 const PLAIN = made('wpn-t-plain', { damage: 30, energy: 60, heat: 30 });
-const KINDS: Catalog = { ...CATALOG, ...Object.fromEntries([REDLINE, SURGE, PUNISH, FORK, SPOOL, PLAIN].map((w) => [w.id, w])) };
+/** A redline that cannot miss, and a fork that breaks whatever it touches. */
+const SURE = made('wpn-t-sure', { trait: 'redline', traitPower: 6, damage: 30, accuracy: 999, energy: 60, heat: 10 });
+const BREAKER = made('wpn-t-breaker', { trait: 'fork', traitPower: 50, damageType: 'energy', damage: 4000, accuracy: 999, energy: 60, heat: 10 });
+const KINDS: Catalog = { ...CATALOG, ...Object.fromEntries([REDLINE, SURGE, PUNISH, FORK, SPOOL, PLAIN, SURE, BREAKER].map((w) => [w.id, w])) };
 
 const END: Action = { type: 'endTurn' };
 const player = (s: BattleState): UnitState => s.units[0];
-function battle(carried: Partial<Build>, enemies = ['gun-turret', 'gun-turret', 'gun-turret'], seed = 1, catalog: Catalog = KINDS): BattleState {
+function battle(carried: Partial<Build>, enemies = ['gun-turret', 'gun-turret', 'gun-turret'], seed = 1, catalog: Catalog = KINDS, opts: BattleOptions = {}): BattleState {
   const build: Build = { ...DEMO_BUILD, rightHand: undefined, leftHand: undefined, shoulder: undefined, ...carried };
   for (const key of Object.keys(build) as (keyof Build)[]) if (build[key] === undefined) delete build[key];
-  let s = createBattle(build, enemies.map((id) => ENEMIES[id]), catalog, seed);
+  let s = createBattle(build, enemies.map((id) => ENEMIES[id]), catalog, seed, opts);
   for (let guard = 0; activeUnit(s).id !== 'player' && guard < 20; guard++) s = applyAction(s, END, catalog);
   return s;
 }
@@ -167,6 +171,26 @@ describe('a fork fired in a battle', () => {
     expect(lines[1]).toMatch(/^Slaat over op Gun Turret B - \w+ -\d+$/);
   });
 
+  test('where a barrier took all of what leapt on, the bar says what the barrier lost, as it does of any hit', () => {
+    const lines = said(edit(landing(), (d) => { d.units[2].barrier = 500; }));
+    expect(lines[1]).toMatch(/^wpn-t-fork hits Gun Turret B - barrier -\d+$/);
+  });
+
+  test('and where what leapt on broke the second machine in one, the bar says that of it, as it does of any hit', () => {
+    const flow = flowOf(battle({ rightHand: BREAKER.id }));
+    flow.onInput('confirm');
+    flow.onInput('confirm');
+    flow.onInput('confirm');
+    const lines: string[] = [flow.message];
+    for (let guard = 0; flow.phase === 'animating' && guard < 50; guard++) {
+      flow.advance();
+      if (flow.phase === 'animating') lines.push(flow.message);
+    }
+    expect(lines[0]).toBe(STRINGS.shatter(BREAKER.name, 'Gun Turret A'));
+    expect(lines).toContain(STRINGS.shatter(BREAKER.name, 'Gun Turret B'));
+    expect(lines.some((line) => line.startsWith('It leaps'))).toBe(false);
+  });
+
   test('what leapt on is not a shot of its own in the pilot\'s record: one shot, one hit, and the armour both took off', () => {
     const state = landing();
     const after = applyAction(state, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' }, KINDS);
@@ -228,6 +252,71 @@ describe('where a fork would leap on to, on the field', () => {
     const { page, screen, flow } = aiming(FORK);
     screen.onInput('cancel');
     expect(flow.phase).toBe('weapon');
+    expect(word(page(), 'FORK')).toEqual([]);
+    expect(corners(page())).toEqual([]);
+  });
+
+  test('what is more pressing to say of that machine is said in place of the word; the corners are there all the same', () => {
+    const flow = new BattleFlow(edit(battle({ rightHand: FORK.id }), (d) => { d.units[2].staggered = 2; }), KINDS, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, KINDS, { fast: true, background: 'bg-mine' });
+    for (let i = 0; i < 2000 && (screen.banner || flow.phase !== 'action'); i++) screen.update(16);
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    expect(flow.preview?.fork).toBe('enemy-1');
+    const shown = record((ctx) => screen.draw(ctx));
+    expect(word(shown, 'FORK')).toEqual([]);
+    expect(word(shown, 'STAGGER')).toHaveLength(1);
+    expect(corners(shown)).toHaveLength(8);
+  });
+
+  test('on the machine the client wants in one piece the objective\'s word stands, and the bolt\'s corners lie a pixel inside the objective\'s', () => {
+    const flow = new BattleFlow(battle({ rightHand: FORK.id }, ['gun-turret', 'heavy-mech', 'gun-turret'], 1, KINDS, { objective: { type: 'disable', target: 1 } }), KINDS, { quiet: true });
+    const screen = new BattleScreen(flow, sprites, KINDS, { fast: true, background: 'bg-mine' });
+    for (let i = 0; i < 2000 && (screen.banner || flow.phase !== 'action'); i++) screen.update(16);
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    for (let i = 0; i < 4 && flow.targetId !== 'enemy-0'; i++) screen.onInput('next');
+    expect(flow.targetId).toBe('enemy-0');
+    expect(flow.preview?.fork).toBe('enemy-1');
+    const shown = record((ctx) => screen.draw(ctx));
+    expect(word(shown, 'FORK')).toEqual([]);
+    expect(word(shown, STRINGS.objectives.mark)).toHaveLength(1);
+    const box = (pieces: Drawn['rects']) => ({
+      left: Math.min(...pieces.map((r) => r.x)), top: Math.min(...pieces.map((r) => r.y)),
+      right: Math.max(...pieces.map((r) => r.x + r.w)), bottom: Math.max(...pieces.map((r) => r.y + r.h)),
+    });
+    const amber = shown.rects.filter((r) => r.color === COLORS.heat && ((r.w === 3 && r.h === 1) || (r.w === 1 && r.h === 3)));
+    expect(amber).toHaveLength(8);
+    expect(corners(shown)).toHaveLength(8);
+    const [outer, inner] = [box(amber), box(corners(shown))];
+    expect(inner).toEqual({ left: outer.left + 1, top: outer.top + 1, right: outer.right - 1, bottom: outer.bottom - 1 });
+  });
+
+  test('a redline fired warm through the screen itself: the screen tells the effects what kind the weapon is, and the word is written', () => {
+    const flow = new BattleFlow(edit(battle({ rightHand: SURE.id }), (d) => { player(d).heat = 50; }), KINDS, { quiet: true });
+    // (Not hurried: a screen that is plays no effects at all.)
+    const screen = new BattleScreen(flow, sprites, KINDS, { fast: false, background: 'bg-mine' });
+    for (let i = 0; i < 2000 && (screen.banner || flow.phase !== 'action'); i++) screen.update(16);
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    expect(flow.phase).toBe('target');
+    expect(screen.words).toEqual([]);
+    screen.onInput('confirm');
+    const seen = new Set<string>();
+    for (let i = 0; i < 2000 && flow.phase !== 'action'; i++) {
+      screen.update(16);
+      for (const text of screen.words) seen.add(text);
+    }
+    expect([...seen]).toContain('REDLINE +30%');
+    // And a room of thirty-two letters is what a row's note has: the menu's width less its edges and the cursor.
+    expect(WEAPON_NOTE_CHARS).toBe(32);
+  });
+
+  test('once the trigger is pulled the mark is gone: there is no shot being aimed any more', () => {
+    const { page, screen, flow } = aiming(FORK);
+    screen.onInput('confirm');
+    expect(flow.phase).not.toBe('target');
+    expect(flow.preview).toBeNull();
     expect(word(page(), 'FORK')).toEqual([]);
     expect(corners(page())).toEqual([]);
   });

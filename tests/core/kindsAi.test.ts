@@ -1,6 +1,6 @@
 import { chooseAutoPlayerAction, chooseEnemyAction } from '../../src/core/ai';
 import {
-  HEAT_LIMIT, activeUnit, applyAction, boostCost, createBattle, guardCost,
+  HEAT_LIMIT, activeUnit, applyAction, boostCost, createBattle, guardCost, previewShot,
   type Action, type BattleEvent, type BattleOptions, type BattleState, type UnitState,
 } from '../../src/core/battle';
 import type { Build, Catalog, EnemyDef, Module, Weapon, WeaponSlot } from '../../src/core/types';
@@ -22,13 +22,16 @@ const FORK = made('wpn-t-fork', { trait: 'fork', traitPower: 50, damageType: 'en
 const SPOOL = made('wpn-t-spool', { trait: 'spool', traitPower: 3, damage: 5, energy: 60, heat: 10, impact: 1 });
 const SPOOL_BACK = made('wpn-t-spool-back', { trait: 'spool', traitPower: 3, damage: 5, energy: 70, heat: 10, impact: 1, mount: 'shoulder' });
 const BLADE = made('wpn-t-blade', { damage: 30, energy: 90, heat: 10, impact: 5, melee: true });
+const CHARGED = made('wpn-t-charged', { damage: 30, energy: 100, heat: 10, impact: 5, charge: true });
+const COOL = made('wpn-t-cool', { damage: 30, energy: 60, heat: 10, impact: 5 });
+const HOT_BACK = made('wpn-t-hot-back', { damage: 30, energy: 70, heat: 40, impact: 5, mount: 'shoulder' });
 const PLAIN = made('wpn-t-plain', { damage: 30, energy: 60, heat: 30, impact: 5 });
 const PLAIN_BACK = made('wpn-t-plain-back', { damage: 30, energy: 70, heat: 30, impact: 5, mount: 'shoulder' });
 const SHOVE = made('wpn-t-shove', { damage: 10, energy: 60, heat: 10, impact: 9999 });
 const SHOVE_BACK = made('wpn-t-shove-back', { damage: 10, energy: 70, heat: 10, impact: 9999, mount: 'shoulder' });
 const KINDS: Catalog = {
   ...CATALOG,
-  ...Object.fromEntries([REDLINE, SURGE, SURGE_BACK, PUNISH, PUNISH_BLADE, FORK, SPOOL, SPOOL_BACK, BLADE, PLAIN, PLAIN_BACK, SHOVE, SHOVE_BACK].map((w) => [w.id, w])),
+  ...Object.fromEntries([REDLINE, SURGE, SURGE_BACK, PUNISH, PUNISH_BLADE, FORK, SPOOL, SPOOL_BACK, BLADE, CHARGED, COOL, HOT_BACK, PLAIN, PLAIN_BACK, SHOVE, SHOVE_BACK].map((w) => [w.id, w])),
 };
 
 const unit = (s: BattleState, id: string): UnitState => s.units.find((u) => u.id === id)!;
@@ -77,6 +80,20 @@ describe('the order the game\'s own pilot fires in', () => {
     expect(turn(withEnergy(plain, 130)).did).toEqual(['rightHand', 'leftHand']);
   });
 
+  test('a machine that carries none of the kinds vents before it fires anything, when one weapon of its own would take it past the limit', () => {
+    // The right hand would fit under the limit and the shoulder would not: as ever, the vent comes first.
+    const warm = edit(withEnergy(field({ rightHand: COOL.id, shoulder: HOT_BACK.id }), 400), (d) => { player(d).heat = 65; });
+    expect(chooseAutoPlayerAction(warm, KINDS)).toEqual({ type: 'cool' });
+    // Beside a redline the weapons that fit are fired first, and the vent is for what is left.
+    const kinds = edit(withEnergy(field({ rightHand: COOL.id, leftHand: REDLINE.id, shoulder: HOT_BACK.id }), 400), (d) => { player(d).heat = 65; });
+    expect(turn(kinds).did.slice(0, 3)).toEqual(['rightHand', 'leftHand', 'cool']);
+  });
+
+  test('a weapon that was charged a turn ago costs nothing now: it does not crowd a kind out of the turn\'s energy', () => {
+    const ready = edit(withEnergy(field({ rightHand: CHARGED.id, leftHand: REDLINE.id }), REDLINE.energy), (d) => { player(d).charged = ['rightHand']; });
+    expect(turn(ready).did).toEqual(['rightHand', 'leftHand']);
+  });
+
   test('a redline is fired after whatever else heats its machine, and is the better for it', () => {
     const start = withEnergy(field({ rightHand: REDLINE.id, leftHand: PLAIN.id, shoulder: PLAIN_BACK.id }), 190);
     const { did, end } = turn(start);
@@ -91,6 +108,9 @@ describe('the order the game\'s own pilot fires in', () => {
     expect(turn(withEnergy(carried, 120)).did).toEqual(['leftHand', 'rightHand']);
     // Enough for one weapon and a little: the redline, which is the first in the old order, and it alone.
     expect(turn(withEnergy(carried, 100)).did).toEqual(['rightHand']);
+    // Only a spool winds up: a weapon of no kind that was fired the turn before is not paid for ahead of the rest for that.
+    const fired = edit(withEnergy(carried, 120), (d) => { player(d).spool = { shoulder: 1 }; });
+    expect(turn(fired).did).toEqual(['leftHand', 'rightHand']);
   });
 
   test('nor is it crowded out from under the heat limit: what the heat runs to is settled the same way', () => {
@@ -104,6 +124,9 @@ describe('the order the game\'s own pilot fires in', () => {
     // With energy to spare it is still the redline that is fired second, before anything is vented for the third.
     const more = turn(warm(45, 400)).did;
     expect(more.slice(0, 2)).toEqual(['leftHand', 'rightHand']);
+    // And at thirty-five, where the shoulder weapon would still fit once the left hand has fired: the room that is
+    // left then is the redline's, which was counted in before the shoulder was.
+    expect(turn(warm(35, 400)).did.slice(0, 3)).toEqual(['leftHand', 'rightHand', 'cool']);
     // At sixty-five only the redline and nothing before it: it is fired at once.
     expect(turn(warm(65, 60)).did).toEqual(['rightHand']);
   });
@@ -176,6 +199,19 @@ describe('the order the game\'s own pilot fires in', () => {
     // A machine that has taken its stance already takes no second one.
     const braced = edit(withEnergy(carried, 400), (d) => { player(d).usedGuard = true; player(d).guarding = true; });
     expect(turn(braced).did).toEqual(['leftHand', 'rightHand']);
+    // Where the stance this pilot would take is a guard (its balance is going) and a guard is more than it can spare,
+    // a boost on jets that boost for less is taken instead.
+    const glide = field({ rightHand: SURGE.id, booster: 'bst-glide' });
+    const [cheap, dear] = [boostCost(player(glide), KINDS), guardCost(player(glide), KINDS)];
+    expect(cheap).toBeLessThan(dear);
+    const reeling = (energy: number): BattleState => edit(withEnergy(glide, energy), (d) => { player(d).stagger = player(d).staggerMax - 1; });
+    expect(turn(reeling(SURGE.energy + dear)).did).toEqual(['guard', 'rightHand']);
+    expect(turn(reeling(SURGE.energy + dear - 1)).did).toEqual(['boost', 'rightHand']);
+    expect(turn(reeling(SURGE.energy + cheap - 1)).did).toEqual(['rightHand']);
+    // A machine that has lost its legs cannot boost, whatever its jets cost: with a guard's worth too little it fires.
+    const legless = (energy: number): BattleState => edit(withEnergy(glide, energy), (d) => { player(d).parts.legs!.ap = 0; });
+    expect(turn(legless(SURGE.energy + dear)).did).toEqual(['guard', 'rightHand']);
+    expect(turn(legless(SURGE.energy + dear - 1)).did).toEqual(['rightHand']);
     // And a machine that carries no surge still takes its stance last, with what is left over.
     expect(turn(withEnergy(field({ rightHand: PLAIN.id, leftHand: PLAIN.id }), 400)).did).toEqual(['rightHand', 'leftHand', 'boost']);
   });
@@ -273,6 +309,24 @@ describe('a fork beside a machine the client wants in one piece', () => {
     const just = Math.ceil(core / 0.95) + 2;
     expect(chooseAutoPlayerAction(beside(whole(just)), whole(just))).toMatchObject({ type: 'fire', weapon: 'rightHand' });
     expect(chooseAutoPlayerAction(beside(whole(just * 2 + 40)), whole(just * 2 + 40))).toMatchObject({ type: 'fire', weapon: 'leftHand' });
+  });
+
+  test('what leaps on is weighed rounded up, and may not take the last of that machine\'s armour', () => {
+    const whole = (damage: number): Catalog => ({ ...KINDS, [FORK.id]: { ...FORK, damage } });
+    // A fork whose whole hit on that core is an odd figure: half of it is not a whole number.
+    const odd = [30, 31, 32, 33].map(whole).find((catalog) => previewShot(beside(catalog), 'player', 'rightHand', 'enemy-1', 'core', catalog).damage % 2 === 1)!;
+    const full = previewShot(beside(odd), 'player', 'rightHand', 'enemy-1', 'core', odd).damage;
+    const leap = Math.ceil(full / 2);
+    const left = (ap: number): BattleState => edit(beside(odd), (d) => { unit(d, 'enemy-1').parts.core!.ap = ap; });
+    expect(chooseAutoPlayerAction(left(leap + 1), odd)).toMatchObject({ type: 'fire', weapon: 'rightHand' });
+    expect(chooseAutoPlayerAction(left(leap), odd)).toMatchObject({ type: 'fire', weapon: 'leftHand' });
+  });
+
+  test('is fired freely when what leaps on lands on some other machine, however hard it hits', () => {
+    const strong: Catalog = { ...KINDS, [FORK.id]: { ...FORK, damage: 5000 } };
+    // The drone that mends, a turret, and then the machine wanted: from the drone the bolt goes on to the turret.
+    const three = withEnergy(field({ rightHand: FORK.id, leftHand: PLAIN.id }, ['repair-drone', 'gun-turret', 'heavy-mech'], { objective: { type: 'disable', target: 2 } }, strong), 120);
+    expect(chooseAutoPlayerAction(three, strong)).toEqual({ type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' });
   });
 
   test('is fired at the wanted machine\'s own limbs like anything else: what leaps on from there lands elsewhere', () => {

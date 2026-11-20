@@ -275,7 +275,7 @@ export class BattleFx {
     switch (event.type) {
       case 'shot': {
         const dtype = s.damageType(event.unit, event.weapon);
-        // What leapt on from a fork's hit comes from where that hit landed, not from the barrel.
+        // What leapt on from a fork's hit comes from the middle of the machine that hit landed on, not from the barrel.
         const from = event.via ? s.hitPoint(event.via, 'core') : s.muzzle(event.unit, event.weapon);
         const target = s.hitPoint(event.target, event.appliedTo);
         const dir = s.facing(event.unit);
@@ -547,9 +547,9 @@ export class BattleFx {
     return this.gone.has(unitId);
   }
 
-  /** What is in the air now: where each thing fired comes from and where it is going. */
-  flights(): { from: Pt; to: Pt }[] {
-    return this.active().flatMap(({ fx }) => (fx.kind === 'projectile' ? [{ from: fx.from, to: fx.to }] : []));
+  /** What is in the air now: where each thing fired comes from and where it is going, and how large it is at either end. */
+  flights(): { from: Pt; to: Pt; grow: [number, number] }[] {
+    return this.active().flatMap(({ fx }) => (fx.kind === 'projectile' ? [{ from: fx.from, to: fx.to, grow: fx.grow }] : []));
   }
 
   kinds(): string[] {
@@ -558,6 +558,11 @@ export class BattleFx {
 
   texts(): string[] {
     return this.active().flatMap(({ fx }) => (fx.kind === 'text' ? [fx.text] : []));
+  }
+
+  /** What is written over the field now: each figure or word, where it begins to rise from and in what colour. */
+  written(): { text: string; at: Pt; color: string }[] {
+    return this.active().flatMap(({ fx }) => (fx.kind === 'text' ? [{ text: fx.text, at: fx.at, color: fx.color }] : []));
   }
 
   /** What each burst that is playing looks like and how large it is, for tests: nobody can watch a test run. */

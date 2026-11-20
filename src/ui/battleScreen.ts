@@ -424,6 +424,11 @@ export class BattleScreen {
   }
 
   /** What the wingman is saying right now, if anything. */
+  /** The words rising over the field at this moment: figures, and what a weapon's kind or a great hit is called. */
+  get words(): string[] {
+    return this.fx.texts();
+  }
+
   get radioLine(): string | null {
     return this.radio?.line ?? null;
   }
@@ -1272,8 +1277,8 @@ export class BattleScreen {
   private drawEnemyMarks(ctx: CanvasRenderingContext2D): void {
     const enemies = this.flow.state.units.slice(1).filter((enemy) => !this.hidden(enemy));
     const marked = this.flow.objective?.target;
-    // While a fork is aimed: the machine its hit would leap on to.
-    const forked = this.flow.phase === 'target' ? this.flow.preview?.fork : undefined;
+    // While a fork is aimed (there is no preview of a shot at any other time): the machine its hit would leap on to.
+    const forked = this.flow.preview?.fork;
     // Each machine's bars are under it; where machines stand so close that their bars would lie on one another, they are stacked.
     // A machine has them until it has been seen to go: the rules can be a turn ahead of the screen.
     const standing = enemies.filter((enemy) => !this.fallen(enemy));

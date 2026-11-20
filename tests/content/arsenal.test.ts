@@ -77,6 +77,25 @@ describe('the ten weapons of the five kinds', () => {
     for (const id of TEN.punish) expect(impactOf(weapon(id)), id).toBeLessThanOrEqual(40);
   });
 
+  test('each is sold with the numbers it was measured with: one changed is a balance measured again', () => {
+    const sold = (id: string) => {
+      const w = weapon(id);
+      return [w.damageType, w.damage, w.accuracy, w.energy, w.heat, w.ammo, w.costPerShot, w.weight, w.price, w.traitPower ?? null, w.impact ?? null];
+    };
+    expect(Object.fromEntries(IDS.map((id) => [id, sold(id)]))).toEqual({
+      'wpn-slagcaster': ['explosive', 44, 68, 70, 22, 14, 40, 105, 1300, 8, null],
+      'wpn-crucible': ['energy', 50, 80, 150, 32, null, 0, 150, 3400, 6, null],
+      'wpn-sluice': ['energy', 30, 80, 100, 28, null, 0, 80, 2400, null, null],
+      'wpn-spillway': ['energy', 32, 84, 140, 36, null, 0, 170, 4200, null, null],
+      'wpn-spike-driver': ['kinetic', 50, 84, 90, 18, 14, 45, 110, 2000, 100, 10],
+      'wpn-headsman': ['kinetic', 74, 90, 85, 12, null, 0, 120, 3200, 100, 40],
+      'wpn-forkbolt': ['energy', 36, 80, 100, 24, null, 0, 65, 1500, 65, null],
+      'wpn-thunderhead': ['energy', 70, 84, 160, 36, null, 0, 140, 3300, 75, null],
+      'wpn-flywheel': ['kinetic', 12, 72, 90, 22, 18, 32, 115, 1400, 4, null],
+      'wpn-thresher': ['kinetic', 18, 68, 120, 26, 16, 85, 220, 2900, 5, null],
+    });
+  });
+
   test('none is built to order, each has somebody who sells it, and no name is used twice or is too long for a row', () => {
     for (const id of IDS) {
       expect(weapon(id).vendor, id).toBeDefined();

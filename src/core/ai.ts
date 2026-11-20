@@ -51,8 +51,8 @@ function fireOrder(state: BattleState, usable: Usable[], target: UnitState): Usa
     }
   };
   if (inOrder.every((u) => when(u) === 0)) return inOrder;
-  const sorted = (list: Usable[], rank: (u: Usable) => number): Usable[] =>
-    list.map((u, at) => ({ u, at })).sort((a, b) => rank(a.u) - rank(b.u) || a.at - b.at).map(({ u }) => u);
+  // (A sort leaves what ranks alike in the order it was in.)
+  const sorted = (list: Usable[], rank: (u: Usable) => number): Usable[] => [...list].sort((a, b) => rank(a) - rank(b));
   let { energy, heat } = unit;
   const fits = sorted(inOrder, (u) => (u.weapon.melee ? 0 : wound(u) ? 1 : 2)).filter((u) => {
     // A charged weapon was paid for when it was charged.
@@ -328,8 +328,7 @@ function autoChoice(state: BattleState, catalog: Catalog): Action {
     // And what leaps on from a fork lands on a core as well: of the machine next along the line.
     const lands = (u: Usable): number => (u.weapon.trait === 'salvo' ? 1
       : u.weapon.trait === 'fork' && forkTarget(state, me.id, target.id)?.id === wanted.id ? (u.weapon.traitPower ?? 0) / 100 : 0);
-    usable = usable.filter((u) =>
-      lands(u) === 0 || Math.ceil(previewShot(state, me.id, u.slot, wanted.id, 'core', catalog).damage * lands(u)) < wanted.parts.core!.ap);
+    usable = usable.filter((u) => Math.ceil(previewShot(state, me.id, u.slot, wanted.id, 'core', catalog).damage * lands(u)) < wanted.parts.core!.ap);
   }
   // A target that will outlast this turn's volley, and that the volley can knock off balance, gets the
   // hardest-pushing weapons first, so the rest land on a staggered mech. Small fry is shot as it comes.
@@ -342,13 +341,14 @@ function autoChoice(state: BattleState, catalog: Catalog): Action {
   const choice = coolOrFire(state, catalog, fireOrder(state, usable, target), target.id, part);
   // A surge leaves nothing over for a stance: the stance is taken first, where the surge still gets the least it
   // asks. (Flown without one, a machine that carries a surge is hit far more than it need be.)
-  if (choice.type === 'fire' && !me.usedBoost && !me.usedGuard && weaponIn(me.build, choice.weapon, catalog)!.trait === 'surge') {
+  if (choice.type === 'fire' && weaponIn(me.build, choice.weapon, catalog)!.trait === 'surge') {
     const least = weaponIn(me.build, choice.weapon, catalog)!.energy;
     const boost: Action = { type: 'boost' };
     const guard: Action = { type: 'guard' };
     const leaves = (action: Action): boolean =>
       can(state, action, catalog) && me.energy - (action.type === 'boost' ? boostCost(me, catalog) : guardCost(me, catalog)) >= least;
-    // The stance it would take with energy to spare; failing that the other one, which is better than none.
+    // The stance it would take with energy to spare; failing that the other one, which is better than none. (One
+    // stance a turn: a machine that has taken its own is refused both.)
     const first = stance(state, me, enemies, catalog);
     const braced = first && [first, first.type === 'boost' ? guard : boost].find(leaves);
     if (braced) return braced;
