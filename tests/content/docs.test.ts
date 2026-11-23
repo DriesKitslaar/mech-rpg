@@ -13,7 +13,7 @@ import { ALL_STRIPES, MAX_STRIPE_POINTS, STRIPES_AT, STRIPES_A_POINT, countsForC
 import type { FramePart, Weapon } from '../../src/core/types';
 import { ARENA } from '../../src/content/arena';
 import { MANUAL } from '../../src/content/codex';
-import { BOARD_TEXT, GRUDGE_NAMES } from '../../src/content/board';
+import { BOARD_TEXT, GRUDGE_FACES, GRUDGE_NAMES, LEDGER_LINES } from '../../src/content/board';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { setLanguage } from '../../src/content/language';
@@ -604,6 +604,18 @@ describe('what is said of accounts is so', () => {
     expect(medals.map((entry) => entry.progress(kept(2, ['Tally'])).have)).toEqual([5, 1, 1]);
     expect(medals.map((entry) => entry.progress({ accounts: ['Tally', 'Docket', 'Lapse'] } as never).have)).toEqual([9, 3, 3]);
     expect(medals.map((entry) => entry.progress({} as never).have)).toEqual([0, 0, 0]);
+  });
+
+  test('the guide: where an account is announced, where it can be looked up, and how a meeting opens, in the words of the screen', () => {
+    expect(section).toContain(`**${STRINGS.accounts.opened}** (Nederlands **${STRINGS_NL.accounts.opened}**) met de roepnaam`);
+    expect(section).toContain(`bovenaan de pagina **${STRINGS.database.pages.people}** (Nederlands **${STRINGS_NL.database.pages.people}**)`);
+    expect(section).toContain('De gesloten rekeningen staan eronder. Voor een rekening begint, staat er niemand.');
+    expect(section).toContain(`**${STRINGS.battleIntro.overdue}** (Nederlands **${STRINGS_NL.battleIntro.overdue}**), de roepnaam en de machine van dichtbij`);
+    // What the guide says the page says is what its lines are about.
+    expect(Object.keys(LEDGER_LINES).sort()).toEqual(['began', 'closed', 'due', 'knows', 'met']);
+    expect(GRUDGE_NAMES).toHaveLength(16);
+    expect(Object.keys(GRUDGE_FACES)).toHaveLength(16);
+    expect(README).toContain('Elk van de zestien piloten heeft een eigen gezicht en een pagina in de databank');
   });
 
   test('the manual: a chapter after the one on jobs, in the words the notice and the screen use', () => {

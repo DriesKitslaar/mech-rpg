@@ -1,0 +1,9 @@
+{
+  "id": "portrait-acct-mercer",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a composed pilot with a bald head, a trimmed dark goatee and a thin gold ring in one ear, wearing a wine-red flight coat with gold piping. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

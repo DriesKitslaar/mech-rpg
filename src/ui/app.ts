@@ -5,7 +5,7 @@ import {
 import { askSettlement, generateBoard, swarmContract } from '../core/board';
 import { jobContract, recordJob } from '../core/jobs';
 import {
-  GRUDGE, NOTHING_FOUGHT, accountLine, bookGrudge, foughtIn, grudgeContract, grudgeEnemy, grudgeOf, isGrudge, type Fought as AccountFought,
+  GRUDGE, NOTHING_FOUGHT, accountBegun, accountLine, bookGrudge, foughtIn, grudgeContract, grudgeEnemy, grudgeOf, isGrudge, type Fought as AccountFought,
 } from '../core/grudge';
 import { computeBuildStats, validatePlayerBuild } from '../core/build';
 import {
@@ -320,11 +320,14 @@ class MissionHost implements Screen {
     });
     const battle = this.mission.battles[this.index];
     const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
+    // A meeting with the pilot of an account opens as a boss's battle does: they come in on the band, under their
+    // callsign and the notice's own word.
+    const theirs = !boss && isGrudge(this.mission) ? this.app.enemies()[battle.enemies[0]] : undefined;
     if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: lent ? undefined : this.app.game!.paint,
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
-      ...(boss ? { boss: boss.name } : {}),
+      ...(boss ? { boss: boss.name } : theirs ? { boss: theirs.name, warning: STRINGS.battleIntro.overdue } : {}),
       ...(known && game?.callsign ? { pilot: STRINGS.renown.banner(game.callsign, known) } : {}),
       coach: this.coach,
       typing: this.app.typing(), calm: this.app.settings.calm === true,
@@ -826,7 +829,15 @@ export class App {
       id: `stripe:${kind}:${stripe}`, heading: STRINGS.stripes.earned, title: STRINGS.stripes.title(STRINGS.classes.names[kind], stripe), stripes: stripe, sound: 'medal' as const,
       ...(point ? { note: STRINGS.stripes.point } : {}),
     }));
-    this.toasts.push(...crownToasts, ...seatToasts, ...stripeToasts, ...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
+    // An account that has just begun is said as the contract it began in is booked: that somebody will be back, and
+    // under what callsign. Their page is in the database from then on.
+    const begun = accountBegun(before, game);
+    const accountToasts: Toast[] = begun === null ? []
+      : [{ id: `account:${begun}`, heading: STRINGS.accounts.opened, title: STRINGS.accounts.callsign(begun), sound: 'entry' }];
+    this.toasts.push(
+      ...crownToasts, ...seatToasts, ...stripeToasts, ...medalToasts(earned), ...nameToasts, ...accountToasts,
+      ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts,
+    );
     this.game = game;
     this.saveFailed = !this.file.save(game);
     // Options that could not be stored when they were changed go with the next thing that can be.

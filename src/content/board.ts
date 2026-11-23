@@ -1,10 +1,12 @@
 import type { BoardText } from '../core/board';
-import type { GrudgeText } from '../core/grudge';
+import type { GrudgeText, LedgerEntry } from '../core/grudge';
 import type { JobText } from '../core/jobs';
 import { STRINGS } from './strings';
 
 /** The callsigns an account's pilot can have. None is a name the game uses for anybody else. */
 export const GRUDGE_NAMES = ['Brakk', 'Tally', 'Docket', 'Lapse', 'Surety', 'Margin', 'Stub', 'Escrow', 'Harrow', 'Flint', 'Thistle', 'Pike', 'Calder', 'Sorrel', 'Vandal', 'Mercer'];
+/** The face of each: the sprite of its portrait. A callsign always has the same one. */
+export const GRUDGE_FACES: Record<string, string> = Object.fromEntries(GRUDGE_NAMES.map((name) => [name, `portrait-acct-${name.toLowerCase()}`]));
 
 /**
  * The words of an account: its notice, the lines of its briefing, what is said over its battle and what the bill
@@ -66,6 +68,37 @@ export const GRUDGE_LINES = {
   ],
 };
 const fill = (line: string, gaps: Record<string, string | undefined>): string => line.replace(/\{(\w+)\}/g, (_, gap: string) => gaps[gap] ?? '');
+
+/**
+ * What the database's page of an account says: of the one that is open, a sentence for each thing the pilot would
+ * otherwise have to remember (what they fly and how it began, how many meetings there have been, what their
+ * machine is hardened against, how long until their notice); of one that is closed, that it is. The gaps are
+ * for a machine, a weapon and a number of contracts.
+ */
+export const LEDGER_LINES = {
+  began: {
+    beat: 'Flies a {machine} that you could not finish.',
+    ran: 'Flies a {machine} that broke off from you.',
+    wrecked: 'You wrecked their {machine}. They have another.',
+  },
+  // None, one and two meetings won: there is no page of an open account after the third.
+  met: ['You have not met by name yet.', 'You have met once, and won.', 'You have met twice, and won both.'],
+  knows: ['Their machine knows nothing of what you fly.', 'Their machine is hardened against your {a}.'],
+  // The notice is out; it is one contract off; it is several.
+  due: ['Their notice is out: it is among the open contracts.', 'Their notice comes after one more contract won.', 'Their notice comes after {n} more contracts won.'],
+  closed: 'Came back for you three times and lost three machines. The account is closed.',
+};
+
+/** The words of an account's page, in the language that is set: `called` gives a machine's and a weapon's name as the player reads them. */
+export function ledgerText(entry: LedgerEntry, called: { machine: (kind: string) => string; weapon: (id: string) => string }): string {
+  if (!entry.open) return LEDGER_LINES.closed;
+  return [
+    fill(LEDGER_LINES.began[entry.origin], { machine: called.machine(entry.kind) }),
+    LEDGER_LINES.met[entry.met],
+    entry.knows === undefined ? LEDGER_LINES.knows[0] : fill(LEDGER_LINES.knows[1], { a: called.weapon(entry.knows) }),
+    entry.wait === 0 ? LEDGER_LINES.due[0] : entry.wait === 1 ? LEDGER_LINES.due[1] : fill(LEDGER_LINES.due[2], { n: String(entry.wait) }),
+  ].join(' ');
+}
 
 export const BOARD_TEXT: BoardText & JobText & GrudgeText = {
   adjectives: [
@@ -154,6 +187,7 @@ export const BOARD_TEXT: BoardText & JobText & GrudgeText = {
   // An account: a pilot who comes back for this one. Every line is read from `GRUDGE_LINES` as it is asked for.
   grudge: {
     names: GRUDGE_NAMES,
+    faces: GRUDGE_FACES,
     title: (name) => fill(GRUDGE_LINES.title, { name }),
     get places() { return [...GRUDGE_LINES.places]; },
     first: {

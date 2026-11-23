@@ -72,7 +72,10 @@ export const STRINGS = {
     },
   },
   // `open` is on the banner of a battle against ordinary machines: the rule that holds there, by the name the manual has it under.
-  battleIntro: { warning: 'WARNING', destroy: 'DESTROY ALL HOSTILES', open: 'MOMENTUM' },
+  // (`overdue` is the word on the band a meeting with the pilot of an account opens on, where a boss's has the warning.)
+  battleIntro: { warning: 'WARNING', overdue: 'OVERDUE', destroy: 'DESTROY ALL HOSTILES', open: 'MOMENTUM' },
+  // An account (see grudge.ts), as it is announced when one begins: that it has, and under what callsign.
+  accounts: { opened: 'ACCOUNT OPENED', callsign: (name: string) => `Callsign ${name}` },
   // The launch that opens a contract flown from the hangar: where it is, and the word as the catapult fires.
   catapult: { bay: 'CATAPULT', go: 'LAUNCH' },
   yourTurn: (round: number) => `Round ${round} - your move`,
@@ -397,6 +400,9 @@ export const STRINGS = {
     findToast: 'FOUND', newFinds: (n: number) => `${n} new finds`,
     // The people of Varn the pilot has come across.
     known: (n: number, of: number) => `KNOWN ${n}/${of}`, broughtIn: 'Brought in',
+    // The pilots of accounts (see grudge.ts), who have a page here from the moment their account begins: what one is
+    // to the pilot, where a person of the story has whom they work for, and how many there are.
+    accountOpen: 'Open account', accountClosed: 'Account closed', accounts: (n: number) => `ACCOUNTS ${n}`,
     // The jukebox: the songs heard so far, to be played again.
     heard: (n: number, of: number) => `HEARD ${n}/${of}`, notHeard: 'Not heard so far.', play: 'A: play', stop: 'A: stop', playing: 'NOW PLAYING',
     length: (time: string) => `LENGTH ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Music is off. Turn it on in Options to hear this.',

@@ -499,6 +499,14 @@ wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de ar
 - Na de derde is de rekening gesloten (**ACCOUNT CLOSED**, Nederlands **REKENING DICHT**). Daarna
   kan er een nieuwe beginnen, met een andere piloot. Er loopt er altijd maar één tegelijk.
 - Verlies je of loop je weg, dan verandert er niets: het bericht blijft staan.
+- **Begint er een rekening, dan zie je dat meteen** over de afrekening van het contract waarin het
+  gebeurde: **ACCOUNT OPENED** (Nederlands **REKENING GEOPEND**) met de roepnaam.
+- **Wie er achter je aan zit, staat in de databank**, bovenaan de pagina **PEOPLE** (Nederlands
+  **MENSEN**): het gezicht, de machine en hoe het begon, hoe vaak jullie elkaar ontmoet hebben,
+  waartegen de machine gehard is en na hoeveel gewonnen contracten het bericht komt. De gesloten
+  rekeningen staan eronder. Voor een rekening begint, staat er niemand.
+- Elke ontmoeting opent met een eigen band over het veld: **OVERDUE** (Nederlands **VERVALLEN**),
+  de roepnaam en de machine van dichtbij.
 - Hoeveel rekeningen je hebt gesloten staat op de pagina **Record** van je piloot.
 - **Drie medailles:** één voor de eerste gewonnen ontmoeting, één voor een gesloten rekening, één
   voor drie.

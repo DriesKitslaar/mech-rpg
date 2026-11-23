@@ -172,6 +172,42 @@ export function grudgeOf(game: Pick<GameState, 'grudge'>): Grudge | null {
   return g;
 }
 
+/**
+ * The callsign of an account that has just begun: one that is open in the game as it is now and was not in the
+ * game as it was. Null where there was no game before: one that is loaded with an account began nothing.
+ */
+export function accountBegun(before: Pick<GameState, 'grudge'> | null | undefined, after: Pick<GameState, 'grudge'>): string | null {
+  if (!before) return null;
+  const [was, is] = [grudgeOf(before), grudgeOf(after)];
+  return is && (!was || was.name !== is.name) ? is.name : null;
+}
+
+/** An account as its page lists it: one that is closed is a callsign; the one that is open says the rest. */
+export type LedgerEntry =
+  | { name: string; open: false }
+  | {
+    name: string; open: true; kind: string; origin: GrudgeOrigin; met: number; knows?: string;
+    /** Contracts still to be won before its notice is out: none once it is. */
+    wait: number;
+  };
+
+/**
+ * The accounts there are to read about: the one that is open, then the closed ones in the order they were
+ * closed, each callsign once. A callsign that has come round again and is open is that, and is not listed as
+ * closed beside it. Nobody is listed with whom no account has begun.
+ */
+export function ledger(game: Pick<GameState, 'grudge' | 'accounts'>): LedgerEntry[] {
+  const open = grudgeOf(game);
+  const closed = Array.isArray(game.accounts) ? [...new Set(game.accounts)].filter((name) => name !== open?.name) : [];
+  return [
+    ...(open ? [{
+      name: open.name, open: true as const, kind: open.kind, origin: open.origin, met: open.met,
+      ...(open.knows === undefined ? {} : { knows: open.knows }), wait: Math.max(0, GRUDGE_WAIT[open.met] - open.waited),
+    }] : []),
+    ...closed.map((name) => ({ name, open: false as const })),
+  ];
+}
+
 /** How many accounts the pilot has closed. */
 export const accountsClosed = (game: Pick<GameState, 'accounts'>): number => (Array.isArray(game.accounts) ? game.accounts.length : 0);
 
@@ -192,6 +228,8 @@ export interface GrudgeText {
   grudge: {
     /** The callsigns there are. None is a name the game uses for anybody else. */
     names: string[];
+    /** The face of a callsign that has one, as the sprite of its portrait: beside what its pilot says. */
+    faces?: Record<string, string>;
     /** What the notice is called. */
     title: (name: string) => string;
     /** Where it is to be: a line for each of the board's backgrounds, in their order. They chose it, and there is no client. */
@@ -216,6 +254,12 @@ export interface GrudgeText {
 /** Who briefs a notice, and speaks when the pilot is hurt. */
 const DISPATCH = 'Dispatch';
 
+/** The face of a callsign, where it has one: to be put beside what its pilot says, or on their page. */
+export const grudgeFace = (text: GrudgeText, name: string): { portrait?: string } => {
+  const faces = text.grudge.faces;
+  return faces && Object.hasOwn(faces, name) ? { portrait: faces[name] } : {};
+};
+
 /**
  * The notice of the account that is open, once it is due: one battle about their machine, with the
  * company the board's budget for the tier leaves after it (nothing that mends, as with a hit; none
@@ -233,10 +277,11 @@ export function grudgeContract(
   const place = dice.roll(text.backgrounds.length);
   const machine = called.machine(g.kind);
   const face = faceOf(text, DISPATCH);
+  const theirs = grudgeFace(text, g.name);
   const talk: TalkLine[] = [
-    { at: 'start', who: g.name, text: g.met === 0 ? words.opens.first[g.origin] : words.opens.again[g.met - 1] },
+    { at: 'start', who: g.name, text: g.met === 0 ? words.opens.first[g.origin] : words.opens.again[g.met - 1], ...theirs },
     { at: 'hurt', who: DISPATCH, text: words.hurt[g.knows === undefined ? 0 : 1], ...face },
-    { at: 'win', who: g.name, text: words.falls[g.met] },
+    { at: 'win', who: g.name, text: words.falls[g.met], ...theirs },
   ];
   return {
     id: `open-${game.cycle}-${game.battlesWon}-${GRUDGE}`, phase: 'patrol', title: words.title(g.name), client: DISPATCH, ...face,

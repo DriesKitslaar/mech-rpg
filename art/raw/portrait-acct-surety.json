@@ -1,0 +1,9 @@
+{
+  "id": "portrait-acct-surety",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a calm, heavyset older pilot with dark brown skin and a neat white beard, wearing a navy flight coat buttoned to the throat with a single brass clasp. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

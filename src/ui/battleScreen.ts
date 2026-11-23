@@ -187,6 +187,8 @@ export class BattleScreen {
       pilot?: string;
       /** The contract's name, for the banner that opens the battle. */
       title?: string;
+      /** The word on the band a boss comes in on, where it is not the warning: a meeting with the pilot of an account has the notice's. */
+      warning?: string;
       /** The boss the battle is against, if it is against one: the banner becomes a warning. */
       boss?: string;
       /** Makes the handheld rumble for a number of milliseconds. */
@@ -720,7 +722,7 @@ export class BattleScreen {
       // A boss comes in on a band of its own, from its side of the field: the warning, its name, and itself from close by.
       const alarm = this.opts.calm === true || Math.floor(this.clock / 180) % 2 === 0;
       drawEntrance(ctx, p, this.clock, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W },
-        { warning: STRINGS.battleIntro.warning, name: boss.toUpperCase(), alarm }, this.entrant(boss), this.opts.calm === true);
+        { warning: this.opts.warning ?? STRINGS.battleIntro.warning, name: boss.toUpperCase(), alarm }, this.entrant(boss), this.opts.calm === true);
       return;
     }
     // It slides in from the left, holds, and leaves to the right.

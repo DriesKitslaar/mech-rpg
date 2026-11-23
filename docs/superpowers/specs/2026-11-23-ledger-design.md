@@ -29,8 +29,8 @@ This round gives them a face, an entrance, a moment when the account opens, and 
   boss's `WARNING`.
 - **The moment it begins is said.** As the contract an account begins in is booked, an announcement
   comes up over the bill: a new account, and the callsign.
-- **A page.** The database's page of people lists, after the people of the story, the account that
-  is open and the accounts that are closed. The open one says what the pilot would otherwise have to
+- **A page.** The database's page of people lists, before the people of the story, the account that
+  is open and then the accounts that are closed: who is after the pilot is the first thing on it. The open one says what the pilot would otherwise have to
   remember: their machine and how it began, how many meetings there have been, what their machine is
   hardened against, and how many contracts until their notice is out (or that it is). A closed one
   says that it is closed.
@@ -72,10 +72,10 @@ This round gives them a face, an entrance, a moment when the account opens, and 
 - `accountBegun(before, after)` in `src/core/grudge.ts`: the callsign of an account that is open in
   the game after a contract was booked and was not before. The app announces it as it announces a
   medal or a new page.
-- `ledger(game)` in `src/core/grudge.ts`: the accounts as the page lists them: the closed ones in the
-  order they were closed, then the open one. The database's page of people draws them after the
-  story's people, each with its face, `OPEN ACCOUNT` or `ACCOUNT CLOSED` where a person has a role,
-  and its lines.
+- `ledger(game)` in `src/core/grudge.ts`: the accounts as the page lists them: the open one, then
+  the closed ones in the order they were closed, each callsign once. The database's page of people
+  draws them before the story's people, each with its face, `OPEN ACCOUNT` or `ACCOUNT CLOSED` where
+  a person has a role, and its lines (`LEDGER_LINES` and `ledgerText` in `src/content/board.ts`).
 
 ## Constraints
 
