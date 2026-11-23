@@ -15,7 +15,8 @@ describe('hiring a wingman from the briefing', () => {
     const { app } = inHub(strong(done('intro-1')));
     select(app, 'contracts');
     select(app, 'patrol');
-    expect(ids(app)).toEqual(['accept', 'build', 'back']);
+    // Nor a row for the build: a pilot in the introductions is shown the contract alone.
+    expect(ids(app)).toEqual(['accept', 'back']);
     expect(hire(app).wingman).toBeNull();
   });
 

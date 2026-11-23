@@ -273,7 +273,7 @@ describe('the database', () => {
     press(app, 'prev', 'prev');
     expect(ids(app)).toEqual(MANUAL.map((topic) => topic.id));
     press(app, 'down', 'down');
-    expect(snap(app).detail).toMatchObject({ title: 'MOMENTUM' });
+    expect(snap(app).detail).toMatchObject({ title: MANUAL[2].title });
     expect((snap(app).detail as { lines: string[] }).lines.join(' ')).toBe(MANUAL[2].text);
   });
 
@@ -326,7 +326,8 @@ describe('the database', () => {
     expect(app.game!.medals.length).toBeGreaterThan(3);
     app.update(16);
     // The medals are one announcement; the name such a record has earned is the next (sixty machines and ten ranks of the
-    // arena pass two marks at once, and it is the higher that is said); the Overdrives that ten levels opened are one more.
-    expect(snap(app)).toMatchObject({ toast: `medals:${app.game!.medals.length}`, toasts: ['name:2', 'overdrive:second-wind+iron-skin+deadeye'] });
+    // arena pass two marks at once, and it is the higher that is said); the level reached is said, and the Overdrives
+    // that ten levels opened are one more.
+    expect(snap(app)).toMatchObject({ toast: `medals:${app.game!.medals.length}`, toasts: ['name:2', 'level:10', 'overdrive:second-wind+iron-skin+deadeye'] });
   });
 });

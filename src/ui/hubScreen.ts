@@ -1,5 +1,10 @@
-import { campaignComplete } from '../core/campaign';
+import { isSwarm } from '../core/board';
+import { campaignComplete, type Mission } from '../core/campaign';
+import { isGrudge } from '../core/grudge';
+import { isJob } from '../core/jobs';
 import { levelFor, perkPoints } from '../core/pilot';
+import { drillOpen, drillPassed } from '../core/training';
+import { DRILLS } from '../content/drills';
 import { MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
 import { STRINGS } from '../content/strings';
@@ -16,6 +21,26 @@ const H = STRINGS.hub;
 const ROWS = 11;
 /** The entry of the contract list that opens the archive. No contract has this id. */
 export const ARCHIVE = 'archive';
+/** The letters the line under the list of contracts may have: the width of the list's panel, in small letters. */
+export const KIND_CHARS = 39;
+
+/** The kinds of row the list of contracts tells apart, each with a line of its own under the list. */
+export type RowKind = 'story' | 'choice' | 'verdict' | 'side' | 'open' | 'asks' | 'job' | 'account' | 'swarm' | 'patrol' | 'lent';
+/**
+ * Which kind a contract on the list is. `lent`: the pilot's own mech cannot deploy, and the list is the
+ * patrol alone, flown in a lent one. The open board's own contracts come and go with every win; the job, the
+ * notice of an account and the swarm stand beside them and are each their own kind.
+ */
+export function kindOf(mission: Pick<Mission, 'id' | 'phase' | 'asks'>, lent: boolean): RowKind {
+  if (lent) return 'lent';
+  if (isGrudge(mission)) return 'account';
+  if (isSwarm(mission)) return 'swarm';
+  if (isJob(mission)) return 'job';
+  if (mission.id.startsWith('open-')) return mission.asks ? 'asks' : 'open';
+  if (mission.phase === 'patrol') return 'patrol';
+  if (mission.phase === 'side' || mission.phase === 'choice' || mission.phase === 'verdict') return mission.phase;
+  return 'story';
+}
 
 /** The place between contracts: shows the pilot's standing and leads to everything else. */
 /** The title of the contract that ends the introductions, after which the arena and open contracts are offered. */
@@ -32,6 +57,8 @@ export class HubScreen implements Screen {
   }
   /** True while the list showing is the archive of contracts already done. */
   private inArchive = false;
+  /** What kind each contract on the list is, by its id. */
+  private kinds = new Map<string, RowKind>();
   private clock = 0;
 
   /** `list` opens with that list showing, and the cursor on the entry `at`, for returning from a briefing. */
@@ -40,12 +67,14 @@ export class HubScreen implements Screen {
     const unread = app.unreadCount();
     const points = perkPoints(app.game!, PERKS);
     const sideWork = app.sideWorkOpen();
+    const drills = DRILLS.filter((drill) => drillOpen(app.game!, drill, MISSIONS) && !drillPassed(app.game!, drill.id)).length;
     this.main = new MenuList([
       // Open even when the mech cannot deploy: the patrol is then flown in a lent one. The note says what is wrong.
       { id: 'contracts', label: H.contractsItem, enabled: true, note: errors[0] ? STRINGS.buildErrors[errors[0]] : undefined },
       // Until the arena opens, the entry says what opens it: the last of the introductory contracts.
       { id: 'arena', label: H.arena, enabled: sideWork && errors.length === 0, note: sideWork ? undefined : H.opensAfter(lastIntroduction()) },
-      { id: 'training', label: H.training, enabled: true },
+      // Drills that are open and have not been passed are said beside it, as unread messages are beside theirs.
+      { id: 'training', label: H.training, enabled: true, note: drills > 0 ? H.drills(drills) : undefined },
       // A run is flown in a stock frame, so it is open whatever state the pilot's own mech is in.
       { id: 'gauntlet', label: STRINGS.gauntlet.item, enabled: sideWork, note: sideWork ? undefined : H.opensAfter(lastIntroduction()) },
       { id: 'garage', label: H.garage, enabled: true },
@@ -76,11 +105,26 @@ export class HubScreen implements Screen {
     // button pressed again and again should lead on, not round and round the patrol, and not into a
     // bounty either: side work is chosen, never fallen into.
     const story = missions.findIndex((m) => m.phase !== 'patrol' && m.phase !== 'side');
+    const lent = this.app.buildErrors().length > 0;
+    this.kinds = new Map(missions.map((m) => [m.id, kindOf(m, lent)]));
+    // With no story on offer (it is told, or waits on something), the cursor rests on the open board, where the
+    // work is: its first contract, the single fight. The patrol is what is left when there is neither.
+    const board = missions.findIndex((m) => ['open', 'asks'].includes(this.kinds.get(m.id)!));
     this.sub = new MenuList([
       // A contract that asks for a class pays more to a pilot who wins it as one: a plus after what it pays.
       ...missions.map((m) => ({ id: m.id, label: m.title, enabled: true, note: m.asks ? `${m.reward}+` : String(m.reward) })),
       ...(done > 0 ? [{ id: ARCHIVE, label: H.archive, enabled: true, note: String(done) }] : []),
-    ], Math.max(0, story));
+    ], Math.max(0, story >= 0 ? story : board));
+  }
+
+  /** What the row in hand is, for under the list, while the contracts or the archive are showing. */
+  private get row(): string | null {
+    if (!this.sub || this.asking) return null;
+    if (this.inArchive) return H.kinds.replay;
+    const id = this.list.selected?.id;
+    if (id === ARCHIVE) return H.kinds.archive;
+    const kind = id === undefined ? undefined : this.kinds.get(id);
+    return kind ? H.kinds[kind] : null;
   }
 
   /** The contracts already done, each with the best rank earned on it. */
@@ -129,7 +173,7 @@ export class HubScreen implements Screen {
 
   view(): ScreenView {
     const message = this.app.saveFailed ? STRINGS.saveFailed : this.asking ? H.cycleQuestion(this.nextCycle)[0] : '';
-    return { menu: { items: this.list.items, cursor: this.list.cursor }, message, list: this.inArchive ? 'archive' : this.sub && !this.asking ? 'contracts' : 'main' };
+    return { menu: { items: this.list.items, cursor: this.list.cursor }, message, list: this.inArchive ? 'archive' : this.sub && !this.asking ? 'contracts' : 'main', row: this.row };
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -176,9 +220,9 @@ export class HubScreen implements Screen {
       drawList(ctx, this.list, x + 6, 96, w - 16, ROWS);
     }
 
-    // Under the menu's panel, clear of its last row and of anything announced along the bottom edge.
-    if (campaignComplete(game, MISSIONS)) {
-      drawText(ctx, H.campaignDone, x + w / 2, 78 + 24 + ROWS * LINE + 4, { align: 'center', color: COLORS.dim, size: 10 });
-    }
+    // Under the menu's panel, clear of its last row and of anything announced along the bottom edge: what kind of
+    // row is in hand while the contracts are showing, and otherwise, once the story is told, that it is.
+    const foot = this.row ?? (campaignComplete(game, MISSIONS) ? H.campaignDone : null);
+    if (foot) drawText(ctx, foot, x + w / 2, 78 + 24 + ROWS * LINE + 4, { align: 'center', color: COLORS.dim, size: 10 });
   }
 }

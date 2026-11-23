@@ -14,8 +14,16 @@ export const STRINGS = {
     fire: 'Fire', boost: 'Boost', guard: 'Guard', cool: 'Vent', module: 'Module', repair: 'Field Repair', auto: 'Auto Turn',
     endTurn: 'End Turn', retreat: 'Retreat',
   },
-  /** What an action costs other than energy, said beside it in the list. */
-  actionNotes: { repair: 'ends turn' },
+  /**
+   * What an action costs other than energy, said beside it in the list; and, beside a row that cannot be chosen,
+   * why: the machine is boosting or guarding (one of the two a turn), has vented, has used its module, has no
+   * field repairs left, has nothing damaged, has only damage past patching, and what stops a boost.
+   */
+  actionNotes: {
+    repair: 'ends turn',
+    boosting: 'boosting', guarding: 'guarding', vented: 'vented', used: 'used', spent: 'none left', whole: 'not needed', late: 'too late',
+    noEnergy: 'no energy', legs: 'legs gone', tracks: 'cannot boost', staggered: 'staggered', noTarget: 'no target',
+  },
   retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
   parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
   meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
@@ -172,6 +180,19 @@ export const STRINGS = {
     target: 'Pick the part to hit with A. The core kills.',
     repairPart: 'Pick the part to patch with A.   B: go back',
   },
+  // Under that line while a new pilot chooses what to do: what the row under the cursor is for. Each opens with the row's name.
+  coachRows: {
+    fire: 'FIRE: pick a weapon, then a part to hit. Each weapon fires once a turn.',
+    boost: 'BOOST: you are much harder to hit until your next turn. Not with Guard.',
+    guard: 'GUARD: stops 40% of every hit on you until your next turn. Not with Boost.',
+    cool: 'VENT: sheds heat at once. Pass 100 heat and your next turn is lost.',
+    module: 'MODULE: the module you fitted. It costs no energy. Once a turn.',
+    repair: 'FIELD REPAIR: patches one part. It takes the rest of your turn.',
+    order: 'WINGMAN: tells your wingman what to shoot at next.',
+    endTurn: 'END TURN: the enemy moves. You get energy back and shed some heat.',
+    auto: 'AUTO TURN: the mech plays this one turn for you.',
+    retreat: 'RETREAT: leave the battle. The contract is lost.',
+  },
   titleScreen: {
     tagline: 'Every contract pays. Not every pilot collects.',
     continue: 'Continue', newGame: 'New Game', loadGame: 'Load Game', options: 'Options',
@@ -182,7 +203,9 @@ export const STRINGS = {
     progress: (done: number, cycle: number, time: string) => `${done} done  ${cycle > 0 ? `C${cycle + 1}  ` : ''}${time}`,
   },
   // The frames a new pilot chooses between. Their figures go by the garage's own names.
-  starter: { heading: 'CHOOSE A FRAME', hint: 'A: take this one   B: back', credits: 'Credits' },
+  // The last of its figures is what the pilot has in hand beside it, and is worded so that it does not read as a price.
+  // `later` stands under the figures: the choice is where a pilot starts, and not what they stay in.
+  starter: { heading: 'CHOOSE A FRAME', hint: 'A: take this one   B: back', credits: 'Plus credits', later: 'Any part can be changed later.' },
   callsign: {
     heading: 'YOUR CALLSIGN', hint: 'A: pick   B: erase', del: 'DEL', ok: 'OK',
     rows: ['ABCDEFGHI', 'JKLMNOPQR', 'STUVWXYZ0', '123456789'],
@@ -243,6 +266,24 @@ export const STRINGS = {
     messages: 'Messages', database: 'Database', training: 'Training', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
     credits: 'CREDITS', battlesWon: 'CONTRACTS WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
+    // Beside Training: the drills that are open and not passed.
+    drills: (n: number) => `${n} open`,
+    // Under the list of contracts: what kind of row is in hand. Each fits the width of the list's panel in small letters.
+    kinds: {
+      story: 'STORY: the next step of the war',
+      choice: 'STORY: one client, and the others go',
+      verdict: 'STORY: the ending. Fly one of these',
+      side: 'SIDE WORK: flown once, and optional',
+      open: 'OPEN: a new offer after every win',
+      asks: 'OPEN: + pays more in the class it asks',
+      job: 'JOB: asks for more than a win',
+      account: 'ACCOUNT: stays here until you win it',
+      swarm: 'SWARM: wave on wave, paid by the head',
+      patrol: 'PATROL: always on offer, pays little',
+      lent: 'CANNOT DEPLOY: patrol only, lent mech',
+      archive: 'ARCHIVE: fly a finished contract again',
+      replay: 'REPLAY: pays less and changes nothing',
+    },
     locked: 'Locked', opensAfter: (title: string) => `after ${title}`, campaignDone: 'The war is over. The work is not.',
     cycleLabel: (n: number) => `CYCLE ${n + 1}`,
     // What starting over keeps, and what the cycle that would begin changes: tougher enemies and better pay up to the third
@@ -311,6 +352,8 @@ export const STRINGS = {
   },
   pilot: {
     heading: 'PILOT', level: 'LEVEL', xp: 'XP', next: 'NEXT LEVEL', maxLevel: 'MAX LEVEL', points: 'PERK POINTS',
+    // The announcement of a level gained: its heading, and the level it names.
+    levelUp: 'LEVEL GAINED', levelReached: (n: number) => `Level ${n}`,
     hint: 'A: spend a point   L1/R1: page   B: back', pageHint: 'L1/R1: page   B: back',
     noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
     pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDALS', record: 'RECORD', classes: 'CLASS' },
@@ -484,6 +527,17 @@ export const STRINGS = {
       standard: 'The game as it was balanced.',
       veteran: 'Enemies have 20% more armour and firepower.',
     },
+    // What each of the other rows is, under the list while the cursor is on it.
+    help: {
+      sfx: 'The sounds of the game: shots, hits, menus.',
+      music: 'The music. The Database has a jukebox.',
+      rumble: 'The handheld shakes with a hit, if it can.',
+      fastBattles: 'Battles play 2.5 times as fast, with no launch.',
+      textSpeed: 'How fast briefings and talk are written out.',
+      language: 'The language of everything on the screen.',
+      credits: 'Watch the end roll once more.',
+      title: 'Back to the title. The game is kept as it is.',
+    } as Record<string, string>,
     hint: 'A: change   B: back',
   },
   buildErrors: {
@@ -544,6 +598,8 @@ export const STRINGS = {
     // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
     askBonus: (name: string) => `${name} bonus`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
+    // Beside the balance: what the medals earned with this bill paid, which the net does not count.
+    medals: (credits: number) => `with medals +${credits}`,
     // On the bill of a fight on the range, where the net stands on one that is paid: what it would have come to.
     wouldCost: 'WOULD HAVE COST',
     relief: (credits: number) => `Debt limit reached: ${credits} written off`,
@@ -605,6 +661,8 @@ export const STRINGS = {
     cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
     lastWeapon: 'Last weapon', needWeapon: 'You need at least one weapon',
     hint: 'A trade  L1/R1 category  LEFT/RIGHT buy/sell list  B back', fitHint: 'Fit it in the Garage.',
+    // Under the hint: where AP, WT, DRAIN and the rest are explained, by the names the hub and the database have for it.
+    wordsHint: 'What the short words mean: Database, MANUAL',
   },
   partInfo: {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',

@@ -21,6 +21,8 @@ export interface Settlement {
   lines: { partId: string; lost: number; cost: number }[];
   /** What Dispatch wrote off of the bill because of the debt limit; set when the settlement is booked. */
   relief?: number;
+  /** What the medals earned as this was booked paid. It is in the balance and no part of `net`: the bill says it beside the balance. */
+  medals?: number;
   /** How well a won contract was done, the score behind it and what it adds to the fee; see rank.ts. */
   rank?: Rank;
   score?: number;

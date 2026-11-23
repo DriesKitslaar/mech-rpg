@@ -210,7 +210,8 @@ describe('a game kept from before there were lessons', () => {
     });
     expect(m.first).toEqual([LESSON_LINES.momentum.text]);
     expect(m.second[0]).toBe(LESSON_LINES.rout.text);
-    expect(savedGame(m.store).lessons).toEqual(['momentum', 'rout']);
+    // (A machine that fires all it has may be told of its heat as well: that lesson is its own test's.)
+    expect(savedGame(m.store).lessons!.filter((id) => id !== 'heat')).toEqual(['momentum', 'rout']);
   });
 });
 

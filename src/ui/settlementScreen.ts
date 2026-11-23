@@ -11,7 +11,7 @@ import type { App, Screen, ScreenView } from './app';
 import { drawStamp } from './cinema';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { drawRoom } from './room';
-import { COLORS, LINE, charsFor, drawPanel, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, LINE, charsFor, drawPanel, drawText, wrap } from './widgets';
 
 const S = STRINGS.settlement;
 /** When the rank comes down, how long it takes to land, and how long the net amount takes to count up. */
@@ -41,11 +41,13 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned, seated, account } = this.settlement;
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned, seated, account, medals } = this.settlement;
     return {
       menu: { items: [], cursor: 0 },
       settlement: {
         net, won, reward, ammoCost, repairCost, rank: rank ?? null, bonus: bonus ?? 0, relief: relief ?? 0, tip: won ? null : this.tip,
+        // What the medals earned with this booking paid: in the balance, not in the net.
+        medals: medals ?? 0,
         // What the contract paid on top for being won as the class it asked for, and which class.
         asked: asked ?? null,
         // True of the bill of a fight on the range: shown, and not booked.
@@ -143,6 +145,8 @@ export class SettlementScreen implements Screen {
     }
     const balance = this.app.game!.credits; // already includes this settlement
     drawText(ctx, S.balance, x + 10, 206, { color: COLORS.dim });
+    // What medals paid as this was booked is in the balance and not in the net above it: said beside the word, so the sum can be followed.
+    if (s.medals) drawText(ctx, S.medals(s.medals), x + 10 + Math.ceil(S.balance.length * CHAR_W) + 8, 207, { color: COLORS.armor, size: 10 });
     drawText(ctx, String(balance), right, 206, { align: 'right', color: balance < 0 ? COLORS.danger : COLORS.text });
     // A bill that ran into the debt limit: what Dispatch wrote off, between the balance and the way out.
     if (s.relief) drawText(ctx, S.relief(s.relief), LOGICAL_W / 2, 217, { align: 'center', color: COLORS.heat, size: 10 });

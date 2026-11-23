@@ -38,6 +38,9 @@ const EDGE = 5;
  * Whether the label at the right end of the message bar (which battle of the contract this is) can be
  * shown beside the message: a message that needs the room has it, and the label waits.
  */
+/** The letters the message bar holds from edge to edge. */
+export const MESSAGE_CHARS = Math.floor((310 - 2 * EDGE) / LETTER);
+
 export function labelFits(message: string, label: string, width = 310): boolean {
   return EDGE + message.length * LETTER + LETTER <= width - EDGE - label.length * LETTER;
 }

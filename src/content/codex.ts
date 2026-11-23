@@ -163,8 +163,24 @@ export const WORLD: Entry[] = [
   },
 ];
 
-/** How the game works, a topic at a time. Every number here is the rule as the game plays it. */
+/**
+ * How the game works, a topic at a time. Every number here is the rule as the game plays it. In the order a
+ * pilot comes to need them: the buttons and the short words first, then what a first hour asks, then what the
+ * open board brings, and the long game last.
+ */
 export const MANUAL: { id: string; title: string; text: string }[] = [
+  {
+    id: 'controls', title: 'CONTROLS',
+    text: 'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive. A or B cuts short the launch a contract opens with; with Fast Battles on there is none.',
+  },
+  {
+    id: 'words', title: 'SHORT WORDS',
+    text: "AP: armour. WT: weight, against the LOAD its legs can carry. DRAIN: energy a part takes out of every turn. RES K/E/X: what it stops, in a hundred, of kinetic, energy and explosive damage. MOB: a pair of legs' mobility. A machine's Mobility is less the more it is loaded. OUTPUT: energy a turn. COOLING: heat shed a turn.",
+  },
+  {
+    id: 'words-guns', title: 'SHORT WORDS: GUNS',
+    text: "DMG: damage. ACC: accuracy. EN, HEAT: what a shot costs. IMP: the push on the target's balance (STAB). AMMO: rounds, each one billed. AIM: added to hitting, by kind where it says K/E/X. FOCUS: the share taken off the penalty for aiming at a limb. THRUST: what a boost adds to dodging. BOOST COST: its share of a turn's energy.",
+  },
   {
     id: 'basics', title: 'THE BASICS',
     text: 'You are paid by the contract. A contract is one to three battles; damage and spent rounds carry from one to the next. Win and the fee is yours, less repairs and ammunition. Lose or walk away and you pay those all the same.',
@@ -172,6 +188,86 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   {
     id: 'turn', title: 'YOUR TURN',
     text: 'Each turn your generator gives you energy. Spend it on firing each weapon once, on Boost, Guard or Vent, then end the turn. Your module costs none. The more mobile unit acts first each round. Auto Turn plays one turn for you.',
+  },
+  {
+    id: 'aim', title: 'AIMING',
+    text: 'Pick a target and a part. The core is the easiest to hit; legs are 5 harder, arms 10, the head 20. Destroy the core and the unit is gone. A part that is already destroyed passes half of any further damage on to the core.',
+  },
+  {
+    id: 'parts', title: 'LOSING PARTS',
+    text: 'Without legs a unit cannot dodge or boost. Without arms it cannot fire what it holds in its hands, though a shield there still covers it. Without a head its aim drops by 30. That is as true of you as of them.',
+  },
+  {
+    id: 'types', title: 'DAMAGE TYPES',
+    text: 'Kinetic, energy, explosive. Every part resists each kind differently, and the units page shows what an enemy\'s core is weak to once you have met it. A piercing weapon halves the resistance it meets.',
+  },
+  {
+    id: 'heat', title: 'HEAT',
+    text: 'Firing makes heat, and your generator sheds some at the end of every turn. Pass 100 and you overheat: your next turn is lost. Vent sheds heat at once for a fifth of a turn\'s energy.',
+  },
+  {
+    id: 'boost', title: 'BOOST AND BLADES',
+    text: 'Boost makes you much harder to hit until your next turn. A blade can only strike in a turn that began with a boost, and the strike uses the boost up. Tracks cannot boost at all.',
+  },
+  {
+    id: 'guard', title: 'GUARD',
+    text: 'Guard costs a fifth of a turn\'s energy. Until your next turn it stops 40% of the damage and half the push of every hit. A shield in the left hand stops more, and so do tracks.',
+  },
+  {
+    id: 'stagger', title: 'STAGGER',
+    text: 'Every hit pushes on the target\'s balance; the thin bar shows how much it has left. When it runs out the unit staggers: it cannot dodge, takes 30% more damage, and starts its next turn with less energy. Heavy mechs are steadier.',
+  },
+  {
+    id: 'charge', title: 'CHARGED WEAPONS',
+    text: 'Some weapons charge for a turn before they fire. When an enemy has one loaded, the turn before it fires is the time to guard or boost.',
+  },
+  {
+    id: 'repairs', title: 'FIELD REPAIRS',
+    text: 'Twice per contract you can patch a damaged part in the field, which restores 40% of its armour. A destroyed part cannot be patched. A repair ends your turn, so fire first. Each one you use lowers your rank a little.',
+  },
+  {
+    id: 'modules', title: 'MODULES',
+    text: 'One module fits each mech: a coolant flush, a barrier, an overclock, a target painter and others. A module has a few uses per battle and costs no energy. The shop and the garage say what each one does.',
+  },
+  {
+    id: 'objectives', title: 'OBJECTIVES',
+    text: 'Not every battle is won by destroying everything. Some ask you to outlast a number of rounds, to protect something, to take out one leader, to disable a machine without destroying it, or to drive a pilot off. The line at the top of the field says which. Freight you guard stands on the field; if it burns, a third or less is left.',
+  },
+  {
+    id: 'tricks', title: 'ENEMY TRICKS',
+    text: 'Shield drones cover the others. Repair drones weld them back together. Jammers spoil your aim. Bomb crawlers go off on a fuse. Carriers launch more. Shoot the helper first. The word over a machine is what it means to do next: AIMS HEAD, WINDS UP, HOLDS.',
+  },
+  {
+    id: 'ranks', title: 'RANKS',
+    text: 'A won contract is ranked S to D on three things: rounds taken against par, armour lost, and field repairs used. S pays 25% more and A 10% more. The archive lets you play a contract again for a better rank and a share of the pay. A contract won for the other side is kept there as it was first offered.',
+  },
+  {
+    id: 'money', title: 'MONEY',
+    text: 'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying, and you can owe 2000 at most: what a bill adds beyond that, Dispatch writes off.',
+  },
+  {
+    id: 'garage', title: 'THE GARAGE',
+    text: 'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Right opens your seven saved builds: room for one of each class, each listed by the class it is. Left opens the paint shop.',
+  },
+  {
+    id: 'legs', title: 'LEG TYPES',
+    text: 'Reverse legs dodge better when they boost. Four legs are steady and aim shoulder weapons better. Tracks cannot boost, but guard best and are the hardest to stagger. Hover boosts cheaply and is easily knocked off balance.',
+  },
+  {
+    id: 'pilot', title: 'LEVELS AND PERKS',
+    text: 'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.',
+  },
+  {
+    id: 'difficulty', title: 'DIFFICULTY',
+    text: 'Story takes a fifth off enemy armour and firepower; Veteran adds a fifth. Change it in the options whenever you like. Fast battles play everything at two and a half times the speed.',
+  },
+  {
+    id: 'ground', title: 'GROUND',
+    text: 'Some places have a rule for both sides. Rain: all shed 4 more heat a turn. Furnace heat: 4 less. Dust: every shot 5 less likely to hit. Flood water: a boost dodges 6 less. Sealed vault: explosions do 15% less. Crosswind: kinetic hits 6 less likely. Clear air: beams 4 more likely. The briefing and the field name it.',
+  },
+  {
+    id: 'odds', title: 'ODDS',
+    text: 'A briefing gives the odds of the contract in the build you have chosen: Auto Turn flies it 20 times with your perks, bench work, Overdrive, wingman and difficulty, and its wins are counted. Another build is another count. The odds are what Auto Turn makes of the fight: flying it yourself, you can do better.',
   },
   {
     id: 'momentum', title: 'MOMENTUM',
@@ -198,80 +294,8 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'What you destroy on contracts earns you a name. Every machine counts one, a boss eight, a rank of the arena four, a telling of the story forty. There are five names; your record says which is yours and what the next asks. A contract\'s banner carries it, unless a boss is coming in, and ordinary machines are told who is coming.',
   },
   {
-    id: 'aim', title: 'AIMING',
-    text: 'Pick a target and a part. The core is the easiest to hit; legs are 5 harder, arms 10, the head 20. Destroy the core and the unit is gone. A part that is already destroyed passes half of any further damage on to the core.',
-  },
-  {
-    id: 'parts', title: 'LOSING PARTS',
-    text: 'Without legs a unit cannot dodge or boost. Without arms it cannot fire what it holds in its hands, though a shield there still covers it. Without a head its aim drops by 30. That is as true of you as of them.',
-  },
-  {
-    id: 'types', title: 'DAMAGE TYPES',
-    text: 'Kinetic, energy, explosive. Every part resists each kind differently, and the units page shows what an enemy\'s core is weak to once you have met it. A piercing weapon halves the resistance it meets.',
-  },
-  {
-    id: 'heat', title: 'HEAT',
-    text: 'Firing makes heat, and your generator sheds some at the end of every turn. Pass 100 and you overheat: your next turn is lost. Vent sheds heat at once for a fifth of a turn\'s energy.',
-  },
-  {
-    id: 'stagger', title: 'STAGGER',
-    text: 'Every hit pushes on the target\'s balance; the thin bar shows how much it has left. When it runs out the unit staggers: it cannot dodge, takes 30% more damage, and starts its next turn with less energy. Heavy mechs are steadier.',
-  },
-  {
-    id: 'boost', title: 'BOOST AND BLADES',
-    text: 'Boost makes you much harder to hit until your next turn. A blade can only strike in a turn that began with a boost, and the strike uses the boost up. Tracks cannot boost at all.',
-  },
-  {
-    id: 'guard', title: 'GUARD',
-    text: 'Guard costs a fifth of a turn\'s energy. Until your next turn it stops 40% of the damage and half the push of every hit. A shield in the left hand stops more, and so do tracks.',
-  },
-  {
-    id: 'charge', title: 'CHARGED WEAPONS',
-    text: 'Some weapons charge for a turn before they fire. When an enemy has one loaded, the turn before it fires is the time to guard or boost.',
-  },
-  {
-    id: 'kinds', title: 'FIVE KINDS',
-    text: 'Five kinds of weapon ask something of you. REDLINE hits harder the hotter you run: fire it last. SURGE takes all the energy you have left and hits for every 100 of it. PUNISH does far more to a staggered machine. FORK: a hit leaps to the next machine. SPOOL fires 2 shots, and one more for every turn in a row.',
-  },
-  {
-    id: 'works', title: 'WORKS FRAMES',
-    text: 'Beat the coast yard\'s works pilots to buy their frames. A SIROCCO core RUNS HOT: it overheats past 130, not 100, so a volley can hold one weapon more and a REDLINE climbs higher. A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn\'s worth. A SURGE leaves nothing to keep.',
-  },
-  {
-    id: 'modules', title: 'MODULES',
-    text: 'One module fits each mech: a coolant flush, a barrier, an overclock, a target painter and others. A module has a few uses per battle and costs no energy. The shop and the garage say what each one does.',
-  },
-  {
-    id: 'repairs', title: 'FIELD REPAIRS',
-    text: 'Twice per contract you can patch a damaged part in the field, which restores 40% of its armour. A destroyed part cannot be patched. A repair ends your turn, so fire first. Each one you use lowers your rank a little.',
-  },
-  {
-    id: 'tricks', title: 'ENEMY TRICKS',
-    text: 'Shield drones cover the others. Repair drones weld them back together. Jammers spoil your aim. Bomb crawlers go off on a fuse. Carriers launch more. Shoot the helper first.',
-  },
-  {
-    id: 'objectives', title: 'OBJECTIVES',
-    text: 'Not every battle is won by destroying everything. Some ask you to outlast a number of rounds, to protect something, to take out one leader, to disable a machine without destroying it, or to drive a pilot off. The line at the top of the field says which. Freight you guard stands on the field; if it burns, a third or less is left.',
-  },
-  {
-    id: 'ranks', title: 'RANKS',
-    text: 'A won contract is ranked S to D on three things: rounds taken against par, armour lost, and field repairs used. S pays 25% more and A 10% more. The archive lets you play a contract again for a better rank and a share of the pay. A contract won for the other side is kept there as it was first offered.',
-  },
-  {
-    id: 'money', title: 'MONEY',
-    text: 'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying, and you can owe 2000 at most: what a bill adds beyond that, Dispatch writes off.',
-  },
-  {
-    id: 'garage', title: 'THE GARAGE',
-    text: 'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Right opens your seven saved builds: room for one of each class, each listed by the class it is. Left opens the paint shop.',
-  },
-  {
-    id: 'paint', title: 'THE PAINT SHOP',
-    text: "Twelve paints come ready, and a master's crown brings theirs. MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake. Up and down choose a row, left and right change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows. A mix is kept as you leave it.",
-  },
-  {
-    id: 'legs', title: 'LEG TYPES',
-    text: 'Reverse legs dodge better when they boost. Four legs are steady and aim shoulder weapons better. Tracks cannot boost, but guard best and are the hardest to stagger. Hover boosts cheaply and is easily knocked off balance.',
+    id: 'wingmen', title: 'WINGMEN',
+    text: 'A wingman is hired in the briefing for a share of fee and experience, and fires once a round from round 2. In battle the Wing row gives orders for nothing: strike the strongest, strike what you fired at last, or cover you, which takes a share off every shot at you while they hold fire.',
   },
   {
     id: 'classes', title: 'CLASSES',
@@ -280,10 +304,6 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   {
     id: 'stripes', title: 'STRIPES',
     text: "A class gives you a stripe at 3, at 8 and at 15 contracts won flying it: three a class, twenty-one in all. Every fifth stripe you hold, of whatever classes, is a perk point: the first is soonest had by flying five kinds of machine. The CLASS page shows them, and a briefing's Build row how near the next is.",
-  },
-  {
-    id: 'odds', title: 'ODDS',
-    text: 'A briefing gives the odds of the contract in the build you have chosen: Auto Turn flies it 20 times with your perks, bench work, Overdrive, wingman and difficulty, and its wins are counted. Another build is another count. The odds are what Auto Turn makes of the fight: flying it yourself, you can do better.',
   },
   {
     id: 'asks', title: 'CLASS WANTED',
@@ -306,36 +326,16 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: "The range also lists your saved builds that can be flown. Pick one and the simulator flies it against you: the same parts, with the bench's work on them, in other colours, flown as its class is flown. The odds in the briefing say which of two builds beats the other before a shot is fired. Nothing is billed, paid or counted.",
   },
   {
-    id: 'pilot', title: 'LEVELS AND PERKS',
-    text: 'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.',
-  },
-  {
-    id: 'cycle', title: 'A NEW CYCLE',
-    text: 'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and arena rank. Enemies get tougher and pay gets better the first two times, then both stay as they are. The bench goes a step further each time, up to five. Some contracts then have a second offer, from the other side.',
-  },
-  {
-    id: 'finds', title: 'WHAT IS FOUND',
-    text: 'Some of what you do leaves something behind: a paper, a brass check. The database keeps them under FOUND, the papers by their numbers. One you have not found shows a clue in its place. Nothing found is lost when the story starts over.',
+    id: 'paint', title: 'THE PAINT SHOP',
+    text: "Twelve paints come ready, and a master's crown brings theirs. MIX 1, 2 and 3 are yours to mix: put one on and its five rows wake. Up and down choose a row, left and right change it: the armour's colour, how strong and how dark it is, the colour of the trim and how hard it glows. A mix is kept as you leave it.",
   },
   {
     id: 'bench', title: 'THE BENCH',
     text: 'In the garage, R1 on a part you own puts it on the bench. A step costs its number times the price of the part and adds a twentieth: armour to a frame part, damage to a weapon, output to a generator. The work stays with the part when it is sold. The bench goes two steps, and one further each time the story starts over, to five.',
   },
   {
-    id: 'difficulty', title: 'DIFFICULTY',
-    text: 'Story takes a fifth off enemy armour and firepower; Veteran adds a fifth. Change it in the options whenever you like. Fast battles play everything at two and a half times the speed.',
-  },
-  {
     id: 'overdrive', title: 'OVERDRIVE',
     text: 'From pilot level 3 a meter at the left edge of the field fills as you fight: 8 for a volley that lands, 10 for one you take, 15 for a machine destroyed. Full, R1 on your turn sets off your Overdrive. Second Wind starts your turn over; Iron Skin (level 6) halves damage until your next turn; Deadeye (level 9) cannot miss.',
-  },
-  {
-    id: 'ground', title: 'GROUND',
-    text: 'Some places have a rule for both sides. Rain: all shed 4 more heat a turn. Furnace heat: 4 less. Dust: every shot 5 less likely to hit. Flood water: a boost dodges 6 less. Sealed vault: explosions do 15% less. Crosswind: kinetic hits 6 less likely. Clear air: beams 4 more likely. The briefing and the field name it.',
-  },
-  {
-    id: 'wingmen', title: 'WINGMEN',
-    text: 'A wingman is hired in the briefing for a share of fee and experience, and fires once a round from round 2. In battle the Wing row gives orders for nothing: strike the strongest, strike what you fired at last, or cover you, which takes a share off every shot at you while they hold fire.',
   },
   {
     id: 'gauntlet', title: 'THE GAUNTLET',
@@ -344,6 +344,18 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   {
     id: 'elites', title: 'ELITES AND RELICS',
     text: 'An elite is a machine with a mark. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. The Gauntlet hides one behind some doors: beat it for one more thing on offer. Some open contracts have one, and pay more. A warden beaten leaves one of two relics.',
+  },
+  {
+    id: 'finds', title: 'WHAT IS FOUND',
+    text: 'Some of what you do leaves something behind: a paper, a brass check. The database keeps them under FOUND, the papers by their numbers. One you have not found shows a clue in its place. Nothing found is lost when the story starts over.',
+  },
+  {
+    id: 'kinds', title: 'FIVE KINDS',
+    text: 'Five kinds of weapon ask something of you. REDLINE hits harder the hotter you run: fire it last. SURGE takes all the energy you have left and hits for every 100 of it. PUNISH does far more to a staggered machine. FORK: a hit leaps to the next machine. SPOOL fires 2 shots, and one more for every turn in a row.',
+  },
+  {
+    id: 'works', title: 'WORKS FRAMES',
+    text: 'Beat the coast yard\'s works pilots to buy their frames. A SIROCCO core RUNS HOT: it overheats past 130, not 100, so a volley can hold one weapon more and a REDLINE climbs higher. A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn\'s worth. A SURGE leaves nothing to keep.',
   },
   {
     id: 'cups', title: 'ARENA CUPS',
@@ -362,8 +374,8 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: "Under the seven masters is a seat that is no class's. Its keeper takes one challenge: from the pilot who holds all seven crowns, in any build. The keeper's machine fights three ways and changes as it is hurt. Take the seat and its frame, the Sovereign, is on the shop's list, and the keeper's paint is yours.",
   },
   {
-    id: 'controls', title: 'CONTROLS',
-    text: 'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive. A or B cuts short the launch a contract opens with; with Fast Battles on there is none.',
+    id: 'cycle', title: 'A NEW CYCLE',
+    text: 'When the story is over it can be started again. You keep credits, parts, level, perks, medals, the database and arena rank. Enemies get tougher and pay gets better the first two times, then both stay as they are. The bench goes a step further each time, up to five. Some contracts then have a second offer, from the other side.',
   },
 ];
 

@@ -170,3 +170,26 @@ describe('the other side\'s offer, taken by a pilot who already holds what it ha
     expect(announced(app).filter((id) => id.startsWith('held:'))).toEqual([]);
   });
 });
+
+describe('the shop says where its short words are explained', () => {
+  const foot = (app: App) => record((ctx) => app.draw(ctx)).texts.filter((t) => t.y >= 255).map((t) => t.text);
+
+  test('under the hint, in small letters, by the names the hub and the database have for the place', () => {
+    for (const [language, S] of [['en', STRINGS], ['nl', STRINGS_NL]] as const) {
+      const { app } = inHub({ ...done(), settings: { ...done().settings, language } });
+      select(app, 'shop');
+      expect(foot(app)).toEqual([S.shop.wordsHint]);
+      expect(S.shop.wordsHint).toContain(S.hub.database);
+      expect(S.shop.wordsHint).toContain(S.database.pages.manual);
+      expect(S.shop.wordsHint.length * 4).toBeLessThanOrEqual(LOGICAL_W - 12);
+    }
+  });
+
+  test('a part just bought has that line for where it is fitted, as before', () => {
+    const { app } = inHub({ ...done(), credits: 5000 });
+    select(app, 'shop');
+    press(app, 'confirm');
+    expect(snap(app).message).toMatch(/^Bought /);
+    expect(foot(app)).toEqual([STRINGS.shop.fitHint]);
+  });
+});

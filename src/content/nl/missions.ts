@@ -90,8 +90,8 @@ export const MISSIONS_NL: Record<string, string> = {
   [`The core kills. The rest cripples.`]: `De kern doodt. De rest verminkt.`,
   [`Clean enough. You get paid, the convoy gets through, nobody asks whose drones those were.`]: `Netjes genoeg. Jij krijgt loon, het konvooi komt erdoor, niemand vraagt van wie die drones waren.`,
   [`An abandoned checkpoint turret has woken up and is shooting at anything that moves.`]: `Een verlaten turret bij een controlepost is wakker geworden en schiet op alles wat beweegt.`,
-  [`It hits hard and never moves. Boost to make yourself harder to hit, and watch your heat.`]: `Hij raakt hard en beweegt nooit. Boost om moeilijker te raken te zijn, en let op je hitte.`,
-  [`Push past the red line and your mech shuts down for a turn. Vent before that happens.`]: `Ga je over de rode lijn, dan valt je mech een beurt uit. Koel voor het zover is.`,
+  [`It hits hard and never moves. Boost to make yourself harder to hit, or Guard to take less of it.`]: `Hij raakt hard en beweegt nooit. Boost om moeilijker te raken te zijn, of Dekking om minder te incasseren.`,
+  [`One or the other each turn, before you end it: the turret fires when you are done.`]: `Een van de twee per beurt, voordat je afsluit: de turret vuurt als jij klaar bent.`,
   [`Turret silenced. Three clients just asked for your number. That is how it starts.`]: `Turret zwijgt. Drie klanten vroegen net om je nummer. Zo begint het.`,
   [`Squatters have occupied Seam Nine. Unarmed. Disorganised. A nuisance, nothing more.`]: `Krakers hebben Ader Negen bezet. Ongewapend. Ongeorganiseerd. Lastig, meer niet.`,
   [`Walk in, make noise, walk out. Hadron pays promptly and remembers its friends.`]: `Loop erin, maak lawaai, loop eruit. Hadron betaalt stipt en onthoudt zijn vrienden.`,
@@ -596,6 +596,8 @@ export const MISSIONS_NL: Record<string, string> = {
     `Een neer, en het wapen dat het deed is weer klaar. Dat is DOORSTOTEN, het woord op de banner: niets hier staat boven je, dus elke vernietigde machine geeft je het schot terug.`,
   [`Two in one turn, and the one that is left has lost its nerve. It leaves on its turn without firing. It only counts as destroyed if you get to it first.`]:
     `Twee in een beurt, en wat er nog staat is in paniek. Het vertrekt in zijn beurt zonder te vuren. Het telt alleen als vernietigd als je het eerst te pakken krijgt.`,
+  [`You are running hot. Pass the red line and the frame shuts down: your next turn is lost. Vent sheds heat at once, and a turn with fewer shots lets it drain.`]:
+    `Je loopt heet. Voorbij de rode lijn valt het frame uit: je volgende beurt ben je kwijt. Koelen loost meteen hitte, en een beurt met minder schoten laat het zakken.`,
   // What the wanted say when the fight opens and when it is lost.
   [`Nice helmet. I will have it when you are done with it.`]: `Mooie helm. Die neem ik als jij ermee klaar bent.`,
   [`All right, all right! Keep the helmet. Mine was nicer anyway.`]: `Al goed, al goed! Hou die helm maar. De mijne was toch mooier.`,

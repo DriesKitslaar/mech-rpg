@@ -276,13 +276,14 @@ describe('the list of contracts', () => {
     expect(snap(app)).toMatchObject({ screen: 'briefing', briefing: { mission: 'intro-1' } });
   });
 
-  test('with no story contract on offer, on the patrol', () => {
+  test('with no story contract on offer, on the open board: the work that is left, and not the patrol at the head of the list', () => {
     const story = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
       'choice-hadron', 'hadron-3', 'hadron-4', 'hadron-5', 'finale-hadron', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
     const { app } = inHub(quiet({ ...done(...story), endingSeen: true }));
     select(app, 'contracts');
     const { items, cursor } = snap(app).menu;
-    expect(items[cursor].id).toBe('patrol');
+    expect(items[0].id).toBe('patrol');
+    expect(items[cursor].id).toBe('open-0-0-0');
   });
 
   test('coming back from a briefing still leaves the cursor on that contract', () => {

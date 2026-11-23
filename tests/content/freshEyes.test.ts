@@ -1,7 +1,7 @@
 import { BOARD_TEXT } from '../../src/content/board';
-import { UNITS } from '../../src/content/codex';
+import { MANUAL, UNITS } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
-import { dictionaryOf } from '../../src/content/language';
+import { dictionaryOf, setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
@@ -12,6 +12,7 @@ import { wrap } from '../../src/ui/widgets';
  * What four testers who had not seen the game found in a play-through of the whole of it, held so
  * that it stays mended: the words of the game, in both languages, against the room they are drawn in.
  */
+afterEach(() => setLanguage('en'));
 const nl = dictionaryOf('nl');
 const dutch = (english: string): string => nl[english] ?? english;
 const linesOf = (text: string, chars: number): number => wrap(text, chars).length;
@@ -61,5 +62,41 @@ describe('an escort\'s title does not say what the freight is: that is the place
       expect(dutch(title).length, dutch(title)).toBeLessThanOrEqual(18);
     }
     expect(clash).toEqual([]);
+  });
+});
+
+describe('the manual, in the order a pilot comes to need it', () => {
+  const at = (id: string): number => {
+    const index = MANUAL.findIndex((topic) => topic.id === id);
+    expect(index, id).toBeGreaterThanOrEqual(0);
+    return index;
+  };
+
+  test('it opens on the buttons and the short words, not on the fiftieth page', () => {
+    expect(MANUAL.slice(0, 3).map((topic) => topic.id)).toEqual(['controls', 'words', 'words-guns']);
+  });
+
+  test('what a first hour asks comes before what the open board brings, and the long game stands last', () => {
+    const firstHour = ['basics', 'turn', 'aim', 'parts', 'types', 'heat', 'boost', 'guard', 'stagger', 'repairs', 'ranks', 'money', 'garage'];
+    const board = ['momentum', 'shatter', 'rout', 'swarm', 'jobs', 'accounts', 'range', 'gauntlet'];
+    const longGame = ['works', 'cups', 'crowns', 'masters', 'seat', 'cycle'];
+    const last = (ids: string[]): number => Math.max(...ids.map(at));
+    const first = (ids: string[]): number => Math.min(...ids.map(at));
+    expect(last(firstHour)).toBeLessThan(first(board));
+    expect(last(board)).toBeLessThan(first(longGame));
+    expect(at('cycle')).toBe(MANUAL.length - 1);
+  });
+
+  test('the legend names every short word a part\'s lines and the battle\'s panel use, in English and in Dutch', () => {
+    for (const [language, S] of [['en', STRINGS], ['nl', STRINGS_NL]] as const) {
+      setLanguage(language);
+      const legend = `${MANUAL[at('words')].text} ${MANUAL[at('words-guns')].text}`;
+      const P = S.partInfo;
+      const words = [P.ap, P.weight, P.drain, P.resist, P.capacity, P.mobility, P.output, P.cooling, P.damage, P.accuracy, P.energy, P.heat,
+        P.ammo, P.impact, P.aim, P.focus, P.thrust, P.boostCost, S.tags.stability, S.garage.mobility];
+      expect(words.filter((word) => !legend.includes(word)).map((word) => `${language}: ${word}`)).toEqual([]);
+      // And the three letters of the kinds of damage, as the lines write them.
+      expect(legend).toContain(`K/${P.typeLetters.energy}/${P.typeLetters.explosive}`);
+    }
   });
 });

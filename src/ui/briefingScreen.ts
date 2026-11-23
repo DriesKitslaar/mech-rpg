@@ -44,6 +44,11 @@ export const ODDS_FAIR = 0.4;
  */
 export const ODDS_BUDGET_MS = 4;
 export const ODDS_GOES = 8;
+/**
+ * How long a briefing that has just opened does not take A, as a line of talk does not: the cursor stands on Accept,
+ * and a press meant for the list of contracts would launch one. Short enough that hub to launch stays three presses.
+ */
+export const BRIEFING_HOLD_MS = 250;
 /** The colour odds are written in once they are counted: good, fair or poor. */
 export const oddsColor = (odds: Forecast): string =>
   odds.won >= odds.played * ODDS_GOOD ? COLORS.armor : odds.won >= odds.played * ODDS_FAIR ? COLORS.heat : COLORS.danger;
@@ -144,9 +149,15 @@ export class BriefingScreen implements Screen {
    */
   private counts = new Map<string, { mission: Mission; fight: Fight; count: Count } | null>();
 
+  /** What is left of the moment in which A is not taken: see `BRIEFING_HOLD_MS`. */
+  private held: number;
+
   constructor(private app: App, private first: Mission) {
+    this.held = app.deps.fast ? 0 : BRIEFING_HOLD_MS;
     this.other = app.otherOffer(first);
-    this.builds = first.loaner === undefined ? app.sorties() : [];
+    // A pilot still in the introductions is told the contract and nothing else: what class a build is, how the
+    // odds stand and what a stripe is are for once the board opens, and each has its chapter in the manual.
+    this.builds = first.loaner === undefined && !app.newcomer ? app.sorties() : [];
     this.turnTo(first);
   }
 
@@ -237,6 +248,7 @@ export class BriefingScreen implements Screen {
 
   update(dtMs: number): void {
     this.writer.update(dtMs);
+    this.held = Math.max(0, this.held - dtMs);
     // A few actions of a flight a frame: the briefing goes on writing itself out while the odds are counted.
     const counting = this.counting;
     if (!counting || counted(counting.count)) return;
@@ -255,6 +267,8 @@ export class BriefingScreen implements Screen {
     else if (action === 'cancel') this.app.closeBriefing(this.first);
     else if (this.list.selected?.id === 'wingman' && (action === 'left' || action === 'right' || action === 'confirm')) this.choose(action === 'left' ? -1 : 1);
     else if (this.list.selected?.id === 'build' && (action === 'left' || action === 'right' || action === 'confirm')) this.turnBuild(action === 'left' ? -1 : 1);
+    // A press that comes in the briefing's first moment was meant for the list before it: a contract is not launched by it.
+    else if (action === 'confirm' && this.held > 0) return;
     else if (action === 'confirm') {
       const id = this.list.selected?.id;
       // Accepting fits the build that was chosen, if it is not the one on the floor already, and starts the contract in it.
@@ -273,6 +287,8 @@ export class BriefingScreen implements Screen {
       menu: { items: this.list.items, cursor: this.list.cursor },
       // True while the briefing is still writing itself out.
       typing: !this.writer.done,
+      // True for the moment in which a press is not taken: whoever drives the game waits it out.
+      busy: this.held > 0,
       briefing: {
         mission: this.mission.id, replay: !!this.mission.replay, reward: this.fee, objectives: objectiveLines(this.mission), ground: groundLines(this.mission),
         wingman: this.hires.length === 0 ? null

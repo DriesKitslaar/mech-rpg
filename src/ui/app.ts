@@ -29,7 +29,7 @@ import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
 import { intentOf } from '../core/intent';
 import { intentText } from './tags';
-import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, xpForContract } from '../core/pilot';
+import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, perkPoints, xpForContract } from '../core/pilot';
 import { countsForClass, stripesEarned } from '../core/stripes';
 import { nameRank } from '../core/renown';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
@@ -188,6 +188,8 @@ interface Toast {
   tier?: Tier;
   /** How many of its class's three stripes the stripe announced makes: it is drawn as those, where a medal or a page would be. */
   stripes?: number;
+  /** Where what is announced is to be found, by the names the hub and the room have for it: small, at the right of the heading. */
+  where?: string;
   sound: SoundName;
 }
 
@@ -315,8 +317,10 @@ class MissionHost implements Screen {
     // What Dispatch explains once is explained on a contract: the simulator and the Gauntlet have voices of their own.
     const told = game?.lessons ?? [];
     const lessons = drill ? {} : Object.fromEntries(LESSONS.filter((id) => !told.includes(id)).map((id) => [id, LESSON_LINES[id]]));
+    // A pilot who let the machine fly the last turn of the battle before finds the cursor on Auto Turn in this one.
+    const auto = this.index > 0 && this.flow.flewItself;
     this.flow = new BattleFlow(state, catalog, {
-      talk: this.mission.battles[this.index].talk, quiet: fast, cycle: this.app.game?.cycle ?? 0, lessons, ...(opening ? { opening } : {}),
+      talk: this.mission.battles[this.index].talk, quiet: fast, cycle: this.app.game?.cycle ?? 0, lessons, auto, ...(opening ? { opening } : {}),
     });
     const battle = this.mission.battles[this.index];
     const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
@@ -348,8 +352,7 @@ class MissionHost implements Screen {
 
   /** True for a pilot who has not finished the introductions of a first story: they are told which button does what. */
   private get coach(): boolean {
-    const game = this.app.game;
-    return !!game && game.cycle === 0 && !introductionsDone(game, MISSIONS);
+    return this.app.newcomer;
   }
 
   /** How much stronger or weaker than the book the enemy is in this contract. */
@@ -369,6 +372,17 @@ class MissionHost implements Screen {
   private bookIfOver(): void {
     const { outcome } = this.flow.state;
     if (this.settlement || outcome === 'ongoing' || (outcome === 'victory' && this.hasNext())) return;
+    // What medals pay as the result is booked is in the balance and not in the net: the bill says how much it was.
+    const paid = this.app.medalCredits;
+    this.book();
+    const medals = this.app.medalCredits - paid;
+    const booked = this.settlement as Settlement | null;
+    if (booked && medals > 0) this.settlement = { ...booked, medals };
+  }
+
+  /** Books the contract that is over, by its kind, and keeps the bill to show. */
+  private book(): void {
+    const { outcome } = this.flow.state;
     // After a defeat Dispatch has a word about what went wrong in the battle that was lost.
     this.tip = adviceAfter(this.flow.state);
     if (isGauntlet(this.mission)) {
@@ -795,6 +809,9 @@ export class App {
     this.go('hub');
   }
 
+  /** What medals have paid since the app was opened: whoever books something reads it before and after, to say what its medals paid. */
+  medalCredits = 0;
+
   /**
    * Replaces the game state and saves it. On the way the record is brought up to date with the
    * time played, any medal the pilot now has what it takes for is awarded, and the database's
@@ -810,6 +827,7 @@ export class App {
     const heard = songs.length !== listed.length || songs.some((song, i) => song !== listed[i]) ? { ...next, heard: songs } : next;
     const timed = seconds > 0 ? { ...heard, stats: { ...heard.stats, seconds: heard.stats.seconds + seconds } } : heard;
     const { game: awarded, earned } = awardMedals(timed, MEDALS);
+    this.medalCredits += earned.reduce((sum, medal) => sum + MEDAL_PAY[medal.tier], 0);
     // The database does not run ahead of the story: while a page of story is waiting to be shown,
     // nothing opens, so what that page is about to reveal is not announced before it.
     const waiting = dueScenes(awarded, SCENES, MISSIONS).length > 0;
@@ -818,12 +836,19 @@ export class App {
     const before = this.game;
     const drives = before ? OVERDRIVES.filter((id) => overdriveOpen(game, id) && !overdriveOpen(before, id)) : [];
     // Several at once (a pilot who jumps levels) are one announcement, like several medals are.
+    // Each of these says where in the pilot's room the thing announced is: an announcement is gone in a moment.
+    const inPilot = (page: keyof typeof STRINGS.pilot.pages): string => `${STRINGS.hub.pilot}, ${STRINGS.pilot.pages[page]}`;
     const driveToasts: Toast[] = drives.length === 0 ? []
-      : [{ id: `overdrive:${drives.join('+')}`, heading: STRINGS.overdrive.opened, title: drives.map((id) => STRINGS.overdrive.names[id]).join(', '), sound: 'entry' }];
+      : [{ id: `overdrive:${drives.join('+')}`, heading: STRINGS.overdrive.opened, title: drives.map((id) => STRINGS.overdrive.names[id]).join(', '), where: inPilot('drive'), sound: 'entry' }];
+    // A level gained is said too, with the perk points there are to spend: it came silently, and the hub's row was all that showed it.
+    const level = before && levelFor(game.xp) > levelFor(before.xp) ? levelFor(game.xp) : 0;
+    const points = perkPoints(game, PERKS);
+    const levelToasts: Toast[] = level === 0 ? []
+      : [{ id: `level:${level}`, heading: STRINGS.pilot.levelUp, title: STRINGS.pilot.levelReached(level), where: inPilot('perks'), sound: 'entry', ...(points > 0 ? { note: STRINGS.hub.points(points) } : {}) }];
     // A name the record has just earned is said once, as it is earned. A game that is loaded with one has it without ceremony.
     const named = before && nameRank(game) > nameRank(before) ? nameRank(game) : 0;
     const nameToasts: Toast[] = named === 0 ? []
-      : [{ id: `name:${named}`, heading: STRINGS.renown.earned, title: STRINGS.renown.names[named - 1], sound: 'medal' }];
+      : [{ id: `name:${named}`, heading: STRINGS.renown.earned, title: STRINGS.renown.names[named - 1], where: inPilot('record'), sound: 'medal' }];
     // A crown that has just been taken is said once, by what its holder is now called.
     const crownToasts: Toast[] = !before ? [] : ARCHETYPES.filter((kind) => crownHeld(game, kind) && !crownHeld(before, kind))
       .map((kind) => ({ id: `crown:${kind}`, heading: STRINGS.arena.masters.taken, title: STRINGS.arena.masters.titles[kind], sound: 'medal' }));
@@ -832,7 +857,7 @@ export class App {
       ? [{ id: 'seat', heading: STRINGS.arena.seat.taken, title: STRINGS.arena.seat.row, sound: 'medal' }] : [];
     // A stripe is said as it is earned: whose it is and which of the class's three, and that it brought a perk point when it did.
     const stripeToasts: Toast[] = !before ? [] : stripesEarned(before, game).map(({ kind, stripe, point }) => ({
-      id: `stripe:${kind}:${stripe}`, heading: STRINGS.stripes.earned, title: STRINGS.stripes.title(STRINGS.classes.names[kind], stripe), stripes: stripe, sound: 'medal' as const,
+      id: `stripe:${kind}:${stripe}`, heading: STRINGS.stripes.earned, title: STRINGS.stripes.title(STRINGS.classes.names[kind], stripe), stripes: stripe, where: inPilot('classes'), sound: 'medal' as const,
       ...(point ? { note: STRINGS.stripes.point } : {}),
     }));
     // An account that has just begun is said as the contract it began in is booked: that somebody will be back, and
@@ -845,7 +870,7 @@ export class App {
       .map((find) => ({ id: `held:${find.id}`, heading: STRINGS.database.heldToast, title: find.title, sound: 'entry' as const }));
     this.toasts.push(
       ...crownToasts, ...seatToasts, ...stripeToasts, ...medalToasts(earned), ...nameToasts, ...accountToasts,
-      ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...heldToasts, ...driveToasts,
+      ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...heldToasts, ...levelToasts, ...driveToasts,
     );
     this.game = game;
     this.saveFailed = !this.file.save(game);
@@ -887,6 +912,15 @@ export class App {
   /** What a machine and a weapon are called on the screen, by their ids: for the words of an account, which name both. */
   called(): { machine: (kind: string) => string; weapon: (id: string) => string } {
     return { machine: (kind) => ALL_ENEMIES[kind]?.name ?? kind, weapon: (id) => this.deps.catalog[id]?.name ?? id };
+  }
+
+  /**
+   * True for a pilot who has not finished the introductions of a first story. They are told which button does
+   * what in a battle, and a briefing tells them the contract alone: no class, no odds, no stripes.
+   */
+  get newcomer(): boolean {
+    const game = this.game;
+    return !!game && game.cycle === 0 && !introductionsDone(game, MISSIONS);
   }
 
   /** True once the arena and the open contracts are available. */
@@ -1509,6 +1543,7 @@ export class App {
     else if (item.stripes) drawStripes(ctx, x + 7, y + 10, item.stripes);
     else drawPage(ctx, x + 6, y + 9);
     drawText(ctx, item.heading, x + 20, y + 2, { color: COLORS.dim, size: 10 });
+    if (item.where) drawText(ctx, item.where, x + w - 6, y + 2, { align: 'right', color: COLORS.dim, size: 10 });
     drawText(ctx, item.title, x + 20, y + 12, { color: COLORS.accent });
     if (item.note) drawText(ctx, item.note, x + w - 6, y + 12, { align: 'right', color: COLORS.armor });
   }

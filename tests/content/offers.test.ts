@@ -351,9 +351,10 @@ describe('the other offer in the game', () => {
         expect(snap(second).menu.cursor).toBe(3);
         const plain = open(told(later(0), language), 'hadron-1').app;
         expect(rowsOf(plain)).toEqual([B.accept, B.build, B.wingman, B.back]);
-        // The first contract of all: nobody is for hire yet, and nobody else is offering.
+        // The first contract of all: nobody is for hire yet, nobody else is offering, and a pilot still in the
+        // introductions is not shown a row for the build either.
         const bare = open(told(fresh(0), language), 'intro-1').app;
-        expect(rowsOf(bare)).toEqual([B.accept, B.build, B.back]);
+        expect(rowsOf(bare)).toEqual([B.accept, B.back]);
       } finally {
         setLanguage('en');
       }

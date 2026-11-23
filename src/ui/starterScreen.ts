@@ -104,6 +104,8 @@ export class StarterScreen implements Screen {
       drawText(ctx, label, LIST.x + 14, top + i * LINE, { color: COLORS.dim });
       drawText(ctx, value, LIST.x + LIST.w - 10, top + i * LINE, { align: 'right' });
     });
+    // Under the panel: the choice is a start, and nothing is fixed by it.
+    drawText(ctx, T.later, LIST.x + LIST.w / 2, LIST.y + 20 + rows * LINE + 6 + FIGURES * LINE + 4, { align: 'center', color: COLORS.dim, size: 10 });
 
     // What it is, in the words of whoever keeps the lot.
     drawPanel(ctx, 4, ABOUT.y, LOGICAL_W - 8, ABOUT.h);
