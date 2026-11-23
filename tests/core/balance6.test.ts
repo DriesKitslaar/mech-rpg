@@ -7,7 +7,7 @@ import { newGame } from '../../src/core/game';
 import { masterMission } from '../../src/core/masters';
 import { playMission } from '../../src/core/mission';
 import { seatMission } from '../../src/core/seat';
-import type { Build } from '../../src/core/types';
+import type { Build, Catalog, FramePart } from '../../src/core/types';
 import { ALL_ENEMIES, ARENA } from '../../src/content/arena';
 import { MASTERS } from '../../src/content/masters';
 import { MISSIONS } from '../../src/content/missions';
@@ -61,21 +61,27 @@ const LOADS = {
   twin: { rightHand: 'wpn-void-rifle', leftHand: 'wpn-pulse-carbine' },
   /** A blade and a surge. */
   surge: { rightHand: 'wpn-arc-blade', leftHand: 'wpn-sluice' },
+  /** A beam that asks half a turn, and a blade. */
+  beam: { rightHand: 'wpn-lance-emitter', leftHand: 'wpn-arc-blade' },
+  /** Two surges and nothing else: whichever fires takes all there is. */
+  surges: { rightHand: 'wpn-sluice', shoulder: 'wpn-spillway' },
 };
+/** The catalogue with the Solstice's core as it would be without what it keeps. */
+const EMPTIED: Catalog = { ...CATALOG, 'core-solstice': { ...(CATALOG['core-solstice'] as FramePart), buffer: undefined } };
 
 const flown = new Map<string, number>();
 /** How often a build wins these contracts, in a hundred, over the same flights every time it is asked; with no perk to its name. */
-function fly(name: FrameName, inside: object, load: keyof typeof LOADS, contracts: string[]): number {
-  const key = `${name}|${JSON.stringify(inside)}|${load}|${contracts.join(',')}`;
+function fly(name: FrameName, inside: object, load: keyof typeof LOADS, contracts: string[], catalog: Catalog = CATALOG): number {
+  const key = `${name}|${JSON.stringify(inside)}|${load}|${contracts.join(',')}|${catalog === CATALOG}`;
   const known = flown.get(key);
   if (known !== undefined) return known;
   const build = { ...frame(name), ...inside, ...LOADS[load] } as Build;
-  expect(validatePlayerBuild(build, CATALOG), `${name} ${load}`).toEqual([]);
+  expect(validatePlayerBuild(build, catalog), `${name} ${load}`).toEqual([]);
   let wins = 0;
   for (const id of contracts) {
     const mission = contract(id);
     for (let seed = 1; seed <= SEEDS; seed++) {
-      const end = playMission(build, mission, ALL_ENEMIES, CATALOG, seed * 7919, (s) => runBattle(s, CATALOG, chooseAutoPlayerAction), { enemyScale: mission.scale ?? 1 });
+      const end = playMission(build, mission, ALL_ENEMIES, catalog, seed * 7919, (s) => runBattle(s, catalog, chooseAutoPlayerAction), { enemyScale: mission.scale ?? 1 });
       if (end.outcome === 'victory') wins += 1;
     }
   }
@@ -125,6 +131,15 @@ describe('a Solstice is the frame for weapons that ask more than a turn gives', 
     for (const other of ['shrike', 'auditor'] as const) {
       expect(solstice, other).toBeGreaterThanOrEqual(said(`two blades: ${other}`, fly(other, QUICK, 'blades', EVERYTHING)) + 10);
     }
+  }, LONG);
+
+  test('what its core keeps is what makes it so: the same frame without the buffer wins less often with a beam and a blade, and exactly as often with surges alone', () => {
+    const kept = said('beam and blade: solstice', fly('solstice', QUICK, 'beam', EVERYTHING));
+    const lost = said('beam and blade: solstice without its buffer', fly('solstice', QUICK, 'beam', EVERYTHING, EMPTIED));
+    expect(kept).toBeGreaterThanOrEqual(lost + 5);
+    // A surge takes all the energy there is: nothing is ever left for the core to keep, and the flights are the same flights.
+    const surges = said('two surges: solstice', fly('solstice', QUICK, 'surges', EVERYTHING));
+    expect(said('two surges: solstice without its buffer', fly('solstice', QUICK, 'surges', EVERYTHING, EMPTIED))).toBe(surges);
   }, LONG);
 
   test('with two rifles, or a rifle and a blade, it is no better than the frames there were', () => {

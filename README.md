@@ -71,6 +71,12 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   harder naarmate je mecha heter is, een piekwapen neemt al je energie in één schot, een
   strafwapen doet dubbele schade tegen een wankelende machine, een vonk slaat over op een tweede
   vijand, en een optoerwapen vuurt elke beurt op rij een schot meer.
+- **De werf**: twee mecha's voor het eind van het spel, elk te winnen in een duel met een
+  fabriekspiloot van de werf aan de kust. De Sirocco loopt heet: zijn hittegrens is 130 in plaats
+  van 100, dus er past een wapen meer in een salvo en een witheet wapen klimt verder. De Solstice
+  bewaart de energie die je niet gebruikt voor je volgende beurt, tot een halve beurt. Hun piloten
+  laten zien waar de mecha voor is: de een slaat elke ronde harder, de ander wacht een ronde en
+  vuurt dan met anderhalve beurt energie.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.

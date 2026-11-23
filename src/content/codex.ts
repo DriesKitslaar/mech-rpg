@@ -234,6 +234,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'Five kinds of weapon ask something of you. REDLINE hits harder the hotter you run: fire it last. SURGE takes all the energy you have left and hits for every 100 of it. PUNISH does far more to a staggered machine. FORK: a hit leaps to the next machine. SPOOL fires 2 shots, and one more for every turn in a row.',
   },
   {
+    id: 'works', title: 'WORKS FRAMES',
+    text: 'Two frames are won from the coast yard\'s works pilots. A SIROCCO core RUNS HOT: it overheats past 130, not 100, so a volley can hold one weapon more and a REDLINE climbs higher. A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn\'s worth. A SURGE leaves nothing to keep.',
+  },
+  {
     id: 'modules', title: 'MODULES',
     text: 'One module fits each mech: a coolant flush, a barrier, an overclock, a target painter and others. A module has a few uses per battle and costs no energy. The shop and the garage say what each one does.',
   },

@@ -83,9 +83,11 @@ BUFFER in both languages: RESERVE is what the Dutch calls one of the Gauntlet's 
 heat, to a stagger) loses nothing that was kept. What comes off a turn's energy (a drain, a
 stagger's half) comes off the turn's own share, as ever, and not off what was kept.
 
-What it is for: a held round and then a surge with half as much again behind it; a guard and a
-full volley in the same turn; nothing wasted in a turn that was not all needed. What it costs: it
-is plated lightly, and a round held is a round in which nothing was fired.
+What it is for: weapons that ask more energy than a turn gives, and turns that were not all
+needed: nothing of them is wasted. A held round and then a surge with half as much again behind it
+is for the pilot to choose: a surge takes all the energy there is, so on its own it never leaves
+anything to keep. What it costs: it is plated lightly, and a round held is a round in which nothing
+was fired.
 
 ### How a pilot comes by them
 
@@ -95,14 +97,16 @@ that frame's four parts in the shop (`won:duel-3`, `won:duel-4`), for good, as t
 
 ### The two works pilots
 
-- **Kiln** carries a redline in each hand and nothing that cools. Left alone the Sirocco is hotter
-  every round and hits harder for it. The briefing says what to do about that: knock it off balance
-  (a staggered machine has half its energy and fires less), or heat it past even its own limit so
-  that it loses a turn.
+- **Kiln** carries a redline in its hand and another on its shoulder, and nothing that cools. Left
+  alone the Sirocco is hotter every round and hits harder for it. The briefing says what to do about
+  that: knock it off balance (a staggered machine has less energy and fires less), or heat it past
+  even its own limit so that it loses a turn.
 - **Vesper** carries a surge. The Solstice fires nothing on every other round: it guards, keeps its
   energy, and says so in what it is about to do, where an enemy's next move is always shown. The
-  round after, the surge has a turn and a half behind it. The briefing says what to do: hit it in
-  the round it holds, guard in the round it fires, and a weapon that drains takes what it kept.
+  round after, the surge has a turn and a half behind it. The briefing says what to do, and says it
+  by what is shown, so that it is true whoever moves first: when its next move is to hold it is
+  open, and when its next move is to fire the pilot guards. (A weapon that drains takes from the
+  turn the surge is fired with, as it does from any turn; what the core kept it does not touch.)
 
 Both are plated to last a duel, as the first two swords are.
 
