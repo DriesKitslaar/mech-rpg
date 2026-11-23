@@ -177,7 +177,7 @@ describe('the bench, in the garage', () => {
     const had = snap(app).credits;
     toParts(app, 'core');
     // On a part the bench takes, the foot of the panel says which button puts it there.
-    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain('R1: THE BENCH');
+    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain('R1: the bench');
     press(app, 'next', 'confirm');
     const said = record((ctx) => app.draw(ctx)).texts.map((t) => t.text);
     expect(said).toEqual(expect.arrayContaining([
@@ -194,7 +194,7 @@ describe('the bench, in the garage', () => {
     expect(record((ctx) => poor.draw(ctx)).texts.map((t) => t.text)).toEqual(expect.arrayContaining(['Not enough credits', 'You have 10 c']));
     const { app } = inHub(rich());
     toParts(app, 'booster');
-    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).not.toContain('R1: THE BENCH');
+    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).not.toContain('R1: the bench');
   });
 
   test('the hint for the bench stands over the list of parts, where a build that may not leave does not hide it', () => {
@@ -207,7 +207,7 @@ describe('the bench, in the garage', () => {
       const { app } = inHub(saved);
       toParts(app, 'core');
       const texts = record((ctx) => app.draw(ctx)).texts;
-      const hint = texts.find((t) => t.text === 'R1: THE BENCH')!;
+      const hint = texts.find((t) => t.text === 'R1: the bench')!;
       expect(hint, name).toBeDefined();
       const slot = texts.find((t) => t.text === STRINGS.slots.core.toUpperCase())!;
       // On the line of the slot's name, at the right of the panel, clear of that name and of the edge of the screen.
@@ -225,7 +225,7 @@ describe('the bench, in the garage', () => {
       const { app } = inHub({ ...base, settings: { ...base.settings, language: 'nl' } });
       const had = snap(app).credits;
       toParts(app, 'core');
-      expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain('R1: WERKBANK');
+      expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain('R1: de werkbank');
       press(app, 'next', 'confirm', 'confirm');
       const said = record((ctx) => app.draw(ctx)).texts.map((t) => t.text);
       // A cycle is a cyclus in the Dutch game, and a ronde is a round of a battle: the bench's limit is the cycle's.

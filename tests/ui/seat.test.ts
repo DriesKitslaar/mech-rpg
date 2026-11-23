@@ -355,14 +355,17 @@ describe('where the seat is seen and what comes of it', () => {
     expect(written(before, 'CROWNS 7/7')).toMatchObject({ right: 273, y: 22, size: 10, color: COLORS.dim });
     expect(before.texts.some((t) => t.text === 'THE EIGHTH SEAT')).toBe(false);
     const held = drawn(onClasses(champion(late('marksman'), { ...CROWNED, seat: true })));
-    expect(written(held, 'THE EIGHTH SEAT')).toMatchObject({ right: 273, y: 22, size: 10, color: CROWN_COLOR });
+    // It ends short of the column of crowns: two letters and more lie between it and the word over the next column.
+    expect(written(held, 'THE EIGHTH SEAT')).toMatchObject({ right: 261, y: 22, size: 10, color: CROWN_COLOR });
+    const beside = held.texts.filter((t) => t.y === 22 && t.left > 261).sort((a, b) => a.left - b.left)[0];
+    expect(beside.left - 261).toBeGreaterThanOrEqual(12);
     expect(held.texts.some((t) => /^CROWNS /.test(t.text))).toBe(false);
     // Nothing in that row of the page runs into anything else, in either language.
     const header = held.texts.filter((t) => t.y === 22);
     for (const a of header) for (const b of header) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
     const base = champion(late('marksman'), { ...CROWNED, seat: true });
     const dutch = drawn(onClasses({ ...base, settings: { ...base.settings, language: 'nl' } }));
-    expect(written(dutch, 'DE ACHTSTE STOEL')).toMatchObject({ right: 273, y: 22, color: CROWN_COLOR });
+    expect(written(dutch, 'DE ACHTSTE STOEL')).toMatchObject({ right: 261, y: 22, color: CROWN_COLOR });
     const kop = dutch.texts.filter((t) => t.y === 22);
     for (const a of kop) for (const b of kop) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
   });

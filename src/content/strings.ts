@@ -153,6 +153,8 @@ export const STRINGS = {
     spendFirst: 'Second Wind: spend your turn first.',
     // Announced in passing when the pilot's level opens one.
     opened: 'OVERDRIVE OPEN',
+    // The announcement's second line when more open at once than their names have room for.
+    openedMany: (n: number) => `${n} Overdrives`,
     level: (n: number) => `LV ${n}`, fitted: 'FITTED', hint: 'A: fit   L1/R1: page   B: back',
   },
   // What a hired wingman can be told, on the pilot's turn, for nothing.
@@ -176,9 +178,9 @@ export const STRINGS = {
   // Said over the field in a new pilot's first battles: which button does what at this step.
   coach: {
     action: 'UP/DOWN: choose what to do   A: confirm',
-    weapon: 'Pick a weapon with A.   B: go back',
-    target: 'Pick the part to hit with A. The core kills.',
-    repairPart: 'Pick the part to patch with A.   B: go back',
+    weapon: 'UP/DOWN: pick a weapon   A: aim it   B: back',
+    target: 'UP/DOWN: pick a part   A: fire. The core kills.',
+    repairPart: 'UP/DOWN: pick a part   A: patch it   B: back',
   },
   // Under that line while a new pilot chooses what to do: what the row under the cursor is for. Each opens with the row's name.
   coachRows: {
@@ -470,7 +472,7 @@ export const STRINGS = {
   },
   training: {
     heading: 'TRAINING', client: 'Training Simulator', pays: 'PAYS', passed: 'PASSED', locked: 'LOCKED', open: 'OPEN',
-    count: (n: number, of: number) => `PASSED ${n}/${of}`, hint: 'A: briefing   B: back',
+    count: (n: number, of: number) => `PASSED ${n}/${of}`, hint: 'A: briefing   L1/R1: page   B: back',
     lockedNote: 'The simulator opens this drill once Dispatch has finished introducing you.',
     tag: 'TRAINING: a lent mech in the simulator. It costs nothing.',
     won: 'DRILL PASSED', lost: 'DRILL FAILED',
@@ -480,10 +482,10 @@ export const STRINGS = {
     rangeBriefing: (fielded: string) => `The simulator fields ${fielded} against your own machine, as the book has it and as hard as the game is set.`,
     rangeFree: 'Nothing here is billed, paid or counted. Afterwards you see what a real flight would have cost.',
     rangeDebrief: 'The simulator resets. Your machine is as it was.',
-    rangeTag: 'RANGE: your own mech in the simulator. Nothing is billed or counted.',
+    rangeTag: 'TEST RANGE: your own mech in the simulator. Nothing is billed or counted.',
     rangeWon: 'RANGE CLEARED', rangeLost: 'SHOT DOWN',
     rangeEmpty: 'Nothing met yet. Fly a contract and come back.',
-    rangeHint: 'LEFT/RIGHT: how many   A: briefing   B: back',
+    rangeHint: 'LEFT/RIGHT: how many   A: briefing   L1/R1: page   B: back',
     rangeShut: (why: string) => `CLOSED: your mech cannot deploy (${why}).`,
     rangeCount: (n: number) => `x${n}`,
     // Where a contract's briefing says what it pays.
@@ -589,7 +591,7 @@ export const STRINGS = {
   ending: { continue: 'Press A to return to headquarters' },
   scene: { continue: 'Press A to continue', yourCall: 'YOUR CALL', answer: 'UP/DOWN: choose   A: answer. It stands.' },
   settlement: {
-    won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
+    won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Fee', ammo: 'Ammunition', repairs: 'Armour repair',
     // The heading of a duel that took a master's crown, and of the one that took the eighth seat.
     crowned: 'THE CROWN IS YOURS', seated: 'THE SEAT IS YOURS',
     // The heading of a meeting won with the pilot of an account: which of its meetings it was, and of the one that closed it.
@@ -624,15 +626,17 @@ export const STRINGS = {
     rightHand: 'Right Hand', leftHand: 'Left Hand', shoulder: 'Shoulder',
   },
   garage: {
-    heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
+    heading: 'GARAGE', empty: 'Empty', none: 'Empty', inUse: 'In use', fitted: '*',
     weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', cooling: 'Cooling',
     evasion: 'Boost evade', volley: 'Volley EN', back: 'B: back',
-    factoryPaint: 'Factory', paint: (name: string) => `L1/R1 PAINT: ${name}`,
+    factoryPaint: 'Factory', paint: (name: string) => `L1/R1: paint ${name}`,
     // Which way the panel's other pages are, at the foot of the parts: the paint shop to the left, the saved builds to the right.
-    pages: 'LEFT: PAINT  RIGHT: BUILDS',
+    pages: 'LEFT: paint shop   RIGHT: builds',
+    // At the foot of the page of saved builds.
+    buildsHint: 'A: load or save   B: back',
     // The page of paint: the paint that is worn, and the five things a mix of the pilot's own sets (see core/mix.ts).
     mixer: {
-      heading: 'PAINT SHOP', change: 'LEFT/RIGHT: CHANGE',
+      heading: 'PAINT SHOP', change: 'LEFT/RIGHT: change',
       rows: { paint: 'PAINT', hue: 'ARMOUR', finish: 'FINISH', shade: 'SHADE', trim: 'TRIM', glow: 'GLOW' },
       finish: ['Steel', 'Matte', 'Rich', 'Vivid'], shade: ['Pale', 'Light', 'Middle', 'Dark', 'Deep'], glow: ['Soft', 'Clear', 'Bright'],
       ready: 'A paint as it comes. Choose MIX 1, 2 or 3 to mix your own.',
@@ -645,7 +649,7 @@ export const STRINGS = {
       rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SHLDR',
     },
     // The bench: a part made a step better for credits.
-    toBench: 'R1: THE BENCH', bench: 'THE BENCH', benchStep: (step: number, cap: number) => `Step ${step} of ${cap}`,
+    toBench: 'R1: the bench', bench: 'THE BENCH', benchStep: (step: number, cap: number) => `Step ${step} of ${cap}`,
     tune: (step: number) => `Tune to +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `You have ${credits} c`,
     benchFigures: { armour: 'Armour', damage: 'Damage', output: 'Output' },
     benchAtLimit: 'No further this cycle', benchAtEnd: 'As far as it goes', benchShort: 'Not enough credits',
@@ -653,7 +657,7 @@ export const STRINGS = {
   shop: {
     heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'c',
     tabs: {
-      head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', booster: 'Bst', fcs: 'FCS', module: 'Mod',
+      head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', booster: 'Boost', fcs: 'FCS', module: 'Mod',
       hand: 'Hand', shoulder: 'Shldr',
     },
     bought: (name: string) => `Bought ${name}`,

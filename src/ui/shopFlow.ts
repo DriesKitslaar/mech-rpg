@@ -36,7 +36,7 @@ export class ShopFlow {
       return this.stock.filter((part) => tabOf(part) === this.tab).map((part) => {
         const owned = this.game.inventory[part.id] ?? 0;
         return {
-          id: part.id, label: owned > 0 ? `${part.name} (${owned})` : part.name,
+          id: part.id, label: owned > 0 ? `${part.name} x${owned}` : part.name,
           enabled: checkBuy(this.game, part.id, this.catalog) === null, note: String(part.price),
         };
       });

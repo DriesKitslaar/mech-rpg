@@ -120,7 +120,7 @@ export const STRINGS_NL = {
       deadeye: 'Tot je beurt eindigt: elk schot raak, een kwart meer schade.',
     } as Record<string, string>,
     how: 'De meter aan de rand van het veld vult zich als je raakt, geraakt wordt en machines sloopt. Is hij vol, druk dan in je beurt op R1.',
-    spendFirst: 'Tweede Adem: gebruik eerst je beurt.', opened: 'OVERDRIVE OPEN',
+    spendFirst: 'Tweede Adem: gebruik eerst je beurt.', opened: 'OVERDRIVE OPEN', openedMany: (n: number) => `${n} Overdrives`,
     level: (n: number) => `LV ${n}`, fitted: 'GEKOZEN', hint: 'A: kies   L1/R1: blad   B: terug',
   },
   orders: {
@@ -142,9 +142,9 @@ export const STRINGS_NL = {
   hints: { result: 'Verder met A' },
   coach: {
     action: 'OP/NEER: kies wat je doet   A: bevestig',
-    weapon: 'Kies een wapen met A.   B: terug',
-    target: 'Kies met A welk onderdeel je raakt. De kern doodt.',
-    repairPart: 'Kies met A wat je oplapt.   B: terug',
+    weapon: 'OP/NEER: kies een wapen   A: mik   B: terug',
+    target: 'OP/NEER: kies een onderdeel   A: vuur. De kern doodt.',
+    repairPart: 'OP/NEER: kies een onderdeel   A: lap op   B: terug',
   },
   coachRows: {
     fire: 'VUUR: kies een wapen, dan een onderdeel. Elk wapen vuurt eens per beurt.',
@@ -388,7 +388,7 @@ export const STRINGS_NL = {
   },
   training: {
     heading: 'TRAINING', client: 'Trainingssimulator', pays: 'LOON', passed: 'GEHAALD', locked: 'OP SLOT', open: 'OPEN',
-    count: (n: number, of: number) => `GEHAALD ${n}/${of}`, hint: 'A: briefing   B: terug',
+    count: (n: number, of: number) => `GEHAALD ${n}/${of}`, hint: 'A: briefing   L1/R1: blad   B: terug',
     lockedNote: 'De simulator opent deze oefening zodra Dispatch klaar is met je inwerken.',
     tag: 'TRAINING: een geleende mech in de simulator. Kost niets.',
     won: 'GESLAAGD', lost: 'GEZAKT',
@@ -400,7 +400,7 @@ export const STRINGS_NL = {
     rangeTag: 'PROEFVELD: je eigen mech in de simulator. Niets telt of kost iets.',
     rangeWon: 'VELD SCHOON', rangeLost: 'NEERGEHAALD',
     rangeEmpty: 'Nog niets gezien. Vlieg eerst een contract.',
-    rangeHint: 'LINKS/RECHTS: hoeveel   A: briefing   B: terug',
+    rangeHint: 'LINKS/RECHTS: hoeveel   A: briefing   L1/R1: blad   B: terug',
     rangeShut: (why: string) => `DICHT: je mech kan niet uitrukken (${why}).`,
     rangeCount: (n: number) => `x${n}`,
     rangePays: 'GRATIS',
@@ -494,7 +494,7 @@ export const STRINGS_NL = {
   ending: { continue: 'Terug naar het hoofdkwartier met A' },
   scene: { continue: 'Verder met A', yourCall: 'JOUW KEUZE', answer: 'OP/NEER: kies   A: antwoord. Staat vast.' },
   settlement: {
-    won: 'CONTRACT VOLTOOID', lost: 'CONTRACT MISLUKT', reward: 'Loon', ammo: 'Munitie', repairs: 'Reparatie',
+    won: 'CONTRACT VOLTOOID', lost: 'CONTRACT MISLUKT', reward: 'Loon', ammo: 'Munitie', repairs: 'Pantserherstel',
     crowned: 'DE KROON IS VAN JOU', seated: 'DE STOEL IS VAN JOU',
     account: (meeting: number, of: number) => `REKENING: ${meeting} VAN ${of}`, accountClosed: 'REKENING DICHT',
     rank: 'RANG', rankBonus: (rank: string) => `Bonus rang ${rank}`,
@@ -522,13 +522,13 @@ export const STRINGS_NL = {
     rightHand: 'Rechterhand', leftHand: 'Linkerhand', shoulder: 'Schouder',
   },
   garage: {
-    heading: 'GARAGE', empty: 'Leeg', none: '(geen)', inUse: 'Gebruikt', fitted: '*',
+    heading: 'GARAGE', empty: 'Leeg', none: 'Leeg', inUse: 'Gebruikt', fitted: '*',
     weight: 'Gewicht', energy: 'Energie', mobility: 'Mobiliteit', armour: 'Pantser', stability: 'Stabiliteit', cooling: 'Koeling',
     evasion: 'Boost ontwijk', volley: 'Salvo EN', back: 'B: terug',
-    factoryPaint: 'Fabriek', paint: (name: string) => `L1/R1 LAK: ${name}`,
-    pages: 'LINKS: LAK  RECHTS: BUILDS',
+    factoryPaint: 'Fabriek', paint: (name: string) => `L1/R1: lak ${name}`,
+    pages: 'LINKS: spuiterij   RECHTS: builds', buildsHint: 'A: laad/bewaar   B: terug',
     mixer: {
-      heading: 'SPUITERIJ', change: 'LINKS/RECHTS: WIJZIG',
+      heading: 'SPUITERIJ', change: 'LINKS/RECHTS: wijzig',
       rows: { paint: 'LAK', hue: 'PANTSER', finish: 'STERKTE', shade: 'TINT', trim: 'BIES', glow: 'GLOED' },
       finish: ['Staal', 'Mat', 'Vol', 'Sterk'], shade: ['Bleek', 'Licht', 'Midden', 'Donker', 'Diep'], glow: ['Zacht', 'Helder', 'Fel'],
       ready: 'Lak uit de fabriek. Kies MIX 1, 2 of 3 en meng er zelf een.',
@@ -540,7 +540,7 @@ export const STRINGS_NL = {
       head: 'HOOFD', core: 'KERN', arms: 'ARMEN', legs: 'BENEN', generator: 'GEN', booster: 'BOOST', fcs: 'FCS', module: 'MOD',
       rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SCHDR',
     },
-    toBench: 'R1: WERKBANK', bench: 'DE WERKBANK', benchStep: (step: number, cap: number) => `Stap ${step} van ${cap}`,
+    toBench: 'R1: de werkbank', bench: 'DE WERKBANK', benchStep: (step: number, cap: number) => `Stap ${step} van ${cap}`,
     tune: (step: number) => `Naar +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `Je hebt ${credits} c`,
     benchFigures: { armour: 'Pantser', damage: 'Schade', output: 'Vermogen' },
     benchAtLimit: 'Niet verder deze cyclus', benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
@@ -548,7 +548,7 @@ export const STRINGS_NL = {
   shop: {
     heading: 'WINKEL', buy: 'KOOP', sell: 'VERK.', credits: 'c',
     tabs: {
-      head: 'Hoofd', core: 'Kern', arms: 'Armen', legs: 'Benen', generator: 'Gen', booster: 'Bst', fcs: 'FCS', module: 'Mod',
+      head: 'Hoofd', core: 'Kern', arms: 'Armen', legs: 'Benen', generator: 'Gen', booster: 'Boost', fcs: 'FCS', module: 'Mod',
       hand: 'Hand', shoulder: 'Schdr',
     },
     bought: (name: string) => `Gekocht: ${name}`,

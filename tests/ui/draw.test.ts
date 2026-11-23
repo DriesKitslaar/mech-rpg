@@ -343,8 +343,10 @@ describe('the screens the three-act story added', () => {
     expect(drawn.filter((d) => /^ {2}\S/.test(d.text))).toHaveLength(4);
     expect(drawn.some((d) => d.text === 'Rank A bonus')).toBe(true);
     const debrief = Math.min(...drawn.filter((d) => d.y >= 140 && d.y < 180).map((d) => d.y));
-    // A line of text is eleven pixels high.
-    expect(lowest + 11).toBeLessThanOrEqual(debrief);
+    // A line of text is eleven pixels high: one is left empty between the last part and what the client says, which
+    // is two lines here and begins a line lower for it.
+    expect(lowest + 2 * 11).toBeLessThanOrEqual(debrief);
+    expect(drawn.filter((d) => d.y >= debrief && d.y < 180)).toHaveLength(2);
   });
 
   /** A battle with one line of talk at its start, past its banner, with the line on screen. */

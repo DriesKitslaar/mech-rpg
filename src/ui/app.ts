@@ -96,7 +96,7 @@ import { TitleScreen } from './titleScreen';
 import { TrainingScreen } from './trainingScreen';
 import { setDetail } from './light';
 import { Pace, type Detail } from './pace';
-import { COLORS, drawMedal, drawPage, drawPanel, drawStripes, drawText } from './widgets';
+import { CHAR_W, COLORS, drawMedal, drawPage, drawPanel, drawStripes, drawText } from './widgets';
 import { drawBlind, drawDoors } from './wipe';
 
 /** What a screen reports about itself, for tests and for telling whether an input did anything. */
@@ -210,6 +210,14 @@ function entryToasts(opened: Entry[]): Toast[] {
   if (opened.length === 0) return [];
   if (opened.length === 1) return [{ id: `entry:${opened[0].id}`, heading: D.toast, title: opened[0].title, sound: 'entry' }];
   return [{ id: `entries:${opened.length}`, heading: D.toast, title: D.newEntries(opened.length), sound: 'entry' }];
+}
+
+/** The letters the second line of an announcement holds: it is 176 wide, and its words start 20 in and stop 6 short of the edge. */
+export const TOAST_TITLE_CHARS = Math.floor(150 / CHAR_W);
+/** The Overdrives an announcement names: each by its name while they fit on its line, and how many there are when they do not. */
+export function driveTitle(names: string[]): string {
+  const all = names.join(', ');
+  return all.length <= TOAST_TITLE_CHARS ? all : STRINGS.overdrive.openedMany(names.length);
 }
 
 /** One announcement for a find, by its name, or one for all of them when there are several. */
@@ -839,7 +847,7 @@ export class App {
     // Each of these says where in the pilot's room the thing announced is: an announcement is gone in a moment.
     const inPilot = (page: keyof typeof STRINGS.pilot.pages): string => `${STRINGS.hub.pilot}, ${STRINGS.pilot.pages[page]}`;
     const driveToasts: Toast[] = drives.length === 0 ? []
-      : [{ id: `overdrive:${drives.join('+')}`, heading: STRINGS.overdrive.opened, title: drives.map((id) => STRINGS.overdrive.names[id]).join(', '), where: inPilot('drive'), sound: 'entry' }];
+      : [{ id: `overdrive:${drives.join('+')}`, heading: STRINGS.overdrive.opened, title: driveTitle(drives.map((id) => STRINGS.overdrive.names[id])), where: inPilot('drive'), sound: 'entry' }];
     // A level gained is said too, with the perk points there are to spend: it came silently, and the hub's row was all that showed it.
     const level = before && levelFor(game.xp) > levelFor(before.xp) ? levelFor(game.xp) : 0;
     const points = perkPoints(game, PERKS);

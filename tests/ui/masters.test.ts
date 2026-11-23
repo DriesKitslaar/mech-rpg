@@ -15,6 +15,7 @@ import { STRINGS_NL } from '../../src/content/nl/strings';
 import { CATALOG } from '../../src/content/parts';
 import { STRINGS } from '../../src/content/strings';
 import { TOAST_MS, type App } from '../../src/ui/app';
+import { HINT_Y } from '../../src/ui/arenaScreen';
 import { LOGICAL_W } from '../../src/ui/display';
 import { battleTrack } from '../../src/ui/soundtrack';
 import type { SpriteStore } from '../../src/ui/sprites';
@@ -155,7 +156,7 @@ describe('the arena has two pages', () => {
       expect(written(shown, 'OPEN')).toMatchObject({ right: LOGICAL_W - 12, y: 191, color: COLORS.armor });
       const style = wrap(master.style, charsFor(LOGICAL_W - 28));
       expect(shown.texts.filter((t) => t.y >= 207 + LINE && t.y < 252 && t.left === 12).map((t) => t.text)).toEqual(style);
-      expect(written(shown, A.back)).toMatchObject({ y: 253, color: COLORS.dim });
+      expect(written(shown, A.back)).toMatchObject({ y: HINT_Y, color: COLORS.dim });
       const panel = shown.texts.filter((t) => t.y >= 184);
       for (const a of panel) for (const b of panel) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
       for (const t of shown.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 4);
@@ -477,7 +478,7 @@ describe('in Dutch', () => {
     expect(written(shown, 'KRONEN 1/7').y).toBe(22);
     expect(snap(app).menu.items.map((row) => row.label)).toEqual(['Duellist', 'Scherpschutter', 'Artillerie', 'Lansier', 'Bastion', 'Jager', 'Allrounder', 'De achtste stoel']);
     expect(written(shown, 'MEESTERDUELLIST').y).toBe(207);
-    expect(written(shown, N.back).y).toBe(253);
+    expect(written(shown, N.back).y).toBe(HINT_Y);
     for (const kind of ARCHETYPES) {
       toRow(app, masterId(kind));
       const page = drawn(app);

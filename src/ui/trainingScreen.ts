@@ -15,7 +15,7 @@ import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
 import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { unitPage } from './unitPage';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
+import { COLORS, LINE, STATE_COLORS, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
 
 const T = STRINGS.training;
 const C = STRINGS.classes;
@@ -230,7 +230,7 @@ export class TrainingScreen implements Screen {
     const selected = this.list.selected;
     const state = !selected?.enabled ? T.locked : selected.note === T.passed ? T.passed : T.open;
     drawText(ctx, drill.title.toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
-    drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === T.locked ? COLORS.danger : state === T.passed ? COLORS.armor : COLORS.dim });
+    drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === T.locked ? STATE_COLORS.shut : state === T.passed ? STATE_COLORS.done : STATE_COLORS.todo });
     drawText(ctx, drill.lesson, 12, 207, { color: COLORS.armor });
     const text = selected?.enabled ? drill.briefing[0] : T.lockedNote;
     wrap(text, PANEL_CHARS).slice(0, PANEL_LINES).forEach((row, i) => drawText(ctx, row, 12, 219 + i * LINE));
@@ -254,7 +254,8 @@ export class TrainingScreen implements Screen {
       // A saved build to spar with: its name in the garage, its figures with the bench's work counted, what kind of machine it is.
       const { slot, kind, armour, mobility, energy } = machine.spar;
       drawText(ctx, T.spar(slot + 1).toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
-      drawText(ctx, `${G.armour} ${armour}   ${G.mobility} ${mobility}   ${G.energy} ${energy}`, 12, 207, { color: COLORS.armor });
+      // In capitals, as the line of a machine from the book is.
+      drawText(ctx, `${G.armour.toUpperCase()} ${armour}   ${G.mobility.toUpperCase()} ${mobility}   ${G.energy.toUpperCase()} ${energy}`, 12, 207, { color: COLORS.armor });
       drawText(ctx, C.garage(C.names[kind], C.tags[kind]), 12, 219);
       drawText(ctx, T.sparNote, 12, 219 + LINE, { color: COLORS.dim });
       hint(T.hint);

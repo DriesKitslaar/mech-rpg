@@ -42,7 +42,7 @@ test('each tab lists its stock with the price', () => {
   toTab(flow, 'booster');
   expect(flow.list.items.map((i) => i.id)).toEqual(['bst-stock', 'bst-sprint', 'bst-vector', 'bst-ram', 'bst-glide', 'bst-after', 'bst-phase']);
   toTab(flow, 'fcs');
-  expect(flow.list.items[0]).toMatchObject({ id: 'fcs-stock', label: 'Stock FCS (1)', note: '100' });
+  expect(flow.list.items[0]).toMatchObject({ id: 'fcs-stock', label: 'Stock FCS x1', note: '100' });
   toTab(flow, 'module');
   expect(flow.list.items).toHaveLength(11);
 });
@@ -77,7 +77,7 @@ test('what cannot be afforded is marked and cannot be bought', () => {
 
 test('owned copies are shown next to the name', () => {
   const flow = shop(buy(fresh(), 'head-halo', CATALOG));
-  expect(flow.list.items.find((i) => i.id === 'head-halo')?.label).toBe('Halo Visor (1)');
+  expect(flow.list.items.find((i) => i.id === 'head-halo')?.label).toBe('Halo Visor x1');
   expect(flow.list.items.find((i) => i.id === 'head-ronin')?.label).toBe('Ronin Helm');
 });
 

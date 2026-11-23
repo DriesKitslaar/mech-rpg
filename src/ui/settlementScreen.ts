@@ -14,6 +14,11 @@ import { drawRoom } from './room';
 import { CHAR_W, COLORS, LINE, charsFor, drawPanel, drawText, wrap } from './widgets';
 
 const S = STRINGS.settlement;
+/** Where what the client says of it begins, under the rows of the bill, and how many lines of it there is room for above the rule. */
+export const WORDS_Y = 144;
+export const WORDS_LINES = 3;
+/** How many damaged parts a bill names at most. */
+export const REPAIR_LINES = 4;
 /** When the rank comes down, how long it takes to land, and how long the net amount takes to count up. */
 const STAMP_AT = 500;
 const STAMP_MS = 160;
@@ -88,7 +93,6 @@ export class SettlementScreen implements Screen {
     if (s.rank) {
       // How well it was done, in the corner: S and A are the ones that pay. It is stamped on a moment after the bill appears.
       const color = s.rank === 'S' ? COLORS.accent : s.rank === 'A' ? COLORS.armor : s.rank === 'B' ? COLORS.text : COLORS.dim;
-      drawText(ctx, S.rank, right - 16, 33, { size: 10, align: 'right', color: COLORS.dim });
       if (fast || this.clock >= STAMP_AT) {
         const landed = fast ? 1 : Math.min(1, (this.clock - STAMP_AT) / STAMP_MS);
         const scale = 3 - 2 * landed;
@@ -100,10 +104,20 @@ export class SettlementScreen implements Screen {
         // As it lands a ring runs out from it; the ranks that pay flare and throw sparks.
         if (!fast) drawStamp(ctx, { x: right - 6, y: 36 }, this.clock - STAMP_AT - STAMP_MS, color, s.rank === 'S' || s.rank === 'A', calm);
       }
+      // The word beside it is written last: the ring that runs out from the stamp passes under it, and not through it.
+      drawText(ctx, S.rank, right - 16, 33, { size: 10, align: 'right', color: COLORS.dim });
     }
 
-    // Eight rows, a line apart, end just above what the client says: the fee, what was added to it, the bill, and
-    // as many repair lines as that leaves room for.
+    // After a win, what the client had to say about it; after a defeat, what Dispatch makes of it.
+    // A master who has just lost the crown says so themselves, and so does the keeper who has just lost the seat: and
+    // after the keeper's words stands what the arena has to say of it, which is where their machine is to be had.
+    const words = s.seated ? `"${KEEPER.concede}" ${this.mission.debrief}` : s.crowned ? `"${masterOf(s.crowned).concede}"` : s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
+    const said = wrap(words, charsFor(w - 20)).slice(0, WORDS_LINES);
+    // Whatever is said ends above the rule: so what is short may begin lower, and that is the room a full bill has.
+    const lowest = WORDS_Y + (WORDS_LINES - said.length) * LINE;
+
+    // The rows are a line apart, and a line is left empty between the last of them and what is said: the fee, what
+    // was added to it, the bill, and as many repair lines as that leaves room for.
     let y = 55;
     const row = (label: string, amount: number, color: string = COLORS.text): void => {
       drawText(ctx, label, x + 10, y, { color: COLORS.text });
@@ -117,19 +131,17 @@ export class SettlementScreen implements Screen {
     if (s.asked) row(S.askBonus(STRINGS.classes.names[s.asked.kind]), s.asked.bonus, COLORS.armor);
     row(S.ammo, -s.ammoCost, s.ammoCost > 0 ? COLORS.danger : COLORS.dim);
     row(S.repairs, -s.repairCost, s.repairCost > 0 ? COLORS.danger : COLORS.dim);
-    // Four repair lines fit, three when both the rank and the class paid; the total above always covers all of them.
-    for (const line of s.lines.slice(0, Math.min(4, (143 - y) / LINE))) {
+    // Four repair lines at most, and fewer where what was added to the fee and what is said take more than three
+    // lines between them; the total above always covers all of them. The sentence under them does not read as one more.
+    for (const line of s.lines.slice(0, Math.max(0, Math.min(REPAIR_LINES, Math.floor((lowest - LINE - y) / LINE))))) {
       drawText(ctx, `  ${catalog[line.partId]?.name ?? line.partId}`, x + 10, y, { color: COLORS.dim });
       drawText(ctx, String(-line.cost), right, y, { align: 'right', color: COLORS.dim });
       y += LINE;
     }
 
-    // After a win, what the client had to say about it; after a defeat, what Dispatch makes of it.
-    // A master who has just lost the crown says so themselves, and so does the keeper who has just lost the seat: and
-    // after the keeper's words stands what the arena has to say of it, which is where their machine is to be had.
-    const words = s.seated ? `"${KEEPER.concede}" ${this.mission.debrief}` : s.crowned ? `"${masterOf(s.crowned).concede}"` : s.won ? this.mission.debrief : this.tip ? STRINGS.advice[this.tip] : '';
-    wrap(words, charsFor(w - 20)).slice(0, 3).forEach((line, i) =>
-      drawText(ctx, line, x + 10, 144 + i * LINE, { color: s.won ? COLORS.dim : COLORS.text }));
+    // What is said begins where it always does, or a line under the last row of a bill that reaches further down.
+    const wordsY = Math.max(WORDS_Y, y + LINE);
+    said.forEach((line, i) => drawText(ctx, line, x + 10, wordsY + i * LINE, { color: s.won ? COLORS.dim : COLORS.text }));
 
     ctx.fillStyle = COLORS.border;
     ctx.fillRect(x + 10, 180, w - 20, 1);

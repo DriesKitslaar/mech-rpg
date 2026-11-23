@@ -1,10 +1,13 @@
 import { createBattle, type BattleEvent, type BattleState } from '../../src/core/battle';
+import { ARCHETYPES } from '../../src/core/archetype';
+import type { Settlement } from '../../src/core/economy';
 import type { GameState } from '../../src/core/game';
 import type { EnemyDef } from '../../src/core/types';
 import { JUKEBOX, UNITS, WORLD } from '../../src/content/codex';
 import { FINDS } from '../../src/content/finds';
 import { setLanguage } from '../../src/content/language';
 import { MEDALS } from '../../src/content/medals';
+import { MISSIONS } from '../../src/content/missions';
 import '../../src/content/nl';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 import type { App } from '../../src/ui/app';
@@ -13,8 +16,12 @@ import { LOGICAL_W } from '../../src/ui/display';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
 import { COMPARE_LINE_CHARS, PART_LINE_CHARS, compareParts, partLines } from '../../src/ui/partInfo';
+import { MANUAL } from '../../src/content/codex';
+import { driveTitle, TOAST_TITLE_CHARS } from '../../src/ui/app';
+import { HINT_Y } from '../../src/ui/arenaScreen';
+import { REPAIR_LINES, SettlementScreen, WORDS_LINES, WORDS_Y } from '../../src/ui/settlementScreen';
 import { DETAIL_TEXT_X } from '../../src/ui/shopScreen';
-import { CHAR_W } from '../../src/ui/widgets';
+import { CHAR_W, COLORS, LINE, STATE_COLORS } from '../../src/ui/widgets';
 import { done, finishMission, inHub, press, savedGame, select, snap, strong, type Store } from '../helpers/app';
 import { record, type Written } from '../helpers/canvas';
 
@@ -313,5 +320,206 @@ describe('no word lies over another, and none runs off the screen', () => {
     finishMission(app);
     look('bill');
     expect(faults).toEqual([]);
+  });
+});
+
+describe('one game: the same thing looks and is called the same on every screen', () => {
+  const texts = (app: App): Written[] => record((ctx) => app.draw(ctx)).texts;
+  const colorOf = (app: App, word: string): string | undefined => texts(app).find((t) => t.text === word && t.y > 180)?.color;
+  const past = (): GameState => ({ ...strong(done('intro-1', 'intro-2')), scenes: ['act-1'] });
+
+  test('a word for how something stands has one colour for each meaning: to do, done, shut', () => {
+    expect(STATE_COLORS).toEqual({ todo: COLORS.armor, done: COLORS.dim, shut: COLORS.danger, held: COLORS.accent });
+    // Training: a drill to run, and one that is passed.
+    const { app } = inHub({ ...past(), drills: ['drill-aim'] });
+    select(app, 'training');
+    const drills = new Map<string, string>();
+    for (let i = 0; i < snap(app).menu.items.length; i++) {
+      for (const word of [STRINGS.training.passed, STRINGS.training.open, STRINGS.training.locked]) {
+        const color = colorOf(app, word);
+        if (color) drills.set(word, color);
+      }
+      press(app, 'down');
+    }
+    expect(drills.get(STRINGS.training.passed)).toBe(STATE_COLORS.done);
+    expect(drills.get(STRINGS.training.open)).toBe(STATE_COLORS.todo);
+    press(app, 'cancel');
+    // A drill that is not yet open is shut, and red as every shut thing is.
+    const early = inHub({ ...done('intro-1'), drills: [] }).app;
+    select(early, 'training');
+    const shut = new Map<string, string>();
+    for (let i = 0; i < snap(early).menu.items.length; i++) {
+      const color = colorOf(early, STRINGS.training.locked);
+      if (color) shut.set(STRINGS.training.locked, color);
+      press(early, 'down');
+    }
+    expect(shut.get(STRINGS.training.locked)).toBe(STATE_COLORS.shut);
+    // The arena: the next opponent, one beaten, one that is shut; a cup that is open and one that is won.
+    const arena = inHub({ ...past(), arenaRank: 10, cups: ['cup-bronze'] }).app;
+    select(arena, 'arena');
+    const seen = new Map<string, string>();
+    for (let i = 0; i < snap(arena).menu.items.length; i++) {
+      for (const word of [STRINGS.arena.next, STRINGS.arena.beaten, STRINGS.arena.locked, STRINGS.arena.cups.open, STRINGS.arena.cups.won]) {
+        const color = colorOf(arena, word);
+        if (color) seen.set(word, color);
+      }
+      press(arena, 'down');
+    }
+    expect(seen.get(STRINGS.arena.beaten)).toBe(STATE_COLORS.done);
+    expect(seen.get(STRINGS.arena.cups.won)).toBe(STATE_COLORS.done);
+    expect(seen.get(STRINGS.arena.cups.open)).toBe(STATE_COLORS.todo);
+    expect(seen.get(STRINGS.arena.locked)).toBe(STATE_COLORS.shut);
+  });
+
+  test('every line that names buttons is written one way: the button, a colon, what it does, and three spaces before the next', () => {
+    for (const S of [STRINGS, STRINGS_NL]) {
+      const hints = [
+        S.arena.back, S.arena.backLocked, S.pilot.hint, S.pilot.pageHint, S.database.hint, S.training.hint, S.training.rangeHint, S.options.hint,
+        S.overdrive.hint, S.gauntlet.hint, S.starter.hint, S.callsign.hint, S.shop.hint, S.garage.back, S.garage.pages, S.garage.buildsHint,
+        S.garage.toBench, S.garage.mixer.change, S.garage.paint('Factory'), S.coach.action, S.coach.weapon, S.coach.repairPart, S.briefing.wingmanHint, S.briefing.buildHint,
+        S.messagesScreen.back,
+      ];
+      const one = /^[A-Z0-9/]+: [^:]+?(   [A-Z0-9/]+: [^:]+?)*$/;
+      expect(hints.filter((hint) => !one.test(hint))).toEqual([]);
+      // And every other text of the game that names two buttons, or begins with one and a colon, is such a line.
+      const buttons = new Set(['A', 'B', 'L1', 'R1', 'L1/R1', 'UP/DOWN', 'LEFT/RIGHT', 'LEFT', 'RIGHT', 'OP/NEER', 'LINKS/RECHTS', 'LINKS', 'RECHTS']);
+      const named = (text: string): number => new Set(text.split(/\s+/).map((word) => word.replace(/[:.,]$/, '')).filter((word) => buttons.has(word))).size;
+      const lines: string[] = [];
+      const walk = (node: unknown): void => {
+        if (typeof node === 'string') { if (named(node) >= 2 || buttons.has(node.split(': ')[0])) lines.push(node); }
+        else if (node && typeof node === 'object') Object.values(node).forEach(walk);
+      };
+      walk(S);
+      expect(lines.length).toBeGreaterThan(20);
+      expect(lines.filter((line) => !one.test(line))).toEqual([]);
+      // What a button does is written small: a word in capitals after the colon is a name, or it is shouting.
+      expect(hints.filter((hint) => /: [A-Z]{3,}/.test(hint.replace(/[A-Z0-9/]+: /g, ': ').replace(/^: /, '')))).toEqual([]);
+    }
+  });
+
+  test('the simulator says that the shoulder buttons turn its page, and the page of saved builds says what A does', () => {
+    expect(STRINGS.training.hint).toContain('L1/R1: page');
+    expect(STRINGS.training.rangeHint).toContain('L1/R1: page');
+    const { app } = inHub(past());
+    select(app, 'garage');
+    press(app, 'right');
+    expect(texts(app).map((t) => t.text)).toContain(STRINGS.garage.buildsHint);
+    press(app, 'cancel');
+    expect(texts(app).map((t) => t.text)).not.toContain(STRINGS.garage.buildsHint);
+  });
+
+  test('what a class\'s build still has to buy is red, as a missing part is elsewhere: pink is the cursor\'s', () => {
+    const { app } = inHub({ ...done('intro-1', 'intro-2'), scenes: ['act-1'], credits: 0 });
+    select(app, 'pilot');
+    for (let i = 0; i < 6 && snap(app).page !== 'classes'; i++) press(app, 'next');
+    expect(snap(app).page).toBe('classes');
+    const names = new Set(Object.values(CATALOG).map((part) => part.name));
+    const parts = texts(app).filter((t) => t.y >= 182 && names.has(t.text));
+    expect(parts.length).toBeGreaterThan(3);
+    expect(parts.some((t) => t.color === COLORS.danger)).toBe(true);
+    expect(parts.filter((t) => t.color === COLORS.accent)).toEqual([]);
+  });
+
+  test('the test range goes by one name: on its tab, in its briefing and in the manual', () => {
+    expect(STRINGS.training.pages.range).toBe('TEST RANGE');
+    expect(STRINGS.training.rangeTag).toMatch(/^TEST RANGE: /);
+    expect(MANUAL.find((topic) => topic.id === 'range')!.title).toBe('THE TEST RANGE');
+    expect(STRINGS.training.rangeTitle).toBe('Test Range');
+  });
+
+  test('the bill: what a contract pays is its fee, and mending armour is not called by the word for field repairs left', () => {
+    expect(STRINGS.settlement.reward).toBe('Fee');
+    expect(STRINGS.settlement.repairs).not.toBe(STRINGS.meters.repairs);
+    expect(STRINGS.settlement.repairs.toUpperCase()).not.toBe(STRINGS.meters.repairs);
+    expect(STRINGS_NL.settlement.repairs.toUpperCase()).not.toBe(STRINGS_NL.meters.repairs);
+  });
+
+  test('what is owned is counted one way in the shop and in the garage, and a slot with nothing in it has one word', () => {
+    const { app } = inHub(past());
+    select(app, 'shop');
+    const owned = snap(app).menu.items.map((item) => item.label).filter((label) => / x\d+$/.test(label));
+    expect(owned.length).toBeGreaterThan(0);
+    expect(snap(app).menu.items.map((item) => item.label).filter((label) => /\(\d+\)$/.test(label))).toEqual([]);
+    expect(STRINGS.garage.none).toBe(STRINGS.garage.empty);
+    expect(STRINGS.shop.tabs.booster).toBe('Boost');
+  });
+
+  test('three Overdrives at once are named while their names fit the announcement, and counted when they do not', () => {
+    const names = (S: { overdrive: { names: Record<string, string> } }): string[] => Object.values(S.overdrive.names);
+    expect(names(STRINGS)).toHaveLength(3);
+    for (const S of [STRINGS, STRINGS_NL]) {
+      for (let n = 1; n <= 3; n++) expect(driveTitle(names(S).slice(0, n)).length).toBeLessThanOrEqual(TOAST_TITLE_CHARS);
+    }
+    expect(driveTitle(names(STRINGS).slice(0, 2))).toBe(names(STRINGS).slice(0, 2).join(', '));
+    setLanguage('nl');
+    expect(names(STRINGS).join(', ').length).toBeGreaterThan(TOAST_TITLE_CHARS);
+    expect(driveTitle(names(STRINGS))).toBe('3 Overdrives');
+  });
+
+  test('a full bill keeps a clear line between its last row and what the client says of it', () => {
+    const sprites = { get: (id: string, fallback: { w: number; h: number }) => ({ image: { id } as unknown as CanvasImageSource, w: fallback.w, h: fallback.h }) };
+    // More parts damaged than a bill names.
+    const lines = Object.keys(CATALOG).slice(0, 6).map((partId) => ({ partId, lost: 10, cost: 25 }));
+    const bill = (extra: Partial<Settlement>, debrief: string): Written[] => {
+      const settlement: Settlement = { net: 900, won: true, reward: 800, ammoCost: 40, repairCost: 150, lines, ...extra };
+      const app = {
+        deps: { fast: true, sprites, catalog: CATALOG }, settings: { calm: true }, game: { credits: 5000 }, leaveSettlement: () => undefined,
+      } as unknown as App;
+      const screen = new SettlementScreen(app, settlement, { ...MISSIONS[0], debrief });
+      return record((ctx) => screen.draw(ctx)).texts;
+    };
+    // The plain bill, the one whose rank paid, and the one whose rank and class both paid: the most rows a bill has.
+    const bills: Partial<Settlement>[] = [{}, { rank: 'S', bonus: 200 }, { rank: 'S', bonus: 200, asked: { kind: ARCHETYPES[0], bonus: 100 } }];
+    // What the client says, in one line, in two and in three.
+    const one = 'Paid in full.';
+    const said = [one, `${one} The yard is clear and the trucks are rolling again.`, `${one} The yard is clear and the trucks are rolling again. Dispatch has your name down for the next one, and so do we.`];
+    const named = said.map((debrief, n) => bills.map((extra) => {
+      const texts = bill(extra, debrief);
+      const rows = texts.filter((t) => t.left < 60 && t.y >= 55 && t.color !== COLORS.dim || t.text.startsWith('  '));
+      const words = texts.filter((t) => t.left === 50 && t.y >= WORDS_Y && t.y < 180 && !t.text.startsWith('  '));
+      expect(words).toHaveLength(n + 1);
+      const last = Math.max(...rows.filter((t) => t.y < 180).map((t) => t.y));
+      // A whole line stays empty under the last row: and no more than that is given away, so no repair line is left off for nothing.
+      expect(words[0].y - last).toBeGreaterThanOrEqual(2 * LINE);
+      // What is said never begins higher than it always does, and always ends above the rule under it.
+      expect(words[0].y).toBeGreaterThanOrEqual(WORDS_Y);
+      expect(words[n].y + LINE).toBeLessThanOrEqual(180 - 2);
+      return rows.filter((t) => t.text.startsWith('  ')).length;
+    }));
+    // Three lines said cost a full bill a repair line or two; what is shorter moves down and costs it less, or nothing.
+    expect(named).toEqual([[4, 4, 4], [4, 4, 3], [4, 3, 2]]);
+    expect([REPAIR_LINES, WORDS_LINES]).toEqual([4, 3]);
+  });
+
+  test('the word RANK is written over the ring that runs out from the stamp, and the ring does not cut it', () => {
+    const sprites = { get: (id: string, fallback: { w: number; h: number }) => ({ image: { id } as unknown as CanvasImageSource, w: fallback.w, h: fallback.h }) };
+    const settlement: Settlement = { net: 900, won: true, reward: 800, ammoCost: 40, repairCost: 60, lines: [], rank: 'S', bonus: 200 };
+    const app = {
+      deps: { fast: false, sprites, catalog: CATALOG }, settings: { calm: false }, game: { credits: 5000 }, leaveSettlement: () => undefined,
+    } as unknown as App;
+    const screen = new SettlementScreen(app, settlement, MISSIONS[0]);
+    // Half a second for the stamp to come down, a sixth to land, and the ring is on its way out.
+    screen.update(760);
+    const shown = record((ctx) => screen.draw(ctx));
+    const word = shown.texts.findIndex((t) => t.text === STRINGS.settlement.rank);
+    expect(word).toBeGreaterThanOrEqual(0);
+    const when = (kind: string, at: number): number => shown.order.findIndex((step) => step.kind === kind && step.at === at);
+    // The ring: single pixels in the rank's colour, fading as they run out.
+    const ring = shown.rects.map((r, at) => ({ r, at })).filter(({ r }) => r.color === COLORS.accent && r.w === 1 && r.h === 1 && r.alpha < 1);
+    expect(ring.length).toBeGreaterThan(8);
+    // Some of it does pass where the word stands: which is why the order matters.
+    const box = shown.texts[word];
+    expect(ring.some(({ r }) => r.x >= box.left && r.x <= box.right && r.y >= box.y && r.y <= box.y + box.size)).toBe(true);
+    expect(Math.max(...ring.map(({ at }) => when('rect', at)))).toBeLessThan(when('text', word));
+  });
+
+  test('the line of buttons under a master\'s three lines stands more than a line below them', () => {
+    expect(HINT_Y - (207 + 3 * 11)).toBeGreaterThanOrEqual(15);
+    const { app } = inHub({ ...past(), arenaRank: 10 });
+    select(app, 'arena');
+    press(app, 'next');
+    const hint = texts(app).find((t) => t.text === STRINGS.arena.back || t.text === STRINGS.arena.backLocked)!;
+    expect(hint.y).toBe(HINT_Y);
+    expect(hint.y + 10).toBeLessThanOrEqual(266);
   });
 });

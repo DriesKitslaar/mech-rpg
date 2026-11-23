@@ -208,7 +208,8 @@ export class PilotScreen implements Screen {
     // The crowns of the arena's masters, counted once they are there to be taken, or once one is held. For the pilot who
     // has taken the eighth seat the count has nothing left to say (every row has its crown): the seat stands there instead.
     if (seatHeld(game)) {
-      drawText(ctx, STRINGS.arena.seat.row.toUpperCase(), CROWN_X + 9, 22, { align: 'right', color: CROWN_COLOR, size: 10 });
+      // A few letters short of the column of crowns, so that it does not read on into the word over the column beside it.
+      drawText(ctx, STRINGS.arena.seat.row.toUpperCase(), CROWN_X - 3, 22, { align: 'right', color: CROWN_COLOR, size: 10 });
     } else if (mastersOpen(game) || crownsHeld(game) > 0) {
       drawText(ctx, STRINGS.arena.masters.crowns(crownsHeld(game), ARCHETYPES.length), CROWN_X + 9, 22, { align: 'right', color: COLORS.dim, size: 10 });
     }
@@ -250,7 +251,8 @@ export class PilotScreen implements Screen {
       const y = 182 + row * LINE;
       drawText(ctx, STRINGS.garage.slotTags[slot], x, y + 1, { color: COLORS.dim, size: 10 });
       const name = id !== undefined && Object.hasOwn(catalog, id) ? catalog[id].name : '-';
-      const color = id === undefined || advice.unsold.includes(slot) ? COLORS.dim : advice.toBuy.includes(slot) ? COLORS.accent : COLORS.text;
+      // What is still to be bought is red, as a part that is missing is everywhere else: pink is the cursor's.
+      const color = id === undefined || advice.unsold.includes(slot) ? COLORS.dim : advice.toBuy.includes(slot) ? COLORS.danger : COLORS.text;
       drawText(ctx, name, x + 34, y, { color });
     }));
     // In the corner the build leaves free: the contracts won as this class at which it gives its next stripe.

@@ -264,7 +264,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'CLASS WANTED': 'KLASSE GEZOCHT',
   'Once the board has grown a little, one of its three open contracts wants a class: its pay on the list ends in a plus, and its briefing says which. It can be won as anything; won in a build of that class it pays a quarter more. Turn to such a build on the Build row and the line lights up.':
     "Is het bord wat gegroeid, dan zoekt een van de drie open contracten een klasse: het loon in de lijst eindigt op een plus en de briefing zegt welke. Winnen kan met alles; in een build van die klasse betaalt het een kwart meer. Ga op de rij Build naar zo'n build en de regel licht op.",
-  'THE RANGE': 'HET PROEFVELD',
+  'THE TEST RANGE': 'HET PROEFVELD',
   "The simulator's second page (L1/R1) is the range: your own build against any machine you have met, up to three of the lighter ones, one of a mech or anything of the story's. A real fight: perks, bench work, Overdrive and difficulty all count. Nothing is billed, paid or counted; afterwards you see what it would have cost.":
     'Pagina twee van de simulator (L1/R1) is het proefveld: je eigen build tegen elke machine die je al zag, tot drie lichtere, of een mech of iets uit het verhaal. Een echt gevecht: perks, werkbank, Overdrive en moeilijkheid tellen mee. Niets wordt gerekend, betaald of geteld; daarna zie je wat het had gekost.',
   SPARRING: 'SPARREN',

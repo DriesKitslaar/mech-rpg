@@ -633,8 +633,8 @@ describe('sparring with a saved build', () => {
     const { app } = onRange(pilot());
     const shown = drawn(app);
     expect(written(shown, 'SAVED BUILD 1')).toMatchObject({ left: 12, y: 189, size: 16, color: COLORS.accent });
-    expect(shown.texts.some((t) => t.y === 207 && /^Armour \d+ {3}Mobility \d+ {3}Energy \d+$/.test(t.text))).toBe(true);
-    expect(written(shown, `Armour ${armourOf(BASTION)}   Mobility 7   Energy 235`).color).toBe(COLORS.armor);
+    expect(shown.texts.some((t) => t.y === 207 && /^ARMOUR \d+ {3}MOBILITY \d+ {3}ENERGY \d+$/.test(t.text))).toBe(true);
+    expect(written(shown, `ARMOUR ${armourOf(BASTION)}   MOBILITY 7   ENERGY 235`).color).toBe(COLORS.armor);
     expect(written(shown, 'BASTION: takes it and stays standing').y).toBe(219);
     expect(T.sparNote).toBe('The simulator flies this build against you.');
     expect(written(shown, T.sparNote).y).toBe(219 + LINE);
@@ -645,7 +645,7 @@ describe('sparring with a saved build', () => {
     const tuned = tunedCatalog(CATALOG, { [BASTION.core]: 2 });
     const armour = (['head', 'core', 'arms', 'legs'] as const).reduce((sum, slot) => sum + (tuned[BASTION[slot]!] as { ap: number }).ap, 0);
     expect(armour).toBeGreaterThan(armourOf(BASTION));
-    expect(drawn(benched).texts.some((t) => t.y === 207 && t.text.startsWith(`Armour ${armour}   `))).toBe(true);
+    expect(drawn(benched).texts.some((t) => t.y === 207 && t.text.startsWith(`ARMOUR ${armour}   `))).toBe(true);
     // The build is drawn as a mech, part by part, where a machine of the range would stand.
     expect(shown.images.filter((image) => image.x >= 150 && image.w < 200).length).toBeGreaterThan(3);
     const panel = shown.texts.filter((t) => t.y >= 184);

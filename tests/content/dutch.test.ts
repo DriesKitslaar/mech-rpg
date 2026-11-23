@@ -51,7 +51,7 @@ const ROOM_FOR: Record<string, number> = {
   // A row of the battle's menu, from where its words start to the panel's edge.
   'actions.endTurn': MENU_ROW_CHARS,
   // The new pilot's lines over the field: 75 small letters fit across it (tests/ui/coach.test.ts).
-  'coach.target': 75,
+  'coach.target': 75, 'coach.repairPart': 75,
   // Under the figures of a frame to start in: the panel is 150 wide, in small letters.
   'starter.later': 34,
   // A ground's rule stands after its name on one line of the briefing.

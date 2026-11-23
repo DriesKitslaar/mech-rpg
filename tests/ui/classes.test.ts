@@ -243,7 +243,7 @@ describe('one to fly now', () => {
       const name = nameOf(shown, slot);
       const id = advice.build[slot];
       expect(name.text, slot).toBe(id === undefined ? '-' : CATALOG[id].name);
-      expect(name.color, slot).toBe(id === undefined ? COLORS.dim : advice.toBuy.includes(slot) ? COLORS.accent : COLORS.text);
+      expect(name.color, slot).toBe(id === undefined ? COLORS.dim : advice.toBuy.includes(slot) ? COLORS.danger : COLORS.text);
     }
     // The lancer of the war keeps the Hauler's arms, its thrusters and its fire control: those three the pilot has.
     expect(BUILD_SLOTS.filter((slot) => advice.build[slot] !== undefined && !advice.toBuy.includes(slot))).toEqual(['arms', 'booster', 'fcs']);

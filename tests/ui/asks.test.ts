@@ -298,7 +298,7 @@ describe('at the settlement', () => {
     expect(askedOf(app)).toBeNull();
   });
 
-  test('with the rank\'s row and the class\'s row both there, the bill still ends above what the client says: a repair line makes way', () => {
+  test('with the rank\'s row and the class\'s row both there, the bill still ends a clear line above what the client says: a repair line makes way', () => {
     const { won, asking } = boardAsking('lancer');
     const { app } = inHub(pilot(won));
     select(app, 'contracts');
@@ -315,11 +315,17 @@ describe('at the settlement', () => {
     const words = shown.texts.filter((t) => t.y >= 144 && t.y < 180 && t.color === COLORS.dim && t.left === 50);
     expect(words.length).toBeGreaterThan(0);
     const rows = shown.texts.filter((t) => t.y >= 55 && t.y < 144 && t.left === 50);
-    // Reward, rank, class, ammunition, repairs and three of the four parts: eight rows, the last one above the client's words.
-    expect(rows.map((t) => t.y)).toEqual([55, 66, 77, 88, 99, 110, 121, 132]);
-    expect(Math.max(...rows.map((t) => t.y)) + LINE).toBeLessThanOrEqual(144);
-    expect(rows.slice(0, 5).map((t) => t.text)).toEqual(['Reward', 'Rank S bonus', 'Lancer bonus', 'Ammunition', 'Repairs']);
-    // With one of the two rows gone there is room for all four parts again, and with both gone no more than four are listed.
+    // The fee, the rank, the class, ammunition and armour repair, a line apart: and then the parts.
+    expect(rows.slice(0, 5).map((t) => [t.text, t.y])).toEqual([['Fee', 55], ['Rank S bonus', 66], ['Lancer bonus', 77], ['Ammunition', 88], ['Armour repair', 99]]);
+    // A line stays empty between the last row and what the client says, which ends above the rule under it.
+    expect(words[0].y - Math.max(...rows.map((t) => t.y))).toBeGreaterThanOrEqual(2 * LINE);
+    expect(words[words.length - 1].y + LINE).toBeLessThanOrEqual(180 - 2);
+    // Seven lines are shared by what was added to the fee, the parts repaired and what the client says: never more than four parts.
+    const room = (added: number): number => Math.min(4, 7 - added - words.length);
+    expect(words.length).toBeLessThanOrEqual(3);
+    expect(rows.length - 5).toBe(room(2));
+    expect(room(2)).toBeLessThan(4);
+    // With one of the two rows gone there is room for one part more, and with both gone no more than four are listed.
     const full = screen.settlement as typeof screen.settlement & { asked?: unknown };
     const rowsOf = (bill: typeof full): string[] => {
       screen.settlement = bill;
@@ -327,10 +333,11 @@ describe('at the settlement', () => {
     };
     const parts = ['head-colossus', 'core-colossus', 'arms-colossus', 'legs-colossus'].map((id) => CATALOG[id].name);
     expect(parts[1]).toBe('Colossus Core');
-    expect(rowsOf({ ...full, asked: undefined })).toEqual(['Reward', 'Rank S bonus', 'Ammunition', 'Repairs', ...parts]);
-    expect(rowsOf({ ...full, rank: 'B', bonus: 0 })).toEqual(['Reward', 'Lancer bonus', 'Ammunition', 'Repairs', ...parts]);
-    expect(rowsOf({ ...full, asked: undefined, rank: 'B', bonus: 0 })).toEqual(['Reward', 'Ammunition', 'Repairs', ...parts]);
-    expect(rowsOf({ ...full, asked: undefined, rank: 'B', bonus: 0, lines: [...full.lines, { partId: 'gen-kd1', lost: 1, cost: 1 }] })).toEqual(['Reward', 'Ammunition', 'Repairs', ...parts]);
+    expect(rowsOf({ ...full, asked: undefined })).toEqual(['Fee', 'Rank S bonus', 'Ammunition', 'Armour repair', ...parts.slice(0, room(1))]);
+    expect(rowsOf({ ...full, rank: 'B', bonus: 0 })).toEqual(['Fee', 'Lancer bonus', 'Ammunition', 'Armour repair', ...parts.slice(0, room(1))]);
+    expect(room(1)).toBe(room(2) + 1);
+    expect(rowsOf({ ...full, asked: undefined, rank: 'B', bonus: 0 })).toEqual(['Fee', 'Ammunition', 'Armour repair', ...parts]);
+    expect(rowsOf({ ...full, asked: undefined, rank: 'B', bonus: 0, lines: [...full.lines, { partId: 'gen-kd1', lost: 1, cost: 1 }] })).toEqual(['Fee', 'Ammunition', 'Armour repair', ...parts]);
   });
 
   test('in Dutch the row names the class', () => {

@@ -216,6 +216,9 @@ export class GarageScreen implements Screen {
       // With nothing wrong, the foot of the panel says what the shoulder buttons and the D-pad do here.
       drawText(ctx, G.paint(flow.paintName), 8, STATS_Y + 61, { color: COLORS.dim, size: 10 });
       drawText(ctx, G.pages, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
+    } else if (flow.mode === 'loadouts') {
+      // The page of saved builds says what A does on a row of it.
+      drawText(ctx, G.buildsHint, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
     }
   }
 

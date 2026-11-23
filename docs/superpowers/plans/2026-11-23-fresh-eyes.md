@@ -119,6 +119,32 @@ Tests: the Dutch section of `tests/content/freshEyes.test.ts`, the measured exce
 | T2-29: the guide's words are not the screen's | So | The guide and the README say mech, balans, akte, hoofd and kern, and Guard where they said bewaken; the options are all listed; Load Game is said to be there with more than one kept game; End Turn is among the actions; the hub's table has a column of the Dutch names, and the battle's actions are given in Dutch once. |
 | (found by the new test, by nobody else) | So | A row of the database's list that is nineteen letters long ran under the mark that says the list goes on, when it stood first or last in view ("Colossus Juggernaut", in both languages). A row is now cut at eighteen in the list and stands whole at the head of its page. |
 
+#### Batch 4: one game (tester 4: the same thing, said and shown the same way on every screen)
+
+Tests: the section "one game" of `tests/ui/freshEyes.test.ts`. Older tests that held an old word or an old place were brought along: the bill in `asks` and `draw`, the arena's hint in `masters`, the seat's label in `seat`, the colour of a part to buy in `classes`, the range's figures in `range`, the bench's hint in `bench`, the count of what is owned in `shopFlow`, the mixer's hint in `docs`.
+
+| Finding | So? | Answer |
+|---|---|---|
+| T4-4: one word for how something stands, two colours (OPEN grey here and teal there; PASSED teal, BEATEN grey) | So | One colour for each meaning, in `STATE_COLORS`: to do is teal (OPEN, NEXT OPPONENT), done is grey (PASSED, BEATEN, WON), shut is red (LOCKED), held is pink (a crown, the seat). Training and the arena's three pages take their colours from it. |
+| T4-5: the line that names the buttons has several dialects | So | One form: the button, a colon, what it does in small letters, three spaces before the next. Brought to it: the garage's lines ("LEFT: paint shop   RIGHT: builds", "L1/R1: paint Factory", "R1: the bench"), the mixer's, and the battle's lines for a weapon, a target and a repair. Training now says "L1/R1: page", and the page of saved builds has a line where it had none ("A: load or save   B: back"). The test walks every text of the game in both languages: one that names two buttons, or begins with a button and a colon, has to be such a line. Left: where the line stands on each screen (centred in a panel here, at the right there); each stands on the row its screen has free, and moving them would shift lists the testers counted as good. "Press A to continue" stays a sentence: it is alone on its row and is said to the player, not listed. |
+| T4-6: BUY and SELL in the shop do not look or turn as tabs do elsewhere | Left | The shop has two things to turn: the kind of part (L1/R1, as pages turn everywhere) and whether one buys or sells (LEFT/RIGHT, in the bar). A second row in the look of the first would say that both turn with L1/R1. The hint has named both since batch 3. |
+| T4-10: pink means "still to buy" on one page | So | Red, as a part that is missing is everywhere else; pink is the cursor's and a title's. |
+| T4-11: what a contract pays has four names | So in part | The bill's row is "Fee", the word the briefings, the wingmen and the manual use. PAYS heads a column in the lists; PURSE is the arena's own word for a prize that no client pays, and the Dutch keeps POT for it. |
+| T4-12: how many you own is "(1)" in the shop and "x1" in the garage | So | "x1" in both. |
+| T4-13: "nothing here" is written five ways | So in part | The garage said "Empty" on the row and "(none)" in the picker of the same place: both say "Empty". Left: a dash is what an empty cell of a table is; "None" is a choice (no wingman) and not an empty place; "? ? ?" is something not yet known, which is another thing than nothing. |
+| T4-14: the places of a machine are named differently in the garage and the shop | So in part | The shop's tab says "Boost", as the garage's row does. Left: the shop's tabs are kinds of part (a hand weapon goes in either hand, so "Hand") and the garage's rows are places on the machine; the picker writes LEFT HAND in full because it has the room. |
+| T4-15: the test range has two names in English | So | TEST RANGE on its tab and at the head of its briefing, "Test Range" over its bill, "The Test Range" in the manual. |
+| T4-18: REPAIRS is field repairs left in a battle and a cost on the bill | So | The bill's row is "Armour repair" (Pantserherstel); REPAIRS in battle stays the count it is. |
+| T4-19: capitals here and not there in the range's panel | So | The figures of a saved build are written as a machine's are in the same panel: ARMOUR 705   MOBILITY 7   ENERGY 235. |
+| T4-24: the ring that runs out from the rank's stamp cuts the word RANK | So | The word is written after the ring, which passes under it. The test holds both that the ring crosses the word's place and that the word comes later. |
+| T4-25: the rows of a full bill run into what the client says | So | A line stays empty between the last row and the client's words. Seven lines are shared by what was added to the fee, the parts repaired and what is said: words of one or two lines begin lower for it, and a bill names fewer than four parts only where what was added to the fee and what is said take more than three lines between them (the total above the parts covers all of them, as it did). |
+| T4-26: the hint reads as a fourth line of a master's description | So | It stands 16 px under the third line where it stood 13 (`HINT_Y` in the arena), which is as low as the screen lets it go. |
+| T4-27: "THE EIGHTH SEAT" and "WON" read as one phrase | So | The seat's label ends twelve pixels further left; the test holds the gap, and the Dutch label stands at the same place. |
+| T4-29: three Overdrives opened at once are too wide for an announcement in Dutch | So | They are named while their names fit, and counted when they do not: "3 Overdrives". |
+| T4-30: the bottom-left panel of a battle is a bare box while the menu is down | Left | The menu comes back into it within a second or two; whatever stood there in between would be read as a menu. |
+
+Tester 4's other findings were answered where they belong: T4-1, 2, 3, 17, 21 and 28 in batch 1, T4-20 in batch 2, and T4-7, 8, 9, 16, 22 and 23 in batch 3.
+
 ### Task F4: final check
 
 - [ ] `npx tsc --noEmit`; all unit tests; the browser tests; the endurance test.

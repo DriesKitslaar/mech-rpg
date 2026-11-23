@@ -13,7 +13,10 @@ import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
 import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { idlePose } from './pose';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
+import { COLORS, LINE, STATE_COLORS, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
+
+/** Where the line that names the buttons stands, at the foot of the panel under the list. */
+export const HINT_Y = 256;
 
 const A = STRINGS.arena;
 const M = A.masters;
@@ -191,7 +194,7 @@ export class ArenaScreen implements Screen {
         : !o ? (this.list.selected?.enabled ? A.next : A.locked)
         : o.rank <= game.arenaRank ? A.beaten : o.rank === game.arenaRank + 1 ? A.next : A.locked;
       drawText(ctx, (o ? o.name : cup ? A.cups.names[cup.id] : A.mirror.title).toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
-      drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === A.locked ? COLORS.danger : state === A.next ? COLORS.armor : COLORS.dim });
+      drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === A.locked ? STATE_COLORS.shut : state === A.next || state === A.cups.open ? STATE_COLORS.todo : STATE_COLORS.done });
       // The one at the top of what this pilot can see has a word for whoever has beaten them.
       const last = o && o.rank === game.arenaRank && (o.rank === CHAMPION_RANK || o.rank === ARENA_RANKS);
       const cupNames = cup ? cup.ranks.map((rank) => ARENA[rank - 1].name) : [];
@@ -201,7 +204,8 @@ export class ArenaScreen implements Screen {
       wrap(words, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + i * LINE));
     }
     // A is offered where the row in hand takes a challenge, and nowhere else.
-    drawText(ctx, this.list.selected?.enabled ? A.back : A.backLocked, LOGICAL_W / 2, 253, { align: 'center', color: COLORS.dim });
+    // Clear of the three lines over it by more than a line, so that it does not read as a fourth.
+    drawText(ctx, this.list.selected?.enabled ? A.back : A.backLocked, LOGICAL_W / 2, HINT_Y, { align: 'center', color: COLORS.dim });
   }
 
   /**
@@ -213,7 +217,7 @@ export class ArenaScreen implements Screen {
     const master = masterOf(kind);
     const state = this.stateOf(kind);
     const word = { locked: A.locked, open: M.open, beaten: A.beaten, crown: M.crowned }[state];
-    const color = { locked: COLORS.danger, open: COLORS.armor, beaten: COLORS.dim, crown: COLORS.accent }[state];
+    const color = { locked: STATE_COLORS.shut, open: STATE_COLORS.todo, beaten: STATE_COLORS.done, crown: STATE_COLORS.held }[state];
     drawText(ctx, master.name.toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
     drawText(ctx, word, LOGICAL_W - 12, 191, { align: 'right', color });
     drawText(ctx, M.titles[kind].toUpperCase(), 12, 207, { color: COLORS.armor });
@@ -228,7 +232,7 @@ export class ArenaScreen implements Screen {
   private drawSeat(ctx: CanvasRenderingContext2D): void {
     const state = this.seatState;
     const word = { locked: A.locked, open: M.open, held: S.held }[state];
-    const color = { locked: COLORS.danger, open: COLORS.armor, held: COLORS.accent }[state];
+    const color = { locked: STATE_COLORS.shut, open: STATE_COLORS.todo, held: STATE_COLORS.held }[state];
     drawText(ctx, KEEPER.name.toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
     drawText(ctx, word, LOGICAL_W - 12, 191, { align: 'right', color });
     drawText(ctx, S.title.toUpperCase(), 12, 207, { color: COLORS.armor });

@@ -322,7 +322,7 @@ describe('what is said of the paint shop is so', () => {
     expect(section).toContain(`Druk in de garage op **links**: dan sta je in de **${M.heading}**. Met **B** ga je terug naar de onderdelen.`);
     // How a row is changed: the D-pad, which goes on while it is held, the shoulder buttons, and A.
     expect(section).toContain('met **links/rechts** verander je hem: houd de knop ingedrukt en hij loopt door. **L1/R1** doen hetzelfde, en **A** gaat een stap verder.');
-    expect(M.change).toBe('LEFT/RIGHT: CHANGE');
+    expect(M.change).toBe('LEFT/RIGHT: change');
   });
 
   test('the guide\'s table: each row by its name, in its number of steps, with the names its steps have', () => {
