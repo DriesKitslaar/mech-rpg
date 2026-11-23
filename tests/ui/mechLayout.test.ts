@@ -1,4 +1,4 @@
-import { BACK_BOX, BACK_JOINTS, BACK_MOUNT, FAR_FIST, HIT_LAYER, MECH_BOX, NEAR_FIST, SMALL_BOX, VIEWS, fistOf, hitOn, layoutMech, muzzleOf, type HitPart, type MechView } from '../../src/ui/mechLayout';
+import { BACK_BOX, BACK_JOINTS, BACK_MOUNT, BAR_COVERED, BAR_END, FAR_FIST, HIT_LAYER, MECH_BOX, NEAR_FIST, SMALL_BOX, VIEWS, barCut, fistOf, hitOn, layoutMech, muzzleOf, shoulderBar, type HitPart, type MechView } from '../../src/ui/mechLayout';
 
 /** Frame layers carry their own position inside the pose; weapons only have a size. */
 const layers = {
@@ -340,5 +340,65 @@ describe('where a hand is', () => {
     const squat = { w: 43, h: 34, ox: 67, oy: 23, fx: 36, fy: 23 };
     expect(fistOf({ ...layers, armNear: squat }, 'leftHand', 'back')).toEqual(VIEWS.back.farFist);
     expect(fistOf({ ...layers, armNear: squat }, 'rightHand', 'back')).toEqual({ x: 103, y: 46 });
+  });
+});
+
+describe('the bar across the shoulders, from behind', () => {
+  const { x, y, w, h } = BACK_JOINTS.shoulders;
+  const nowhere = (): boolean => false;
+  const everywhere = (): boolean => true;
+  /** An arm that covers so many pixels of the bar's end on its side, from the end's outer top corner on, column by column. */
+  const covering = (side: 'near' | 'far', pixels: number) => (px: number, py: number): boolean => {
+    const from = side === 'near' ? x + w - BAR_END : x;
+    const at = (px - from) * h + (py - y);
+    return px >= from && px < from + BAR_END && py >= y && py < y + h && at < pixels;
+  };
+
+  test('the end of the bar is its last four columns, and eight of their pixels behind the arm are enough to keep it', () => {
+    expect([BAR_END, BAR_COVERED]).toEqual([4, 8]);
+    expect(BAR_END * h).toBeGreaterThan(BAR_COVERED);
+  });
+
+  test('an arm whose shoulder covers the end leaves the bar whole, wherever the arm is', () => {
+    for (const side of ['near', 'far'] as const) {
+      expect(barCut(side, { ox: 50, w: 20 }, everywhere)).toBe(0);
+      expect(barCut(side, { ox: 50, w: 20 }, covering(side, BAR_COVERED))).toBe(0);
+    }
+  });
+
+  test('an arm that covers too little of it has the bar left off as far as its own inner edge and four more', () => {
+    // The near arm is on the right: the bar ends four pixels inside the arm's left edge.
+    expect(barCut('near', { ox: 60, w: 30 }, nowhere)).toBe(x + w - (60 + BAR_END));
+    expect(barCut('near', { ox: 60, w: 30 }, covering('near', BAR_COVERED - 1))).toBe(x + w - 64);
+    // The far arm is on the left: the bar begins four pixels inside the arm's right edge.
+    expect(barCut('far', { ox: 20, w: 30 }, nowhere)).toBe(20 + 30 - BAR_END - x);
+    expect(barCut('far', { ox: 20, w: 30 }, covering('far', BAR_COVERED - 1))).toBe(10);
+  });
+
+  test('only what lies in the end on its own side counts: an arm solid everywhere else covers nothing', () => {
+    const elsewhere = (side: 'near' | 'far') => (px: number, py: number): boolean => !covering(side, BAR_END * h)(px, py);
+    expect(barCut('near', { ox: 60, w: 30 }, elsewhere('near'))).toBe(18);
+    expect(barCut('far', { ox: 20, w: 30 }, elsewhere('far'))).toBe(10);
+    // The other side's end is no part of it.
+    expect(barCut('near', { ox: 60, w: 30 }, covering('far', BAR_END * h))).toBe(18);
+  });
+
+  test('nothing is left off that is not there: an arm that ends outside the bar takes nothing from it', () => {
+    expect(barCut('near', { ox: x + w, w: 30 }, nowhere)).toBe(0);
+    expect(barCut('near', { ox: x + w - BAR_END, w: 30 }, nowhere)).toBe(0);
+    expect(barCut('near', { ox: x + w - BAR_END - 1, w: 30 }, nowhere)).toBe(1);
+    expect(barCut('far', { ox: 0, w: x + BAR_END }, nowhere)).toBe(0);
+    expect(barCut('far', { ox: 0, w: x + BAR_END + 1 }, nowhere)).toBe(1);
+  });
+
+  test('the bar that is drawn is the joint less what each arm leaves off: the far arm at its left, the near arm at its right', () => {
+    const arm = (bar?: number) => ({ w: 30, h: 40, ox: 20, oy: 40, ...(bar === undefined ? {} : { bar }) });
+    expect(shoulderBar({})).toEqual({ x, y, w, h });
+    expect(shoulderBar({ armNear: arm(), armFar: arm() })).toEqual({ x, y, w, h });
+    expect(shoulderBar({ armNear: arm(15) })).toEqual({ x, y, w: w - 15, h });
+    expect(shoulderBar({ armFar: arm(6) })).toEqual({ x: x + 6, y, w: w - 6, h });
+    expect(shoulderBar({ armNear: arm(15), armFar: arm(6) })).toEqual({ x: x + 6, y, w: w - 21, h });
+    // Two arms that leave off more than there is leave nothing, and never less than nothing.
+    expect(shoulderBar({ armNear: arm(30), armFar: arm(30) })).toEqual({ x: x + 30, y, w: 0, h });
   });
 });

@@ -522,6 +522,8 @@ class MissionHost implements Screen {
         // What the enemy being aimed at is about to do.
         intent: intentText(intentOf(flow.state, flow.state.units.find((u) => u.id === flow.targetId) ?? flow.state.units[0], this.app.deps.catalog)),
         enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),
+        // How warm the first of the other side is, and what its core has kept for its next turn: neither is drawn as a figure.
+        enemyHeat: flow.state.units[1].heat, enemyKept: flow.state.units[1].kept,
       },
     };
   }
