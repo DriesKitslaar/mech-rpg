@@ -36,13 +36,13 @@
 **Interfaces:**
 - Produces: `open(game?, options?)` (an app over a store in memory, new or kept, hurried or at a walking pace), `press(app, ...actions)`, `wait(app, ms)`, `screen(app)` (the screen as rows of text where they stand), `menu(app)`, `told(app)` (what the game tells a test of itself), `kept(store)` (the game as saved).
 
-- [ ] The kit, and a page that says how to use it.
-- [ ] Kept games along two careers (two clients, two verdicts) at some ten stages each, with a line for each that says where it stands.
-- [ ] Tried by hand: from a new game to the first bill through the kit alone, and a kept game of the long game opened in Dutch.
+- [x] The kit, and a page that says how to use it. A screen is printed in a second; a battle flown by the game's own Auto Turn hands back what was said and reported in it, line by line. (A text with an edge is written three times a pixel apart: the kit counts it once.)
+- [x] Kept games along three careers of the automatic pilot (Hadron on Standard into a second telling, Lumen on Standard, the Undertow on Story) at nine or ten stages each: twenty-nine. Four more made by hand from the one where the story is over, for the long game: an account with its notice out, the seven crowns held, the eighth seat taken, and two million credits.
+- [x] Tried by hand: a new game from the title to its first bill through the kit alone (the briefing, the battle's lines, the bill), and six kept games opened in Dutch, the long game's list of contracts among them.
 
 ### Task F2: the four testers
 
-- [ ] Four testers at once, each with one lens, the kit, the rules of the round and a file of its own for notes: the first two hours in English; all of it in Dutch; the middle, the end and the long game; the screens side by side.
+- [ ] Four testers at once, each with one lens, the kit, the rules of the round and a file of its own for notes: the first two hours in English; all of it in Dutch; the middle, the end and the long game; the screens side by side (the 225 pictures added since the last whole look).
 - [ ] What each handed in, kept beside the plan's findings (in the scratchpad; the findings themselves go into this plan).
 
 ### Task F3: the findings, checked and answered
