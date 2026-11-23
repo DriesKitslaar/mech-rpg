@@ -124,13 +124,13 @@ const rounded = (fee: number): number => Math.round(fee / 50) * 50;
 
 /** The machines of the board that can be taken in one piece: they have arms or legs to lose. */
 const MECHS = POOL.filter((id) => MECH_ENEMIES.includes(id));
-/** The machines that stand with one: anything of the board's that is not a mech, at most one of them a helper. */
-function company(dice: Dice, budget: number): string[] {
+/** The machines that stand with one: anything of the board's that is not a mech (and none of `except`), at most one of them a helper. */
+export function company(dice: Dice, budget: number, except: string[] = []): string[] {
   const picked: string[] = [];
   let left = budget;
   while (picked.length < 2 && left > 0) {
     const helped = picked.some((id) => SUPPORT_ENEMIES.includes(id));
-    const affordable = POOL.filter((id) => !MECH_ENEMIES.includes(id) && ENEMY_COST[id] <= left && !(helped && SUPPORT_ENEMIES.includes(id)));
+    const affordable = POOL.filter((id) => !MECH_ENEMIES.includes(id) && !except.includes(id) && ENEMY_COST[id] <= left && !(helped && SUPPORT_ENEMIES.includes(id)));
     if (affordable.length === 0) break;
     const id = dice.pick(affordable);
     picked.push(id);

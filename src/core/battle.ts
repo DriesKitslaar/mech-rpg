@@ -98,6 +98,13 @@ export const DEADEYE_DAMAGE = 1.25;
 export type EnemyMark = 'armoured' | 'overclocked' | 'swift' | 'shielded';
 export const MARKS: EnemyMark[] = ['armoured', 'overclocked', 'swift', 'shielded'];
 export const MARK = { armour: 0.4, damage: 1.25, evasion: 15, shield: 0.1 } as const;
+/**
+ * What a weapon does to a machine that is hardened against it, as a share of what it does to any other: the
+ * armour it takes off, and nothing else about the shot. It is as likely to hit and pushes as hard.
+ */
+export const HARDENED = 0.5;
+/** Whether a machine is hardened against a weapon: the weapon is one of those its unit lists. */
+export const hardenedAgainst = (target: Pick<UnitState, 'hardened'>, weapon: Pick<Weapon, 'id'>): boolean => target.hardened?.includes(weapon.id) ?? false;
 
 /** Something the player has to keep from being worn down; see the `protect` objective. `sprite` is its picture on the field, where it has one. */
 export interface Asset { name: string; hp: number; maxHp: number; sprite?: string }
@@ -209,6 +216,8 @@ export interface UnitState {
   damageBoost: number;
   /** What sets this enemy apart, if it is an elite one. */
   mark?: EnemyMark;
+  /** Weapons this unit is hardened against, by their ids: each does `HARDENED` of its damage to it. Absent of a unit that is hardened against none. */
+  hardened?: string[];
   /** The energy the unit's turn began with: what Second Wind gives back. */
   turnEnergy: number;
   /** The Overdrive this unit has, if any: only the pilot's own mech has one. */
@@ -484,6 +493,8 @@ function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scal
     ...(abilities.bomb ? { fuse: abilities.bomb.fuse } : {}),
     ...(abilities.carrier ? { launchIn: abilities.carrier.every } : {}),
     ...(mark ? { mark } : {}),
+    // (A list of its own: what is done to the unit is not done to the definition it was made from.)
+    ...(def.hardened?.length ? { hardened: [...def.hardened] } : {}),
   }, {
     damage: scale * (mark === 'overclocked' ? MARK.damage : 1), toughness: scale,
     armour: (def.plating ?? 0) + (mark === 'armoured' ? MARK.armour : 0), ...(mark === 'swift' ? { evasion: MARK.evasion } : {}),
@@ -1031,7 +1042,7 @@ function shotOn(
   const resist = targetPart.resist[weapon.damageType] * (weapon.trait === 'pierce' ? 0.5 : 1);
   const lift = kindLift(attacker, weapon, target, taken);
   let amount = weapon.damage * lift * share * tuneFactor(attacker.mods.tune, weapon.id) * (1 - resist) * attacker.mods.damage * attacker.damageBoost
-    * aegisFactor(state, target) * (state.ground?.damage?.[weapon.damageType] ?? 1);
+    * aegisFactor(state, target) * (state.ground?.damage?.[weapon.damageType] ?? 1) * (hardenedAgainst(target, weapon) ? HARDENED : 1);
   if (target.side === 'player' && state.support?.order === 'cover') amount *= 1 - coverShare(state.support);
   if (attacker.deadeye) amount *= DEADEYE_DAMAGE;
   if (target.ironSkin) amount *= IRON_SKIN;

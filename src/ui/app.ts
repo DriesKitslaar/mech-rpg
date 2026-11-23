@@ -4,6 +4,9 @@ import {
 } from '../core/arena';
 import { askSettlement, generateBoard, swarmContract } from '../core/board';
 import { jobContract, recordJob } from '../core/jobs';
+import {
+  GRUDGE, NOTHING_FOUGHT, accountLine, bookGrudge, foughtIn, grudgeContract, grudgeEnemy, grudgeOf, isGrudge, type Fought as AccountFought,
+} from '../core/grudge';
 import { computeBuildStats, validatePlayerBuild } from '../core/build';
 import {
   archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, otherOffer, markRead,
@@ -172,7 +175,8 @@ const TOASTS_AT_ONCE = 3;
 const TOAST_ROOM: ScreenName[] = ['hub', 'settlement', 'options'];
 
 /** What the battles of a contract added up to, for the record. */
-export interface Fought { tally: Stats; met: string[]; retreated: boolean; overdrives?: number }
+/** What a contract's battles came to: the record, the kinds met, and what an account goes by (see grudge.ts). */
+export interface Fought { tally: Stats; met: string[]; retreated: boolean; overdrives?: number; account?: AccountFought }
 
 /** Something to tell the pilot in passing: a medal earned, the database grown. */
 interface Toast {
@@ -257,6 +261,8 @@ class MissionHost implements Screen {
   private met = new Set<string>();
   /** Overdrives set off in the battles already counted. */
   private overdrives = 0;
+  /** What the contract's battles came to as far as an account goes: who one could begin with, and what the pilot's weapons did. */
+  private account: AccountFought = NOTHING_FOUGHT;
   /** What there is to say about the battle the contract was lost in; null after a win or a retreat. */
   private tip: Advice | null = null;
   /** What the contract's battles are fought with, as the app said when the battle on screen began. */
@@ -390,9 +396,14 @@ class MissionHost implements Screen {
     // The holder of a class's crown is paid more for a contract that asks for that class.
     const asked = askSettlement(rankSettlement(bill, performance), this.mission, flown, this.mission.asks ? askBonus(game, this.mission.asks) : undefined);
     // The duel that takes the eighth seat says so on its bill, as one that takes a crown does.
-    const settlement = seatSettlement(crownSettlement(asked, this.mission, flown, game), this.mission, game);
+    const crowned = seatSettlement(crownSettlement(asked, this.mission, flown, game), this.mission, game);
+    // The bill of a meeting won says whose account it was and which of its meetings, as the game stood before it was booked.
+    const account = crowned.won ? accountLine(game, this.mission) : null;
+    const settlement = account ? { ...crowned, account } : crowned;
     this.count();
-    const relief = this.app.bookSettlement(settlement, this.mission, { tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state), overdrives: this.overdrives });
+    const relief = this.app.bookSettlement(settlement, this.mission, {
+      tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state), overdrives: this.overdrives, account: this.account,
+    });
     // What the debt limit wrote off is shown with the bill.
     this.settlement = relief > 0 ? { ...settlement, relief } : settlement;
   }
@@ -403,6 +414,8 @@ class MissionHost implements Screen {
     // Whatever was on the field was met, what joined later included.
     for (const unit of this.flow.state.units) if (unit.side === 'enemy' && unit.kind) this.met.add(unit.kind);
     this.overdrives += this.flow.state.events.filter((event) => event.type === 'overdrive').length;
+    // Who an account could begin with, and what the pilot's weapons did: to the other side, and to the named machine of a meeting.
+    this.account = foughtIn(this.account, this.flow.state, isGrudge(this.mission));
   }
 
   update(dtMs: number): void {
@@ -526,6 +539,10 @@ class MissionHost implements Screen {
         enemyHeat: flow.state.units[1].heat, enemyKept: flow.state.units[1].kept,
         // What is written over the first of the other side: the one state worth flagging about it, if there is one.
         enemyMark: this.screen.markOver(flow.state.units[1].id),
+        // The weapons the first of the other side is hardened against, by their ids.
+        hardened: flow.state.units[1].hardened ?? [],
+        // Whether the weapon in hand does half to the machine under the sights.
+        halved: flow.halved,
       },
     };
   }
@@ -839,7 +856,12 @@ export class App {
     if (!this.sideWorkOpen()) return story;
     // Beside the board's three: the job that asks for something else, once the board has grown to have one, and the swarm.
     const job = jobContract(game.battlesWon, game.cycle, BOARD_TEXT);
-    return [...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT), ...(job ? [job] : []), swarmContract(game.battlesWon, game.cycle, BOARD_TEXT)];
+    // And the notice of a pilot who has come back for this one, once it is due.
+    const notice = grudgeContract(game, BOARD_TEXT, { machine: (kind) => ALL_ENEMIES[kind]?.name ?? kind, weapon: (id) => this.deps.catalog[id]?.name ?? id });
+    return [
+      ...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT), ...(job ? [job] : []), ...(notice ? [notice] : []),
+      swarmContract(game.battlesWon, game.cycle, BOARD_TEXT),
+    ];
   }
 
   /** True once the arena and the open contracts are available. */
@@ -940,7 +962,9 @@ export class App {
     if (!game) return ALL_ENEMIES;
     // The saved builds that can be sparred with are opponents too, each made from its own parts.
     const spars = sparSlots(game, this.deps.catalog).map((slot) => [SPAR_ENEMY(slot), sparEnemy(game, slot, STRINGS.training.spar(slot + 1), this.deps.catalog)]);
-    return { ...ALL_ENEMIES, mirror: mirrorEnemy(game, STRINGS.arena.mirror.name), ...Object.fromEntries(spars) };
+    // And the machine of whoever has an account open with this pilot.
+    const account = grudgeEnemy(game, ALL_ENEMIES);
+    return { ...ALL_ENEMIES, mirror: mirrorEnemy(game, STRINGS.arena.mirror.name), ...Object.fromEntries(spars), ...(account ? { [GRUDGE]: account } : {}) };
   }
 
   /**
@@ -1335,6 +1359,8 @@ export class App {
         if (mission.phase !== 'patrol' && settlement.rank) next = recordRank(next, mission.id, settlement.rank);
       }
     }
+    // An account: a meeting won is booked, any other contract won is one waited through, and where none is open one may begin.
+    next = bookGrudge(next, mission, settlement.won, fought.account ?? NOTHING_FOUGHT, BOARD_TEXT.grudge.names);
     this.commit(next);
     return relief;
   }
@@ -1492,6 +1518,9 @@ export class App {
       screen: this.name,
       credits: game?.credits ?? null,
       battlesWon: game?.battlesWon ?? null,
+      // The account that is open, if one is, and the callsigns of those closed.
+      grudge: game ? grudgeOf(game) : null,
+      accounts: game?.accounts ?? [],
       completed: game?.completed ?? null,
       build: game?.build ?? null,
       inventory: game?.inventory ?? null,

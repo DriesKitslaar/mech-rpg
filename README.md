@@ -78,6 +78,10 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   halve beurt. Hun piloten laten zien waar de mecha voor is: de een slaat elke ronde harder, de
   ander wacht een ronde en vuurt dan met anderhalve beurt energie. Wat hij heeft opgespaard, staat
   boven hem op het veld.
+- **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op
+  een eigen bericht naast het bord, met zijn roepnaam. Zijn mecha is gehard tegen het wapen dat hem
+  de vorige keer het hardst raakte: dat doet bij hem nog de helft, dus het loont om iets anders mee
+  te nemen. Na drie ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.
@@ -91,7 +95,7 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   spiegelgevecht tegen je eigen mecha. Na het verhaal: vier duels, elk om een mecha die je
   daarna zelf mag kopen.
 - **Training**: dertien oefeningen in een geleende mecha die elk één ding uitleggen.
-- **Piloot**: niveaus en acht vaardigheden, 74 medailles en een logboek.
+- **Piloot**: niveaus en acht vaardigheden, 77 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
 - **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,

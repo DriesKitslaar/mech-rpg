@@ -290,6 +290,11 @@ export interface EnemyDef {
    * last a duel takes longer to bring down and hits no harder for it, which a contract's scale would make it do.
    */
   plating?: number;
+  /**
+   * Weapons it is hardened against, by their ids: each of them does half to it (see `HARDENED`). A machine that
+   * comes back for a pilot is hardened against what that pilot hit it hardest with; see grudge.ts.
+   */
+  hardened?: string[];
 }
 
 export const FRAME_SLOTS: FrameSlot[] = ['core', 'legs', 'arms', 'head'];

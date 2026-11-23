@@ -42,6 +42,8 @@ export const STRINGS = {
     covered: 'COVERED', jammed: (n: number) => `JAMMED -${n}`, ironSkin: 'IRON SKIN', deadeye: 'DEADEYE',
     // What sets an elite enemy apart.
     marks: { armoured: 'ARMOURED', overclocked: 'OVERCLOCKED', swift: 'SWIFT', shielded: 'SHIELDED' } as Record<string, string>,
+    // A machine that is hardened against a weapon (see `HARDENED`), and what that weapon does to it while it is aimed at it.
+    hardened: 'HARDENED', half: 'HALF',
   },
   // What an enemy is about to do, read from how it moves: shown with its tags while it is aimed at.
   intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', cool: 'COOLING', windUp: 'WINDS UP', hold: 'HOLDS' },
@@ -366,6 +368,8 @@ export const STRINGS = {
     sRanks: 'S RANKS', arena: 'ARENA RANK', shots: 'SHOTS FIRED', hits: 'SHOTS LANDED', accuracy: 'ACCURACY',
     damage: 'ARMOUR SHOT OFF', taken: 'ARMOUR LOST', overheats: 'TURNS LOST TO HEAT', rounds: 'ROUNDS FOUGHT',
     earned: 'CREDITS EARNED', medals: 'MEDALS', cycle: 'CYCLE', time: 'TIME PLAYED', none: '-', ranksHeld: 'RANKS HELD',
+    // Beside the name the record has earned: the accounts the pilot has closed (see grudge.ts), once there is one.
+    accounts: (closed: number) => `ACCOUNTS CLOSED ${closed}`,
   },
   // The name a pilot's record has earned: five of them, each with what it means to the other side.
   renown: {
@@ -475,6 +479,8 @@ export const STRINGS = {
     finale: 'THE LAST MOVE OF THE WAR', repeatable: 'STANDING CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: AN ELITE', swarm: 'OPEN CONTRACT: A SWARM',
     // The open contract that asks for something else, by its kind.
     jobs: { hit: 'OPEN CONTRACT: A HIT', repo: 'OPEN CONTRACT: A REPOSSESSION', escort: 'OPEN CONTRACT: AN ESCORT', hold: 'OPEN CONTRACT: A HOLDING ACTION' },
+    // The notice of a pilot who has come back for this one: see grudge.ts.
+    account: 'OPEN CONTRACT: AN ACCOUNT',
     verdict: 'VERDICT: your answer ends the story. Every other offer is withdrawn.',
     replay: 'ARCHIVE: pays less. Nothing in the story changes.',
     lent: 'LENT MECH: yours cannot deploy. The bill is still yours.',
@@ -515,6 +521,8 @@ export const STRINGS = {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
     // The heading of a duel that took a master's crown, and of the one that took the eighth seat.
     crowned: 'THE CROWN IS YOURS', seated: 'THE SEAT IS YOURS',
+    // The heading of a meeting won with the pilot of an account: which of its meetings it was, and of the one that closed it.
+    account: (meeting: number, of: number) => `ACCOUNT: ${meeting} OF ${of}`, accountClosed: 'ACCOUNT CLOSED',
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
     askBonus: (name: string) => `${name} bonus`,

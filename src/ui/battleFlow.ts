@@ -1,6 +1,6 @@
 import { chooseAutoPlayerAction, chooseEnemyAction } from '../core/ai';
 import {
-  activeUnit, applyAction, checkAction, objectiveTarget, previewShot, weaponNow, ROUND_LIMIT,
+  activeUnit, applyAction, checkAction, hardenedAgainst, objectiveTarget, previewShot, weaponNow, ROUND_LIMIT,
   type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState, ORDERS,
 } from '../core/battle';
 import { moduleOf, weaponIn } from '../core/build';
@@ -283,6 +283,13 @@ export class BattleFlow {
     const open = this.targetsOf(slot);
     const named = objectiveTarget(this.state);
     return open.find((e) => e.id === this.lastTarget) ?? open.find((e) => e.id === named?.id) ?? open[0];
+  }
+
+  /** True while the weapon in hand is one the machine under the sights is hardened against: it does half to it (see `HARDENED`). */
+  get halved(): boolean {
+    const weapon = this.weapon ? weaponIn(this.player.build, this.weapon, this.catalog) : undefined;
+    const target = this.state.units.find((unit) => unit.id === this.targetId);
+    return !!weapon && !!target && hardenedAgainst(target, weapon);
   }
 
   /** Which of the enemies the weapon in hand can reach is under the sights, counted from one, and how many there are. */

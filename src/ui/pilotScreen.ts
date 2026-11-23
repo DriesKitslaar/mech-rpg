@@ -14,6 +14,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
+import { accountsClosed } from '../core/grudge';
 import { nameRank, nextNameAt, renownOf } from '../core/renown';
 import { RECORD_ROWS, rankTally, recordLines } from './record';
 import {
@@ -163,7 +164,7 @@ export class PilotScreen implements Screen {
       medalCount: { earned: MEDALS.filter((m) => game.medals.includes(m.id)).length, of: MEDALS.length },
       ...(this.page === 'medals' ? { detail: this.detail() } : {}),
       ...(this.page === 'drive' ? { overdrive: fittedOverdrive(game) ?? null } : {}),
-      ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length), known: { rank: nameRank(game), renown: renownOf(game), next: nextNameAt(game) } } : {}),
+      ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length), known: { rank: nameRank(game), renown: renownOf(game), next: nextNameAt(game) }, accounts: accountsClosed(game) } : {}),
       ...(this.page === 'classes' ? { classes: { flown: this.flown, kind: this.kind, advice: this.advice() } } : {}),
     };
   }
@@ -394,5 +395,8 @@ export class PilotScreen implements Screen {
     drawText(ctx, next === null ? N.renown(renownOf(game)) : N.towards(renownOf(game), next), LOGICAL_W - 12, known + 4, { align: 'right', color: COLORS.dim });
     drawText(ctx, rank > 0 ? N.names[rank - 1].toUpperCase() : N.none, 12, known + 15, { color: rank > 0 ? COLORS.accent : COLORS.dim });
     if (rank > 0) drawText(ctx, N.notes[rank - 1], 12, known + 26);
+    // Beside the name: the accounts closed, once there is one. Those were the ones who came back for this pilot by name.
+    const closed = accountsClosed(game);
+    if (closed > 0) drawText(ctx, STRINGS.record.accounts(closed), LOGICAL_W - 12, known + 15, { align: 'right' });
   }
 }

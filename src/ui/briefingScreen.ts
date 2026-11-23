@@ -54,7 +54,9 @@ export function hostiles(mission: Mission): string[] {
   for (const battle of mission.battles) for (const id of [...battle.enemies, ...(battle.reserve ?? [])]) counts.set(id, (counts.get(id) ?? 0) + 1);
   // The mirror, and a saved build that is sparred with, are machines made on the spot: each goes by what the game calls it.
   const spar = parseSpar(mission.id);
-  const name = (id: string): string => (id === 'mirror' ? STRINGS.arena.mirror.name : spar !== null ? STRINGS.training.spar(spar + 1) : ALL_ENEMIES[id]?.name ?? id);
+  // And one the contract itself has a name for goes by that.
+  const name = (id: string): string =>
+    mission.names?.[id] ?? (id === 'mirror' ? STRINGS.arena.mirror.name : spar !== null ? STRINGS.training.spar(spar + 1) : ALL_ENEMIES[id]?.name ?? id);
   return [...counts].map(([id, n]) => `${name(id)}${n > 1 ? ` x${n}` : ''}`);
 }
 
@@ -68,7 +70,7 @@ export function objectiveLines(mission: Mission): string[] {
   const numbered = mission.battles.length > 1;
   return mission.battles.flatMap((battle, i) => {
     const o = battle.objective;
-    const name = o && 'target' in o ? (ALL_ENEMIES[battle.enemies[o.target]]?.name ?? '') : '';
+    const name = o && 'target' in o ? (mission.names?.[battle.enemies[o.target]] ?? ALL_ENEMIES[battle.enemies[o.target]]?.name ?? '') : '';
     const asked = !o || o.type === 'destroy' ? []
       : [o.type === 'survive' ? BO.survive(o.rounds) : o.type === 'protect' ? BO.protect(o.name)
         : o.type === 'leader' ? BO.leader(name) : o.type === 'disable' ? BO.disable(name) : BO.driveOff(name)];
@@ -299,6 +301,7 @@ export class BriefingScreen implements Screen {
       : mission.replay ? B.replay
       : isSwarm(mission) ? B.swarm
       : mission.job !== undefined ? B.jobs[mission.job]
+      : mission.grudge !== undefined ? B.account
       : mission.id.startsWith('open-') ? (mission.elite ? B.openElite : B.open)
       : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict
       : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable

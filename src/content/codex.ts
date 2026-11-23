@@ -294,6 +294,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: "Once the board has grown a little, a job stands beside its three. Its title says which of four it is. Hit: paid for one machine, over when it falls. Repo: take that machine's arms and legs and leave its core. Escort: whatever stands wears the freight down each round. Hold: last six rounds. They turn with every contract won.",
   },
   {
+    id: 'accounts', title: 'OVERDUE ACCOUNTS',
+    text: 'A pilot you wrecked, drove off or lost to may come back for you: a notice beside the board, OVERDUE and their callsign. Their machine is HARDENED against the weapon that hurt it most last time: that weapon does HALF to it, and the briefing names it. Bring another and it is only a machine. Three meetings close the account.',
+  },
+  {
     id: 'range', title: 'THE RANGE',
     text: "The simulator's second page (L1/R1) is the range: your own build against any machine you have met, up to three of the lighter ones, one of a mech or anything of the story's. A real fight: perks, bench work, Overdrive and difficulty all count. Nothing is billed, paid or counted; afterwards you see what it would have cost.",
   },

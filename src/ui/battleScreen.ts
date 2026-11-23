@@ -1354,6 +1354,8 @@ export class BattleScreen {
     const marked = !!unit.mark && Math.floor(this.clock / MARK_TURN_MS) % 2 === 0;
     if (aegisFactor(this.flow.state, unit) < 1 && !marked) return { text: T.covered, color: COLORS.energy };
     if (unit.mark) return { text: T.marks[unit.mark], color: COLORS.accent };
+    // A machine that is hardened against a weapon says so as an elite says its mark.
+    if (unit.hardened?.length) return { text: T.hardened, color: COLORS.accent };
     return null;
   }
 
@@ -1376,6 +1378,9 @@ export class BattleScreen {
       ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor, rank: 2 }] : []),
       ...(unit.abilities.carrier ? [{ text: T.carrier, color: COLORS.heat, rank: 2 }] : []),
       ...(unit.mark ? [{ text: T.marks[unit.mark], color: COLORS.accent, rank: 4 }] : []),
+      // Hardened against a weapon: and, while that weapon is the one aimed at it, that it does half. Nothing in the row is more pressing than that.
+      ...(unit.hardened?.length ? [{ text: T.hardened, color: COLORS.accent, rank: 4 }] : []),
+      ...(this.flow.phase === 'target' && this.flow.targetId === unit.id && this.flow.halved ? [{ text: T.half, color: COLORS.danger, rank: 9 }] : []),
       ...(aegisFactor(state, unit) < 1 ? [{ text: T.covered, color: COLORS.energy, rank: 4 }] : []),
       ...(jammed > 0 ? [{ text: T.jammed(jammed), color: COLORS.heat, rank: 5 }] : []),
       ...(unit.boosted ? [{ text: T.boost, color: COLORS.energy, rank: 5 }] : []),

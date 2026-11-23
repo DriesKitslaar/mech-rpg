@@ -467,6 +467,35 @@ er gevraagd wordt.
   beste manier om geld te verdienen".
 - **Twee medailles:** één voor een klus van elke soort, één voor 25 klussen.
 
+### Vervallen rekeningen: wie voor je terugkomt
+
+Vanaf vijftien gewonnen contracten kan een piloot die je bent tegengekomen **voor je terugkomen**.
+Dat begint met iets wat echt gebeurd is: je sloopte zijn mecha, hij sloeg voor je op de vlucht, of
+hij versloeg jou. Drie gewonnen contracten later staat er tussen de open contracten een bericht met
+zijn roepnaam: **Overdue: Brakk** (Nederlands **Vervallen: Brakk**). Je neemt het aan wanneer je
+wilt; het blijft staan tot je het wint.
+
+- Het is **één gevecht om één machine**: de zijne, met wat gezelschap. Valt hij, dan is het klaar
+  (**TARGET: BRAKK**).
+- Zijn mecha is **gehard** tegen het wapen dat hem de vorige keer het hardst raakte. Dat wapen doet
+  bij hem nog maar **de helft**; bij de machines naast hem doet het wat het altijd deed. De briefing
+  noemt het wapen bij naam. Boven hem staat **HARDENED** (Nederlands **GEHARD**), en mik je met dat
+  wapen op hem, dan staat er **HALF** (Nederlands **HELFT**) naast zijn naam en zie je bij **DMG**
+  het gehalveerde getal.
+- Neem dus **iets anders mee**: wissel dat wapen in de garage, of blader bij de briefing op de rij
+  **Build** naar een andere bewaarde build en kijk wat **ODDS** dan zegt. Met hetzelfde wapen kan
+  het ook, maar het duurt langer en je verdient er per ronde ruim een derde minder mee.
+- Hij komt **drie keer** terug, steeds in dezelfde mecha, elke keer iets dikker gepantserd en gehard
+  tegen het wapen dat hem de keer ervoor het hardst raakte. Na de eerste keer wacht hij twee
+  gewonnen contracten, na de tweede weer twee. De tweede ontmoeting betaalt een kwart meer dan de
+  eerste, de derde de helft meer.
+- Na de derde is de rekening gesloten (**ACCOUNT CLOSED**, Nederlands **REKENING DICHT**). Daarna
+  kan er een nieuwe beginnen, met een andere piloot. Er loopt er altijd maar één tegelijk.
+- Verlies je of loop je weg, dan verandert er niets: het bericht blijft staan.
+- Hoeveel rekeningen je hebt gesloten staat op de pagina **Record** van je piloot.
+- **Drie medailles:** één voor de eerste gewonnen ontmoeting, één voor een gesloten rekening, één
+  voor drie.
+
 ### Het proefveld: je build gratis uitproberen
 
 Onder **Training** zit een tweede pagina: druk op **R1** (of **L1**) voor **TEST RANGE**. Daar

@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { ARCHETYPES, archetypeOf } from '../../src/core/archetype';
-import { GUARD_DAMAGE, HEAT_LIMIT, SPOOL_BASE, SURGE_UNIT, bufferRoom, createBattle } from '../../src/core/battle';
+import { GUARD_DAMAGE, HARDENED, HEAT_LIMIT, SPOOL_BASE, SURGE_UNIT, bufferRoom, createBattle } from '../../src/core/battle';
+import { WINS_PER_TIER } from '../../src/core/board';
+import { GRUDGE_MEETINGS, GRUDGE_NUMBERS, GRUDGE_TIER, GRUDGE_WAIT } from '../../src/core/grudge';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
 import { startNewCycle } from '../../src/core/campaign';
 import { launches } from '../../src/core/launch';
@@ -11,8 +13,10 @@ import { ALL_STRIPES, MAX_STRIPE_POINTS, STRIPES_AT, STRIPES_A_POINT, countsForC
 import type { FramePart, Weapon } from '../../src/core/types';
 import { ARENA } from '../../src/content/arena';
 import { MANUAL } from '../../src/content/codex';
+import { BOARD_TEXT, GRUDGE_NAMES } from '../../src/content/board';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
+import { setLanguage } from '../../src/content/language';
 import { MASTERS } from '../../src/content/masters';
 import { MEDALS, WEAPON_KINDS, WORKS_DUELS } from '../../src/content/medals';
 import { DUELS } from '../../src/content/sidework';
@@ -525,5 +529,86 @@ describe('what is said of the yard\'s two frames and their duels is so', () => {
     expect(README).toContain('De Solstice bewaart de energie die je niet gebruikt voor je volgende beurt, tot een halve beurt.');
     expect(README).toContain('de ander wacht een ronde en vuurt dan met anderhalve beurt energie. Wat hij heeft opgespaard, staat boven hem op het veld.');
     expect(README).toContain(`Na het verhaal: ${word(DUELS.length)} duels, elk om een mecha die je daarna zelf mag kopen.`);
+  });
+});
+
+describe('what is said of accounts is so', () => {
+  const section = GUIDE.slice(GUIDE.indexOf('### Vervallen rekeningen: wie voor je terugkomt'), GUIDE.indexOf('### Het proefveld'));
+  const chapter = MANUAL.find((entry) => entry.id === 'accounts')!;
+  afterEach(() => setLanguage('en'));
+
+  test('the figures everything below is held to: from the third tier, three meetings, after three contracts and then two and two, half, and a quarter more each time', () => {
+    expect([GRUDGE_TIER, WINS_PER_TIER, GRUDGE_MEETINGS, HARDENED]).toEqual([3, 5, 3, 0.5]);
+    expect([...GRUDGE_WAIT]).toEqual([3, 2, 2]);
+    expect(GRUDGE_NUMBERS.pay).toEqual([1, 1.25, 1.5]);
+    expect(GRUDGE_NUMBERS.plating[0]).toBe(0);
+    expect(GRUDGE_NUMBERS.plating[1]).toBeGreaterThan(0);
+    expect(GRUDGE_NUMBERS.plating[2]).toBeGreaterThan(GRUDGE_NUMBERS.plating[1]);
+  });
+
+  test('the guide: when one begins, what its notice is called in both languages, and what the contract asks', () => {
+    expect(section.length).toBeGreaterThan(1500);
+    expect(section).toContain(`Vanaf ${word(GRUDGE_TIER * WINS_PER_TIER)} gewonnen contracten kan een piloot die je bent tegengekomen **voor je terugkomen**`);
+    expect(section).toContain('je sloopte zijn mecha, hij sloeg voor je op de vlucht, of hij versloeg jou');
+    expect(section).toContain(`${capital(word(GRUDGE_WAIT[0]))} gewonnen contracten later staat er tussen de open contracten een bericht met zijn roepnaam`);
+    expect(GRUDGE_NAMES).toContain('Brakk');
+    const english = BOARD_TEXT.grudge.title('Brakk');
+    setLanguage('nl');
+    const dutch = BOARD_TEXT.grudge.title('Brakk');
+    setLanguage('en');
+    expect(section).toContain(`**${english}** (Nederlands **${dutch}**)`);
+    expect(section).toContain(`(**${STRINGS.objectives.leader('Brakk')}**)`);
+    expect(section).toContain('het blijft staan tot je het wint');
+    expect(section).toContain('Verlies je of loop je weg, dan verandert er niets: het bericht blijft staan.');
+  });
+
+  test('the guide: what hardened is, in the words the screen writes', () => {
+    expect(section).toContain('Zijn mecha is **gehard** tegen het wapen dat hem de vorige keer het hardst raakte. Dat wapen doet bij hem nog maar **de helft**');
+    expect(section).toContain('bij de machines naast hem doet het wat het altijd deed');
+    expect(section).toContain(`Boven hem staat **${STRINGS.tags.hardened}** (Nederlands **${STRINGS_NL.tags.hardened}**)`);
+    expect(section).toContain(`dan staat er **${STRINGS.tags.half}** (Nederlands **${STRINGS_NL.tags.half}**) naast zijn naam en zie je bij **${STRINGS.preview.damage}** het gehalveerde getal`);
+    expect(section).toContain('blader bij de briefing op de rij **Build** naar een andere bewaarde build en kijk wat **ODDS** dan zegt');
+  });
+
+  test('the guide: three meetings in the same machine, what each waits and pays, how one closes, and the medals', () => {
+    expect(section).toContain(`Hij komt **${word(GRUDGE_MEETINGS)} keer** terug, steeds in dezelfde mecha, elke keer iets dikker gepantserd`);
+    expect(section).toContain(`Na de eerste keer wacht hij ${word(GRUDGE_WAIT[1])} gewonnen contracten, na de tweede weer ${word(GRUDGE_WAIT[2])}.`);
+    expect(section).toContain('De tweede ontmoeting betaalt een kwart meer dan de eerste, de derde de helft meer.');
+    expect(section).toContain(`(**${STRINGS.settlement.accountClosed}**, Nederlands **${STRINGS_NL.settlement.accountClosed}**)`);
+    expect(section).toContain('Er loopt er altijd maar één tegelijk.');
+    expect(section).toContain(`staat op de pagina **${capital(STRINGS.pilot.pages.record.toLowerCase())}** van je piloot`);
+    const medals = MEDALS.filter((entry) => entry.id.startsWith('account-'));
+    expect(medals.map((entry) => [entry.id, entry.tier])).toEqual([['account-1', 1], ['account-closed', 2], ['account-3', 3]]);
+    expect(section).toContain(`**${capital(word(medals.length))} medailles:** één voor de eerste gewonnen ontmoeting, één voor een gesloten rekening, één voor ${word(medals[2].progress({} as never).need)}.`);
+    // What each asks: a meeting won, an account closed, three closed.
+    const kept = (met: number, accounts: string[]) => ({ accounts, grudge: { name: 'Brakk', kind: 'stalker', origin: 'ran', met, waited: 0 } }) as never;
+    expect(medals.map((entry) => entry.progress(kept(0, [])))).toEqual([{ have: 0, need: 1 }, { have: 0, need: 1 }, { have: 0, need: 3 }]);
+    expect(medals.map((entry) => entry.progress(kept(1, [])).have)).toEqual([1, 0, 0]);
+    expect(medals.map((entry) => entry.progress(kept(2, ['Tally'])).have)).toEqual([5, 1, 1]);
+    expect(medals.map((entry) => entry.progress({ accounts: ['Tally', 'Docket', 'Lapse'] } as never).have)).toEqual([9, 3, 3]);
+    expect(medals.map((entry) => entry.progress({} as never).have)).toEqual([0, 0, 0]);
+  });
+
+  test('the manual: a chapter after the one on jobs, in the words the notice and the screen use', () => {
+    expect(MANUAL[MANUAL.findIndex((entry) => entry.id === 'jobs') + 1].id).toBe('accounts');
+    expect(chapter.title).toBe('OVERDUE ACCOUNTS');
+    expect(REFERENCE_NL[chapter.title]).toBe('VERVALLEN REKENING');
+    expect(chapter.text).toContain('A pilot you wrecked, drove off or lost to may come back for you');
+    expect(BOARD_TEXT.grudge.title('Brakk')).toBe('Overdue: Brakk');
+    expect(chapter.text).toContain('OVERDUE and their callsign');
+    expect(chapter.text).toContain(`Their machine is ${STRINGS.tags.hardened} against the weapon that hurt it most last time: that weapon does ${STRINGS.tags.half} to it`);
+    expect(chapter.text).toContain('Three meetings close the account.');
+    const dutch = REFERENCE_NL[chapter.text];
+    expect(dutch).toContain('VERVALLEN en hun roepnaam');
+    expect(dutch).toContain(`Hun machine is ${STRINGS_NL.tags.hardened} tegen het wapen dat hem de vorige keer het meest deed: dat doet de ${STRINGS_NL.tags.half}`);
+    expect(dutch).toContain(`${capital(word(GRUDGE_MEETINGS))} ontmoetingen sluiten de rekening.`);
+  });
+
+  test('the README: a section on accounts, and the medals counted', () => {
+    expect(README).toContain('- **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op een eigen bericht naast het bord, met zijn roepnaam.');
+    expect(README).toContain('Zijn mecha is gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet bij hem nog de helft');
+    expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
+    expect(README).toContain(`${MEDALS.length} medailles`);
+    expect(MEDALS).toHaveLength(77);
   });
 });

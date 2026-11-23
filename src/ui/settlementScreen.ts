@@ -2,6 +2,7 @@ import type { Advice } from '../core/advice';
 import type { Mission } from '../core/campaign';
 import { isDrill } from '../core/training';
 import type { Settlement } from '../core/economy';
+import { GRUDGE_MEETINGS } from '../core/grudge';
 import { masterOf } from '../content/masters';
 import { KEEPER } from '../content/seat';
 import { STRINGS } from '../content/strings';
@@ -40,7 +41,7 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned, seated } = this.settlement;
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned, seated, account } = this.settlement;
     return {
       menu: { items: [], cursor: 0 },
       settlement: {
@@ -53,6 +54,8 @@ export class SettlementScreen implements Screen {
         crowned: crowned ?? null,
         // True of the bill of the duel that took the eighth seat.
         seated: seated === true,
+        // The meeting with an account's pilot that this bill is of: whose account, which meeting, and whether it closed it.
+        account: account ?? null,
       },
     };
   }
@@ -76,7 +79,8 @@ export class SettlementScreen implements Screen {
     const drill = isDrill(this.mission);
     const T = STRINGS.training;
     // A duel that took a master's crown is headed by that, and the one that took the eighth seat by that.
-    const heading = drill ? (s.won ? T.won : T.lost) : s.simulated ? (s.won ? T.rangeWon : T.rangeLost) : s.seated ? S.seated : s.crowned ? S.crowned : s.won ? S.won : S.lost;
+    const heading = drill ? (s.won ? T.won : T.lost) : s.simulated ? (s.won ? T.rangeWon : T.rangeLost) : s.seated ? S.seated : s.crowned ? S.crowned
+      : s.account ? (s.account.closed ? S.accountClosed : S.account(s.account.meeting, GRUDGE_MEETINGS)) : s.won ? S.won : S.lost;
     drawText(ctx, heading, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
     const fast = this.app.deps.fast;
     if (s.rank) {
