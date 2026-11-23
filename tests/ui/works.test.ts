@@ -7,11 +7,12 @@ import '../../src/content/nl';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 import SPRITES from '../../src/content/sprites.json';
 import { BattleFlow } from '../../src/ui/battleFlow';
-import { BattleScreen } from '../../src/ui/battleScreen';
+import { BattleScreen, GENERATOR } from '../../src/ui/battleScreen';
 import { PART_LINE_CHARS, partLines } from '../../src/ui/partInfo';
 import type { SpriteStore } from '../../src/ui/sprites';
+import { intentText } from '../../src/ui/tags';
 import { COLORS } from '../../src/ui/widgets';
-import { record, type Drawn, type Written } from '../helpers/canvas';
+import { record, type Drawn, type Glowed, type Written } from '../helpers/canvas';
 
 /**
  * What a pilot sees of the two cores in a battle: the heat bar drawn to the machine's own limit and red where
@@ -93,6 +94,56 @@ describe('the heat bar of a machine with a limit of its own', () => {
   test('the figure is the same in Dutch', () => {
     setLanguage('nl');
     expect(heatRow(shown(battle(HOT.id, 84)).page()).figure.text).toBe('84/130');
+  });
+});
+
+describe('a machine seen to be hot, on the field', () => {
+  /** The lights of one colour on a page: the glow of a hot machine is orange-red, the light of its generator amber. */
+  const lights = (page: Drawn, rgb: string): Glowed[] => page.glows.filter((glow) => glow.stops[0]?.[1].startsWith(`rgba(${rgb},`));
+  const brightness = (glow: Glowed): number => Number(/, ([\d.]+)\)$/.exec(glow.stops[0][1])![1]);
+  const HEAT_GLOW = '255, 90, 32';
+  const AMBER = '255, 176, 96';
+  const seen = (core: string, heat: number): Drawn => shown(battle(core, heat), false).page();
+
+  test('glows from three quarters of the way to its own limit: from 75 of a hundred, from 98 of 130', () => {
+    const glowing = (core: string, heat: number): number => lights(seen(core, heat), HEAT_GLOW).length;
+    expect([74, 75, 97, 98].map((heat) => glowing(stock.id, heat))).toEqual([0, 1, 1, 1]);
+    expect([74, 75, 97, 98].map((heat) => glowing(HOT.id, heat))).toEqual([0, 0, 0, 1]);
+  });
+
+  test('and the brighter the nearer it is to that limit: at 110 of 130 it is not yet half-way from where the glow begins to the limit', () => {
+    // (The glow breathes; two screens brought to the pilot's turn in the same way are at the same breath.)
+    const at = (core: string, heat: number): number => brightness(lights(seen(core, heat), HEAT_GLOW)[0]);
+    const full = at(HOT.id, 130);
+    // The glow is half as strong where it begins as at the limit, and rises evenly between: 97.5 to 130 here.
+    const share = (110 / 130 - 0.75) / 0.25;
+    expect(share).toBeLessThan(0.5);
+    expect(at(HOT.id, 110) / full).toBeCloseTo((1 + share) / 2, 1);
+    expect(at(HOT.id, 110)).toBeLessThan(full * 0.8);
+    // Any other machine at a hundred is as far gone as this one at 130, and is at its brightest long before 110.
+    expect(at(stock.id, 100)).toBeCloseTo(full, 2);
+    expect(at(stock.id, 110)).toBeCloseTo(full, 2);
+  });
+
+  test('the light of the pilot\'s generator swells with its heat as a share of the machine\'s own limit', () => {
+    const radius = (core: string, heat: number): number => lights(seen(core, heat), AMBER)[0].r;
+    expect(radius(stock.id, 0)).toBe(GENERATOR.r);
+    expect(radius(HOT.id, 0)).toBe(GENERATOR.r);
+    // Half-way to its own limit it has swollen by half of what it can: 65 of 130, 50 of a hundred.
+    expect(radius(HOT.id, 65)).toBe(GENERATOR.r + 3);
+    expect(radius(stock.id, 50)).toBe(GENERATOR.r + 3);
+    expect(radius(HOT.id, 130)).toBe(GENERATOR.r + 6);
+    expect(radius(stock.id, 65)).toBeCloseTo(GENERATOR.r + 3.9, 5);
+  });
+});
+
+describe('what a machine that holds is about to do', () => {
+  test('is written as holding, in a word of its own, in both languages', () => {
+    expect(intentText({ kind: 'hold' })).toBe('HOLDS');
+    expect(intentText({ kind: 'hold' })).not.toBe(intentText({ kind: 'cool' }));
+    setLanguage('nl');
+    expect(intentText({ kind: 'hold' })).toBe('WACHT');
+    expect(intentText({ kind: 'hold' })).not.toBe(intentText({ kind: 'cool' }));
   });
 });
 

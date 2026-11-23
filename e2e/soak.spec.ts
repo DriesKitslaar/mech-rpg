@@ -52,6 +52,8 @@ function pilot(done: string[], wears: Partial<Build> = {}): GameState {
   g = { ...g, credits: 999999, battlesWon: done.length };
   // The frame first, then what it carries: weapons other than the build's own, where the player wears them.
   for (const [slot, id] of [...Object.entries(REFERENCE_BUILDS.tier6), ...Object.entries(wears)]) {
+    // A slot the player leaves empty is emptied.
+    if (id === undefined) { g = equip(g, slot as keyof GameState['build'], null, CATALOG); continue; }
     g = buy(g, id, CATALOG);
     g = equip(g, slot as keyof GameState['build'], id, CATALOG);
   }
@@ -240,6 +242,9 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
         if (kind) kinds.add(kind[1]);
       }
       if (/^(It leaps on to|Slaat over op) /.test(b.message)) kinds.add('leap');
+      // What the two works frames do: a turn opened with what the core kept, and a machine past a hundred that is still the pilot's to fly.
+      if ((fought.words ?? []).some((word) => /^\+\d+ EN$/.test(word))) kinds.add('kept');
+      if (b.phase === 'action' && (s.player?.heat ?? 0) > 100) kinds.add('hot');
       if (fought.fork) kinds.add('mark');
       for (const row of fought.weapons ?? []) {
         const said = / (ALL|ALLES) \d+ /.test(row.note) ? 'row:surge' : / \d+ (SHOTS|SCHOTEN)$/.test(row.note) ? 'row:spool' : / \+\d+%$/.test(row.note) ? 'row:redline' : null;
@@ -335,6 +340,17 @@ const THREE_KINDS: Partial<Build> = { rightHand: 'wpn-sluice', leftHand: 'wpn-fl
 /** And the other two: a redline and a punish, with a howler to knock a machine off balance for the punish. */
 const TWO_KINDS: Partial<Build> = { rightHand: 'wpn-slagcaster', leftHand: 'wpn-spike-driver', shoulder: 'wpn-howler' };
 
+/** A Sirocco with a volley of three hot weapons, two of them redlines, and a coolant flush. */
+const HOT_VOLLEY: Partial<Build> = {
+  head: 'head-sirocco', core: 'core-sirocco', arms: 'arms-sirocco', legs: 'legs-sirocco', generator: 'gen-tidal', module: 'mod-coolant',
+  rightHand: 'wpn-plasma', leftHand: 'wpn-slagcaster', shoulder: 'wpn-crucible',
+};
+/** A Solstice with a rifle and a blade and nothing on its shoulder: what a turn leaves over is kept. */
+const KEEPER_OF_TURNS: Partial<Build> = {
+  head: 'head-solstice', core: 'core-solstice', arms: 'arms-solstice', legs: 'legs-solstice', generator: 'gen-tidal', booster: 'bst-phase',
+  fcs: 'fcs-surgeon', module: 'mod-oracle', rightHand: 'wpn-void-rifle', leftHand: 'wpn-arc-blade', shoulder: undefined,
+};
+
 const PLAYERS: {
   name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held'; mix?: Mix;
   /** Weapons worn in place of the build's own, and whether one of them is aimed by hand each turn. */
@@ -356,6 +372,10 @@ const PLAYERS: {
   // bolt that leaps on, a spool winding up and a surge emptying the cell; and what Auto Turn makes of a redline and a punish.
   { name: 'with a surge, a spool and a fork, one weapon aimed by hand each turn', done: ACT_ONE, prefer: ['lumen', 'enforce'], settings: {}, wears: THREE_KINDS, hand: true },
   { name: 'with a redline and a punish, in Dutch, left to Auto Turn', done: ACT_ONE, prefer: ['hadron', 'default'], settings: { language: 'nl' }, wears: TWO_KINDS },
+  // The two frames of the yard's works pilots, each from behind in every battle: a heat bar drawn to 130 and a machine
+  // past a hundred, and a turn that opens with what the last one did not spend.
+  { name: 'in a Sirocco with a volley of three hot weapons, left to Auto Turn', done: AFTER_THE_WAR, prefer: ['undertow', 'enforce'], settings: {}, wears: HOT_VOLLEY },
+  { name: 'in a Solstice with a rifle and a blade, in Dutch, one weapon aimed by hand each turn', done: AFTER_THE_WAR, prefer: ['lumen', 'default'], settings: { language: 'nl' }, wears: KEEPER_OF_TURNS, hand: true },
 ];
 
 for (const player of PLAYERS) {
@@ -400,6 +420,8 @@ for (const player of PLAYERS) {
     if (player.wears) console.log(`${player.name}: of the five kinds, seen ${played.kinds.join(' ') || 'nothing'}`);
     if (player.wears === THREE_KINDS) expect(played.kinds).toEqual(expect.arrayContaining(['SURGE', 'leap', 'mark', 'row:spool', 'row:surge']));
     if (player.wears === TWO_KINDS) expect(played.kinds).toEqual(expect.arrayContaining(['STRAF', 'WITHEET']));
+    if (player.wears === HOT_VOLLEY) expect(played.kinds).toEqual(expect.arrayContaining(['hot', 'REDLINE']));
+    if (player.wears === KEEPER_OF_TURNS) expect(played.kinds).toContain('kept');
     // Every one of them flew a swarm: the machines that come on later were on the screen.
     expect(played.swarms).toBe(1);
     // And jobs, once the board had one to offer: what each kind asks was on the field, with everything drawn.

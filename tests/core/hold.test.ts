@@ -7,7 +7,7 @@ import {
 import { validatePlayerBuild } from '../../src/core/build';
 import { newGame } from '../../src/core/game';
 import { intentOf, nextTurnRound } from '../../src/core/intent';
-import type { Build, EnemyDef } from '../../src/core/types';
+import type { Build, Catalog, EnemyDef, Weapon } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
@@ -165,6 +165,58 @@ describe('the habit of holding', () => {
     expect(enemyTurn(s).actions.some((a) => a.type === 'fire')).toBe(true);
     // Its core keeps what it does not spend, as the pilot's own does.
     expect(foe(s).buffer).toBe(50);
+  });
+});
+
+describe('what is read of a machine with a buffer', () => {
+  /** A weapon that asks more than a turn gives: it can only be fired with what was kept on top. */
+  const HEAVY: Weapon = { ...(CATALOG['wpn-enemy-wave'] as Weapon), id: 'wpn-t-heavy', name: 'wpn-t-heavy', trait: undefined, energy: TURN + 60 };
+  const WITH: Catalog = { ...CATALOG, [HEAVY.id]: HEAVY };
+  /** The Solstice with that weapon and no habit of holding: it fires when it can. */
+  const SAVER: EnemyDef = { ...ENEMIES.vesper, id: 'saver', abilities: {}, build: { ...ENEMIES.vesper.build, rightHand: HEAVY.id } };
+  const turnOf = (s: BattleState): { actions: Action[]; after: BattleState } => {
+    const actions: Action[] = [];
+    for (let guard = 0; guard < 12 && s.outcome === 'ongoing' && activeUnit(s).id === 'enemy-0'; guard++) {
+      const action = chooseEnemyAction(s, WITH);
+      actions.push(action);
+      s = applyAction(s, action, WITH, hit);
+    }
+    return { actions, after: s };
+  };
+
+  test('what it kept is counted in: a weapon it can only fire with a turn and what was kept on top reads as aimed, and is fired', () => {
+    const s = createBattle(SLOW, [SAVER], WITH, 1);
+    expect(activeUnit(s).id).toBe('enemy-0');
+    expect(foe(s).energy).toBe(TURN);
+    // The first turn has not the energy for it: nothing is fired, and what is left is kept.
+    const first = turnOf(s);
+    expect(first.actions.some((a) => a.type === 'fire')).toBe(false);
+    expect(foe(first.after).kept).toBeGreaterThanOrEqual(60);
+    // The pilot reads its next turn: with what it kept, the weapon can be fired.
+    expect(intentOf(first.after, foe(first.after), WITH)).toEqual({ kind: 'aim', part: 'core' });
+    const second = turnOf(applyAction(first.after, END, WITH));
+    expect(second.actions[0]).toMatchObject({ type: 'fire', weapon: 'rightHand' });
+    // The same machine with nothing kept could not, and reads as nothing.
+    const empty = edit(first.after, (d) => { foe(d).kept = 0; });
+    expect(intentOf(empty, foe(empty), WITH)).toBeNull();
+  });
+
+  test('a holder that winds a weapon up in the round it fires reads as winding up, not as holding', () => {
+    const bow: EnemyDef = { ...ENEMIES.vesper, id: 'bow', build: { ...ENEMIES.vesper.build, rightHand: 'wpn-enemy-longbow' } };
+    const s = against(QUICK, bow);
+    expect(activeUnit(s).id).toBe('player');
+    // The first round is one it holds.
+    expect(intentOf(s, foe(s), CATALOG)).toEqual({ kind: 'hold' });
+    const second = pass(enemyTurn(pass(s)).after);
+    expect(second.round).toBe(2);
+    expect(activeUnit(second).id).toBe('enemy-0');
+    expect(chooseEnemyAction(second, CATALOG)).toEqual({ type: 'charge', weapon: 'rightHand' });
+    // Read from the pilot's side in the round before: its next turn is the one it winds up in.
+    const mine = enemyTurn(pass(s)).after;
+    expect(mine.round).toBe(2);
+    expect(activeUnit(mine).id).toBe('player');
+    expect(nextTurnRound(mine, foe(mine))).toBe(2);
+    expect(intentOf(mine, foe(mine), CATALOG)).toEqual({ kind: 'charge' });
   });
 });
 

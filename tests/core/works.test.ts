@@ -1,6 +1,6 @@
 import { chooseAutoPlayerAction } from '../../src/core/ai';
 import {
-  HEAT_AFTER_OVERHEAT, HEAT_LIMIT, STAGGER_ENERGY, activeUnit, applyAction, createBattle, heatLimitOf, bufferOf, turnEnergyOf, weaponNow,
+  HEAT_AFTER_OVERHEAT, HEAT_LIMIT, STAGGER_ENERGY, activeUnit, applyAction, bufferRoom, createBattle, heatLimitOf, bufferOf, turnEnergyOf, weaponNow,
   type Action, type BattleEvent, type BattleState, type UnitState,
 } from '../../src/core/battle';
 import type { Build, Catalog, EnemyDef, FramePart, Module, Weapon, WeaponSlot } from '../../src/core/types';
@@ -16,6 +16,8 @@ const END: Action = { type: 'endTurn' };
 const stock = CATALOG[DEMO_BUILD.core!] as FramePart;
 const HOT: FramePart = { ...stock, id: 'core-t-hot', name: 'core-t-hot', heatLimit: 130 };
 const DEEP: FramePart = { ...stock, id: 'core-t-deep', name: 'core-t-deep', buffer: 50 };
+/** A buffer whose share of a turn does not come out even. */
+const THIRD: FramePart = { ...stock, id: 'core-t-third', name: 'core-t-third', buffer: 33 };
 const rifle = CATALOG['wpn-rivet-rifle'] as Weapon;
 const made = (id: string, change: Partial<Weapon>): Weapon => ({ ...rifle, id, name: id, ammo: null, costPerShot: 0, ...change });
 const WARM = made('wpn-t-warm', { damage: 20, energy: 40, heat: 30 });
@@ -25,7 +27,7 @@ const ONE = made('wpn-t-one', { damage: 20, energy: 40, heat: 1 });
 const REDLINE = made('wpn-t-redline', { trait: 'redline', traitPower: 6, damage: 50, energy: 40, heat: 10 });
 const DRAIN = made('wpn-t-drain', { trait: 'drain', traitPower: 70, damage: 5, energy: 10, heat: 1 });
 const WORKS: Catalog = {
-  ...CATALOG, [HOT.id]: HOT, [DEEP.id]: DEEP,
+  ...CATALOG, [HOT.id]: HOT, [DEEP.id]: DEEP, [THIRD.id]: THIRD,
   ...Object.fromEntries([WARM, WARM_LEFT, WARM_BACK, ONE, REDLINE, DRAIN].map((w) => [w.id, w])),
 };
 
@@ -124,6 +126,17 @@ describe('a core with a heat limit of its own', () => {
     expect(there.slice(0, 3)).toEqual(['rightHand', 'leftHand', 'cool']);
   });
 
+  test('the order it fires in is planned to the machine\'s own limit: what heats it goes before a redline wherever both still fit', () => {
+    // A redline in the right hand, and two weapons of thirty heat. What fits under the limit is fired with the redline last.
+    const carried = { rightHand: REDLINE.id, leftHand: WARM_LEFT.id, shoulder: WARM_BACK.id };
+    const first = (s: BattleState): Action => chooseAutoPlayerAction(edit(s, (d) => { player(d).energy = 400; }), WORKS);
+    // At seventy-five the redline and one of the others fit under a hundred and thirty: the other goes first, to warm the redline.
+    expect(first(at(field(HOT.id, carried), 75))).toMatchObject({ type: 'fire', weapon: 'leftHand' });
+    // In any other machine the same is so thirty lower, and at seventy-five nothing but the redline fits: it vents, or fires the redline as it is.
+    expect(first(at(field(stock.id, carried), 45))).toMatchObject({ type: 'fire', weapon: 'leftHand' });
+    expect(first(at(field(stock.id, carried), 75))).not.toMatchObject({ type: 'fire', weapon: 'leftHand' });
+  });
+
   test('a coolant flush is kept back beside a redline until a weapon would pass the machine\'s own limit', () => {
     const flush = Object.values(CATALOG).find((part): part is Module => part.kind === 'module' && part.effect === 'coolant')!;
     const carried = { rightHand: WARM.id, leftHand: REDLINE.id, module: flush.id };
@@ -175,6 +188,17 @@ describe('a core with a buffer', () => {
     expect(player(third).energy).toBe(turn + cap);
     const just = nextTurn(edit(again, (d) => { player(d).energy = cap - 1; }));
     expect(player(just).energy).toBe(turn + cap - 1);
+  });
+
+  test('a share that does not come out even is rounded down: the room is never more than the share', () => {
+    const third = field(THIRD.id, { rightHand: ONE.id });
+    const own = turnEnergyOf(player(third), WORKS);
+    expect((own * 33) % 100).not.toBe(0);
+    const room = Math.floor((own * 33) / 100);
+    expect(bufferRoom(player(third), WORKS)).toBe(room);
+    expect(player(nextTurn(third)).energy).toBe(own + room);
+    // And of a machine with no buffer the room is nothing.
+    expect(bufferRoom(player(plain), WORKS)).toBe(0);
   });
 
   test('a machine without one keeps nothing, and its turn says nothing of it', () => {
