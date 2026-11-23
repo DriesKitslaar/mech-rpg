@@ -454,7 +454,7 @@ export const STRINGS_NL = {
   advice: {
     disable: 'De machine moest heel blijven. Mik op benen en armen; laat de kern met rust.',
     protect: 'Het verliest per ronde een punt per vijand die nog staat. Dun ze uit, zwakste eerst.',
-    heat: 'Oververhit kostte je een beurt. Koel voor de hittebalk over 100 gaat.',
+    heat: 'Oververhit kostte je een beurt. Koel voor de hittebalk vol is.',
     stance: 'Boost en Dekking bleven liggen. Boost maakt je lastig te raken; Dekking dempt de rest.',
     repairs: 'Je viel met veldreparaties over. Een reparatie kost je beurt: vuur eerst, lap dan.',
     time: 'De tijd raakte op. Breng meer vuurkracht mee en mik op wat het contract noemt.',

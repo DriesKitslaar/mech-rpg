@@ -527,7 +527,8 @@ export const STRINGS = {
   advice: {
     disable: 'The machine was wanted in one piece. Aim at its legs and arms; leave the core alone.',
     protect: 'It loses a point a round for every hostile still standing. Thin them out, weakest first.',
-    heat: 'You overheated and lost a turn. Vent before the heat bar passes 100.',
+    // The bar is as long as the machine's own limit, so this is so in a machine whose limit is not the usual one.
+    heat: 'You overheated and lost a turn. Vent before the heat bar is full.',
     stance: 'You never used Boost or Guard. Boost makes you hard to hit; Guard blunts what lands.',
     repairs: 'You went down with field repairs unused. A repair ends your turn: fire, then patch.',
     time: 'The fight ran out of time. Bring more firepower, and aim at what the contract names.',

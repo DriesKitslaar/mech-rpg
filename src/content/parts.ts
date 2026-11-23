@@ -110,16 +110,16 @@ export const SHOP_PARTS: Part[] = [
   // Sirocco: one of the two machines the yard on the coast had never sold. Long-limbed and lightly plated for its
   // weight, and its core runs hot: a heat limit of 130 where every other machine's is 100. Sold to a pilot who has
   // beaten the yard's works pilot in one.
-  frame('head-sirocco', 'Sirocco Visor', 'head', 70, r(0.15, 0.25, 0.25), 40, 30, 3800, 'freelance', { aim: 16 }),
-  frame('core-sirocco', 'Sirocco Core', 'core', 270, r(0.2, 0.3, 0.3), 280, 75, 5200, 'freelance', { heatLimit: 130 }),
-  frame('arms-sirocco', 'Sirocco Arms', 'arms', 135, r(0.15, 0.25, 0.25), 130, 50, 3600, 'freelance', { aim: 12 }),
-  frame('legs-sirocco', 'Sirocco Legs', 'legs', 180, r(0.15, 0.25, 0.25), 220, 65, 4200, 'freelance', { capacity: 1350, mobility: 34 }),
+  frame('head-sirocco', 'Sirocco Visor', 'head', 80, r(0.15, 0.25, 0.25), 40, 30, 3800, 'freelance', { aim: 16 }),
+  frame('core-sirocco', 'Sirocco Core', 'core', 300, r(0.2, 0.3, 0.3), 280, 75, 5200, 'freelance', { heatLimit: 130 }),
+  frame('arms-sirocco', 'Sirocco Arms', 'arms', 150, r(0.15, 0.25, 0.25), 130, 50, 3600, 'freelance', { aim: 12 }),
+  frame('legs-sirocco', 'Sirocco Legs', 'legs', 200, r(0.15, 0.25, 0.25), 220, 65, 4200, 'freelance', { capacity: 1350, mobility: 34 }),
   // Solstice: the other. Tall and narrow, and its core has a buffer: energy left at the end of its turn is kept for
   // the next, up to half of what a turn gives. Sold to a pilot who has beaten the yard's works pilot in one.
-  frame('head-solstice', 'Solstice Helm', 'head', 60, r(0.15, 0.3, 0.15), 30, 25, 3800, 'freelance', { aim: 18 }),
-  frame('core-solstice', 'Solstice Core', 'core', 230, r(0.2, 0.35, 0.2), 220, 65, 5600, 'freelance', { buffer: 50 }),
-  frame('arms-solstice', 'Solstice Arms', 'arms', 110, r(0.15, 0.3, 0.15), 100, 40, 3400, 'freelance', { aim: 14 }),
-  frame('legs-solstice', 'Solstice Legs', 'legs', 155, r(0.15, 0.3, 0.15), 170, 60, 4000, 'freelance', { capacity: 1100, mobility: 46 }),
+  frame('head-solstice', 'Solstice Helm', 'head', 60, r(0.15, 0.3, 0.15), 30, 25, 4000, 'freelance', { aim: 18 }),
+  frame('core-solstice', 'Solstice Core', 'core', 230, r(0.2, 0.35, 0.2), 220, 65, 6000, 'freelance', { buffer: 50 }),
+  frame('arms-solstice', 'Solstice Arms', 'arms', 110, r(0.15, 0.3, 0.15), 100, 40, 3600, 'freelance', { aim: 14 }),
+  frame('legs-solstice', 'Solstice Legs', 'legs', 155, r(0.15, 0.3, 0.15), 170, 60, 4400, 'freelance', { capacity: 1100, mobility: 46 }),
   // Sovereign: built for one pilot, the keeper of the eighth seat. A little more of everything than an Auditor, a field
   // in its core like a Sterling's and arms that keep their balance like a Shrike's, at a price in weight, in what it
   // draws and in credits that nothing else asks. Sold to the pilot who takes the seat, and built to order: no run of the
@@ -263,8 +263,8 @@ const ENEMY_PARTS: Part[] = [
   weapon('wpn-enemy-maul', 'Siege Maul', 'hand', 'kinetic', 48, 66, 110, 26, null, 0, 150, 0),
   weapon('wpn-enemy-mortar', 'Siege Mortar', 'shoulder', 'explosive', 44, 62, 100, 30, null, 0, 180, 0),
   // What the yard's two works pilots carry: weapons of the kinds their machines were built round, in the yard's own make.
-  weapon('wpn-enemy-brand', 'Works Brand', 'hand', 'explosive', 30, 72, 90, 30, null, 0, 120, 0, undefined, 'redline', 12),
-  weapon('wpn-enemy-flue', 'Works Flue', 'shoulder', 'energy', 34, 76, 130, 38, null, 0, 180, 0, undefined, 'redline', 10),
+  weapon('wpn-enemy-brand', 'Works Brand', 'hand', 'explosive', 18, 72, 90, 30, null, 0, 120, 0, undefined, 'redline', 36),
+  weapon('wpn-enemy-flue', 'Works Flue', 'shoulder', 'energy', 22, 76, 130, 38, null, 0, 180, 0, undefined, 'redline', 34),
   weapon('wpn-enemy-wave', 'Standing Wave', 'hand', 'energy', 30, 84, 120, 30, null, 0, 130, 0, undefined, 'surge'),
   // Gunship: quick, fragile, rains explosives over the whole mech.
   frame('core-gunship', 'Gunship Hull', 'core', 110, r(0.1, 0.1, 0.1), 120, 0, 0, undefined),

@@ -303,7 +303,7 @@ export const DUELS: Mission[] = [
     ] })],
   },
   {
-    id: 'duel-3', phase: 'side', series: 'duel', when: 'verdict', title: 'Hot Work', client: 'Dispatch', portrait: 'portrait-dispatch', reward: 14000,
+    id: 'duel-3', phase: 'side', series: 'duel', when: 'verdict', title: 'Hot Work', client: 'Dispatch', portrait: 'portrait-dispatch', reward: 14000, scale: 1.15,
     briefing: [
       'The yard that builds the Circuit\'s machines has two it has never sold. It has sent a works pilot to the old foundry to see what beat its swords.',
       'A Sirocco. It runs hot: its limit is 130 where any other machine\'s is 100, and both its weapons hit harder the hotter it gets. Leave it alone and every round is worse.',
@@ -318,7 +318,7 @@ export const DUELS: Mission[] = [
     ] })],
   },
   {
-    id: 'duel-4', phase: 'side', series: 'duel', when: 'verdict', title: 'The Longest Day', client: 'Dispatch', portrait: 'portrait-dispatch', reward: 17000,
+    id: 'duel-4', phase: 'side', series: 'duel', when: 'verdict', title: 'The Longest Day', client: 'Dispatch', portrait: 'portrait-dispatch', reward: 17000, scale: 1.3,
     briefing: [
       'The yard has sent its other works pilot, in its other machine. Vesper has booked the plaza for the evening of the longest day of the year, from the last of the light.',
       'A Solstice keeps the energy it does not spend. One round it holds: guards, fires nothing. The next, its one weapon has a turn and a half behind it.',

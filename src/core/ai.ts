@@ -1,5 +1,5 @@
 import {
-  activeUnit, applyAction, boostCost, checkAction, forkTarget, guardCost, guardFactor, mendablePart, objectiveTarget, previewShot, LIMITER_HEAT,
+  activeUnit, applyAction, boostCost, bufferRoom, checkAction, forkTarget, guardCost, guardFactor, mendablePart, objectiveTarget, previewShot, LIMITER_HEAT,
   OVERCLOCK_HEAT,
   type Action, type BattleState, type UnitState,
 } from './battle';
@@ -64,6 +64,9 @@ function fireOrder(state: BattleState, usable: Usable[], target: UnitState): Usa
   });
   return fits.length === 0 ? inOrder : sorted(fits, when);
 }
+
+/** Whether a machine has kept energy worth bracing for: at least half of what its buffer holds. */
+export const saving = (unit: UnitState, catalog: Catalog): boolean => unit.kept > 0 && unit.kept * 2 >= bufferRoom(unit, catalog);
 
 /** Whether a unit with the habit of holding its fire is in a round it holds. */
 export const holding = (state: BattleState, unit: UnitState): boolean => unit.abilities.hold !== undefined && state.round % unit.abilities.hold !== 0;
@@ -294,9 +297,9 @@ function autoChoice(state: BattleState, catalog: Catalog): Action {
   if (enemies.length === 0) return { type: 'endTurn' };
 
   if (!me.usedBoost && !me.usedGuard) {
-    // A bomb that goes off before the next turn, or a charged shot that is about to be fired, is
-    // braced for now, while there is energy for it.
-    const incoming = enemies.some((e) => e.fuse === 1 || e.charged.length > 0);
+    // A bomb that goes off before the next turn, a charged shot that is about to be fired, or a machine that has
+    // kept a good part of a turn's energy to spend on top of its next, is braced for now, while there is energy for it.
+    const incoming = enemies.some((e) => e.fuse === 1 || e.charged.length > 0 || saving(e, catalog));
     if (incoming && can(state, { type: 'guard' }, catalog)) return { type: 'guard' };
     // A battle that only has to be outlasted is fought from cover: stance first, shooting with what is left.
     if (state.objective.type === 'survive') {

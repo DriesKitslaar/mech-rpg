@@ -584,6 +584,8 @@ export const coolingOn = (state: BattleState, unit: UnitState, catalog: Catalog)
 export const heatLimitOf = (build: Build, catalog: Catalog): number => framePart(build, 'core', catalog)?.heatLimit ?? HEAT_LIMIT;
 /** The share of a turn's energy, in a hundred, that a machine of this build keeps from one turn for the next. */
 export const bufferOf = (build: Build, catalog: Catalog): number => framePart(build, 'core', catalog)?.buffer ?? 0;
+/** The most energy a unit's buffer can keep from one turn to the next: its share of what a turn gives the unit. */
+export const bufferRoom = (unit: UnitState, catalog: Catalog): number => Math.floor((turnEnergyOf(unit, catalog) * unit.buffer) / 100);
 
 export const turnEnergyOf = (unit: UnitState, catalog: Catalog): number =>
   computeBuildStats(unit.build, catalog).turnEnergy + unit.mods.energy
@@ -797,7 +799,7 @@ function finishTurn(state: BattleState, catalog: Catalog): void {
   const unit = activeUnit(state);
   unit.heat = Math.max(0, unit.heat - coolingOn(state, unit, catalog));
   // A core with a buffer keeps what the turn did not spend, as far as it holds.
-  unit.kept = Math.min(unit.energy, Math.floor((turnEnergyOf(unit, catalog) * unit.buffer) / 100));
+  unit.kept = Math.min(unit.energy, bufferRoom(unit, catalog));
   unit.damageBoost = 1;
   unit.deadeye = false;
   state.turn += 1;
