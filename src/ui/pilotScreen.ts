@@ -43,8 +43,11 @@ export const CLASS_STRIPE_Y = 238;
 /** The row of the perks page that says what stripes have brought: under what the perk does, over what stands in the way of buying it. */
 export const PERKS_STRIPES_Y = 226;
 const ADVICE_COLUMN_W = 146;
-/** The panel of the question before a build to try is bought and fitted: over the list of classes. */
-export const ASK = { x: 36, y: 36, w: 238, h: 64 };
+/**
+ * The panel of the question before a build to try is bought and fitted: over the rows of the list of classes,
+ * all of them, so that no row shows half from under it. The build it is about stays in view below.
+ */
+export const ASK = { x: 8, y: 32, w: 294, h: 80 };
 
 /** The pilot: level and perks, the medals earned and still to earn, the record of what they have done, and the kinds of machine there are. */
 export class PilotScreen implements Screen {
@@ -303,9 +306,9 @@ export class PilotScreen implements Screen {
     ctx.fillStyle = '#0c0c18';
     ctx.fillRect(x, y, w, h);
     drawPanel(ctx, x, y, w, h);
-    drawText(ctx, C.ask(this.advice().cost), x + 8, y + 6, { color: COLORS.accent });
-    drawText(ctx, C.askNote, x + 8, y + 6 + LINE);
-    drawList(ctx, asking, x + 8, y + 12 + 2 * LINE, w - 20, 2);
+    drawText(ctx, C.ask(this.advice().cost), x + 8, y + 10, { color: COLORS.accent });
+    drawText(ctx, C.askNote, x + 8, y + 10 + LINE);
+    drawList(ctx, asking, x + 8, y + 18 + 2 * LINE, w - 20, 2);
   }
 
   /**

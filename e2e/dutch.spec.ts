@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { completeMission } from '../src/core/campaign';
 import { newGame, type GameState } from '../src/core/game';
+import { ACCENTED } from '../src/content/language';
 import { MISSIONS } from '../src/content/missions';
 import { SCENES } from '../src/content/scenes';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
@@ -81,4 +82,28 @@ test('in Dutch: the game is played from the title to a battle and through its sc
     await waitForScreen(page, 'hub');
   }
   expect(errors).toEqual([]);
+});
+
+test('the font writes the letters Dutch spelling asks for, each as wide as any other letter', async ({ page }) => {
+  await open(page);
+  const measured = await page.evaluate(async (letters) => {
+    await document.fonts.load('20px VT323');
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    const width = (font: string, text: string): number => { ctx.font = font; return ctx.measureText(text).width; };
+    return {
+      loaded: document.fonts.check('20px VT323'),
+      plain: width('20px VT323', 'e'),
+      // A letter the font lacks is drawn from another font: this is how wide that would be.
+      other: width('20px serif', 'e'),
+      widths: [...letters].map((letter) => [letter, width('20px VT323', letter)] as [string, number]),
+      // A word with every one of them is as long as the same number of plain letters.
+      word: width('20px VT323', letters),
+    };
+  }, ACCENTED);
+  expect(measured.loaded).toBe(true);
+  // The game takes a letter to be four tenths of its size wide: eight pixels at twenty.
+  expect(measured.plain).toBe(8);
+  expect(measured.other).not.toBe(measured.plain);
+  expect(measured.widths.filter(([, width]) => width !== measured.plain)).toEqual([]);
+  expect(measured.word).toBe(ACCENTED.length * measured.plain);
 });

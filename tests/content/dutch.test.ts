@@ -1,5 +1,5 @@
 import { JUKEBOX, MANUAL, PEOPLE } from '../../src/content/codex';
-import { dictionaryOf, registeredTexts, setLanguage } from '../../src/content/language';
+import { ACCENTED, dictionaryOf, registeredTexts, setLanguage } from '../../src/content/language';
 import '../../src/content/nl';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
@@ -91,7 +91,7 @@ const MAY_STAY = new Set(['who', 'client', 'asset', 'part.name', 'board.word', '
  * asks for (a browser test holds the font to that: e2e/dutch.spec.ts). Anything else might be drawn from another
  * font, at another width.
  */
-const WRITABLE = /^[\x20-\x7eéèëïöüêàçÉÈËÏÖÜ]*$/;
+const WRITABLE = new RegExp(`^[\\x20-\\x7e${ACCENTED}]*$`);
 
 const texts = registeredTexts();
 const nl = dictionaryOf('nl');

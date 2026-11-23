@@ -98,3 +98,10 @@ export function textsOf(source: string, things: readonly unknown[], keys: Record
   }
   return found;
 }
+
+/**
+ * The letters beyond the plain ones that Dutch spelling asks for, and that the game's font is known to
+ * write at the width of every other letter: a browser test measures each (e2e/dutch.spec.ts). A text of
+ * the game uses no other: one the font lacked would be drawn from another font, at another width.
+ */
+export const ACCENTED = 'éèëïöüêàçÉÈËÏÖÜ';
