@@ -38,6 +38,7 @@ export const STRINGS_NL = {
     fuse: (n: number) => `LONT ${n}`, aegis: 'AEGIS', jammer: 'STOORDER', mender: 'HERSTEL', carrier: 'DRAGER', shaken: 'PANIEK',
     covered: 'GEDEKT', jammed: (n: number) => `GESTOORD -${n}`, ironSkin: 'IJZERHUID', deadeye: 'SCHERPOOG',
     marks: { armoured: 'GEPANTSERD', overclocked: 'OVERKLOKT', swift: 'SNEL', shielded: 'SCHILD' } as Record<string, string>,
+    hardened: 'GEHARD', hardenedLeft: (n: number) => `GEHARD ${n}`, half: 'HELFT',
   },
   intent: { aim: (part: string) => `MIKT ${AIMED[part] ?? part.toUpperCase()}`, dart: 'ONTWIJKT', mend: 'HERSTELT', cool: 'KOELT', windUp: 'LAADT OP', hold: 'WACHT' },
   objectives: {
@@ -50,6 +51,7 @@ export const STRINGS_NL = {
     reserve: (n: number) => `NOG ${n} OP KOMST`, more: (n: number) => `+${n}`,
     won: {
       survive: 'Je hield stand.', protect: (name: string) => `${name}: veilig.`, leader: 'Hun leider ligt neer.',
+      down: (name: string) => `${name} ligt neer.`,
       disable: 'Lamgelegd, in een stuk.', driveOff: (name: string) => `${name} druipt af.`,
     },
     lost: { asset: (name: string) => `${name}: kwijt.`, target: 'Het doelwit is vernietigd.', time: 'Tijd is om.' },
@@ -85,6 +87,7 @@ export const STRINGS_NL = {
   stagger: (unit: string) => does(unit, 'WANKELT'),
   recover: (unit: string) => does(unit, 'staat pal'),
   fieldDown: (unit: string) => `${subj(unit)}: veld weg`,
+  hardeningGone: (unit: string) => `${subj(unit)}: harding weg`,
   fieldUp: (unit: string) => `${subj(unit)}: veld terug`,
   charge: (unit: string, weapon: string) => does(unit, `laadt ${weapon} op`),
   barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} raakt ${obj(target)} - barriere -${absorbed}`,
@@ -313,6 +316,7 @@ export const STRINGS_NL = {
     sRanks: 'S-RANGEN', arena: 'ARENARANG', shots: 'SCHOTEN', hits: 'SCHOTEN RAAK', accuracy: 'PRECISIE',
     damage: 'PANTSER VERNIELD', taken: 'PANTSER KWIJT', overheats: 'BEURTEN OVERVERHIT', rounds: 'RONDES GESPEELD',
     earned: 'CREDITS VERDIEND', medals: 'MEDAILLE', cycle: 'CYCLUS', time: 'SPEELTIJD', none: '-', ranksHeld: 'RANGEN',
+    accounts: (closed: number) => `REKENINGEN DICHT ${closed}`,
   },
   renown: {
     names: ['Kostenpost', 'Afboeking', 'Total Loss', 'Overmacht', 'De Eindafrekening'],
@@ -412,6 +416,7 @@ export const STRINGS_NL = {
     hostiles: 'VERWACHT', exclusive: 'EXCLUSIEF: de andere twee klanten trekken hun aanbod in.',
     finale: 'LAATSTE ZET VAN DE OORLOG', repeatable: 'DOORLOPEND CONTRACT', open: 'OPEN CONTRACT', openElite: 'OPEN CONTRACT: EEN ELITE', swarm: 'OPEN CONTRACT: EEN ZWERM',
     jobs: { hit: 'OPEN CONTRACT: DOELWIT', repo: 'OPEN CONTRACT: EEN BESLAG', escort: 'OPEN CONTRACT: EEN ESCORTE', hold: 'OPEN CONTRACT: STANDHOUDEN' },
+    account: 'OPEN CONTRACT: EEN REKENING',
     verdict: 'VONNIS: je antwoord eindigt het verhaal. Elk ander aanbod vervalt.',
     replay: 'ARCHIEF: minder loon. Het verhaal verandert niet.',
     lent: 'LEENMECH: de jouwe kan niet mee. Rekening blijft van jou.',
@@ -445,6 +450,7 @@ export const STRINGS_NL = {
   settlement: {
     won: 'CONTRACT VOLTOOID', lost: 'CONTRACT MISLUKT', reward: 'Loon', ammo: 'Munitie', repairs: 'Reparatie',
     crowned: 'DE KROON IS VAN JOU', seated: 'DE STOEL IS VAN JOU',
+    account: (meeting: number, of: number) => `REKENING: ${meeting} VAN ${of}`, accountClosed: 'REKENING DICHT',
     rank: 'RANG', rankBonus: (rank: string) => `Bonus rang ${rank}`,
     askBonus: (name: string) => `Bonus ${name}`,
     net: 'NETTO', balance: 'SALDO', continue: 'Verder met A',
@@ -548,7 +554,7 @@ export const STRINGS_NL = {
   },
   fx: {
     miss: 'MIS', overheat: 'OVERVERHIT', stagger: 'WANKELT', shaken: 'PANIEK', block: (n: number) => `BLOK ${n}`,
-    fieldDown: 'VELD WEG', fieldUp: 'VELD TERUG',
+    fieldDown: 'VELD WEG', fieldUp: 'VELD TERUG', hardeningGone: 'HARDING WEG',
     overkill: 'OVERKILL', chain: (n: number) => `REEKS x${n}`, rout: 'VLUCHT', offline: 'UIT',
     kinds: { redline: (percent: number) => `WITHEET +${percent}%`, surge: (times: string) => `PIEK x${times}`, punish: 'STRAF' },
     kept: (amount: number) => `+${amount} EN`,

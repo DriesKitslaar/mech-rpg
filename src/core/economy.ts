@@ -33,6 +33,8 @@ export interface Settlement {
   crowned?: Archetype;
   /** Set on the bill of the duel that took the eighth seat from its keeper; see seat.ts. */
   seated?: true;
+  /** Set on the bill of a meeting won with the pilot of an account: whose, which meeting, and whether it closed the account; see grudge.ts. */
+  account?: { name: string; meeting: number; closed: boolean };
 }
 
 /** Pilot perks that change the bill: a fraction more pay, a fraction off ammunition and repairs. */

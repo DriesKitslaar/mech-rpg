@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ARCHETYPES } from '../src/core/archetype';
 import { completeMission } from '../src/core/campaign';
 import { BUILD_SLOTS, buy, equip, newGame, type GameState } from '../src/core/game';
+import { meetingsWon, type Grudge } from '../src/core/grudge';
 import { DEFAULT_MIXES, MIX_KEYS, isMix, mixId, setMix, stepMix, type Mix } from '../src/core/mix';
 import { xpForLevel } from '../src/core/pilot';
 import { stripesEarned } from '../src/core/stripes';
@@ -40,6 +41,8 @@ const AFTER_THE_WAR = [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-
 type Seen = Snap & {
   list?: string; busy?: boolean; page?: string; launch?: unknown; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean }; toasts?: string[];
   player?: { heat: number };
+  /** The account that is open, and on a bill the meeting it is of. */
+  grudge?: Grudge | null; settlement?: { account?: { name: string; meeting: number; closed: boolean } | null };
 };
 
 /**
@@ -163,6 +166,8 @@ interface Played {
   notices: number;
   /** What was seen of the five kinds of weapon, where it was looked at: words over the field, lines of the bar, marks, rows of the list. */
   kinds: string[];
+  /** The notices of an account taken from the list, and the bills that were a meeting's: whose, which, and whether it closed the account. */
+  meetings: number; bills: string[];
 }
 
 /**
@@ -174,10 +179,11 @@ interface Played {
  * for is flown for the other side. With `seat`, the duel for the eighth seat of the arena's masters is
  * flown before anything else. With `hand`, the pilot opens the list of weapons once a turn, while the machine is
  * cool, and aims and fires the last weapon on it that can be fired (the one on the shoulder) for themselves, at the
- * second machine where there is one; Auto Turn has the rest of the turn. It stops when all of that is done or its
- * time is up.
+ * second machine where there is one; Auto Turn has the rest of the turn. With `account`, the notice of an account is
+ * taken before anything else whenever it is on offer, and while one is open and not yet due the board's own contracts
+ * are flown to wait it through. It stops when all of that is done or its time is up.
  */
-async function play(page: Page, prefer: string[], minutes: number, other = false, seat = false, hand = false): Promise<Played> {
+async function play(page: Page, prefer: string[], minutes: number, other = false, seat = false, hand = false, account = false): Promise<Played> {
   const tried = new Map<string, number>();
   const screens = new Set<string>();
   const rooms = ['gauntlet', 'training', 'arena', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'];
@@ -206,6 +212,12 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   const kinds = new Set<string>();
   let aimed = '';
   let last = '';
+  // The notices of an account taken, the bills that were a meeting's, and the board's contracts flown to wait one through.
+  let meetings = 0;
+  const bills = new Set<string>();
+  let waits = 0;
+  // The hardening last seen on the first machine of a battle, and which battle that was.
+  let hardening = { of: '', left: 0 };
   let frames = 0;
   const step = async (ms: number): Promise<void> => { frames += Math.ceil(ms / 16); await adv(page, ms); };
   while (Date.now() < until) {
@@ -216,6 +228,8 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     if (s.toast?.startsWith('stripe:')) stripes.add(s.toast);
     if (s.toast) notices.add(s.toast);
     if (s.screen !== 'settlement') read = 0;
+    const bill = s.screen === 'settlement' ? s.settlement?.account : null;
+    if (bill) bills.add(`${bill.name}:${bill.meeting}:${bill.closed ? 'closed' : 'open'}`);
     const items = s.menu?.items ?? [];
     const cur = items[s.menu?.cursor ?? 0]?.id;
     const has = (id: string): boolean => items.some((item) => item.id === id && item.enabled);
@@ -236,7 +250,15 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     } else if (s.screen === 'battle') {
       const b = s.battle!;
       if (`${b.mission}/${b.index}/${b.round > 1}` !== last && b.round === 1) { battles++; last = `${b.mission}/${b.index}/false`; }
-      const fought = b as unknown as { words?: string[]; fork?: string | null; weapons?: { note: string }[] | null };
+      const fought = b as unknown as { words?: string[]; fork?: string | null; weapons?: { note: string }[] | null; hardened?: string[]; halved?: boolean; hardening?: number | null };
+      // The machine of an account: hardened against a weapon, and, while that weapon is aimed at it, said to take half;
+      // and a hardening seen to have less left than it had, or to have gone while the battle went on.
+      if ((fought.hardened ?? []).length > 0) kinds.add('hardened');
+      if (fought.halved) kinds.add('half');
+      if (typeof fought.hardening === 'number') {
+        if (hardening.of === `${b.mission}/${b.index}` && fought.hardening < hardening.left) kinds.add('wearing');
+        hardening = { of: `${b.mission}/${b.index}`, left: fought.hardening };
+      } else if (hardening.of === `${b.mission}/${b.index}` && b.outcome === 'ongoing') { kinds.add('worn'); hardening = { of: '', left: 0 }; }
       for (const word of fought.words ?? []) {
         const kind = /^(REDLINE|SURGE|PUNISH|WITHEET|PIEK|STRAF)\b/.exec(word);
         if (kind) kinds.add(kind[1]);
@@ -270,6 +292,8 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
         await step(320);
         await tap(page, 'KeyE');
         await step(320);
+        // (What the row says of the machine the aim has moved to is looked at as well.)
+        if (((await snap(page)).battle as { halved?: boolean } | undefined)?.halved) kinds.add('half');
         await tap(page, 'Enter');
       } else if (b.phase === 'weapon' || b.phase === 'target') await tap(page, 'Escape');
       else await step(160);
@@ -278,11 +302,16 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
       const swarm = swarms < 1 ? items.find((item) => item.id.endsWith('-swarm') && item.enabled) : undefined;
       const kindOf = (item: { label: string }): string => item.label.split(':')[0];
       const job = items.find((item) => item.id.endsWith('-job') && item.enabled && !jobs.includes(kindOf(item)));
-      const pick = swarm ?? job ?? story.find((item) => prefer.some((word) => item.id.includes(word))) ?? story[0];
+      // The notice of an account first, whenever it is there (a few times over, should a meeting be lost); and while
+      // one is open with no notice out, one of the board's own three, which is one more contract waited through.
+      const notice = account && meetings < 6 ? items.find((item) => item.id.endsWith('-grudge') && item.enabled) : undefined;
+      const wait = account && !notice && s.grudge && waits < 12 ? items.find((item) => /^open-\d+-\d+-\d+$/.test(item.id) && item.enabled) : undefined;
+      const pick = notice ?? swarm ?? job ?? story.find((item) => prefer.some((word) => item.id.includes(word))) ?? story[0] ?? wait;
       if (!pick) { storyOver = true; await tap(page, 'Escape'); }
       else if (cur !== pick.id) await tap(page, 'ArrowDown');
       else {
-        if (pick === swarm) swarms++; else if (pick === job) jobs.push(kindOf(job)); else tried.set(pick.id, (tried.get(pick.id) ?? 0) + 1);
+        if (pick === notice) meetings++; else if (pick === wait) waits++;
+        else if (pick === swarm) swarms++; else if (pick === job) jobs.push(kindOf(job)); else tried.set(pick.id, (tried.get(pick.id) ?? 0) + 1);
         flown++;
         await tap(page, 'Enter');
       }
@@ -329,7 +358,7 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   const waiting = [end.toast, ...(end.toasts ?? [])].filter((id): id is string => !!id);
   return {
     missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel, launches, flown, stripes: [...stripes], waiting, notices: notices.size,
-    kinds: [...kinds].sort(),
+    kinds: [...kinds].sort(), meetings, bills: [...bills],
   };
 }
 
@@ -356,6 +385,8 @@ const PLAYERS: {
   name: string; done: string[]; prefer: string[]; settings: Record<string, unknown>; later?: boolean; seat?: 'taken' | 'held'; mix?: Mix;
   /** Weapons worn in place of the build's own, and whether one of them is aimed by hand each turn. */
   wears?: Partial<Build>; hand?: boolean;
+  /** The account that is open as the player sets out, and the callsigns of those closed before it. */
+  account?: { open: Grudge; closed?: string[] };
 }[] = [
   // In the white mix as it comes: the launch and every battle from the first contract on show a mixed machine from behind.
   { name: 'from the first contract, in English, with all of the light', done: [], prefer: ['hadron'], settings: {}, mix: DEFAULT_MIXES[0] },
@@ -377,6 +408,18 @@ const PLAYERS: {
   // past a hundred, and a turn that opens with what the last one did not spend.
   { name: 'in a Sirocco with a volley of three hot weapons, left to Auto Turn', done: AFTER_THE_WAR, prefer: ['undertow', 'enforce'], settings: {}, wears: HOT_VOLLEY },
   { name: 'in a Solstice with a rifle and a blade, in Dutch, one weapon aimed by hand each turn', done: AFTER_THE_WAR, prefer: ['lumen', 'default'], settings: { language: 'nl' }, wears: KEEPER_OF_TURNS, hand: true },
+  // A pilot somebody has come back for. One whose second notice is out, in a machine hardened against the cannon
+  // this pilot aims by hand: HARDENED over it, HALF beside its name while that cannon is on it, and a hardening
+  // that each of those shots wears. And one at the third meeting, in Dutch, which closes the account; whoever the
+  // board's contracts then leave may begin another, who knows nothing yet.
+  {
+    name: 'with an account at its second meeting, whose machine knows the cannon aimed by hand', done: AFTER_THE_WAR, prefer: [], settings: {}, hand: true,
+    account: { open: { name: 'Brakk', kind: 'heavy-mech', origin: 'ran', knows: REFERENCE_BUILDS.tier6.shoulder!, met: 1, waited: 2 } },
+  },
+  {
+    name: 'with an account at its third meeting and one closed before it, in Dutch', done: AFTER_THE_WAR, prefer: [], settings: { language: 'nl' },
+    account: { open: { name: 'Tally', kind: 'stalker', origin: 'beat', knows: REFERENCE_BUILDS.tier6.rightHand!, met: 2, waited: 2 }, closed: ['Brakk'] },
+  },
 ];
 
 for (const player of PLAYERS) {
@@ -384,9 +427,10 @@ for (const player of PLAYERS) {
     test.skip(!ASKED, 'a long look: run with SOAK=1');
     test.setTimeout((MINUTES + 2) * 60_000);
     const made = player.seat ? crowned(player.seat === 'held') : player.later ? again(player.done) : pilot(player.done, player.wears);
-    const start = player.mix ? setMix(made, player.mix) : made;
+    const mixed = player.mix ? setMix(made, player.mix) : made;
+    const start: GameState = player.account ? { ...mixed, grudge: player.account.open, ...(player.account.closed ? { accounts: player.account.closed } : {}) } : mixed;
     const errors = await open(page, start, player.settings);
-    const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat, !!player.hand);
+    const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat, !!player.hand, !!player.account);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
     console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.flown} contracts flown, ${played.launches} launches, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, ${played.notices} notices, stripes ${played.stripes.join(' ') || 'none'}, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
@@ -423,6 +467,23 @@ for (const player of PLAYERS) {
     if (player.wears === TWO_KINDS) expect(played.kinds).toEqual(expect.arrayContaining(['STRAF', 'WITHEET']));
     if (player.wears === HOT_VOLLEY) expect(played.kinds).toEqual(expect.arrayContaining(['hot', 'REDLINE']));
     if (player.wears === KEEPER_OF_TURNS) expect(played.kinds).toContain('kept');
+    if (player.account) {
+      // The notice was taken and their machine stood there hardened; the one who aims the weapon it knows by hand was told
+      // it does half. Every meeting won is in the kept game, and had a bill that said whose account it was and which of
+      // its meetings (the last may not have come up yet when the time ran out).
+      const kept = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as Pick<GameState, 'grudge' | 'accounts'>);
+      const won = meetingsWon(kept) - meetingsWon(start);
+      console.log(`${player.name}: notices taken ${played.meetings}, meetings won ${won}, bills ${played.bills.join(' ') || 'none'}, closed ${(kept.accounts ?? []).join(' ') || 'none'}, open ${kept.grudge ? `${kept.grudge.name} at ${kept.grudge.met}` : 'none'}, seen ${played.kinds.filter((kind) => ['hardened', 'half', 'wearing', 'worn'].includes(kind)).join(' ') || 'nothing'}`);
+      expect(played.meetings).toBeGreaterThanOrEqual(1);
+      expect(played.kinds).toContain('hardened');
+      // The one who aims the weapon it knows by hand, turn after turn, was told it does half and saw the hardening wear.
+      if (player.hand) expect(played.kinds).toEqual(expect.arrayContaining(['half', 'wearing']));
+      expect(won).toBeGreaterThanOrEqual(1);
+      expect([won, won - 1]).toContain(played.bills.length);
+      // Whoever was closed before is still written down, and whoever a bill said was closed is with them.
+      for (const name of player.account.closed ?? []) expect(kept.accounts, name).toContain(name);
+      for (const bill of played.bills.filter((line) => line.endsWith(':closed'))) expect(kept.accounts, bill).toContain(bill.split(':')[0]);
+    }
     // Every one of them flew a swarm: the machines that come on later were on the screen.
     expect(played.swarms).toBe(1);
     // And jobs, once the board had one to offer: what each kind asks was on the field, with everything drawn.

@@ -1,6 +1,6 @@
 import { chooseAutoPlayerAction, chooseEnemyAction } from '../core/ai';
 import {
-  activeUnit, applyAction, checkAction, objectiveTarget, previewShot, weaponNow, ROUND_LIMIT,
+  activeUnit, applyAction, checkAction, hardenedAgainst, objectiveTarget, previewShot, weaponNow, ROUND_LIMIT,
   type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState, ORDERS,
 } from '../core/battle';
 import { moduleOf, weaponIn } from '../core/build';
@@ -227,7 +227,8 @@ export class BattleFlow {
       switch (objective.type) {
         case 'survive': return O.won.survive;
         case 'protect': return O.won.protect(objective.name);
-        case 'leader': return O.won.leader;
+        // One that stood there alone was nobody's leader: it is said by its name.
+        case 'leader': return target && this.state.units.filter((unit) => unit.side === 'enemy').length === 1 ? O.won.down(target.name) : O.won.leader;
         case 'disable': return O.won.disable;
         case 'driveOff': return target ? O.won.driveOff(target.name) : '';
         case 'destroy': return '';
@@ -283,6 +284,13 @@ export class BattleFlow {
     const open = this.targetsOf(slot);
     const named = objectiveTarget(this.state);
     return open.find((e) => e.id === this.lastTarget) ?? open.find((e) => e.id === named?.id) ?? open[0];
+  }
+
+  /** True while the weapon in hand is one the machine under the sights is hardened against: it does half to it (see `HARDENED`). */
+  get halved(): boolean {
+    const weapon = this.weapon ? weaponIn(this.player.build, this.weapon, this.catalog) : undefined;
+    const target = this.state.units.find((unit) => unit.id === this.targetId);
+    return !!weapon && !!target && hardenedAgainst(target, weapon);
   }
 
   /** Which of the enemies the weapon in hand can reach is under the sights, counted from one, and how many there are. */
@@ -373,6 +381,7 @@ export class BattleFlow {
       case 'recover': return STRINGS.recover(name(event.unit));
       case 'fieldDown': return STRINGS.fieldDown(name(event.unit));
       case 'fieldUp': return STRINGS.fieldUp(name(event.unit));
+      case 'hardeningGone': return STRINGS.hardeningGone(name(event.unit));
       case 'charge': {
         const unit = this.state.units.find((u) => u.id === event.unit)!;
         return STRINGS.charge(name(event.unit), weaponIn(unit.build, event.weapon, this.catalog)?.name ?? event.weapon);

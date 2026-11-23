@@ -173,6 +173,9 @@ describe('why a battle ended', () => {
   test('is said when the objective decided it', () => {
     expect(fight(core(battle([mech()], { objective: { type: 'disable', target: 0 } }), 1))).toMatchObject({ phase: 'result', resultNote: 'The target was destroyed.' });
     expect(fight(core(battle([turret, turret], { objective: { type: 'leader', target: 0 } }), 1)).resultNote).toBe('Their leader is down.');
+    // One that stood there alone was nobody's leader: it is down by its name.
+    expect(fight(core(battle([turret], { objective: { type: 'leader', target: 0 } }), 1)).resultNote).toBe(`${turret.name} is down.`);
+    expect(turret.name.length).toBeGreaterThan(3);
     expect(fight(core(battle([mech()], { objective: { type: 'driveOff', target: 0, share: 0.5 } }), 111)).resultNote).toBe('Test Mech breaks off.');
     const sturdy = edit(battle([turret, turret], { objective: { type: 'protect', name: 'Convoy', hp: 2 } }), (d) => {
       d.units[0].parts.core!.ap = 9999;

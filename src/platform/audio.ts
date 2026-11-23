@@ -135,6 +135,8 @@ export function soundsForEvent(event: BattleEvent, damageType: DamageType, fligh
     // A field going out is a hiss; one coming back is heard as a guard going up.
     case 'fieldDown': return now('cool');
     case 'fieldUp': return now('guard');
+    // A hardening shot away rings as a machine knocked off its balance does.
+    case 'hardeningGone': return now('stagger');
     case 'cool':
     case 'turnSkipped': return now('cool');
     case 'repair': return now('repair');

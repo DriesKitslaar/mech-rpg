@@ -54,7 +54,9 @@ export function hostiles(mission: Mission): string[] {
   for (const battle of mission.battles) for (const id of [...battle.enemies, ...(battle.reserve ?? [])]) counts.set(id, (counts.get(id) ?? 0) + 1);
   // The mirror, and a saved build that is sparred with, are machines made on the spot: each goes by what the game calls it.
   const spar = parseSpar(mission.id);
-  const name = (id: string): string => (id === 'mirror' ? STRINGS.arena.mirror.name : spar !== null ? STRINGS.training.spar(spar + 1) : ALL_ENEMIES[id]?.name ?? id);
+  // And one the contract itself has a name for goes by that.
+  const name = (id: string): string =>
+    mission.names?.[id] ?? (id === 'mirror' ? STRINGS.arena.mirror.name : spar !== null ? STRINGS.training.spar(spar + 1) : ALL_ENEMIES[id]?.name ?? id);
   return [...counts].map(([id, n]) => `${name(id)}${n > 1 ? ` x${n}` : ''}`);
 }
 
@@ -68,7 +70,7 @@ export function objectiveLines(mission: Mission): string[] {
   const numbered = mission.battles.length > 1;
   return mission.battles.flatMap((battle, i) => {
     const o = battle.objective;
-    const name = o && 'target' in o ? (ALL_ENEMIES[battle.enemies[o.target]]?.name ?? '') : '';
+    const name = o && 'target' in o ? (mission.names?.[battle.enemies[o.target]] ?? ALL_ENEMIES[battle.enemies[o.target]]?.name ?? '') : '';
     const asked = !o || o.type === 'destroy' ? []
       : [o.type === 'survive' ? BO.survive(o.rounds) : o.type === 'protect' ? BO.protect(o.name)
         : o.type === 'leader' ? BO.leader(name) : o.type === 'disable' ? BO.disable(name) : BO.driveOff(name)];
@@ -87,6 +89,28 @@ export function groundLines(mission: Mission): string[] {
 /** Rows of briefing text that fit in the body, given how many lines of objectives sit under them. */
 export const BRIEFING_ROWS = 10;
 export const briefingRows = (mission: Mission): number => BRIEFING_ROWS - objectiveLines(mission).length - groundLines(mission).length;
+/** The room left under each paragraph of what the client says, in pixels: so a briefing of several holds less than its rows. */
+export const BRIEFING_GAP = 4;
+/**
+ * How many of a briefing's lines the page draws, wrapped as it wraps them: all of them, where it fits. A line is
+ * drawn while it starts no lower than the last row the contract leaves for the client, and each paragraph is
+ * followed by a gap.
+ */
+export function briefingShown(mission: Mission): { lines: number; shown: number } {
+  const lastRow = (briefingRows(mission) - 1) * LINE;
+  let y = 0;
+  let lines = 0;
+  let shown = 0;
+  for (const paragraph of mission.briefing) {
+    for (const _line of wrap(paragraph, BRIEFING_CHARS)) {
+      lines += 1;
+      if (y <= lastRow) shown += 1;
+      y += LINE;
+    }
+    y += BRIEFING_GAP;
+  }
+  return { lines, shown };
+}
 export const BRIEFING_CHARS = charsFor(LOGICAL_W - 24);
 
 /**
@@ -299,6 +323,7 @@ export class BriefingScreen implements Screen {
       : mission.replay ? B.replay
       : isSwarm(mission) ? B.swarm
       : mission.job !== undefined ? B.jobs[mission.job]
+      : mission.grudge !== undefined ? B.account
       : mission.id.startsWith('open-') ? (mission.elite ? B.openElite : B.open)
       : mission.phase === 'choice' ? B.exclusive : mission.phase === 'verdict' ? B.verdict
       : mission.phase === 'finale' ? B.finale : mission.phase === 'patrol' ? B.repeatable
@@ -393,7 +418,7 @@ export class BriefingScreen implements Screen {
         drawText(ctx, line, 12, y);
         y += LINE;
       }
-      y += 4;
+      y += BRIEFING_GAP;
     }
     // What the contract asks for appears when the client has finished talking.
     // What the ground does comes last, in the colour of the weather.

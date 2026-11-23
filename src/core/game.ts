@@ -1,6 +1,7 @@
 import type { Archetype } from './archetype';
 import { OVERDRIVES, type OverdriveId } from './battle';
 import type { Run } from './gauntlet';
+import type { Grudge } from './grudge';
 import type { JobKind } from './jobs';
 import { MIX_SHAPE } from './mix';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
@@ -100,6 +101,10 @@ export interface GameState {
   lessons?: string[];
   /** Bench work: the step each part stands at, by part id (see tuning.ts). Kept across cycles. */
   tuning?: Tuning;
+  /** The account that is open: a pilot who is coming back for this one (see grudge.ts). Absent where there is none. Kept across cycles. */
+  grudge?: Grudge;
+  /** The callsigns of the accounts closed, in the order they were. Kept across cycles. Absent until one is. */
+  accounts?: string[];
 }
 
 export const FACTORY_PAINT = 'factory';
@@ -320,6 +325,10 @@ const isTextList = (v: unknown): v is string[] => Array.isArray(v) && v.every((x
 /** More copies than this of one part is not something play can produce. */
 const MAX_COPIES = 999;
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+/** An id as parts, machines and kinds of thing have them. */
+const isPlainId = (v: unknown): v is string => typeof v === 'string' && /^[a-z0-9-]{1,64}$/.test(v);
+/** A name as an account's pilot has one. */
+const isName = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z][A-Za-z '-]{0,23}$/.test(v);
 
 /**
  * Checks data read from storage before the game trusts it. Limits such as weight are not checked:
@@ -366,6 +375,13 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
     if (counts !== undefined && (!isRecord(counts) || Object.keys(counts).length > 32
       || !Object.entries(counts).every(([kind, count]) => /^[a-z]{1,24}$/.test(kind) && isWholeNonNegative(count) && count <= 1_000_000))) return false;
   }
+  // An account: a callsign, plain ids, one of three words and small whole counts. Whether it is about a machine an
+  // account can be about is the reader's business: one that is not reads as none.
+  const { grudge, accounts } = value;
+  if (grudge !== undefined && !(isRecord(grudge) && isName(grudge.name) && isPlainId(grudge.kind) && isPlainId(grudge.origin)
+    && (grudge.knows === undefined || isPlainId(grudge.knows))
+    && isWholeNonNegative(grudge.met) && grudge.met <= 2 && isWholeNonNegative(grudge.waited) && grudge.waited <= 1_000_000)) return false;
+  if (accounts !== undefined && !(Array.isArray(accounts) && accounts.length <= 1000 && accounts.every(isName))) return false;
   // Bench work: whole steps against plain ids, no further than the bench goes in this telling. A part
   // this version does not know is kept: it is simply never fitted.
   const { tuning } = value;

@@ -1,6 +1,6 @@
 import { dictionary, overlay, textsOf, translatable, type TextSlot } from '../language';
 import { ARENA } from '../arena';
-import { BOARD_TEXT } from '../board';
+import { BOARD_TEXT, GRUDGE_LINES } from '../board';
 import { JUKEBOX, MANUAL, PEOPLE, UNITS, WORLD } from '../codex';
 import { DRILLS, LESSON_LINES } from '../drills';
 import { FINDS } from '../finds';
@@ -70,6 +70,11 @@ function contentTexts(): TextSlot[] {
     // The jobs beside the board: what each can be called, what its kind asks, and what an escort keeps alive.
     ...textsOf('missions', Object.values(BOARD_TEXT.jobs), { titles: 'mission.title', brief: 'briefing' }),
     ...textsOf('missions', [BOARD_TEXT], { assets: 'asset' }),
+    // An account's notice: what it is called, the lines of its briefing, what is said over its battle, and what its bill says.
+    ...textsOf('missions', [GRUDGE_LINES], { title: 'mission.title', places: 'briefing', again: 'briefing', hardened: 'briefing', falls: 'battle.talk', hurt: 'battle.talk', debrief: 'debrief' }),
+    ...textsOf('missions', [GRUDGE_LINES.first], { beat: 'briefing', ran: 'briefing', wrecked: 'briefing' }),
+    ...textsOf('missions', [GRUDGE_LINES.opens.first], { beat: 'battle.talk', ran: 'battle.talk', wrecked: 'battle.talk' }),
+    ...textsOf('missions', [GRUDGE_LINES.opens], { again: 'battle.talk' }),
     ...textsOf('missions', WINGMEN, { text: 'briefing' }),
     ...textsOf('missions', WINGMEN.map((w) => w.radio), { start: 'radio', kill: 'radio', cheer: 'radio', warn: 'radio', win: 'radio' }),
     ...textsOf('story', Object.values(ENEMIES).flatMap((e) => e.phases ?? []), { line: 'battle.talk' }),

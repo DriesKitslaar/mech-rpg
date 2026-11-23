@@ -101,6 +101,10 @@ export interface Mission {
   asks?: Archetype;
   /** Set on the open contract that asks for something other than everything destroyed: which of the four kinds it is; see jobs.ts. */
   job?: JobKind;
+  /** Set on the notice of an account: which of its meetings this is, from 1; see grudge.ts. */
+  grudge?: number;
+  /** What a machine of this contract goes by where that is not what its kind is called, by the id a battle fields it under. */
+  names?: Record<string, string>;
   /** Set on a duel with a master of the arena: the class whose crown is fought for. Won in a build of that class, the crown is the pilot's; see masters.ts. */
   crown?: Archetype;
   /** Set on an arena fight: the rank of the opponent. */

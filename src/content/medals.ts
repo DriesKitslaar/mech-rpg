@@ -2,6 +2,7 @@ import { ARCHETYPES, kindsWon, mostWonAs } from '../core/archetype';
 import { ARENA_RANKS, CHAMPION_RANK } from '../core/arena';
 import { checksHeld, papersFound } from '../core/codex';
 import { FACTORY_PAINT, type GameState } from '../core/game';
+import { accountsClosed, meetingsWon } from '../core/grudge';
 import { JOB_KINDS, jobsWon, kindsOfJob } from '../core/jobs';
 import { crownsHeld } from '../core/masters';
 import { isMix } from '../core/mix';
@@ -127,6 +128,10 @@ const EARNED: Medal[] = [
   // The jobs on the board that ask for something else: for trying each kind, and for living off them.
   { id: 'job-each', name: 'Odd Jobs', text: `Win a job of each of the ${JOB_KINDS.length} kinds on the board.`, tier: 1, progress: count(JOB_KINDS.length, kindsOfJob) },
   { id: 'job-25', name: 'On Retainer', text: 'Win 25 jobs.', tier: 2, progress: count(25, (g) => jobsWon(g)) },
+  // Accounts: the pilots who come back for this one by name (see grudge.ts). For meeting one, for closing one, and for closing three.
+  { id: 'account-1', name: 'Second Notice', text: 'Win a meeting with a pilot who came back for you.', tier: 1, progress: count(1, meetingsWon) },
+  { id: 'account-closed', name: 'Closed Book', text: 'Close an account: beat the same pilot three times.', tier: 2, progress: count(1, accountsClosed) },
+  { id: 'account-3', name: 'Repeat Customers', text: 'Close three accounts.', tier: 3, progress: count(3, accountsClosed) },
   { id: 'met-20', name: 'Field Guide', text: 'Meet 20 kinds of enemy.', tier: 2, progress: count(20, kindsMet) },
   { id: 'met-all', name: 'Know Your Enemy', text: 'Meet every kind of enemy there is.', tier: 3, progress: count(KINDS.length, kindsMet) },
   // What is found.

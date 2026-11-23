@@ -467,6 +467,42 @@ er gevraagd wordt.
   beste manier om geld te verdienen".
 - **Twee medailles:** één voor een klus van elke soort, één voor 25 klussen.
 
+### Vervallen rekeningen: wie voor je terugkomt
+
+Vanaf vijftien gewonnen contracten kan een piloot die je bent tegengekomen **voor je terugkomen**.
+Dat begint met iets wat echt gebeurd is: je sloopte de mecha van die piloot, die sloeg voor je op
+de vlucht, of stond nog overeind toen jij het veld verliet. Drie gewonnen contracten later staat
+er tussen de open contracten een bericht met een roepnaam: **Overdue: Brakk** (Nederlands
+**Vervallen: Brakk**). Je neemt het aan wanneer je wilt; het blijft staan tot je het wint. Alles
+wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena.
+
+- Het is **één gevecht om één machine**: die van de piloot, met wat gezelschap. Valt die machine,
+  dan is het klaar (**TARGET: BRAKK**).
+- **De eerste keer** kent de piloot je nog niet: het is de machine zoals die is. Wat jij er in
+  die ontmoeting mee doet, wordt onthouden.
+- **Vanaf de tweede keer** is de machine **gehard** tegen het ene wapen dat er de vorige keer het
+  meeste pantser af haalde. Dat wapen doet bij die machine nog maar **de helft**; bij de machines
+  ernaast doet het wat het altijd deed. De briefing noemt het wapen bij naam. Boven de machine
+  staat **HARDENED** (Nederlands **GEHARD**), en mik je er met dat wapen op, dan staat er **HALF**
+  (Nederlands **HELFT**) naast de naam en zie je bij **DMG** het gehalveerde getal.
+- **De harding slijt.** Naast de naam staat een getal, bijvoorbeeld **HARDENED 160** (Nederlands
+  **GEHARD 160**): zoveel kan de harding nog hebben. Elke treffer van dat wapen haalt eraf wat hij
+  aan schade deed. Is het getal op, dan is de harding weg (**HARDENING GONE**, Nederlands
+  **HARDING WEG**) en doet het wapen weer alles.
+- Neem dus **iets anders mee**: wissel dat wapen in de garage, of blader bij de briefing op de rij
+  **Build** naar een andere bewaarde build en kijk wat **ODDS** dan zegt. Met hetzelfde wapen kan
+  het ook, maar het duurt langer en levert per ronde minder op. Heb je maar één wapen, dan is het
+  je hele vuurkracht die halveert tot de harding weg is: dan loont wisselen het meest.
+- De piloot komt **drie keer** terug, steeds in dezelfde mecha, de tweede en derde keer iets
+  dikker gepantserd. Na de eerste keer duurt het twee gewonnen contracten, na de tweede weer
+  twee. De tweede ontmoeting betaalt een kwart meer dan de eerste, de derde de helft meer.
+- Na de derde is de rekening gesloten (**ACCOUNT CLOSED**, Nederlands **REKENING DICHT**). Daarna
+  kan er een nieuwe beginnen, met een andere piloot. Er loopt er altijd maar één tegelijk.
+- Verlies je of loop je weg, dan verandert er niets: het bericht blijft staan.
+- Hoeveel rekeningen je hebt gesloten staat op de pagina **Record** van je piloot.
+- **Drie medailles:** één voor de eerste gewonnen ontmoeting, één voor een gesloten rekening, één
+  voor drie.
+
 ### Het proefveld: je build gratis uitproberen
 
 Onder **Training** zit een tweede pagina: druk op **R1** (of **L1**) voor **TEST RANGE**. Daar
