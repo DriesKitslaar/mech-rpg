@@ -1,11 +1,11 @@
 import { chooseAutoPlayerAction, runBattle } from '../../src/core/ai';
 import { createBattle, type BattleEvent, type BattleState } from '../../src/core/battle';
 import { ENEMY_COST, MECH_ENEMIES, POOL, SUPPORT_ENEMIES, boardTier, budgetFor, scaleFor, type BoardText } from '../../src/core/board';
-import type { Mission } from '../../src/core/campaign';
+import { startNewCycle, type Mission } from '../../src/core/campaign';
 import { isValidState, newGame, type GameState } from '../../src/core/game';
 import {
   GRUDGE, GRUDGE_MEETINGS, GRUDGE_NUMBERS, GRUDGE_TIER, GRUDGE_WAIT, NOTHING_FOUGHT, accountLine, accountsClosed, addDealt, bookGrudge, dealtBy, foughtIn,
-  grudgeContract, grudgeDue, grudgeEnemy, grudgeOf, isGrudge, stronger, witness,
+  grudgeContract, grudgeDue, grudgeEnemy, grudgeOf, isGrudge, meetingsWon, stronger, witness,
   type Fought, type Grudge, type GrudgeOrigin, type GrudgeText, type Witness,
 } from '../../src/core/grudge';
 import { JOB_NUMBERS, MENDERS } from '../../src/core/jobs';
@@ -14,6 +14,7 @@ import { rangeId } from '../../src/core/range';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { BOARD_TEXT } from '../../src/content/board';
 import { ENEMIES } from '../../src/content/enemies';
+import { MISSIONS } from '../../src/content/missions';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 
 /**
@@ -178,6 +179,24 @@ describe('what a contract\'s battles come to, one battle after another', () => {
     expect(NOTHING_FOUGHT).toEqual({ seen: null, dealt: {}, named: {} });
   });
 
+  test('who was seen is the stronger of the two whichever battle saw them, and of two alike the one of the earlier battle', () => {
+    const wreck = (kind: string): BattleState => ended([kind], (state) => fell(state, 0));
+    const ran = ended(['light-mech'], (state) => left(state, 0));
+    const after = (...battles: BattleState[]): Witness | null => battles.reduce((fought, battle) => foughtIn(fought, battle, false), NOTHING_FOUGHT).seen;
+    // One that ran in the first battle is kept, though a dearer one was wrecked in the second.
+    expect(after(ran, wreck('juggernaut'))).toEqual({ kind: 'light-mech', origin: 'ran' });
+    expect(after(wreck('juggernaut'), ran)).toEqual({ kind: 'light-mech', origin: 'ran' });
+    // Of two that were wrecked the dearer, though it fell first.
+    expect(after(wreck('juggernaut'), wreck('light-mech'))).toEqual({ kind: 'juggernaut', origin: 'wrecked' });
+    expect(after(wreck('light-mech'), wreck('juggernaut'))).toEqual({ kind: 'juggernaut', origin: 'wrecked' });
+    // Two that cost the same and ended the same way: the earlier battle's.
+    expect(ENEMY_COST.stalker).toBe(ENEMY_COST['heavy-mech']);
+    expect(after(wreck('stalker'), wreck('heavy-mech'))).toEqual({ kind: 'stalker', origin: 'wrecked' });
+    expect(after(wreck('heavy-mech'), wreck('stalker'))).toEqual({ kind: 'heavy-mech', origin: 'wrecked' });
+    // And a battle that saw nobody leaves who was seen as they were.
+    expect(after(ran, ended(['tank'], (state) => fell(state, 0)))).toEqual({ kind: 'light-mech', origin: 'ran' });
+  });
+
   test('in a meeting, what was done to the machine that stands first is kept apart: the machines beside it are not it', () => {
     const met = foughtIn(NOTHING_FOUGHT, first, true);
     expect(met.named).toEqual({ [DEMO_BUILD.rightHand!]: 30 });
@@ -223,6 +242,14 @@ describe('how an account begins', () => {
     expect(grudgeOf(bookGrudge(open, BOARD, false, { ...fought, seen: { kind: 'juggernaut', origin: 'beat' } }, NAMES))).toEqual(account());
     for (const mission of [{ id: rangeId('stalker', 1) }, { id: 'drill-basics' }, { id: 'gauntlet-3' }, { id: 'open-0-7-1', loaner: DEMO_BUILD }]) {
       expect(bookGrudge(fresh, mission, true, fought, NAMES), mission.id).toBe(fresh);
+    }
+  });
+
+  test('nor with anything that is not a mech of the board, whatever is said to have been seen', () => {
+    const fresh = game();
+    for (const kind of [...SUPPORT_ENEMIES, 'tank', 'adjuster', 'rival', 'no-such-machine']) {
+      expect(MECHS, kind).not.toContain(kind);
+      for (const origin of ['beat', 'ran', 'wrecked'] as const) expect(bookGrudge(fresh, BOARD, true, { ...fought, seen: { kind, origin } }, NAMES), kind).toBe(fresh);
     }
   });
 
@@ -311,6 +338,18 @@ describe('the notice', () => {
     expect(notice(due({}, 12, 1)).id).toBe(`open-1-12-${GRUDGE}`);
   });
 
+  test('each meeting rolls dice of its own: at one and the same progress the three are not the same fight in the same place', () => {
+    const fight = (battlesWon: number, met: number): string => {
+      const { background, enemies } = notice(due({ met, waited: 9 }, battlesWon)).battles[0];
+      return `${background} ${enemies.join(' ')}`;
+    };
+    // (So that what is measured of a third meeting is not measured over again on the fights of the first.)
+    const progresses = Array.from({ length: 30 }, (_, i) => 15 + i);
+    expect(progresses.filter((won) => fight(won, 0) !== fight(won, 1)).length).toBeGreaterThan(20);
+    expect(progresses.filter((won) => fight(won, 1) !== fight(won, 2)).length).toBeGreaterThan(20);
+    expect(progresses.filter((won) => fight(won, 0) !== fight(won, 2)).length).toBeGreaterThan(20);
+  });
+
   test('one battle about one machine: theirs first, named by the objective, with the company the budget leaves', () => {
     for (let battlesWon = 5; battlesWon < 45; battlesWon++) {
       for (const kind of MECHS) {
@@ -391,6 +430,9 @@ describe('the notice', () => {
     expect(grudgeEnemy(game(), ALL_ENEMIES)).toBeNull();
     // There before it is due as well: whatever asks for it finds it.
     expect(grudgeEnemy(game({ grudge: account() }), ALL_ENEMIES)).not.toBeNull();
+    // And none where the machines that can be fielded do not have theirs among them.
+    expect(grudgeEnemy(game({ grudge: account() }), {})).toBeNull();
+    expect(grudgeEnemy(game({ grudge: account() }), { 'heavy-mech': ENEMIES['heavy-mech'] })).toBeNull();
   });
 
   test('is fought as a fight about one machine, to an end, by the game\'s own pilot', () => {
@@ -478,6 +520,16 @@ describe('what a saved game may hold', () => {
     expect(isValidState(kept(blank({ met: 2, waited: 40 })), CATALOG)).toBe(true);
   });
 
+  test('a pilot who tells the story again takes both along: the account that is open, as it stands, and the callsigns closed', () => {
+    const told = game({ completed: MISSIONS.map((mission) => mission.id), endingSeen: true, grudge: account({ met: 1, waited: 1 }), accounts: ['Tally', 'Docket'] });
+    const again = startNewCycle(told, MISSIONS);
+    expect(again.cycle).toBe(told.cycle + 1);
+    expect(grudgeOf(again)).toEqual(account({ met: 1, waited: 1 }));
+    expect(again.accounts).toEqual(['Tally', 'Docket']);
+    expect(meetingsWon(again)).toBe(meetingsWon(told));
+    expect(isValidState(again, CATALOG)).toBe(true);
+  });
+
   test('one that is not the shape of an account is not a saved game', () => {
     const bad: unknown[] = [
       'Brakk', 7, null, [], { ...account(), name: 7 }, { ...account(), name: '' }, { ...account(), name: 'x'.repeat(40) }, { ...account(), kind: 7 },
@@ -486,6 +538,19 @@ describe('what a saved game may hold', () => {
     ];
     for (const grudge of bad) expect(isValidState(kept(grudge), CATALOG), JSON.stringify(grudge)).toBe(false);
     for (const accounts of ['Brakk', [7], [''], Array.from({ length: 2000 }, () => 'Brakk')]) expect(isValidState(kept(account(), accounts), CATALOG), JSON.stringify(accounts).slice(0, 40)).toBe(false);
+  });
+
+  test('one met as often as an account is met is closed, however it came to be kept: nothing reads it as open', () => {
+    const over = game({ grudge: account({ met: GRUDGE_MEETINGS, waited: 9 }), accounts: ['Tally'] });
+    expect(isValidState(over, CATALOG)).toBe(false);
+    expect(grudgeOf(over)).toBeNull();
+    expect(grudgeDue(over)).toBe(false);
+    expect(grudgeContract(over, TEXT, CALLED)).toBeNull();
+    expect(grudgeEnemy(over, ALL_ENEMIES)).toBeNull();
+    expect(accountLine(over, NOTICE)).toBeNull();
+    // Only the account that was closed is counted: three meetings, and none of this one's.
+    expect(meetingsWon(over)).toBe(GRUDGE_MEETINGS);
+    expect(meetingsWon(game({ grudge: account({ met: 2 }), accounts: ['Tally'] }))).toBe(GRUDGE_MEETINGS + 2);
   });
 
   test('one of the right shape about a machine no account is about reads as none: there is no notice, and one may begin', () => {

@@ -174,7 +174,6 @@ const TOASTS_AT_ONCE = 3;
  */
 const TOAST_ROOM: ScreenName[] = ['hub', 'settlement', 'options'];
 
-/** What the battles of a contract added up to, for the record. */
 /** What a contract's battles came to: the record, the kinds met, and what an account goes by (see grudge.ts). */
 export interface Fought { tally: Stats; met: string[]; retreated: boolean; overdrives?: number; account?: AccountFought }
 

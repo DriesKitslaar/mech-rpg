@@ -193,6 +193,30 @@ describe('a machine that is hardened, on the field', () => {
     expect(texts.some((t) => t.text.includes(`${STRINGS.preview.damage} ${plain.damage}`))).toBe(false);
   });
 
+  test('in a row with no room for everything, what it is about to do makes way: that it is hardened, and that this weapon does half, are said nowhere else', () => {
+    const T = STRINGS.tags;
+    const rowOf = (made: ReturnType<typeof shown>): string[] => {
+      const texts = made.page().texts;
+      const at = texts.find((t) => t.text === T.hardened && t.align === 'left')!.y;
+      return texts.filter((t) => t.y === at && t.align === 'left' && t.size === 10).map((t) => t.text);
+    };
+    // With nothing else on it the row has room for what the machine is about to do, which stands last.
+    const roomy = shown(field());
+    aim(roomy, 0);
+    const plain = rowOf(roomy);
+    expect(plain.slice(0, 2)).toEqual([T.hardened, T.half]);
+    expect(plain).toHaveLength(3);
+    const intent = plain[2];
+    // Guarding and painted as well, there is one tag more than the row holds beside this name.
+    const full = field();
+    full.units[1].guarding = true;
+    full.units[1].painted = 2;
+    const tight = shown(full);
+    aim(tight, 0);
+    expect(rowOf(tight)).toEqual([T.hardened, T.half, T.guard, T.painted]);
+    expect(tight.page().texts.filter((t) => t.text === intent)).toEqual([]);
+  });
+
   test('aimed at with any other weapon: hardened still, and nothing does half', () => {
     const made = shown(field());
     aim(made, 1);

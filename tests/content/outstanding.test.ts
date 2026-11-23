@@ -94,6 +94,54 @@ describe('the lines', () => {
     }
   });
 
+  test('each place of the board\'s text reads the line that is written for it, and no other', () => {
+    const filled = (line: string, gaps: Record<string, string>): string => Object.entries(gaps).reduce((text, [gap, word]) => text.replaceAll(`{${gap}}`, word), line);
+    const words = BOARD_TEXT.grudge;
+    const who = { name: 'Brakk', machine: 'Stalker' };
+    expect(words.title(who.name)).toBe('Overdue: Brakk');
+    for (const origin of GRUDGE_ORIGINS) {
+      expect(words.first[origin](who.name, who.machine), origin).toBe(filled(GRUDGE_LINES.first[origin], who));
+      expect(words.opens.first[origin], origin).toBe(GRUDGE_LINES.opens.first[origin]);
+    }
+    for (const meeting of [0, 1]) {
+      expect(words.again[meeting](who.name, who.machine), `meeting ${meeting + 2}`).toBe(filled(GRUDGE_LINES.again[meeting], who));
+      expect(words.opens.again[meeting], `meeting ${meeting + 2}`).toBe(GRUDGE_LINES.opens.again[meeting]);
+    }
+    for (const meeting of [0, 1, 2]) {
+      expect(words.falls[meeting], `meeting ${meeting + 1}`).toBe(GRUDGE_LINES.falls[meeting]);
+      expect(words.debrief[meeting](who.name), `meeting ${meeting + 1}`).toBe(filled(GRUDGE_LINES.debrief[meeting], { name: who.name }));
+    }
+    expect(words.hurt).toBe(GRUDGE_LINES.hurt);
+  });
+
+  test('and each line says what its place is for: how it began, which meeting it is, and only the last that it is the last', () => {
+    expect(GRUDGE_LINES.first.beat).toContain('put you down');
+    expect(GRUDGE_LINES.first.ran).toContain('broke off');
+    expect(GRUDGE_LINES.first.wrecked).toContain('You wrecked');
+    expect(GRUDGE_LINES.opens.first.beat).toContain('Back for more');
+    expect(GRUDGE_LINES.opens.first.ran).toContain('I ran');
+    expect(GRUDGE_LINES.opens.first.wrecked).toContain('cost me a machine');
+    expect(GRUDGE_LINES.again[0]).toContain('again');
+    expect(GRUDGE_LINES.again[0]).not.toContain('third');
+    expect(GRUDGE_LINES.again[1]).toContain('a third time');
+    expect(GRUDGE_LINES.opens.again[0]).toContain('rebuilt');
+    expect(GRUDGE_LINES.opens.again[1]).toContain('Last time');
+    expect(GRUDGE_LINES.falls[2]).toContain('Account closed');
+    expect(GRUDGE_LINES.debrief[2]).toContain('account is closed');
+    for (const line of [GRUDGE_LINES.falls[0], GRUDGE_LINES.falls[1], GRUDGE_LINES.debrief[0], GRUDGE_LINES.debrief[1]]) expect(line.toLowerCase(), line).not.toContain('closed');
+    // The second bill says there is a third to come. And Dispatch speaks of the machine: it is not its pilot talking.
+    expect(GRUDGE_LINES.debrief[1]).toContain('a third time');
+    expect(GRUDGE_LINES.hurt).toContain('Whatever does half');
+    // A notice made of them says the same: one that began with a defeat, at its third meeting.
+    const third = notice(account({ origin: 'beat', met: 2 }));
+    expect(third.battles[0].talk!.map((line) => line.text)).toEqual([GRUDGE_LINES.opens.again[1], GRUDGE_LINES.hurt, GRUDGE_LINES.falls[2]]);
+    expect(third.debrief).toBe(GRUDGE_LINES.debrief[2].replace('{name}', 'Brakk'));
+    const first = notice(account({ origin: 'beat' }));
+    expect(first.briefing[1]).toContain('put you down');
+    expect(first.battles[0].talk!.map((line) => line.text)).toEqual([GRUDGE_LINES.opens.first.beat, GRUDGE_LINES.hurt, GRUDGE_LINES.falls[0]]);
+    expect(first.debrief).toBe(GRUDGE_LINES.debrief[0].replace('{name}', 'Brakk'));
+  });
+
   test('are read as they are asked for: the same notice is in whatever language is set when it is made', () => {
     const english = notice(account());
     setLanguage('nl');

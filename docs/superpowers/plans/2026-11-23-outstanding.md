@@ -64,8 +64,8 @@
 - [x] Winning it. Tests first: `met` up, `waited` 0, the same machine, `knows` the weapon that did most to the named machine this time (what it was, where nothing hit); the third win closes the account and writes the callsign down; a name closed is not given again while another is left; losing changes nothing.
 - [x] The saved game. Tests first: a game from before loads with neither field; an account of the wrong shape is refused; one of the right shape about nothing an account can be about reads as none and lets one begin.
 - [x] Measure and set `GRUDGE_NUMBERS` and `GRUDGE_TIER` (`scripts/grudge.ts`, kept). The tables are below.
-- [ ] `tests/core/balance7.test.ts`: the targets, held with a few flights of room.
-- [ ] Deliberate faults over the new lines; a test for each that is not caught. Commit.
+- [x] `tests/core/balance7.test.ts`: the targets, held with a few flights of room.
+- [x] Deliberate faults over the new lines; a test for each that is not caught. Commit. (What they found is under O2.)
 
 ### What was measured
 
@@ -132,23 +132,44 @@ the hard difficulty's fourth tier, where a hit is won 77 times in a hundred; it 
 ### Task O2: in the game
 
 **Files:**
-- Modify: `src/ui/app.ts` (`missions()`, `enemies()`, `MissionHost.count()` and `bookIfOver()`, `bookSettlement()`, the snapshot), `src/ui/briefingScreen.ts` (the notice's tag; a machine a contract has a name for goes by it in the list of what to expect and in what the contract asks), `src/ui/battleScreen.ts` (the word over a hardened machine, its tag, and the tag while a hardened weapon is aimed at it), `src/ui/settlementScreen.ts` (which meeting; paid in full), `src/ui/pilotScreen.ts` (accounts closed)
+- Modify: `src/ui/app.ts` (`missions()`, `enemies()`, `MissionHost.count()` and `bookIfOver()`, `bookSettlement()`, the snapshot), `src/ui/briefingScreen.ts` (the notice's tag; a machine a contract has a name for goes by it in the list of what to expect and in what the contract asks), `src/ui/battleScreen.ts` (the word over a hardened machine, its tag, and the tag while a hardened weapon is aimed at it), `src/ui/settlementScreen.ts` (which meeting; account closed), `src/ui/pilotScreen.ts` (accounts closed)
 - Modify: `src/content/board.ts` (the words: `GRUDGE_NAMES`, `GRUDGE_LINES`, `BOARD_TEXT.grudge`), `src/content/strings.ts`, `src/content/nl/strings.ts`, `src/content/nl/missions.ts`, `src/content/nl/reference.ts`, `src/content/nl/index.ts`, `src/content/codex.ts` (a chapter of the manual), `src/content/medals.ts`, `src/core/medals.ts`
 - Modify: `README.md`, `docs/handleiding.md`
 - Test: `tests/content/outstanding.test.ts`, `tests/ui/outstanding.test.ts`, `tests/content/docs.test.ts`, `e2e/outstanding.spec.ts`, `e2e/soak.spec.ts` (a player who closes an account)
 
 **Interfaces:**
 - Consumes everything O1 produces.
-- Produces: `BOARD_TEXT` extended with `GrudgeText`; `STRINGS.tags.hardened`, `STRINGS.tags.half`, `STRINGS.briefing.account`, `STRINGS.settlement.account(meeting, of)`, `STRINGS.settlement.paidInFull`, a row on the pilot's page; snapshot fields `grudge` (the account, or null), `accounts` and, in a battle, `hardened` (the first enemy's list).
+- Produces: `BOARD_TEXT` extended with `GrudgeText`; `STRINGS.tags.hardened`, `STRINGS.tags.half`, `STRINGS.briefing.account`, `STRINGS.settlement.account(meeting, of)`, `STRINGS.settlement.accountClosed`, `STRINGS.record.accounts(n)` beside the pilot's name on the record page; snapshot fields `grudge` (the account, or null), `accounts`, in a battle `hardened` (the first enemy's list) and `halved` (the weapon in hand does half to the machine aimed at), and on a bill `account`.
 
 - [x] The words: sixteen callsigns, the title, briefing lines by origin and by meeting, the line that names the weapon (or says none is known), battle lines, debriefs; all with their Dutch, fitted.
 - [x] The app: the notice in the list, the machine among the enemies, what a contract's battles saw and dealt gathered as they end, `bookGrudge` when the contract is booked, the bill's line.
-- [ ] Tests of the words and the wiring: no callsign is anybody's name; every notice (each callsign, machine, origin, meeting and place, with the longest weapon's name) fits its briefing in both languages; an account that begins, waits and is met through the app.
-- [ ] The screen: over the machine and in its row, `HARDENED`; while the weapon it is hardened against is aimed at it, `HALF` in the row; the bill; the pilot's page.
-- [ ] Three medals; the manual's chapter; the guide's chapter; the README. Docs tests that hold each claim to the game.
-- [ ] Browser tests with pictures: an account that begins, the notice three contracts later, its briefing, the meeting with the known weapon in hand (the halved figure) and with another, the bill; the third meeting and the bill that closes it; in Dutch.
-- [ ] Deliberate faults over the new lines; commit.
+- [x] Tests of the words and the wiring: no callsign is anybody's name; every notice (each callsign, machine, origin, meeting and place, with the longest weapon's name) fits its briefing in both languages; an account that begins, waits and is met through the app.
+- [x] The screen: over the machine and in its row, `HARDENED`; while the weapon it is hardened against is aimed at it, `HALF` in the row; the bill; the pilot's page.
+- [x] Three medals; the manual's chapter; the guide's chapter; the README. Docs tests that hold each claim to the game.
+- [x] Browser tests with pictures: an account that begins, the notice three contracts later, its briefing, the meeting with the known weapon in hand (the halved figure) and with another, the bill; the third meeting and the bill that closes it; in Dutch.
+- [x] Deliberate faults over the new lines; commit.
+
+### What the deliberate faults found
+
+137 faults were put into the new lines, one at a time, and the tests of the round run against each: 94 in the
+rules (`battle.ts`, `grudge.ts`, `game.ts`, `jobs.ts`) and 43 in the screens, the app's wiring, the words and the
+medals. 123 were caught by the tests as they stood. The 14 that were not each have a test now, and all 137 are
+caught:
+
+- **The rules (6).** An account met three times was read as an open one (`grudgeOf` is the second line behind the
+  check of the saved game, and nothing asked it). A machine nobody can field was fielded (`grudgeEnemy` with a
+  record that has no such kind). Over the battles of a contract, of two witnesses alike the later was kept, and a
+  later battle's witness replaced a stronger one: the one test there had the stronger one come last. An account
+  began with something that is not a mech of the board. And the three meetings of an account rolled the same dice
+  at the same progress, which no player can come to (a meeting won is a contract won) and the measuring can.
+- **The screen (2).** In a row with no room for everything, `HALF` or `HARDENED` made way before what the machine
+  is about to do. There is a test of such a row now: both stay, the intent goes.
+- **The words (6).** `BOARD_TEXT.grudge` read the wrong line for a place: one that beat the pilot or was wrecked
+  briefed as one that ran, the second and third opening lines the wrong way round, what they say as they fall and
+  the debriefs the wrong way round (the first bill said the account was closed), Dispatch saying what they say.
+  The tests of the rules use words of their own, so nothing held the game's words to their places; a test does
+  now, and another holds each line to what its place is for.
 
 ### Task O3: final check
 
-- [ ] Read through once more; all tests; the endurance test with a player who closes an account; an independent review of the branch and its findings answered; the last APK; a short Dutch summary.
+- [ ] Read through once more; all tests; the endurance test with two players who have an account (one from its first notice on, who aims the weapon the machine knows by hand; one at the third meeting, in Dutch, who closes it); an independent review of the branch and its findings answered; the last APK; a short Dutch summary.
