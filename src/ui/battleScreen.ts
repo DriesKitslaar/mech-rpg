@@ -34,6 +34,7 @@ import {
   placeFor, standAt, type Place, type Spot,
 } from './stage';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
+import { looming } from '../core/ai';
 import { intentOf } from '../core/intent';
 import { PLAIN_TYPING, TYPING_SPEED, Typewriter, type Typing } from './typewriter';
 import { THUNDER_AFTER_MS, drawWeather, drawWeatherExtras, strokeBegan, weatherFor } from './weather';
@@ -423,12 +424,18 @@ export class BattleScreen {
     }
   }
 
-  /** What the wingman is saying right now, if anything. */
+  /** What is written over a unit of the other side at this moment: the one state worth flagging, if there is one. */
+  markOver(unitId: string): string | null {
+    const unit = this.flow.state.units.find((u) => u.id === unitId);
+    return unit && !unit.destroyed ? this.fieldMark(unit)?.text ?? null : null;
+  }
+
   /** The words rising over the field at this moment: figures, and what a weapon's kind or a great hit is called. */
   get words(): string[] {
     return this.fx.texts();
   }
 
+  /** What the wingman is saying right now, if anything. */
   get radioLine(): string | null {
     return this.radio?.line ?? null;
   }
@@ -843,14 +850,14 @@ export class BattleScreen {
   /** The units that glow with their own heat at this moment: close to their limit, and there to be seen. A hurried game has none. */
   private hot(): UnitState[] {
     if (this.opts.fast) return [];
-    return this.flow.state.units.filter((unit) => !unit.destroyed && !this.hidden(unit) && unit.heat >= HEAT_LIMIT * HOT);
+    return this.flow.state.units.filter((unit) => !unit.destroyed && !this.hidden(unit) && unit.heat >= unit.heatLimit * HOT);
   }
 
   private drawHeat(ctx: CanvasRenderingContext2D): void {
     const scene = this.scene();
     for (const unit of this.hot()) {
       const at = scene.hitPoint(unit.id, 'core');
-      const over = Math.min(1, (unit.heat / HEAT_LIMIT - HOT) / (1 - HOT));
+      const over = Math.min(1, (unit.heat / unit.heatLimit - HOT) / (1 - HOT));
       this.standing++;
       drawGlow(ctx, { x: at.x, y: at.y, r: 30, color: '#ff5a20', alpha: (0.16 + 0.16 * over) * (0.8 + 0.2 * Math.sin(this.clock / 140)) }, this.opts.calm ? 0.5 : 1);
       // Wisps of hot air rising off it.
@@ -1163,7 +1170,7 @@ export class BattleScreen {
     const body = pose.core ?? { dx: 0, dy: 0 };
     const stance = this.stances.of(player.id);
     const dazed = stance.staggered || stance.overheated;
-    const hot = Math.max(0, Math.min(1, player.heat / HEAT_LIMIT));
+    const hot = Math.max(0, Math.min(1, player.heat / player.heatLimit));
     const breath = 0.8 + 0.2 * Math.sin(this.clock / 700);
     drawGlow(ctx, {
       x: HERO.x + GENERATOR.x + t.dx + body.dx,
@@ -1335,6 +1342,9 @@ export class BattleScreen {
     if (this.stances.of(unit.id).shaken) return { text: T.shaken, color: COLORS.accent };
     if (unit.fuse !== undefined) return { text: T.fuse(unit.fuse), color: unit.fuse <= 1 && blink ? COLORS.danger : COLORS.heat };
     if (unit.charged.length > 0) return { text: T.charging, color: blink ? COLORS.danger : COLORS.heat };
+    // A surge about to be fired with what its machine kept on top of a turn: how much that is, as pressing as a charge,
+    // and said in place of the guard the machine took while it held (the row beside its name says both).
+    if (looming(this.flow.state, unit, this.catalog)) return { text: STRINGS.fx.kept(unit.kept), color: blink ? COLORS.danger : COLORS.energy };
     if (unit.staggered > 0) return { text: T.stagger, color: blink ? COLORS.heat : COLORS.text };
     if (unit.guarding) return { text: T.guard, color: COLORS.armor };
     if (unit.boosted) return { text: T.boost, color: COLORS.energy };
@@ -1372,6 +1382,9 @@ export class BattleScreen {
       ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor, rank: 6 }] : []),
       ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat, rank: 8 }] : []),
       ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy, rank: 7 }] : []),
+      // What a core's buffer is keeping for the unit's next turn. The first to make way in a full row: where it is
+      // about to matter it is written over the machine as well.
+      ...(unit.kept > 0 ? [{ text: STRINGS.fx.kept(unit.kept), color: COLORS.energy, rank: 0 }] : []),
       // A core's field that has been broken: said for as long as nothing stands in its place.
       ...(unit.barrier === 0 && fieldOf(unit, this.catalog) > 0 ? [{ text: T.fieldDown, color: COLORS.dim, rank: 7 }] : []),
       // An Overdrive that lasts says so for as long as it does.
@@ -1672,18 +1685,21 @@ export class BattleScreen {
   }
 
   private drawEnergyAndHeat(ctx: CanvasRenderingContext2D, player: UnitState, x: number, y: number, width: number): void {
-    const hot = player.heat > 75 || this.flow.overheatWarning;
+    // Red from where a machine is seen to be hot (three quarters of the way to its own limit), or when the weapon being aimed would pass the limit.
+    const hot = player.heat > player.heatLimit * HOT || this.flow.overheatWarning;
     this.drawStat(ctx, STRINGS.meters.energy, player.energy, turnEnergyOf(player, this.catalog), COLORS.energy, x, y, width);
-    this.drawStat(ctx, STRINGS.meters.heat, player.heat, HEAT_LIMIT, hot ? COLORS.danger : COLORS.heat, x, y + LINE, width);
+    // The bar is as long as the machine's limit, and a limit that is not the usual one is written beside the figure.
+    const figure = player.heatLimit === HEAT_LIMIT ? String(player.heat) : `${player.heat}/${player.heatLimit}`;
+    this.drawStat(ctx, STRINGS.meters.heat, player.heat, player.heatLimit, hot ? COLORS.danger : COLORS.heat, x, y + LINE, width, figure);
   }
 
   private drawStat(
     ctx: CanvasRenderingContext2D, label: string, value: number, max: number, color: string, x: number, y: number,
-    width: number,
+    width: number, figure = String(value),
   ): void {
     drawText(ctx, label, x, y, { color: COLORS.dim });
     drawMeter(ctx, x + 30, y + 4, width - 70, 4, value, max, color);
-    drawText(ctx, String(value), x + width, y, { align: 'right', color: color === COLORS.danger ? COLORS.danger : COLORS.text });
+    drawText(ctx, figure, x + width, y, { align: 'right', color: color === COLORS.danger ? COLORS.danger : COLORS.text });
   }
 
   private drawResult(ctx: CanvasRenderingContext2D): void {

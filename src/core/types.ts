@@ -35,6 +35,16 @@ export interface FramePart {
    */
   field?: number;
   /**
+   * A core only: the heat its machine may carry before it overheats, where that is not the usual hundred. Whatever
+   * asks where a machine's limit is asks the machine: a shot that would overheat it, a redline's heat, the bar.
+   */
+  heatLimit?: number;
+  /**
+   * A core only: the share of a turn's energy, in a hundred, that its machine can keep. What is left when the
+   * machine's turn ends is kept, as far as that goes, and is there on top of its next turn's energy.
+   */
+  buffer?: number;
+  /**
    * Arms only: the first blade to strike in a turn does not give up the boost that carried the mech in. A second
    * blade after it does, as any blade does from other arms.
    */
@@ -225,6 +235,12 @@ export interface Abilities {
   carrier?: { unit: EnemyDef; every: number };
   /** Raises a field of this much, whatever the core it flies is sold with: a house machine tuned past what its yard sells. See `FramePart.field`. */
   field?: number;
+  /**
+   * Fires only in rounds that divide by this. In every other round it holds: it braces if it can, fires nothing and
+   * ends its turn, and what it is about to do reads as holding. A pilot's habit, not a machine's: with a core that
+   * keeps what is not spent, the round it fires in has more than a turn's energy behind it.
+   */
+  hold?: number;
 }
 
 /** A change a boss goes through when its core has taken enough. */

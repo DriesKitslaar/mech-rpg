@@ -1254,6 +1254,195 @@
       "hi": 0.844
     }
   },
+  "legs-sirocco": {
+    "file": "sprites/legs-sirocco.png",
+    "w": 119,
+    "h": 99,
+    "ox": 18,
+    "oy": 57,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "core-sirocco": {
+    "file": "sprites/core-sirocco.png",
+    "w": 50,
+    "h": 84,
+    "ox": 44,
+    "oy": 3,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "head-sirocco": {
+    "file": "sprites/head-sirocco.png",
+    "w": 20,
+    "h": 21,
+    "ox": 68,
+    "oy": 29,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "arms-sirocco.near": {
+    "file": "sprites/arms-sirocco.near.png",
+    "w": 54,
+    "h": 43,
+    "ox": 88,
+    "oy": 20,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "arms-sirocco.far": {
+    "file": "sprites/arms-sirocco.far.png",
+    "w": 39,
+    "h": 63,
+    "ox": 23,
+    "oy": 24,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "legs-solstice": {
+    "file": "sprites/legs-solstice.png",
+    "w": 102,
+    "h": 100,
+    "ox": 29,
+    "oy": 53,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "core-solstice": {
+    "file": "sprites/core-solstice.png",
+    "w": 33,
+    "h": 76,
+    "ox": 59,
+    "oy": 3,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "head-solstice": {
+    "file": "sprites/head-solstice.png",
+    "w": 14,
+    "h": 18,
+    "ox": 69,
+    "oy": 26,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "arms-solstice.near": {
+    "file": "sprites/arms-solstice.near.png",
+    "w": 48,
+    "h": 32,
+    "ox": 85,
+    "oy": 36,
+    "fx": 42,
+    "fy": 24,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "arms-solstice.far": {
+    "file": "sprites/arms-solstice.far.png",
+    "w": 28,
+    "h": 56,
+    "ox": 38,
+    "oy": 33,
+    "fx": 6,
+    "fy": 51,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
   "legs-crawler": {
     "file": "sprites/legs-crawler.png",
     "w": 138,
@@ -1706,6 +1895,21 @@
     "file": "sprites/wpn-enemy-mortar.png",
     "w": 41,
     "h": 26
+  },
+  "wpn-enemy-brand": {
+    "file": "sprites/wpn-enemy-brand.png",
+    "w": 41,
+    "h": 22
+  },
+  "wpn-enemy-flue": {
+    "file": "sprites/wpn-enemy-flue.png",
+    "w": 31,
+    "h": 26
+  },
+  "wpn-enemy-wave": {
+    "file": "sprites/wpn-enemy-wave.png",
+    "w": 58,
+    "h": 16
   },
   "enemy-recon-drone": {
     "file": "sprites/enemy-recon-drone.png",
@@ -2305,6 +2509,16 @@
   },
   "portrait-argent": {
     "file": "sprites/portrait-argent.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-kiln": {
+    "file": "sprites/portrait-kiln.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-vesper": {
+    "file": "sprites/portrait-vesper.png",
     "w": 56,
     "h": 56
   },
@@ -3916,6 +4130,215 @@
       "hi": 0.844
     }
   },
+  "legs-sirocco.back": {
+    "file": "sprites/legs-sirocco.back.png",
+    "w": 93,
+    "h": 73,
+    "ox": 14,
+    "oy": 50,
+    "hx": 60,
+    "hy": 35,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "core-sirocco.back": {
+    "file": "sprites/core-sirocco.back.png",
+    "w": 39,
+    "h": 56,
+    "ox": 39,
+    "oy": 2,
+    "hx": 19,
+    "hy": 38,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "head-sirocco.back": {
+    "file": "sprites/head-sirocco.back.png",
+    "w": 9,
+    "h": 7,
+    "ox": 51,
+    "oy": 16,
+    "hx": 5,
+    "hy": 2,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "arms-sirocco.near.back": {
+    "file": "sprites/arms-sirocco.near.back.png",
+    "w": 45,
+    "h": 32,
+    "ox": 67,
+    "oy": 20,
+    "hx": 17,
+    "hy": 11,
+    "fx": 39,
+    "fy": 19,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "arms-sirocco.far.back": {
+    "file": "sprites/arms-sirocco.far.back.png",
+    "w": 25,
+    "h": 54,
+    "ox": 19,
+    "oy": 17,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "legs-solstice.back": {
+    "file": "sprites/legs-solstice.back.png",
+    "w": 88,
+    "h": 78,
+    "ox": 12,
+    "oy": 42,
+    "hx": 59,
+    "hy": 43,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "core-solstice.back": {
+    "file": "sprites/core-solstice.back.png",
+    "w": 29,
+    "h": 66,
+    "ox": 40,
+    "oy": 2,
+    "hx": 18,
+    "hy": 38,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "head-solstice.back": {
+    "file": "sprites/head-solstice.back.png",
+    "w": 11,
+    "h": 10,
+    "ox": 50,
+    "oy": 20,
+    "hx": 6,
+    "hy": 3,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "arms-solstice.near.back": {
+    "file": "sprites/arms-solstice.near.back.png",
+    "w": 43,
+    "h": 28,
+    "ox": 63,
+    "oy": 29,
+    "hx": 11,
+    "hy": 4,
+    "fx": 37,
+    "fy": 17,
+    "bar": 15,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "arms-solstice.far.back": {
+    "file": "sprites/arms-solstice.far.back.png",
+    "w": 21,
+    "h": 44,
+    "ox": 25,
+    "oy": 30,
+    "fx": 5,
+    "fy": 39,
+    "bar": 6,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
   "legs-crawler.back": {
     "file": "sprites/legs-crawler.back.png",
     "w": 101,
@@ -5344,6 +5767,211 @@
       "hi": 0.844
     }
   },
+  "legs-sirocco.small": {
+    "file": "sprites/legs-sirocco.small.png",
+    "w": 77,
+    "h": 64,
+    "ox": 12,
+    "oy": 37,
+    "hx": 52,
+    "hy": 31,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "core-sirocco.small": {
+    "file": "sprites/core-sirocco.small.png",
+    "w": 32,
+    "h": 54,
+    "ox": 29,
+    "oy": 2,
+    "hx": 21,
+    "hy": 30,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "head-sirocco.small": {
+    "file": "sprites/head-sirocco.small.png",
+    "w": 13,
+    "h": 13,
+    "ox": 44,
+    "oy": 19,
+    "hx": 5,
+    "hy": 2,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "arms-sirocco.near.small": {
+    "file": "sprites/arms-sirocco.near.small.png",
+    "w": 35,
+    "h": 28,
+    "ox": 57,
+    "oy": 13,
+    "hx": 17,
+    "hy": 15,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "arms-sirocco.far.small": {
+    "file": "sprites/arms-sirocco.far.small.png",
+    "w": 25,
+    "h": 40,
+    "ox": 15,
+    "oy": 16,
+    "paint": {
+      "accent": [
+        1,
+        2,
+        3,
+        8,
+        11
+      ],
+      "lo": 0.005,
+      "mid": 0.089,
+      "hi": 0.412
+    }
+  },
+  "legs-solstice.small": {
+    "file": "sprites/legs-solstice.small.png",
+    "w": 66,
+    "h": 65,
+    "ox": 19,
+    "oy": 34,
+    "hx": 19,
+    "hy": 34,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "core-solstice.small": {
+    "file": "sprites/core-solstice.small.png",
+    "w": 22,
+    "h": 49,
+    "ox": 38,
+    "oy": 2,
+    "hx": 12,
+    "hy": 32,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "head-solstice.small": {
+    "file": "sprites/head-solstice.small.png",
+    "w": 9,
+    "h": 12,
+    "ox": 45,
+    "oy": 17,
+    "hx": 4,
+    "hy": 3,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "arms-solstice.near.small": {
+    "file": "sprites/arms-solstice.near.small.png",
+    "w": 32,
+    "h": 20,
+    "ox": 55,
+    "oy": 24,
+    "hx": 17,
+    "hy": 12,
+    "fx": 26,
+    "fy": 15,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
+  "arms-solstice.far.small": {
+    "file": "sprites/arms-solstice.far.small.png",
+    "w": 19,
+    "h": 36,
+    "ox": 24,
+    "oy": 22,
+    "fx": 4,
+    "fy": 31,
+    "paint": {
+      "accent": [
+        3,
+        5,
+        6,
+        8
+      ],
+      "lo": 0.031,
+      "mid": 0.205,
+      "hi": 0.844
+    }
+  },
   "legs-crawler.small": {
     "file": "sprites/legs-crawler.small.png",
     "w": 90,
@@ -6265,5 +6893,20 @@
     "file": "sprites/wpn-enemy-mortar.small.png",
     "w": 27,
     "h": 17
+  },
+  "wpn-enemy-brand.small": {
+    "file": "sprites/wpn-enemy-brand.small.png",
+    "w": 26,
+    "h": 14
+  },
+  "wpn-enemy-flue.small": {
+    "file": "sprites/wpn-enemy-flue.small.png",
+    "w": 20,
+    "h": 17
+  },
+  "wpn-enemy-wave.small": {
+    "file": "sprites/wpn-enemy-wave.small.png",
+    "w": 38,
+    "h": 10
   }
 }

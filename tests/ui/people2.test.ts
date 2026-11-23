@@ -44,7 +44,7 @@ describe('when somebody\'s page opens', () => {
 
   test('those who are met in battle: each when their own machine has been on the field, and no other', () => {
     const met = PEOPLE.flatMap((p) => ('met' in p.when ? [p] : []));
-    expect(met.map((p) => p.id)).toEqual(['sable', 'rook', 'krell', 'magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary', 'larder', 'argent']);
+    expect(met.map((p) => p.id)).toEqual(['sable', 'rook', 'krell', 'magpie', 'dredge', 'lark', 'hollow', 'paragon', 'notary', 'larder', 'argent', 'kiln', 'vesper']);
     const everything = Object.keys(ENEMIES);
     for (const person of met) {
       // Their page is theirs: it is opened by the machine that carries their name.
@@ -71,10 +71,10 @@ describe('a new cycle', () => {
     const finished = { ...done(...FINISHED), met: ['sable'] };
     const first = inHub(finished).app;
     people(first);
-    expect(db(first).count).toBe('KNOWN 11/21');
+    expect(db(first).count).toBe('KNOWN 11/23');
     const second = inHub(startNewCycle(finished, MISSIONS)).app;
     people(second);
-    expect(db(second).count).toBe('KNOWN 11/21');
+    expect(db(second).count).toBe('KNOWN 11/23');
     point(second, 'brenn');
     expect(db(second).detail).toMatchObject({ title: 'DIRECTOR BRENN', portrait: 'portrait-hadron' });
   });

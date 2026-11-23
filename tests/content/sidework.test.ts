@@ -172,8 +172,8 @@ describe('how hard the side work is', () => {
 
   test('a bounty is not for a new pilot: the starter mech loses the first notice more often than it wins it', () => {
     expect(wins('bounty-1', 'starter')).toBeLessThan(0.5);
-    // Six notices, seven favours, four jobs for the Guild, three contracts nobody posted, and two duels.
-    expect(SIDE_WORK).toHaveLength(22);
+    // Six notices, seven favours, four jobs for the Guild, three contracts nobody posted, and four duels.
+    expect(SIDE_WORK).toHaveLength(24);
   });
 });
 

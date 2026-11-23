@@ -1,0 +1,9 @@
+{
+  "id": "portrait-kiln",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a wiry, sunburnt test pilot in their forties with a shaved head, soot smudges on the cheekbones and old burn scars down one side of the neck, wearing a scorched black heat-proof flight suit with burnt-orange piping, the collar open, and dark round welding goggles pushed up on the forehead. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

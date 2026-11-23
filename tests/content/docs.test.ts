@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { ARCHETYPES, archetypeOf } from '../../src/core/archetype';
-import { SPOOL_BASE, SURGE_UNIT } from '../../src/core/battle';
+import { GUARD_DAMAGE, HEAT_LIMIT, SPOOL_BASE, SURGE_UNIT, bufferRoom, createBattle } from '../../src/core/battle';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
 import { startNewCycle } from '../../src/core/campaign';
 import { launches } from '../../src/core/launch';
@@ -14,7 +14,8 @@ import { MANUAL } from '../../src/content/codex';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { MASTERS } from '../../src/content/masters';
-import { MEDALS, WEAPON_KINDS } from '../../src/content/medals';
+import { MEDALS, WEAPON_KINDS, WORKS_DUELS } from '../../src/content/medals';
+import { DUELS } from '../../src/content/sidework';
 import { REFERENCE_NL } from '../../src/content/nl/reference';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { CATALOG, SHOP_PARTS, SHOP_UNLOCKS } from '../../src/content/parts';
@@ -73,7 +74,7 @@ describe('the README counts what is there', () => {
 
 /** The guide's chapter on the eighth seat, from its heading to the next chapter's, as one line of text. */
 const GUIDE_TEXT = readFileSync('docs/handleiding.md', 'utf8');
-const SEAT_CHAPTER = GUIDE_TEXT.slice(GUIDE_TEXT.indexOf('### De achtste stoel'), GUIDE_TEXT.indexOf('## Twee duels na het einde')).replace(/\s+/g, ' ');
+const SEAT_CHAPTER = GUIDE_TEXT.slice(GUIDE_TEXT.indexOf('### De achtste stoel'), GUIDE_TEXT.indexOf('## Vier duels na het einde')).replace(/\s+/g, ' ');
 const GUIDE = GUIDE_TEXT.replace(/\s+/g, ' ');
 
 describe('the guide\'s chapter on the eighth seat says what is so', () => {
@@ -387,7 +388,7 @@ describe('what is said of the five kinds of weapon is so', () => {
     // Twice as much: of both the weapons that punish.
     expect(section).toContain('| **PUNISH** | STRAF | Dubbele schade tegen een mecha die wankelt. Zelf duwt het nauwelijks. |');
     expect(ofKind('punish').map((weapon) => weapon.traitPower)).toEqual([100, 100]);
-    expect(section).toContain('| **REDLINE** | WITHEET | Hoe heter je eigen mecha is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de grens van 100. |');
+    expect(section).toContain(`| **REDLINE** | WITHEET | Hoe heter je eigen mecha is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de hittegrens van je mecha (${HEAT_LIMIT}, in een Sirocco ${(CATALOG['core-sirocco'] as FramePart).heatLimit}). |`);
     expect(STRINGS.partInfo.traits.redline(8)).toBe('REDLINE: +8% per 10 heat');
     expect(section).toContain('| **FORK** | VONK | Een treffer slaat over op de volgende vijand in de rij, voor een deel van de schade. Wat overslaat mist nooit. |');
     for (const weapon of ofKind('fork')) expect(weapon.traitPower, weapon.id).toBeLessThan(100);
@@ -433,5 +434,96 @@ describe('what is said of the five kinds of weapon is so', () => {
     expect(owns(['wpn-crucible', 'wpn-spillway', 'wpn-headsman', 'wpn-thunderhead', 'wpn-thresher'])).toBe(5);
     expect(owns(['wpn-crucible', 'wpn-slagcaster', 'wpn-rivet-rifle', 'toString'])).toBe(1);
     expect(owns(['wpn-crucible', 'wpn-spillway'], 0)).toBe(0);
+  });
+});
+
+describe('what is said of the yard\'s two frames and their duels is so', () => {
+  const chapter = MANUAL.find((entry) => entry.id === 'works')!;
+  const dutch = REFERENCE_NL[chapter.text];
+  const section = GUIDE.slice(GUIDE.indexOf('## Vier duels na het einde'), GUIDE.indexOf('## Opslaan'));
+  const sirocco = CATALOG['core-sirocco'] as FramePart;
+  const solstice = CATALOG['core-solstice'] as FramePart;
+
+  test('the figures everything below is held to: a limit of 130 for the usual 100, half a turn kept, a guard at six tenths, every other round', () => {
+    expect([sirocco.heatLimit, HEAT_LIMIT, solstice.buffer, GUARD_DAMAGE, ENEMIES.vesper.abilities?.hold]).toEqual([130, 100, 50, 0.6, 2]);
+    expect(WORKS_DUELS.map((id) => DUELS.find((mission) => mission.id === id)!.title)).toEqual(['Hot Work', 'The Longest Day']);
+  });
+
+  test('the manual: a chapter that names each core by the line its part has, with the limit and the share the rules give', () => {
+    expect(chapter.title).toBe('WORKS FRAMES');
+    expect(REFERENCE_NL[chapter.title]).toBe('FRAMES VAN DE WERF');
+    // It stands after the chapter on the five kinds, which it speaks of.
+    expect(MANUAL[MANUAL.findIndex((entry) => entry.id === 'kinds') + 1].id).toBe('works');
+    // Neither frame is given away: each part is on the shop's shelves, at a price, once its duel is won.
+    expect(chapter.text).toMatch(/^Beat the coast yard's works pilots to buy their frames\. /);
+    expect(dutch).toMatch(/^Versla de piloten van de kustwerf om hun frames te kopen\. /);
+    for (const [name, duel] of [['sirocco', 'duel-3'], ['solstice', 'duel-4']]) {
+      for (const slot of ['head', 'core', 'arms', 'legs']) {
+        expect(SHOP_UNLOCKS[`${slot}-${name}`], `${slot}-${name}`).toBe(`won:${duel}`);
+        expect(CATALOG[`${slot}-${name}`].price, `${slot}-${name}`).toBeGreaterThan(0);
+      }
+    }
+    expect(chapter.text).toContain(`A SIROCCO core RUNS HOT: it overheats past ${sirocco.heatLimit}, not ${HEAT_LIMIT}`);
+    expect(STRINGS.partInfo.heatLimit(130)).toMatch(/^RUNS HOT: /);
+    expect(chapter.text).toContain('A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn\'s worth.');
+    expect(STRINGS.partInfo.buffer).toMatch(/^BUFFER: /);
+    // The two kinds of weapon it names, by the names their lines have.
+    for (const kind of ['redline', 'surge'] as const) {
+      expect(chapter.text).toContain(kind.toUpperCase());
+      expect(STRINGS.partInfo.traits[kind](1)).toMatch(new RegExp(`^${kind.toUpperCase()}:`));
+    }
+    expect(dutch).toContain(`Een SIROCCO-kern is HEET: oververhit pas boven ${sirocco.heatLimit}, niet ${HEAT_LIMIT}`);
+    expect(STRINGS_NL.partInfo.heatLimit(130)).toMatch(/^HEET: /);
+    expect(dutch).toContain('Een SOLSTICE-kern heeft een BUFFER');
+    expect(dutch).toContain('tot een halve beurt');
+    expect(STRINGS_NL.partInfo.buffer).toMatch(/^BUFFER: /);
+    const lines = STRINGS_NL.partInfo.traits as Record<string, (power: number) => string>;
+    expect(lines.redline(1)).toMatch(/^WITHEET:/);
+    expect(lines.surge(1)).toMatch(/^PIEK:/);
+    expect(dutch).toContain('WITHEET klimt hoger');
+    expect(dutch).toContain('Een PIEK laat niets over.');
+  });
+
+  test('the guide: four duels by their titles in the order they are fought, and what each of the last two machines does', () => {
+    expect(section.length).toBeGreaterThan(3000);
+    const titles = DUELS.map((mission) => section.indexOf(`**${mission.title}**`));
+    expect(DUELS.map((mission) => mission.title)).toEqual(['By Appointment', 'First Sword', 'Hot Work', 'The Longest Day']);
+    expect(titles.every((at) => at >= 0)).toBe(true);
+    expect([...titles].sort((a, b) => a - b)).toEqual(titles);
+    expect(section).toContain(`hij oververhit pas boven ${sirocco.heatLimit} hitte, waar elke andere mecha dat boven ${HEAT_LIMIT} doet`);
+    // A machine glows from three quarters of the way to its own limit (the screen's own test holds that): the guide says what the glow means.
+    expect(section).toContain('Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig.');
+    expect(section).toContain('bewaart hij voor zijn volgende beurt, tot een halve beurt');
+    expect(section).toContain('Vesper wacht om de andere ronde (dekking, geen schot) en vuurt de ronde erna één wapen af, met anderhalve beurt energie erachter');
+    // What is written over Vesper's machine once it has held: half of what a turn gives it, which is the figure the guide gives.
+    const vesper = createBattle(STARTERS[0].build, [ENEMIES.vesper], CATALOG, 1).units[1];
+    expect(STRINGS.fx.kept(bufferRoom(vesper, CATALOG))).toBe('+180 EN');
+    expect(section).toContain(`Kijk wat er boven hem staat. Knippert daar een getal, zoals **${STRINGS.fx.kept(bufferRoom(vesper, CATALOG))}**, dan heeft hij zoveel energie bewaard en vuurt hij in zijn volgende beurt: kies dan eerst **${STRINGS.actions.guard}**.`);
+    expect(section).toContain('Een opgevangen treffer doet nog zes tiende van de schade.');
+    expect(section).toContain('Staat er geen getal, dan staat hij open: sla toe.');
+    // Its next move is said beside its name, once it is aimed at: in the words the screen writes there.
+    expect(section).toContain(`Mik je op hem, dan staat naast zijn naam wat hij gaat doen: **${STRINGS.intent.aim('').trim()}** met het onderdeel waarop hij mikt, of **${STRINGS.intent.hold}** (Nederlands **${STRINGS_NL.intent.aim('').trim()}** en **${STRINGS_NL.intent.hold}**)`);
+    expect(section).toContain('Auto Turn zoekt die dekking uit zichzelf');
+  });
+
+  test('the guide: what a pilot who flies one sees, in the words the screen writes', () => {
+    expect(section).toContain(`**${STRINGS.partInfo.heatLimit(130)}** (Nederlands **${STRINGS_NL.partInfo.heatLimit(130)}**)`);
+    expect(section).toContain(`Je hittebalk loopt dan tot ${sirocco.heatLimit} in plaats van ${HEAT_LIMIT}`);
+    expect(section).toContain('bijvoorbeeld **84/130**');
+    expect(section).toContain(`**${STRINGS.partInfo.buffer}** (Nederlands **${STRINGS_NL.partInfo.buffer}**)`);
+    expect(section).toContain('tot de helft van wat een beurt je geeft');
+    expect(section).toContain(`bijvoorbeeld **${STRINGS.fx.kept(180)}**`);
+    expect(STRINGS.fx.kept(180)).toBe('+180 EN');
+    expect(section).toContain('Een piekwapen (**SURGE**) neemt altijd alle energie, dus daarmee blijft er niets over om te bewaren');
+    const medal = MEDALS.find((entry) => entry.id === 'works')!;
+    expect(section).toContain(`krijgt de medaille **${medal.name}**`);
+  });
+
+  test('the README: a section on the two, four duels, and the counts that grew', () => {
+    expect(README).toContain('- **De werf**: twee mecha\'s voor het eind van het spel, elk te koop zodra je in een duel de fabriekspiloot van de werf aan de kust verslaat die hem vliegt.');
+    expect(README).toContain(`De Sirocco loopt heet: zijn hittegrens is ${sirocco.heatLimit} in plaats van ${HEAT_LIMIT}`);
+    expect(README).toContain('De Solstice bewaart de energie die je niet gebruikt voor je volgende beurt, tot een halve beurt.');
+    expect(README).toContain('de ander wacht een ronde en vuurt dan met anderhalve beurt energie. Wat hij heeft opgespaard, staat boven hem op het veld.');
+    expect(README).toContain(`Na het verhaal: ${word(DUELS.length)} duels, elk om een mecha die je daarna zelf mag kopen.`);
   });
 });

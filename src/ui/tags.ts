@@ -74,6 +74,7 @@ export function intentText(intent: Intent | null): string | null {
     case 'cool': return STRINGS.intent.cool;
     // A charge already held has its own tag; this is the turn spent winding one up.
     case 'charge': return STRINGS.intent.windUp;
+    case 'hold': return STRINGS.intent.hold;
     default: return null;
   }
 }

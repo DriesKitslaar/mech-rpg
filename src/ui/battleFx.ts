@@ -504,8 +504,14 @@ export class BattleFx {
         this.say(0, at, STRINGS.fx.fieldUp, COLORS.energy);
         break;
       }
-      case 'recover':
       case 'turnStart':
+        // What a core's buffer kept from the turn before is there now: said over the machine in the colour of energy.
+        if (event.kept) {
+          const at = s.centre(event.unit);
+          this.say(0, { x: at.x, y: at.y - WORD_GAP }, STRINGS.fx.kept(event.kept), COLORS.energy);
+        }
+        break;
+      case 'recover':
       case 'outcome':
         break;
     }

@@ -1,0 +1,11 @@
+{
+  "id": "core-solstice.back",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/back-solstice.png"
+  ],
+  "prompt": "Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 as the background. Do not move, redraw, rescale or recentre anything. Keep: only the torso seen from behind: the round backpack with the cyan lens in its middle, the narrow body under it down to the waist, and both long flat capacitor blades that rise straight up from behind the shoulders. Erase everything else and fill it with green: the oval helmet between the blades (that is the head), both pointed shoulder guards with the cyan lights (those belong to the arms), both arms, the hips with the pointed skirt plate and both legs."
+}

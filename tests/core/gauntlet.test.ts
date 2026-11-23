@@ -271,14 +271,19 @@ describe('what a run pays and how far it gets', () => {
     // drawn from all of it: with them on the shelf these same forty runs are other runs. They clear 9.1 and
     // twenty-two reach the tenth. Over four hundred runs it is 8.8 floors with the ten for 8.5 without (171
     // reaching the tenth for 156): a third of a floor, which is about what four hundred runs differ by.
+    //
+    // The eight parts of the two frames the yard's works pilots fly are offered in the same way, and these forty
+    // runs are other runs again: they clear 8.9 and nineteen reach the tenth. Over four hundred runs it is 8.9
+    // floors with the eight for 8.8 without (180 reaching the tenth for 171): a tenth of a floor, which is less
+    // than four hundred runs differ by.
     const depths = Array.from({ length: 40 }, (_, i) => floorsCleared(play((i + 1) * 7919 + 1, 60)));
     const mean = depths.reduce((sum, depth) => sum + depth, 0) / depths.length;
     expect(mean).toBeGreaterThan(8.6);
     expect(mean).toBeLessThan(9.6);
     // The deep floors stay hard to reach: twenty is reached by nobody here.
     const tenth = depths.filter((depth) => depth >= 10).length;
-    expect(tenth).toBeGreaterThanOrEqual(20);
-    expect(tenth).toBeLessThanOrEqual(28);
+    expect(tenth).toBeGreaterThanOrEqual(17);
+    expect(tenth).toBeLessThanOrEqual(25);
     expect(depths.filter((depth) => depth >= 20).length).toBe(0);
   });
 });

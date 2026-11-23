@@ -117,6 +117,28 @@ describe('drawing a mech in a view', () => {
     expect(first).toBe(6);
   });
 
+  test('the bar across the shoulders is drawn short of an arm that says so: by what the far arm leaves off at its left and the near arm at its right', () => {
+    const { store: s } = store();
+    const parts = mechSprites(s, DEMO_BUILD, undefined, 'back');
+    // Arms that carry their shoulders under the bar, as a Solstice's do: the manifest gives each what to leave off.
+    const low: MechSprites = { ...parts, armNear: { ...parts.armNear!, bar: 15 }, armFar: { ...parts.armFar!, bar: 6 } };
+    const bars = (sprites: MechSprites) => record((ctx) => drawMech(ctx, sprites, 20, 30, { dx: 0, dy: 0 }, 0, {}, 'back')).rects;
+    const { x, y, w, h } = BACK_JOINTS.shoulders;
+    const dark = bars(low).filter((r) => r.color === JOINT_DARK);
+    expect(dark.map((r) => [r.x - 20, r.y - 30, r.w, r.h])).toEqual([
+      [BACK_JOINTS.neck.x, BACK_JOINTS.neck.y, BACK_JOINTS.neck.w, BACK_JOINTS.neck.h],
+      [x + 6, y, w - 6 - 15, h],
+      [BACK_JOINTS.waist.x, BACK_JOINTS.waist.y, BACK_JOINTS.waist.w, BACK_JOINTS.waist.h],
+    ]);
+    // Its line of light is as long as what is left of it.
+    const lit = bars(low).filter((r) => r.color === JOINT_LIT)[1];
+    expect([lit.x - 20, lit.w]).toEqual([x + 6, w - 21]);
+    // One arm alone takes off its own end only, and arms that say nothing leave the bar whole.
+    expect(bars({ ...parts, armNear: low.armNear }).filter((r) => r.color === JOINT_DARK)[1]).toMatchObject({ x: 20 + x, w: w - 15 });
+    expect(bars({ ...parts, armFar: low.armFar }).filter((r) => r.color === JOINT_DARK)[1]).toMatchObject({ x: 20 + x + 6, w: w - 6 });
+    expect(bars(parts).filter((r) => r.color === JOINT_DARK)[1]).toMatchObject({ x: 20 + x, w });
+  });
+
   test('the joints go where the body goes: with a shift, a sway, the body in a pose, and legs that lower it; a mech without a body has none', () => {
     const { store: s } = store();
     const parts = mechSprites(s, DEMO_BUILD, undefined, 'back');

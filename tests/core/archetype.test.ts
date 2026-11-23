@@ -104,8 +104,8 @@ describe('how a machine stands, when what it fights with says nothing', () => {
   test('the slowest legs make a bastion and the quickest a skirmisher: the legs as they are sold, at eighteen or less and at forty or more', () => {
     const by = (name: Archetype): string[] => legs.filter((part) => kind(armed({ rightHand: 'wpn-rivet-rifle' }, { legs: part.id })) === name).map((part) => part.id).sort();
     expect(by('bastion')).toEqual(['legs-bulwark', 'legs-colossus', 'legs-crawler', 'legs-dozer']);
-    expect(by('skirmisher')).toEqual(['legs-courier', 'legs-glide', 'legs-halo', 'legs-mantis', 'legs-shrike', 'legs-sterling', 'legs-wraith']);
-    expect(by('allrounder')).toEqual(['legs-auditor', 'legs-ronin', 'legs-sovereign', 'legs-spider', 'legs-strider']);
+    expect(by('skirmisher')).toEqual(['legs-courier', 'legs-glide', 'legs-halo', 'legs-mantis', 'legs-shrike', 'legs-solstice', 'legs-sterling', 'legs-wraith']);
+    expect(by('allrounder')).toEqual(['legs-auditor', 'legs-ronin', 'legs-sirocco', 'legs-sovereign', 'legs-spider', 'legs-strider']);
     // The edges are the Dozer's legs and the Courier's, and a point either side of each is another kind.
     expect([(CATALOG['legs-dozer'] as FramePart).mobility, (CATALOG['legs-courier'] as FramePart).mobility]).toEqual([SLOW_LEGS, QUICK_LEGS]);
     const withLegs = (mobility: number): Archetype => {

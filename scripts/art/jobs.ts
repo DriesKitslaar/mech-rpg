@@ -263,6 +263,16 @@ function backLayer(id: string, fromFamily: string, which: Layer, keep: string = 
  * that backpack on every other family's back.
  */
 const HEAD_FROM_BEHIND: Record<string, string> = {
+  sirocco:
+    'only the head itself: the small dark helmet dome at the very top of the mecha, in the middle between the fins. ' +
+    'Erase everything else: in particular every one of the tall thin heat-sink fins that rise around it, the ribbed ' +
+    'backpack column with the glowing orange vent that lies directly below it, both shoulders, the arms, the torso ' +
+    'and the legs.',
+  solstice:
+    'only the head itself: the smooth dark oval helmet at the very top of the mecha, between the two tall blades. ' +
+    'Erase everything else: in particular both tall flat capacitor blades that rise on either side of it, the round ' +
+    'backpack with the cyan lens that lies directly below it, both pointed shoulder guards, the arms, the torso and ' +
+    'the legs.',
   sovereign:
     'only the head itself: the violet helmet dome at the very top of the mecha with the fan of gold points that ' +
     'stands up around it and the gold band directly under the dome. Erase everything else: in particular the violet ' +
@@ -301,6 +311,18 @@ const HEAD_FROM_BEHIND: Record<string, string> = {
 
 /** Torsos that came away from behind with the head still standing on them: each is told which part that is. */
 const CORE_FROM_BEHIND: Record<string, string> = {
+  sirocco:
+    'only the torso seen from behind: the ribbed backpack column with the glowing orange vent in its middle, the ' +
+    'back plates beside it, the narrow ribbed waist under it, and the whole row of tall thin heat-sink fins that ' +
+    'rise from the top of the back like a mane. Erase everything else and fill it with green: the small helmet dome ' +
+    'in the middle of the fins (that is the head), both large shoulder guards with the round joints (those belong ' +
+    'to the arms), both arms, the hips with their skirt plates and both legs.',
+  solstice:
+    'only the torso seen from behind: the round backpack with the cyan lens in its middle, the narrow body under it ' +
+    'down to the waist, and both long flat capacitor blades that rise straight up from behind the shoulders. Erase ' +
+    'everything else and fill it with green: the oval helmet between the blades (that is the head), both pointed ' +
+    'shoulder guards with the cyan lights (those belong to the arms), both arms, the hips with the pointed skirt ' +
+    'plate and both legs.',
   sovereign:
     'only the torso seen from behind: the violet backpack block with the ribbed gold vent in its middle and the ' +
     'round white lamp on each side of it, and the narrow ivory body directly under it down to the waist. Erase ' +
@@ -331,8 +353,8 @@ function backLayersOf(fromFamily: string, ids: { legs: string; core: string; hea
     backLayer(ids.legs, fromFamily, 'legs'),
     backLayer(ids.core, fromFamily, 'torso', CORE_FROM_BEHIND[fromFamily]),
     backLayer(ids.head, fromFamily, 'head', HEAD_FROM_BEHIND[fromFamily]),
-    backLayer(`${ids.arms}.near`, fromFamily, 'armNear'),
-    backLayer(`${ids.arms}.far`, fromFamily, 'armFar'),
+    backLayer(`${ids.arms}.near`, fromFamily, 'armNear', armOf(fromFamily, KEEP_BACK.armNear)),
+    backLayer(`${ids.arms}.far`, fromFamily, 'armFar', armOf(fromFamily, KEEP_BACK.armFar)),
   ];
 }
 
@@ -341,20 +363,58 @@ function backLayersOf(fromFamily: string, ids: { legs: string; core: string; hea
  * head is and what lies under it.
  */
 const HEAD_FROM_FRONT: Record<string, string> = {
+  sirocco:
+    'only the head itself: the small low wedge-shaped helmet with the wide glowing orange visor slit, in the middle ' +
+    'at the top of the chest. Erase everything else: in particular every one of the tall thin heat-sink fins that ' +
+    'rise behind it and on either side of it, both shoulders, the chest, the arms and the legs.',
+  solstice:
+    'only the head itself: the smooth dark oval helmet with the single round cyan eye, at the top between the two ' +
+    'tall blades. Erase everything else: in particular both tall flat capacitor blades that rise on either side of ' +
+    'it, both pointed shoulder guards, the chest, the arms and the legs.',
   dozer:
     'only the head itself: the small cage-like cab of red bars with the single round yellow lamp inside it, at the ' +
     'very top of the mecha. Erase everything else: in particular the wide grey steel chest plate with the grille ' +
     'that lies directly below the cage, both grey shoulder blocks, the arms, the torso and the legs.',
 };
 
+/**
+ * Torsos that carry something tall on their backs which the usual words would leave behind or give to the head:
+ * each is told that it is the torso's.
+ */
+const CORE_FROM_FRONT: Record<string, string> = {
+  sirocco:
+    'only the torso: the deep ribbed chest with its two glowing slotted vents and the abdomen, from the waist up to ' +
+    'the neck, together with the whole row of tall thin heat-sink fins that rise from behind it above the shoulders ' +
+    'like a mane. Erase the head (the small wedge-shaped helmet with the orange visor slit), both arms with their ' +
+    'shoulder armour, the hips and the legs.',
+  solstice:
+    'only the torso: the slender chest with the round cyan lens in its middle and the abdomen, from the waist up to ' +
+    'the neck, together with both long flat capacitor blades that rise straight up from behind it. Erase the head ' +
+    '(the smooth oval helmet with the cyan eye), both arms with their pointed shoulder guards, the hips and the legs.',
+};
+
+/**
+ * What stands behind a shoulder and is not the arm's: said to both arms of a family whose torso carries something
+ * tall on its back, from the front and from behind, so that it is not cut away with the arm.
+ */
+const NOT_THE_ARMS: Record<string, string> = {
+  sirocco:
+    'Erase also every tall thin heat-sink fin that stands up above or behind the shoulder: the fins are not part of ' +
+    'the arm. The arm ends at the top of its own shoulder armour.',
+  solstice:
+    'Erase also the tall flat capacitor blade that rises straight up behind the shoulder: the blades are not part ' +
+    'of the arm. The arm ends at the top of its own pointed shoulder guard.',
+};
+const armOf = (family: string, usual: string): string => (NOT_THE_ARMS[family] ? `${usual} ${NOT_THE_ARMS[family]}` : usual);
+
 /** The five layers of one family, named after the parts that use them. */
 function layersOf(fromFamily: string, ids: { legs: string; core: string; head: string; arms: string }): ArtJob[] {
   return [
     layer(ids.legs, fromFamily, 'legs'),
-    layer(ids.core, fromFamily, 'torso'),
+    layer(ids.core, fromFamily, 'torso', CORE_FROM_FRONT[fromFamily]),
     layer(ids.head, fromFamily, 'head', HEAD_FROM_FRONT[fromFamily]),
-    layer(`${ids.arms}.near`, fromFamily, 'armNear'),
-    layer(`${ids.arms}.far`, fromFamily, 'armFar'),
+    layer(`${ids.arms}.near`, fromFamily, 'armNear', armOf(fromFamily, KEEP.armNear)),
+    layer(`${ids.arms}.far`, fromFamily, 'armFar', armOf(fromFamily, KEEP.armFar)),
   ];
 }
 
@@ -482,6 +542,21 @@ const DESIGNS: Record<string, string> = {
     'white lights: long coat-like armour skirts hanging from the hips at the front and back, narrow shoulders with upright ' +
     'gold-edged collar plates, slender precise limbs, and a smooth faceless mask head with one thin vertical gold line and ' +
     'a low crown ridge. Slimmer and taller-looking than the first image, elegant, cold and expensive.',
+  // The two frames the yard on the coast has never sold. Designs of this game's own: a rangy machine in soot and
+  // ember with a mane of heat-sink fins, and a tall narrow one in midnight blue with two capacitor blades on its back.
+  sirocco:
+    'a rangy, long-limbed mecha built to run hot, in matte soot-black armour with burnt-orange panel edges and narrow ' +
+    'vents that glow ember-orange: a crest of tall thin heat-sink fins rising in a row behind its head and shoulders ' +
+    'like a mane, a deep ribbed chest with two slotted glowing vents, long forearms in vented shrouds, tall narrow ' +
+    'shins with radiator slats down the front, and a low wedge-shaped head with one wide horizontal visor slit ' +
+    'glowing orange. Longer-limbed and leaner than the first image, scorched, restless and dangerous.',
+  solstice:
+    'a tall, narrow, serene mecha that stores power, in dark midnight-blue armour with pale silver-white inner ' +
+    'plates, thin bright cyan light seams and a few small cyan lights: two long flat capacitor blades rising ' +
+    'straight up from behind its shoulders, side by side, like the prongs of a tuning fork, a slender chest with ' +
+    'one round cyan lens in its middle, long slim arms with ringed forearms, long legs with pointed knee caps, and ' +
+    'a smooth oval head with a single round cyan eye and no crest. Taller-looking and narrower than the first ' +
+    'image, calm, exact and humming.',
   // The frame of the one who keeps the eighth seat. A design of this game's own: a herald in violet enamel and gold
   // under a crest of seven points, one for each crown that is asked of whoever comes for it.
   sovereign:
@@ -516,6 +591,9 @@ const DRAWN: ArtJob[] = [
   family('shrike', 'ronin', DESIGNS.shrike),
   // The frame for the very end of it: what the keeper of the eighth seat flies.
   family('sovereign', 'ronin', DESIGNS.sovereign),
+  // The two the yard's works pilots bring to Varn.
+  family('sirocco', 'ronin', DESIGNS.sirocco),
+  family('solstice', 'ronin', DESIGNS.solstice),
   // Free-standing lower bodies: a family drawing with only the legs replaced, from which the legs layer is cut.
   lowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
@@ -540,6 +618,8 @@ const DRAWN: ArtJob[] = [
   ...layersOf('sterling', { legs: 'legs-sterling', core: 'core-sterling', head: 'head-sterling', arms: 'arms-sterling' }),
   ...layersOf('shrike', { legs: 'legs-shrike', core: 'core-shrike', head: 'head-shrike', arms: 'arms-shrike' }),
   ...layersOf('sovereign', { legs: 'legs-sovereign', core: 'core-sovereign', head: 'head-sovereign', arms: 'arms-sovereign' }),
+  ...layersOf('sirocco', { legs: 'legs-sirocco', core: 'core-sirocco', head: 'head-sirocco', arms: 'arms-sirocco' }),
+  ...layersOf('solstice', { legs: 'legs-solstice', core: 'core-solstice', head: 'head-solstice', arms: 'arms-solstice' }),
   layer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   layer('legs-spider', 'spider', 'legs',
@@ -687,6 +767,10 @@ const DRAWN: ArtJob[] = [
   { id: 'wpn-enemy-needle', kind: 'handWeapon', source: 'wpn-needler', prompt: '' },
   { id: 'wpn-enemy-maul', kind: 'handWeapon', source: 'wpn-scatter-gun', prompt: '' },
   { id: 'wpn-enemy-mortar', kind: 'shoulderWeapon', source: 'wpn-mortar-pod', prompt: '' },
+  // What the yard's works pilots carry looks like what the yard's machines were built for.
+  { id: 'wpn-enemy-brand', kind: 'handWeapon', source: 'wpn-slagcaster', prompt: '' },
+  { id: 'wpn-enemy-flue', kind: 'shoulderWeapon', source: 'wpn-crucible', prompt: '' },
+  { id: 'wpn-enemy-wave', kind: 'handWeapon', source: 'wpn-sluice', prompt: '' },
 
   item('enemy-recon-drone', 'enemy', 'ronin',
     'a small hovering security drone in the same dark charcoal and deep red armour: a compact body with two ducted rotors, one glowing magenta sensor eye and a small barrel underneath. The whole drone, nothing else, no mecha.', true),
@@ -790,6 +874,9 @@ const DRAWN: ArtJob[] = [
   // The two swords of the Coast Circuit.
   portrait('portrait-larder', 'a lean, sharp-eyed duellist in their thirties with close-cropped ash-grey hair and a band of black paint across the eyes like a mask, wearing a high-collared charcoal flight jacket with three rust-red talon marks stitched on one shoulder'),
   portrait('portrait-argent', 'a composed, upright older duellist with silver hair tied back and a calm level gaze, wearing a pearl-white dress flight coat with silver buttons, thin gold piping and a small gold sword pin at the collar'),
+  // The two works pilots of the yard that builds the Circuit's machines.
+  portrait('portrait-kiln', 'a wiry, sunburnt test pilot in their forties with a shaved head, soot smudges on the cheekbones and old burn scars down one side of the neck, wearing a scorched black heat-proof flight suit with burnt-orange piping, the collar open, and dark round welding goggles pushed up on the forehead'),
+  portrait('portrait-vesper', 'a still, pale test pilot of uncertain age with straight jaw-length black hair and calm half-closed eyes, wearing a high-collared midnight-blue flight coat with thin cyan piping and a small silver tuning-fork pin at the collar'),
   portrait('portrait-guild', 'a sly night-market broker of uncertain age in a hooded patchwork cloak, half of the face hidden behind a lacquered dark red trader mask, fingers heavy with mismatched rings, lit by warm lantern light'),
   // Not a face: the recorder behind the seat of the pilot's own frame, which has a voice of a kind.
   { id: 'portrait-recorder', kind: 'portrait',
@@ -870,6 +957,8 @@ const DRAWN: ArtJob[] = [
   backFamily('sterling', 'ronin'),
   backFamily('shrike', 'ronin'),
   backFamily('sovereign', 'ronin'),
+  backFamily('sirocco', 'ronin'),
+  backFamily('solstice', 'ronin'),
   backLowerBody('crawler', 'bulwark',
     'a tank lower body: a wide, low armoured chassis carried on two heavy caterpillar tracks, one on each side, ' +
     'with hazard stripes on the track guards. No legs and no feet.'),
@@ -892,6 +981,8 @@ const DRAWN: ArtJob[] = [
   ...backLayersOf('sterling', { legs: 'legs-sterling', core: 'core-sterling', head: 'head-sterling', arms: 'arms-sterling' }),
   ...backLayersOf('shrike', { legs: 'legs-shrike', core: 'core-shrike', head: 'head-shrike', arms: 'arms-shrike' }),
   ...backLayersOf('sovereign', { legs: 'legs-sovereign', core: 'core-sovereign', head: 'head-sovereign', arms: 'arms-sovereign' }),
+  ...backLayersOf('sirocco', { legs: 'legs-sirocco', core: 'core-sirocco', head: 'head-sirocco', arms: 'arms-sirocco' }),
+  ...backLayersOf('solstice', { legs: 'legs-solstice', core: 'core-solstice', head: 'head-solstice', arms: 'arms-solstice' }),
   backLayer('legs-crawler', 'crawler', 'legs',
     'only the lower body below the waist: the whole tracked chassis with both caterpillar tracks. Erase the torso, head and both arms.'),
   backLayer('legs-spider', 'spider', 'legs',

@@ -15,10 +15,12 @@ export type SpriteSlot = 'armFar' | 'legs' | 'core' | 'head' | 'armNear' | 'righ
  * held and where it fires from: turned, those are no longer where its corners would put them.
  * `hx`/`hy`, on a frame layer that can be hit in its view, is where in its own picture a hit on it lands (see `hitOn`).
  * `fx`/`fy`, on an arm whose fist was not drawn where its view has the fist, is where in its own picture that fist is (see `fistOf`).
+ * `bar`, on an arm from behind that carries its shoulder lower than the bar across the shoulders, is how much of the
+ * bar is left off at that arm's end (see `shoulderBar`).
  */
 export type SpriteSize = {
   w: number; h: number; ox?: number; oy?: number; drop?: number; gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number;
-  fx?: number; fy?: number;
+  fx?: number; fy?: number; bar?: number;
 };
 export type DrawCmd = { slot: SpriteSlot; x: number; y: number };
 export type MechView = 'front' | 'back' | 'small';
@@ -87,6 +89,36 @@ export const BACK_JOINTS = {
   shoulders: { x: 36, y: 24, w: 46, h: 6 },
   waist: { x: 55, y: 44, w: 8, h: 18 },
 };
+
+/**
+ * How much of an end of the bar across the shoulders has to lie behind the arm at that end: so many of the pixels
+ * of its last `BAR_END` columns. An arm that covers less carries its shoulder lower than the bar, and the bar is
+ * left off at its end as far as the arm's own inner edge and `BAR_END` more (see `barCut`): it then ends under the body.
+ */
+export const BAR_END = 4;
+export const BAR_COVERED = 8;
+
+/**
+ * What an arm from behind has to say of the bar across the shoulders: how much of the bar's end on its side is left
+ * off. Nothing for an arm whose shoulder covers that end, as nearly all do. `solid(x, y)` says whether the arm has
+ * a pixel at a point of the pose box.
+ */
+export function barCut(side: 'near' | 'far', arm: { ox: number; w: number }, solid: (x: number, y: number) => boolean): number {
+  const { x, y, w, h } = BACK_JOINTS.shoulders;
+  const from = side === 'near' ? x + w - BAR_END : x;
+  let behind = 0;
+  for (let dx = 0; dx < BAR_END; dx++) for (let dy = 0; dy < h; dy++) if (solid(from + dx, y + dy)) behind++;
+  if (behind >= BAR_COVERED) return 0;
+  return Math.max(0, side === 'near' ? x + w - (arm.ox + BAR_END) : arm.ox + arm.w - BAR_END - x);
+}
+
+/** The bar across the shoulders of this mech from behind: the joint, less what each arm says to leave off at its end. */
+export function shoulderBar(sizes: Partial<Record<SpriteSlot, SpriteSize>>): { x: number; y: number; w: number; h: number } {
+  const { x, y, w, h } = BACK_JOINTS.shoulders;
+  const left = sizes.armFar?.bar ?? 0;
+  const right = sizes.armNear?.bar ?? 0;
+  return { x: x + left, y, w: Math.max(0, w - left - right), h };
+}
 
 const FRAME: SpriteSlot[] = ['armFar', 'legs', 'core', 'head', 'armNear'];
 

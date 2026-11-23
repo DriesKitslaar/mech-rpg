@@ -1,5 +1,5 @@
 import { chooseEnemyAction } from './ai';
-import { activeUnit, applyAction, turnEnergyOf, type Action, type BattleState, type UnitState } from './battle';
+import { activeUnit, applyAction, nextTurnRound, turnEnergyOf, type Action, type BattleState, type UnitState } from './battle';
 import type { Catalog, FrameSlot } from './types';
 
 /**
@@ -13,15 +13,13 @@ export type Intent =
   | { kind: 'dart' }
   | { kind: 'mend' }
   | { kind: 'charge' }
+  /** Fires nothing this turn and keeps what it has: see `Abilities.hold`. */
+  | { kind: 'hold' }
   | { kind: 'cool' }
   | { kind: 'fuse'; turns: number }
   | { kind: 'reeling' };
 
-/** The round in which the unit takes its next turn: this one if its turn is still to come. */
-export function nextTurnRound(state: BattleState, unit: UnitState): number {
-  const at = state.order.indexOf(unit.id);
-  return at >= 0 && at >= state.turn ? state.round : state.round + 1;
-}
+export { nextTurnRound };
 
 /** The field as it will stand when the unit's next turn starts, if nothing else happens first. */
 function atItsTurn(state: BattleState, unit: UnitState, catalog: Catalog): BattleState {
@@ -35,7 +33,10 @@ function atItsTurn(state: BattleState, unit: UnitState, catalog: Catalog): Battl
     else { copy.order = [unit.id]; copy.turn = 0; }
     me.boosted = false;
     me.guarding = false;
-    me.energy = Math.max(0, turnEnergyOf(me, catalog) - me.energyDebt);
+    // What a buffer kept is on top, as it is when the turn really starts.
+    me.energy = Math.max(0, turnEnergyOf(me, catalog) - me.energyDebt) + me.kept;
+    me.kept = 0;
+    me.turnEnergy = me.energy;
     me.energyDebt = 0;
     me.usedBoost = false;
     me.usedGuard = false;
@@ -83,6 +84,8 @@ function work(state: BattleState, unit: UnitState, catalog: Catalog): Intent | n
   // A skirmisher that boosts is out of reach for the round, whatever it fires on the way.
   if (unit.ai === 'skirmisher' && actions.some((a) => a.type === 'boost')) return { kind: 'dart' };
   if (shot) return { kind: 'aim', part: shot.part };
+  // A pilot who holds, in a round it holds: it braces and waits.
+  if (unit.abilities.hold !== undefined && !actions.some((a) => a.type === 'cool' || a.type === 'charge')) return { kind: 'hold' };
   if (actions.some((a) => a.type === 'charge')) return { kind: 'charge' };
   if (actions.some((a) => a.type === 'cool')) return { kind: 'cool' };
   return null;

@@ -262,11 +262,14 @@ export const QUEST: Mission[] = [
 
 const larder = says('Larder', 'portrait-larder');
 const argent = says('Argent', 'portrait-argent');
+const kiln = says('Kiln', 'portrait-kiln');
+const vesper = says('Vesper', 'portrait-vesper');
 
 /**
- * Two duels, one at a time, once the audit is over. The Coast Circuit duels for standing and not for clients,
- * and it has heard of the pilot who settled Varn: it sends a sword, and when that one falls, its first. Each
- * flies a frame no yard in Varn builds, and whoever has beaten one may buy one.
+ * Four duels, one at a time, once the audit is over. The Coast Circuit duels for standing and not for clients,
+ * and it has heard of the pilot who settled Varn: it sends a sword, and when that one falls, its first. Then the
+ * yard that builds the Circuit's machines sends its two works pilots, each in a machine it has never sold, to see
+ * what beat its swords. Each of the four flies a frame no yard in Varn builds, and whoever has beaten one may buy one.
  */
 export const DUELS: Mission[] = [
   {
@@ -297,6 +300,36 @@ export const DUELS: Mission[] = [
       argent(3, 'Piece by piece will not do it. Nothing worth doing is done piece by piece.'),
       dispatch('hurt', 'Break the field and hit it in the round it is down. There is no other way through.'),
       argent('win', 'Yielded. The field is down and so am I. Keep the hall. You have paid for it.'),
+    ] })],
+  },
+  {
+    id: 'duel-3', phase: 'side', series: 'duel', when: 'verdict', title: 'Hot Work', client: 'Dispatch', portrait: 'portrait-dispatch', reward: 14000, scale: 1.15,
+    briefing: [
+      'The yard that builds the Circuit\'s machines has two it has never sold. It has sent a works pilot to the old foundry to see what beat its swords.',
+      'A Sirocco. It runs hot: its limit is 130 where any other machine\'s is 100, and both its weapons hit harder the hotter it gets. Leave it alone and every round is worse.',
+      'Stagger it and it fires less. Heat it past even that limit and it loses a turn. I have taken the booking.',
+    ],
+    debrief: 'Kiln walks the Sirocco out still glowing, and laughing. The yard adds a page to its price list. It arrives scorched.',
+    battles: [battle(['kiln'], 'bg-foundry', { talk: [
+      kiln('start', 'Kiln, works pilot. They tell you never to run a machine hot. I have never run one cold.'),
+      kiln(3, 'Feel that? She is only now getting warm. Give her another round.'),
+      dispatch('hurt', 'It is hotter every round and hits harder for it. Stagger it, or cook it past its limit.'),
+      kiln('win', 'Hah! Cooked in my own kiln. Tell the yard the limit could go higher.'),
+    ] })],
+  },
+  {
+    id: 'duel-4', phase: 'side', series: 'duel', when: 'verdict', title: 'The Longest Day', client: 'Dispatch', portrait: 'portrait-dispatch', reward: 17000, scale: 1.3,
+    briefing: [
+      'The yard has sent its other works pilot, in its other machine. Vesper has booked the plaza for the evening of the longest day of the year, from the last of the light.',
+      'A Solstice keeps the energy it does not spend. One round it holds: guards, fires nothing. The next, its one weapon has a turn and a half behind it.',
+      'Watch what stands over it. A number: guard, that much is coming. Nothing: it is open, and that round is yours.',
+    ],
+    debrief: 'Vesper shuts the Solstice down where it stands and waits for the truck. The yard sends its last page. No more zeroes fit.',
+    battles: [battle(['vesper'], 'bg-plaza', { talk: [
+      vesper('start', 'Vesper, for the yard. I do not hurry. Whatever is worth having is worth keeping a while.'),
+      vesper(3, 'You spend everything, every round. It must be tiring, never having anything left.'),
+      dispatch('hurt', 'The number over it is what it kept. Guard while it shows. Hit it when it is gone.'),
+      vesper('win', 'Spent. All of it, and nothing kept. So that is what an empty hand feels like.'),
     ] })],
   },
 ];

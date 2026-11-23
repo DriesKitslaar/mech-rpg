@@ -288,18 +288,25 @@ briefing zegt hoe jouw build ervoor staat.
   het aantal kronen.
 - **Een medaille** en een brief van het arenakantoor.
 
-## Twee duels na het einde
+## Vier duels na het einde
 
 Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appointment**. Win je
-dat, dan volgt een tweede: **First Sword**. Het zijn gevechten van één tegen één, tegen piloten van
-buiten de stad, elk in een mecha die niemand in Varn bouwt. Een wingman kun je er niet voor huren:
-ze vroegen om jou alleen. Wie zo'n duel wint, mag die mecha daarna in de **Shop** kopen. Dat recht
-raak je niet meer kwijt, ook niet in een nieuwe cyclus.
+dat, dan volgt een tweede, **First Sword**, daarna **Hot Work** en als laatste **The Longest
+Day**. Het zijn gevechten van één tegen één, tegen piloten van buiten de stad, elk in een mecha die
+niemand in Varn bouwt. Een wingman kun je er niet voor huren: ze vroegen om jou alleen. Wie zo'n
+duel wint, mag die mecha daarna in de **Shop** kopen. Dat recht raak je niet meer kwijt, ook niet
+in een nieuwe cyclus.
+
+De eerste twee tegenstanders zijn zwaarden van het Coast Circuit. De laatste twee zijn de
+fabriekspiloten van de werf aan de kust die de mecha's van het Circuit bouwt: zij komen kijken wat
+hun zwaarden heeft verslagen, elk in een mecha die de werf nog nooit heeft verkocht.
 
 | Mecha | Wat hem bijzonder maakt | Hoe je hem verslaat |
 |---|---|---|
 | **Shrike** (grijs, licht) | Zijn armen: de eerste slag met een zwaard per beurt kost hem zijn Boost niet. Hij slaat toe en blijft moeilijk te raken. | Breng hem aan het wankelen of schiet zijn benen kapot: dan ontwijkt hij niet meer. |
 | **Sterling** (wit, snel) | Zijn kern wekt een veld op dat de eerste schade opvangt. Blijft er iets van staan, dan is het de volgende ronde weer heel. | Breek het veld in één ronde met een harde klap, of met alles tegelijk. Dan ligt het de ronde daarna plat en is hij kwetsbaar. Losse, kleine treffers voeden het veld alleen maar. |
+| **Sirocco** (zwart en oranje) | Zijn kern loopt heet: hij oververhit pas boven 130 hitte, waar elke andere mecha dat boven 100 doet. Kiln vuurt met twee wapens die harder raken naarmate hij heter is. De eerste ronde stelt het weinig voor; vanaf de derde raakt elk schot minstens drie keer zo hard. | Breng hem aan het wankelen: dan heeft hij minder energie en vuurt hij minder. Of stook hem met thermische wapens over zijn eigen grens: dan verliest hij een beurt en begint hij koeler opnieuw. Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig. Wacht niet af, want elke ronde wordt hij gevaarlijker. |
+| **Solstice** (blauw en zilver) | Zijn kern heeft een buffer: energie die hij niet gebruikt, bewaart hij voor zijn volgende beurt, tot een halve beurt. Vesper wacht om de andere ronde (dekking, geen schot) en vuurt de ronde erna één wapen af, met anderhalve beurt energie erachter. | Kijk wat er boven hem staat. Knippert daar een getal, zoals **+180 EN**, dan heeft hij zoveel energie bewaard en vuurt hij in zijn volgende beurt: kies dan eerst **Guard**. Een opgevangen treffer doet nog zes tiende van de schade. Staat er geen getal, dan staat hij open: sla toe. Mik je op hem, dan staat naast zijn naam wat hij gaat doen: **AIMS** met het onderdeel waarop hij mikt, of **HOLDS** (Nederlands **MIKT** en **WACHT**). Auto Turn zoekt die dekking uit zichzelf. |
 
 Vlieg je ze zelf, dan gelden dezelfde regels voor jou. Op het onderdeel staat het erbij: **POISE**
 bij de armen van de Shrike, **FIELD** bij de kern van de Sterling (bij jou vangt het veld 25 schade
@@ -309,6 +316,22 @@ meer dan alle andere, op die van de Colossus en de rupsbanden na, en zijn toch v
 twee. Met twee zwaarden kost de tweede slag je wel je
 Boost. Staat er **FIELD DOWN** in je statusregel, dan is je veld gebroken en komt het een beurt
 later terug.
+
+Bij de kern van de Sirocco staat **RUNS HOT: heat limit 130** (Nederlands **HEET: hittegrens
+130**). Je hittebalk loopt dan tot 130 in plaats van 100, en ernaast staat hoe ver je bent,
+bijvoorbeeld **84/130**. De waarschuwing dat een schot je oververhit komt ook pas bij 130. Een
+witheet wapen (**REDLINE**) telt je hitte mee tot die grens, en raakt in een Sirocco dus harder
+dan in welke andere mecha ook. Hij is op zijn best met drie wapens die veel hitte maken.
+
+Bij de kern van de Solstice staat **BUFFER: keeps unspent EN** (Nederlands **BUFFER: houdt EN
+over**). Houd je aan het eind van je beurt energie over, dan krijg je die er de volgende beurt bij,
+tot de helft van wat een beurt je geeft. Boven je mecha staat dan bijvoorbeeld **+180 EN**. Hij is
+op zijn best met wapens die veel energie vragen, zoals twee klingen of een zware straal. Een
+piekwapen (**SURGE**) neemt altijd alle energie, dus daarmee blijft er niets over om te bewaren,
+tenzij je een beurt bewust niet vuurt: dan zit er de beurt daarna anderhalve beurt energie achter,
+zoals bij Vesper.
+
+Wie beide fabriekspiloten verslaat, krijgt de medaille **Works Order**.
 
 ## Opslaan
 
@@ -477,7 +500,7 @@ de soort op de onderste regel van het onderdeel.
 
 | Soort | In het Nederlands | Wat het doet | Zo haal je er het meeste uit |
 |---|---|---|---|
-| **REDLINE** | WITHEET | Hoe heter je eigen mecha is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de grens van 100. | Vuur eerst je andere wapens (die maken hitte) en dit als laatste. Een generator die slecht koelt is hier ineens een voordeel. Koel niet te vroeg. |
+| **REDLINE** | WITHEET | Hoe heter je eigen mecha is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de hittegrens van je mecha (100, in een Sirocco 130). | Vuur eerst je andere wapens (die maken hitte) en dit als laatste. Een generator die slecht koelt is hier ineens een voordeel. Koel niet te vroeg. |
 | **SURGE** | PIEK | Neemt alle energie die je nog hebt. De schade die erbij staat geldt voor elke 100 energie die het neemt. | Doe eerst al het andere (Boost of Dekking, je andere wapens) en schiet dan leeg. Hoe groter je generator, hoe harder de klap. |
 | **PUNISH** | STRAF | Dubbele schade tegen een mecha die wankelt. Zelf duwt het nauwelijks. | Neem er een wapen bij dat hard duwt (een Howler, een hamer, een vuist) en vuur dat eerst. |
 | **FORK** | VONK | Een treffer slaat over op de volgende vijand in de rij, voor een deel van de schade. Wat overslaat mist nooit. | Voor gevechten tegen meerdere vijanden. Bij het mikken staat **FORK** (Nederlands **VONK**) boven de machine waar het naartoe springt. |

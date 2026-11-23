@@ -711,19 +711,19 @@ describe('the screens the pilot\'s record added', () => {
     press(app, 'down', 'down', 'down', 'down', 'down');
     const unit = page();
     expect(unit.said).toEqual(expect.arrayContaining([
-      'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'SEEN 2/47', '? ? ?',
+      'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'SEEN 2/49', '? ? ?',
     ]));
     expect(unit.calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'enemy-gun-turret')).toBe(true);
     press(app, 'next');
     // A pilot one contract in knows only the voice that hands out the work.
-    expect(page().said).toEqual(expect.arrayContaining(['PEOPLE', 'DISPATCH', 'Dispatch', 'KNOWN 1/21', '? ? ?']));
+    expect(page().said).toEqual(expect.arrayContaining(['PEOPLE', 'DISPATCH', 'Dispatch', 'KNOWN 1/23', '? ? ?']));
     press(app, 'next');
     expect(page().said).toEqual(expect.arrayContaining(['VARN', 'Varn', 'The Licence', 'Hadron Mining']));
     press(app, 'next');
     // Nothing is found yet: every paper has its number, and the page of the first says where to look.
     expect(page().said).toEqual(expect.arrayContaining(['FOUND', '01 ? ? ?', 'Not found yet.', 'FOUND 0/40   LAMP CHECKS 0']));
     press(app, 'next');
-    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Momentum', 'Shatter', 'Overkill', 'They Break', 'Swarms', 'A Name', 'Five Kinds', 'Enemy Tricks', `${48} TOPICS`]));
+    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Momentum', 'Shatter', 'Overkill', 'They Break', 'Swarms', 'A Name', 'Five Kinds', 'Works Frames', 'Field Repairs', `${49} TOPICS`]));
   });
 
   test('the database growing is announced with its own mark, and medals after it one by one', () => {

@@ -1,0 +1,11 @@
+{
+  "id": "head-sirocco.back",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/back-sirocco.png"
+  ],
+  "prompt": "Edit the attached pixel art image. Keep the listed part of the mecha exactly as it is: same pixels, same position, same size, same colours. Erase everything else and fill it with the same solid pure green #00FF00 as the background. Do not move, redraw, rescale or recentre anything. Keep: only the head itself: the small dark helmet dome at the very top of the mecha, in the middle between the fins. Erase everything else: in particular every one of the tall thin heat-sink fins that rise around it, the ribbed backpack column with the glowing orange vent that lies directly below it, both shoulders, the arms, the torso and the legs."
+}

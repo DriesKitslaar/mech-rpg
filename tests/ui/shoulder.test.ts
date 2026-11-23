@@ -61,6 +61,15 @@ const partsOf = (kind: 'legs' | 'core' | 'head' | 'arms'): string[] =>
 /** Mechs that between them wear every part there is: each pair of legs once, the other parts in turn (there are more legs than of any other part). */
 const turn = (kind: 'core' | 'head' | 'arms', i: number): string => partsOf(kind)[i % partsOf(kind).length];
 const WARDROBE: Build[] = partsOf('legs').map((legs, i) => ({ ...DEMO_BUILD, legs, core: turn('core', i), head: turn('head', i + 3), arms: turn('arms', i + 5) }));
+/**
+ * Two frames are built unlike the rest, and a hit on them lands further from where a view has the part than on any
+ * other: a Sirocco's helmet is all but lost in its mane of fins, and a Solstice is narrow, with its head and its
+ * shoulders low. By the layer the hit is seen on, how far.
+ */
+const OWN_BUILD: Record<string, number> = {
+  'head-sirocco.back': 6, 'head-sirocco.small': 7,
+  'head-solstice.back': 10, 'head-solstice.small': 6, 'arms-solstice.near.back': 14, 'arms-solstice.near.small': 10, 'core-solstice.small': 2,
+};
 /** The layer a hit on a part is seen on, for a build in a view. */
 const hitLayer = (build: Build, part: FrameSlot, suffix: string): string => (part === 'arms' ? `${build.arms}.near${suffix}` : `${build[part]}${suffix}`);
 
@@ -331,8 +340,8 @@ describe('what is fired', () => {
   });
 
   test('lands on the pilot\'s mech on the part that is hit, on a pixel of its drawing: whatever it wears, tracks, four legs and a hover unit among it', () => {
-    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([16, 13, 13, 13]);
-    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(55);
+    expect([partsOf('legs').length, partsOf('core').length, partsOf('head').length, partsOf('arms').length]).toEqual([18, 15, 15, 15]);
+    expect(new Set(WARDROBE.flatMap((build) => [build.legs, build.core, build.head, build.arms])).size).toBe(63);
     let lowered = 0;
     for (const build of WARDROBE) {
       for (const id of [build.legs!, build.core, build.head!, build.arms!]) expect(CATALOG[id], id).toBeDefined();
@@ -349,7 +358,7 @@ describe('what is fired', () => {
         const off = Math.hypot(hit.x - (HERO.x + aim.x), hit.y - (HERO.y + aim.y + (part === 'legs' ? 0 : legs.drop ?? 0)));
         // A squat frame carries its head a little lower than the others: the hit is on the head it has, not over it.
         // The widest stance there is has the leg nearest the middle twenty-one from it.
-        expect(off, `${part} of ${build.legs}`).toBeLessThanOrEqual({ core: 0, head: 5, arms: 7, legs: 21 }[part]);
+        expect(off, `${part} of ${build.legs}`).toBeLessThanOrEqual(OWN_BUILD[hitLayer(build, part, '.back')] ?? { core: 0, head: 5, arms: 7, legs: 21 }[part]);
       }
       // Its middle is under its body, at its waist or a little over it, and the floor under it is the line its feet are on.
       const core = own.find((image) => idOf(image) === `${build.core}.back`)!;
@@ -379,7 +388,7 @@ describe('what is fired', () => {
         expect(solidAt(drawn, hit), `${part} of ${JSON.stringify([worn.legs, worn.core, worn.head, worn.arms])} at ${hit.x},${hit.y}`).toBe(true);
         const aim = VIEWS.small.hit![part];
         const off = Math.hypot(hit.x - (box.right - aim.x), hit.y - (box.top + aim.y + (part === 'legs' ? 0 : legs.drop ?? 0)));
-        expect(off, `${part} of ${worn.legs}`).toBeLessThanOrEqual({ core: 0, head: 2, arms: 7, legs: 20 }[part]);
+        expect(off, `${part} of ${worn.legs}`).toBeLessThanOrEqual(OWN_BUILD[hitLayer(rival.build as Build, part, '.small')] ?? { core: 0, head: 2, arms: 7, legs: 20 }[part]);
       }
       // Its middle is under its body too: the body is drawn leftward from its right edge.
       const core = small.find((image) => idOf(image) === `${worn.core}.small`)!;

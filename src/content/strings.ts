@@ -44,7 +44,7 @@ export const STRINGS = {
     marks: { armoured: 'ARMOURED', overclocked: 'OVERCLOCKED', swift: 'SWIFT', shielded: 'SHIELDED' } as Record<string, string>,
   },
   // What an enemy is about to do, read from how it moves: shown with its tags while it is aimed at.
-  intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', cool: 'COOLING', windUp: 'WINDS UP' },
+  intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', cool: 'COOLING', windUp: 'WINDS UP', hold: 'HOLDS' },
   objectives: {
     survive: (round: number, rounds: number) => `HOLD OUT ${round}/${rounds}`,
     protect: (name: string, hp: number, max: number) => `${name.toUpperCase()} ${hp}/${max}`,
@@ -527,7 +527,8 @@ export const STRINGS = {
   advice: {
     disable: 'The machine was wanted in one piece. Aim at its legs and arms; leave the core alone.',
     protect: 'It loses a point a round for every hostile still standing. Thin them out, weakest first.',
-    heat: 'You overheated and lost a turn. Vent before the heat bar passes 100.',
+    // The bar is as long as the machine's own limit, so this is so in a machine whose limit is not the usual one.
+    heat: 'You overheated and lost a turn. Vent before the heat bar is full.',
     stance: 'You never used Boost or Guard. Boost makes you hard to hit; Guard blunts what lands.',
     repairs: 'You went down with field repairs unused. A repair ends your turn: fire, then patch.',
     time: 'The fight ran out of time. Bring more firepower, and aim at what the contract names.',
@@ -591,6 +592,9 @@ export const STRINGS = {
     // What a part of a frame does that no other part does: a core's field, and arms that strike and are gone again.
     field: (n: number) => `FIELD: absorbs ${n} a round`, fieldBreak: 'Broken, it is down a turn',
     poise: 'POISE: 1 blade keeps Boost',
+    // A core that runs hot, and one that keeps the energy its machine does not spend.
+    heatLimit: (limit: number) => `RUNS HOT: heat limit ${limit}`,
+    buffer: 'BUFFER: keeps unspent EN', bufferMost: (percent: number) => `Up to ${percent}% of a turn`,
     traits: {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',
@@ -629,6 +633,8 @@ export const STRINGS = {
     overkill: 'OVERKILL', chain: (n: number) => `CHAIN x${n}`, rout: 'ROUT', offline: 'OFFLINE',
     // Where a weapon's kind did its work: over a redline fired hot and a surge, what it added; over a machine a punish caught reeling.
     kinds: { redline: (percent: number) => `REDLINE +${percent}%`, surge: (times: string) => `SURGE x${times}`, punish: 'PUNISH' },
+    // Over a machine whose core kept energy from its last turn, as its turn opens.
+    kept: (amount: number) => `+${amount} EN`,
     phase: (n: number) => `PHASE ${n}`,
     modules: {
       coolant: 'COOLANT', barrier: 'BARRIER', overclock: 'OVERCLOCK', painter: 'PAINTED', nanites: 'NANITES', shock: 'SHOCK',

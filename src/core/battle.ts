@@ -157,6 +157,14 @@ export interface UnitState {
    */
   spun: WeaponSlot[];
   spool: Partial<Record<WeaponSlot, number>>;
+  /** The heat past which the unit overheats: its core's own limit, or the usual one. */
+  heatLimit: number;
+  /**
+   * The share of a turn's energy, in a hundred, that the unit's core can keep from one turn for the next (none,
+   * of most cores), and what it is keeping now: what was left when its last turn ended, as far as the core holds.
+   */
+  buffer: number;
+  kept: number;
   /**
    * Units this unit's volleys have destroyed in its current turn, in an open battle: 0 when the
    * turn begins. A volley that destroys one readies its weapon again, so a unit that outguns the
@@ -229,7 +237,8 @@ export interface UnitState {
 }
 
 export type BattleEvent =
-  | { type: 'turnStart'; unit: string }
+  /** `kept` is what the turn opened with beyond its own energy, of a unit whose core keeps what it does not spend. */
+  | { type: 'turnStart'; unit: string; kept?: number }
   | { type: 'turnSkipped'; unit: string }
   /**
    * `part` is where the shot was aimed; `appliedTo` and `damage` are what was actually hit and lost.
@@ -414,7 +423,7 @@ function createUnit(
   const unit: UnitState = {
     id, name, side, build, composed: false, abilities: {}, phases: [], phase: 0, ...extra, parts, heat: 0, energy: 0, ammo, restocked: {},
     boosted: false, overheated: false,
-    usedBoost: false, usedCool: false, fired: [], spun: [], spool: {}, chain: 0, repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
+    usedBoost: false, usedCool: false, fired: [], spun: [], spool: {}, heatLimit: heatLimitOf(build, catalog), buffer: bufferOf(build, catalog), kept: 0, chain: 0, repairsLeft: REPAIRS_PER_MISSION + mods.repairs, destroyed: false, mods, energyDebt: 0,
     stagger: 0, staggerMax: Math.max(1, Math.round(stats.stability * mods.toughness)), staggered: 0,
     guarding: false, usedGuard: false, charged: [], moduleUses: moduleOf(build, catalog)?.uses ?? 0, usedModule: false,
     barrier: 0, painted: 0, paintBonus: 0, chaff: 0, damageBoost: 1, drive: 0, ironSkin: false, deadeye: false, turnEnergy: 0,
@@ -570,6 +579,18 @@ function evasionOn(state: BattleState, unit: UnitState, catalog: Catalog): numbe
 /** Heat a unit sheds on this ground at the end of its turn, and with the cool action. */
 export const coolingOn = (state: BattleState, unit: UnitState, catalog: Catalog): number =>
   Math.max(0, coolingOf(unit, catalog) + (state.ground?.cooling ?? 0));
+
+/** The heat a machine of this build may carry before it overheats: its core's own limit, or the usual one. */
+export const heatLimitOf = (build: Build, catalog: Catalog): number => framePart(build, 'core', catalog)?.heatLimit ?? HEAT_LIMIT;
+/** The share of a turn's energy, in a hundred, that a machine of this build keeps from one turn for the next. */
+export const bufferOf = (build: Build, catalog: Catalog): number => framePart(build, 'core', catalog)?.buffer ?? 0;
+/** The round in which a unit takes its next turn: this one if its turn is still to come. */
+export function nextTurnRound(state: BattleState, unit: UnitState): number {
+  const at = state.order.indexOf(unit.id);
+  return at >= 0 && at >= state.turn ? state.round : state.round + 1;
+}
+/** The most energy a unit's buffer can keep from one turn to the next: its share of what a turn gives the unit. */
+export const bufferRoom = (unit: UnitState, catalog: Catalog): number => Math.floor((turnEnergyOf(unit, catalog) * unit.buffer) / 100);
 
 export const turnEnergyOf = (unit: UnitState, catalog: Catalog): number =>
   computeBuildStats(unit.build, catalog).turnEnergy + unit.mods.energy
@@ -751,7 +772,10 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
       continue;
     }
     const energy = Math.max(0, turnEnergyOf(unit, catalog) - unit.energyDebt);
-    unit.energy = unit.staggered > 0 ? Math.floor(energy * STAGGER_ENERGY) : energy;
+    // What a buffer kept is on top of the turn's own energy: a drain and a stagger take from the turn, not from it.
+    const kept = unit.kept;
+    unit.kept = 0;
+    unit.energy = (unit.staggered > 0 ? Math.floor(energy * STAGGER_ENERGY) : energy) + kept;
     unit.turnEnergy = unit.energy;
     unit.energyDebt = 0;
     unit.usedBoost = false;
@@ -760,7 +784,7 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
     unit.usedModule = false;
     unit.fired = [];
     unit.chain = 0;
-    state.events.push({ type: 'turnStart', unit: unit.id });
+    state.events.push({ type: 'turnStart', unit: unit.id, ...(kept > 0 ? { kept } : {}) });
     // A turn lost to overheating is lost to a fuse and a launch bay too: neither gets this far.
     if (unit.fuse !== undefined) {
       unit.fuse -= 1;
@@ -779,6 +803,8 @@ function beginTurns(state: BattleState, catalog: Catalog): void {
 function finishTurn(state: BattleState, catalog: Catalog): void {
   const unit = activeUnit(state);
   unit.heat = Math.max(0, unit.heat - coolingOn(state, unit, catalog));
+  // A core with a buffer keeps what the turn did not spend, as far as it holds.
+  unit.kept = Math.min(unit.energy, bufferRoom(unit, catalog));
   unit.damageBoost = 1;
   unit.deadeye = false;
   state.turn += 1;
@@ -901,7 +927,7 @@ export function shotsNow(unit: UnitState, slot: WeaponSlot, weapon: Weapon): num
  */
 function kindLift(attacker: UnitState, weapon: Weapon, target?: UnitState, taken?: number): number {
   switch (weapon.trait) {
-    case 'redline': return 1 + (Math.min(attacker.heat, HEAT_LIMIT) * (weapon.traitPower ?? 0)) / 1000;
+    case 'redline': return 1 + (Math.min(attacker.heat, attacker.heatLimit) * (weapon.traitPower ?? 0)) / 1000;
     case 'surge': return (taken ?? attacker.energy) / SURGE_UNIT;
     case 'punish': return target && target.staggered > 0 ? 1 + (weapon.traitPower ?? 0) / 100 : 1;
     default: return 1;
@@ -1297,10 +1323,10 @@ function addDrive(unit: UnitState, amount: number): void {
   if (unit.overdrive && !unit.destroyed) unit.drive = Math.min(DRIVE_MAX, unit.drive + amount);
 }
 
-/** Adds heat; passing the limit marks the unit overheated, which costs it its next turn. */
+/** Adds heat; passing the unit's limit marks it overheated, which costs it its next turn. */
 function heatUp(state: BattleState, unit: UnitState, amount: number): void {
   unit.heat += amount;
-  if (unit.heat > HEAT_LIMIT && !unit.overheated && !unit.destroyed) {
+  if (unit.heat > unit.heatLimit && !unit.overheated && !unit.destroyed) {
     unit.overheated = true;
     state.events.push({ type: 'overheat', unit: unit.id });
   }

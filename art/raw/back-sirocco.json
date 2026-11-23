@@ -1,0 +1,12 @@
+{
+  "id": "back-sirocco",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "edit",
+  "references": [
+    "art/raw/back-ronin.png",
+    "art/raw/family-sirocco.png"
+  ],
+  "prompt": "The first image shows a mecha seen from behind in a combat stance. Redraw it as a different mecha design in exactly the same pose, camera angle, body size and position on the canvas: every joint (head, shoulders, elbows, hands, hips, knees, feet) stays in the same place. In particular the arm on the right side of the image stays raised and stretched forward towards the upper right, with its fist exactly where it is in the first image, and the arm on the left side stays bent at its side. The new design is shown from the front in the second image; in words it is: a rangy, long-limbed mecha built to run hot, in matte soot-black armour with burnt-orange panel edges and narrow vents that glow ember-orange: a crest of tall thin heat-sink fins rising in a row behind its head and shoulders like a mane, a deep ribbed chest with two slotted glowing vents, long forearms in vented shrouds, tall narrow shins with radiator slats down the front, and a low wedge-shaped head with one wide horizontal visor slit glowing orange. Longer-limbed and leaner than the first image, scorched, restless and dangerous. Seen from behind, its back shows armour plates and a backpack unit that suit that design. Keep the same proportions between joints. No weapons, empty hands. 16-bit pixel art, crisp pixels, no anti-aliasing, no text. Solid pure green #00FF00 background, no green on the subject itself."
+}

@@ -33,6 +33,8 @@ const steps = (game: GameState): number[] => Object.keys(game.tuning ?? {})
   .filter((id) => Object.hasOwn(CATALOG, id) && tunable(CATALOG[id])).map((id) => stepOf(game.tuning, id));
 const benchSteps = (game: GameState): number => steps(game).reduce((sum, step) => sum + step, 0);
 const furthestStep = (game: GameState): number => Math.max(0, ...steps(game));
+/** The duels with the two works pilots. */
+export const WORKS_DUELS = ['duel-3', 'duel-4'];
 /** The kinds of weapon that ask something of their machine, and how many of them the pilot owns a weapon of. */
 export const WEAPON_KINDS: NonNullable<Weapon['trait']>[] = ['redline', 'surge', 'punish', 'fork', 'spool'];
 const kindsOwned = (game: GameState): number => WEAPON_KINDS.filter((kind) => Object.keys(game.inventory).some((id) => {
@@ -91,6 +93,8 @@ const EARNED: Medal[] = [
   { id: 'crown-all', name: 'Seven Crowns', text: 'Hold the crown of every class.', tier: 3, progress: count(ARCHETYPES.length, crownsHeld) },
   // The eighth seat: its keeper beaten, by the holder of every crown.
   { id: 'seat', name: 'True Metal', text: "Take the eighth seat at the masters' table.", tier: 3, progress: count(1, (g) => (seatHeld(g) ? 1 : 0)) },
+  // The two works pilots of the coast yard: a duel won is one that has left a rank.
+  { id: 'works', name: 'Works Order', text: "Beat both of the coast yard's works pilots.", tier: 3, progress: count(WORKS_DUELS.length, (g) => WORKS_DUELS.filter((id) => g.ranks[id] !== undefined).length) },
   { id: 'overdrive', name: 'Redline', text: 'Set off an Overdrive.', tier: 1, progress: count(1, (g) => g.overdrives ?? 0) },
   { id: 'overdrive-50', name: 'Past the Stop', text: 'Set off 50 Overdrives.', tier: 2, progress: count(50, (g) => g.overdrives ?? 0) },
   // The Gauntlet.
