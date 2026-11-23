@@ -482,6 +482,8 @@ describe('what is said of the yard\'s two frames and their duels is so', () => {
     expect(titles.every((at) => at >= 0)).toBe(true);
     expect([...titles].sort((a, b) => a - b)).toEqual(titles);
     expect(section).toContain(`hij oververhit pas boven ${sirocco.heatLimit} hitte, waar elke andere mecha dat boven ${HEAT_LIMIT} doet`);
+    // A machine glows from three quarters of the way to its own limit (the screen's own test holds that): the guide says what the glow means.
+    expect(section).toContain('Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig.');
     expect(section).toContain('bewaart hij voor zijn volgende beurt, tot een halve beurt');
     expect(section).toContain('Vesper wacht om de andere ronde (dekking, geen schot) en vuurt de ronde erna één wapen met anderhalve beurt energie erachter');
     expect(section).toContain(`Staat er **${STRINGS.intent.hold}** (Nederlands **${STRINGS_NL.intent.hold}**) boven hem, dan staat hij open`);

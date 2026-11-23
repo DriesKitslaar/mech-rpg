@@ -242,9 +242,10 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
         if (kind) kinds.add(kind[1]);
       }
       if (/^(It leaps on to|Slaat over op) /.test(b.message)) kinds.add('leap');
-      // What the two works frames do: a turn opened with what the core kept, and a machine past a hundred that is still the pilot's to fly.
+      // What the two works frames do: a turn opened with what the core kept, and a machine past a hundred and not past its own limit.
       if ((fought.words ?? []).some((word) => /^\+\d+ EN$/.test(word))) kinds.add('kept');
-      if (b.phase === 'action' && (s.player?.heat ?? 0) > 100) kinds.add('hot');
+      // (Seen whenever it is so: by the pilot's next choice the end of the turn has cooled the machine again.)
+      if ((s.player?.heat ?? 0) > 100 && (s.player?.heat ?? 0) <= 130) kinds.add('hot');
       if (fought.fork) kinds.add('mark');
       for (const row of fought.weapons ?? []) {
         const said = / (ALL|ALLES) \d+ /.test(row.note) ? 'row:surge' : / \d+ (SHOTS|SCHOTEN)$/.test(row.note) ? 'row:spool' : / \+\d+%$/.test(row.note) ? 'row:redline' : null;
