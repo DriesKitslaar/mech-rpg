@@ -98,6 +98,27 @@ Tests: `tests/ui/firstHours.test.ts` (52), and the manual's order and legend in 
 | T1-21: the first retreat pays | Left, and now said | The medal is meant; the bill now says beside the balance what it paid. |
 | T1-6: the whole first act is won on Auto Turn in the starter | Left for the next round | See the end of this section: difficulty and stakes are a round of their own. |
 
+#### Batch 3: the Dutch (tester 2, and what tester 4 saw of it)
+
+Tests: the Dutch section of `tests/content/freshEyes.test.ts`, the measured exceptions in `tests/content/dutch.test.ts`, and "no word lies over another" in `tests/ui/freshEyes.test.ts`, which draws the rooms, the shop, the garage, a briefing, a battle and a bill in both languages.
+
+| Finding | So? | Answer |
+|---|---|---|
+| T2-4, T4-7: UP/DOWN and LEFT/RIGHT in eight Dutch hints | So | OP/NEER and LINKS/RECHTS; a test holds that no Dutch text names the cross in English. |
+| T2-5 to T2-18, T2-28, T2-30: single lines that read as translated | So | Each rewritten as the tester had it or nearer the room: "Gun Turret zet zich schrap", "Volgend gevecht met A", "Einde beurt", "KIES ER EEN", "DE EERSTE REGEL DIE PAST, TELT", "hier staat niets boven je", "Niets te verkopen", the three medals "in 3 klassen", "ieder koelt 4 extra per beurt", "Ertstrein onder vuur", the twelve lines of T2-18, omverslaat, warmgehouden, "Je viel met reparaties op zak". |
+| T2-15: "slot" means a kept game, locked, and where a part goes | So | A kept game has a PLEK ("START OP WELKE PLEK?"), and a mount is a plek too; OP SLOT keeps the word for locked. |
+| T2-16, T4-9: WINST for wins | So | A count of wins is ZEGES, a thing won is GEWONNEN; a test holds that WINST stands nowhere. |
+| T2-19, T4-23: no accented letters anywhere | So, and the cause was a rule of ours | A test forbade them "for a letter the font may not have". Measured in a browser: the font has é, è, ë, ï and their capitals at the width of every other letter. The rule now allows them, and the Dutch is spelt with them (barrière, relikwieën, tweeënhalf, kopieën, cliënten, Efficiënt). |
+| T2-20, T4-16: English Title Case on Dutch titles ("Boost En Klingen"); "Kinds Of Work" | So | A list writes a title as a title in English, small words inside it small ("Kinds of Work"), and as a sentence in Dutch, with the names it is called after ("Frames van de werf", "Hadron Mining"): `listTitle` in `content/titles.ts`. The contracts the board makes up follow: "Kalm grootboek". Left: "The eighth seat" as the subject of a message beside "The Eighth Seat" as a row of the arena: a subject is a sentence, as every other subject is. |
+| T2-21: a decimal point in Dutch | So | A figure with a tenth is written through `figure()`: 39,9 in Dutch, 39.9 in English; the manual's Dutch says 0,8. |
+| T2-22, T2-23, T4-22: a singular after a count, words cut short where there is room | So | MEDAILLES, VONDSTEN, EENHEDEN, "Nieuwe cyclus", "Verkocht:", CONTRACTEN GEWONNEN, VOLGEND LEVEL. The rule that held a Dutch word to two letters over the English was what cut them: it now has a list of places measured to hold more (`ROOM_FOR`), and the screens are drawn and looked at for words over words. |
+| T2-24: one thing, two names | So in part | OEFENINGEN and RANGLIJST for the two tabs; the handbook names the option as the options do (Snel vechten); the end roll says "piloot met licentie" as the database does; Vol on both rows of the options; "onderdeel" where there is room for it. Left: AP beside Pantser and FCS beside vuurleiding (the short word is the part's line, the long one the sentence, and the legend now joins them); "LV 17" beside a callsign. |
+| T2-25, T4-8: Scherpschutter is a perk and a class; "reeks" is a run of the Gauntlet and a chain of kills | So | The perk is Vaste hand. A run of the Gauntlet is an afdaling; REEKS is the chain alone. |
+| T2-26: paint names half translated | Left | Names stay as they are in Dutch: parts, weapons, machines, songs, paints. "Fabriek" is not a paint's name but what the row says of a machine with none. |
+| T2-27: three genders for a machine | So in part | The two lines found now say zijn and hij, as the briefings do. |
+| T2-29: the guide's words are not the screen's | So | The guide and the README say mech, balans, akte, hoofd and kern, and Guard where they said bewaken; the options are all listed; Load Game is said to be there with more than one kept game; End Turn is among the actions; the hub's table has a column of the Dutch names, and the battle's actions are given in Dutch once. |
+| (found by the new test, by nobody else) | So | A row of the database's list that is nineteen letters long ran under the mark that says the list goes on, when it stood first or last in view ("Colossus Juggernaut", in both languages). A row is now cut at eighteen in the list and stands whole at the head of its page. |
+
 ### Task F4: final check
 
 - [ ] `npx tsc --noEmit`; all unit tests; the browser tests; the endurance test.

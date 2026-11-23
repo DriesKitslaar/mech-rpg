@@ -358,7 +358,7 @@ describe('the page can be read', () => {
     expect(snap(app).menu.items.map((item) => item.label)).toEqual(['Duellist', 'Scherpschutter', 'Artillerie', 'Lansier', 'Bastion', 'Jager', 'Allrounder']);
     onKind(app, 'skirmisher');
     const shown = drawn(app);
-    for (const text of ['KLASSE', 'EEN MACHINE IS DE EERSTE DIE PAST', 'WINST', 'JAGER', 'BOUW ER NU EEN', N.rules.skirmisher]) expect(written(shown, text), text).toBeTruthy();
+    for (const text of ['KLASSE', 'DE EERSTE REGEL DIE PAST, TELT', 'ZEGES', 'JAGER', 'BOUW ER NU EEN', N.rules.skirmisher]) expect(written(shown, text), text).toBeTruthy();
     expect(shown.texts.some((t) => t.text.startsWith('Nog te kopen: '))).toBe(true);
     for (const kind of ARCHETYPES) {
       expect(N.names[kind], kind).not.toBe('');

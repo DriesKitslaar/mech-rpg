@@ -1,6 +1,7 @@
 import { SPOOL_BASE, shotsOf } from '../core/battle';
 import { impactOf } from '../core/build';
 import type { Build, Catalog, Part } from '../core/types';
+import { figure } from '../content/language';
 import { STRINGS } from '../content/strings';
 import { wrap } from './widgets';
 
@@ -25,7 +26,7 @@ export function partLines(part: Part): string[] {
   switch (part.kind) {
     case 'weapon':
       return [
-        row(I.types[part.damageType], `${I.damage} ${part.damage}`, `${I.accuracy} ${part.accuracy}`),
+        row(I.types[part.damageType], `${I.damage} ${figure(part.damage)}`, `${I.accuracy} ${part.accuracy}`),
         // A surge asks this much at the least, and takes whatever more there is.
         row(`${I.energy} ${part.energy}${part.trait === 'surge' ? '+' : ''}`, `${I.heat} ${part.heat}`, `${I.impact} ${impactOf(part)}`),
         part.ammo === null
@@ -137,7 +138,7 @@ export function compareParts(part: Part, fitted: Part): DiffChip[][] {
   const chips = facts(part, fitted).flatMap(([label, mine, theirs, moreIsBetter, unit = '']): DiffChip[] => {
     // A figure with the bench's work in it may have a tenth: the difference is said to a tenth and no further.
     const delta = Math.round((mine - theirs) * 10) / 10;
-    return delta === 0 ? [] : [{ text: `${label} ${delta > 0 ? '+' : ''}${delta}${unit}`, good: delta > 0 === moreIsBetter }];
+    return delta === 0 ? [] : [{ text: `${label} ${delta > 0 ? '+' : ''}${figure(delta)}${unit}`, good: delta > 0 === moreIsBetter }];
   });
   const rows: DiffChip[][] = [];
   for (const chip of chips) {

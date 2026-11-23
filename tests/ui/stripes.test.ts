@@ -229,7 +229,7 @@ describe('stripes on the classes page', () => {
     expect(written(shown, 'STREPEN 10/21').y).toBe(256);
     expect(written(shown, 'PUNT BIJ 15').y).toBe(256);
     // The duellist under the cursor has won two of the three a first stripe asks.
-    expect(written(shown, 'STREEP BIJ 3 WINST').y).toBe(CLASS_STRIPE_Y);
+    expect(written(shown, 'STREEP BIJ 3 ZEGES').y).toBe(CLASS_STRIPE_Y);
     for (let i = 0; i < 3; i++) press(app, 'down');
     expect(written(drawn(app), 'ALLE DRIE STREPEN').color).toBe(STRIPE_COLOR);
     setLanguage('en');
@@ -276,10 +276,10 @@ describe('stripes on the perks page', () => {
 
   test('in Dutch it counts one point as one and several as several', () => {
     const cases: [GameState['wonAs'], string][] = [
-      [holding(4), 'Strepen 4/21: 0 punten tot nu, volgend bij 5.'],
-      [holding(5), 'Strepen 5/21: 1 punt tot nu, volgend bij 10.'],
-      [holding(10), 'Strepen 10/21: 2 punten tot nu, volgend bij 15.'],
-      [holding(21), 'Strepen 21/21: 4 punten tot nu.'],
+      [holding(4), 'Strepen 4/21: tot nu 0 punten, volgende bij 5.'],
+      [holding(5), 'Strepen 5/21: tot nu 1 punt, volgende bij 10.'],
+      [holding(10), 'Strepen 10/21: tot nu 2 punten, volgende bij 15.'],
+      [holding(21), 'Strepen 21/21: tot nu 4 punten.'],
     ];
     for (const [wonAsNow, words] of cases) {
       const shown = drawn(onPage('perks', quiet({ wonAs: wonAsNow }), 'nl'));

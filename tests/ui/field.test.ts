@@ -97,7 +97,7 @@ describe('the label of a field', () => {
     setLanguage('nl');
     const m = made(createBattle(FIELDED, [ENEMIES['gun-turret']], CATALOG, 1));
     m.settle();
-    expect(m.texts()).toContain('BARRIERE 25');
+    expect(m.texts()).toContain('BARRIÈRE 25');
     player(m).barrier = 0;
     expect(m.texts()).toContain('VELD WEG');
   });

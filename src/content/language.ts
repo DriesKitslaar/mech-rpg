@@ -18,6 +18,9 @@ export function setLanguage(next: Language): void {
   for (const apply of appliers) apply(next);
 }
 
+/** A number as the language writes it: Dutch has a comma where English has a point. */
+export const figure = (n: number | string): string => (current === 'nl' ? String(n).replace('.', ',') : String(n));
+
 const isPlain = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** Puts every leaf of `from` into `into`, in place, so that whoever holds a part of `into` sees the change. */

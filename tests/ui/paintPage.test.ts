@@ -408,7 +408,8 @@ describe('what the page draws', () => {
     const { app } = inGarage(setMix(pilot(), DEFAULT_MIXES[0]), language);
     const onPage = drawn(app);
     expect(written(onPage, M.change)).toMatchObject({ align: 'right', size: 10, color: COLORS.dim, y: MIX_PAGE.headY + 1 });
-    expect(M.change).toContain('LEFT/RIGHT');
+    // The buttons of the cross are named in the language of the screen.
+    expect(M.change).toContain(language === 'nl' ? 'LINKS/RECHTS' : 'LEFT/RIGHT');
     expect(written(onPage, M.heading).right).toBeLessThan(written(onPage, M.change).left - 8);
     // The way back is the top bar's: B.
     expect(written(onPage, G.back).y).toBe(1);

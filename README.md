@@ -1,7 +1,7 @@
 # IRONWAGE
 
 Een beurtgebaseerde mech-RPG voor de Retroid Pocket Classic. Je bent een huurling in de
-neonstad Varn: je stelt een mecha samen uit losse onderdelen, neemt contracten aan van drie
+neonstad Varn: je stelt een mech samen uit losse onderdelen, neemt contracten aan van drie
 opdrachtgevers, en betaalt munitie en reparaties uit je eigen loon.
 
 ![Gevecht](docs/screenshots/battle-mech.png)
@@ -26,10 +26,10 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 
 ## Wat er in zit
 
-- **Mecha**: elf sloten (kop, romp, armen, benen, generator, booster, vuurleiding, module, twee
+- **Mech**: elf sloten (hoofd, kern, armen, benen, generator, booster, vuurleiding, module, twee
   handen, schouder) en 151 onderdelen in de winkel. Het gewicht mag het draagvermogen van de benen
   niet overschrijden en de generator moet alles kunnen voeden. Twaalf verfschema's, acht die je in
-  de arena verdient, drie die je zelf mengt, en zeven opgeslagen builds. Je begint in een van drie mecha's naar keuze.
+  de arena verdient, drie die je zelf mengt, en zeven opgeslagen builds. Je begint in een van drie mechs naar keuze.
 - **Zeven klassen**: elke build is een Duellist, Sharpshooter, Artillery, Lancer, Bastion,
   Skirmisher of All-rounder. De garage zegt welke, het pilotenscherm houdt bij wat je als elke
   klasse hebt gewonnen en stelt een build voor die je nu kunt kopen. Met elk van de zeven is het
@@ -57,7 +57,7 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   mag de houder van die stoel uitdagen, in welke build ook. Zijn machine, de Sovereign, vecht op
   drie manieren en wisselt als hij geraakt wordt. Win je, dan mag je de Sovereign zelf kopen en is
   de lak van de houder van jou.
-- **Lancering**: elk contract vanuit de hangar opent met je eigen mecha op de katapult: drie lampen,
+- **Lancering**: elk contract vanuit de hangar opent met je eigen mech op de katapult: drie lampen,
   en weg is hij, de tunnel uit het licht in. Anderhalve seconde, en met één druk op A of B sla je
   het over.
 - **Strepen**: een klasse geeft je een streep bij 3, 8 en 15 gewonnen contracten, en elke vijfde
@@ -65,39 +65,39 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   heeft zijn punten het eerst; met twintig strepen heb je eindelijk elke rang van elke perk. Bij
   de briefing zie je per build hoe ver zijn klasse van de volgende streep is.
 - **Eigen lak**: in de garage meng je je eigen lak, in vijf rijen: de kleur van het pantser, hoe
-  sterk en hoe donker die is, en de kleur en de felheid van de lichten. Je mecha verandert bij
+  sterk en hoe donker die is, en de kleur en de felheid van de lichten. Je mech verandert bij
   elke druk mee, en drie mengsels blijven bewaard.
 - **Arsenaal**: tien wapens van vijf soorten die iets van je terugvragen. Een witheet wapen raakt
-  harder naarmate je mecha heter is, een piekwapen neemt al je energie in één schot, een
+  harder naarmate je mech heter is, een piekwapen neemt al je energie in één schot, een
   strafwapen doet dubbele schade tegen een wankelende machine, een vonk slaat over op een tweede
   vijand, en een optoerwapen vuurt elke beurt op rij een schot meer.
-- **De werf**: twee mecha's voor het eind van het spel, elk te koop zodra je in een duel de
+- **De werf**: twee mechs voor het eind van het spel, elk te koop zodra je in een duel de
   fabriekspiloot van de werf aan de kust verslaat die hem vliegt. De Sirocco loopt heet: zijn
   hittegrens is 130 in plaats van 100, dus er past een wapen meer in een salvo en een witheet wapen
   klimt verder. De Solstice bewaart de energie die je niet gebruikt voor je volgende beurt, tot een
-  halve beurt. Hun piloten laten zien waar de mecha voor is: de een slaat elke ronde harder, de
+  halve beurt. Hun piloten laten zien waar de mech voor is: de een slaat elke ronde harder, de
   ander wacht een ronde en vuurt dan met anderhalve beurt energie. Wat hij heeft opgespaard, staat
   boven hem op het veld.
 - **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op
   een eigen bericht naast het bord, met een roepnaam. De eerste keer kent die piloot je nog niet.
-  Daarna is de mecha gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de
+  Daarna is de mech gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de
   helft tot de harding is weggeschoten, dus het loont om iets anders mee te nemen. Na drie
   gewonnen ontmoetingen is de rekening gesloten en kan er een met een ander beginnen. Elk van de
   zestien piloten heeft een eigen gezicht en een pagina in de Database, waar je ziet wie er achter
   je aan zit en wanneer het bericht komt.
-- **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
-  noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
+- **Gevecht**: per beurt besteed je energie aan vuren, boosten, dekking, koelen, je module of een
+  noodreparatie. Je mikt op onderdelen; zware treffers brengen een mech uit balans. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.
 - **Vijanden**: 49 soorten, waaronder drones die de rest afdekken of repareren, stoorzenders,
   lopende bommen, dragers, benoemde piloten en eindbazen die halverwege van tactiek veranderen.
-- **Campagne**: drie bedrijven, 29 verhaalcontracten waarvan één piloot er achttien speelt, drie
+- **Campagne**: drie aktes, 29 verhaalcontracten waarvan één piloot er achttien speelt, drie
   opdrachtgevers, twee slotkeuzes en zes eindes. Contracten hebben doelen (overleven, beschermen,
   uitschakelen zonder te vernietigen, verjagen) en een rang van S tot D. Gespeelde contracten staan
   in een archief.
 - **Arena**: een ladder van tien piloten, een achterkamer met vijf voor de kampioen, en een
-  spiegelgevecht tegen je eigen mecha. Na het verhaal: vier duels, elk om een mecha die je
+  spiegelgevecht tegen je eigen mech. Na het verhaal: vier duels, elk om een mech die je
   daarna zelf mag kopen.
-- **Training**: dertien oefeningen in een geleende mecha die elk één ding uitleggen.
+- **Training**: dertien oefeningen in een geleende mech die elk één ding uitleggen.
 - **Piloot**: niveaus en acht vaardigheden, 77 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
@@ -144,7 +144,7 @@ De APK wordt bij elke push gebouwd door de workflow in `.github/workflows/androi
 
 ## Beeld
 
-Elke mecha-familie is één complete tekening in een vaste houding, die in vijf lagen is
+Elke mech-familie is één complete tekening in een vaste houding, die in vijf lagen is
 geknipt. Omdat alle families dezelfde houding delen, passen lagen van verschillende families
 op elkaar. De prompts staan in `scripts/art/jobs.ts`, en bij elke afbeelding in `art/raw`
 staat een bestand met de prompt waarmee ze is gemaakt.

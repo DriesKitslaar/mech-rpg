@@ -1,5 +1,6 @@
 import type { BattleEvent } from '../core/battle';
 import type { DamageType, FrameSlot, Weapon, WeaponSlot } from '../core/types';
+import { figure } from '../content/language';
 import { STRINGS } from '../content/strings';
 import { TYPE_COLOR, lightsOf, paintFx } from './fxPaint';
 import { LOGICAL_W } from './display';
@@ -221,7 +222,7 @@ export class BattleFx {
     const over = { x: own.x, y: own.y - WORD_GAP };
     switch (this.scene.kind?.(event.unit, event.weapon)) {
       case 'redline': return this.say(0, over, K.redline(event.lift - 100), COLORS.heat);
-      case 'surge': return this.say(0, over, K.surge((event.lift / 100).toFixed(1)), COLORS.energy);
+      case 'surge': return this.say(0, over, K.surge(figure((event.lift / 100).toFixed(1))), COLORS.energy);
       case 'punish': return this.say(flight, { x: target.x, y: target.y - WORD_GAP }, K.punish, COLORS.accent);
       default:
     }

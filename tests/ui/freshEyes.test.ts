@@ -1,7 +1,10 @@
 import { createBattle, type BattleEvent, type BattleState } from '../../src/core/battle';
 import type { GameState } from '../../src/core/game';
 import type { EnemyDef } from '../../src/core/types';
+import { JUKEBOX, UNITS, WORLD } from '../../src/content/codex';
+import { FINDS } from '../../src/content/finds';
 import { setLanguage } from '../../src/content/language';
+import { MEDALS } from '../../src/content/medals';
 import '../../src/content/nl';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 import type { App } from '../../src/ui/app';
@@ -13,7 +16,7 @@ import { COMPARE_LINE_CHARS, PART_LINE_CHARS, compareParts, partLines } from '..
 import { DETAIL_TEXT_X } from '../../src/ui/shopScreen';
 import { CHAR_W } from '../../src/ui/widgets';
 import { done, finishMission, inHub, press, savedGame, select, snap, strong, type Store } from '../helpers/app';
-import { record } from '../helpers/canvas';
+import { record, type Written } from '../helpers/canvas';
 
 /**
  * What four testers who had not seen the game found on its screens, held so that it stays mended.
@@ -191,5 +194,124 @@ describe('the shop says where its short words are explained', () => {
     press(app, 'confirm');
     expect(snap(app).message).toMatch(/^Bought /);
     expect(foot(app)).toEqual([STRINGS.shop.fitHint]);
+  });
+});
+
+describe('no word lies over another, and none runs off the screen', () => {
+  /** What is written on the screen once: a word with an edge is written several times a pixel apart. */
+  function written(app: App): Written[] {
+    const texts = record((ctx) => app.draw(ctx)).texts.filter((t) => t.text.trim() !== '');
+    return texts.filter((t, i) => !texts.slice(0, i).some((u) => u.text === t.text && Math.abs(u.y - t.y) <= 2 && Math.abs(u.left - t.left) <= 2));
+  }
+  /** How tall the letters of a text stand: a row of the usual size is eleven apart from the next. */
+  const tall = (t: Written): number => Math.max(6, t.size - 3);
+  function crowded(app: App): string[] {
+    const texts = written(app);
+    const out: string[] = [];
+    for (const t of texts) if (t.left < 0 || t.right > LOGICAL_W) out.push(`off the screen: ${t.text}`);
+    texts.forEach((a, i) => texts.slice(i + 1).forEach((b) => {
+      const sameRows = a.y < b.y + tall(b) && b.y < a.y + tall(a);
+      if (sameRows && a.left < b.right - 0.5 && b.left < a.right - 0.5) out.push(`"${a.text}" over "${b.text}"`);
+    }));
+    return out;
+  }
+  /** A pilot with all of it open: the story told, the ladder climbed, the crowns and the seat, medals, an account. */
+  function veteran(language: 'en' | 'nl'): GameState {
+    const story = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
+      'choice-hadron', 'hadron-3', 'hadron-4', 'hadron-5', 'finale-hadron', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
+    const base = strong(done(...story));
+    return {
+      ...base, endingSeen: true, scenes: [], credits: 1234567, xp: 99999, arenaRank: 15, battlesWon: 44,
+      met: UNITS.map((unit) => unit.id), codex: [...WORLD.map((entry) => entry.id), ...FINDS.map((find) => find.id)],
+      medals: MEDALS.map((medal) => medal.id), heard: JUKEBOX.map((song) => song.id),
+      wonAs: { duellist: 15, marksman: 8, artillery: 3, lancer: 15, bastion: 2, skirmisher: 0, allrounder: 15 },
+      grudge: { name: 'Brakk', kind: 'heavy-mech', origin: 'wrecked', knows: 'wpn-lance-emitter', met: 1, waited: 2 },
+      stats: { ...base.stats, contracts: 123, lost: 45, retreats: 6, kills: 789, seconds: 360000 },
+      settings: { ...base.settings, language },
+    };
+  }
+
+  test.each(['en', 'nl'] as const)('in the rooms of the hub, on every page of each (%s)', (language) => {
+    const { app } = inHub(veteran(language));
+    const faults: string[] = [];
+    const look = (where: string): void => { for (const fault of crowded(app)) faults.push(`${where}: ${fault}`); };
+    look('hub');
+    select(app, 'contracts');
+    for (let i = 0; i < snap(app).menu.items.length; i++) { look(`contracts ${i}`); press(app, 'down'); }
+    press(app, 'cancel');
+    for (const [room, pages] of [['pilot', 5], ['database', 6], ['arena', 2], ['training', 2]] as const) {
+      select(app, room);
+      expect(snap(app).screen).toBe(room);
+      for (let page = 0; page < pages; page++) {
+        const rows = Math.min(snap(app).menu.items.length, 60);
+        for (let row = 0; row < Math.max(1, rows); row++) { look(`${room} ${page}/${row}`); press(app, 'down'); }
+        press(app, 'next');
+      }
+      press(app, 'cancel');
+      expect(snap(app).screen).toBe('hub');
+    }
+    for (const room of ['gauntlet', 'options', 'messages'] as const) {
+      select(app, room);
+      for (let row = 0; row < Math.max(1, snap(app).menu.items.length); row++) { look(`${room} ${row}`); press(app, 'down'); }
+      press(app, 'cancel');
+      if (snap(app).screen !== 'hub') press(app, 'cancel');
+      expect(snap(app).screen).toBe('hub');
+    }
+    expect(faults).toEqual([]);
+  });
+
+  test.each(['en', 'nl'] as const)('in the shop, on every shelf, buying and selling (%s)', (language) => {
+    const { app } = inHub(veteran(language));
+    select(app, 'shop');
+    const faults: string[] = [];
+    for (const side of ['buy', 'sell']) {
+      for (let tab = 0; tab < 10; tab++) {
+        const rows = snap(app).menu.items.length;
+        for (let row = 0; row < Math.max(1, rows); row++) { for (const fault of crowded(app)) faults.push(`${side} ${tab}/${row}: ${fault}`); press(app, 'down'); }
+        press(app, 'next');
+      }
+      press(app, 'right');
+    }
+    expect(faults).toEqual([]);
+  });
+
+  test.each(['en', 'nl'] as const)('in the garage: the slots, a slot\'s parts, the paint and the builds (%s)', (language) => {
+    const { app } = inHub(veteran(language));
+    select(app, 'garage');
+    const faults: string[] = [];
+    const look = (where: string): void => { for (const fault of crowded(app)) faults.push(`${where}: ${fault}`); };
+    for (let slot = 0; slot < 11; slot++) {
+      look(`slot ${slot}`);
+      press(app, 'confirm');
+      for (let row = 0; row < Math.min(6, snap(app).menu.items.length); row++) { look(`slot ${slot} part ${row}`); press(app, 'down'); }
+      press(app, 'cancel');
+      press(app, 'down');
+    }
+    press(app, 'left');
+    look('paint');
+    press(app, 'cancel');
+    press(app, 'right');
+    for (let row = 0; row < 7; row++) { look(`builds ${row}`); press(app, 'down'); }
+    expect(faults).toEqual([]);
+  });
+
+  test.each(['en', 'nl'] as const)('in a briefing, a battle and on its bill (%s)', (language) => {
+    const { app } = inHub(veteran(language));
+    const faults: string[] = [];
+    const look = (where: string): void => { for (const fault of crowded(app)) faults.push(`${where}: ${fault}`); };
+    select(app, 'contracts');
+    select(app, 'patrol');
+    for (let row = 0; row < snap(app).menu.items.length; row++) { look(`briefing ${row}`); press(app, 'down'); }
+    select(app, 'accept');
+    for (let i = 0; i < 4000 && snap(app).battle!.phase !== 'action'; i++) app.update(16);
+    for (let row = 0; row < snap(app).menu.items.length; row++) { look(`battle menu ${row}`); press(app, 'down'); }
+    select(app, 'fire');
+    look('battle weapons');
+    press(app, 'confirm');
+    look('battle aim');
+    press(app, 'cancel', 'cancel');
+    finishMission(app);
+    look('bill');
+    expect(faults).toEqual([]);
   });
 });

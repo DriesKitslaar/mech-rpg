@@ -528,7 +528,8 @@ describe('the lines of a part the bench has worked on', () => {
           for (const [a, b] of [[5, 0], [0, 3], [1, 2]]) {
             for (const row of compareParts(tunedPart(mine, a), tunedPart(theirs, b))) {
               expect(row.reduce((sum, chip) => sum + chip.text.length + 2, -2), `${mine.id} +${a} against ${theirs.id} +${b}`).toBeLessThanOrEqual(COMPARE_LINE_CHARS);
-              for (const chip of row) expect(chip.text, `${mine.id} +${a} against ${theirs.id} +${b}`).toMatch(/ [+-]\d+(\.\d)?%?$/);
+              // A tenth is written with a point in English and a comma in Dutch.
+              for (const chip of row) expect(chip.text, `${mine.id} +${a} against ${theirs.id} +${b}`).toMatch(language === 'nl' ? / [+-]\d+(,\d)?%?$/ : / [+-]\d+(\.\d)?%?$/);
             }
           }
         }

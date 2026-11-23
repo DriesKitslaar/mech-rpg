@@ -149,7 +149,7 @@ export const MISSIONS_NL: Record<string, string> = {
 
   // Act II: Lumen's war.
   [`Hadron has armed a mining machine and pointed it at our eastern campus. It is roughly the size of the campus.`]: `Hadron heeft een mijnmachine bewapend en op onze oostelijke campus gericht. Hij is ongeveer zo groot als de campus.`,
-  [`It is called the Strip-Miner. Its hull laughs at bullets. Energy weapons are indicated.`]: `Hij heet de Strip-Miner. Zijn romp lacht om kogels. Stralen zijn aangewezen.`,
+  [`It is called the Strip-Miner. Its hull laughs at bullets. Energy weapons are indicated.`]: `Hij heet de Strip-Miner. Zijn romp lacht om kogels. Stralen zijn geboden.`,
   [`It barely moves and it cannot be reasoned with. Remove it before it arrives.`]: `Hij beweegt amper en er valt niet mee te praten. Verwijder hem voor hij aankomt.`,
   [`The Strip-Miner stops forty metres short of the campus fence. Varga calls the margin adequate.`]: `De Strip-Miner stopt veertig meter voor het hek van de campus. Varga noemt de marge toereikend.`,
   [`The Undertow is sending its machines up through the service levels. Crawlers first, then their champion.`]: `De Undertow stuurt zijn machines omhoog door de dienstniveaus. Eerst kruipers, dan hun kampioen.`,
@@ -158,7 +158,7 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Rook limps home laughing. Varga files him under "unresolved" and moves on.`]: `Rook hinkt lachend naar huis. Varga boekt hem onder "onopgelost" en gaat door.`,
   [`Hadron and the Undertow have each sent machines for the core stack. For once they agree on something.`]: `Hadron en de Undertow sturen allebei machines op de kernstapel af. Voor een keer zijn ze het ergens over eens.`,
   [`The stack cannot defend itself and cannot be rebuilt. Every hostile left standing damages it each round.`]: `De stapel kan zich niet verdedigen en is niet te herbouwen. Elke vijand die blijft staan beschadigt hem elke ronde.`,
-  [`Prioritise. We will not tell you how. That is what you are paid for.`]: `Stel prioriteiten. Hoe zeggen we niet. Daar word je voor betaald.`,
+  [`Prioritise. We will not tell you how. That is what you are paid for.`]: `Stel prioriteiten. Hoe, dat zeggen we niet. Daar word je voor betaald.`,
   [`The stack hums on, intact. Varga sends a number with more digits than usual and no words.`]: `De stapel zoemt door, intact. Varga stuurt een getal met meer cijfers dan anders en geen woorden.`,
 
   // Act II: the Undertow's war.
@@ -225,7 +225,7 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Thermal weapons: every hit heats you. A jammer mast spoils your aim while it stands. Vent early.`]: `Thermische wapens: elke treffer geeft hitte. Een stoormast bederft je richten zolang hij staat. Koel vroeg.`,
   [`Paragon surrendered the frame and three sets of medals. The board kept the medals as a deposit.`]: `Paragon leverde het frame en drie sets medailles in. Het bord hield de medailles als borg.`,
   [`WANTED: The Notary. Left Meridian with a frame, a seal and a client list, and has been foreclosing on people privately.`]: `GEZOCHT: The Notary. Verliet Meridian met een frame, een zegel en een klantenlijst, en legt sindsdien op eigen houtje beslag bij mensen.`,
-  [`An Auditor frame behind a barrier, with lien drones that drain your energy. The last notice on the board, and the largest.`]: `Een Auditor-frame achter een barriere, met Lien Drones die je energie aftappen. Het laatste biljet op het bord, en het grootste.`,
+  [`An Auditor frame behind a barrier, with lien drones that drain your energy. The last notice on the board, and the largest.`]: `Een Auditor-frame achter een barrière, met Lien Drones die je energie aftappen. Het laatste biljet op het bord, en het grootste.`,
   [`The seal is broken and the client list is public. Several people in Varn slept well for the first time in years.`]: `Het zegel is gebroken en de klantenlijst openbaar. In Varn sliepen mensen voor het eerst in jaren goed.`,
 
   // Favours.
@@ -304,18 +304,18 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Resisting lawful seizure. I will add it to the schedule of costs.`]: `Verzet tegen wettig beslag. Ik zet het op de kostenstaat.`,
   [`The lease on this building lapsed at midnight. We are merely tidying up.`]: `De huur van dit pand verliep om middernacht. Wij ruimen alleen maar op.`,
   [`I am on the east roof. One shot a round, at the biggest thing you have not killed yet.`]: `Ik zit op het oostdak. Een schot per ronde, op het grootste dat je nog niet gedood hebt.`,
-  [`Two debtors on one roof. Efficient. The Assessor will value you both.`]: `Twee schuldenaren op een dak. Efficient. De Assessor taxeert jullie allebei.`,
+  [`Two debtors on one roof. Efficient. The Assessor will value you both.`]: `Twee schuldenaren op een dak. Efficiënt. De Assessor taxeert jullie allebei.`,
   [`Hm. We work well. Tell nobody. They want to talk to you now. So do I.`]: `Hm. Wij werken goed samen. Zeg het niemand. Ze willen je nu spreken. Ik ook.`,
   [`I wondered which of us they would ask. I am almost flattered that it was you.`]: `Ik vroeg me af wie van ons ze zouden vragen. Ik ben bijna gevleid dat jij het werd.`,
   [`Paid in full, then. Look after the city. Somebody should have.`]: `Volledig betaald, dus. Zorg voor de stad. Iemand had dat moeten doen.`,
   [`You are making an uninsurable decision. I want that on the record.`]: `Je neemt een onverzekerbaar besluit. Ik wil dat dat genoteerd wordt.`,
-  [`Policy... void. I shall have to find other work. How novel.`]: `Polis... nietig. Ik zal ander werk moeten zoeken. Wat nieuw.`,
+  [`Policy... void. I shall have to find other work. How novel.`]: `Polis... nietig. Ik zal ander werk moeten zoeken. Dat is nieuw.`,
 
   // What is said during the battles about more than the battle.
   [`Easy. That frame has come home worse than this. Do not ask me how I know.`]: `Rustig. Dat frame is wel erger thuisgekomen dan dit. Vraag niet hoe ik dat weet.`,
   [`Unarmed squatters with a Hadron tank. The factory grease is still on its plates. Somebody delivered that.`]: `Ongewapende krakers met een tank van Hadron. Het fabrieksvet zit nog op de platen. Die is door iemand afgeleverd.`,
   [`Funny. For a full ore train, those wagons ride very high on their springs.`]: `Grappig. Voor een volle ertstrein staan die wagons erg hoog op hun veren.`,
-  [`The train is insured, pilot. You are not. Stand where that suggests.`]: `De trein is verzekerd, piloot. Jij niet. Ga staan waar dat op wijst.`,
+  [`The train is insured, pilot. You are not. Stand where that suggests.`]: `De trein is verzekerd, piloot. Jij niet. Stel je daarnaar op.`,
   [`The tank`]: `De tank`,
   [`Brenn will have told you they are unarmed. You have seen what is parked in Seam Nine. Ask who paid for it.`]: `Brenn zei vast dat ze ongewapend zijn. Je hebt gezien wat er in Ader Negen staat. Vraag je af wie ervoor betaalde.`,
   [`His clearance crew goes in behind whoever makes the noise. Tonight that could be you, facing the other way.`]: `Zijn ruimploeg komt achter de lawaaimaker aan. Vannacht kun jij dat zijn, met je gezicht de andere kant op.`,
@@ -472,7 +472,7 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Every hit pushes on a mech's balance. The thin bar under its armour shows how much it has left.`]: `Elke treffer duwt tegen de balans van een mech. De dunne balk onder zijn pantser toont hoeveel er over is.`,
   [`When the bar runs out the mech staggers: it cannot dodge, takes 30% more damage and starts its next turn short of energy. Heavy weapons push hardest. Lead with them.`]: `Is de balk op, dan wankelt de mech: hij kan niet ontwijken, krijgt 30% meer schade en begint zijn volgende beurt met minder energie. Zware wapens duwen het hardst. Begin ermee.`,
   [`Knocked flat, then taken apart. In that order.`]: `Eerst omver, dan uit elkaar. In die volgorde.`,
-  [`Some machines fight by making the others harder to beat. A shield drone covers everything near it. A repair drone welds armour back on every turn.`]: `Sommige machines vechten door de andere moeilijker te verslaan te maken. Een schilddrone dekt alles in de buurt. Een reparatiedrone last elke beurt pantser terug.`,
+  [`Some machines fight by making the others harder to beat. A shield drone covers everything near it. A repair drone welds armour back on every turn.`]: `Sommige machines vechten door de andere taaier te maken. Een schilddrone dekt alles in de buurt. Een reparatiedrone last elke beurt pantser terug.`,
   [`Shoot the big one first and you will be here all day. Take the helpers down, then the one they were helping.`]: `Schiet eerst op de grote en je staat hier de hele dag. Haal de helpers neer, dan degene die ze hielpen.`,
   [`Drones first. The enforcer was only ever as strong as its friends.`]: `Eerst de drones. De Enforcer was altijd maar zo sterk als zijn vrienden.`,
   [`A blade hits hard and makes almost no heat. It only reaches from close in.`]: `Een kling raakt hard en maakt bijna geen hitte. Hij reikt alleen van dichtbij.`,
@@ -486,7 +486,8 @@ export const MISSIONS_NL: Record<string, string> = {
   [`The convoy rolls on with paint to spare. Counting heads is half of this job.`]: `Het konvooi rolt door met lak over. Koppen tellen is het halve werk.`,
 
   // The open contracts. Titles are an adjective and a noun; every noun here is a het-word, so the
-  // adjective needs no ending ("Koud Grootboek", "Stil Vonnis").
+  // adjective needs no ending ("Koud grootboek", "Stil vonnis"). A Dutch title is written as a sentence is:
+  // the noun has no capital, and the two nouns that are the same word in both languages are listed for that alone.
   [`Cold`]: `Koud`,
   [`Silent`]: `Stil`,
   [`Broken`]: `Gebroken`,
@@ -501,20 +502,22 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Second`]: `Tweede`,
   [`Quiet`]: `Kalm`,
   [`Glass`]: `Glazen`,
-  [`Ledger`]: `Grootboek`,
-  [`Signal`]: `Signaal`,
-  [`Harvest`]: `Gewas`,
-  [`Curfew`]: `Nachtslot`,
-  [`Invoice`]: `Bedrag`,
-  [`Lantern`]: `Baken`,
-  [`Tithe`]: `Tiend`,
-  [`Shift`]: `Rooster`,
-  [`Rain`]: `Noodweer`,
-  [`Furnace`]: `Smeltvuur`,
-  [`Audit`]: `Onderzoek`,
-  [`Freight`]: `Transport`,
-  [`Static`]: `Geruis`,
-  [`Verdict`]: `Vonnis`,
+  [`Ledger`]: `grootboek`,
+  [`Signal`]: `signaal`,
+  [`Harvest`]: `gewas`,
+  [`Curfew`]: `nachtslot`,
+  [`Invoice`]: `bedrag`,
+  [`Lantern`]: `baken`,
+  [`Tithe`]: `tiend`,
+  [`Shift`]: `rooster`,
+  [`Rain`]: `noodweer`,
+  [`Furnace`]: `smeltvuur`,
+  [`Audit`]: `onderzoek`,
+  [`Freight`]: `transport`,
+  [`Static`]: `geruis`,
+  [`Verdict`]: `vonnis`,
+  [`Dividend`]: `dividend`,
+  [`Circuit`]: `circuit`,
   // The swarm beside the open contracts.
   [`Drone Season`]: `Droneseizoen`,
   [`Locust Hour`]: `Sprinkhanenuur`,
@@ -593,7 +596,7 @@ export const MISSIONS_NL: Record<string, string> = {
     `Drie op het veld en vijf erachter. Ze komen op als de ronde omslaat, op de plek van wie viel. Het salvo vuurt op alle drie tegelijk.`,
   // What Dispatch explains once, the first time it happens.
   [`One down, and the weapon that did it is ready again. That is the MOMENTUM on the banner: nothing here outranks you, so a kill gives the shot back. Use it.`]:
-    `Een neer, en het wapen dat het deed is weer klaar. Dat is DOORSTOTEN, het woord op de banner: niets hier staat boven je, dus elke vernietigde machine geeft je het schot terug.`,
+    `Een neer, en het wapen dat het deed is weer klaar. Dat is DOORSTOTEN, het woord op de banner: hier staat niets boven je, dus elke vernietigde machine geeft je het schot terug.`,
   [`Two in one turn, and the one that is left has lost its nerve. It leaves on its turn without firing. It only counts as destroyed if you get to it first.`]:
     `Twee in een beurt, en wat er nog staat is in paniek. Het vertrekt in zijn beurt zonder te vuren. Het telt alleen als vernietigd als je het eerst te pakken krijgt.`,
   [`You are running hot. Pass the red line and the frame shuts down: your next turn is lost. Vent sheds heat at once, and a turn with fewer shots lets it drain.`]:
@@ -610,7 +613,7 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Four armies decorated me for this. You may pay for the fifth.`]: `Vier legers gaven me hier medailles voor. Jij mag de vijfde betalen.`,
   [`I yield. Mind the medals. Some of them were earned.`]: `Ik geef me over. Pas op de medailles. Sommige zijn verdiend.`,
   [`You are in default, pilot. This frame is the notice.`]: `Je bent in gebreke, piloot. Dit frame is de aanmaning.`,
-  [`This is irregular. My clients will hear of... no. I suppose they will not.`]: `Dit is onregelmatig. Mijn clienten zullen hiervan... nee. Dat zullen ze dus niet.`,
+  [`This is irregular. My clients will hear of... no. I suppose they will not.`]: `Dit is onregelmatig. Mijn cliënten zullen hiervan... nee. Dat zullen ze dus niet.`,
   // The Guild's broker.
   [`Guild Broker`]: `Gildemakelaar`,
   [`Mind the quarry face while you are at it. We sell that stone.`]: `Pas meteen op de groevewand. Die steen verkopen wij.`,
@@ -636,12 +639,12 @@ export const MISSIONS_NL: Record<string, string> = {
   // An open contract with an elite in it: what sets the elite apart.
   [`Among them: an armoured elite, far thicker. Pays extra.`]: `Daartussen: een gepantserde elite, veel dikker. Extra loon.`,
   // The jobs beside the board. A title begins with its kind: Doelwit, Beslag, Escorte, Stand.
-  [`Hit: Loose End`]: `Doelwit: Los Eind`,
+  [`Hit: Loose End`]: `Doelwit: Los eind`,
   [`Hit: Quiet Word`]: `Doelwit: Tipgever`,
   [`Hit: Night Clerk`]: `Doelwit: Klerk`,
   [`Hit: Old Account`]: `Doelwit: Rekening`,
   [`Hit: Key Witness`]: `Doelwit: Getuige`,
-  [`Repo: Late Fees`]: `Beslag: Te Laat`,
+  [`Repo: Late Fees`]: `Beslag: Te laat`,
   [`Repo: Bad Paper`]: `Beslag: Wanbetaler`,
   [`Repo: Lost Lease`]: `Beslag: Leasewrak`,
   [`Repo: Final Demand`]: `Beslag: Aanmaning`,
@@ -652,9 +655,9 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Escort: Signed For`]: `Escorte: Getekend`,
   [`Escort: Fragile`]: `Escorte: Breekbaar`,
   [`Hold: Gate Nine`]: `Stand: Poort Negen`,
-  [`Hold: No Relief`]: `Stand: Geen Aflos`,
-  [`Hold: Long Shift`]: `Stand: Lange Wacht`,
-  [`Hold: Dead Hours`]: `Stand: Dode Uren`,
+  [`Hold: No Relief`]: `Stand: Geen aflos`,
+  [`Hold: Long Shift`]: `Stand: Lange wacht`,
+  [`Hold: Dead Hours`]: `Stand: Dode uren`,
   [`Hold: Overtime`]: `Stand: Overwerk`,
   [`The fee is for one machine, marked on the field: overclocked, and hitting hard. When it falls the job is done. The rest is nobody's business.`]:
     `Het loon is voor een machine, gemerkt op het veld: overklokt, en hij slaat hard. Valt hij, dan is de klus klaar. De rest gaat niemand aan.`,
@@ -670,7 +673,7 @@ export const MISSIONS_NL: Record<string, string> = {
   [`Pump Barge`]: `Pompschuit`,
   [`Among them: an overclocked elite, hitting hard. Pays extra.`]: `Daartussen: een overklokte elite, slaat harder. Extra loon.`,
   [`Among them: a swift elite, much harder to hit. Pays extra.`]: `Daartussen: een snelle elite, lastig te raken. Extra loon.`,
-  [`Among them: an elite behind a renewing barrier. Pays extra.`]: `Daartussen: een elite, barriere komt terug. Extra loon.`,
+  [`Among them: an elite behind a renewing barrier. Pays extra.`]: `Daartussen: een elite, barrière komt terug. Extra loon.`,
   [`A nest has woken up: light machines, far more of them than a field holds. As one falls the next comes on. The client pays by the head, for every one of them.`]: `Er is een nest wakker geworden: lichte machines, veel meer dan er op een veld passen. Valt er een, dan komt de volgende. De klant betaalt per stuk, voor elk ervan.`,
   // The duels with the Coast Circuit, once the audit is over.
   [`Somebody has booked the roof of the freight exchange for an hour at dusk and paid in advance. They asked for you by callsign, and for nobody else.`]: `Iemand heeft het dak van de vrachtbeurs een uur geboekt, bij schemer, en vooruit betaald. Ze vroegen bij roepnaam naar jou en naar niemand anders.`,

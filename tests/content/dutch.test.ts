@@ -3,8 +3,10 @@ import { dictionaryOf, registeredTexts, setLanguage } from '../../src/content/la
 import '../../src/content/nl';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
-import { TALK_CHARS } from '../../src/ui/battleScreen';
+import { MENU_ROW_CHARS, TALK_CHARS } from '../../src/ui/battleScreen';
 import { BRIEFING_CHARS } from '../../src/ui/briefingScreen';
+import { KIND_CHARS } from '../../src/ui/hubScreen';
+import { MESSAGE_CHARS } from '../../src/ui/tags';
 import { FIND_CLUE_LINES, FIND_TEXT_LINES, PAGE_CHARS } from '../../src/ui/databaseScreen';
 import { LOGICAL_W } from '../../src/ui/display';
 import { SCENE_CHARS } from '../../src/ui/sceneScreen';
@@ -39,8 +41,53 @@ const ROOM: Record<string, { width?: number; max?: number; lines?: number }> = {
   // Its text and its clue stand in a page with room to spare: what they may take is that room, in either language.
   'find.source': { max: 37 }, 'find.clue': { width: PAGE_CHARS, lines: FIND_CLUE_LINES }, 'find.text': { width: PAGE_CHARS, lines: FIND_TEXT_LINES },
 };
+/**
+ * Places of the interface where the Dutch may run more than two letters past the English, because the place is
+ * known to hold more: the most letters it holds, and how that is known. A word that is cut short where there is
+ * room for it is a fault of its own. Everything that is not listed keeps the rule; what is drawn is held to its
+ * screen by `tests/ui/freshEyes.test.ts`, which looks for words that lie over one another.
+ */
+const ROOM_FOR: Record<string, number> = {
+  // A row of the battle's menu, from where its words start to the panel's edge.
+  'actions.endTurn': MENU_ROW_CHARS,
+  // The new pilot's lines over the field: 75 small letters fit across it (tests/ui/coach.test.ts).
+  'coach.target': 75,
+  // Under the figures of a frame to start in: the panel is 150 wide, in small letters.
+  'starter.later': 34,
+  // A ground's rule stands after its name on one line of the briefing.
+  'ground.furnace.note': BRIEFING_CHARS - 16,
+  // The Gauntlet's panel is 156 wide and its words start 6 in: 30 letters; a row of its menu starts 8 further in.
+  'gauntlet.start': 27, 'gauntlet.abandon': 27, 'gauntlet.draftHeading': 30, 'gauntlet.over': 30,
+  // The hub: a row of its menu that has no note beside it, the line under its panel, and the label over a figure
+  // of at most five digits in the panel above the menu (144 wide).
+  'hub.cycle': 27, 'hub.campaignDone': KIND_CHARS, 'hub.battlesWon': 24,
+  // The names of pages, and of what a page counts: a plural is a letter or two more than the English has.
+  'pilot.pages.medals': 10, 'database.pages.units': 10, 'database.pages.finds': 10, 'training.pages.drills': 10, 'arena.pages.ladder': 10,
+  'medals.heading': 10, 'record.medals': 10, 'arena.cups.won': 10,
+  // A row of the record: its label at the left, its figure at the right, half the screen between them.
+  'record.contracts': 20, 'record.lost': 20,
+  // Under the bar of experience, in small letters, in the middle of the screen.
+  'pilot.next': 20,
+  // A line of the end roll.
+  'credits.roles.ashfall': 24,
+};
+/**
+ * Sentences a function builds around names and figures, where the Dutch words are this many letters more than the
+ * English ones and the place has the room: a machine that braces in the message bar (the bar holds 62 letters, the
+ * longest name is eighteen), the count of what is found at the foot of its page, and what the shop says of a sale
+ * in large letters across its foot (48 letters).
+ */
+const SLACK_FOR: Record<string, number> = { guard: 9, 'database.found': 3, 'shop.sold': 5 };
+
 /** Kinds that are names: they may stay as they are. Everything else has to be translated. */
 const MAY_STAY = new Set(['who', 'client', 'asset', 'part.name', 'board.word', 'scene.heading', 'scene.title', 'mission.title', 'medal.name', 'perk.name', 'page.title', 'person.role']);
+
+/**
+ * The letters the game's font is known to write at the width of every other: plain ones, and those Dutch spelling
+ * asks for (a browser test holds the font to that: e2e/dutch.spec.ts). Anything else might be drawn from another
+ * font, at another width.
+ */
+const WRITABLE = /^[\x20-\x7eéèëïöüêàçÉÈËÏÖÜ]*$/;
 
 const texts = registeredTexts();
 const nl = dictionaryOf('nl');
@@ -80,7 +127,7 @@ describe('Dutch: the content', () => {
     for (const [english, dutch] of Object.entries(nl)) {
       expect(dutch.length, english).toBeGreaterThan(0);
       expect(dutch, english).toBe(dutch.trim());
-      expect(/^[\x20-\x7e]*$/.test(dutch), dutch).toBe(true);
+      expect(WRITABLE.test(dutch), dutch).toBe(true);
       // What is quoted or numbered in the English is in the Dutch: figures are rules, not prose.
       const figures = (s: string) => (s.match(/\d+/g) ?? []).sort().join(',');
       expect(figures(dutch), `${english} -> ${dutch}`).toBe(figures(english));
@@ -171,10 +218,22 @@ describe('Dutch: the interface', () => {
       const other = dutch.get(path);
       if (!other) continue;
       said.forEach((text, i) => {
-        if (other[i] !== undefined && other[i].length > text.length + 2) tooLong.push(`${path}: "${other[i]}" (${other[i].length}) for "${text}" (${text.length})`);
+        if (other[i] === undefined) return;
+        // Where the place is known to hold more, it is that room the Dutch is held to.
+        const room = Object.hasOwn(ROOM_FOR, path) ? ROOM_FOR[path] : text.length + (Object.hasOwn(SLACK_FOR, path) ? SLACK_FOR[path] : 2);
+        if (other[i].length > room) tooLong.push(`${path}: "${other[i]}" (${other[i].length}) for "${text}" (${text.length})`);
       });
     }
     expect(tooLong).toEqual([]);
+    // Every place listed as roomier is a place the game has, and one where the Dutch does use the room.
+    const paths = new Set(english.map((leaf) => leaf.path));
+    expect([...Object.keys(ROOM_FOR), ...Object.keys(SLACK_FOR)].filter((path) => !paths.has(path))).toEqual([]);
+    expect(MESSAGE_CHARS).toBeGreaterThanOrEqual(18 + ' zet zich schrap'.length + SLACK_FOR.guard);
+    const unused = [...Object.keys(ROOM_FOR), ...Object.keys(SLACK_FOR)].filter((path) => {
+      const said = english.find((leaf) => leaf.path === path)!.said;
+      return (dutch.get(path) ?? []).every((text, i) => said[i] === undefined || text.length <= said[i].length + 2);
+    });
+    expect(unused).toEqual([]);
   });
 
   test('says the numbers the English says, in the order the English says them: a count, a price or a threshold is the same in both', () => {

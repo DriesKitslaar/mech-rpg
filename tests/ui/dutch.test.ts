@@ -141,7 +141,7 @@ describe('the game in Dutch', () => {
     expect(english).toEqual(expect.arrayContaining(['Director Brenn', 'who found you the work', 'a licensed pilot']));
     setLanguage('nl');
     const dutchRoll = roll();
-    expect(dutchRoll).toEqual(expect.arrayContaining(['Directeur Brenn', 'Analist Varga', 'die je het werk bezorgde', 'een erkende piloot']));
+    expect(dutchRoll).toEqual(expect.arrayContaining(['Directeur Brenn', 'Analist Varga', 'die je het werk bezorgde', 'piloot met licentie']));
     for (const text of ['Director Brenn', 'Analyst Varga', 'who found you the work', 'a licensed pilot', 'Lumen\'s best']) expect(dutchRoll).not.toContain(text);
     setLanguage('en');
     expect(roll()).toEqual(english);

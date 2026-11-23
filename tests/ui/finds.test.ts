@@ -80,7 +80,8 @@ describe('the page of what has been found', () => {
     try {
       setLanguage('nl');
       expect(findLabel(paper('paper-policy'), true)).toBe('02 Polis VRN-1');
-      expect(findLabel(paper('paper-retainer'), true)).toBe('16 Vast Contract');
+      // In Dutch a title in a list is written as a sentence is.
+      expect(findLabel(paper('paper-retainer'), true)).toBe('16 Vast contract');
     } finally {
       setLanguage('en');
     }
@@ -209,7 +210,7 @@ describe('the page of what has been found', () => {
       expect(labels(app)[2]).toBe('03 Aftelrijm');
       expect(labels(app)[24]).toBe('Penning 114');
       expect(labels(app)[25]).toBe('Penning ? ? ?');
-      expect(snap(app).count).toBe('VONDST 2/40   PENNINGEN 1');
+      expect(snap(app).count).toBe('VONDSTEN 2/40   PENNINGEN 1');
       press(app, 'down', 'down');
       expect(detail(app).lines.join(' ')).toContain('ijzer voor de delver');
     } finally {

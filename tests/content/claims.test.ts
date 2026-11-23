@@ -789,7 +789,7 @@ describe('small words', () => {
   });
 
   test('the shop\'s hint says which button trades', () => {
-    expect(STRINGS.shop.hint).toMatch(/^A /);
+    expect(STRINGS.shop.hint).toMatch(/^A: trade /);
     expect(STRINGS.shop.hint.length * 4.8).toBeLessThanOrEqual(300);
   });
 });

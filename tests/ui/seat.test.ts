@@ -332,7 +332,7 @@ describe('in Dutch', () => {
     const won = drawn(made.app);
     expect(written(won, 'DE STOEL IS VAN JOU').y).toBe(26);
     const woorden = won.texts.filter((t) => t.y >= 144 && t.y < 180);
-    expect(woorden.map((t) => t.text).join(' ')).toBe('"Hij werd alleen warm gehouden. Ga zitten, piloot." De werf van zijn machine neemt nu jouw order aan.');
+    expect(woorden.map((t) => t.text).join(' ')).toBe('"Hij werd alleen warmgehouden. Ga zitten, piloot." De werf van zijn machine neemt nu jouw order aan.');
     expect(woorden.length).toBeLessThanOrEqual(3);
     for (let i = 0; i < 40 && snap(made.app).toast !== 'seat'; i++) made.app.update(TOAST_MS + 1);
     const notice = drawn(made.app);

@@ -45,14 +45,14 @@ const capital = (text: string): string => text[0].toUpperCase() + text.slice(1);
 
 describe('the README counts what is there', () => {
   test('the machine: its slots, the shop\'s parts, the paints and who earns the others, the saved builds, the starters', () => {
-    expect(README).toContain(`**Mecha**: ${word(BUILD_SLOTS.length)} sloten`);
+    expect(README).toContain(`**Mech**: ${word(BUILD_SLOTS.length)} sloten`);
     expect(README).toContain(`en ${SHOP_PARTS.length} onderdelen in de winkel`);
     // The paints anyone may wear, and those won in the arena: a master's for each crown, and the keeper's.
     const earned = CROWN_PAINTS.length + 1;
     expect(README).toContain(`${capital(word(PAINTS.length))} verfschema's, ${word(earned)} die je in de arena verdient, ${word(MIX_SLOTS)} die je zelf mengt, en ${word(LOADOUT_SLOTS)} opgeslagen builds.`);
     expect(CROWN_PAINTS).toHaveLength(MASTERS.length);
     expect(SEAT_PAINT.id).toBe(KEEPER.paint);
-    expect(README).toContain(`Je begint in een van ${word(STARTERS.length)} mecha's naar keuze.`);
+    expect(README).toContain(`Je begint in een van ${word(STARTERS.length)} mechs naar keuze.`);
     expect(README).toContain(`**Hangar**: ${word(LOADOUT_SLOTS)} plekken voor bewaarde builds`);
   });
 
@@ -176,7 +176,7 @@ describe('what is said of the launch is so', () => {
     for (const id of ['arena-3', 'cup-gold', 'arena-seat', 'drill-basics', 'range-spar-1', 'gauntlet-4']) expect(launches({ id }), id).toBe(false);
     expect(GUIDE).toContain(`**${STRINGS.options.fastBattles}** speelt gevechten tweeënhalf keer zo snel af, en slaat de lancering aan het begin van een contract over.`);
     expect(FAST_BATTLE_SPEED).toBe(2.5);
-    expect(README).toContain('**Lancering**: elk contract vanuit de hangar opent met je eigen mecha op de katapult: drie lampen,');
+    expect(README).toContain('**Lancering**: elk contract vanuit de hangar opent met je eigen mech op de katapult: drie lampen,');
     expect(LAMPS_AT).toHaveLength(3);
   });
 });
@@ -312,7 +312,7 @@ describe('what is said of the paint shop is so', () => {
     expect(all.slice(-MIX_SLOTS)).toEqual(DEFAULT_MIXES.map(mixId));
     expect(DEFAULT_MIXES.map((mix) => schemeOfMix(mix).name)).toEqual(['Mix 1', 'Mix 2', 'Mix 3']);
     // A white machine with blue lights, a black one with red, and navy with gold.
-    expect(section).toContain('een witte mecha met blauwe lichten, een zwarte met rode, en een marineblauwe met goud');
+    expect(section).toContain('een witte mech met blauwe lichten, een zwarte met rode, en een marineblauwe met goud');
     const [white, black, navy] = DEFAULT_MIXES.map((mix) => schemeOfMix(mix));
     const light = (scheme: typeof white): number => toHsl(...rampOf(scheme)[3])[2];
     expect(light(white)).toBeGreaterThan(0.5);
@@ -333,7 +333,7 @@ describe('what is said of the paint shop is so', () => {
     expect(rows[2]).toContain(`${M.shade.join(', ')}.`);
     expect(rows[4]).toContain(`${M.glow.join(', ')}.`);
     // White and black, as the guide says they are made.
-    expect(section).toContain(`**${M.finish[0]}** met **${M.shade[0]}** geeft een witte mecha, **${M.finish[0]}** met **${M.shade.at(-1)}** een zwarte.`);
+    expect(section).toContain(`**${M.finish[0]}** met **${M.shade[0]}** geeft een witte mech, **${M.finish[0]}** met **${M.shade.at(-1)}** een zwarte.`);
     expect([DEFAULT_MIXES[0].finish, DEFAULT_MIXES[0].shade]).toEqual([0, 0]);
     expect([DEFAULT_MIXES[1].finish, DEFAULT_MIXES[1].shade]).toEqual([0, MIX_STEPS.shade - 1]);
     expect(section).toContain('Het kost niets. Er is een medaille voor wie een eigen mengsel draagt.');
@@ -390,9 +390,9 @@ describe('what is said of the five kinds of weapon is so', () => {
     expect(section).toContain(`| **SURGE** | PIEK | Neemt alle energie die je nog hebt. De schade die erbij staat geldt voor elke ${SURGE_UNIT} energie die het neemt. |`);
     expect(section).toContain(`| **SPOOL** | OPTOEREN | Begint met ${SPOOL_BASE} schoten en krijgt er elke beurt op rij een bij. Sla je een beurt over, dan begint het weer bij ${SPOOL_BASE}. |`);
     // Twice as much: of both the weapons that punish.
-    expect(section).toContain('| **PUNISH** | STRAF | Dubbele schade tegen een mecha die wankelt. Zelf duwt het nauwelijks. |');
+    expect(section).toContain('| **PUNISH** | STRAF | Dubbele schade tegen een mech die wankelt. Zelf duwt het nauwelijks. |');
     expect(ofKind('punish').map((weapon) => weapon.traitPower)).toEqual([100, 100]);
-    expect(section).toContain(`| **REDLINE** | WITHEET | Hoe heter je eigen mecha is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de hittegrens van je mecha (${HEAT_LIMIT}, in een Sirocco ${(CATALOG['core-sirocco'] as FramePart).heatLimit}). |`);
+    expect(section).toContain(`| **REDLINE** | WITHEET | Hoe heter je eigen mech is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de hittegrens van je mech (${HEAT_LIMIT}, in een Sirocco ${(CATALOG['core-sirocco'] as FramePart).heatLimit}). |`);
     expect(STRINGS.partInfo.traits.redline(8)).toBe('REDLINE: +8% per 10 heat');
     expect(section).toContain('| **FORK** | VONK | Een treffer slaat over op de volgende vijand in de rij, voor een deel van de schade. Wat overslaat mist nooit. |');
     for (const weapon of ofKind('fork')) expect(weapon.traitPower, weapon.id).toBeLessThan(100);
@@ -494,7 +494,7 @@ describe('what is said of the yard\'s two frames and their duels is so', () => {
     expect(DUELS.map((mission) => mission.title)).toEqual(['By Appointment', 'First Sword', 'Hot Work', 'The Longest Day']);
     expect(titles.every((at) => at >= 0)).toBe(true);
     expect([...titles].sort((a, b) => a - b)).toEqual(titles);
-    expect(section).toContain(`hij oververhit pas boven ${sirocco.heatLimit} hitte, waar elke andere mecha dat boven ${HEAT_LIMIT} doet`);
+    expect(section).toContain(`hij oververhit pas boven ${sirocco.heatLimit} hitte, waar elke andere mech dat boven ${HEAT_LIMIT} doet`);
     // A machine glows from three quarters of the way to its own limit (the screen's own test holds that): the guide says what the glow means.
     expect(section).toContain('Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig.');
     expect(section).toContain('bewaart hij voor zijn volgende beurt, tot een halve beurt');
@@ -524,11 +524,11 @@ describe('what is said of the yard\'s two frames and their duels is so', () => {
   });
 
   test('the README: a section on the two, four duels, and the counts that grew', () => {
-    expect(README).toContain('- **De werf**: twee mecha\'s voor het eind van het spel, elk te koop zodra je in een duel de fabriekspiloot van de werf aan de kust verslaat die hem vliegt.');
+    expect(README).toContain('- **De werf**: twee mechs voor het eind van het spel, elk te koop zodra je in een duel de fabriekspiloot van de werf aan de kust verslaat die hem vliegt.');
     expect(README).toContain(`De Sirocco loopt heet: zijn hittegrens is ${sirocco.heatLimit} in plaats van ${HEAT_LIMIT}`);
     expect(README).toContain('De Solstice bewaart de energie die je niet gebruikt voor je volgende beurt, tot een halve beurt.');
     expect(README).toContain('de ander wacht een ronde en vuurt dan met anderhalve beurt energie. Wat hij heeft opgespaard, staat boven hem op het veld.');
-    expect(README).toContain(`Na het verhaal: ${word(DUELS.length)} duels, elk om een mecha die je daarna zelf mag kopen.`);
+    expect(README).toContain(`Na het verhaal: ${word(DUELS.length)} duels, elk om een mech die je daarna zelf mag kopen.`);
   });
 });
 
@@ -549,7 +549,7 @@ describe('what is said of accounts is so', () => {
   test('the guide: when one begins, what its notice is called in both languages, and what the contract asks', () => {
     expect(section.length).toBeGreaterThan(1500);
     expect(section).toContain(`Vanaf ${word(GRUDGE_TIER * WINS_PER_TIER)} gewonnen contracten kan een piloot die je bent tegengekomen **voor je terugkomen**`);
-    expect(section).toContain('je sloopte de mecha van die piloot, die sloeg voor je op de vlucht, of stond nog overeind toen jij het veld verliet');
+    expect(section).toContain('je sloopte de mech van die piloot, die sloeg voor je op de vlucht, of stond nog overeind toen jij het veld verliet');
     expect(section).toContain(`${capital(word(GRUDGE_WAIT[0]))} gewonnen contracten later staat er tussen de open contracten een bericht met een roepnaam`);
     // Whatever is counted as a contract won is one waited through: a fight in the arena too.
     expect(section).toContain('Alles wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena.');
@@ -586,10 +586,10 @@ describe('what is said of accounts is so', () => {
   });
 
   test('the guide: three meetings in the same machine, what each waits and pays, how one closes, and the medals', () => {
-    expect(section).toContain(`De piloot komt **${word(GRUDGE_MEETINGS)} keer** terug, steeds in dezelfde mecha, de tweede en derde keer iets dikker gepantserd`);
+    expect(section).toContain(`De piloot komt **${word(GRUDGE_MEETINGS)} keer** terug, steeds in dezelfde mech, de tweede en derde keer iets dikker gepantserd`);
     expect(section).toContain(`Na de eerste keer duurt het ${word(GRUDGE_WAIT[1])} gewonnen contracten, na de tweede weer ${word(GRUDGE_WAIT[2])}.`);
     // In the guide, as in the game, their pilot is nobody's he or she.
-    expect(section).not.toMatch(/\b(zijn mecha|zijn roepnaam|zijn naam|hij komt|wacht hij|hij sloeg|hij versloeg|bij hem|boven hem|naast hem)\b/i);
+    expect(section).not.toMatch(/\b(zijn mech|zijn roepnaam|zijn naam|hij komt|wacht hij|hij sloeg|hij versloeg|bij hem|boven hem|naast hem)\b/i);
     expect(section).toContain('De tweede ontmoeting betaalt een kwart meer dan de eerste, de derde de helft meer.');
     expect(section).toContain(`(**${STRINGS.settlement.accountClosed}**, Nederlands **${STRINGS_NL.settlement.accountClosed}**)`);
     expect(section).toContain('Er loopt er altijd maar één tegelijk.');
@@ -645,7 +645,7 @@ describe('what is said of accounts is so', () => {
 
   test('the README: a section on accounts, and the medals counted', () => {
     expect(README).toContain('- **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op een eigen bericht naast het bord, met een roepnaam. De eerste keer kent die piloot je nog niet.');
-    expect(README).toContain('Daarna is de mecha gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de helft tot de harding is weggeschoten');
+    expect(README).toContain('Daarna is de mech gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de helft tot de harding is weggeschoten');
     // (Won: a meeting lost or walked away from leaves the account as it was.)
     expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} gewonnen ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
     expect(README).toContain(`${MEDALS.length} medailles`);

@@ -660,7 +660,7 @@ export const STRINGS = {
     sold: (name: string, price: number) => `Sold ${name} +${price}`,
     cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
     lastWeapon: 'Last weapon', needWeapon: 'You need at least one weapon',
-    hint: 'A trade  L1/R1 category  LEFT/RIGHT buy/sell list  B back', fitHint: 'Fit it in the Garage.',
+    hint: 'A: trade   L1/R1: category   LEFT/RIGHT: buy or sell   B: back', fitHint: 'Fit it in the Garage.',
     // Under the hint: where AP, WT, DRAIN and the rest are explained, by the names the hub and the database have for it.
     wordsHint: 'What the short words mean: Database, MANUAL',
   },

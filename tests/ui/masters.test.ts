@@ -473,7 +473,7 @@ describe('in Dutch', () => {
     select(app, 'arena');
     press(app, 'next');
     shown = drawn(app);
-    expect(shown.texts.filter((t) => t.y === 1).map((t) => t.text)).toEqual(expect.arrayContaining(['LADDER', 'MEESTERS']));
+    expect(shown.texts.filter((t) => t.y === 1).map((t) => t.text)).toEqual(expect.arrayContaining(['RANGLIJST', 'MEESTERS']));
     expect(written(shown, 'KRONEN 1/7').y).toBe(22);
     expect(snap(app).menu.items.map((row) => row.label)).toEqual(['Duellist', 'Scherpschutter', 'Artillerie', 'Lansier', 'Bastion', 'Jager', 'Allrounder', 'De achtste stoel']);
     expect(written(shown, 'MEESTERDUELLIST').y).toBe(207);
