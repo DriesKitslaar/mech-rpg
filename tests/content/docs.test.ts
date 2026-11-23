@@ -540,8 +540,15 @@ describe('what is said of the long game is so', () => {
     // What the question says stays, and what it says starts over.
     const asked = STRINGS.hub.cycleQuestion(1).join(' ');
     expect(asked).toContain('You keep credits, parts, level, perks and arena rank.');
-    expect(asked).toContain('Side work, duels and the Archive start over with it.');
-    expect(story).toContain('je credits, onderdelen, level, perks en arenarang blijven. Bijklussen, de duels en het archief beginnen opnieuw');
+    expect(asked).toContain('Side work and its duels, and the Archive, start over too.');
+    expect(story).toContain('je credits, onderdelen, level, perks en arenarang blijven. Bijklussen, met de vier duels die daarbij horen, en het archief beginnen opnieuw');
+    // The duels that start over are the four that are side work; what was won in the arena is not among what starts over.
+    expect(DUELS.map((mission) => mission.phase)).toEqual(['side', 'side', 'side', 'side']);
+    expect(story).toContain('Wat je in de arena hebt bereikt, blijft allemaal: je rang, de bekers, de kronen en de stoel.');
+    // A replay from the Archive is for a better rank, on the list's line as in the guide.
+    expect(STRINGS.hub.kinds.replay).toBe('REPLAY: pays less, for a better rank');
+    expect(STRINGS_NL.hub.kinds.replay).toBe('OPNIEUW: minder loon, voor betere rang');
+    expect(GUIDE).toContain('In het archief kun je oude contracten opnieuw spelen voor een betere rang en een deel van het loon.');
     // Skipping: only what was told before, never an ending, and a question is still asked.
     expect(story).toContain(`rechtsboven staat dan **${STRINGS.scene.skip}**`);
     const seen = { told: { scenes: ['act-1', 'talk-kite', 'ending-x'], read: [] } };

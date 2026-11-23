@@ -13,11 +13,16 @@ const GENERAL: Advice[] = ['patrol', 'drills', 'auto'];
 /** The share of its armour the other side has to have left for a defeat to be put down to the machine and not to how it was flown. */
 export const OUTMATCHED_SHARE = 2 / 3;
 
-/** What is left of the armour the other side came with, as a share of it: 1 with none of them touched, 0 with nothing standing. */
+/**
+ * What is left of the armour the other side came onto the field with, as a share of it: 1 with none of
+ * them touched, 0 with nothing standing. A machine that is down has none left, whatever its limbs still
+ * carry: it went through the core, or it lost its nerve and left. Machines still to come are not counted.
+ */
 export function armourLeft(state: BattleState): number {
-  const parts = state.units.filter((unit) => unit.side === 'enemy').flatMap((unit) => Object.values(unit.parts));
-  const whole = parts.reduce((sum, part) => sum + part.maxAp, 0);
-  return whole > 0 ? parts.reduce((sum, part) => sum + Math.max(0, part.ap), 0) / whole : 0;
+  const enemies = state.units.filter((unit) => unit.side === 'enemy');
+  const whole = enemies.flatMap((unit) => Object.values(unit.parts)).reduce((sum, part) => sum + part.maxAp, 0);
+  const left = enemies.filter((unit) => !unit.destroyed).flatMap((unit) => Object.values(unit.parts)).reduce((sum, part) => sum + Math.max(0, part.ap), 0);
+  return whole > 0 ? left / whole : 0;
 }
 
 /**

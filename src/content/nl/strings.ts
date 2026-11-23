@@ -234,13 +234,13 @@ export const STRINGS_NL = {
       patrol: 'PATROUILLE: altijd open, weinig loon',
       lent: 'NIET INZETBAAR: patrouille in leenmech',
       archive: 'ARCHIEF: vlieg een oud contract opnieuw',
-      replay: 'OPNIEUW: minder loon, verandert niets',
+      replay: 'OPNIEUW: minder loon, voor betere rang',
       unflown: 'NIEUW: * is nog nooit gewonnen',
     },
     locked: 'Op slot', opensAfter: (title: string) => `na ${title}`, campaignDone: 'De oorlog is voorbij. Het werk niet.',
     cycleLabel: (n: number) => `CYCLUS ${n + 1}`,
     cycleQuestion: (next: number): string[] => ['De oorlog opnieuw?', 'Je houdt credits, level,', 'onderdelen, perks, arenarang.',
-      'Bijklussen, duels en het', 'archief beginnen opnieuw.',
+      'Bijklussen en hun duels, en', 'het archief beginnen opnieuw.',
       ...(next <= 2 ? ['Taaiere vijanden, meer loon,', 'een stap meer op de werkbank.']
         : next === 3 ? ['Vijanden blijven even taai.', 'De werkbank kan nog een stap.']
           : ['Vijanden blijven even taai,', 'en het loon blijft gelijk.'])],

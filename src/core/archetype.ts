@@ -1,5 +1,5 @@
 import { framePart, shieldOf, weaponIn } from './build';
-import { BUILD_SLOTS, LOADOUT_SLOTS, buy, checkBuy, fits, ownedCount, partOf, saveLoadout, type BuildSlot, type GameState } from './game';
+import { BUILD_SLOTS, buy, checkBuy, fits, ownedCount, partOf, sameBuild, saveLoadout, savedBuilds, type BuildSlot, type GameState } from './game';
 import { WEAPON_SLOTS, type AiProfile, type Build, type Catalog } from './types';
 
 /**
@@ -98,22 +98,22 @@ export function adviceFor(game: GameState, builds: Build[], inStock: (partId: st
   const sold = weighed.filter((advice) => advice.unsold.length === 0);
   if (sold.length === 0) return weighed[0];
   const nearest = sold.reduce((least, advice) => (advice.cost < least.cost ? advice : least));
-  return [...sold].reverse().find((advice) => advice.cost <= game.credits) ?? nearest;
+  return [...sold].reverse().find((advice) => paidFor(game, advice)) ?? nearest;
 }
 
-/** Whether two builds are the same build: the same part in every slot, and nothing where the other has nothing. */
-export const sameBuild = (a: Build, b: Build): boolean => BUILD_SLOTS.every((slot) => a[slot] === b[slot]);
+/** Whether the credits in hand pay for what a build still takes: one owned in full takes none, and a pilot in debt has that many. */
+const paidFor = (game: Pick<GameState, 'credits'>, advice: BuildAdvice): boolean => advice.toBuy.length === 0 || advice.cost <= game.credits;
 
 /** The place among the saved builds that holds this build, from 0; -1 when none does. */
 export const keptAt = (game: Pick<GameState, 'loadouts'>, build: Build): number =>
-  Array.from({ length: LOADOUT_SLOTS }, (_, i) => game.loadouts[i] ?? null).findIndex((saved) => saved !== null && sameBuild(saved, build));
+  savedBuilds(game).findIndex((saved) => saved !== null && sameBuild(saved, build));
 
 /**
  * Whether a build to try can be followed today: everything of it is owned or on the shelf, the
  * credits in hand pay for what is not owned, and it is not the build the pilot flies already.
  */
 export const canFollow = (game: GameState, advice: BuildAdvice): boolean =>
-  advice.unsold.length === 0 && advice.cost <= game.credits && !sameBuild(game.build, advice.build);
+  advice.unsold.length === 0 && paidFor(game, advice) && !sameBuild(game.build, advice.build);
 
 /**
  * Follows a build to try: buys what of it is still to be bought and fits it, in place of what the
@@ -140,6 +140,6 @@ export function followAdvice(game: GameState, advice: BuildAdvice, catalog: Cata
   }
   next = { ...next, build: { ...advice.build } };
   if (keptAt(next, advice.build) >= 0) return next;
-  const free = Array.from({ length: LOADOUT_SLOTS }, (_, i) => next.loadouts[i] ?? null).indexOf(null);
+  const free = savedBuilds(next).indexOf(null);
   return free >= 0 ? saveLoadout(next, free) : next;
 }

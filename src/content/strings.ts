@@ -284,7 +284,8 @@ export const STRINGS = {
       patrol: 'PATROL: always on offer, pays little',
       lent: 'CANNOT DEPLOY: patrol only, lent mech',
       archive: 'ARCHIVE: fly a finished contract again',
-      replay: 'REPLAY: pays less and changes nothing',
+      // (What a replay can change is the best rank on record: nothing of the story.)
+      replay: 'REPLAY: pays less, for a better rank',
       // (In a later telling: a contract of the story or beside it that was never won in any telling. Its row ends in a star.)
       unflown: 'NEW: the * marks one you never won',
     },
@@ -294,7 +295,8 @@ export const STRINGS = {
     // telling, a step more at the bench up to the fourth.
     // What stays, what leaves the list of contracts until the story brings it back, and what the next telling is like.
     cycleQuestion: (next: number): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
-      'Side work, duels and the', 'Archive start over with it.',
+      // (The duels that start over are the ones that are side work: what was won in the arena stays.)
+      'Side work and its duels, and', 'the Archive, start over too.',
       ...(next <= 2 ? ['Tougher enemies, better pay,', 'one more step at the bench.']
         : next === 3 ? ['Enemies are as tough as now.', 'The bench has one step left.']
           : ['Enemies are as tough as now,', 'and the pay is the same.'])],

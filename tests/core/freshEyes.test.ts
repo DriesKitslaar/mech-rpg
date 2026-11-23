@@ -2,14 +2,14 @@ import {
   CUPS, MIRROR_ID, MIRROR_PURSE, arenaMission, arenaPurse, cupMission, cupPurse, mirrorMission, mirrorPurse, recordCupWin, recordMirrorWin, recordRematch,
   rematchPurse, rematchesWon,
 } from '../../src/core/arena';
-import { ARCHETYPES, adviceFor, archetypeOf, canFollow, followAdvice, keptAt, sameBuild } from '../../src/core/archetype';
+import { ARCHETYPES, adviceFor, archetypeOf, canFollow, followAdvice, keptAt } from '../../src/core/archetype';
 import { validatePlayerBuild } from '../../src/core/build';
 import {
   arrivedMessages, isUnread, markRead, markSceneSeen, noteArrivals, readBefore, skippable, startNewCycle, toldBefore, unreadMessages, type Message, type Scene,
 } from '../../src/core/campaign';
 import { heldAlready } from '../../src/core/codex';
 import { applySettlement, type Settlement } from '../../src/core/economy';
-import { BUILD_SLOTS, LOADOUT_SLOTS, buy, isValidState, loadoutsNeeding, newGame, ownedCount, saveLoadout, sell, type GameState } from '../../src/core/game';
+import { BUILD_SLOTS, LOADOUT_SLOTS, buy, isValidState, loadoutsNeeding, newGame, ownedCount, sameBuild, saveLoadout, savedBuilds, sell, type GameState } from '../../src/core/game';
 import { groundedBuilds, sortieBuilds } from '../../src/core/sortie';
 import { MASTER_PURSE, masterId, masterMission, masterPurse } from '../../src/core/masters';
 import { SEAT_ID, SEAT_PURSE, seatMission, seatPurse } from '../../src/core/seat';
@@ -20,6 +20,8 @@ import { ARENA } from '../../src/content/arena';
 import { MASTERS } from '../../src/content/masters';
 import { MESSAGES, MISSIONS } from '../../src/content/missions';
 import { SCENES } from '../../src/content/scenes';
+import { DUELS } from '../../src/content/sidework';
+import { STRINGS } from '../../src/content/strings';
 import { KEEPER } from '../../src/content/seat';
 import { done } from '../helpers/app';
 import { FINDS } from '../../src/content/finds';
@@ -171,6 +173,48 @@ describe('a rematch in the arena', () => {
       Object.fromEntries(Array.from({ length: 65 }, (_, i) => [`arena-${i}`, 1]))];
     for (const rematches of bad) expect(isValidState({ ...JSON.parse(JSON.stringify(game)), rematches }, CATALOG), JSON.stringify(rematches).slice(0, 40)).toBe(false);
   });
+
+  test('what the game writes of it, it will read again: with as many bouts as a kept game may hold, or a count at its limit', () => {
+    const full = Object.fromEntries(Array.from({ length: 64 }, (_, i) => [`old-${i}`, 1]));
+    expect(isValidState(JSON.parse(JSON.stringify(at(15, { rematches: full }))), CATALOG)).toBe(true);
+    const game = recordRematch(at(15, { rematches: full }), 'arena-15');
+    expect(isValidState(JSON.parse(JSON.stringify(game)), CATALOG)).toBe(true);
+    expect(rematchesWon(game, 'arena-15')).toBe(1);
+    expect(Object.keys(game.rematches!)).toHaveLength(64);
+    // Room is made by the one that was written down first: the others are kept.
+    expect(Object.hasOwn(game.rematches!, 'old-0')).toBe(false);
+    expect(Object.hasOwn(game.rematches!, 'old-1')).toBe(true);
+    // A bout that is among them already takes nobody's place.
+    const again = recordRematch(game, 'arena-15');
+    expect(Object.keys(again.rematches!)).toHaveLength(64);
+    expect(rematchesWon(again, 'arena-15')).toBe(2);
+    expect(Object.hasOwn(again.rematches!, 'old-1')).toBe(true);
+    // A count at the most a kept game may say stays there.
+    const most = recordRematch(at(15, { rematches: { 'arena-15': 1_000_000 } }), 'arena-15');
+    expect(most.rematches).toEqual({ 'arena-15': 1_000_000 });
+    expect(isValidState(JSON.parse(JSON.stringify(most)), CATALOG)).toBe(true);
+    // Handed more bouts than a game may hold (no kept game has them), it makes room down to what one may: and the
+    // bout just won is never the one that makes way, wherever it stands among them.
+    const over = recordRematch({ rematches: { 'arena-15': 4, ...Object.fromEntries(Array.from({ length: 66 }, (_, i) => [`old-${i}`, 1])) } }, 'arena-15');
+    expect(Object.keys(over.rematches!)).toHaveLength(64);
+    expect(over.rematches!['arena-15']).toBe(5);
+    // A bout under a name no kept game may hold is not written down at all.
+    const before = at(15, { rematches: { 'arena-15': 2 } });
+    expect(recordRematch(before, 'Arena 15')).toBe(before);
+    expect(recordRematch(before, '')).toBe(before);
+  });
+
+  test('every bout that can be won twice has an id a kept game may hold', () => {
+    const bouts = [...ARENA.map((opponent) => arenaMission(at(15), opponent, TEXT).id), MIRROR_ID, ...CUPS.map((cup) => cup.id), ...MASTERS.map((master) => masterId(master.kind)), SEAT_ID];
+    expect(bouts.length).toBeGreaterThan(20);
+    // All of them at once fit in what a kept game may hold of them, with room to spare.
+    expect(bouts.length).toBeLessThan(64);
+    expect(new Set(bouts).size).toBe(bouts.length);
+    for (const id of bouts) expect(id).toMatch(/^[a-z0-9-]{1,48}$/);
+    const all = bouts.reduce((game, id) => recordRematch(game, id), at(15));
+    expect(Object.keys(all.rematches!).sort()).toEqual([...bouts].sort());
+    expect(isValidState(JSON.parse(JSON.stringify(all)), CATALOG)).toBe(true);
+  });
 });
 
 describe('a build to try, followed from the page that names it', () => {
@@ -216,6 +260,34 @@ describe('a build to try, followed from the page that names it', () => {
     expect(refitted.credits).toBe(back.credits);
     expect(refitted.inventory).toEqual(back.inventory);
     expect(sameBuild(refitted.build, advice.build)).toBe(true);
+  });
+
+  test('a pilot in debt fits a build owned in full all the same: nothing is bought, so nothing is paid', () => {
+    const game = rich();
+    const advice = advised(game, 'lancer');
+    const bought = followAdvice(game, advice, CATALOG)!;
+    const owing: GameState = { ...bought, build: { ...STARTER_BUILD }, loadouts: [], credits: -300 };
+    const again = adviceFor(owing, [advice.build], every, CATALOG);
+    expect([again.toBuy, again.cost]).toEqual([[], 0]);
+    expect(canFollow(owing, again)).toBe(true);
+    const refitted = followAdvice(owing, again, CATALOG)!;
+    expect(refitted.credits).toBe(-300);
+    expect(sameBuild(refitted.build, advice.build)).toBe(true);
+    // With nothing in hand the same holds, and one part short does not: a part costs what it costs.
+    expect(canFollow({ ...owing, credits: 0 }, again)).toBe(true);
+    const part = advice.build.head!;
+    const short: GameState = { ...owing, inventory: { ...owing.inventory, [part]: 0 } };
+    const less = adviceFor(short, [advice.build], every, CATALOG);
+    expect(less.toBuy).toEqual(['head']);
+    expect([canFollow(short, less), followAdvice(short, less, CATALOG)]).toEqual([false, null]);
+    // Of the builds on offer, a pilot in debt is advised the furthest one owned in full, as a pilot with money is the furthest one they can pay for.
+    const early = ARCHETYPE_BUILDS.lancer[STAGES[0]];
+    const late = ARCHETYPE_BUILDS.lancer[STAGES[STAGES.length - 1]];
+    expect(sameBuild(early, late)).toBe(false);
+    let both: GameState = rich();
+    for (const build of [early, late]) both = followAdvice(both, adviceFor(both, [build], every, CATALOG), CATALOG)!;
+    const owingBoth: GameState = { ...both, build: { ...STARTER_BUILD }, credits: -300 };
+    expect(sameBuild(adviceFor(owingBoth, [early, late], every, CATALOG).build, late)).toBe(true);
   });
 
   test('it is not followed where it cannot be: too dear, not sold yet, or flown already; and the game is left as it was', () => {
@@ -358,10 +430,75 @@ describe('a telling that knows the pilot has been here', () => {
     ];
     for (const fault of bad) expect(isValidState({ ...JSON.parse(JSON.stringify(game)), ...fault }, CATALOG), JSON.stringify(fault).slice(0, 50)).toBe(false);
   });
+
+  test('what the game writes of earlier tellings and of its mail, it will read again', () => {
+    // A kept game may name anything as shown or read: only plain ids are remembered as told before.
+    const odd = { ...told(), scenes: ['act-1', 'Act Two', ''], read: ['welcome', 'Read Me'] };
+    expect(isValidState(JSON.parse(JSON.stringify(odd)), CATALOG)).toBe(true);
+    const next = startNewCycle(odd, MISSIONS);
+    expect(next.told).toEqual({ scenes: ['act-1'], read: ['welcome'] });
+    expect(isValidState(JSON.parse(JSON.stringify(next)), CATALOG)).toBe(true);
+    // More than a kept game may hold: the last thousand are kept, and what this telling added is among them.
+    const many = Array.from({ length: 1000 }, (_, i) => `old-${i}`);
+    const long = startNewCycle({ ...told(), told: { scenes: many, read: many }, scenes: ['act-1'], read: ['welcome'] }, MISSIONS);
+    expect(long.told!.scenes).toHaveLength(1000);
+    expect(long.told!.read).toHaveLength(1000);
+    expect(long.told!.scenes.at(-1)).toBe('act-1');
+    expect(long.told!.read.at(-1)).toBe('welcome');
+    expect(long.told!.scenes[0]).toBe('old-1');
+    expect(isValidState(JSON.parse(JSON.stringify(long)), CATALOG)).toBe(true);
+    // Mail: with a thousand names written down already, what comes is written down all the same, and the game still opens.
+    const stuffed = { ...done('intro-1', 'intro-2'), mail: many };
+    expect(isValidState(JSON.parse(JSON.stringify(stuffed)), CATALOG)).toBe(true);
+    const arrived = ids(arrivedMessages(stuffed, MESSAGES, MISSIONS));
+    const noted = noteArrivals(stuffed, MESSAGES, MISSIONS);
+    expect(noted.mail).toHaveLength(1000);
+    expect(noted.mail!.slice(-arrived.length)).toEqual(arrived);
+    expect(isValidState(JSON.parse(JSON.stringify(noted)), CATALOG)).toBe(true);
+    expect(noteArrivals(noted, MESSAGES, MISSIONS)).toBe(noted);
+  });
+
+  test('what was won in the arena stays when the story starts over: the duels that leave are the four that are side work', () => {
+    const kind = MASTERS[0].kind;
+    const arena = { arenaRank: 15, cups: [CUPS[0].id], masters: [kind], crowns: [kind], seat: true as const, rematches: { [SEAT_ID]: 2 } };
+    const next = startNewCycle({ ...told(), ...arena }, MISSIONS);
+    expect(next).toMatchObject({ ...arena, cycle: 1, completed: [] });
+    expect(DUELS.map((mission) => mission.phase)).toEqual(['side', 'side', 'side', 'side']);
+    // The question before it says both, and names the duels as side work's.
+    const asked = STRINGS.hub.cycleQuestion(1).join(' ');
+    expect(asked).toContain('arena rank');
+    expect(asked).toContain('Side work and its duels');
+  });
+
+  test('every page of story and every letter has an id a kept game may hold', () => {
+    for (const scene of SCENES) expect(scene.id).toMatch(/^[a-z0-9-]{1,64}$/);
+    for (const message of MESSAGES) expect(message.id).toMatch(/^[a-z0-9-]{1,64}$/);
+    // And all of them together are far fewer than it may hold.
+    expect(SCENES.length).toBeLessThan(500);
+    expect(MESSAGES.length).toBeLessThan(500);
+  });
 });
 
 describe('a saved build and the parts it is made of', () => {
   const rich = (): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), credits: 200_000 });
+
+  test('the places for saved builds are all of them, whatever length a game was kept at; and two builds are the same build slot for slot', () => {
+    const other = { ...STARTER_BUILD, head: 'head-halo' };
+    // A game kept when there were three places has seven now: the three as they were, and four free.
+    const short = { loadouts: [null, other, null] };
+    expect(savedBuilds(short)).toHaveLength(LOADOUT_SLOTS);
+    expect(savedBuilds(short)[1]).toEqual(other);
+    expect(savedBuilds(short).filter((build) => build === null)).toHaveLength(LOADOUT_SLOTS - 1);
+    expect(savedBuilds({ loadouts: [] })).toEqual(Array.from({ length: LOADOUT_SLOTS }, () => null));
+    // One more than there are places is not a place.
+    expect(savedBuilds({ loadouts: Array.from({ length: LOADOUT_SLOTS + 1 }, () => other) })).toHaveLength(LOADOUT_SLOTS);
+    expect(sameBuild(STARTER_BUILD, { ...STARTER_BUILD })).toBe(true);
+    expect(sameBuild(STARTER_BUILD, other)).toBe(false);
+    // A slot left empty is not the same as a slot filled: nothing where the other has nothing.
+    const { shoulder: _, ...bare } = { ...STARTER_BUILD, shoulder: 'wpn-halo-array' };
+    expect(sameBuild({ ...bare, shoulder: 'wpn-halo-array' }, bare)).toBe(false);
+    expect(sameBuild(bare, { ...bare })).toBe(true);
+  });
 
   test('selling the one copy of a part a saved build holds leaves that build a part short: which builds, the shop is told', () => {
     // Build 2 is the starter with another head; the pilot flies the starter and owns that head once.

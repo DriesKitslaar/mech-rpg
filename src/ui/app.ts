@@ -850,14 +850,15 @@ export class App {
     const songs = [...new Set([...listed, ...this.heardNow])].filter((song) => Object.hasOwn(SONGS, song));
     const heard = songs.length !== listed.length || songs.some((song, i) => song !== listed[i]) ? { ...next, heard: songs } : next;
     const timed = seconds > 0 ? { ...heard, stats: { ...heard.stats, seconds: heard.stats.seconds + seconds } } : heard;
-    // The letters that have come since the game was last kept are written down in the order they came.
-    const noted = noteArrivals(timed, MESSAGES, MISSIONS);
-    const { game: awarded, earned } = awardMedals(noted, MEDALS);
+    const { game: awarded, earned } = awardMedals(timed, MEDALS);
     this.medalCredits += earned.reduce((sum, medal) => sum + MEDAL_PAY[medal.tier], 0);
     // The database does not run ahead of the story: while a page of story is waiting to be shown,
     // nothing opens, so what that page is about to reveal is not announced before it.
     const waiting = dueScenes(awarded, SCENES, MISSIONS).length > 0;
-    const { game, opened } = waiting ? { game: awarded, opened: [] } : openEntries(awarded, CODEX, MISSIONS);
+    const { game: entered, opened } = waiting ? { game: awarded, opened: [] } : openEntries(awarded, CODEX, MISSIONS);
+    // The letters that have come since the game was last kept are written down in the order they came: after the
+    // database's entries have opened, since a find can bring a letter with it.
+    const game = noteArrivals(entered, MESSAGES, MISSIONS);
     // An Overdrive that the pilot's level has just opened is said once, so the page it is fitted on gets looked at.
     const before = this.game;
     const drives = before ? OVERDRIVES.filter((id) => overdriveOpen(game, id) && !overdriveOpen(before, id)) : [];

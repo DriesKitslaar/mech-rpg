@@ -1,7 +1,9 @@
 import { adviceAfter, armourLeft, ADVICE, OUTMATCHED_SHARE } from '../../src/core/advice';
+import { chooseAutoPlayerAction, stepBattle } from '../../src/core/ai';
 import { ROUND_LIMIT, createBattle, type BattleEvent, type BattleOptions, type BattleState } from '../../src/core/battle';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
+import { JUGGERNAUT as STRONG } from '../helpers/app';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
 import { charsFor, wrap } from '../../src/ui/widgets';
@@ -81,7 +83,7 @@ describe('what Dispatch says after a defeat', () => {
     // A turn lost to heat, or no Boost and no Guard, comes first: that is flying, and the machine is not judged on it.
     expect(adviceAfter(lost([...stood, { type: 'overheat', unit: 'player' }], {}, leave(1)))).toBe('heat');
     expect(adviceAfter(lost([], {}, leave(1)))).toBe('stance');
-    // What the share is taken of: all the armour the other side came with, a machine that is down counting for nothing left.
+    // What the share is taken of: all the armour the other side came onto the field with, a machine that is down counting for nothing left.
     const s = lost(stood, {}, leave(1));
     expect(armourLeft(s)).toBe(1);
     for (const part of Object.values(s.units[1].parts)) part.ap = 0;
@@ -94,6 +96,45 @@ describe('what Dispatch says after a defeat', () => {
     alone.units = alone.units.filter((unit) => unit.side === 'player');
     expect(armourLeft(alone)).toBe(0);
     expect(adviceAfter(alone)).not.toBe('outmatched');
+  });
+
+  test('a machine destroyed through its core has no armour left, whatever its limbs still carry: two of three down is not "barely marked"', () => {
+    // Three light mechs, flown at by the game's own pilot until two are down: as the rules leave them, not as a hand would.
+    let state = createBattle(STRONG, [ENEMIES['light-mech'], ENEMIES['light-mech'], ENEMIES['light-mech']], CATALOG, 2);
+    const down = (): number => state.units.filter((unit) => unit.side === 'enemy' && unit.destroyed).length;
+    for (let i = 0; i < 4000 && state.outcome === 'ongoing' && down() < 2; i++) state = stepBattle(state, CATALOG, chooseAutoPlayerAction);
+    expect(down()).toBe(2);
+    const enemies = state.units.filter((unit) => unit.side === 'enemy');
+    const wrecks = enemies.filter((unit) => unit.destroyed);
+    // The wrecks went down with armour on their limbs: that is what must not be counted.
+    const onWrecks = wrecks.flatMap((unit) => Object.values(unit.parts)).reduce((sum, part) => sum + Math.max(0, part.ap), 0);
+    expect(onWrecks).toBeGreaterThan(0);
+    const whole = enemies.flatMap((unit) => Object.values(unit.parts)).reduce((sum, part) => sum + part.maxAp, 0);
+    const standing = enemies.filter((unit) => !unit.destroyed).flatMap((unit) => Object.values(unit.parts)).reduce((sum, part) => sum + Math.max(0, part.ap), 0);
+    // Counted with the wrecks' limbs it would be more than half, and with a little less hit, "barely marked".
+    expect((standing + onWrecks) / whole).toBeGreaterThan(0.5);
+    expect(armourLeft(state)).toBeCloseTo(standing / whole);
+    expect(armourLeft(state)).toBeLessThan(0.4);
+    // Lost from there, having flown it soundly: it was a fight, and the machine is not what is blamed.
+    const defeat = structuredClone(state);
+    defeat.outcome = 'defeat';
+    defeat.events = stood;
+    defeat.units[0].repairsLeft = 0;
+    expect(adviceAfter(defeat)).not.toBe('outmatched');
+    // A machine that lost its nerve and left is gone as a wreck is: nothing of it is left on the field.
+    const routed = lost(stood, {}, leave(1));
+    routed.units[1].destroyed = true;
+    const stays = Object.values(routed.units[2].parts).reduce((sum, part) => sum + part.ap, 0);
+    const all = routed.units.filter((u) => u.side === 'enemy').flatMap((u) => Object.values(u.parts)).reduce((sum, part) => sum + part.maxAp, 0);
+    expect(armourLeft(routed)).toBeCloseTo(stays / all);
+  });
+
+  test('the share is of what came onto the field: machines still to come are not counted, for or against', () => {
+    const swarm = structuredClone(createBattle(DEMO_BUILD, [ENEMIES['light-mech']], CATALOG, 1, { reserve: [ENEMIES['light-mech'], ENEMIES['light-mech']] }));
+    expect(swarm.reserve).toHaveLength(2);
+    expect(armourLeft(swarm)).toBe(1);
+    for (const part of Object.values(swarm.units[1].parts)) part.ap = Math.floor(part.maxAp / 4);
+    expect(armourLeft(swarm)).toBeLessThan(0.3);
   });
 
   test('what went most plainly wrong is said first: the contract\'s own terms, then heat, then stance, then repairs', () => {

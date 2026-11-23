@@ -1,6 +1,7 @@
 import type { Mission } from './campaign';
 import { likenessPaint } from './mix';
 import type { GameState } from './game';
+import { BOUT_ID, MAX_BOUTS, MAX_COUNT } from './kept';
 import type { EnemyDef } from './types';
 
 /** The ladder ends with the champion at rank ten. Behind it is a back room with five more, shown only to the champion. */
@@ -46,9 +47,19 @@ export const rematchesWon = (state: Rematched, id: string): number => {
 };
 /** What a bout pays that has been won before, of a purse that was this much in full. */
 export const rematchPurse = (state: Rematched, id: string, purse: number): number => Math.round(purse / 4 / 2 ** Math.min(40, rematchesWon(state, id)));
-/** Writes a rematch won down: its next purse is half of this one's. */
+/**
+ * Writes a rematch won down: its next purse is half of this one's. Only what a kept game may hold is
+ * written: a bout under a plain id, a count no higher than a count may be, and no more bouts than there
+ * is room for (the one written down first makes way, which play never comes to: there are fewer bouts).
+ */
 export function recordRematch<T extends Rematched>(state: T, id: string): T {
-  return { ...state, rematches: { ...state.rematches, [id]: rematchesWon(state, id) + 1 } };
+  if (!BOUT_ID.test(id)) return state;
+  const rematches: Record<string, number> = { ...state.rematches, [id]: Math.min(MAX_COUNT, rematchesWon(state, id) + 1) };
+  for (const bout of Object.keys(rematches)) {
+    if (Object.keys(rematches).length <= MAX_BOUTS) break;
+    if (bout !== id) delete rematches[bout];
+  }
+  return { ...state, rematches };
 }
 /** The mark of a rematch on a bout in the shape of a contract. */
 export const asRematch = (again: boolean): { rematch?: true } => (again ? { rematch: true } : {});

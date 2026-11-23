@@ -235,7 +235,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'tricks', title: 'ENEMY TRICKS',
-    text: 'Shield drones cover the others. Repair drones weld them back together. Jammers spoil your aim. Bomb crawlers go off on a fuse. Carriers launch more. Shoot the helper first. The word over a machine is what it means to do next: AIMS HEAD, WINDS UP, HOLDS.',
+    text: 'Shield drones cover the others. Repair drones weld them back together. Jammers spoil your aim. Bomb crawlers go off on a fuse. Carriers launch more. Shoot the helper first. While you aim at a machine, the word beside its name is what it means to do next: AIMS HEAD, WINDS UP, HOLDS.',
   },
   {
     id: 'ranks', title: 'RANKS',

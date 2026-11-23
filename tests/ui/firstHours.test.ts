@@ -15,6 +15,7 @@ import { DEMO_BUILD } from '../../src/content/parts';
 import { STRINGS } from '../../src/content/strings';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen, MENU_ROW_CHARS } from '../../src/ui/battleScreen';
+import { PANEL_Y } from '../../src/ui/stage';
 import { LOGICAL_W } from '../../src/ui/display';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { archetypeOf } from '../../src/core/archetype';
@@ -33,7 +34,9 @@ import { CATALOG, SHOP_PARTS } from '../../src/content/parts';
 import type { App } from '../../src/ui/app';
 import { BRIEFING_HOLD_MS } from '../../src/ui/briefingScreen';
 import { ARCHIVE, KIND_CHARS, kindOf } from '../../src/ui/hubScreen';
-import { MESSAGE_CHARS } from '../../src/ui/tags';
+import { MESSAGE_CHARS, intentText } from '../../src/ui/tags';
+import { COLORS } from '../../src/ui/widgets';
+import { intentOf } from '../../src/core/intent';
 import { JUGGERNAUT, accept, done, finishBattle, finishMission, fresh, inHub, makeApp, press, select, snap, strong } from '../helpers/app';
 import { record } from '../helpers/canvas';
 import { ALL } from '../helpers/testParts';
@@ -203,15 +206,68 @@ describe('where the cursor rests when the menu is handed over', () => {
     settle(flow);
     expect(flow.phase).toBe('action');
     expect(under(flow)).toBe('auto');
-    // Backing out of a retreat leaves it where it was.
-    pick(flow, 'retreat');
-    flow.onInput('cancel');
-    expect(under(flow)).toBe('auto');
     // Anything the pilot does themselves ends it: the next turn opens on Fire again.
     pick(flow, 'endTurn');
     settle(flow);
     expect(flow.phase).toBe('action');
     expect(under(flow)).toBe('fire');
+  });
+
+  test('a list that is opened and left again leaves the cursor on the row it was opened from: a stray A does not fly the turn', () => {
+    const flow = ready(battle(DEMO_BUILD, ['scrap-king']));
+    pick(flow, 'auto');
+    settle(flow);
+    expect(flow.phase).toBe('action');
+    expect(under(flow)).toBe('auto');
+    const round = flow.state.round;
+    // The weapons, and B: back on Fire, where the list was opened. A opens it again; nothing was fired, no turn was flown.
+    pick(flow, 'fire');
+    expect(flow.phase).toBe('weapon');
+    flow.onInput('cancel');
+    expect([flow.phase, under(flow)]).toEqual(['action', 'fire']);
+    flow.onInput('confirm');
+    expect(flow.phase).toBe('weapon');
+    // From a target back to the weapons, and from there back to Fire.
+    flow.onInput('confirm');
+    expect(flow.phase).toBe('target');
+    flow.onInput('cancel');
+    flow.onInput('cancel');
+    expect([flow.phase, under(flow)]).toEqual(['action', 'fire']);
+    // The question before a retreat, answered No or left with B: back on Retreat, which asks again and rests on No.
+    for (const leave of ['confirm', 'cancel'] as const) {
+      pick(flow, 'retreat');
+      expect(flow.phase).toBe('confirmRetreat');
+      flow.onInput(leave);
+      expect([flow.phase, under(flow)]).toEqual(['action', 'retreat']);
+    }
+    expect(flow.state.round).toBe(round);
+    expect(flow.state.outcome).toBe('ongoing');
+    // Nothing was done, so the machine is still offered the next turn: after one it flies itself, the menu opens on Auto Turn.
+    expect(flow.flewItself).toBe(true);
+    pick(flow, 'auto');
+    settle(flow);
+    if (flow.phase === 'action') expect(under(flow)).toBe('auto');
+  });
+
+  test('the same for the list of parts to repair, and for the enemies a painter can mark', () => {
+    const state = structuredClone(ready(battle(DEMO_BUILD, ['scrap-king'])).state);
+    state.units[0].parts.arms!.ap = 1;
+    const flow = ready(state, { auto: true });
+    expect(under(flow)).toBe('auto');
+    expect(item(flow, 'repair').enabled).toBe(true);
+    pick(flow, 'repair');
+    expect(flow.phase).toBe('repairPart');
+    flow.onInput('cancel');
+    expect([flow.phase, under(flow)]).toEqual(['action', 'repair']);
+    const painting = ready(battle({ ...DEMO_BUILD, module: 'mod-painter' }, ['gun-turret', 'tank']), { auto: true });
+    expect(under(painting)).toBe('auto');
+    pick(painting, 'module');
+    expect(painting.phase).toBe('moduleTarget');
+    painting.onInput('cancel');
+    expect([painting.phase, under(painting)]).toEqual(['action', 'module']);
+    // Nothing was marked, and the machine is still offered the turn.
+    expect(painting.state.units.filter((unit) => unit.painted > 0)).toEqual([]);
+    expect(painting.flewItself).toBe(true);
   });
 
   test('and in the next battle of the same contract, when the last turn of the one before was flown so', () => {
@@ -826,14 +882,48 @@ describe('a shot that is not the pilot\'s says whose it was', () => {
   });
 });
 
-describe('the word over an enemy says what it means to do, and the manual says so', () => {
-  test('the chapter on what enemies do names those words as the field writes them, in both languages', () => {
+describe('what an enemy means to do is said beside its name while it is aimed at, and the manual says so', () => {
+  test('the chapter on what enemies do names those words as the screen writes them, and where they stand, in both languages', () => {
     const tricks = MANUAL.find((topic) => topic.id === 'tricks')!;
     expect(tricks.text.length).toBeLessThanOrEqual(330);
-    for (const [language, S] of [['en', STRINGS], ['nl', STRINGS_NL]] as const) {
+    for (const [language, S, where, not] of [['en', STRINGS, 'While you aim at a machine, the word beside its name', 'over a machine'], ['nl', STRINGS_NL, 'Mik je op een machine, dan staat naast zijn naam', 'boven een machine']] as const) {
       setLanguage(language);
       const text = MANUAL.find((topic) => topic.id === 'tricks')!.text;
+      expect(text.length, language).toBeLessThanOrEqual(330);
       for (const word of [S.intent.aim('head'), S.intent.windUp, S.intent.hold]) expect(text, `${language} ${word}`).toContain(word);
+      expect(text, language).toContain(where);
+      expect(text, language).not.toContain(not);
+    }
+  });
+
+  test('and that is where it stands: on the row of the target\'s name in the panel, and with the menu up nowhere', () => {
+    for (const language of ['en', 'nl'] as const) {
+      setLanguage(language);
+      const flow = ready(battle());
+      const screen = new BattleScreen(flow, sprites, ALL, { fast: true });
+      const texts = () => record((ctx) => screen.draw(ctx)).texts;
+      const enemy = flow.state.units.find((u) => u.side === 'enemy')!;
+      // A turret lines up a shot at a part: that is the word the manual's first example is.
+      expect(intentOf(flow.state, enemy, ALL)?.kind).toBe('aim');
+      const word = intentText(intentOf(flow.state, enemy, ALL))!;
+      expect(word, language).toMatch(language === 'en' ? /^AIMS [A-Z]+$/ : /^MIKT [A-Z]+$/);
+      // With the menu of actions up, nothing on the screen says it: not over the machine, not in the panel.
+      expect(flow.phase).toBe('action');
+      expect(texts().filter((t) => t.text === word), language).toEqual([]);
+      // Aimed at, it is on the row of the name: right of it, under the field, in the colour of what is coming.
+      pick(flow, 'fire');
+      flow.onInput('confirm');
+      expect(flow.phase).toBe('target');
+      const aimed = texts();
+      const name = aimed.find((t) => t.text === enemy.name.toUpperCase() && t.color === COLORS.accent)!;
+      const said = aimed.filter((t) => t.text === word);
+      expect(said.length, language).toBe(1);
+      // The row of the name: the small letters of a tag sit a pixel lower in it than the name's.
+      expect(said[0].color).toBe(COLORS.danger);
+      expect(said[0].y - name.y).toBeGreaterThanOrEqual(0);
+      expect(said[0].y - name.y).toBeLessThanOrEqual(2);
+      expect(said[0].left).toBeGreaterThan(name.right);
+      expect(name.y).toBeGreaterThanOrEqual(PANEL_Y);
     }
   });
 });

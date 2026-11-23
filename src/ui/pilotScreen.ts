@@ -1,5 +1,5 @@
-import { ARCHETYPES, adviceFor, archetypeOf, canFollow, keptAt, sameBuild, wonAs, type Archetype, type BuildAdvice } from '../core/archetype';
-import { DEFAULT_CALLSIGN, type BuildSlot, type GameState } from '../core/game';
+import { ARCHETYPES, adviceFor, archetypeOf, canFollow, keptAt, wonAs, type Archetype, type BuildAdvice } from '../core/archetype';
+import { DEFAULT_CALLSIGN, sameBuild, type BuildSlot, type GameState } from '../core/game';
 import { crownHeld, crownsHeld, mastersOpen } from '../core/masters';
 import { seatHeld } from '../core/seat';
 import { ALL_STRIPES, MAX_STRIPES, nextPointAt, nextStripeAt, stripePoints, stripesHeld, stripesOf } from '../core/stripes';

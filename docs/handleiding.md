@@ -60,7 +60,7 @@ de Nederlandse erbij waar je ze het eerst nodig hebt.
 | Contracts | Contracten | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld), drie wisselende losse contracten, één klus met een eigen doel en één zwerm. Onderaan staat het archief. Onder de lijst staat wat voor rij je voor je hebt: **STORY** (het verhaal), **SIDE WORK** (een bijklus, eenmalig), **OPEN** (een los contract: na elke winst staat er een ander), **JOB**, **ACCOUNT**, **SWARM**, **PATROL** of **ARCHIVE**. Een **+** achter het loon betekent meer loon als je het in de gevraagde klasse wint. |
 | Arena | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
 | Training | Training | Dertien oefeningen in een geleende mech, en het proefveld voor je eigen build. Naast het woord staat hoeveel oefeningen open staan en nog niet gehaald zijn (**3 open**). |
-| The Gauntlet | De Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
+| The Gauntlet | De Gauntlet | Een reeks etages in een standaardframe, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
 | Garage | Garage | Onderdelen wisselen, verf kiezen (L1/R1), je eigen lak mengen (links), zeven builds bewaren (rechts). |
 | Shop | Winkel | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. Onderaan staat waar de afkortingen (AP, WT, DRAIN) uitgelegd worden: in de Database, op het blad **MANUAL**. |
 | Pilot | Piloot | Niveau en vaardigheden, medailles, een logboek van alles wat je gedaan hebt, en de zeven klassen (**Class**). |
@@ -190,7 +190,7 @@ Niet elk gevecht win je door alles te vernietigen. Boven het veld staat wat er g
   weer bovenop.
 - Mag je eigen mech niet uitrukken (te zwaar, te weinig energie, geen wapen) en heb je geen geld om
   dat op te lossen, dan kun je de patrouille nog steeds vliegen: Dispatch leent je daarvoor een
-  standaardmecha. De rest van de contracten wacht tot je eigen mech weer in orde is.
+  standaardframe. De rest van de contracten wacht tot je eigen mech weer in orde is.
 
 ## Het verhaal
 
@@ -207,8 +207,9 @@ bepaalt wie er later iets voor je doet, en wat er aan het eind over je geschreve
 **Een nieuwe cyclus weet dat je er al geweest bent.**
 
 - **Wat blijft en wat opnieuw begint** staat in de vraag die het spel stelt voor je begint: je
-  credits, onderdelen, level, perks en arenarang blijven. Bijklussen, de duels en het archief
-  beginnen opnieuw: ze komen terug naarmate het verhaal vordert.
+  credits, onderdelen, level, perks en arenarang blijven. Bijklussen, met de vier duels die
+  daarbij horen, en het archief beginnen opnieuw: ze komen terug naarmate het verhaal vordert.
+  Wat je in de arena hebt bereikt, blijft allemaal: je rang, de bekers, de kronen en de stoel.
 - **Overslaan.** Een verhaalpagina of gesprek dat je in een eerdere cyclus al zag, sla je over met
   **B**; rechtsboven staat dan **B: skip, told before**. Een vraag die je gesteld wordt, moet je
   wel opnieuw beantwoorden, en het einde sla je nooit over. In je eerste cyclus doet **B** op een
@@ -251,7 +252,9 @@ spiegelgevecht, een beker, een meester. Dat is een revanche; de briefing begint 
 
 - **De pot wordt steeds kleiner.** De eerste revanche betaalt een kwart van de pot, elke volgende
   de helft van de vorige, tot er niets meer te halen valt. De lijst van de arena laat zien wat
-  een rij nu betaalt.
+  een rij nu betaalt. Alleen bij een meester van wie je de kroon hebt (**CROWN**) en bij de
+  achtste stoel als die van jou is (**HELD**) staat dat woord op die plek: wat de revanche dan
+  betaalt, staat in de briefing.
 - **Een revanche is geen contract.** Hij komt niet op je teller van gewonnen contracten, het open
   bord verandert er niet door, en je verdient er geen streep mee.
 - Een gevecht in de arena dat je **voor het eerst** wint, telt wel als gewonnen contract: daarna

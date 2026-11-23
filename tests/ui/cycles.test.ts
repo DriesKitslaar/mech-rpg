@@ -23,7 +23,7 @@ describe('the question before the story starts over', () => {
     expect(question(1)).toEqual([
       'Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
       // What leaves the list of contracts until the story brings it back.
-      'Side work, duels and the', 'Archive start over with it.',
+      'Side work and its duels, and', 'the Archive, start over too.',
       'Tougher enemies, better pay,', 'one more step at the bench.',
     ]);
     expect(question(2)).toEqual(question(1));

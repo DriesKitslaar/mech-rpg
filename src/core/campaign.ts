@@ -2,6 +2,7 @@ import type { Archetype } from './archetype';
 import type { EnemyMark, OverdriveId } from './battle';
 import type { Support } from './battle';
 import type { GameState } from './game';
+import { keptIds } from './kept';
 import type { JobKind } from './jobs';
 import { crownsHeld } from './masters';
 import { seatHeld } from './seat';
@@ -406,7 +407,9 @@ export function otherOffer(state: GameState, mission: Mission, missions: Mission
  */
 export function startNewCycle(state: GameState, missions: Mission[]): GameState {
   if (!campaignComplete(state, missions)) throw new Error('the campaign is not complete');
-  const also = (kept: string[] | undefined, more: string[]): string[] => [...(kept ?? []), ...more.filter((id) => !(kept ?? []).includes(id))];
+  // Only what a kept game may hold is remembered: a game may name anything as shown or read, and what is
+  // written here is read back with more care than that.
+  const also = (kept: string[] | undefined, more: string[]): string[] => keptIds([...(kept ?? []), ...more.filter((id) => !(kept ?? []).includes(id))]);
   const told = { scenes: also(state.told?.scenes, state.scenes), read: also(state.told?.read, state.read) };
   return { ...state, completed: [], read: [], scenes: [], choices: {}, endingSeen: false, cycle: state.cycle + 1, told, mail: [] };
 }
@@ -478,7 +481,9 @@ export function stockFor(state: GameState, parts: Part[], unlocks: Record<string
 
 /**
  * Messages that have arrived, oldest first: in the order they came, as far as that was written down
- * (`GameState.mail`), and before those, in the order of the list, whatever arrived before it was.
+ * (`GameState.mail`), and after those, in the order of the list, whatever has arrived and is not
+ * written down yet: it came after everything that is. (A game from before the order was kept has
+ * nothing written down, and its letters in the order of the list, as it always had them.)
  * A letter that has been read stays where it is, whatever has changed since: one that waits for
  * something not to have happened yet (a ninth check, a verdict) is not taken back out of the inbox
  * when it happens. The inbox is emptied when the story starts over.
@@ -488,7 +493,8 @@ export function arrivedMessages(state: GameState, messages: Message[], missions:
   const arrived = messages.filter((m) => (state.read.includes(m.id) || reached(state, m.after, missions)) && (!m.faction || m.faction === chosen));
   const came = Array.isArray(state.mail) ? state.mail : [];
   const when = (m: Message): number => came.indexOf(m.id);
-  return [...arrived.filter((m) => when(m) < 0), ...arrived.filter((m) => when(m) >= 0).sort((a, b) => when(a) - when(b))];
+  // What is not written down yet came after everything that is: it is the last to come, in the order of the list.
+  return [...arrived.filter((m) => when(m) >= 0).sort((a, b) => when(a) - when(b)), ...arrived.filter((m) => when(m) < 0)];
 }
 
 /**
@@ -498,7 +504,8 @@ export function arrivedMessages(state: GameState, messages: Message[], missions:
 export function noteArrivals(state: GameState, messages: Message[], missions: Mission[]): GameState {
   const came = Array.isArray(state.mail) ? state.mail : [];
   const fresh = arrivedMessages(state, messages, missions).map((m) => m.id).filter((id) => !came.includes(id));
-  return fresh.length === 0 ? state : { ...state, mail: [...came, ...fresh] };
+  // No more is written down than a kept game may hold: of too many, the last.
+  return fresh.length === 0 ? state : { ...state, mail: keptIds([...came, ...fresh]) };
 }
 
 /** The scenes the pilot should be shown now, in list order: reached, not passed, not seen. */

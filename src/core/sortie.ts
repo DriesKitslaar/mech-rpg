@@ -1,5 +1,5 @@
 import { validatePlayerBuild } from './build';
-import { BUILD_SLOTS, checkLoadout, loadLoadout, type GameState } from './game';
+import { checkLoadout, loadLoadout, sameBuild, type GameState } from './game';
 import type { Build, Catalog } from './types';
 
 /** A build a contract can be taken in: the one on the floor (`slot` null), or a saved one, by the slot it is kept in. */
@@ -7,8 +7,6 @@ export interface Sortie {
   slot: number | null;
   build: Build;
 }
-
-const same = (a: Build, b: Build): boolean => BUILD_SLOTS.every((slot) => a[slot] === b[slot]);
 
 /**
  * What a pilot can take a contract in, the build on the floor first: then every saved build that
@@ -18,7 +16,7 @@ const same = (a: Build, b: Build): boolean => BUILD_SLOTS.every((slot) => a[slot
  */
 export function sortieBuilds(game: GameState, catalog: Catalog): Sortie[] {
   const saved = game.loadouts.flatMap((build, slot): Sortie[] =>
-    (build && checkLoadout(game, slot, catalog) === null && validatePlayerBuild(build, catalog).length === 0 && !same(build, game.build) ? [{ slot, build }] : []));
+    (build && checkLoadout(game, slot, catalog) === null && validatePlayerBuild(build, catalog).length === 0 && !sameBuild(build, game.build) ? [{ slot, build }] : []));
   return [{ slot: null, build: game.build }, ...saved];
 }
 
@@ -36,7 +34,7 @@ export interface Grounded {
  */
 export function groundedBuilds(game: GameState, catalog: Catalog): Grounded[] {
   return game.loadouts.flatMap((build, slot): Grounded[] => {
-    if (!build || same(build, game.build)) return [];
+    if (!build || sameBuild(build, game.build)) return [];
     const refused = checkLoadout(game, slot, catalog);
     if (refused) return [{ slot, ...(refused.part !== undefined ? { part: refused.part } : {}) }];
     return validatePlayerBuild(build, catalog).length > 0 ? [{ slot }] : [];

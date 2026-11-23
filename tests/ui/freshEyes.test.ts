@@ -1,13 +1,14 @@
 import { createBattle, type BattleEvent, type BattleState } from '../../src/core/battle';
 import { ARCHETYPES } from '../../src/core/archetype';
 import type { Settlement } from '../../src/core/economy';
-import { buy, sell, type GameState } from '../../src/core/game';
+import { buy, isValidState, sell, type GameState } from '../../src/core/game';
 import type { EnemyDef } from '../../src/core/types';
 import { JUKEBOX, UNITS, WORLD } from '../../src/content/codex';
 import { FINDS } from '../../src/content/finds';
 import { setLanguage } from '../../src/content/language';
 import { MEDALS } from '../../src/content/medals';
-import { MISSIONS } from '../../src/content/missions';
+import { MESSAGES, MISSIONS } from '../../src/content/missions';
+import { arrivedMessages, checksHeld, decide, noteArrivals } from '../../src/core/campaign';
 import '../../src/content/nl';
 import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 import type { App } from '../../src/ui/app';
@@ -229,13 +230,26 @@ describe('the shop says where its short words are explained', () => {
 });
 
 describe('no word lies over another, and none runs off the screen', () => {
-  /** What is written on the screen once: a word with an edge is written several times a pixel apart. */
-  function written(app: App): Written[] {
-    const texts = record((ctx) => app.draw(ctx)).texts.filter((t) => t.text.trim() !== '');
-    return texts.filter((t, i) => !texts.slice(0, i).some((u) => u.text === t.text && Math.abs(u.y - t.y) <= 2 && Math.abs(u.left - t.left) <= 2));
-  }
   /** How tall the letters of a text stand: a row of the usual size is eleven apart from the next. */
   const tall = (t: Written): number => Math.max(6, t.size - 3);
+  /**
+   * What is written on the screen once: a word with an edge is written several times a pixel apart. A word that a
+   * panel was then drawn over is not on the screen: one that lies wholly under a solid fill that came after it.
+   * (One that such a fill covers in part is still counted: half a word showing beside a panel is a fault.)
+   */
+  function written(app: App): Written[] {
+    const drawn = record((ctx) => app.draw(ctx));
+    let texts: Written[] = [];
+    for (const step of drawn.order) {
+      if (step.kind === 'text') texts.push(drawn.texts[step.at]);
+      if (step.kind !== 'rect') continue;
+      const fill = drawn.rects[step.at];
+      if (fill.alpha !== 1 || fill.blend !== 'source-over' || !/^#[0-9a-f]{6}$/i.test(fill.color)) continue;
+      texts = texts.filter((t) => !(t.left >= fill.x && t.right <= fill.x + fill.w && t.y >= fill.y && t.y + tall(t) <= fill.y + fill.h));
+    }
+    texts = texts.filter((t) => t.text.trim() !== '');
+    return texts.filter((t, i) => !texts.slice(0, i).some((u) => u.text === t.text && Math.abs(u.y - t.y) <= 2 && Math.abs(u.left - t.left) <= 2));
+  }
   function crowded(app: App): string[] {
     const texts = written(app);
     const out: string[] = [];
@@ -259,6 +273,9 @@ describe('no word lies over another, and none runs off the screen', () => {
       grudge: { name: 'Brakk', kind: 'heavy-mech', origin: 'wrecked', knows: 'wpn-lance-emitter', met: 1, waited: 2 },
       stats: { ...base.stats, contracts: 123, lost: 45, retreats: 6, kills: 789, seconds: 360000 },
       settings: { ...base.settings, language },
+      // The longest callsign there is, bench work on what is fitted, and a part owned twice: each adds letters to a row.
+      callsign: 'OCTAVIAN', tuning: { 'head-colossus': 2, 'wpn-lance-emitter': 2, 'gen-singularity': 1 },
+      inventory: { ...base.inventory, 'wpn-pulse-carbine': 2, 'head-halo': 3 },
     };
   }
 
@@ -343,6 +360,51 @@ describe('no word lies over another, and none runs off the screen', () => {
     press(app, 'cancel', 'cancel');
     finishMission(app);
     look('bill');
+    expect(faults).toEqual([]);
+  });
+
+  test.each(['en', 'nl'] as const)('where the long game put new words: a question on the class page, a rematch, the question before a new telling, and the list of one (%s)', (language) => {
+    const { app } = inHub(veteran(language));
+    const faults: string[] = [];
+    const look = (where: string): void => { for (const fault of crowded(app)) faults.push(`${where}: ${fault}`); };
+    // The class page: for every class whose build can be bought and fitted, the question over the list.
+    select(app, 'pilot');
+    for (let i = 0; i < 6 && snap(app).page !== 'classes'; i++) press(app, 'next');
+    let asked = 0;
+    for (let row = 0; row < ARCHETYPES.length; row++) {
+      look(`class ${row}`);
+      press(app, 'confirm');
+      if ((snap(app).classes as { asking: boolean }).asking) { asked += 1; look(`class ${row} asked`); press(app, 'cancel'); }
+      press(app, 'down');
+    }
+    expect(asked).toBeGreaterThan(3);
+    press(app, 'cancel');
+    // A rematch of the ladder's first rank: its briefing, row by row, and its bill.
+    select(app, 'arena');
+    select(app, 'rank-1');
+    expect(snap(app).screen).toBe('briefing');
+    for (let row = 0; row < snap(app).menu.items.length; row++) { look(`rematch briefing ${row}`); press(app, 'down'); }
+    select(app, 'accept');
+    finishMission(app);
+    expect(record((ctx) => app.draw(ctx)).texts.some((t) => t.text === STRINGS.settlement.rematchWon)).toBe(true);
+    look('rematch bill');
+    press(app, 'confirm');
+    if (snap(app).screen !== 'hub') press(app, 'cancel');
+    expect(snap(app).screen).toBe('hub');
+    // The question before a new telling: seven lines and two answers.
+    select(app, 'cycle');
+    look('cycle question');
+    press(app, 'down');
+    look('cycle question, on yes');
+    press(app, 'confirm');
+    for (let i = 0; i < 200 && snap(app).screen !== 'hub'; i++) press(app, 'confirm');
+    expect(app.game!.cycle).toBe(1);
+    // The list of a later telling: every row that was never won ends in a star, and the line under it says so.
+    select(app, 'contracts');
+    const rows = snap(app).menu.items;
+    expect(rows.some((item) => item.label.endsWith(` ${UNFLOWN_MARK}`))).toBe(true);
+    for (let i = 0; i < rows.length; i++) { look(`later contracts ${i}`); press(app, 'down'); }
+    // And the first page of story that is told again, with what B does in its corner.
     expect(faults).toEqual([]);
   });
 });
@@ -786,6 +848,71 @@ describe('the long game: a telling that knows the pilot has been here', () => {
     select(app, 'messages');
     expect(snap(app).menu.items[0]).toMatchObject({ id: 'mirror-match', note: STRINGS.messagesScreen.isNew });
     expect(snap(app).menu.items.slice(1).map((item) => item.id)).toEqual([...before].reverse());
+  });
+
+  test('a letter that a find brings is the last to come: on top and marked new, not under everything that was read', () => {
+    // The end of the audit in a later telling, with the box and eight checks, and every letter read: the ninth
+    // check is on a string among a thief's helmets, and with it comes the letter that makes the third offer.
+    const WAR = ['intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
+      'choice-undertow', 'undertow-3', 'undertow-4', 'undertow-5', 'finale-undertow', 'quest-1', 'quest-2', 'quest-3', 'audit-1', 'audit-2', 'audit-3'];
+    const eight = ['dock', 'krell', 'kite', 'marrow', 'convoy', 'debt', 'hatch', 'king'].map((id) => `check-${id}`);
+    const audited: GameState = { ...decide(done(...WAR), 'logs', 'keep'), cycle: 1, codex: eight };
+    const { app, store } = inHub(audited);
+    app.commit({ ...app.game!, read: arrivedMessages(app.game!, MESSAGES, MISSIONS).map((m) => m.id) });
+    app.go('hub');
+    expect(checksHeld(app.game!)).toBe(8);
+    expect(snap(app).menu.items.find((item) => item.id === 'messages')!.note).toBeUndefined();
+    const before = savedGame(store).mail!;
+    expect(before).not.toContain('third-offer');
+    // More letters than the page has rows: one filed as the oldest would be out of sight.
+    expect(before.length).toBeGreaterThanOrEqual(20);
+    app.bookSettlement({ won: true, reward: 500, ammoCost: 0, repairCost: 0, net: 500, lines: [], rank: 'B' }, MISSIONS.find((m) => m.id === 'bounty-1')!);
+    expect(app.game!.codex).toContain('check-magpie');
+    expect(checksHeld(app.game!)).toBe(9);
+    // It is written down with the game that the find was written down in, as the last to come.
+    expect(savedGame(store).mail!.at(-1)).toBe('third-offer');
+    app.go('hub');
+    const row = snap(app).menu.items.find((item) => item.id === 'messages')!;
+    expect(row.note).toBe(STRINGS.hub.unread(savedGame(store).mail!.length - before.length));
+    select(app, 'messages');
+    expect(snap(app).menu.items[0]).toMatchObject({ id: 'third-offer', note: STRINGS.messagesScreen.isNew });
+    // And it is drawn: the word NEW is on the page, on the first row.
+    const drawn = record((ctx) => app.draw(ctx)).texts;
+    const subject = MESSAGES.find((m) => m.id === 'third-offer')!.subject;
+    const title = drawn.find((t) => t.text.includes(subject))!;
+    expect(title).toBeDefined();
+    expect(drawn.some((t) => t.text === STRINGS.messagesScreen.isNew && Math.abs(t.y - title.y) <= 1)).toBe(true);
+  });
+
+  test('a letter that was never written down is read as the last to come, and one written down keeps its place', () => {
+    const game: GameState = { ...done('intro-1', 'intro-2'), mail: ['after-intro-1'] };
+    const ids = arrivedMessages(game, MESSAGES, MISSIONS).map((m) => m.id);
+    expect(ids.length).toBeGreaterThan(2);
+    expect(ids[0]).toBe('after-intro-1');
+    // Those not written down follow it in the order of the list, as they would be written down.
+    const rest = MESSAGES.map((m) => m.id).filter((id) => ids.includes(id) && id !== 'after-intro-1');
+    expect(ids.slice(1)).toEqual(rest);
+    expect(noteArrivals(game, MESSAGES, MISSIONS).mail).toEqual(ids);
+    // A game from before letters were written down has them as the list does.
+    const { mail: _, ...old } = game;
+    expect(arrivedMessages(old, MESSAGES, MISSIONS).map((m) => m.id)).toEqual(MESSAGES.map((m) => m.id).filter((id) => ids.includes(id)));
+  });
+
+  test('a kept game with a thousand names for its mail is opened, written to, and opened again', () => {
+    const many = Array.from({ length: 1000 }, (_, i) => `old-${i}`);
+    const kept: GameState = { ...strong(done('intro-1', 'intro-2')), scenes: ['act-1', 'talk-kite'], mail: many };
+    expect(isValidState(JSON.parse(JSON.stringify(kept)), CATALOG)).toBe(true);
+    const { app, store } = inHub(kept);
+    // Opening it wrote the letters that have come down, and what was written is a game that opens.
+    const written = savedGame(store);
+    expect(isValidState(written, CATALOG)).toBe(true);
+    expect(written.mail).toHaveLength(1000);
+    expect(written.mail!.at(-1)).not.toMatch(/^old-/);
+    const again = inHub(written).app;
+    expect(again.game!.mail).toEqual(written.mail);
+    // And the inbox has its letters, the last to come on top.
+    select(app, 'messages');
+    expect(snap(app).menu.items[0].id).toBe(written.mail!.at(-1));
   });
 
   test('in a later telling a contract that was never won ends in a star, and the line under the list says what the star is; nothing is starred in a first telling', () => {

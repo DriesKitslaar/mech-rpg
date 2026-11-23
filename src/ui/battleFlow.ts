@@ -77,6 +77,8 @@ export class BattleFlow {
   private weapon: WeaponSlot | null = null;
   /** The row of the action menu to come back to, after something that leaves the turn going. */
   private keepCursor: number | null = null;
+  /** The row of the menu a list was opened from (the weapons, the parts to repair, a question): B out of it comes back here. */
+  private openedFrom: number | null = null;
   /** The weapon the pilot's last kill readied, while the run it belongs to goes on: the weapon menu opens on it. */
   private chained: WeaponSlot | null = null;
   /** The events, by their place in the battle's list, at which a kill readied a weapon for nothing: see `readiedForNothing`. */
@@ -531,6 +533,17 @@ export class BattleFlow {
     this.overheatWarning = false;
   }
 
+  /**
+   * Back from a list the pilot opened and left again without choosing: the cursor is on the row it was
+   * opened from, and not wherever the menu would rest of itself. (A pilot who lets the machine fly has
+   * the menu rest on Auto Turn: one press too many there would fly the turn.)
+   */
+  private backToActions(): void {
+    const row = this.openedFrom;
+    this.openActionMenu();
+    if (row !== null && this.menu.items[row]) this.menu.cursor = row;
+  }
+
   /** The row the cursor rests on as the menu is handed over. */
   private restingRow(items: MenuItem[]): number {
     const at = (id: ActionId): number => items.findIndex((item) => item.id === id);
@@ -712,6 +725,7 @@ export class BattleFlow {
           return;
         }
         if (input !== 'confirm' || !item?.enabled) return;
+        this.openedFrom = this.menu.cursor;
         switch (item.id as ActionId) {
           case 'fire': return this.openWeaponMenu();
           case 'repair': return this.openRepairMenu();
@@ -742,11 +756,11 @@ export class BattleFlow {
           default: return this.act({ type: item.id as 'boost' | 'guard' | 'cool' | 'endTurn' });
         }
       case 'confirmRetreat':
-        if (input === 'cancel' || (input === 'confirm' && item.id === 'no')) return this.openActionMenu();
+        if (input === 'cancel' || (input === 'confirm' && item.id === 'no')) return this.backToActions();
         if (input === 'confirm') this.act({ type: 'retreat' });
         return;
       case 'weapon': {
-        if (input === 'cancel') return this.openActionMenu();
+        if (input === 'cancel') return this.backToActions();
         if (input !== 'confirm' || !item?.enabled) return;
         const slot = item.id as WeaponSlot;
         const target = this.firstTarget(slot);
@@ -765,11 +779,11 @@ export class BattleFlow {
         }
         return;
       case 'repairPart':
-        if (input === 'cancel') return this.openActionMenu();
+        if (input === 'cancel') return this.backToActions();
         if (input === 'confirm') this.act({ type: 'repair', part: item.id as FrameSlot });
         return;
       case 'moduleTarget':
-        if (input === 'cancel') return this.openActionMenu();
+        if (input === 'cancel') return this.backToActions();
         if (input === 'confirm' && item) this.act({ type: 'module', target: item.id });
         return;
     }

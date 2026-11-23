@@ -608,6 +608,25 @@ describe('bought and fitted from the page', () => {
     expect(after.build).toEqual(lancer);
   });
 
+  test('and a pilot in debt fits it all the same: the page offers it and does not say there is nothing to buy', () => {
+    const lancer = ARCHETYPE_BUILDS.lancer.war;
+    for (const credits of [-300, 0]) {
+      const owned: GameState = { ...flying(AFTER.war, lancer), build: { ...STARTER_BUILD }, credits };
+      const { app, store } = inHub(owned);
+      select(app, 'pilot');
+      for (let i = 0; i < 6 && snap(app).page !== 'classes'; i++) press(app, 'next');
+      onKind(app, 'lancer');
+      expect(page(app).advice).toMatchObject({ build: lancer, toBuy: [], cost: 0 });
+      const shown = drawn(app);
+      expect(written(shown, 'A: fit this build').color).toBe(COLORS.armor);
+      expect(shown.texts.some((t) => t.text === C.toBuy(0))).toBe(false);
+      press(app, 'confirm', 'down', 'confirm');
+      const after = savedGame(store);
+      expect(after.build, String(credits)).toEqual(lancer);
+      expect(after.credits).toBe(credits + medalPay(after.medals.filter((id) => !owned.medals.includes(id))));
+    }
+  });
+
   test('in Dutch the question, its answers and what stands beside the build fit where they stand', () => {
     const app = onPage(AFTER.war, 'nl');
     onKind(app, 'bastion');
