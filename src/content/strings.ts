@@ -403,6 +403,8 @@ export const STRINGS = {
     // The pilots of accounts (see grudge.ts), who have a page here from the moment their account begins: what one is
     // to the pilot, where a person of the story has whom they work for, and how many there are.
     accountOpen: 'Open account', accountClosed: 'Account closed', accounts: (n: number) => `ACCOUNTS ${n}`,
+    // And what stands behind the callsign in the list, so that a row of an account is told from a person of the story.
+    rowOpen: 'OPEN', rowClosed: 'CLOSED',
     // The jukebox: the songs heard so far, to be played again.
     heard: (n: number, of: number) => `HEARD ${n}/${of}`, notHeard: 'Not heard so far.', play: 'A: play', stop: 'A: stop', playing: 'NOW PLAYING',
     length: (time: string) => `LENGTH ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Music is off. Turn it on in Options to hear this.',

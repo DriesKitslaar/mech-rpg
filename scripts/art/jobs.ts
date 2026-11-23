@@ -885,7 +885,7 @@ const DRAWN: ArtJob[] = [
   portrait('portrait-acct-lapse', 'a gaunt, sleepless pilot with lank dark hair falling over one eye and hollow cheeks, wearing a faded violet flight jacket with a cracked visor hanging round the neck'),
   portrait('portrait-acct-surety', 'a calm, heavyset older pilot with dark brown skin and a neat white beard, wearing a navy flight coat buttoned to the throat with a single brass clasp'),
   portrait('portrait-acct-margin', 'a narrow-faced pilot with short copper-red hair and heavy freckles, wearing a white padded helmet liner and a pale blue flight suit with one ruler-straight red stripe down the shoulder'),
-  portrait('portrait-acct-stub', 'a short, stocky pilot with a square jaw set hard and a flat fringe of black hair, wearing an orange work vest over a grey undersuit with a grease rag over one shoulder'),
+  portrait('portrait-acct-stub', 'a short, stocky pilot with a square jaw set hard, a week of dark stubble and a faded blue knitted cap pulled low over the brow, wearing an orange work vest over a grey undersuit with a grease rag over one shoulder'),
   portrait('portrait-acct-escrow', 'an elegant older pilot with silver hair swept straight back and deep-set dark eyes, wearing a black flight coat with a high stiff collar and a small silver padlock pin'),
   portrait('portrait-acct-harrow', 'a weathered pilot with a sunburnt face, grey-blond hair in two short braids and one eyebrow missing under an old scar, wearing a rust-red quilted flight vest with dust goggles up on the forehead'),
   portrait('portrait-acct-flint', 'a lean pilot with dark skin, close-cropped black hair and a hard level stare, wearing a charcoal flight suit with a single spark-yellow shoulder patch'),

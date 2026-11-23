@@ -189,7 +189,10 @@ export class BattleScreen {
       title?: string;
       /** The word on the band a boss comes in on, where it is not the warning: a meeting with the pilot of an account has the notice's. */
       warning?: string;
-      /** The boss the battle is against, if it is against one: the banner becomes a warning. */
+      /**
+       * Who comes in on a band of their own, by the name on it: the boss the battle is against, if it is against one
+       * (the banner becomes a warning), or the pilot of an account at a meeting (it becomes the notice's word: `warning`).
+       */
       boss?: string;
       /** Makes the handheld rumble for a number of milliseconds. */
       rumble?: (ms: number) => void;

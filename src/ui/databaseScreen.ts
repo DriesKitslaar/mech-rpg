@@ -15,7 +15,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { unitPage } from './unitPage';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawTabs, drawText, wrap } from './widgets';
+import { COLORS, LINE, charsFor, clip, drawList, drawPanel, drawPortrait, drawTabs, drawText, wrap } from './widgets';
 
 const D = STRINGS.database;
 export type DatabasePage = 'units' | 'people' | 'world' | 'finds' | 'manual' | 'music';
@@ -52,6 +52,11 @@ const PORTRAIT = 56;
 export const PERSON_LINES = Math.floor((PAGE.h - 4 - (4 + LINE + 2 + PORTRAIT + 6)) / LINE);
 /** The row of an account in the list of people: by its callsign, which is nobody else's id. */
 const ACCOUNT = 'account:';
+/**
+ * The letters of a callsign its row has room for, beside the word that says what the account is. The game's own
+ * callsigns are shorter; one from a file made elsewhere may not be, and is cut (its page has it whole).
+ */
+export const ROW_NAME = 10;
 /** The most lines a find's text may take on its page, and its clue: both stand under a name and a line about where it comes from. */
 export const FIND_TEXT_LINES = 12;
 export const FIND_CLUE_LINES = 3;
@@ -107,11 +112,11 @@ export class DatabaseScreen implements Screen {
         return { id: find.id, label: findLabel(find, found), enabled: found };
       })),
       manual: new MenuList(MANUAL.map((topic) => ({ id: topic.id, label: titleCase(topic.title), enabled: true }))),
-      // First whoever has an account with the pilot: the one that is open, then those that are closed. Nobody is
-      // listed there before an account with them begins. Then everybody of the story, each with a row like every
-      // unit: somebody not come across yet keeps their name.
+      // First whoever has an account with the pilot: the one that is open, then those that are closed, each with a
+      // word behind the callsign that says which. Nobody is listed there before an account with them begins. Then
+      // everybody of the story, each with a row like every unit: somebody not come across yet keeps their name.
       people: new MenuList([
-        ...ledger(game).map((entry) => ({ id: `${ACCOUNT}${entry.name}`, label: entry.name, enabled: true })),
+        ...ledger(game).map((entry) => ({ id: `${ACCOUNT}${entry.name}`, label: clip(entry.name, ROW_NAME), enabled: true, note: entry.open ? D.rowOpen : D.rowClosed })),
         ...PEOPLE.map((person) => {
           const known = personKnown(game, person);
           return { id: person.id, label: known ? person.name : D.unknown, enabled: known };
@@ -167,9 +172,8 @@ export class DatabaseScreen implements Screen {
     if (this.page === 'people' && selected.id.startsWith(ACCOUNT)) {
       const entry = ledger(this.app.game!).find((account) => `${ACCOUNT}${account.name}` === selected.id);
       if (!entry) return null;
-      const called = { machine: (kind: string) => ALL_ENEMIES[kind]?.name ?? kind, weapon: (id: string) => this.app.deps.catalog[id]?.name ?? id };
       const role = entry.open ? D.accountOpen : D.accountClosed;
-      const lines = wrap(ledgerText(entry, called), PAGE_CHARS);
+      const lines = wrap(ledgerText(entry, this.app.called()), PAGE_CHARS);
       const { portrait } = grudgeFace(BOARD_TEXT, entry.name);
       // A callsign that has no face has what it is to the pilot as its first line, where the face would have it beside it.
       return portrait ? { title: entry.name.toUpperCase(), portrait, role, lines } : { title: entry.name.toUpperCase(), lines: [role.toUpperCase(), '', ...lines] };

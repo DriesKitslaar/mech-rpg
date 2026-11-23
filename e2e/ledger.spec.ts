@@ -56,7 +56,7 @@ async function load(page: Page, save: GameState): Promise<string[]> {
 }
 const kept = (page: Page): Promise<GameState> => page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as GameState);
 
-type Fought = { phase: string; outcome: string; spoken: string | null; face: string | null; banner: boolean; typing: boolean };
+type Fought = { phase: string; outcome: string; spoken: string | null; face: string | null; banner: boolean; typing: boolean; entrance: { warning: string; name: string } | null };
 type Shown = { title: string; portrait?: string; role?: string; lines: string[] };
 type Seen = { battle: Fought; screen: string; toast: string | null; toasts: string[]; page?: string; detail?: Shown; count?: string; menu: Snap['menu'] };
 const seen = async (page: Page): Promise<Seen> => (await snap(page)) as unknown as Seen;
@@ -133,7 +133,7 @@ test('an account begins: it is announced over the bill of the contract it began 
   const s = await toPeople(page);
   expect(s.menu.items[0]).toMatchObject({ id: `account:${begun.name}`, label: begun.name, enabled: true });
   expect(s.detail).toMatchObject({ title: begun.name.toUpperCase(), portrait: GRUDGE_FACES[begun.name], role: 'Open account' });
-  expect(s.detail!.lines.join(' ')).toContain('You have not met by name yet.');
+  expect(s.detail!.lines.join(' ')).toContain('Meetings won: none of the three that close the account.');
   expect(s.detail!.lines.join(' ')).toContain('Their notice comes after 3 more contracts won.');
   await page.screenshot({ path: shot('ledger-page-new') });
   expect(errors).toEqual([]);
@@ -150,7 +150,7 @@ test('a meeting: the band they come in on, under the notice\'s word; and their f
   // The band: it has come in, and holds.
   await page.waitForFunction(() => (window as any).__game.snapshot().battle?.banner === true);
   await page.waitForTimeout(600);
-  expect((await seen(page)).battle.banner).toBe(true);
+  expect((await seen(page)).battle).toMatchObject({ banner: true, entrance: { warning: 'OVERDUE', name: 'BRAKK' }, face: null });
   await page.screenshot({ path: shot('ledger-entrance') });
   // Then they have the first word, beside their face: once the band has gone and the line is written out.
   await written(page);
@@ -175,8 +175,8 @@ test('their page: the account that is open first, with what there is to know of 
   expect(s.menu.items.slice(0, 3).map((item) => item.id)).toEqual(['account:Brakk', 'account:Tally', 'account:Harrow']);
   expect(s.detail).toMatchObject({ title: 'BRAKK', portrait: GRUDGE_FACES.Brakk, role: 'Open account' });
   const said = s.detail!.lines.join(' ');
-  expect(said).toContain('that broke off from you');
-  expect(said).toContain('You have met once, and won.');
+  expect(said).toContain('that once broke off from you');
+  expect(said).toContain('Meetings won: one of the three that close the account.');
   expect(said).toContain(`hardened against your ${CATALOG[BUILD.rightHand!].name}`);
   expect(said).toContain('Their notice comes after one more contract won.');
   expect(s.count).toContain('ACCOUNTS 3');
@@ -194,7 +194,7 @@ test('in Dutch: the band under the notice\'s Dutch word, and the page', async ({
   const errors = await load(page, pilot({ grudge: account({ waited: 2 }), accounts: ['Tally'] }, 'nl'));
   const s = await toPeople(page);
   expect(s.detail).toMatchObject({ title: 'BRAKK', role: 'Open rekening' });
-  expect(s.detail!.lines.join(' ')).toContain('Het bericht is er: het staat bij de open contracten.');
+  expect(s.detail!.lines.join(' ')).toContain('Het bericht is er, en blijft staan tot je het wint.');
   expect(s.count).toContain('REKENINGEN 2');
   await page.screenshot({ path: shot('nl-ledger-page') });
   await press(page, 'Escape');
@@ -206,7 +206,7 @@ test('in Dutch: the band under the notice\'s Dutch word, and the page', async ({
   await waitForScreen(page, 'battle');
   await page.waitForFunction(() => (window as any).__game.snapshot().battle?.banner === true);
   await page.waitForTimeout(600);
-  expect((await seen(page)).battle.banner).toBe(true);
+  expect((await seen(page)).battle).toMatchObject({ banner: true, entrance: { warning: 'VERVALLEN', name: 'BRAKK' }, face: null });
   await page.screenshot({ path: shot('nl-ledger-entrance') });
   expect(errors).toEqual([]);
 });

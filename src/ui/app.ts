@@ -874,11 +874,16 @@ export class App {
     // Beside the board's three: the job that asks for something else, once the board has grown to have one, and the swarm.
     const job = jobContract(game.battlesWon, game.cycle, BOARD_TEXT);
     // And the notice of a pilot who has come back for this one, once it is due.
-    const notice = grudgeContract(game, BOARD_TEXT, { machine: (kind) => ALL_ENEMIES[kind]?.name ?? kind, weapon: (id) => this.deps.catalog[id]?.name ?? id });
+    const notice = grudgeContract(game, BOARD_TEXT, this.called());
     return [
       ...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT), ...(job ? [job] : []), ...(notice ? [notice] : []),
       swarmContract(game.battlesWon, game.cycle, BOARD_TEXT),
     ];
+  }
+
+  /** What a machine and a weapon are called on the screen, by their ids: for the words of an account, which name both. */
+  called(): { machine: (kind: string) => string; weapon: (id: string) => string } {
+    return { machine: (kind) => ALL_ENEMIES[kind]?.name ?? kind, weapon: (id) => this.deps.catalog[id]?.name ?? id };
   }
 
   /** True once the arena and the open contracts are available. */

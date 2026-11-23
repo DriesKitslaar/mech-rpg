@@ -233,6 +233,11 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     if (s.screen !== 'settlement') read = 0;
     const bill = s.screen === 'settlement' ? s.settlement?.account : null;
     if (bill) bills.add(`${bill.name}:${bill.meeting}:${bill.closed ? 'closed' : 'open'}`);
+    // Who came in on a band of their own, and under what word; and whose face was beside a line as it was said.
+    // (Looked at before anything is pressed or passed over: while the band is up, the line under it holds every press off.)
+    const entered = s.screen === 'battle' ? s.battle as unknown as { entrance?: { warning: string; name: string } | null; face?: string | null } : null;
+    if (entered?.entrance) kinds.add(`band:${entered.entrance.warning}:${entered.entrance.name}`);
+    if (entered?.face) kinds.add(`face:${entered.face}`);
     const items = s.menu?.items ?? [];
     const cur = items[s.menu?.cursor ?? 0]?.id;
     const has = (id: string): boolean => items.some((item) => item.id === id && item.enabled);
@@ -253,13 +258,7 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     } else if (s.screen === 'battle') {
       const b = s.battle!;
       if (`${b.mission}/${b.index}/${b.round > 1}` !== last && b.round === 1) { battles++; last = `${b.mission}/${b.index}/false`; }
-      const fought = b as unknown as {
-        words?: string[]; fork?: string | null; weapons?: { note: string }[] | null; hardened?: string[]; halved?: boolean; hardening?: number | null;
-        entrance?: { warning: string; name: string } | null; face?: string | null;
-      };
-      // Who came in on a band of their own, and under what word; and whose face was beside a line as it was said.
-      if (fought.entrance) kinds.add(`band:${fought.entrance.warning}:${fought.entrance.name}`);
-      if (fought.face) kinds.add(`face:${fought.face}`);
+      const fought = b as unknown as { words?: string[]; fork?: string | null; weapons?: { note: string }[] | null; hardened?: string[]; halved?: boolean; hardening?: number | null };
       // The machine of an account: hardened against a weapon, and, while that weapon is aimed at it, said to take half;
       // and a hardening seen to have less left than it had, or to have gone while the battle went on.
       if ((fought.hardened ?? []).length > 0) kinds.add('hardened');

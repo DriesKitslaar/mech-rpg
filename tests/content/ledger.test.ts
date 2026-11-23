@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { MECH_ENEMIES, POOL } from '../../src/core/board';
 import { GRUDGE_MEETINGS, GRUDGE_ORIGINS, grudgeContract, type Grudge, type LedgerEntry } from '../../src/core/grudge';
 import { newGame, type GameState } from '../../src/core/game';
@@ -17,6 +19,7 @@ import { wrap } from '../../src/ui/widgets';
  * beside what its pilot says in a fight.
  */
 const sheet = SPRITES as Record<string, { file: string; w: number; h: number }>;
+const root = join(__dirname, '..', '..');
 const CALLED = { machine: (kind: string) => ALL_ENEMIES[kind].name, weapon: (id: string) => CATALOG[id].name };
 const game = (grudge: Grudge): GameState => ({ ...newGame(CATALOG, STARTER_BUILD), battlesWon: 20, grudge });
 
@@ -34,6 +37,24 @@ describe('the faces', () => {
     for (const [name, id] of Object.entries(GRUDGE_FACES)) {
       expect(sheet[id], name).toEqual({ file: `sprites/${id}.png`, w: face.w, h: face.h });
     }
+  });
+
+  test('each is a file the game ships, of that size, and no two are the same picture; each was drawn at the lowest quality from a description of nobody, and is kept as it was made', () => {
+    const pictures: string[] = [];
+    for (const [name, id] of Object.entries(GRUDGE_FACES)) {
+      const file = join(root, 'public', sheet[id].file);
+      expect(existsSync(file), name).toBe(true);
+      const png = readFileSync(file);
+      // A PNG says what it is in its first bytes, and how wide and how tall in its first chunk.
+      expect(png.subarray(1, 4).toString('latin1'), name).toBe('PNG');
+      expect([png.readUInt32BE(16), png.readUInt32BE(20)], name).toEqual([56, 56]);
+      pictures.push(png.toString('base64'));
+      const made = JSON.parse(readFileSync(join(root, 'art', 'raw', `${id}.json`), 'utf8')) as { id: string; quality: string; prompt: string };
+      expect(made, name).toMatchObject({ id, quality: 'low' });
+      expect(made.prompt, name).toContain('head and shoulders of an original character');
+      expect(existsSync(join(root, 'art', 'raw', `${id}.png`)), name).toBe(true);
+    }
+    expect(new Set(pictures).size).toBe(GRUDGE_NAMES.length);
   });
 
   test('none is the face of anybody else', () => {
@@ -66,24 +87,40 @@ describe('what the page of an account says', () => {
   const open = (change: Partial<Extract<LedgerEntry, { open: true }>> = {}): LedgerEntry => ({ name: 'Brakk', open: true, kind: 'stalker', origin: 'ran', met: 1, knows: 'wpn-arc-blade', wait: 2, ...change });
   afterEach(() => setLanguage('en'));
 
-  test('of the one that is open: what they fly and how it began, the meetings there have been, what their machine knows, and how long until the notice', () => {
+  test('of the one that is open: what they fly and how it began, the meetings won, what their machine knows, and how long until the notice', () => {
     const stalker = ALL_ENEMIES.stalker.name;
     const blade = CATALOG['wpn-arc-blade'].name;
-    expect(ledgerText(open(), CALLED)).toBe(`Flies a ${stalker} that broke off from you. You have met once, and won. Their machine is hardened against your ${blade}. Their notice comes after 2 more contracts won.`);
-    expect(ledgerText(open({ origin: 'beat', met: 0, wait: 3 }), CALLED)).toContain(`Flies a ${stalker} that you could not finish. You have not met by name yet.`);
-    expect(ledgerText(open({ origin: 'wrecked', met: 2 }), CALLED)).toContain(`You wrecked their ${stalker}. They have another. You have met twice, and won both.`);
+    expect(ledgerText(open(), CALLED)).toBe(`Flies a ${stalker} that once broke off from you. Meetings won: one of the three that close the account. Their machine is hardened against your ${blade}. Their notice comes after 2 more contracts won.`);
+    expect(ledgerText(open({ origin: 'beat', met: 0, wait: 3 }), CALLED)).toContain(`Flies a ${stalker} that you once could not finish. Meetings won: none of the three that close the account.`);
+    expect(ledgerText(open({ origin: 'wrecked', met: 2 }), CALLED)).toContain(`You once wrecked their ${stalker}. They have another. Meetings won: two of the three that close the account.`);
     const { knows: _, ...unknowing } = open() as Extract<LedgerEntry, { open: true }>;
     expect(ledgerText(unknowing, CALLED)).toContain('Their machine knows nothing of what you fly.');
     expect(ledgerText(unknowing, CALLED)).not.toContain(blade);
-    expect(ledgerText(open({ wait: 0 }), CALLED)).toContain('Their notice is out: it is among the open contracts.');
+    expect(ledgerText(open({ wait: 0 }), CALLED)).toContain('Their notice is out, and stays out until you win it.');
     expect(ledgerText(open({ wait: 1 }), CALLED)).toContain('Their notice comes after one more contract won.');
     expect(ledgerText(open({ wait: 3 }), CALLED)).toContain('Their notice comes after 3 more contracts won.');
     // Nothing is left of a gap that was not filled.
     expect(ledgerText(open(), CALLED)).not.toMatch(/[{}]/);
   });
 
+  test('no line says more than the saved game knows: how it began is said as something that happened once, the meetings are the ones won, and nothing is said of where the notice is', () => {
+    // An account counts the meetings won (a meeting lost leaves it as it was), so that is what its page counts.
+    for (const line of LEDGER_LINES.met) expect(line).toMatch(/^Meetings won: (none|one|two) of the three that close the account\.$/);
+    expect(GRUDGE_MEETINGS).toBe(3);
+    for (const line of Object.values(LEDGER_LINES.began)) expect(line, line).toMatch(/\bonce\b/);
+    // A notice that is out may not be on offer at that moment (a machine that may not deploy is offered the patrol alone).
+    expect(LEDGER_LINES.due[0]).not.toMatch(/contracts|list|board/);
+    // And a callsign may have come round more than once: its closed page counts nothing.
+    expect(LEDGER_LINES.closed).not.toMatch(/\b(once|twice|three|\d)\b/);
+    // The Dutch counts the same, in the same order, and speaks of the notice as the English does.
+    expect(LEDGER_LINES.met.map((line) => /: (\w+) van de drie die de rekening sluiten\.$/.exec(nl[line])?.[1])).toEqual(['geen', 'een', 'twee']);
+    for (const line of Object.values(LEDGER_LINES.began)) expect(nl[line], line).toMatch(/\booit\b/);
+    expect(nl[LEDGER_LINES.due[0]]).not.toMatch(/contract|lijst|bord/);
+    expect(nl[LEDGER_LINES.closed]).not.toMatch(/\b(drie|twee|\d)\b/);
+  });
+
   test('of one that is closed: that it is, and no more', () => {
-    expect(ledgerText({ name: 'Tally', open: false }, CALLED)).toBe('Came back for you three times and lost three machines. The account is closed.');
+    expect(ledgerText({ name: 'Tally', open: false }, CALLED)).toBe('Came back for you until there was nothing left to come back in. The account is closed.');
   });
 
   test('the lines: one for each way an account begins, each number of meetings, what is known and how long; each with its Dutch and the same gaps', () => {

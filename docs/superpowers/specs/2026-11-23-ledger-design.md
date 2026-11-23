@@ -31,9 +31,11 @@ This round gives them a face, an entrance, a moment when the account opens, and 
   comes up over the bill: a new account, and the callsign.
 - **A page.** The database's page of people lists, before the people of the story, the account that
   is open and then the accounts that are closed: who is after the pilot is the first thing on it. The open one says what the pilot would otherwise have to
-  remember: their machine and how it began, how many meetings there have been, what their machine is
+  remember: their machine and how it began, how many of the three meetings have been won (the saved
+  game counts the ones won: a meeting lost leaves the account as it was), what their machine is
   hardened against, and how many contracts until their notice is out (or that it is). A closed one
-  says that it is closed.
+  says that it is closed. A row says which it is (`OPEN`, `CLOSED`), so that it is told from a person
+  of the story.
 - English and Dutch; the guide says where to look.
 
 ## Non-goals

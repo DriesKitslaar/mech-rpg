@@ -160,9 +160,12 @@ test('the second: their notice on the list, the briefing that names the weapon, 
   await toBriefing(page, 'account-briefing');
   expect(((await snap(page)) as unknown as { briefing: { objectives: string[] } }).briefing.objectives.join(' ')).toContain('Brakk');
   await choose(page, 'accept');
-  await page.waitForFunction(() => (window as any).__game.snapshot().battle?.spoken);
+  // They have the first word: once the band they come in on has gone, it is on the screen, all of it.
+  await page.waitForFunction(() => {
+    const battle = (window as any).__game.snapshot().battle;
+    return !!battle && !battle.banner && !!battle.spoken && !battle.typing;
+  }, undefined, { timeout: 60_000 });
   let s = await seen(page);
-  // They have the first word.
   expect(s.battle.spoken).toBeTruthy();
   await still(page, 6);
   await page.screenshot({ path: shot('account-opens') });

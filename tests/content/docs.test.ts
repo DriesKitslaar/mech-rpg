@@ -615,7 +615,17 @@ describe('what is said of accounts is so', () => {
     expect(Object.keys(LEDGER_LINES).sort()).toEqual(['began', 'closed', 'due', 'knows', 'met']);
     expect(GRUDGE_NAMES).toHaveLength(16);
     expect(Object.keys(GRUDGE_FACES)).toHaveLength(16);
-    expect(README).toContain('Elk van de zestien piloten heeft een eigen gezicht en een pagina in de databank');
+    expect(README).toContain('Elk van de zestien piloten heeft een eigen gezicht en een pagina in de Database');
+    // Both name the room as the hub's list names it, in either language.
+    expect([STRINGS.hub.database, STRINGS_NL.hub.database]).toEqual(['Database', 'Database']);
+    expect(section).toContain('staat in de Database**');
+    expect(`${section} ${README}`).not.toMatch(/databank/i);
+    // What the guide says a row says is what the row says.
+    expect(section.replace(/\s+/g, ' ')).toContain(`achter een open rekening **${STRINGS.database.rowOpen}** en achter een gesloten **${STRINGS.database.rowClosed}** (Nederlands **${STRINGS_NL.database.rowClosed}**)`);
+    expect(STRINGS_NL.database.rowOpen).toBe(STRINGS.database.rowOpen);
+    // And what it says the page counts is what the page counts: the meetings won.
+    expect(section.replace(/\s+/g, ' ')).toContain('hoeveel van de drie ontmoetingen je gewonnen hebt');
+    for (const line of LEDGER_LINES.met) expect(line).toMatch(/^Meetings won: /);
   });
 
   test('the manual: a chapter after the one on jobs, in the words the notice and the screen use', () => {
@@ -636,7 +646,8 @@ describe('what is said of accounts is so', () => {
   test('the README: a section on accounts, and the medals counted', () => {
     expect(README).toContain('- **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op een eigen bericht naast het bord, met een roepnaam. De eerste keer kent die piloot je nog niet.');
     expect(README).toContain('Daarna is de mecha gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de helft tot de harding is weggeschoten');
-    expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
+    // (Won: a meeting lost or walked away from leaves the account as it was.)
+    expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} gewonnen ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
     expect(README).toContain(`${MEDALS.length} medailles`);
     expect(MEDALS).toHaveLength(77);
   });

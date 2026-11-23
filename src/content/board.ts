@@ -76,20 +76,26 @@ const fill = (line: string, gaps: Record<string, string | undefined>): string =>
  * for a machine, a weapon and a number of contracts.
  */
 export const LEDGER_LINES = {
+  // How it began: something that happened once, and is said so. It is the kind of machine they fly still.
   began: {
-    beat: 'Flies a {machine} that you could not finish.',
-    ran: 'Flies a {machine} that broke off from you.',
-    wrecked: 'You wrecked their {machine}. They have another.',
+    beat: 'Flies a {machine} that you once could not finish.',
+    ran: 'Flies a {machine} that once broke off from you.',
+    wrecked: 'You once wrecked their {machine}. They have another.',
   },
-  // None, one and two meetings won: there is no page of an open account after the third.
-  met: ['You have not met by name yet.', 'You have met once, and won.', 'You have met twice, and won both.'],
+  // The meetings won, of the three that close the account: none, one and two. (Won, not held: a meeting lost or
+  // walked away from leaves the account as it was. There is no page of an open account after the third won.)
+  met: [
+    'Meetings won: none of the three that close the account.',
+    'Meetings won: one of the three that close the account.',
+    'Meetings won: two of the three that close the account.',
+  ],
   knows: ['Their machine knows nothing of what you fly.', 'Their machine is hardened against your {a}.'],
-  // The notice is out; it is one contract off; it is several.
-  due: ['Their notice is out: it is among the open contracts.', 'Their notice comes after one more contract won.', 'Their notice comes after {n} more contracts won.'],
-  closed: 'Came back for you three times and lost three machines. The account is closed.',
+  // The notice is out; it is one contract off; it is several. (Out is not the same as on the list at this moment:
+  // a pilot whose own machine may not deploy is offered nothing but the patrol until it is put right.)
+  due: ['Their notice is out, and stays out until you win it.', 'Their notice comes after one more contract won.', 'Their notice comes after {n} more contracts won.'],
+  // (Of a callsign whose account is closed, however many times it has come round.)
+  closed: 'Came back for you until there was nothing left to come back in. The account is closed.',
 };
-
-/** The words of an account's page, in the language that is set: `called` gives a machine's and a weapon's name as the player reads them. */
 export function ledgerText(entry: LedgerEntry, called: { machine: (kind: string) => string; weapon: (id: string) => string }): string {
   if (!entry.open) return LEDGER_LINES.closed;
   return [

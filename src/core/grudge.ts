@@ -194,7 +194,8 @@ export type LedgerEntry =
 /**
  * The accounts there are to read about: the one that is open, then the closed ones in the order they were
  * closed, each callsign once. A callsign that has come round again and is open is that, and is not listed as
- * closed beside it. Nobody is listed with whom no account has begun.
+ * closed beside it. Nobody is listed with whom no account has begun. (The ledger of the pilot's accounts: not
+ * the one in `art/ledger.json`, which is of what the pictures cost.)
  */
 export function ledger(game: Pick<GameState, 'grudge' | 'accounts'>): LedgerEntry[] {
   const open = grudgeOf(game);

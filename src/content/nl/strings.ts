@@ -338,6 +338,7 @@ export const STRINGS_NL = {
     findToast: 'VONDST', newFinds: (n: number) => `${n} vondsten`,
     known: (n: number, of: number) => `BEKEND ${n}/${of}`, broughtIn: 'Ingerekend',
     accountOpen: 'Open rekening', accountClosed: 'Rekening dicht', accounts: (n: number) => `REKENINGEN ${n}`,
+    rowOpen: 'OPEN', rowClosed: 'DICHT',
     heard: (n: number, of: number) => `GEHOORD ${n}/${of}`, notHeard: 'Nog niet gehoord.', play: 'A: speel', stop: 'A: stop', playing: 'SPEELT NU',
     length: (time: string) => `LENGTE ${time}`, tempo: (bpm: number) => `TEMPO ${bpm}`, musicOff: 'Muziek staat uit. Zet die aan in Opties.',
     unknown: '? ? ?', notMet: 'Nog onbekend.', met: (n: number, of: number) => `GEZIEN ${n}/${of}`,
