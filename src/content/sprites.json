@@ -2527,6 +2527,86 @@
     "w": 56,
     "h": 56
   },
+  "portrait-acct-brakk": {
+    "file": "sprites/portrait-acct-brakk.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-tally": {
+    "file": "sprites/portrait-acct-tally.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-docket": {
+    "file": "sprites/portrait-acct-docket.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-lapse": {
+    "file": "sprites/portrait-acct-lapse.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-surety": {
+    "file": "sprites/portrait-acct-surety.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-margin": {
+    "file": "sprites/portrait-acct-margin.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-stub": {
+    "file": "sprites/portrait-acct-stub.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-escrow": {
+    "file": "sprites/portrait-acct-escrow.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-harrow": {
+    "file": "sprites/portrait-acct-harrow.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-flint": {
+    "file": "sprites/portrait-acct-flint.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-thistle": {
+    "file": "sprites/portrait-acct-thistle.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-pike": {
+    "file": "sprites/portrait-acct-pike.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-calder": {
+    "file": "sprites/portrait-acct-calder.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-sorrel": {
+    "file": "sprites/portrait-acct-sorrel.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-vandal": {
+    "file": "sprites/portrait-acct-vandal.png",
+    "w": 56,
+    "h": 56
+  },
+  "portrait-acct-mercer": {
+    "file": "sprites/portrait-acct-mercer.png",
+    "w": 56,
+    "h": 56
+  },
   "portrait-recorder": {
     "file": "sprites/portrait-recorder.png",
     "w": 56,

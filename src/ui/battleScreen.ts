@@ -187,7 +187,12 @@ export class BattleScreen {
       pilot?: string;
       /** The contract's name, for the banner that opens the battle. */
       title?: string;
-      /** The boss the battle is against, if it is against one: the banner becomes a warning. */
+      /** The word on the band a boss comes in on, where it is not the warning: a meeting with the pilot of an account has the notice's. */
+      warning?: string;
+      /**
+       * Who comes in on a band of their own, by the name on it: the boss the battle is against, if it is against one
+       * (the banner becomes a warning), or the pilot of an account at a meeting (it becomes the notice's word: `warning`).
+       */
       boss?: string;
       /** Makes the handheld rumble for a number of milliseconds. */
       rumble?: (ms: number) => void;
@@ -233,6 +238,12 @@ export class BattleScreen {
   /** True while the opening banner is up. */
   get banner(): boolean {
     return this.intro > 0;
+  }
+
+  /** The band somebody comes in on, while it is up: the word over it and the name on it. Nobody's while a contract's own banner is. */
+  get entrance(): { warning: string; name: string } | null {
+    const boss = this.opts.boss;
+    return this.intro > 0 && boss ? { warning: this.opts.warning ?? STRINGS.battleIntro.warning, name: boss.toUpperCase() } : null;
   }
 
   /** True while a line of talk is still being written out. */
@@ -716,11 +727,11 @@ export class BattleScreen {
   private drawIntro(ctx: CanvasRenderingContext2D): void {
     const p = 1 - this.intro / this.introTotal;
     const boss = this.opts.boss;
-    if (boss) {
+    const entrance = this.entrance;
+    if (boss && entrance) {
       // A boss comes in on a band of its own, from its side of the field: the warning, its name, and itself from close by.
       const alarm = this.opts.calm === true || Math.floor(this.clock / 180) % 2 === 0;
-      drawEntrance(ctx, p, this.clock, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W },
-        { warning: STRINGS.battleIntro.warning, name: boss.toUpperCase(), alarm }, this.entrant(boss), this.opts.calm === true);
+      drawEntrance(ctx, p, this.clock, { top: FIELD_Y, height: PANEL_Y - FIELD_Y, width: LOGICAL_W }, { ...entrance, alarm }, this.entrant(boss), this.opts.calm === true);
       return;
     }
     // It slides in from the left, holds, and leaves to the right.

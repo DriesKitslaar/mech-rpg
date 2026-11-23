@@ -5,7 +5,7 @@ import {
 import { askSettlement, generateBoard, swarmContract } from '../core/board';
 import { jobContract, recordJob } from '../core/jobs';
 import {
-  GRUDGE, NOTHING_FOUGHT, accountLine, bookGrudge, foughtIn, grudgeContract, grudgeEnemy, grudgeOf, isGrudge, type Fought as AccountFought,
+  GRUDGE, NOTHING_FOUGHT, accountBegun, accountLine, bookGrudge, foughtIn, grudgeContract, grudgeEnemy, grudgeOf, isGrudge, type Fought as AccountFought,
 } from '../core/grudge';
 import { computeBuildStats, validatePlayerBuild } from '../core/build';
 import {
@@ -320,11 +320,14 @@ class MissionHost implements Screen {
     });
     const battle = this.mission.battles[this.index];
     const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
+    // A meeting with the pilot of an account opens as a boss's battle does: they come in on the band, under their
+    // callsign and the notice's own word. (Their machine stands first on the field of a notice.)
+    const theirs = isGrudge(this.mission) ? this.app.enemies()[battle.enemies[0]] : undefined;
     if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: lent ? undefined : this.app.game!.paint,
       title: this.mission.title.toUpperCase(), rumble: (ms) => this.app.rumble(ms), jingle: (won) => this.app.jingle(won),
-      ...(boss ? { boss: boss.name } : {}),
+      ...(boss ? { boss: boss.name } : theirs ? { boss: theirs.name, warning: STRINGS.battleIntro.overdue } : {}),
       ...(known && game?.callsign ? { pilot: STRINGS.renown.banner(game.callsign, known) } : {}),
       coach: this.coach,
       typing: this.app.typing(), calm: this.app.settings.calm === true,
@@ -502,6 +505,9 @@ class MissionHost implements Screen {
       launch: this.launch ? this.launch.view() : null,
       battle: {
         banner: this.screen.banner, typing: this.screen.typing,
+        // Who comes in on a band of their own while the banner is up, and under what word: a boss, or the pilot of an account.
+        // (Not while the launch is on: the band has not come in yet.)
+        entrance: this.launch ? null : this.screen.entrance,
         // The options the battle is fought with, as they reached the field.
         calm: this.screen.calm, pace: this.screen.pace,
         // What is being staged: the Overdrive's band while it is up, and the close look at the last machine to fall.
@@ -516,6 +522,9 @@ class MissionHost implements Screen {
         // The words over the field as this is asked: a test cannot read a canvas.
         words: this.screen.words,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
+        // Whose face is beside the line being said, where the one saying it has one. (Nobody's while the banner is over
+        // it: the line is not on the screen yet.)
+        face: this.screen.banner ? null : flow.spoken?.portrait ?? null,
         // Why the battle ended as it did, where what it asked for decided it.
         note: flow.resultNote || null,
         // What is being kept alive: what is left of it, and its picture on the field where it has one and is still to be seen.
@@ -826,7 +835,15 @@ export class App {
       id: `stripe:${kind}:${stripe}`, heading: STRINGS.stripes.earned, title: STRINGS.stripes.title(STRINGS.classes.names[kind], stripe), stripes: stripe, sound: 'medal' as const,
       ...(point ? { note: STRINGS.stripes.point } : {}),
     }));
-    this.toasts.push(...crownToasts, ...seatToasts, ...stripeToasts, ...medalToasts(earned), ...nameToasts, ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts);
+    // An account that has just begun is said as the contract it began in is booked: that somebody will be back, and
+    // under what callsign. Their page is in the database from then on.
+    const begun = accountBegun(before, game);
+    const accountToasts: Toast[] = begun === null ? []
+      : [{ id: `account:${begun}`, heading: STRINGS.accounts.opened, title: STRINGS.accounts.callsign(begun), sound: 'entry' }];
+    this.toasts.push(
+      ...crownToasts, ...seatToasts, ...stripeToasts, ...medalToasts(earned), ...nameToasts, ...accountToasts,
+      ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts,
+    );
     this.game = game;
     this.saveFailed = !this.file.save(game);
     // Options that could not be stored when they were changed go with the next thing that can be.
@@ -857,11 +874,16 @@ export class App {
     // Beside the board's three: the job that asks for something else, once the board has grown to have one, and the swarm.
     const job = jobContract(game.battlesWon, game.cycle, BOARD_TEXT);
     // And the notice of a pilot who has come back for this one, once it is due.
-    const notice = grudgeContract(game, BOARD_TEXT, { machine: (kind) => ALL_ENEMIES[kind]?.name ?? kind, weapon: (id) => this.deps.catalog[id]?.name ?? id });
+    const notice = grudgeContract(game, BOARD_TEXT, this.called());
     return [
       ...story, ...generateBoard(game.battlesWon, game.cycle, BOARD_TEXT), ...(job ? [job] : []), ...(notice ? [notice] : []),
       swarmContract(game.battlesWon, game.cycle, BOARD_TEXT),
     ];
+  }
+
+  /** What a machine and a weapon are called on the screen, by their ids: for the words of an account, which name both. */
+  called(): { machine: (kind: string) => string; weapon: (id: string) => string } {
+    return { machine: (kind) => ALL_ENEMIES[kind]?.name ?? kind, weapon: (id) => this.deps.catalog[id]?.name ?? id };
   }
 
   /** True once the arena and the open contracts are available. */

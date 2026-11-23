@@ -6033,5 +6033,345 @@
    },
    "total_tokens": 302
   }
+ },
+ {
+  "id": "portrait-acct-brakk",
+  "at": "2026-11-23T16:15:25.344Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 107,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 107
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 303
+  }
+ },
+ {
+  "id": "portrait-acct-tally",
+  "at": "2026-11-23T16:15:38.572Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 92,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 288
+  }
+ },
+ {
+  "id": "portrait-acct-docket",
+  "at": "2026-11-23T16:15:49.806Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 100,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 100
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 296
+  }
+ },
+ {
+  "id": "portrait-acct-lapse",
+  "at": "2026-11-23T16:16:02.248Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 92,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 288
+  }
+ },
+ {
+  "id": "portrait-acct-surety",
+  "at": "2026-11-23T16:16:15.221Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 91,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 91
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 287
+  }
+ },
+ {
+  "id": "portrait-acct-margin",
+  "at": "2026-11-23T16:16:28.270Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 95,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 95
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 291
+  }
+ },
+ {
+  "id": "portrait-acct-stub",
+  "at": "2026-11-23T16:16:40.090Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 96,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 96
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 292
+  }
+ },
+ {
+  "id": "portrait-acct-escrow",
+  "at": "2026-11-23T16:16:51.259Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 92,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 92
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 288
+  }
+ },
+ {
+  "id": "portrait-acct-harrow",
+  "at": "2026-11-23T16:17:01.608Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 103,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 103
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 299
+  }
+ },
+ {
+  "id": "portrait-acct-flint",
+  "at": "2026-11-23T16:17:13.667Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 89,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 89
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 285
+  }
+ },
+ {
+  "id": "portrait-acct-thistle",
+  "at": "2026-11-23T16:17:24.903Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 90,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 90
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 286
+  }
+ },
+ {
+  "id": "portrait-acct-pike",
+  "at": "2026-11-23T16:17:36.027Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 88,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 88
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 284
+  }
+ },
+ {
+  "id": "portrait-acct-calder",
+  "at": "2026-11-23T16:17:47.863Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 89,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 89
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 285
+  }
+ },
+ {
+  "id": "portrait-acct-sorrel",
+  "at": "2026-11-23T16:17:59.037Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 93,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 93
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 289
+  }
+ },
+ {
+  "id": "portrait-acct-vandal",
+  "at": "2026-11-23T16:18:09.761Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 95,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 95
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 291
+  }
+ },
+ {
+  "id": "portrait-acct-mercer",
+  "at": "2026-11-23T16:18:20.477Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0083,
+  "usage": {
+   "input_tokens": 90,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 90
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 286
+  }
+ },
+ {
+  "id": "portrait-acct-stub",
+  "at": "2026-11-23T17:38:40.291Z",
+  "method": "generate",
+  "quality": "low",
+  "usd": 0.0084,
+  "usage": {
+   "input_tokens": 107,
+   "input_tokens_details": {
+    "image_tokens": 0,
+    "text_tokens": 107
+   },
+   "output_tokens": 196,
+   "output_tokens_details": {
+    "image_tokens": 196,
+    "text_tokens": 0
+   },
+   "total_tokens": 303
+  }
  }
 ]

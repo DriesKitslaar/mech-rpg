@@ -1,0 +1,9 @@
+{
+  "id": "portrait-acct-vandal",
+  "model": "gpt-image-2",
+  "size": "1024x1024",
+  "quality": "low",
+  "method": "generate",
+  "references": [],
+  "prompt": "16-bit pixel art character portrait, crisp pixels, no anti-aliasing, no text: head and shoulders of an original character, a fierce young pilot with a tall mohawk bleached white and two streaks of black paint under each eye, wearing a sleeveless black padded vest scratched all over with tally marks. Facing slightly to the left, serious expression, lit by pink and cyan neon from the sides, plain very dark blue background."
+}

@@ -731,4 +731,17 @@ export const MISSIONS_NL: Record<string, string> = {
   [`{name} walks away from the wreck. That one keeps a list, and you are on it.`]: `{name} loopt weg van het wrak. Die houdt een lijst bij, en jij staat erop.`,
   [`{name} climbs out and is on the radio to a yard before the dust settles. There will be a third time.`]: `{name} klimt eruit en belt al met een werf voor het stof is gaan liggen. Er komt een derde keer.`,
   [`{name} signs the wreck over where it lies. The account is closed, and paid in full.`]: `{name} tekent het wrak over waar het ligt. De rekening is dicht, en volledig voldaan.`,
+  // The page of an account in the database. Their pilot is nobody's "hij" or "zij" here either.
+  [`Flies a {machine} that you once could not finish.`]: `Vliegt een {machine} die je ooit niet klein kreeg.`,
+  [`Flies a {machine} that once broke off from you.`]: `Vliegt een {machine} die ooit voor je vluchtte.`,
+  [`You once wrecked their {machine}. They have another.`]: `Je sloopte ooit de {machine} van deze piloot. Er is een nieuwe.`,
+  [`Meetings won: none of the three that close the account.`]: `Ontmoetingen gewonnen: geen van de drie die de rekening sluiten.`,
+  [`Meetings won: one of the three that close the account.`]: `Ontmoetingen gewonnen: een van de drie die de rekening sluiten.`,
+  [`Meetings won: two of the three that close the account.`]: `Ontmoetingen gewonnen: twee van de drie die de rekening sluiten.`,
+  [`Their machine knows nothing of what you fly.`]: `De machine weet niets van wat je vliegt.`,
+  [`Their machine is hardened against your {a}.`]: `De machine is gehard tegen je {a}.`,
+  [`Their notice is out, and stays out until you win it.`]: `Het bericht is er, en blijft staan tot je het wint.`,
+  [`Their notice comes after one more contract won.`]: `Het bericht komt na nog een gewonnen contract.`,
+  [`Their notice comes after {n} more contracts won.`]: `Het bericht komt na nog {n} gewonnen contracten.`,
+  [`Came back for you until there was nothing left to come back in. The account is closed.`]: `Kwam voor je terug tot er niets meer was om in terug te komen. De rekening is dicht.`,
 };

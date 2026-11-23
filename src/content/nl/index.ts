@@ -1,6 +1,6 @@
 import { dictionary, overlay, textsOf, translatable, type TextSlot } from '../language';
 import { ARENA } from '../arena';
-import { BOARD_TEXT, GRUDGE_LINES } from '../board';
+import { BOARD_TEXT, GRUDGE_LINES, LEDGER_LINES } from '../board';
 import { JUKEBOX, MANUAL, PEOPLE, UNITS, WORLD } from '../codex';
 import { DRILLS, LESSON_LINES } from '../drills';
 import { FINDS } from '../finds';
@@ -75,6 +75,9 @@ function contentTexts(): TextSlot[] {
     ...textsOf('missions', [GRUDGE_LINES.first], { beat: 'briefing', ran: 'briefing', wrecked: 'briefing' }),
     ...textsOf('missions', [GRUDGE_LINES.opens.first], { beat: 'battle.talk', ran: 'battle.talk', wrecked: 'battle.talk' }),
     ...textsOf('missions', [GRUDGE_LINES.opens], { again: 'battle.talk' }),
+    // The page of an account in the database: sentences that are put together into one text.
+    ...textsOf('missions', [LEDGER_LINES], { met: 'page.text', knows: 'page.text', due: 'page.text', closed: 'page.text' }),
+    ...textsOf('missions', [LEDGER_LINES.began], { beat: 'page.text', ran: 'page.text', wrecked: 'page.text' }),
     ...textsOf('missions', WINGMEN, { text: 'briefing' }),
     ...textsOf('missions', WINGMEN.map((w) => w.radio), { start: 'radio', kill: 'radio', cheer: 'radio', warn: 'radio', win: 'radio' }),
     ...textsOf('story', Object.values(ENEMIES).flatMap((e) => e.phases ?? []), { line: 'battle.talk' }),

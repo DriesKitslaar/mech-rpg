@@ -82,7 +82,9 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   een eigen bericht naast het bord, met een roepnaam. De eerste keer kent die piloot je nog niet.
   Daarna is de mecha gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de
   helft tot de harding is weggeschoten, dus het loont om iets anders mee te nemen. Na drie
-  ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.
+  gewonnen ontmoetingen is de rekening gesloten en kan er een met een ander beginnen. Elk van de
+  zestien piloten heeft een eigen gezicht en een pagina in de Database, waar je ziet wie er achter
+  je aan zit en wanneer het bericht komt.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.

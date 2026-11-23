@@ -13,7 +13,7 @@ import { ALL_STRIPES, MAX_STRIPE_POINTS, STRIPES_AT, STRIPES_A_POINT, countsForC
 import type { FramePart, Weapon } from '../../src/core/types';
 import { ARENA } from '../../src/content/arena';
 import { MANUAL } from '../../src/content/codex';
-import { BOARD_TEXT, GRUDGE_NAMES } from '../../src/content/board';
+import { BOARD_TEXT, GRUDGE_FACES, GRUDGE_NAMES, LEDGER_LINES } from '../../src/content/board';
 import { DRILLS } from '../../src/content/drills';
 import { ENEMIES } from '../../src/content/enemies';
 import { setLanguage } from '../../src/content/language';
@@ -606,6 +606,28 @@ describe('what is said of accounts is so', () => {
     expect(medals.map((entry) => entry.progress({} as never).have)).toEqual([0, 0, 0]);
   });
 
+  test('the guide: where an account is announced, where it can be looked up, and how a meeting opens, in the words of the screen', () => {
+    expect(section).toContain(`**${STRINGS.accounts.opened}** (Nederlands **${STRINGS_NL.accounts.opened}**) met de roepnaam`);
+    expect(section).toContain(`bovenaan de pagina **${STRINGS.database.pages.people}** (Nederlands **${STRINGS_NL.database.pages.people}**)`);
+    expect(section).toContain('De gesloten rekeningen staan eronder. Voor een rekening begint, staat er niemand.');
+    expect(section).toContain(`**${STRINGS.battleIntro.overdue}** (Nederlands **${STRINGS_NL.battleIntro.overdue}**), de roepnaam en de machine van dichtbij`);
+    // What the guide says the page says is what its lines are about.
+    expect(Object.keys(LEDGER_LINES).sort()).toEqual(['began', 'closed', 'due', 'knows', 'met']);
+    expect(GRUDGE_NAMES).toHaveLength(16);
+    expect(Object.keys(GRUDGE_FACES)).toHaveLength(16);
+    expect(README).toContain('Elk van de zestien piloten heeft een eigen gezicht en een pagina in de Database');
+    // Both name the room as the hub's list names it, in either language.
+    expect([STRINGS.hub.database, STRINGS_NL.hub.database]).toEqual(['Database', 'Database']);
+    expect(section).toContain('staat in de Database**');
+    expect(`${section} ${README}`).not.toMatch(/databank/i);
+    // What the guide says a row says is what the row says.
+    expect(section.replace(/\s+/g, ' ')).toContain(`achter een open rekening **${STRINGS.database.rowOpen}** en achter een gesloten **${STRINGS.database.rowClosed}** (Nederlands **${STRINGS_NL.database.rowClosed}**)`);
+    expect(STRINGS_NL.database.rowOpen).toBe(STRINGS.database.rowOpen);
+    // And what it says the page counts is what the page counts: the meetings won.
+    expect(section.replace(/\s+/g, ' ')).toContain('hoeveel van de drie ontmoetingen je gewonnen hebt');
+    for (const line of LEDGER_LINES.met) expect(line).toMatch(/^Meetings won: /);
+  });
+
   test('the manual: a chapter after the one on jobs, in the words the notice and the screen use', () => {
     expect(MANUAL[MANUAL.findIndex((entry) => entry.id === 'jobs') + 1].id).toBe('accounts');
     expect(chapter.title).toBe('OVERDUE ACCOUNTS');
@@ -624,7 +646,8 @@ describe('what is said of accounts is so', () => {
   test('the README: a section on accounts, and the medals counted', () => {
     expect(README).toContain('- **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op een eigen bericht naast het bord, met een roepnaam. De eerste keer kent die piloot je nog niet.');
     expect(README).toContain('Daarna is de mecha gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de helft tot de harding is weggeschoten');
-    expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
+    // (Won: a meeting lost or walked away from leaves the account as it was.)
+    expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} gewonnen ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
     expect(README).toContain(`${MEDALS.length} medailles`);
     expect(MEDALS).toHaveLength(77);
   });

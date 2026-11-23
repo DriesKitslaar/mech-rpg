@@ -4,8 +4,8 @@ import { ENEMY_COST, MECH_ENEMIES, POOL, SUPPORT_ENEMIES, boardTier, budgetFor, 
 import { startNewCycle, type Mission } from '../../src/core/campaign';
 import { isValidState, newGame, type GameState } from '../../src/core/game';
 import {
-  GRUDGE, GRUDGE_MEETINGS, GRUDGE_NUMBERS, GRUDGE_TIER, GRUDGE_WAIT, NOTHING_FOUGHT, accountLine, accountsClosed, addDealt, bookGrudge, dealtBy, foughtIn,
-  grudgeContract, grudgeDue, grudgeEnemy, grudgeOf, isGrudge, meetingsWon, stronger, witness,
+  GRUDGE, GRUDGE_MEETINGS, GRUDGE_NUMBERS, GRUDGE_TIER, GRUDGE_WAIT, NOTHING_FOUGHT, accountBegun, accountLine, accountsClosed, addDealt, bookGrudge, dealtBy, foughtIn,
+  grudgeContract, grudgeDue, grudgeEnemy, grudgeOf, isGrudge, ledger, meetingsWon, stronger, witness,
   type Fought, type Grudge, type GrudgeOrigin, type GrudgeText, type Witness,
 } from '../../src/core/grudge';
 import { JOB_NUMBERS, MENDERS } from '../../src/core/jobs';
@@ -253,6 +253,26 @@ describe('how an account begins', () => {
     expect(grudgeContract(first, TEXT, CALLED)!.briefing[2]).toBe('knows nothing');
   });
 
+  test('`accountBegun`: the callsign of one that is open now and was not; nothing of one that was, or where there was no game before', () => {
+    const fresh = game();
+    const next = bookGrudge(fresh, BOARD, true, fought, NAMES);
+    const name = grudgeOf(next)!.name;
+    expect(accountBegun(fresh, next)).toBe(name);
+    // The same account a contract later, a meeting later, and gone.
+    expect(accountBegun(next, bookGrudge(next, BOARD, true, NOTHING, NAMES))).toBeNull();
+    const met = game({ grudge: account({ met: 1 }) });
+    expect(accountBegun(game({ grudge: account() }), met)).toBeNull();
+    expect(accountBegun(met, game())).toBeNull();
+    expect(accountBegun(fresh, fresh)).toBeNull();
+    // A game that is loaded has no game before it: whatever it holds began some other time.
+    expect(accountBegun(null, next)).toBeNull();
+    expect(accountBegun(undefined, next)).toBeNull();
+    // Another callsign where one was open: that one has begun.
+    expect(accountBegun(game({ grudge: account({ name: 'Tally', met: 2 }) }), game({ grudge: account({ name: 'Docket' }) }))).toBe('Docket');
+    // What is kept and reads as no account began nothing.
+    expect(accountBegun(fresh, game({ grudge: account({ kind: 'no-such-machine' }) }))).toBeNull();
+  });
+
   test('a contract lost begins one as a contract won does', () => {
     expect(grudgeOf(bookGrudge(game(), BOARD, false, { ...fought, seen: { kind: 'heavy-mech', origin: 'beat' } }, NAMES))).toMatchObject({ kind: 'heavy-mech', origin: 'beat', met: 0, waited: 0 });
   });
@@ -435,6 +455,15 @@ describe('the notice', () => {
     expect(talk({ origin: 'beat' })[0][2]).toBe('opens beat');
     expect(talk({ met: 1, origin: 'ran' }).map((line) => line[2])).toEqual(['opens second', 'hurt known', 'falls second']);
     expect(talk({ met: 2, origin: 'beat' }).map((line) => line[2])).toEqual(['opens third', 'hurt known', 'falls third']);
+    // A callsign that has a face says its lines beside it; one that has none says them all the same.
+    const faced: BoardText & GrudgeText = { ...TEXT, grudge: { ...WORDS, faces: { Brakk: 'portrait-of-brakk' } } };
+    const lines = (name: string) => grudgeContract(game({ battlesWon: 12, grudge: account({ name, waited: 3 }) }), faced, CALLED)!.battles[0].talk!;
+    expect(lines('Brakk').map((line) => line.portrait)).toEqual(['portrait-of-brakk', BOARD_TEXT.faces!.Dispatch, 'portrait-of-brakk']);
+    expect(lines('Tally').map((line) => [line.who, 'portrait' in line])).toEqual([['Tally', false], ['Dispatch', true], ['Tally', false]]);
+    // (A name that is no key of its own, such as one every object answers to, has none.)
+    expect(lines('Brakk').length).toBe(3);
+    const odd = grudgeContract(game({ battlesWon: 12, grudge: account({ name: 'constructor', waited: 3 }) }), faced, CALLED)!.battles[0].talk!;
+    expect(odd.map((line) => 'portrait' in line)).toEqual([false, true, false]);
     // Of a machine that knows no weapon Dispatch does not say that it was built for one.
     const plain = (met: number) => grudgeContract(game({ battlesWon: 12, grudge: blank({ met, waited: 3 }) }), TEXT, CALLED)!.battles[0].talk!.map((line) => line.text);
     expect(plain(0)).toEqual(['opens wrecked', 'hurt plain', 'falls first']);
@@ -531,6 +560,53 @@ describe('a meeting won', () => {
     expect(accountLine(at({ met: 2 }), NOTICE)).toEqual({ name: 'Brakk', meeting: 3, closed: true });
     expect(accountLine(at(), BOARD)).toBeNull();
     expect(accountLine(game(), NOTICE)).toBeNull();
+  });
+});
+
+describe('the ledger: the accounts as their page lists them', () => {
+  test('nobody, where no account has begun', () => {
+    expect(ledger(game())).toEqual([]);
+    expect(ledger(game({ accounts: [] }))).toEqual([]);
+  });
+
+  test('the one that is open: who, in what, how it began, how many meetings, what the machine knows, and how many contracts until the notice', () => {
+    expect(ledger(game({ grudge: account({ waited: 1 }) }))).toEqual([
+      { name: 'Brakk', open: true, kind: 'stalker', origin: 'wrecked', met: 0, knows: 'wpn-rivet-rifle', wait: 2 },
+    ]);
+    const wait = (change: Partial<Grudge>): number | undefined => { const [entry] = ledger(game({ grudge: account(change) })); return entry.open ? entry.wait : undefined; };
+    // Three contracts before the first notice, two before each of the others; and none once it is out, however long it is left.
+    expect([0, 1, 2, 3, 9].map((waited) => wait({ waited }))).toEqual([3, 2, 1, 0, 0]);
+    expect([0, 1, 2, 5].map((waited) => wait({ met: 1, waited }))).toEqual([2, 1, 0, 0]);
+    expect([0, 1, 2].map((waited) => wait({ met: 2, waited }))).toEqual([2, 1, 0]);
+    // The wait is over exactly when the notice is on offer.
+    for (const met of [0, 1, 2]) for (let waited = 0; waited < 5; waited++) {
+      const state = game({ grudge: account({ met, waited }) });
+      expect(wait({ met, waited }) === 0, `${met} ${waited}`).toBe(grudgeDue(state));
+    }
+    // One that knows nothing says nothing of a weapon.
+    const [unknowing] = ledger(game({ grudge: blank({ met: 1 }) }));
+    expect(unknowing).toEqual({ name: 'Brakk', open: true, kind: 'stalker', origin: 'wrecked', met: 1, wait: 2 });
+    expect('knows' in unknowing).toBe(false);
+  });
+
+  test('the open one first, then the closed ones in the order they were closed, each callsign once', () => {
+    expect(ledger(game({ accounts: ['Tally', 'Brakk'] }))).toEqual([{ name: 'Tally', open: false }, { name: 'Brakk', open: false }]);
+    expect(ledger(game({ grudge: account({ name: 'Docket' }), accounts: ['Tally', 'Brakk', 'Tally', 'Lapse'] })).map((entry) => [entry.name, entry.open])).toEqual([
+      ['Docket', true], ['Tally', false], ['Brakk', false], ['Lapse', false],
+    ]);
+  });
+
+  test('a callsign that has come round again and is open is listed as that, and not as closed as well', () => {
+    expect(ledger(game({ grudge: account({ name: 'Brakk', met: 1 }), accounts: ['Brakk', 'Tally'] })).map((entry) => [entry.name, entry.open])).toEqual([['Brakk', true], ['Tally', false]]);
+  });
+
+  test('what is kept and reads as no account is not listed, and closed ones that are no list are none', () => {
+    expect(ledger(game({ grudge: account({ kind: 'no-such-machine' }), accounts: ['Tally'] }))).toEqual([{ name: 'Tally', open: false }]);
+    expect(ledger({ accounts: 'Tally' as unknown as string[] })).toEqual([]);
+    // What is given is not written to.
+    const kept = game({ grudge: account(), accounts: ['Tally', 'Tally'] });
+    ledger(kept);
+    expect(kept.accounts).toEqual(['Tally', 'Tally']);
   });
 });
 

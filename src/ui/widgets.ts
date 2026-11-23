@@ -159,6 +159,9 @@ export function drawPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w
 /** Where sprites come from, as far as a widget needs to know. */
 interface Sprites { get(id: string, fallback: { w: number; h: number; label: string }): { image: CanvasImageSource } }
 
+/** A name cut to the letters a row has room for: where it is longer, its first letters and a stop. */
+export const clip = (text: string, chars: number): string => (text.length > chars ? `${text.slice(0, chars - 1)}.` : text);
+
 /** A speaker's face in a square; without one, the plain terminal mark the dispatcher has. */
 export function drawPortrait(ctx: CanvasRenderingContext2D, sprites: Sprites, id: string | undefined, x: number, y: number, size: number): void {
   if (id) {

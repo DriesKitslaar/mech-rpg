@@ -1,6 +1,8 @@
 import { reached } from '../core/campaign';
 import { checksHeld, type Find } from '../core/codex';
 import type { GameState } from '../core/game';
+import { grudgeFace, ledger } from '../core/grudge';
+import { BOARD_TEXT, ledgerText } from '../content/board';
 import { JUKEBOX, MANUAL, PEOPLE, UNITS, WORLD, type Person } from '../content/codex';
 import { FINDS } from '../content/finds';
 import { MISSIONS } from '../content/missions';
@@ -13,7 +15,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { unitPage } from './unitPage';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawPortrait, drawTabs, drawText, wrap } from './widgets';
+import { COLORS, LINE, charsFor, clip, drawList, drawPanel, drawPortrait, drawTabs, drawText, wrap } from './widgets';
 
 const D = STRINGS.database;
 export type DatabasePage = 'units' | 'people' | 'world' | 'finds' | 'manual' | 'music';
@@ -46,6 +48,15 @@ export const PAGE_CHARS = charsFor(PAGE.w - 12);
 const PICTURE_H = 106;
 /** A face is drawn at the size it was painted. */
 const PORTRAIT = 56;
+/** The lines there are for what is said of somebody, under their name and their face. */
+export const PERSON_LINES = Math.floor((PAGE.h - 4 - (4 + LINE + 2 + PORTRAIT + 6)) / LINE);
+/** The row of an account in the list of people: by its callsign, which is nobody else's id. */
+const ACCOUNT = 'account:';
+/**
+ * The letters of a callsign its row has room for, beside the word that says what the account is. The game's own
+ * callsigns are shorter; one from a file made elsewhere may not be, and is cut (its page has it whole).
+ */
+export const ROW_NAME = 10;
 /** The most lines a find's text may take on its page, and its clue: both stand under a name and a line about where it comes from. */
 export const FIND_TEXT_LINES = 12;
 export const FIND_CLUE_LINES = 3;
@@ -101,11 +112,16 @@ export class DatabaseScreen implements Screen {
         return { id: find.id, label: findLabel(find, found), enabled: found };
       })),
       manual: new MenuList(MANUAL.map((topic) => ({ id: topic.id, label: titleCase(topic.title), enabled: true }))),
-      // Everybody has a row, like every unit: somebody not come across yet keeps their name.
-      people: new MenuList(PEOPLE.map((person) => {
-        const known = personKnown(game, person);
-        return { id: person.id, label: known ? person.name : D.unknown, enabled: known };
-      })),
+      // First whoever has an account with the pilot: the one that is open, then those that are closed, each with a
+      // word behind the callsign that says which. Nobody is listed there before an account with them begins. Then
+      // everybody of the story, each with a row like every unit: somebody not come across yet keeps their name.
+      people: new MenuList([
+        ...ledger(game).map((entry) => ({ id: `${ACCOUNT}${entry.name}`, label: clip(entry.name, ROW_NAME), enabled: true, note: entry.open ? D.rowOpen : D.rowClosed })),
+        ...PEOPLE.map((person) => {
+          const known = personKnown(game, person);
+          return { id: person.id, label: known ? person.name : D.unknown, enabled: known };
+        }),
+      ]),
       // Every song has its row, like every unit: one not heard yet keeps its name to itself.
       music: new MenuList(JUKEBOX.map((song) => {
         const heard = app.heard().includes(song.id);
@@ -131,7 +147,12 @@ export class DatabaseScreen implements Screen {
     if (this.page === 'world') return D.entries(this.lists.world.items.length, WORLD.length);
     if (this.page === 'finds') return `${D.found(this.lists.finds.items.filter((item) => item.enabled).length, FINDS.length)}   ${D.checks(checksHeld(this.app.game!))}`;
     if (this.page === 'music') return D.heard(this.lists.music.items.filter((item) => item.enabled).length, JUKEBOX.length);
-    if (this.page === 'people') return D.known(this.lists.people.items.filter((item) => item.enabled).length, PEOPLE.length);
+    if (this.page === 'people') {
+      // The people of the story the pilot has come across, of those there are; and beside it how many accounts there are to read about.
+      const accounts = ledger(this.app.game!).length;
+      const known = this.lists.people.items.filter((item) => item.enabled && !item.id.startsWith(ACCOUNT)).length;
+      return accounts > 0 ? `${D.known(known, PEOPLE.length)}   ${D.accounts(accounts)}` : D.known(known, PEOPLE.length);
+    }
     return D.topics(MANUAL.length);
   }
 
@@ -147,6 +168,15 @@ export class DatabaseScreen implements Screen {
         title: this.unitTitle(selected.id).toUpperCase(), sprite: def.sprite, stats: text.stats,
         lines: [...text.weapons, ...text.abilities, '', ...wrap(note, PAGE_CHARS)],
       };
+    }
+    if (this.page === 'people' && selected.id.startsWith(ACCOUNT)) {
+      const entry = ledger(this.app.game!).find((account) => `${ACCOUNT}${account.name}` === selected.id);
+      if (!entry) return null;
+      const role = entry.open ? D.accountOpen : D.accountClosed;
+      const lines = wrap(ledgerText(entry, this.app.called()), PAGE_CHARS);
+      const { portrait } = grudgeFace(BOARD_TEXT, entry.name);
+      // A callsign that has no face has what it is to the pilot as its first line, where the face would have it beside it.
+      return portrait ? { title: entry.name.toUpperCase(), portrait, role, lines } : { title: entry.name.toUpperCase(), lines: [role.toUpperCase(), '', ...lines] };
     }
     if (this.page === 'people') {
       const person = PEOPLE.find((p) => p.id === selected.id);
