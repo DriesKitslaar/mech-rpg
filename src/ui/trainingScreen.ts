@@ -30,6 +30,13 @@ const ROWS = DRILLS.length;
  * Where the machines of the range stand: the box beside the list, how much larger than life one may be drawn,
  * and how far along its own width each of several stands from the one before it.
  */
+/**
+ * The room the panel at the foot has for what a drill is about, or for the note of a machine on the range: this
+ * many lines of this many letters. Nothing more of a text is drawn, so every text shown there has to fit, in
+ * every language.
+ */
+export const PANEL_CHARS = charsFor(LOGICAL_W - 28);
+export const PANEL_LINES = 3;
 const STAND = { x: 160, y: 20, w: 144, h: 160 };
 const STAND_SCALE = 2;
 const STAND_STEP = 0.55;
@@ -226,7 +233,7 @@ export class TrainingScreen implements Screen {
     drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === T.locked ? COLORS.danger : state === T.passed ? COLORS.armor : COLORS.dim });
     drawText(ctx, drill.lesson, 12, 207, { color: COLORS.armor });
     const text = selected?.enabled ? drill.briefing[0] : T.lockedNote;
-    wrap(text, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 219 + i * LINE));
+    wrap(text, PANEL_CHARS).slice(0, PANEL_LINES).forEach((row, i) => drawText(ctx, row, 12, 219 + i * LINE));
     drawText(ctx, T.hint, LOGICAL_W / 2, 255, { align: 'center', color: COLORS.dim });
   }
 
@@ -260,7 +267,7 @@ export class TrainingScreen implements Screen {
     drawText(ctx, T.rangeCount(machine.count), LOGICAL_W - 12, 191, { align: 'right', color: machine.limit > 1 && this.shut === null ? COLORS.text : COLORS.dim });
     drawText(ctx, `${armour.label} ${armour.value}   ${weak.label} ${weak.value}`, 12, 207, { color: COLORS.armor });
     const note = UNITS.find((unit) => unit.id === machine.kind)?.note ?? '';
-    wrap(note, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 219 + i * LINE));
+    wrap(note, PANEL_CHARS).slice(0, PANEL_LINES).forEach((row, i) => drawText(ctx, row, 12, 219 + i * LINE));
     hint(T.rangeHint);
   }
 }

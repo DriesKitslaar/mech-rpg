@@ -13,7 +13,7 @@ import {
   markSceneSeen, startNewCycle, stockFor, unreadMessages, LESSONS,
   type Mission, type Scene,
 } from '../core/campaign';
-import { isFind, metByRecord, openEntries, type Entry, type Find } from '../core/codex';
+import { heldAlready, isFind, metByRecord, openEntries, type Entry, type Find } from '../core/codex';
 import { applySettlement, debtRelief, settle, type Settlement } from '../core/economy';
 import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import {
@@ -840,9 +840,12 @@ export class App {
     const begun = accountBegun(before, game);
     const accountToasts: Toast[] = begun === null ? []
       : [{ id: `account:${begun}`, heading: STRINGS.accounts.opened, title: STRINGS.accounts.callsign(begun), sound: 'entry' }];
+    // An answer that hands over something the pilot already held says so, where it would otherwise say nothing at all.
+    const heldToasts: Toast[] = heldAlready(before, game, FINDS)
+      .map((find) => ({ id: `held:${find.id}`, heading: STRINGS.database.heldToast, title: find.title, sound: 'entry' as const }));
     this.toasts.push(
       ...crownToasts, ...seatToasts, ...stripeToasts, ...medalToasts(earned), ...nameToasts, ...accountToasts,
-      ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...driveToasts,
+      ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...heldToasts, ...driveToasts,
     );
     this.game = game;
     this.saveFailed = !this.file.save(game);

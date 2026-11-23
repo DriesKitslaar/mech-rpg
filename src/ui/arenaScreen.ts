@@ -200,7 +200,8 @@ export class ArenaScreen implements Screen {
         : last ? (o.rank === ARENA_RANKS ? A.apex : A.champion) : o.style;
       wrap(words, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + i * LINE));
     }
-    drawText(ctx, A.back, LOGICAL_W / 2, 253, { align: 'center', color: COLORS.dim });
+    // A is offered where the row in hand takes a challenge, and nowhere else.
+    drawText(ctx, this.list.selected?.enabled ? A.back : A.backLocked, LOGICAL_W / 2, 253, { align: 'center', color: COLORS.dim });
   }
 
   /**

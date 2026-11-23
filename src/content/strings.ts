@@ -25,7 +25,8 @@ export const STRINGS = {
     targetOf: (n: number, of: number) => `TARGET ${n}/${of}  L1/R1`,
   },
   // `fork` is written over the machine a fork's hit would leap on to.
-  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL', kills: 'DESTROYS', fork: 'FORK' },
+  // `passedOn` is the row of a part that is already destroyed, while aiming: a shot at it goes on to the core, for half.
+  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL', kills: 'DESTROYS', fork: 'FORK', passedOn: (part: string) => `${part}: gone, half to core` },
   weaponMenu: {
     charge: 'CHARGE', ready: 'READY',
     // Of a surge, beside the energy it would take now; of a spool, the shots it has wound up to.
@@ -257,6 +258,8 @@ export const STRINGS = {
     rank: (n: number) => `RANK ${n}`, purse: 'PURSE', rematch: 'REMATCH',
     next: 'NEXT OPPONENT', beaten: 'BEATEN', locked: 'LOCKED', champion: 'You are the champion of Varn.',
     yourRank: (n: number, of: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/${of}`), fight: 'ARENA FIGHT', back: 'A: challenge   L1/R1: page   B: back',
+    // (Under a row that takes no challenge: A does nothing there, and the hint does not say it does.)
+    backLocked: 'L1/R1: page   B: back',
     apex: 'There is nobody left to beat. The back room drinks to you.',
     // The arena's two pages: the ladder, and the masters who stand apart from it.
     pages: { ladder: 'LADDER', masters: 'MASTERS' },
@@ -398,6 +401,8 @@ export const STRINGS = {
     // What has been found: papers and brass lamp checks. One not found has a clue where its text will be.
     found: (n: number, of: number) => `FOUND ${n}/${of}`, checks: (n: number) => `LAMP CHECKS ${n}`, check: 'Check', notFound: 'Not found yet.',
     findToast: 'FOUND', newFinds: (n: number) => `${n} new finds`,
+    // Over the name of a find that an answer hands over and the pilot held already.
+    heldToast: 'ALREADY FOUND',
     // The people of Varn the pilot has come across.
     known: (n: number, of: number) => `KNOWN ${n}/${of}`, broughtIn: 'Brought in',
     // The pilots of accounts (see grudge.ts), who have a page here from the moment their account begins: what one is
@@ -606,6 +611,8 @@ export const STRINGS = {
     output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',
     impact: 'IMP', unlimited: 'unlimited', perShot: '/shot',
     thrust: 'THRUST', boostCost: 'BOOST COST', aimByType: 'AIM K/E/X', focus: 'FOCUS', uses: 'USES',
+    // The letter of each kind of damage, as `resist` and `aimByType` list them: for a figure that is of one kind alone.
+    typeLetters: { kinetic: 'K', energy: 'E', explosive: 'X' },
     guard: (blocked: number) => `GUARD: blocks ${blocked}%`, guardShort: 'GUARD',
     versus: (name: string) => `VS ${name}`,
     charge: 'CHARGE: fires a turn later', melee: 'MELEE: spends your Boost',
@@ -619,7 +626,7 @@ export const STRINGS = {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',
       thermal: (power: number) => `THERMAL: +${power} heat on target`,
-      drain: (power: number) => `DRAIN: -${power} energy on target`,
+      drain: (power: number) => `DRAIN: -${power} EN on target`,
       burst: (power: number) => `BURST: fires ${power} times`,
       salvo: () => 'SALVO: hits every enemy',
       // The five kinds that ask something of the machine that carries them. A spool's line is given the most it fires.
@@ -631,7 +638,7 @@ export const STRINGS = {
     },
     legTypes: {
       biped: '', reverse: 'REVERSE: boost +8 evasion', quad: 'QUAD: steady, shoulder +6',
-      tank: 'TRACKS: no boost, guard 50%', hover: 'HOVER: cheap boost, unsteady',
+      tank: 'TRACKS: no boost, guard 50%', hover: 'HOVER: cheap boost, shaky',
     },
     modules: {
       coolant: (p: number) => `Vents ${p} heat at once.`,

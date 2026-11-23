@@ -23,7 +23,7 @@ export const STRINGS_NL = {
     you: 'JOUW MECH', target: 'DOELWIT', weapons: 'WAPENS', repair: 'WAT REPAREREN?', paint: 'WIE MARKEREN?',
     targetOf: (n: number, of: number) => `DOELWIT ${n}/${of}  L1/R1`,
   },
-  preview: { hit: 'TREF', damage: 'SCH.', all: 'ALLE', kills: 'VERNIETIGT', fork: 'VONK' },
+  preview: { hit: 'TREF', damage: 'SCH.', all: 'ALLE', kills: 'VERNIETIGT', fork: 'VONK', passedOn: (part: string) => `${part}: weg, helft op kern` },
   weaponMenu: {
     charge: 'LADEN', ready: 'KLAAR',
     all: 'ALLES', shots: (count: number) => `${count} SCHOTEN`,
@@ -216,7 +216,7 @@ export const STRINGS_NL = {
     heading: 'ARENA', client: 'Arenakantoor', win: 'Publiek kreeg waar voor zijn geld. Jij ook.',
     rank: (n: number) => `RANG ${n}`, purse: 'POT', rematch: 'REVANCHE',
     next: 'VOLGENDE RIVAAL', beaten: 'GEKLOPT', locked: 'OP SLOT', champion: 'Jij bent de kampioen van Varn.',
-    yourRank: (n: number, of: number) => (n === 0 ? 'GEEN RANG' : `JOUW RANG ${n}/${of}`), fight: 'ARENAGEVECHT', back: 'A: daag uit   L1/R1: blad   B: terug',
+    yourRank: (n: number, of: number) => (n === 0 ? 'GEEN RANG' : `JOUW RANG ${n}/${of}`), fight: 'ARENAGEVECHT', back: 'A: daag uit   L1/R1: blad   B: terug', backLocked: 'L1/R1: blad   B: terug',
     apex: 'Niemand meer te verslaan. De achterkamer drinkt op jou.',
     pages: { ladder: 'LADDER', masters: 'MEESTERS' },
     masters: {
@@ -335,7 +335,7 @@ export const STRINGS_NL = {
   database: {
     heading: 'DATABASE', pages: { units: 'EENHEID', people: 'MENSEN', world: 'WERELD', finds: 'VONDST', manual: 'HANDBOEK', music: 'MUZIEK' }, hint: 'L1/R1: blad   B: terug',
     found: (n: number, of: number) => `VONDST ${n}/${of}`, checks: (n: number) => `PENNINGEN ${n}`, check: 'Penning', notFound: 'Nog zoek.',
-    findToast: 'VONDST', newFinds: (n: number) => `${n} vondsten`,
+    findToast: 'VONDST', newFinds: (n: number) => `${n} vondsten`, heldToast: 'AL GEVONDEN',
     known: (n: number, of: number) => `BEKEND ${n}/${of}`, broughtIn: 'Ingerekend',
     accountOpen: 'Open rekening', accountClosed: 'Rekening dicht', accounts: (n: number) => `REKENINGEN ${n}`,
     rowOpen: 'OPEN', rowClosed: 'DICHT',
@@ -518,9 +518,10 @@ export const STRINGS_NL = {
     output: 'VERMOGEN', cooling: 'KOELING', damage: 'SCH', accuracy: 'PREC', energy: 'EN', heat: 'HITTE', ammo: 'MUN.',
     impact: 'DUW', unlimited: 'onbeperkt', perShot: '/schot',
     thrust: 'STUWING', boostCost: 'BOOSTKOSTEN', aimByType: 'TREF K/S/E', focus: 'FOCUS', uses: 'KEREN',
+    typeLetters: { kinetic: 'K', energy: 'S', explosive: 'E' },
     guard: (blocked: number) => `DEKKING: stopt ${blocked}%`, guardShort: 'DEKKING',
     versus: (name: string) => `VS ${name}`,
-    charge: 'LADEN: vuurt een beurt later', melee: 'MELEE: verbruikt je Boost',
+    charge: 'LADEN: vuurt een beurt erna', melee: 'MELEE: verbruikt je Boost',
     field: (n: number) => `VELD: vangt ${n} per ronde`, fieldBreak: 'Gebroken: een beurt weg',
     poise: 'BALANS: 1 kling houdt Boost',
     heatLimit: (limit: number) => `HEET: hittegrens ${limit}`,
@@ -529,7 +530,7 @@ export const STRINGS_NL = {
       twin: () => 'DUO: vuurt tweemaal',
       pierce: () => 'DOORBOOR: halve weerstand',
       thermal: (power: number) => `THERMISCH: doel +${power} hitte`,
-      drain: (power: number) => `AFTAP: -${power} energie bij doel`,
+      drain: (power: number) => `AFTAP: -${power} EN bij doel`,
       burst: (power: number) => `STOOT: vuurt ${power} keer`,
       salvo: () => 'SALVO: raakt elke vijand',
       redline: (power: number) => `WITHEET: +${power}% per 10 hitte`,
@@ -540,7 +541,7 @@ export const STRINGS_NL = {
     },
     legTypes: {
       biped: '', reverse: 'OMGEKEERD: boost +8 ontwijk', quad: 'QUAD: stevig, schouder +6',
-      tank: 'RUPS: geen boost, dekt 50%', hover: 'HOVER: zuinige boost, wankel',
+      tank: 'RUPS: geen boost, dekt 50%', hover: 'HOVER: boost zuinig, wankel',
     },
     modules: {
       coolant: (p: number) => `Koelt meteen ${p} hitte.`,

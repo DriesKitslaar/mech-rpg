@@ -11,6 +11,9 @@ import { COLORS, LINE, drawList, drawPanel, drawText } from './widgets';
 
 const S = STRINGS.shop;
 const LIST_W = 168;
+/** Where the panel of the part in hand begins, and where its lines of text do: it runs to the right edge of the screen. */
+const DETAIL_X = LIST_W + 2;
+export const DETAIL_TEXT_X = DETAIL_X + 6;
 const ROWS = 12;
 
 /** Draws the shop and passes its results to the app: every trade is saved at once. */
@@ -71,7 +74,7 @@ export class ShopScreen implements Screen {
     drawPanel(ctx, 0, 33, LIST_W, 200);
     drawList(ctx, flow.list, 6, 39, LIST_W - 20, ROWS);
 
-    this.drawDetail(ctx, LIST_W + 2, 33, LOGICAL_W - LIST_W - 2, 200);
+    this.drawDetail(ctx, DETAIL_X, 33, LOGICAL_W - DETAIL_X, 200);
 
     drawPanel(ctx, 0, 235, LOGICAL_W, LOGICAL_H - 235);
     const refused = flow.message === S.cannotAfford || flow.message === S.inUse || flow.message === S.needWeapon;

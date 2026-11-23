@@ -210,7 +210,7 @@ test('a weapon\'s special effect is described', () => {
   expect(partLines(CATALOG['wpn-needler']).at(-1)).toBe('TWIN: fires twice');
   expect(partLines(CATALOG['wpn-void-rifle']).at(-1)).toBe('PIERCE: halves resistance');
   expect(partLines(CATALOG['wpn-thermal-lance']).at(-1)).toBe('THERMAL: +18 heat on target');
-  expect(partLines(CATALOG['wpn-arc-caster']).at(-1)).toBe('DRAIN: -60 energy on target');
+  expect(partLines(CATALOG['wpn-arc-caster']).at(-1)).toBe('DRAIN: -60 EN on target');
 });
 
 describe('comparing a part with the one that is fitted', () => {
@@ -261,6 +261,7 @@ describe('comparing a part with the one that is fitted', () => {
     }
     expect(widest).toBeGreaterThan(20);
     expect(widest).toBeLessThanOrEqual(COMPARE_LINE_CHARS);
+    // (A line of 28 letters would end on the border of the shop's panel.)
     expect(COMPARE_LINE_CHARS).toBeLessThan(28);
   });
 

@@ -101,7 +101,7 @@ export const REFERENCE_NL: Record<string, string> = {
   "The Circuit's first sword, in a Sterling. Its field takes what lands first and is whole each round unless you break it. Broken, it is down a round.":
     'Eerste zwaard van het Circuit, in een Sterling. Zijn veld vangt de eerste treffers op en is elke ronde weer heel, tenzij je het breekt. Dan is het een ronde weg.',
   "The coast yard's works pilot, in a Sirocco. Its heat limit is 130, and both weapons hit harder the hotter it runs. Stagger it, or heat it past that.":
-    'Fabriekspiloot van de kustwerf, in een Sirocco. Zijn hittegrens is 130 en zijn twee wapens slaan harder naarmate hij heter is. Laat hem wankelen, of stook hem daaroverheen.',
+    'Fabriekspiloot van de kustwerf, in een Sirocco: hittegrens 130, en twee wapens die harder slaan naarmate hij heter is. Laat hem wankelen, of stook hem erover.',
   "The coast yard's other works pilot, in a Solstice. It holds every other round and keeps the energy: the next, its one weapon has a turn and a half.":
     'Fabriekspiloot van de kustwerf, in een Solstice. Wacht om de andere ronde en spaart energie: daarna vuurt hij met anderhalve beurt tegelijk.',
 

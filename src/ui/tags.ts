@@ -44,20 +44,27 @@ export function labelFits(message: string, label: string, width = 310): boolean 
 
 export interface Box { x: number; y: number; w: number; h: number }
 
+/** The highest row a mark over a unit may be written in (the first under the message bar), and the rows its letters take. */
+const MARK_TOP = 26;
+const MARK_ROWS = 9;
+
 /**
  * Where the small mark over a unit on the field is written (a fuse, a charge, the contract's
  * target): centred just above it, but not on the bars of another unit that stands higher up.
  * Where it would be, it is written on the unit itself. `bars` are the others' bars where they were
  * put (`placeBars`): bars that were moved down out of each other's way are kept clear of where they are.
+ * `inside` says that the mark lies on the machine: because it was moved there, or because the machine
+ * stands so tall that the highest row a mark may have is on its head. A mark on a machine is written on
+ * a dark ground: bare, an amber word on a yellow machine cannot be read.
  */
 export function markPosition(unit: Box, bars: { x: number; y: number; w: number }[], textWidth: number): { x: number; y: number; inside: boolean } {
   const x = Math.round(unit.x + unit.w / 2);
-  const y = Math.max(26, unit.y - 10);
+  const y = Math.max(MARK_TOP, unit.y - 10);
   const left = x - textWidth / 2;
   const right = x + textWidth / 2;
   // A row of text is nine pixels high; bars are kept a pixel clear above and below.
-  const onBars = bars.some((bar) => left < bar.x + bar.w && right > bar.x && y < bar.y + BARS_H + 1 && y + 9 > bar.y - 1);
-  return onBars ? { x, y: unit.y + 2, inside: true } : { x, y, inside: false };
+  const onBars = bars.some((bar) => left < bar.x + bar.w && right > bar.x && y < bar.y + BARS_H + 1 && y + MARK_ROWS > bar.y - 1);
+  return onBars ? { x, y: unit.y + 2, inside: true } : { x, y, inside: y + MARK_ROWS > unit.y };
 }
 
 

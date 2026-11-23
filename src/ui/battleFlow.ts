@@ -552,8 +552,10 @@ export class BattleFlow {
 
   private openTarget(targetId: string): void {
     const target = this.state.units.find((u) => u.id === targetId)!;
+    // A part that is already destroyed can still be aimed at: the shot goes on to the core, for half. Its row says so.
+    const gone = (part: FrameSlot): boolean => part !== 'core' && target.parts[part]!.ap <= 0;
     const items = FRAME_SLOTS.filter((part) => target.parts[part])
-      .map((part) => ({ id: part, label: partName(target, part), enabled: true }));
+      .map((part) => ({ id: part, label: gone(part) ? STRINGS.preview.passedOn(partName(target, part)) : partName(target, part), enabled: true }));
     this.phase = 'target';
     // A machine the client wants in one piece is aimed at by what has to come off it, never first by its core.
     const wanted = this.state.objective.type === 'disable' && objectiveTarget(this.state)?.id === targetId;

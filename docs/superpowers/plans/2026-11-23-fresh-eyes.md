@@ -42,8 +42,8 @@
 
 ### Task F2: the four testers
 
-- [ ] Four testers at once, each with one lens, the kit, the rules of the round and a file of its own for notes: the first two hours in English; all of it in Dutch; the middle, the end and the long game; the screens side by side (the 225 pictures added since the last whole look).
-- [ ] What each handed in, kept beside the plan's findings (in the scratchpad; the findings themselves go into this plan).
+- [x] Four testers at once, each with one lens, the kit, the rules of the round and a file of its own for notes: the first two hours in English; all of it in Dutch; the middle, the end and the long game; the screens side by side (the 225 pictures added since the last whole look).
+- [x] What each handed in, kept beside the plan's findings (in the scratchpad; the findings themselves go into this plan). A hundred and one findings: 22 from the first two hours (T1), 30 from the Dutch (T2), 19 from the middle, the end and the long game (T3), 30 from the screens side by side (T4). None of them stops a player.
 
 ### Task F3: the findings, checked and answered
 
@@ -51,7 +51,22 @@
 - [ ] Each one answered, worst first: the test that fails for it, the mend, the test passing; or the reason it is left.
 - [ ] The list of what is good, and that no mend touched it.
 
-(The findings and their answers are written here as they are settled.)
+(The findings and their answers are written here as they are settled. A finding is named by its tester and its number in that tester's report: T2-1 is the first finding of the tester who played in Dutch.)
+
+#### Batch 1: what was broken or untrue
+
+| Finding | So? | Answer |
+|---|---|---|
+| T2-2, T4-1: a Dutch paragraph cut off in the middle of a sentence (the first drill, and the range's note on Kiln's machine) | So | The panel's room is a number now (`PANEL_CHARS`, `PANEL_LINES` in `trainingScreen.ts`), and `tests/content/freshEyes.test.ts` measures every drill's text and every note of the range against it, in both languages. Two Dutch texts were shortened. |
+| T4-2, T4-28: a mark written bare on a tall machine (TARGET in amber on a yellow machine; HARDENED, OVERCLOCKED, REDLINE) | So | A mark that the top of the field pushes down onto the machine it belongs to gets the dark plate, as a mark moved for another machine's bars already had (`markPosition` in `tags.ts`; `tests/ui/tags.test.ts`). |
+| T4-3: the shop's detail lines run onto the panel's right border | So | A line holds 27 letters, as the garage's did (`PART_LINE_CHARS` in `partInfo.ts`); a row of figures that is longer closes up its spaces. `tests/ui/freshEyes.test.ts` measures every part's lines against the border, in both languages. |
+| T2-3: a long opening line runs under the fight counter in the top bar | Not so | The bar already leaves the counter out when the line would reach it (`labelFits`). Seen again with the kit on the same contract: the counter is not drawn while that line stands. The tester measured the two texts, not what was drawn. Nothing changed. |
+| T2-1: the shop's comparison says K, E and X, where the Dutch heading says K, S and E | So | The letters come from the strings (`partInfo.typeLetters`); a test holds the comparison to the heading's letters in both languages. |
+| T1-15: a destroyed part can still be aimed at, and the shot goes to the core unannounced | So in part | The figures were right: a shot at a part that is gone passes half on to the core, and the preview showed that half. What was missing is the word: the row of such a part now reads "Legs: gone, half to core". Left as a choice, since half a shot at the core is sometimes the one that finishes it. |
+| T4-17: an escort's title names one freight and its objective another ("ESCORT: WAGE RUN", "Protect: Ore Lift") | So | The five titles name no freight any more (Safe Hands, Last Mile, Day Shift, Signed For, Fragile); a test holds every title against the six freights' names. |
+| T4-21: a locked row of the arena still offers "A: challenge" | So | On a row that cannot be challenged the hint leaves A out. |
+| T3-5: the other side's offer hands over a paper the pilot already holds, and then says nothing | So | The bill is followed by "ALREADY FOUND" over the paper's name (`heldAlready` in `core/codex.ts`; tests in `tests/core/freshEyes.test.ts` and `tests/ui/freshEyes.test.ts`). |
+| T3-17: an account's notice pays the same in a later telling, where everything else pays half as much again | Not so, as stated | A notice is board work, and nothing on the open board grows with the telling: the board's pay is by the pilot's own record (capped at 2200), a notice's by the machine and the meeting (1700 to 4800, measured). The story's contracts are what pay more the second time. Left as it is; whether the open board should keep pace is the subject named below for the next round. |
 
 ### Task F4: final check
 
