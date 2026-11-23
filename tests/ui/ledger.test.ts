@@ -4,7 +4,9 @@ import { GRUDGE, ledger, type Grudge } from '../../src/core/grudge';
 import { ALL_ENEMIES } from '../../src/content/arena';
 import { BOARD_TEXT, GRUDGE_FACES, GRUDGE_NAMES, ledgerText } from '../../src/content/board';
 import { PEOPLE } from '../../src/content/codex';
+import { ENEMIES } from '../../src/content/enemies';
 import { setLanguage } from '../../src/content/language';
+import { MISSIONS } from '../../src/content/missions';
 import '../../src/content/nl';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { CATALOG } from '../../src/content/parts';
@@ -12,7 +14,7 @@ import { STRINGS } from '../../src/content/strings';
 import type { App } from '../../src/ui/app';
 import { PAGE_CHARS, PERSON_LINES } from '../../src/ui/databaseScreen';
 import { forgetWords } from '../../src/ui/signType';
-import { wrap } from '../../src/ui/widgets';
+import { COLORS, wrap } from '../../src/ui/widgets';
 import { JUGGERNAUT, accept, done, finishMission, ids, inHub, makeApp, pastLaunch, press, savedGame, select, snap, strong, toHub } from '../helpers/app';
 import { record, signIn, type Drawn } from '../helpers/canvas';
 
@@ -32,24 +34,33 @@ const noticeId = (wins: number): string => `open-0-${wins}-${GRUDGE}`;
 /** What is being announced, and what is waiting to be. */
 const announced = (app: App): string[] => [snap(app).toast, ...snap(app).toasts].filter((id): id is string => id !== null);
 
+/** A battle taken from the hub at a walking pace, well into its banner's time: it has come in and holds. */
+function walkedInto(game: GameState, mission: string): App {
+  const { app } = makeApp(game, 5, { fast: false });
+  press(app, 'confirm');
+  for (let i = 0; i < 400 && snap(app).screen !== 'hub'; i++) { app.update(16); press(app, 'confirm'); }
+  select(app, 'contracts');
+  select(app, mission);
+  for (let i = 0; i < 200 && snap(app).screen !== 'briefing'; i++) app.update(16);
+  select(app, 'accept');
+  for (let i = 0; i < 400 && snap(app).screen !== 'battle'; i++) app.update(16);
+  pastLaunch(app);
+  for (let i = 0; i < 40; i++) app.update(16);
+  expect((snap(app).battle as { mission: string }).mission).toBe(mission);
+  return app;
+}
+/** Everything of the story up to the verdict, on Lumen's side: the contract then on offer is one machine, a boss. */
+const TO_THE_VERDICT = [
+  'intro-1', 'intro-2', 'hadron-1', 'hadron-2', 'lumen-1', 'lumen-2', 'undertow-1', 'undertow-2', 'rival-1',
+  'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3',
+];
+const BOSS = ENEMIES[MISSIONS.find((mission) => mission.id === 'verdict-enforce')!.battles[0].enemies[0]];
+const beforeTheVerdict = (extra: Partial<GameState> = {}): GameState => strong({ ...done(...TO_THE_VERDICT), scenes: ['war-won-lumen', 'act-3'], ...extra });
+const sign = (page: Drawn, word: string) => signIn(page, word, 'red') ?? signIn(page, word, 'amber');
+
 describe('a meeting opens as a boss\'s battle does', () => {
   /** The first frames of a battle taken from the hub at a walking pace, with its banner up. */
-  function opened(game: GameState, mission: string): Drawn {
-    const { app } = makeApp(game, 5, { fast: false });
-    press(app, 'confirm');
-    for (let i = 0; i < 400 && snap(app).screen !== 'hub'; i++) { app.update(16); press(app, 'confirm'); }
-    select(app, 'contracts');
-    select(app, mission);
-    for (let i = 0; i < 200 && snap(app).screen !== 'briefing'; i++) app.update(16);
-    select(app, 'accept');
-    for (let i = 0; i < 400 && snap(app).screen !== 'battle'; i++) app.update(16);
-    pastLaunch(app);
-    // Well into the band's time: it has come in and holds.
-    for (let i = 0; i < 40; i++) app.update(16);
-    expect((snap(app).battle as { mission: string }).mission).toBe(mission);
-    return drawn(app);
-  }
-  const sign = (page: Drawn, word: string) => signIn(page, word, 'red') ?? signIn(page, word, 'amber');
+  const opened = (game: GameState, mission: string): Drawn => drawn(walkedInto(game, mission));
 
   test('the band, under the notice\'s own word and not the warning, with their callsign in the sign\'s letters', () => {
     const page = opened(pilot(22, { grudge: account() }), noticeId(22));
@@ -85,6 +96,97 @@ describe('a meeting opens as a boss\'s battle does', () => {
     expect(page.rects.some((r) => r.color === 'rgba(40, 8, 14, 0.9)')).toBe(false);
     expect(page.texts.map((t) => t.text)).toContain(board.title.toUpperCase());
   });
+
+  test('none of the machines an account can be about is a boss: a meeting has one band to come in on, the notice\'s', () => {
+    expect(MECHS.length).toBeGreaterThanOrEqual(7);
+    for (const id of MECHS) expect(ALL_ENEMIES[id].phases ?? [], id).toEqual([]);
+  });
+
+  test('a boss still comes in under the warning, whether or not an account is open: the notice\'s word is a meeting\'s alone', () => {
+    expect(BOSS.phases!.length).toBeGreaterThan(0);
+    for (const extra of [{}, { grudge: account() }]) {
+      const page = opened(beforeTheVerdict(extra), 'verdict-enforce');
+      expect(sign(page, STRINGS.battleIntro.warning)).not.toBeNull();
+      expect(sign(page, STRINGS.battleIntro.overdue)).toBeNull();
+      expect(signIn(page, BOSS.name.toUpperCase(), 'steel')).not.toBeNull();
+    }
+  });
+});
+
+describe('what the game tells of it to a test that cannot read a canvas', () => {
+  type Fought = { banner: boolean; entrance: { warning: string; name: string } | null; face: string | null; spoken: string | null };
+  const fought = (app: App): Fought => snap(app).battle as unknown as Fought;
+  /** Lets the banner run out. */
+  function pastBanner(app: App): void {
+    for (let i = 0; i < 600 && fought(app).banner; i++) app.update(16);
+    expect(fought(app).banner).toBe(false);
+  }
+
+  test('a meeting: the notice\'s word and their callsign while the band is up, as the band has them; and nobody\'s once it has gone', () => {
+    const app = walkedInto(pilot(22, { grudge: account() }), noticeId(22));
+    expect(fought(app)).toMatchObject({ banner: true, entrance: { warning: 'OVERDUE', name: 'BRAKK' } });
+    const page = drawn(app);
+    expect(sign(page, fought(app).entrance!.warning)).not.toBeNull();
+    expect(signIn(page, fought(app).entrance!.name, 'steel')).not.toBeNull();
+    pastBanner(app);
+    expect(fought(app).entrance).toBeNull();
+  });
+
+  test('in Dutch it is the Dutch word', () => {
+    const app = walkedInto(dutch(pilot(22, { grudge: account() })), noticeId(22));
+    expect(fought(app).entrance).toEqual({ warning: 'VERVALLEN', name: 'BRAKK' });
+  });
+
+  test('a boss: the warning and its name; a contract of the board: nobody comes in on a band', () => {
+    expect(fought(walkedInto(beforeTheVerdict({ grudge: account() }), 'verdict-enforce')).entrance).toEqual({ warning: 'WARNING', name: BOSS.name.toUpperCase() });
+    const board = walkedInto(pilot(22, { grudge: account() }), generateBoard(22, 0, BOARD_TEXT)[0].id);
+    expect(fought(board)).toMatchObject({ banner: true, entrance: null });
+  });
+
+  test('nobody is said to come in while the machine is still on its way to the field', () => {
+    const { app } = makeApp(pilot(22, { grudge: account() }), 5, { fast: false });
+    press(app, 'confirm');
+    for (let i = 0; i < 400 && snap(app).screen !== 'hub'; i++) { app.update(16); press(app, 'confirm'); }
+    select(app, 'contracts');
+    select(app, noticeId(22));
+    for (let i = 0; i < 200 && snap(app).screen !== 'briefing'; i++) app.update(16);
+    select(app, 'accept');
+    for (let i = 0; i < 400 && snap(app).screen !== 'battle'; i++) app.update(16);
+    expect((snap(app) as { launch?: unknown }).launch).toBeTruthy();
+    expect(fought(app)).toMatchObject({ entrance: null, face: null });
+  });
+
+  test('in a calm picture the band is there as a boss\'s is; in a hurried game there is no banner at all, for them as for a boss', () => {
+    const base = pilot(22, { grudge: account() });
+    const calm = walkedInto({ ...base, settings: { ...base.settings, calm: true } }, noticeId(22));
+    expect(fought(calm).entrance).toEqual({ warning: 'OVERDUE', name: 'BRAKK' });
+    expect(sign(drawn(calm), 'OVERDUE')).not.toBeNull();
+    for (const [game, mission] of [[base, noticeId(22)], [beforeTheVerdict(), 'verdict-enforce']] as const) {
+      const { app } = makeApp(game);
+      press(app, 'confirm');
+      for (let i = 0; i < 400 && snap(app).screen !== 'hub'; i++) press(app, 'confirm');
+      accept(app, mission);
+      expect(fought(app), mission).toMatchObject({ banner: false, entrance: null });
+    }
+  });
+
+  test('their face is beside the line they open with once the band has gone, and not while the band is over it', () => {
+    const app = walkedInto(pilot(22, { grudge: account() }), noticeId(22));
+    const line = BOARD_TEXT.grudge.opens.again[0];
+    expect(fought(app)).toMatchObject({ banner: true, spoken: line, face: null });
+    expect(drawn(app).texts.map((t) => t.text)).not.toContain('BRAKK');
+    pastBanner(app);
+    expect(fought(app)).toMatchObject({ spoken: line, face: GRUDGE_FACES.Brakk });
+    // The box is theirs now: their callsign over what they say.
+    expect(drawn(app).texts.map((t) => t.text)).toContain('BRAKK');
+  });
+
+  test('a callsign with no face has none beside its line: the line is said all the same, under the callsign', () => {
+    const faceless = walkedInto(pilot(22, { grudge: account({ name: 'Quill' }) }), noticeId(22));
+    pastBanner(faceless);
+    expect(fought(faceless)).toMatchObject({ spoken: BOARD_TEXT.grudge.opens.again[0], face: null });
+    expect(drawn(faceless).texts.map((t) => t.text)).toContain('QUILL');
+  });
 });
 
 describe('the moment an account begins', () => {
@@ -93,7 +195,8 @@ describe('the moment an account begins', () => {
   const contract = generateBoard(wins, 0, BOARD_TEXT)[0];
 
   test('is announced over the bill of the contract it began in: that an account is opened, and the callsign', () => {
-    const { app, store } = inHub(pilot(wins));
+    const played: string[] = [];
+    const { app, store } = inHub(pilot(wins), undefined, { sfx: { play: (name: string) => { played.push(name); } } as never });
     expect(announced(app).filter((id) => id.startsWith('account:'))).toEqual([]);
     accept(app, contract.id);
     finishMission(app);
@@ -103,9 +206,17 @@ describe('the moment an account begins', () => {
     // Shown, it says so in the words the game has for it.
     for (let i = 0; i < 80 && snap(app).toast !== `account:${begun.name}`; i++) app.update(snap(app).toast === null ? 16 : 3000);
     expect(snap(app).toast).toBe(`account:${begun.name}`);
-    const words = drawn(app).texts.map((t) => t.text);
+    // It comes up with the sound a new page of the database comes up with: their page is there from now on.
+    expect(played.at(-1)).toBe('entry');
+    const texts = drawn(app).texts;
+    const words = texts.map((t) => t.text);
     expect(words).toContain(STRINGS.accounts.opened);
     expect(words).toContain(STRINGS.accounts.callsign(begun.name));
+    // What it is stands small over whose it is.
+    const heading = texts.find((t) => t.text === STRINGS.accounts.opened)!;
+    const title = texts.find((t) => t.text === STRINGS.accounts.callsign(begun.name))!;
+    expect(heading).toMatchObject({ size: 10, color: COLORS.dim });
+    expect(title).toMatchObject({ x: heading.x, y: heading.y + 10, color: COLORS.accent });
     expect([STRINGS.accounts.opened, STRINGS.accounts.callsign('Brakk')]).toEqual(['ACCOUNT OPENED', 'Callsign Brakk']);
     expect([STRINGS_NL.accounts.opened, STRINGS_NL.accounts.callsign('Brakk')]).toEqual(['REKENING GEOPEND', 'Roepnaam Brakk']);
   });
@@ -252,6 +363,17 @@ describe('their page in the database', () => {
     expect(said).toContain('You have not met by name yet.');
     expect(said).toContain('Their machine knows nothing of what you fly.');
     expect(said).toContain('Their notice comes after 3 more contracts won.');
+    // One account is an account: it is counted.
+    expect(count(app)).toBe(`${D.known(knownOf(app), PEOPLE.length)}   ${D.accounts(1)}`);
+  });
+
+  test('one closed account and none open: it stands first, and is counted', () => {
+    const { app } = inHub(pilot(22, { accounts: ['Tally'] }));
+    toPeople(app);
+    expect(ids(app)).toEqual(['account:Tally', ...story]);
+    expect(detail(app)).toMatchObject({ title: 'TALLY', portrait: GRUDGE_FACES.Tally, role: D.accountClosed });
+    expect(count(app)).toBe(`${D.known(knownOf(app), PEOPLE.length)}   ${D.accounts(1)}`);
+    expect(D.accounts(1)).toBe('ACCOUNTS 1');
   });
 
   test('in Dutch: the rows, what they are to the pilot and the lines', () => {

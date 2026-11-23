@@ -321,8 +321,8 @@ class MissionHost implements Screen {
     const battle = this.mission.battles[this.index];
     const boss = battle.enemies.map((id) => this.app.enemies()[id]).find((enemy) => (enemy?.phases?.length ?? 0) > 0);
     // A meeting with the pilot of an account opens as a boss's battle does: they come in on the band, under their
-    // callsign and the notice's own word.
-    const theirs = !boss && isGrudge(this.mission) ? this.app.enemies()[battle.enemies[0]] : undefined;
+    // callsign and the notice's own word. (Their machine stands first on the field of a notice.)
+    const theirs = isGrudge(this.mission) ? this.app.enemies()[battle.enemies[0]] : undefined;
     if (this.index > 0) this.app.openShutter();
     this.screen = new BattleScreen(this.flow, sprites, catalog, {
       fast, sfx, speed: this.app.settings.fastBattles ? FAST_BATTLE_SPEED : 1, paint: lent ? undefined : this.app.game!.paint,
@@ -505,6 +505,9 @@ class MissionHost implements Screen {
       launch: this.launch ? this.launch.view() : null,
       battle: {
         banner: this.screen.banner, typing: this.screen.typing,
+        // Who comes in on a band of their own while the banner is up, and under what word: a boss, or the pilot of an account.
+        // (Not while the launch is on: the band has not come in yet.)
+        entrance: this.launch ? null : this.screen.entrance,
         // The options the battle is fought with, as they reached the field.
         calm: this.screen.calm, pace: this.screen.pace,
         // What is being staged: the Overdrive's band while it is up, and the close look at the last machine to fall.
@@ -519,6 +522,9 @@ class MissionHost implements Screen {
         // The words over the field as this is asked: a test cannot read a canvas.
         words: this.screen.words,
         objective: flow.objective?.text ?? null, spoken: flow.spoken?.text ?? null, replay: !!this.mission.replay,
+        // Whose face is beside the line being said, where the one saying it has one. (Nobody's while the banner is over
+        // it: the line is not on the screen yet.)
+        face: this.screen.banner ? null : flow.spoken?.portrait ?? null,
         // Why the battle ended as it did, where what it asked for decided it.
         note: flow.resultNote || null,
         // What is being kept alive: what is left of it, and its picture on the field where it has one and is still to be seen.

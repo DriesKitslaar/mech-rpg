@@ -9,10 +9,13 @@ import { stripesEarned } from '../src/core/stripes';
 import { tunable } from '../src/core/tuning';
 import type { Build } from '../src/core/types';
 import { ARCHETYPE_BUILDS } from '../src/content/archetypeBuilds';
+import { GRUDGE_FACES } from '../src/content/board';
 import { FINDS } from '../src/content/finds';
 import { MISSIONS } from '../src/content/missions';
+import { STRINGS_NL } from '../src/content/nl/strings';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
 import { REFERENCE_BUILDS } from '../src/content/referenceBuilds';
+import { STRINGS } from '../src/content/strings';
 import { snap, type Snap } from './helpers';
 
 /**
@@ -250,7 +253,13 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     } else if (s.screen === 'battle') {
       const b = s.battle!;
       if (`${b.mission}/${b.index}/${b.round > 1}` !== last && b.round === 1) { battles++; last = `${b.mission}/${b.index}/false`; }
-      const fought = b as unknown as { words?: string[]; fork?: string | null; weapons?: { note: string }[] | null; hardened?: string[]; halved?: boolean; hardening?: number | null };
+      const fought = b as unknown as {
+        words?: string[]; fork?: string | null; weapons?: { note: string }[] | null; hardened?: string[]; halved?: boolean; hardening?: number | null;
+        entrance?: { warning: string; name: string } | null; face?: string | null;
+      };
+      // Who came in on a band of their own, and under what word; and whose face was beside a line as it was said.
+      if (fought.entrance) kinds.add(`band:${fought.entrance.warning}:${fought.entrance.name}`);
+      if (fought.face) kinds.add(`face:${fought.face}`);
       // The machine of an account: hardened against a weapon, and, while that weapon is aimed at it, said to take half;
       // and a hardening seen to have less left than it had, or to have gone while the battle went on.
       if ((fought.hardened ?? []).length > 0) kinds.add('hardened');
@@ -473,11 +482,16 @@ for (const player of PLAYERS) {
       // its meetings (the last may not have come up yet when the time ran out).
       const kept = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as Pick<GameState, 'grudge' | 'accounts'>);
       const won = meetingsWon(kept) - meetingsWon(start);
-      console.log(`${player.name}: notices taken ${played.meetings}, meetings won ${won}, bills ${played.bills.join(' ') || 'none'}, closed ${(kept.accounts ?? []).join(' ') || 'none'}, open ${kept.grudge ? `${kept.grudge.name} at ${kept.grudge.met}` : 'none'}, seen ${played.kinds.filter((kind) => ['hardened', 'half', 'wearing', 'worn'].includes(kind)).join(' ') || 'nothing'}`);
+      console.log(`${player.name}: notices taken ${played.meetings}, meetings won ${won}, bills ${played.bills.join(' ') || 'none'}, closed ${(kept.accounts ?? []).join(' ') || 'none'}, open ${kept.grudge ? `${kept.grudge.name} at ${kept.grudge.met}` : 'none'}, seen ${played.kinds.filter((kind) => ['hardened', 'half', 'wearing', 'worn'].includes(kind) || /^(band|face):/.test(kind)).join(' ') || 'nothing'}`);
       expect(played.meetings).toBeGreaterThanOrEqual(1);
       expect(played.kinds).toContain('hardened');
       // The one who aims the weapon it knows by hand, turn after turn, was told it does half and saw the hardening wear.
       if (player.hand) expect(played.kinds).toEqual(expect.arrayContaining(['half', 'wearing']));
+      // They came in on the band, under the notice's own word in the language played and their callsign; and their
+      // face was beside what they said.
+      const word = (player.settings.language === 'nl' ? STRINGS_NL : STRINGS).battleIntro.overdue;
+      expect(played.kinds).toContain(`band:${word}:${player.account.open.name.toUpperCase()}`);
+      expect(played.kinds).toContain(`face:${GRUDGE_FACES[player.account.open.name]}`);
       expect(won).toBeGreaterThanOrEqual(1);
       expect([won, won - 1]).toContain(played.bills.length);
       // Whoever was closed before is still written down, and whoever a bill said was closed is with them.
