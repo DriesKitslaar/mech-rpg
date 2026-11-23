@@ -59,6 +59,8 @@ export const UNITS: UnitPage[] = [
   { id: 'notary', title: 'The Notary', note: 'Wanted. An Auditor frame gone private: a barrier, a draining coil and a decree. It hits harder once it is losing.' },
   { id: 'larder', note: 'Coast Circuit. A Shrike with a blade and a rifle. It boosts in, strikes and is still boosting: hard to hit until it staggers or loses its legs.' },
   { id: 'argent', note: 'The Circuit\'s first sword, in a Sterling. Its field takes what lands first and is whole each round unless you break it. Broken, it is down a round.' },
+  { id: 'kiln', note: 'The coast yard\'s works pilot, in a Sirocco. Its heat limit is 130, and both weapons hit harder the hotter it runs. Stagger it, or heat it past that.' },
+  { id: 'vesper', note: 'The coast yard\'s other works pilot, in a Solstice. It holds every other round and keeps the energy: the next, its one weapon has a turn and a half.' },
 ];
 
 /** What there is to know about Varn, in the order it comes to light. */
@@ -435,4 +437,8 @@ export const PEOPLE: Person[] = [
     text: 'Duels for standing up and down the coast and keeps what it wins. Named for the place a shrike hangs its catch.' },
   { id: 'argent', name: 'Argent', portrait: 'portrait-argent', role: 'Coast Circuit', when: { met: 'argent' },
     text: 'First sword of the Coast Circuit for nine seasons. Salutes before the duel and after it, and means it both times.' },
+  { id: 'kiln', name: 'Kiln', portrait: 'portrait-kiln', role: 'Coast yard', when: { met: 'kiln' },
+    text: 'Works pilot. Has run every machine the yard builds past its limit, and written a report on each that begins: it was fine.' },
+  { id: 'vesper', name: 'Vesper', portrait: 'portrait-vesper', role: 'Coast yard', when: { met: 'vesper' },
+    text: 'Works pilot. Speaks rarely and flies rarely, and the yard has learnt to pay attention to both.' },
 ];

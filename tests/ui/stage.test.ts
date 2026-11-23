@@ -67,7 +67,7 @@ describe('where the pilot\'s mech stands', () => {
 
   test('no pair of legs it can stand on reaches under the panel, and all of them reach close to it', () => {
     const legs = Object.keys(MANIFEST).filter((id) => id.startsWith('legs-') && id.endsWith('.back'));
-    expect(legs).toHaveLength(16);
+    expect(legs).toHaveLength(18);
     for (const id of legs) {
       const bottom = HERO.y + MANIFEST[id].oy! + MANIFEST[id].h;
       expect(bottom, id).toBeLessThanOrEqual(PANEL_Y);
@@ -356,7 +356,7 @@ describe('a mech built from parts that is fought alone', () => {
 
   test('every pair of legs it can have stands on the line its box is put on', () => {
     const legs = Object.keys(MANIFEST).filter((id) => id.startsWith('legs-') && id.endsWith('.small'));
-    expect(legs).toHaveLength(16);
+    expect(legs).toHaveLength(18);
     for (const id of legs) {
       const bottom = MANIFEST[id].oy! + MANIFEST[id].h;
       expect(bottom, id).toBeLessThanOrEqual(SMALL_GROUND + 1);

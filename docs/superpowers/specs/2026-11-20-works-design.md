@@ -77,8 +77,9 @@ go somewhere: the generator cools it as it would any machine.
 A tall, narrow machine in indigo and silver-white with thin cyan seams, and two long capacitor
 blades that rise from its back like a tuning fork. A design of this game's own.
 
-Its core has a reserve. Whatever energy the machine has left when its turn ends is kept, up to half
-of what a turn gives it, and is there on top of the next turn's energy. A turn that is lost (to
+Its core has a buffer. Whatever energy the machine has left when its turn ends is kept, up to half
+of what a turn gives it, and is there on top of the next turn's energy. (The word on the screen is
+BUFFER in both languages: RESERVE is what the Dutch calls one of the Gauntlet's relics.) A turn that is lost (to
 heat, to a stagger) loses nothing that was kept. What comes off a turn's energy (a drain, a
 stagger's half) comes off the turn's own share, as ever, and not off what was kept.
 
@@ -107,7 +108,7 @@ Both are plated to last a duel, as the first two swords are.
 
 ## Where it is seen
 
-- **The core's line** in the shop and the garage: what the limit is, what the reserve keeps.
+- **The core's line** in the shop and the garage: what the limit is, what the buffer keeps.
 - **The heat bar** of the pilot's own machine is as long as its limit, and its figure says the
   limit where it is not the usual one. The weapon's row and the aiming line warn of an overheat at
   the machine's own limit.

@@ -39,7 +39,7 @@ export const STRINGS_NL = {
     covered: 'GEDEKT', jammed: (n: number) => `GESTOORD -${n}`, ironSkin: 'IJZERHUID', deadeye: 'SCHERPOOG',
     marks: { armoured: 'GEPANTSERD', overclocked: 'OVERKLOKT', swift: 'SNEL', shielded: 'SCHILD' } as Record<string, string>,
   },
-  intent: { aim: (part: string) => `MIKT ${AIMED[part] ?? part.toUpperCase()}`, dart: 'ONTWIJKT', mend: 'HERSTELT', cool: 'KOELT', windUp: 'LAADT OP' },
+  intent: { aim: (part: string) => `MIKT ${AIMED[part] ?? part.toUpperCase()}`, dart: 'ONTWIJKT', mend: 'HERSTELT', cool: 'KOELT', windUp: 'LAADT OP', hold: 'WACHT' },
   objectives: {
     survive: (round: number, rounds: number) => `HOUD VOL ${round}/${rounds}`,
     protect: (name: string, hp: number, max: number) => `${name.toUpperCase()} ${hp}/${max}`,
@@ -514,6 +514,8 @@ export const STRINGS_NL = {
     charge: 'LADEN: vuurt een beurt later', melee: 'MELEE: verbruikt je Boost',
     field: (n: number) => `VELD: vangt ${n} per ronde`, fieldBreak: 'Gebroken: een beurt weg',
     poise: 'BALANS: 1 kling houdt Boost',
+    heatLimit: (limit: number) => `HEET: hittegrens ${limit}`,
+    buffer: 'BUFFER: houdt EN over', bufferMost: (percent: number) => `Tot ${percent}% van een beurt`,
     traits: {
       twin: () => 'DUO: vuurt tweemaal',
       pierce: () => 'DOORBOOR: halve weerstand',
@@ -549,6 +551,7 @@ export const STRINGS_NL = {
     fieldDown: 'VELD WEG', fieldUp: 'VELD TERUG',
     overkill: 'OVERKILL', chain: (n: number) => `REEKS x${n}`, rout: 'VLUCHT', offline: 'UIT',
     kinds: { redline: (percent: number) => `WITHEET +${percent}%`, surge: (times: string) => `PIEK x${times}`, punish: 'STRAF' },
+    kept: (amount: number) => `+${amount} EN`,
     phase: (n: number) => `FASE ${n}`,
     modules: {
       coolant: 'KOELING', barrier: 'BARRIERE', overclock: 'OVERKLOK', painter: 'GEMERKT', nanites: 'NANITES', shock: 'SCHOK',

@@ -100,6 +100,10 @@ export const REFERENCE_NL: Record<string, string> = {
     'Coast Circuit. Een Shrike met kling en geweer. Boost erin, slaat en boost nog steeds: lastig te raken tot hij wankelt of zijn benen kwijt is.',
   "The Circuit's first sword, in a Sterling. Its field takes what lands first and is whole each round unless you break it. Broken, it is down a round.":
     'Eerste zwaard van het Circuit, in een Sterling. Zijn veld vangt de eerste treffers op en is elke ronde weer heel, tenzij je het breekt. Dan is het een ronde weg.',
+  "The coast yard's works pilot, in a Sirocco. Its heat limit is 130, and both weapons hit harder the hotter it runs. Stagger it, or heat it past that.":
+    'Fabriekspiloot van de kustwerf, in een Sirocco. Zijn hittegrens is 130 en zijn twee wapens slaan harder naarmate hij heter is. Laat hem wankelen, of stook hem daaroverheen.',
+  "The coast yard's other works pilot, in a Solstice. It holds every other round and keeps the energy: the next, its one weapon has a turn and a half.":
+    'Fabriekspiloot van de kustwerf, in een Solstice. Wacht om de andere ronde en bewaart energie: zijn ene wapen heeft daarna anderhalve beurt.',
 
   // --- Database: the world ---
   'A mining city on a seam that should have run dry forty years ago. The pits go down, the towers go up, and the lowest streets flood every spring. Nobody governs Varn. Three powers hold it between them, and none of them will fight for it in person.':
@@ -302,6 +306,8 @@ export const REFERENCE_NL: Record<string, string> = {
   "A class gives you a stripe at 3, at 8 and at 15 contracts won flying it: three a class, twenty-one in all. Every fifth stripe you hold, of whatever classes, is a perk point: the first is soonest had by flying five kinds of machine. The CLASS page shows them, and a briefing's Build row how near the next is.":
     'Een klasse geeft je een streep bij 3, bij 8 en bij 15 contracten die je erin wint: drie per klasse, eenentwintig in totaal. Elke vijfde streep, van welke klasse ook, is een perkpunt: het eerste komt het vlugst met vijf soorten machines. De pagina KLASSE toont ze, de rij Build van een briefing hoe ver de volgende is.',
   'True Metal': 'Echt metaal',
+  'Works Order': 'Fabrieksorder',
+  "Beat both of the coast yard's works pilots.": 'Versla de twee fabriekspiloten van de kustwerf.',
   "Take the eighth seat at the masters' table.": 'Pak de achtste stoel aan de meestertafel.',
   'THE EIGHTH SEAT': 'DE ACHTSTE STOEL',
   "Under the seven masters is a seat that is no class's. Its keeper takes one challenge: from the pilot who holds all seven crowns, in any build. The keeper's machine fights three ways and changes as it is hurt. Take the seat and its frame, the Sovereign, is on the shop's list, and the keeper's paint is yours.":
@@ -523,6 +529,11 @@ export const REFERENCE_NL: Record<string, string> = {
     'Duelleert langs de hele kust om aanzien en houdt de winst. Genoemd naar waar een klauwier zijn vangst ophangt.',
   'First sword of the Coast Circuit for nine seasons. Salutes before the duel and after it, and means it both times.':
     'Negen seizoenen eerste zwaard van het Coast Circuit. Salueert voor het duel en erna, en meent het beide keren.',
+  'Works pilot. Has run every machine the yard builds past its limit, and written a report on each that begins: it was fine.':
+    'Fabriekspiloot. Heeft elke machine van de werf over de grens gejaagd en over elk een rapport geschreven dat begint met: het ging prima.',
+  'Works pilot. Speaks rarely and flies rarely, and the yard has learnt to pay attention to both.':
+    'Fabriekspiloot. Spreekt zelden en vliegt zelden, en de werf heeft geleerd op allebei te letten.',
+  'Coast yard': 'Kustwerf',
   Wingman: 'Wingman',
   'Licensed pilot': 'Piloot met licentie',
   Wanted: 'Gezocht',

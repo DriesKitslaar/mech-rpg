@@ -1,5 +1,5 @@
 import {
-  activeUnit, applyAction, boostCost, checkAction, forkTarget, guardCost, guardFactor, mendablePart, objectiveTarget, previewShot, HEAT_LIMIT, LIMITER_HEAT,
+  activeUnit, applyAction, boostCost, checkAction, forkTarget, guardCost, guardFactor, mendablePart, objectiveTarget, previewShot, LIMITER_HEAT,
   OVERCLOCK_HEAT,
   type Action, type BattleState, type UnitState,
 } from './battle';
@@ -57,7 +57,7 @@ function fireOrder(state: BattleState, usable: Usable[], target: UnitState): Usa
   const fits = sorted(inOrder, (u) => (u.weapon.melee ? 0 : wound(u) ? 1 : 2)).filter((u) => {
     // A charged weapon was paid for when it was charged.
     const cost = u.weapon.charge ? 0 : u.weapon.energy;
-    if (cost > energy || heat + u.weapon.heat > HEAT_LIMIT) return false;
+    if (cost > energy || heat + u.weapon.heat > unit.heatLimit) return false;
     energy -= cost;
     heat += u.weapon.heat;
     return true;
@@ -65,12 +65,15 @@ function fireOrder(state: BattleState, usable: Usable[], target: UnitState): Usa
   return fits.length === 0 ? inOrder : sorted(fits, when);
 }
 
+/** Whether a unit with the habit of holding its fire is in a round it holds. */
+export const holding = (state: BattleState, unit: UnitState): boolean => unit.abilities.hold !== undefined && state.round % unit.abilities.hold !== 0;
+
 /** Shared shape of both policies: cool if a shot would overheat, else fire a safe weapon, else stop. */
 function coolOrFire(
   state: BattleState, catalog: Catalog, usable: Usable[], targetId: string, part: FrameSlot,
 ): Action {
   const unit = activeUnit(state);
-  const overheats = (u: Usable) => unit.heat + u.weapon.heat > HEAT_LIMIT;
+  const overheats = (u: Usable) => unit.heat + u.weapon.heat > unit.heatLimit;
   if (usable.some(overheats) && can(state, { type: 'cool' }, catalog)) return { type: 'cool' };
   const safe = usable.find((u) => !overheats(u));
   return safe ? { type: 'fire', weapon: safe.slot, target: targetId, part } : { type: 'endTurn' };
@@ -117,7 +120,7 @@ function moduleAction(state: BattleState, catalog: Catalog, foe: UnitState): Act
     case 'coolant': {
       const carried = WEAPON_SLOTS.flatMap((slot) => weaponIn(unit.build, slot, catalog) ?? []);
       wanted = carried.some((weapon) => weapon.trait === 'redline')
-        ? carried.some((weapon) => unit.heat + weapon.heat > HEAT_LIMIT)
+        ? carried.some((weapon) => unit.heat + weapon.heat > unit.heatLimit)
         : unit.heat >= 50;
       break;
     }
@@ -174,6 +177,8 @@ export function chooseEnemyAction(state: BattleState, catalog: Catalog): Action 
   const unit = activeUnit(state);
   const player = state.units.find((u) => u.side === 'player')!;
 
+  // A pilot who holds fires nothing in a round it holds: it braces, where it can, and keeps the rest.
+  if (holding(state, unit)) return can(state, { type: 'guard' }, catalog) ? { type: 'guard' } : { type: 'endTurn' };
   // A mender patches before anything else: mending is its whole turn.
   if (unit.abilities.mend !== undefined) {
     const mend = mendAction(state, catalog);

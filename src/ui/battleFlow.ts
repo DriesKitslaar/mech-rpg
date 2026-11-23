@@ -1,6 +1,6 @@
 import { chooseAutoPlayerAction, chooseEnemyAction } from '../core/ai';
 import {
-  activeUnit, applyAction, checkAction, objectiveTarget, previewShot, weaponNow, HEAT_LIMIT, ROUND_LIMIT,
+  activeUnit, applyAction, checkAction, objectiveTarget, previewShot, weaponNow, ROUND_LIMIT,
   type Action, type BattleEvent, type BattleState, type Refusal, type ShotPreview, type UnitState, ORDERS,
 } from '../core/battle';
 import { moduleOf, weaponIn } from '../core/build';
@@ -558,7 +558,7 @@ export class BattleFlow {
     this.targetPart = this.menu.items[this.menu.cursor].id as FrameSlot;
     this.preview = previewShot(this.state, 'player', this.weapon!, this.targetId!, this.targetPart, this.catalog);
     const weapon = weaponIn(this.player.build, this.weapon!, this.catalog)!;
-    this.overheatWarning = this.player.heat + weapon.heat > HEAT_LIMIT;
+    this.overheatWarning = this.player.heat + weapon.heat > this.player.heatLimit;
     this.message = this.overheatWarning ? STRINGS.overheatWarning : STRINGS.yourTurn(this.state.round);
   }
 

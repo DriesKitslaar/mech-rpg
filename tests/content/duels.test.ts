@@ -21,8 +21,9 @@ import SPRITES from '../../src/content/sprites.json';
 import { done } from '../helpers/app';
 
 /**
- * The two duels a pilot is offered once the audit is over, the two pilots who come for them, and the
- * two frames they fly: what each is, when it is offered, what winning it opens, and how hard it is.
+ * The first two duels a pilot is offered once the audit is over, the two swords of the Coast Circuit who come
+ * for them, and the two frames they fly: what each is, when it is offered, what winning it opens, and how hard
+ * it is. The two that follow, with the works pilots of the yard, are in duels2.test.ts.
  */
 
 const SHRIKE = ['head-shrike', 'core-shrike', 'arms-shrike', 'legs-shrike'];
@@ -56,8 +57,8 @@ const duel = (n: 1 | 2): Mission => DUELS[n - 1];
 const LONG = 60_000;
 
 describe('the duels with the Coast Circuit', () => {
-  test('are two, each one battle against one named pilot in a frame of the Circuit, and the second pays more', () => {
-    expect(DUELS.map((m) => m.id)).toEqual(['duel-1', 'duel-2']);
+  test('are the first two of four, each one battle against one named pilot in a frame no yard in Varn builds, and each pays more than the one before', () => {
+    expect(DUELS.map((m) => m.id)).toEqual(['duel-1', 'duel-2', 'duel-3', 'duel-4']);
     expect(SIDE_WORK.filter((m) => m.series === 'duel')).toEqual(DUELS);
     for (const mission of DUELS) {
       expect(mission).toMatchObject({ phase: 'side', series: 'duel', when: 'verdict', client: 'Dispatch', portrait: 'portrait-dispatch' });
@@ -65,8 +66,8 @@ describe('the duels with the Coast Circuit', () => {
       expect(mission.battles[0].enemies).toHaveLength(1);
       expect(mission.briefing).toHaveLength(3);
     }
-    expect(DUELS.map((m) => m.battles[0].enemies[0])).toEqual(['larder', 'argent']);
-    expect(duel(2).reward).toBeGreaterThan(duel(1).reward);
+    expect(DUELS.map((m) => m.battles[0].enemies[0])).toEqual(['larder', 'argent', 'kiln', 'vesper']);
+    expect(DUELS.map((m) => m.reward)).toEqual([8000, 11000, 14000, 17000]);
     // The best-paid work there is beside the story: more than the last notice on the board.
     const others = SIDE_WORK.filter((m) => m.series !== 'duel').map((m) => m.reward);
     expect(duel(1).reward).toBeGreaterThan(Math.max(...others));
@@ -104,7 +105,11 @@ describe('the duels with the Coast Circuit', () => {
     expect(duels(g)).toEqual(['duel-1']);
     const one = completeMission(g, 'duel-1', MISSIONS);
     expect(duels(one)).toEqual(['duel-2']);
-    expect(duels(completeMission(one, 'duel-2', MISSIONS))).toEqual([]);
+    const two = completeMission(one, 'duel-2', MISSIONS);
+    expect(duels(two)).toEqual(['duel-3']);
+    const three = completeMission(two, 'duel-3', MISSIONS);
+    expect(duels(three)).toEqual(['duel-4']);
+    expect(duels(completeMission(three, 'duel-4', MISSIONS))).toEqual([]);
   });
 
   test('are there to be fought again in a later telling, once that telling has had its verdict', () => {

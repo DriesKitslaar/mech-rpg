@@ -9,7 +9,7 @@ import sharp, { type Sharp } from 'sharp';
 import { BACK_POSE_BOX, BACK_TILT, BOX, JOBS, OWN_COLOURS, POSE_BOX, SMALL_POSE_BOX, paintFamilyOf, paintGroups, type ArtJob } from './jobs';
 import { analyse, type PaintInfo } from '../../src/ui/paint';
 import { bounds, chromaKeyGreen, hitSpot, quantize, trim, type RawImage, type RGB } from './imageOps';
-import { HIT_LAYER, VIEWS, type HitPart, type MechView } from '../../src/ui/mechLayout';
+import { HIT_LAYER, VIEWS, barCut, type HitPart, type MechView } from '../../src/ui/mechLayout';
 
 const RAW = 'art/raw';
 const OUT = 'public/sprites';
@@ -17,7 +17,7 @@ const PALETTE = 'art/palette.json';
 const MANIFEST = 'src/content/sprites.json';
 
 type Entry = {
-  file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo;
+  file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; bar?: number; paint?: PaintInfo;
   /** On a weapon turned for the view from behind: where in it it is held, and where it fires from. */
   gx?: number; gy?: number; mx?: number; my?: number;
   /** On a frame layer that can be hit in its view: where in it a hit lands. */
@@ -59,12 +59,23 @@ const LEGS_FROM_BEHIND: Record<string, { drop: number; lower?: number }> = {
  */
 export const FISTS: Record<string, { x: number; y: number }> = {
   'arms-dozer.near.back': { x: 103, y: 46 }, 'arms-dozer.far.back': { x: 22, y: 70 },
+  // A Solstice is narrow and carries its shoulders low: in every view its arm stretched forward reaches out lower and
+  // not as far as the pose has it, and the one held back hangs nearer its body.
+  'arms-solstice.near': { x: 127, y: 60 }, 'arms-solstice.far': { x: 44, y: 84 },
+  'arms-solstice.near.back': { x: 100, y: 46 }, 'arms-solstice.far.back': { x: 30, y: 69 },
+  'arms-solstice.near.small': { x: 81, y: 39 }, 'arms-solstice.far.small': { x: 28, y: 53 },
+  // A Sirocco's forearms are long: from behind the fist of the one stretched forward lies a little beyond the pose's.
+  'arms-sirocco.near.back': { x: 106, y: 39 },
 };
 /** What a layer's entry says of its fist: where in its own picture it is, for a layer whose corner is at (ox, oy) of the pose box; nothing for a layer that names none. */
 export function fistEntry(id: string, ox: number, oy: number): { fx?: number; fy?: number } {
   const fist = FISTS[id];
   return fist ? { fx: fist.x - ox, fy: fist.y - oy } : {};
 }
+
+/** Whether a picture has a pixel at a point of itself. */
+const solidAt = (img: RawImage, x: number, y: number): boolean =>
+  x >= 0 && y >= 0 && x < img.width && y < img.height && img.data[(y * img.width + x) * 4 + 3] >= 128;
 
 export async function decode(input: string | Buffer | Sharp): Promise<RawImage> {
   const s = typeof input === 'string' || Buffer.isBuffer(input) ? sharp(input) : input;
@@ -116,9 +127,12 @@ async function processLayer(job: ArtJob, palette: RGB[]): Promise<Entry> {
   const hit = hitPartOf(job.id);
   const aim = hit && VIEWS[hit.view].hit?.[hit.part];
   const spot = aim ? hitSpot(cut, { x: aim.x - box.x, y: aim.y - oy }) : null;
+  // An arm from behind that carries its shoulder lower than the bar across the shoulders says how much of the bar to leave off at its end.
+  const end = /^arms-.+\.(near|far)\.back$/.exec(job.id)?.[1] as 'near' | 'far' | undefined;
+  const bar = end ? barCut(end, { ox: box.x, w: box.w }, (x, y) => solidAt(cut, x - box.x, y - oy)) : 0;
   return {
     file: `sprites/${job.id}.png`, w: box.w, h: box.h, ox: box.x, oy, ...(drop ? { drop } : {}), ...(spot ? { hx: spot.x, hy: spot.y } : {}),
-    ...fistEntry(job.id, box.x, oy),
+    ...fistEntry(job.id, box.x, oy), ...(bar ? { bar } : {}),
   };
 }
 

@@ -58,6 +58,8 @@ export function partLines(part: Part): string[] {
         // What this part does that no other does.
         ...(part.field ? [I.field(part.field), I.fieldBreak] : []),
         ...(part.poise ? [I.poise] : []),
+        ...(part.heatLimit ? [I.heatLimit(part.heatLimit)] : []),
+        ...(part.buffer ? [I.buffer, I.bufferMost(part.buffer)] : []),
       ];
     }
   }

@@ -50,12 +50,13 @@ describe('a picture and what the manifest says of it', () => {
   });
 
   test('everything the shipped manifest says to lay a mech out by comes through, for every picture there is', () => {
-    const counts = { drop: 0, held: 0, hit: 0, fist: 0 };
+    const counts = { drop: 0, held: 0, hit: 0, fist: 0, bar: 0 };
     for (const [id, entry] of Object.entries(MANIFEST)) {
       const sprite = spriteOf(image, entry);
       expect([sprite.w, sprite.h, sprite.ox, sprite.oy], id).toEqual([entry.w, entry.h, entry.ox, entry.oy]);
-      for (const key of ['drop', 'gx', 'gy', 'mx', 'my', 'hx', 'hy', 'fx', 'fy'] as const) expect(sprite[key], `${id} ${key}`).toBe(entry[key]);
+      for (const key of ['drop', 'gx', 'gy', 'mx', 'my', 'hx', 'hy', 'fx', 'fy', 'bar'] as const) expect(sprite[key], `${id} ${key}`).toBe(entry[key]);
       if (entry.drop) counts.drop++;
+      if (entry.bar) counts.bar++;
       if (entry.gx !== undefined) counts.held++;
       if (entry.hx !== undefined) counts.hit++;
       if (entry.fx !== undefined) counts.fist++;
@@ -63,11 +64,14 @@ describe('a picture and what the manifest says of it', () => {
     // Three lower bodies that lower what stands on them, in three views; every weapon a pilot can carry, from behind; every layer that can be hit.
     expect(counts.drop).toBeGreaterThanOrEqual(5);
     expect(counts.held).toBeGreaterThanOrEqual(24);
-    // Thirteen frames of four parts each that can be hit (of the arms, the one stretched forward), and the three lower bodies
+    // Fifteen frames of four parts each that can be hit (of the arms, the one stretched forward), and the three lower bodies
     // that are not legs: from behind, and far off.
-    expect(counts.hit).toBe(110);
-    // The two arms of one frame, from behind, whose fists were drawn away from where the pose has them.
-    expect(counts.fist).toBe(2);
+    expect(counts.hit).toBe(126);
+    // The arms whose fists were drawn away from where the pose has them: the Dozer's two from behind, a Solstice's two
+    // in each of the three views, and the one a Sirocco stretches forward, from behind.
+    expect(counts.fist).toBe(9);
+    // And the two arms of a Solstice from behind, which carry their shoulders under the bar across them.
+    expect(counts.bar).toBe(2);
   });
 });
 

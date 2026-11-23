@@ -6,7 +6,7 @@
  */
 import { mkdirSync, readFileSync } from 'node:fs';
 import sharp, { type OverlayOptions } from 'sharp';
-import { BACK_JOINTS, VIEWS, dropOf, layoutMech, type MechView, type SpriteSize, type SpriteSlot } from '../../src/ui/mechLayout';
+import { BACK_JOINTS, VIEWS, dropOf, layoutMech, shoulderBar, type MechView, type SpriteSize, type SpriteSlot } from '../../src/ui/mechLayout';
 
 type Manifest = Record<string, SpriteSize & { file: string }>;
 const manifest = JSON.parse(readFileSync('src/content/sprites.json', 'utf8')) as Manifest;
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
     const ox = (cell % COLS) * CELL_W + 4;
     const oy = Math.floor(cell / COLS) * CELL_H + 4;
     if (view === 'back') {
-      for (const joint of Object.values(BACK_JOINTS)) {
+      for (const joint of [BACK_JOINTS.neck, shoulderBar(sizes), BACK_JOINTS.waist]) {
         layers.push({
           input: { create: { width: joint.w, height: joint.h, channels: 4, background: JOINT } },
           left: ox + joint.x, top: oy + joint.y + dropOf(sizes),

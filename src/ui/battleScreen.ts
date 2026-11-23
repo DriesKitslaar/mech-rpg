@@ -843,14 +843,14 @@ export class BattleScreen {
   /** The units that glow with their own heat at this moment: close to their limit, and there to be seen. A hurried game has none. */
   private hot(): UnitState[] {
     if (this.opts.fast) return [];
-    return this.flow.state.units.filter((unit) => !unit.destroyed && !this.hidden(unit) && unit.heat >= HEAT_LIMIT * HOT);
+    return this.flow.state.units.filter((unit) => !unit.destroyed && !this.hidden(unit) && unit.heat >= unit.heatLimit * HOT);
   }
 
   private drawHeat(ctx: CanvasRenderingContext2D): void {
     const scene = this.scene();
     for (const unit of this.hot()) {
       const at = scene.hitPoint(unit.id, 'core');
-      const over = Math.min(1, (unit.heat / HEAT_LIMIT - HOT) / (1 - HOT));
+      const over = Math.min(1, (unit.heat / unit.heatLimit - HOT) / (1 - HOT));
       this.standing++;
       drawGlow(ctx, { x: at.x, y: at.y, r: 30, color: '#ff5a20', alpha: (0.16 + 0.16 * over) * (0.8 + 0.2 * Math.sin(this.clock / 140)) }, this.opts.calm ? 0.5 : 1);
       // Wisps of hot air rising off it.
@@ -1163,7 +1163,7 @@ export class BattleScreen {
     const body = pose.core ?? { dx: 0, dy: 0 };
     const stance = this.stances.of(player.id);
     const dazed = stance.staggered || stance.overheated;
-    const hot = Math.max(0, Math.min(1, player.heat / HEAT_LIMIT));
+    const hot = Math.max(0, Math.min(1, player.heat / player.heatLimit));
     const breath = 0.8 + 0.2 * Math.sin(this.clock / 700);
     drawGlow(ctx, {
       x: HERO.x + GENERATOR.x + t.dx + body.dx,
@@ -1672,18 +1672,21 @@ export class BattleScreen {
   }
 
   private drawEnergyAndHeat(ctx: CanvasRenderingContext2D, player: UnitState, x: number, y: number, width: number): void {
-    const hot = player.heat > 75 || this.flow.overheatWarning;
+    // Red from where a machine is seen to be hot (three quarters of the way to its own limit), or when the weapon being aimed would pass the limit.
+    const hot = player.heat > player.heatLimit * HOT || this.flow.overheatWarning;
     this.drawStat(ctx, STRINGS.meters.energy, player.energy, turnEnergyOf(player, this.catalog), COLORS.energy, x, y, width);
-    this.drawStat(ctx, STRINGS.meters.heat, player.heat, HEAT_LIMIT, hot ? COLORS.danger : COLORS.heat, x, y + LINE, width);
+    // The bar is as long as the machine's limit, and a limit that is not the usual one is written beside the figure.
+    const figure = player.heatLimit === HEAT_LIMIT ? String(player.heat) : `${player.heat}/${player.heatLimit}`;
+    this.drawStat(ctx, STRINGS.meters.heat, player.heat, player.heatLimit, hot ? COLORS.danger : COLORS.heat, x, y + LINE, width, figure);
   }
 
   private drawStat(
     ctx: CanvasRenderingContext2D, label: string, value: number, max: number, color: string, x: number, y: number,
-    width: number,
+    width: number, figure = String(value),
   ): void {
     drawText(ctx, label, x, y, { color: COLORS.dim });
     drawMeter(ctx, x + 30, y + 4, width - 70, 4, value, max, color);
-    drawText(ctx, String(value), x + width, y, { align: 'right', color: color === COLORS.danger ? COLORS.danger : COLORS.text });
+    drawText(ctx, figure, x + width, y, { align: 'right', color: color === COLORS.danger ? COLORS.danger : COLORS.text });
   }
 
   private drawResult(ctx: CanvasRenderingContext2D): void {

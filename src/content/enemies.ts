@@ -71,6 +71,8 @@ const WANTED: Record<string, EnemyDef> = {
 
 const SHRIKE = { head: 'head-shrike', core: 'core-shrike', arms: 'arms-shrike', legs: 'legs-shrike' };
 const STERLING = { head: 'head-sterling', core: 'core-sterling', arms: 'arms-sterling', legs: 'legs-sterling' };
+const SIROCCO = { head: 'head-sirocco', core: 'core-sirocco', arms: 'arms-sirocco', legs: 'legs-sirocco' };
+const SOLSTICE = { head: 'head-solstice', core: 'core-solstice', arms: 'arms-solstice', legs: 'legs-solstice' };
 
 /**
  * The two swords of the Coast Circuit, who come to Varn once the audit is over. Each flies a frame no yard in
@@ -91,6 +93,26 @@ const CIRCUIT: Record<string, EnemyDef> = {
   argent: {
     id: 'argent', name: 'Argent', ai: 'gunner', sprite: 'enemy-rival', composed: true, portrait: 'portrait-argent', plating: 1, abilities: { field: 70 },
     build: { ...STERLING, generator: 'gen-singularity', booster: 'bst-vector', fcs: 'fcs-omni', rightHand: 'wpn-enemy-pinpoint', leftHand: 'wpn-enemy-edge' },
+  },
+};
+
+/**
+ * The two works pilots of the yard that builds the Circuit's machines, who come once its first sword has fallen,
+ * each in a machine the yard has never sold. Each is met in a duel and nowhere else, plated to last one as the swords
+ * are, and fights with what the machine is for, so that what the frame does is learnt from the other end of it.
+ */
+const WORKS: Record<string, EnemyDef> = {
+  // A redline in its hand and another on its shoulder, and nothing that cools: every round it is left alone it is
+  // hotter, and hits harder for it, up to a limit a third again over any other machine's.
+  kiln: {
+    id: 'kiln', name: 'Kiln', ai: 'gunner', sprite: 'enemy-rival', composed: true, portrait: 'portrait-kiln', plating: 1,
+    build: { ...SIROCCO, generator: 'gen-tidal', booster: 'bst-vector', fcs: 'fcs-surgeon', rightHand: 'wpn-enemy-brand', shoulder: 'wpn-enemy-flue' },
+  },
+  // One weapon, which takes all the energy there is. It holds every other round: braces, fires nothing, and keeps
+  // half a turn's energy in its core for the round after.
+  vesper: {
+    id: 'vesper', name: 'Vesper', ai: 'gunner', sprite: 'enemy-rival', composed: true, portrait: 'portrait-vesper', plating: 1, abilities: { hold: 2 },
+    build: { ...SOLSTICE, generator: 'gen-tidal', booster: 'bst-vector', fcs: 'fcs-omni', rightHand: 'wpn-enemy-wave' },
   },
 };
 
@@ -153,6 +175,7 @@ const FIELD: Record<string, EnemyDef> = {
 export const ENEMIES: Record<string, EnemyDef> = {
   ...WANTED,
   ...CIRCUIT,
+  ...WORKS,
   ...FIELD,
   'recon-drone': RECON_DRONE,
   'gun-turret': {

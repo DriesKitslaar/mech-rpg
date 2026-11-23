@@ -1,5 +1,5 @@
 import type { Build } from '../core/types';
-import { BACK_JOINTS, MECH_BOX, VIEWS, dropOf, layoutMech, type MechView, type SpriteSize, type SpriteSlot } from './mechLayout';
+import { BACK_JOINTS, MECH_BOX, VIEWS, dropOf, layoutMech, shoulderBar, type MechView, type SpriteSize, type SpriteSlot } from './mechLayout';
 import type { Pose } from './pose';
 import type { Sprite, SpriteStore } from './sprites';
 
@@ -69,7 +69,8 @@ function piecesOf(parts: MechSprites, sway: number, pose: Pose, view: MechView):
     const body = pose.core ?? { dx: 0, dy: 0 };
     const bx = body.dx;
     const by = sway + body.dy + dropOf(parts);
-    for (const joint of [BACK_JOINTS.neck, BACK_JOINTS.shoulders, BACK_JOINTS.waist]) {
+    // (The bar across the shoulders ends short of an arm that carries its shoulder lower than the bar.)
+    for (const joint of [BACK_JOINTS.neck, shoulderBar(parts), BACK_JOINTS.waist]) {
       pieces.push({ x: bx + joint.x, y: by + joint.y, w: joint.w, h: joint.h, color: JOINT_DARK });
       // A line of light along its length: down the side of one that stands, along the top of one that lies.
       if (joint.h > joint.w) pieces.push({ x: bx + joint.x + 1, y: by + joint.y, w: 2, h: joint.h, color: JOINT_LIT });

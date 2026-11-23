@@ -85,7 +85,7 @@ describe('a contract flown with a wingman', () => {
   });
 
   test('nobody comes along to a duel: the other side asked for one pilot, by callsign', () => {
-    expect(DUELS.length).toBe(2);
+    expect(DUELS.length).toBe(4);
     for (const duel of DUELS) {
       expect(duel.series).toBe('duel');
       expect(takesWingman(duel), duel.id).toBe(false);

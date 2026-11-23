@@ -5,16 +5,16 @@ import { COLORS, FONT } from './widgets';
 
 export type SpriteManifest = Record<string, {
   file: string; w: number; h: number; ox?: number; oy?: number; drop?: number; paint?: PaintInfo;
-  gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number; fx?: number; fy?: number;
+  gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number; fx?: number; fy?: number; bar?: number;
 }>;
 /**
  * `ox`/`oy` is a mech layer's place inside the pose box; `drop`, the `gx`/`gy` and `mx`/`my` of a
  * weapon that was turned for its view, the `hx`/`hy` of a layer that can be hit and the `fx`/`fy` of an
- * arm that names its own fist are explained in mechLayout.
+ * arm that names its own fist, and the `bar` of an arm with a low shoulder, are explained in mechLayout.
  */
 export interface Sprite {
   image: CanvasImageSource; w: number; h: number; ox?: number; oy?: number; drop?: number;
-  gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number; fx?: number; fy?: number;
+  gx?: number; gy?: number; mx?: number; my?: number; hx?: number; hy?: number; fx?: number; fy?: number; bar?: number;
 }
 /** A sheet to draw on that is not the screen: what is drawn on it can be handed to the screen as one picture. */
 export interface Sheet { image: CanvasImageSource; ctx: CanvasRenderingContext2D }
@@ -70,6 +70,8 @@ export function spriteOf(image: CanvasImageSource, entry: SpriteManifest[string]
     ...(hx !== undefined && hy !== undefined ? { hx, hy } : {}),
     // An arm whose fist was not drawn where its view has the fist: where it is.
     ...(fx !== undefined && fy !== undefined ? { fx, fy } : {}),
+    // An arm from behind with a shoulder lower than the bar across the shoulders: how much of the bar is left off at its end.
+    ...(entry.bar ? { bar: entry.bar } : {}),
   };
 }
 

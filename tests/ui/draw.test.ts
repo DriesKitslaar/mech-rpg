@@ -711,12 +711,12 @@ describe('the screens the pilot\'s record added', () => {
     press(app, 'down', 'down', 'down', 'down', 'down');
     const unit = page();
     expect(unit.said).toEqual(expect.arrayContaining([
-      'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'SEEN 2/47', '? ? ?',
+      'DATABASE', 'UNITS', 'WORLD', 'MANUAL', 'GUN TURRET', 'ARMOUR', '260', 'WEAK TO', 'Explosive', 'Bastion Cannon (Kinetic)', 'SEEN 2/49', '? ? ?',
     ]));
     expect(unit.calls.some((c) => c.name === 'drawImage' && (c.args[0] as { id: string }).id === 'enemy-gun-turret')).toBe(true);
     press(app, 'next');
     // A pilot one contract in knows only the voice that hands out the work.
-    expect(page().said).toEqual(expect.arrayContaining(['PEOPLE', 'DISPATCH', 'Dispatch', 'KNOWN 1/21', '? ? ?']));
+    expect(page().said).toEqual(expect.arrayContaining(['PEOPLE', 'DISPATCH', 'Dispatch', 'KNOWN 1/23', '? ? ?']));
     press(app, 'next');
     expect(page().said).toEqual(expect.arrayContaining(['VARN', 'Varn', 'The Licence', 'Hadron Mining']));
     press(app, 'next');
