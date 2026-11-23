@@ -22,6 +22,27 @@ export function sortieBuilds(game: GameState, catalog: Catalog): Sortie[] {
   return [{ slot: null, build: game.build }, ...saved];
 }
 
+/** A saved build that no contract can be taken in now: the slot it is kept in, and the part of it that is no longer owned, where that is why. */
+export interface Grounded {
+  slot: number;
+  /** Id of the first part of it that is missing. Absent where every part is owned and the build may not deploy as it is. */
+  part?: string;
+}
+
+/**
+ * The saved builds that `sortieBuilds` leaves out because they cannot be flown now: a part of one was
+ * sold, or it may not deploy. Whoever chooses a build is told of them, so that one that was saved is
+ * not simply gone. The build on the floor, saved, is not one of them: it is listed as itself.
+ */
+export function groundedBuilds(game: GameState, catalog: Catalog): Grounded[] {
+  return game.loadouts.flatMap((build, slot): Grounded[] => {
+    if (!build || same(build, game.build)) return [];
+    const refused = checkLoadout(game, slot, catalog);
+    if (refused) return [{ slot, ...(refused.part !== undefined ? { part: refused.part } : {}) }];
+    return validatePlayerBuild(build, catalog).length > 0 ? [{ slot }] : [];
+  });
+}
+
 /**
  * The game with the build of that sortie fitted: as it is for the build on the floor, and for a
  * saved build as the garage loads it. A slot that cannot be flown from now (nothing saved in it, a

@@ -109,6 +109,12 @@ export interface Mission {
   crown?: Archetype;
   /** Set on an arena fight: the rank of the opponent. */
   arenaRank?: number;
+  /**
+   * Set on a bout of the arena that this pilot has won before: a rematch. It is fought for a purse that
+   * falls each time and for nothing else: it is no contract won or lost, the open board does not turn
+   * for it, and it counts for no class. See arena.ts.
+   */
+  rematch?: true;
   /** Set on a training drill: the mech that is lent for it. See training.ts. */
   loaner?: Build;
   /** Set on a drill that teaches the Overdrive: the one it is flown with, and what its meter starts at. */
@@ -393,11 +399,28 @@ export function otherOffer(state: GameState, mission: Mission, missions: Mission
   return { ...first, ...terms, scale: terms.scale ?? 1, turned: { question, answer, side } };
 }
 
-/** Starts the story again. Credits, parts, pilot level, perks, arena rank and the best ranks all stay. */
+/**
+ * Starts the story again. Credits, parts, pilot level, perks, arena rank and the best ranks all stay.
+ * What was shown and read in the telling that ends is remembered as told before (see `GameState.told`),
+ * and the inbox begins empty: its letters come again as the story reaches them.
+ */
 export function startNewCycle(state: GameState, missions: Mission[]): GameState {
   if (!campaignComplete(state, missions)) throw new Error('the campaign is not complete');
-  return { ...state, completed: [], read: [], scenes: [], choices: {}, endingSeen: false, cycle: state.cycle + 1 };
+  const also = (kept: string[] | undefined, more: string[]): string[] => [...(kept ?? []), ...more.filter((id) => !(kept ?? []).includes(id))];
+  const told = { scenes: also(state.told?.scenes, state.scenes), read: also(state.told?.read, state.read) };
+  return { ...state, completed: [], read: [], scenes: [], choices: {}, endingSeen: false, cycle: state.cycle + 1, told, mail: [] };
 }
+
+/** Whether a scene was shown in an earlier telling of the story. */
+export const toldBefore = (state: Pick<GameState, 'told'>, sceneId: string): boolean => Array.isArray(state.told?.scenes) && state.told.scenes.includes(sceneId);
+/** Whether a message was read in an earlier telling of the story. */
+export const readBefore = (state: Pick<GameState, 'told'>, messageId: string): boolean => Array.isArray(state.told?.read) && state.told.read.includes(messageId);
+/**
+ * Whether a scene may be skipped: one that was told before, as it was told. An ending is never
+ * skipped, and neither is a page written from what the pilot decided: it may say something else now.
+ */
+export const skippable = (state: Pick<GameState, 'told'>, scene: Pick<Scene, 'id' | 'ending' | 'linesFor'>): boolean =>
+  toldBefore(state, scene.id) && !scene.ending && scene.linesFor === undefined;
 
 /** The story ends with a verdict. A story that has none (a short one) ends with its finale. */
 export function campaignComplete(state: GameState, missions: Mission[]): boolean {
@@ -454,14 +477,28 @@ export function stockFor(state: GameState, parts: Part[], unlocks: Record<string
 }
 
 /**
- * Messages that have arrived, oldest first. A letter that has been read stays where it is, whatever
- * has changed since: one that waits for something not to have happened yet (a ninth check, a
- * verdict) is not taken back out of the inbox when it happens. What was read is forgotten with the
- * rest when the story starts over.
+ * Messages that have arrived, oldest first: in the order they came, as far as that was written down
+ * (`GameState.mail`), and before those, in the order of the list, whatever arrived before it was.
+ * A letter that has been read stays where it is, whatever has changed since: one that waits for
+ * something not to have happened yet (a ninth check, a verdict) is not taken back out of the inbox
+ * when it happens. The inbox is emptied when the story starts over.
  */
 export function arrivedMessages(state: GameState, messages: Message[], missions: Mission[]): Message[] {
   const chosen = chosenFaction(state, missions);
-  return messages.filter((m) => (state.read.includes(m.id) || reached(state, m.after, missions)) && (!m.faction || m.faction === chosen));
+  const arrived = messages.filter((m) => (state.read.includes(m.id) || reached(state, m.after, missions)) && (!m.faction || m.faction === chosen));
+  const came = Array.isArray(state.mail) ? state.mail : [];
+  const when = (m: Message): number => came.indexOf(m.id);
+  return [...arrived.filter((m) => when(m) < 0), ...arrived.filter((m) => when(m) >= 0).sort((a, b) => when(a) - when(b))];
+}
+
+/**
+ * Writes down the messages that have arrived and were not written down yet, after those that were:
+ * several that arrive at once come in the order of the list. To be called whenever the game is kept.
+ */
+export function noteArrivals(state: GameState, messages: Message[], missions: Mission[]): GameState {
+  const came = Array.isArray(state.mail) ? state.mail : [];
+  const fresh = arrivedMessages(state, messages, missions).map((m) => m.id).filter((id) => !came.includes(id));
+  return fresh.length === 0 ? state : { ...state, mail: [...came, ...fresh] };
 }
 
 /** The scenes the pilot should be shown now, in list order: reached, not passed, not seen. */
@@ -484,8 +521,11 @@ export function markSceneSeen(state: GameState, scene: Scene): GameState {
   return { ...state, scenes: [...state.scenes, scene.id], ...(scene.ending ? { endingSeen: true } : {}) };
 }
 
+/** Whether a message that has arrived is new to the pilot: not read in this telling, and not in one before it. */
+export const isUnread = (state: Pick<GameState, 'read' | 'told'>, messageId: string): boolean => !state.read.includes(messageId) && !readBefore(state, messageId);
+
 export function unreadMessages(state: GameState, messages: Message[], missions: Mission[]): Message[] {
-  return arrivedMessages(state, messages, missions).filter((m) => !state.read.includes(m.id));
+  return arrivedMessages(state, messages, missions).filter((m) => isUnread(state, m.id));
 }
 
 export function markRead(state: GameState, messageId: string): GameState {

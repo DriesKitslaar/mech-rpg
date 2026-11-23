@@ -52,6 +52,10 @@ const ROOM_FOR: Record<string, number> = {
   'actions.endTurn': MENU_ROW_CHARS,
   // The new pilot's lines over the field: 75 small letters fit across it (tests/ui/coach.test.ts).
   'coach.target': 75, 'coach.repairPart': 75,
+  // The heading of an announcement, in small letters: 150 wide.
+  'shop.shelfToast': 30,
+  // The heading of a bill, in large letters across a panel that is 230 wide.
+  'settlement.rematchWon': 20, 'settlement.rematchLost': 20,
   // Under the figures of a frame to start in: the panel is 150 wide, in small letters.
   'starter.later': 34,
   // A ground's rule stands after its name on one line of the briefing.

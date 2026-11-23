@@ -40,7 +40,7 @@ export class ShopScreen implements Screen {
     return {
       menu: { items: flow.list.items, cursor: flow.list.cursor },
       message: flow.message,
-      shop: { tab: flow.tab, mode: flow.mode, selected: flow.selected?.id ?? null, fitHint: flow.justBought },
+      shop: { tab: flow.tab, mode: flow.mode, selected: flow.selected?.id ?? null, fitHint: flow.justBought, neededBy: flow.neededBy, shortened: flow.shortened },
     };
   }
 
@@ -82,7 +82,14 @@ export class ShopScreen implements Screen {
     else drawText(ctx, S.hint, LOGICAL_W / 2, 243, { align: 'center', color: COLORS.dim });
     // Buying a part does not fit it: a new pilot is told where that is done. Otherwise the line says where the
     // short words of a part's figures are explained.
-    drawText(ctx, flow.justBought ? S.fitHint : S.wordsHint, LOGICAL_W / 2, 257, { align: 'center', color: COLORS.dim, size: 10 });
+    // A part that a saved build needs: said while it is under the cursor to be sold, and again once it is sold.
+    const [short] = flow.shortened;
+    const [needs] = flow.neededBy;
+    const foot = flow.justBought ? { text: S.fitHint, color: COLORS.dim }
+      : short !== undefined ? { text: S.missedBy(short + 1), color: COLORS.danger }
+        : needs !== undefined ? { text: S.neededBy(needs + 1), color: COLORS.heat }
+          : { text: S.wordsHint, color: COLORS.dim };
+    drawText(ctx, foot.text, LOGICAL_W / 2, 257, { align: 'center', color: foot.color, size: 10 });
   }
 
   private drawDetail(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {

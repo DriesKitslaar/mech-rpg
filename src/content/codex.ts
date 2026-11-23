@@ -95,7 +95,7 @@ export const WORLD: Entry[] = [
   },
   {
     id: 'arena', title: 'THE ARENA', after: 'intro-2',
-    text: 'Ranked pilots fight for purses in a pit under the rail yard. It is licensed, legal and heavily bet on. Beat the next rank and the purse is yours in full; beat someone you have beaten before and you get a quarter.',
+    text: 'Ranked pilots fight for purses in a pit under the rail yard. It is licensed, legal and heavily bet on. Beat the next rank and the purse is yours in full; beat someone you have beaten before and it is a rematch, for a quarter of it or less.',
   },
   {
     id: 'back-room', title: 'THE BACK ROOM', after: 'arena:10',
@@ -323,7 +323,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'spar', title: 'SPARRING',
-    text: "The range also lists your saved builds that can be flown. Pick one and the simulator flies it against you: the same parts, with the bench's work on them, in other colours, flown as its class is flown. The odds in the briefing say which of two builds beats the other before a shot is fired. Nothing is billed, paid or counted.",
+    text: "The range also lists your saved builds that can be flown. Pick one and the simulator flies it against you: the same parts, with the bench's work, in other colours, flown as its class is flown. The odds are yours against it: perks, Overdrive and repairs are yours alone, so your own copy loses. Nothing is billed, paid or counted.",
   },
   {
     id: 'paint', title: 'THE PAINT SHOP',
@@ -358,8 +358,12 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'Beat the coast yard\'s works pilots to buy their frames. A SIROCCO core RUNS HOT: it overheats past 130, not 100, so a volley can hold one weapon more and a REDLINE climbs higher. A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn\'s worth. A SURGE leaves nothing to keep.',
   },
   {
+    id: 'rematches', title: 'REMATCHES',
+    text: 'Whoever you have beaten in the arena will fight you again: a rank, the mirror, a cup, a master. The first rematch pays a quarter of the purse, each one after half of the one before. It is no contract: it earns no stripe, and the open board does not turn for it. A first win there is booked as a contract won, and turns the board.',
+  },
+  {
     id: 'cups', title: 'ARENA CUPS',
-    text: 'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.',
+    text: 'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, and as a rematch after.',
   },
   {
     id: 'crowns', title: 'CROWNS',
@@ -367,7 +371,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'masters', title: 'THE MASTERS',
-    text: "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, a quarter after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.",
+    text: "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, and as a rematch after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.",
   },
   {
     id: 'seat', title: 'THE EIGHTH SEAT',

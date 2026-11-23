@@ -47,9 +47,9 @@
 
 ### Task F3: the findings, checked and answered
 
-- [ ] Each finding checked against the game: so, not so, or so in part. Grouped, worst first.
-- [ ] Each one answered, worst first: the test that fails for it, the mend, the test passing; or the reason it is left.
-- [ ] The list of what is good, and that no mend touched it.
+- [x] Each finding checked against the game: so, not so, or so in part. Grouped, worst first.
+- [x] Each one answered, worst first: the test that fails for it, the mend, the test passing; or the reason it is left.
+- [x] The list of what is good, and that no mend touched it.
 
 (The findings and their answers are written here as they are settled. A finding is named by its tester and its number in that tester's report: T2-1 is the first finding of the tester who played in Dutch.)
 
@@ -144,6 +144,54 @@ Tests: the section "one game" of `tests/ui/freshEyes.test.ts`. Older tests that 
 | T4-30: the bottom-left panel of a battle is a bare box while the menu is down | Left | The menu comes back into it within a second or two; whatever stood there in between would be read as a menu. |
 
 Tester 4's other findings were answered where they belong: T4-1, 2, 3, 17, 21 and 28 in batch 1, T4-20 in batch 2, and T4-7, 8, 9, 16, 22 and 23 in batch 3.
+
+#### Batch 5: the long game (tester 3: the middle, the end, and what comes after)
+
+Tests: the sections "a rematch in the arena", "a build to try, followed from the page that names it", "a telling that knows the pilot has been here" and "a saved build and the parts it is made of" of `tests/core/freshEyes.test.ts`; "the long game" sections of `tests/ui/freshEyes.test.ts`; "bought and fitted from the page" in `tests/ui/classes.test.ts`; the new advice in `tests/core/advice.test.ts`; and the guide's passages held to the game in `tests/content/docs.test.ts`.
+
+Measured, for what touches money: every automatic career (three clients, two verdicts, three difficulties, two tellings each: eighteen) was played before and after, and the eighteen lines are the same to the credit. A career that never fights a rematch is not changed by any of this. What a rematch pays was worked out from the rule: the last rank of the ladder paid 5500 a rematch for ever (the tester took some 17,000 credits a minute from it); it now pays 5500, 2750, 1375, 688, 344, 172 and on down to nothing, 11,000 in all. Every rematch the arena will ever pay comes to 102,050 credits, half of what its first wins pay, and then it is spent.
+
+| Finding | So? | Answer |
+|---|---|---|
+| T3-2: the best pay in the long game is a rematch of the ladder's last rank, and it never runs out | So | A rematch (a rank, the mirror, a cup, a master, the seat, won before) pays a quarter of the purse the first time and each one after half of the one before. The count is kept bout by bout, through every telling. The arena's list shows what a row pays now. |
+| T3-7: an arena bout is a contract everywhere: stripes can be farmed on the first rank, the board turns behind the pilot's back, the record counts bouts lost as contracts lost | So in part | A rematch is no contract: it is not counted as one won or lost, the open board does not turn for it, it is no win for a class (so it earns no stripe), and an account neither waits through it nor begins in it. Its briefing is headed REMATCH and its bill REMATCH WON. A first win in the arena is still booked as a contract won, as it is billed as one: the manual has a chapter (REMATCHES) that says both, and that a first win turns the board. Whether the arena's first wins should move the board at all belongs with the board, in the next round. |
+| T3-6: flying another class costs a hundred presses, and the page that names the build cannot act | So | On Pilot, CLASS, A buys what is missing of the build to try and fits it, after a question that rests on No. Where no saved build holds it and a place is free it is kept there; no saved build is written over. The page then says "YOU FLY THIS: BUILD 3". It is offered where it can be done (everything sold, the credits in hand) and nowhere else. |
+| T3-4: the second telling is the first again, sent as new | So | What was shown and what was read in a telling is remembered when the next begins. A page of story or a conversation that was told before says "B: skip, told before", and B skips it; a question is still asked, an ending and a page written from the pilot's own answers are never skipped, and in a first telling B does nothing. A letter read before comes again with the story and is not marked NEW; the hub counts only what is new. On the list of contracts, in a later telling, a contract of the story or beside it that was never won ends in a star, and the line under the list says what the star is. Not so, as the game is played: that a mashed A answers "YOUR CALL"; the question takes no answer for a second and a half, which the kit's hurried mode leaves out. |
+| T3-5: the other side's offer hands over nothing where the paper is already held | So, answered in batch 2 | The announcement ALREADY FOUND. |
+| T3-8: the question before a new cycle does not say what goes | So | Two lines more: "Side work, duels and the Archive start over with it." |
+| T3-3 (in part): after a defeat at long odds the bill's advice is about field repairs | So | A pilot who lost no turn to heat and used a Boost or a Guard, and went down with the other side holding two thirds of its armour or more, is told that the machine was not up to it, and that a briefing gives the odds. The cliff itself (5 in 20 against the champion, 20 in 20 everywhere else) is the next round's. |
+| T3-11: a copy of my own machine never beats me, and the manual says the odds tell which of two builds beats the other | So | The manual's and the guide's sentence was not true. They now say what is: the odds are the pilot's against that build, and perks, Overdrive and field repairs are the pilot's alone, so a copy of one's own build loses. |
+| T3-12: nothing says that the yard's frames are in the shop | So in part | An announcement when a duel won, or the seat taken, puts a frame on the shelf: NEW IN THE SHOP, "Shrike: 4 parts". Left: that their prices do not hurt a pilot with 130,000 credits is money, and the next round's. |
+| T3-15: mail is not in the order it came | So | The order letters arrive in is written down as the game is kept, and the inbox shows the newest first. Letters of a game from before that keep the order of the list among themselves. |
+| T3-16: selling a part a saved build needs: no warning, and the briefing drops the build without a word | So | The shop says under the list "Saved build 2 needs this part" while the part is under the cursor to be sold, and "Saved build 2 is a part short now" once it is. The sale is not stopped. The briefing's page of builds names a saved build that cannot be flown and why: "BUILD 2: Arc Blade missing", or that it cannot deploy. |
+| T3-18: the shop lists a part with kept bench work as plain | So | The step stands after the name in the shop's lists, to buy and to sell, as it does in the garage and on the part's page. |
+| T3-9, T3-10, T3-14 | So, answered in batch 2 | Medals beside the balance; the cursor stays on Auto Turn; the list says what kind of row is in hand and opens on the board. |
+| T3-17: an account's pay does not move | Not so | The open board's pay does not grow with the telling either: the account is in line with the work it stands among. |
+| T3-13: the Gauntlet pays pocket money | Left | Its pay was never its reward: the finds at ten, fifteen and twenty floors are. That the finds are only hinted at is how the secret is kept, which the testers counted as good. Money is the next round's. |
+| T3-19: AFTERWARDS does not look at side work | Left | Those pages are written from what the pilot answered, not from which bounties were flown; making them read the list of side work is a change to the story, and not a mend. |
+| T3-1, T1-6, the champion's cliff, money that piles up | Left for a round of its own | See below. |
+
+#### What the testers called good, and that no mend touched it
+
+Each of these was read again against the round's changes; where a mend came near one, what it changed is said.
+
+- Dispatch's voice, and the first messages arriving when they are needed (tester 1). Unchanged; the inbox now keeps the order they came in.
+- The bill: itemised, a line of story, one piece of advice after a loss, one sheet for every kind of fight (testers 1, 3, 4). The same sheet. Two rows are named better (Fee, Armour repair), medals stand beside the balance, a line stays empty above the client's words, and there is one more piece of advice.
+- Things taught as they happen, and the drills (tester 1). One lesson more (heat); the drills are as they were, with the colour of OPEN and PASSED changed.
+- Losing is cheap and never a dead end; Retreat, End the run and New Cycle rest on No (testers 1, 3). Unchanged, and the one new question (buy and fit) rests on No as they do.
+- The garage's figures on hover, the shop's VS lines, "Fit it in the Garage" (tester 1). Unchanged.
+- Pilot, CLASS, with its build to fly now (testers 1, 3). Kept as it was, and it can now be acted on.
+- Locked rows that say why; the cursor resting on the next story contract; the lent mech (tester 1). Unchanged; with no story on offer the cursor now rests on the board.
+- The Dutch reads as written, not translated; story, messages and database need almost nothing (tester 2). Only what was listed was touched.
+- Briefings: tag lines, ground rule, EXPECTED, ODDS for each build, the Build row and the Wingman row; duel and bounty briefings (testers 3, 4). Unchanged but for a rematch, which is headed as one, and the page of builds naming a build that cannot fly.
+- Accounts; the ending and its pages; the long game's secret; the arena's doors told by mail; the seat's fight; the swarm's field (tester 3). Unchanged.
+- Counts agree wherever they are compared (tester 3). They still do: a rematch moves neither the hub's count nor the record's.
+- Three presses from the hub to the launch (tester 3). Still three: the briefing holds A for a quarter of a second, and no longer.
+- No text over text in 4,472 states; announcements in one look, never over a word; entrance bands and sign lettering; teal and red for better and worse (tester 4). A test now draws the rooms, the shop, the garage, a briefing, a battle and a bill in both languages and holds that no word lies over another; it found one case nobody had seen.
+
+#### Left, as the next round's subject: difficulty and stakes
+
+Three testers said one thing from three sides. After the first act nothing on the board can be lost, on Standard or Veteran, in any telling (T3-1); the whole first act is won on Auto Turn in the starter (T1-6); the one hard fight is a cliff, 5 in 20 against the champion and 19 in 20 with a tenth more armour (T3-3); and money piles up with nothing to spend it on, so that no cost ever bites (T3-2, T3-12, T3-13). None of that is a mend: it is what the game's numbers are, and changing them asks for the measuring this game does for numbers (careers before and after, per difficulty, per telling). It is the next round: a board that keeps pace with the pilot, stakes that can be raised for pay, a ladder without a cliff, and something worth saving for.
 
 ### Task F4: final check
 

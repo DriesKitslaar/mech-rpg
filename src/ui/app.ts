@@ -1,6 +1,6 @@
 import { adviceAfter, type Advice } from '../core/advice';
 import {
-  CUPS, MIRROR_ID, arenaMission, checkChallenge, cupMission, cupOpen, isCup, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordCupWin, recordMirrorWin,
+  CUPS, MIRROR_ID, arenaMission, checkChallenge, cupMission, cupOpen, isCup, mirrorEnemy, mirrorMission, mirrorOpen, recordArenaWin, recordCupWin, recordMirrorWin, recordRematch,
 } from '../core/arena';
 import { askSettlement, generateBoard, swarmContract } from '../core/board';
 import { jobContract, recordJob } from '../core/jobs';
@@ -10,7 +10,7 @@ import {
 import { computeBuildStats, validatePlayerBuild } from '../core/build';
 import {
   archiveMissions, availableMissions, campaignComplete, completeMission, decide, dueScenes, settleOldStory, forCycle, introductionsDone, lentPatrol, otherOffer, markRead,
-  markSceneSeen, startNewCycle, stockFor, unreadMessages, LESSONS,
+  markSceneSeen, noteArrivals, skippable, startNewCycle, stockFor, unreadMessages, LESSONS,
   type Mission, type Scene,
 } from '../core/campaign';
 import { heldAlready, isFind, metByRecord, openEntries, type Entry, type Find } from '../core/codex';
@@ -19,18 +19,18 @@ import { MEDAL_PAY, awardMedals, type Medal, type Tier } from '../core/medals';
 import {
   TEXT_FACTOR, DEFAULT_SETTINGS, DIFFICULTY_SCALE, LIGHT_DETAILS, ensureArmed, learn, newGame, type GameState, type LightDetail, type Settings,
 } from '../core/game';
-import { ARCHETYPES, archetypeOf, recordWinAs, type Archetype } from '../core/archetype';
+import { ARCHETYPES, archetypeOf, followAdvice, recordWinAs, type Archetype, type BuildAdvice } from '../core/archetype';
 import { askBonus, crownHeld, crownSettlement, isMaster, masterMission, mastersOpen, parseMaster, recordMasterWin } from '../core/masters';
 import { SEAT_ID, isSeat, recordSeatWin, seatHeld, seatMission, seatOpen, seatSettlement } from '../core/seat';
 import { launchRumble, launches } from '../core/launch';
 import { startFight, type Fight } from '../core/mission';
-import { fitSortie, sortieBuilds, type Sortie } from '../core/sortie';
+import { fitSortie, groundedBuilds, sortieBuilds, type Grounded, type Sortie } from '../core/sortie';
 import { wingmanFor, withWingman, type Wingman } from '../core/wingman';
 import { WINGMEN } from '../content/wingmen';
 import { intentOf } from '../core/intent';
 import { intentText } from './tags';
 import { addXp, buyPerk, checkBuyPerk, levelFor, perkEffects, perkPoints, xpForContract } from '../core/pilot';
-import { countsForClass, stripesEarned } from '../core/stripes';
+import { countsForClass, earnsStripes, stripesEarned } from '../core/stripes';
 import { nameRank } from '../core/renown';
 import { missionPar, performanceOf, rankSettlement, recordRank } from '../core/rank';
 import { NO_STATS, addStats, contractStats, retreated, tallyBattle, type Stats } from '../core/stats';
@@ -218,6 +218,22 @@ export const TOAST_TITLE_CHARS = Math.floor(150 / CHAR_W);
 export function driveTitle(names: string[]): string {
   const all = names.join(', ');
   return all.length <= TOAST_TITLE_CHARS ? all : STRINGS.overdrive.openedMany(names.length);
+}
+
+/**
+ * The announcement that a frame has come onto the shop's shelf for what the pilot did: the parts that a duel
+ * won, or the seat taken, put in stock between one keeping of the game and the next. They are named by what
+ * they are parts of (the first word of each is its frame's name) and counted. Nothing for what the story
+ * puts in stock as it goes: the shop is visited often enough then.
+ */
+export function shelfToast(before: GameState | null, after: GameState): Toast[] {
+  if (!before) return [];
+  const earned = (id: string): boolean => Object.hasOwn(SHOP_UNLOCKS, id) && (SHOP_UNLOCKS[id].startsWith('won:') || SHOP_UNLOCKS[id] === 'seat');
+  const had = new Set(stockFor(before, SHOP_PARTS, SHOP_UNLOCKS, MISSIONS).map((part) => part.id));
+  const fresh = stockFor(after, SHOP_PARTS, SHOP_UNLOCKS, MISSIONS).filter((part) => !had.has(part.id) && earned(part.id));
+  if (fresh.length === 0) return [];
+  const frame = fresh[0].name.split(' ')[0];
+  return [{ id: `shelf:${fresh.map((part) => part.id).join('+')}`, heading: STRINGS.shop.shelfToast, title: STRINGS.shop.shelfParts(frame, fresh.length), sound: 'entry' }];
 }
 
 /** One announcement for a find, by its name, or one for all of them when there are several. */
@@ -834,7 +850,9 @@ export class App {
     const songs = [...new Set([...listed, ...this.heardNow])].filter((song) => Object.hasOwn(SONGS, song));
     const heard = songs.length !== listed.length || songs.some((song, i) => song !== listed[i]) ? { ...next, heard: songs } : next;
     const timed = seconds > 0 ? { ...heard, stats: { ...heard.stats, seconds: heard.stats.seconds + seconds } } : heard;
-    const { game: awarded, earned } = awardMedals(timed, MEDALS);
+    // The letters that have come since the game was last kept are written down in the order they came.
+    const noted = noteArrivals(timed, MESSAGES, MISSIONS);
+    const { game: awarded, earned } = awardMedals(noted, MEDALS);
     this.medalCredits += earned.reduce((sum, medal) => sum + MEDAL_PAY[medal.tier], 0);
     // The database does not run ahead of the story: while a page of story is waiting to be shown,
     // nothing opens, so what that page is about to reveal is not announced before it.
@@ -873,12 +891,15 @@ export class App {
     const begun = accountBegun(before, game);
     const accountToasts: Toast[] = begun === null ? []
       : [{ id: `account:${begun}`, heading: STRINGS.accounts.opened, title: STRINGS.accounts.callsign(begun), sound: 'entry' }];
+    // What a duel won, or the seat taken, has put on the shop's shelf is said once: a frame is for sale there now,
+    // and what the duel's client says of it does not name the shop.
+    const shelfToasts: Toast[] = shelfToast(before, game);
     // An answer that hands over something the pilot already held says so, where it would otherwise say nothing at all.
     const heldToasts: Toast[] = heldAlready(before, game, FINDS)
       .map((find) => ({ id: `held:${find.id}`, heading: STRINGS.database.heldToast, title: find.title, sound: 'entry' as const }));
     this.toasts.push(
       ...crownToasts, ...seatToasts, ...stripeToasts, ...medalToasts(earned), ...nameToasts, ...accountToasts,
-      ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...heldToasts, ...levelToasts, ...driveToasts,
+      ...entryToasts(opened.filter((entry) => !isFind(entry))), ...findToasts(opened.filter(isFind)), ...heldToasts, ...shelfToasts, ...levelToasts, ...driveToasts,
     );
     this.game = game;
     this.saveFailed = !this.file.save(game);
@@ -1302,6 +1323,11 @@ export class App {
     return this.game ? sortieBuilds(this.game, tunedCatalog(this.deps.catalog, this.game.tuning)) : [];
   }
 
+  /** The saved builds that cannot be flown now, and the part each is short of where that is why. */
+  grounded(): Grounded[] {
+    return this.game ? groundedBuilds(this.game, tunedCatalog(this.deps.catalog, this.game.tuning)) : [];
+  }
+
   /**
    * Starts a contract, unless it is not on offer, or the build may not deploy and the contract lends
    * no mech of its own. With `other` it is flown as the other side offers it, if they do. With `fit`
@@ -1398,18 +1424,22 @@ export class App {
    */
   bookSettlement(settlement: Settlement, mission: Mission, fought: Fought = { tally: NO_STATS, met: [], retreated: false }): number {
     const relief = debtRelief(this.game!, settlement);
-    let next = applySettlement(this.game!, settlement);
+    // A rematch in the arena is paid and billed, and is no contract: it is not counted as one won or lost, and the board does not turn for it.
+    const counted = mission.rematch !== true;
+    let next = applySettlement(this.game!, settlement, counted);
     next = addXp(next, xpForContract(mission.reward, settlement.won));
     const pay = settlement.reward + (settlement.bonus ?? 0) + (settlement.asked?.bonus ?? 0);
     next = {
       ...next,
-      stats: addStats(next.stats, contractStats(fought.tally, { won: settlement.won, retreated: fought.retreated, pay })),
+      stats: addStats(next.stats, contractStats(fought.tally, { won: settlement.won, retreated: fought.retreated, pay, counted })),
       met: [...next.met, ...fought.met.filter((kind) => !next.met.includes(kind))],
       ...(fought.overdrives ? { overdrives: (next.overdrives ?? 0) + fought.overdrives } : {}),
     };
-    // A win in the pilot's own build is a win for the kind of machine that build is.
+    // A win in the pilot's own build is a win for the kind of machine that build is: but for a rematch, which is flown as a class and won for none.
     const kind = this.flownAs(mission);
-    if (settlement.won && kind) next = recordWinAs(next, kind);
+    if (settlement.won && kind && earnsStripes(mission)) next = recordWinAs(next, kind);
+    // A rematch won: its next purse is half of this one's.
+    if (settlement.won && mission.rematch) next = recordRematch(next, mission.id);
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
       else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);
@@ -1429,9 +1459,21 @@ export class App {
       }
     }
     // An account: a meeting won is booked, any other contract won is one waited through, and where none is open one may begin.
-    next = bookGrudge(next, mission, settlement.won, fought.account ?? NOTHING_FOUGHT, BOARD_TEXT.grudge.names);
+    // An account waits through contracts and begins in one: a rematch is neither waited through nor where one begins.
+    if (counted) next = bookGrudge(next, mission, settlement.won, fought.account ?? NOTHING_FOUGHT, BOARD_TEXT.grudge.names);
     this.commit(next);
     return relief;
+  }
+
+  /**
+   * Buys what a build to try still lacks and fits it, in place of the build on the floor; see `followAdvice`.
+   * False where that cannot be done today, and then nothing is changed.
+   */
+  followAdvice(advice: BuildAdvice): boolean {
+    const next = this.game ? followAdvice(this.game, advice, this.deps.catalog) : null;
+    if (!next) return false;
+    this.commit(next);
+    return true;
   }
 
   /** The kind of machine a contract is flown as: that of the build on the floor. A mech that was lent is nobody's kind, and the simulator and the Gauntlet count for none. */
@@ -1450,6 +1492,11 @@ export class App {
     if (!this.game) return;
     const next = decide(this.game, choice, option, pay);
     if (next !== this.game) this.commit(next);
+  }
+
+  /** Whether a page of story may be skipped: one told in an earlier telling, as it was told then. */
+  canSkip(scene: Scene): boolean {
+    return !!this.game && skippable(this.game, scene);
   }
 
   finishScene(scene: Scene): void {

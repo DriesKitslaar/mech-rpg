@@ -20,10 +20,15 @@ const question = (next: number): string[] => STRINGS.hub.cycleQuestion(next);
 
 describe('the question before the story starts over', () => {
   test('says what the cycle that would begin changes: tougher and better paid up to the third telling, a step more at the bench up to the fourth', () => {
-    expect(question(1)).toEqual(['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.', 'Tougher enemies, better pay,', 'one more step at the bench.']);
+    expect(question(1)).toEqual([
+      'Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
+      // What leaves the list of contracts until the story brings it back.
+      'Side work, duels and the', 'Archive start over with it.',
+      'Tougher enemies, better pay,', 'one more step at the bench.',
+    ]);
     expect(question(2)).toEqual(question(1));
-    expect(question(3).slice(3)).toEqual(['Enemies are as tough as now.', 'The bench has one step left.']);
-    expect(question(4).slice(3)).toEqual(['Enemies are as tough as now,', 'and the pay is the same.']);
+    expect(question(3).slice(5)).toEqual(['Enemies are as tough as now.', 'The bench has one step left.']);
+    expect(question(4).slice(5)).toEqual(['Enemies are as tough as now,', 'and the pay is the same.']);
     expect(question(9)).toEqual(question(4));
   });
 
@@ -39,15 +44,15 @@ describe('the question before the story starts over', () => {
     }
   });
 
-  test.each(['en', 'nl'] as const)('is five lines that fit the box (%s)', (language) => {
+  test.each(['en', 'nl'] as const)('is seven lines that fit the box (%s)', (language) => {
     setLanguage(language);
     try {
       for (let next = 1; next <= 6; next++) {
-        expect(question(next)).toHaveLength(5);
+        expect(question(next)).toHaveLength(7);
         for (const row of question(next)) expect(row.length, row).toBeLessThanOrEqual(30);
       }
-      // The first three lines are the same whatever the cycle: what is kept.
-      expect(question(5).slice(0, 3)).toEqual(question(1).slice(0, 3));
+      // The first five lines are the same whatever the cycle: what is kept, and what starts over.
+      expect(question(5).slice(0, 5)).toEqual(question(1).slice(0, 5));
     } finally {
       setLanguage('en');
     }

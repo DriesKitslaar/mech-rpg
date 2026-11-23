@@ -285,12 +285,16 @@ export const STRINGS = {
       lent: 'CANNOT DEPLOY: patrol only, lent mech',
       archive: 'ARCHIVE: fly a finished contract again',
       replay: 'REPLAY: pays less and changes nothing',
+      // (In a later telling: a contract of the story or beside it that was never won in any telling. Its row ends in a star.)
+      unflown: 'NEW: the * marks one you never won',
     },
     locked: 'Locked', opensAfter: (title: string) => `after ${title}`, campaignDone: 'The war is over. The work is not.',
     cycleLabel: (n: number) => `CYCLE ${n + 1}`,
     // What starting over keeps, and what the cycle that would begin changes: tougher enemies and better pay up to the third
     // telling, a step more at the bench up to the fourth.
+    // What stays, what leaves the list of contracts until the story brings it back, and what the next telling is like.
     cycleQuestion: (next: number): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
+      'Side work, duels and the', 'Archive start over with it.',
       ...(next <= 2 ? ['Tougher enemies, better pay,', 'one more step at the bench.']
         : next === 3 ? ['Enemies are as tough as now.', 'The bench has one step left.']
           : ['Enemies are as tough as now,', 'and the pay is the same.'])],
@@ -298,7 +302,9 @@ export const STRINGS = {
   },
   arena: {
     heading: 'ARENA', client: 'Arena Office', win: 'The crowd got what it paid for. So did you.',
-    rank: (n: number) => `RANK ${n}`, purse: 'PURSE', rematch: 'REMATCH',
+    rank: (n: number) => `RANK ${n}`, purse: 'PURSE',
+    // (Heads the briefing of a bout that was won before.)
+    rematchTag: 'REMATCH: no contract, and a purse that halves',
     next: 'NEXT OPPONENT', beaten: 'BEATEN', locked: 'LOCKED', champion: 'You are the champion of Varn.',
     yourRank: (n: number, of: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/${of}`), fight: 'ARENA FIGHT', back: 'A: challenge   L1/R1: page   B: back',
     // (Under a row that takes no challenge: A does nothing there, and the hint does not say it does.)
@@ -410,8 +416,15 @@ export const STRINGS = {
     },
     garage: (name: string, tag: string) => `${name.toUpperCase()}: ${tag}`,
     // A build of the kind under the cursor that the shop can supply now, and what of it is still to be bought.
-    advice: 'ONE TO FLY NOW', owned: 'You own all of it', toBuy: (credits: number) => `Still to buy: ${credits} c`,
+    advice: 'ONE TO FLY NOW', toBuy: (credits: number) => `Still to buy: ${credits} c`,
     unsold: 'Not all of it is sold yet',
+    // What A does on the page, where it does something: buys what is missing of that build and fits it, or only fits it.
+    follow: (credits: number) => (credits > 0 ? `A: buy for ${credits} c and fit` : 'A: fit this build'),
+    // (Where the build named is the one on the floor, and which of the saved builds holds it.)
+    flying: 'YOU FLY THIS BUILD', flyingKept: (n: number) => `YOU FLY THIS: BUILD ${n}`,
+    // The question before it is done.
+    ask: (credits: number) => (credits > 0 ? `Buy what is missing for ${credits} c?` : 'Fit this build?'),
+    askNote: 'It takes the place of the build you fly.', no: 'No', yes: 'Yes',
   },
   medals: {
     heading: 'MEDALS', earned: 'MEDAL EARNED', earnedMany: 'MEDALS EARNED', count: (n: number) => `${n} medals`, pay: (credits: number) => `+${credits} c`, held: 'EARNED', pays: (credits: number) => `Pays ${credits} c`,
@@ -565,6 +578,8 @@ export const STRINGS = {
     // The build the contract is taken in: the row in the briefing's menu, which build it is, and how to turn to another.
     build: 'Build', buildOnFloor: 'CURRENT BUILD', buildSaved: (slot: number) => `SAVED BUILD ${slot}`,
     buildHint: 'LEFT/RIGHT: another build', buildNone: 'Save builds in the Garage to choose one here.',
+    // (A saved build that cannot be chosen: a part of it was sold, or it may not deploy as it is.)
+    buildShort: (slot: number, part: string) => `BUILD ${slot}: ${part} missing`, buildGrounded: (slot: number) => `BUILD ${slot} cannot deploy`,
     // How the contract is likely to go in that build: what the game's own pilot wins of it, flight by flight as it is counted.
     odds: (won: number, played: number) => `ODDS ${won}/${played}`, oddsWait: 'ODDS ..',
     oddsNote: 'this contract flown on Auto Turn',
@@ -589,9 +604,15 @@ export const STRINGS = {
   },
   messagesScreen: { heading: 'MESSAGES', isNew: 'NEW', from: 'FROM', empty: 'No messages', back: 'B: back' },
   ending: { continue: 'Press A to return to headquarters' },
-  scene: { continue: 'Press A to continue', yourCall: 'YOUR CALL', answer: 'UP/DOWN: choose   A: answer. It stands.' },
+  scene: {
+    continue: 'Press A to continue', yourCall: 'YOUR CALL', answer: 'UP/DOWN: choose   A: answer. It stands.',
+    // (On a page of story that was told in an earlier telling.)
+    skip: 'B: skip, told before',
+  },
   settlement: {
     won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Fee', ammo: 'Ammunition', repairs: 'Armour repair',
+    // (A bout of the arena won before and fought again: it is billed, and is no contract.)
+    rematchWon: 'REMATCH WON', rematchLost: 'REMATCH LOST',
     // The heading of a duel that took a master's crown, and of the one that took the eighth seat.
     crowned: 'THE CROWN IS YOURS', seated: 'THE SEAT IS YOURS',
     // The heading of a meeting won with the pilot of an account: which of its meetings it was, and of the one that closed it.
@@ -613,6 +634,8 @@ export const STRINGS = {
     // The bar is as long as the machine's own limit, so this is so in a machine whose limit is not the usual one.
     heat: 'You overheated and lost a turn. Vent before the heat bar is full.',
     stance: 'You never used Boost or Guard. Boost makes you hard to hit; Guard blunts what lands.',
+    // (The other side kept most of its armour: the machine was the reason, and not how it was flown.)
+    outmatched: 'You barely marked them: that one is beyond this machine. Better parts, the bench or another build; a briefing gives the odds.',
     repairs: 'You went down with field repairs unused. A repair ends your turn: fire, then patch.',
     time: 'The fight ran out of time. Bring more firepower, and aim at what the contract names.',
     patrol: 'Short of parts? The patrol always pays, and a second weapon changes most fights.',
@@ -667,6 +690,10 @@ export const STRINGS = {
     hint: 'A: trade   L1/R1: category   LEFT/RIGHT: buy or sell   B: back', fitHint: 'Fit it in the Garage.',
     // Under the hint: where AP, WT, DRAIN and the rest are explained, by the names the hub and the database have for it.
     wordsHint: 'What the short words mean: Database, MANUAL',
+    // (Announced when a duel won, or the seat taken, puts a frame on the shelf.)
+    shelfToast: 'NEW IN THE SHOP', shelfParts: (frame: string, parts: number) => `${frame}: ${parts} parts`,
+    // (Selling a part that one of the saved builds is made of: before it is sold, and after.)
+    neededBy: (slot: number) => `Saved build ${slot} needs this part`, missedBy: (slot: number) => `Saved build ${slot} is a part short now`,
   },
   partInfo: {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',

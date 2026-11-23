@@ -1,4 +1,4 @@
-import { arrivedMessages, type Message } from '../core/campaign';
+import { arrivedMessages, isUnread, type Message } from '../core/campaign';
 import { MESSAGES, MISSIONS } from '../content/missions';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -27,8 +27,9 @@ export class MessagesScreen implements Screen {
   }
 
   private items() {
-    const read = this.app.game!.read;
-    return this.arrived().map((m) => ({ id: m.id, label: m.subject, enabled: true, note: read.includes(m.id) ? undefined : M.isNew }));
+    // A letter read in an earlier telling comes again with the story and is not marked as new.
+    const game = this.app.game!;
+    return this.arrived().map((m) => ({ id: m.id, label: m.subject, enabled: true, note: isUnread(game, m.id) ? M.isNew : undefined }));
   }
 
   update(dtMs: number): void {

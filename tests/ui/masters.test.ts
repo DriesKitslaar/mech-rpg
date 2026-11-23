@@ -435,14 +435,17 @@ describe('the duel', () => {
     expect(written(drawn(app), 'THE CROWN IS YOURS').y).toBe(26);
   });
 
-  test('a crown is taken once: the holder\'s rematch pays a quarter, says the arena\'s usual word, and changes nothing that is kept', () => {
+  test('a crown is taken once: the holder\'s rematch pays a quarter, is billed as a rematch, and changes nothing that is kept but its own count', () => {
     const { app, store } = won(champion(late('bastion'), { masters: ['bastion'], crowns: ['bastion'] }), 'bastion');
     expect(bill(app)).toMatchObject({ won: true, reward: 2250, crowned: null });
     const kept = savedGame(store);
     expect(kept.crowns).toEqual(['bastion']);
     expect(kept.masters).toEqual(['bastion']);
+    // Its next purse is half of this one.
+    expect(kept.rematches).toEqual({ [masterId('bastion')]: 1 });
     const shown = drawn(app);
-    expect(written(shown, STRINGS.settlement.won).y).toBe(26);
+    expect(written(shown, STRINGS.settlement.rematchWon).y).toBe(26);
+    expect(shown.texts.some((t) => t.text === STRINGS.settlement.won)).toBe(false);
     expect(shown.texts.filter((t) => t.y >= 144 && t.y < 180).map((t) => t.text).join(' ')).toBe(A.win);
     expect(snap(app).toasts).not.toContain('crown:bastion');
   });
@@ -487,15 +490,18 @@ describe('in Dutch', () => {
       for (const a of panel) for (const b of panel) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
       for (const t of page.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 4);
     }
-    // The briefing: the tag on one line, and under it what the crown asks; here it is held.
+    // The briefing: the tag on one line, and under it what the crown asks; here it is held, and the duel a rematch.
     toRow(app, masterId('bastion'));
     press(app, 'confirm');
     shown = drawn(app);
-    expect(written(shown, 'MEESTERDUEL: een tegen een, om de pot')).toMatchObject({ left: 72, y: 40 });
+    expect(written(shown, 'REVANCHE: geen contract, de pot halveert')).toMatchObject({ left: 72, y: 40 });
+    expect(shown.texts.some((t) => t.text === 'MEESTERDUEL: een tegen een, om de pot')).toBe(false);
     expect(written(shown, 'DEZE KROON IS VAN JOU')).toMatchObject({ left: 72, y: 51 });
     press(app, 'cancel');
     toRow(app, masterId('marksman'));
     press(app, 'confirm');
     expect(written(drawn(app), 'KROON: WIN ALS SCHERPSCHUTTER').right).toBeLessThanOrEqual(LOGICAL_W - 8);
+    // A master not beaten yet is no rematch: the duel is headed as a duel.
+    expect(written(drawn(app), 'MEESTERDUEL: een tegen een, om de pot')).toMatchObject({ left: 72, y: 40 });
   });
 });

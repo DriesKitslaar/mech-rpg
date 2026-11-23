@@ -1,4 +1,5 @@
-import { buy, checkBuy, checkSell, sell, type GameState } from '../core/game';
+import { buy, checkBuy, checkSell, loadoutsNeeding, sell, type GameState } from '../core/game';
+import { stepOf } from '../core/tuning';
 import type { Catalog, Part } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -24,6 +25,8 @@ export class ShopFlow {
   message = '';
   /** True while the message on screen is about a purchase: the shop then adds that it still has to be fitted. */
   justBought = false;
+  /** The saved builds that the sale just made left a part short, by their places from 0: said while its message is on screen. */
+  shortened: number[] = [];
 
   /** `stock` is what is for sale now; `everything` is every part that exists, so anything owned can be sold. */
   constructor(game: GameState, private catalog: Catalog, private stock: Part[], private everything: Part[] = stock) {
@@ -32,11 +35,16 @@ export class ShopFlow {
   }
 
   private items(): ListItem[] {
+    // The bench's work stays with a part, sold or not: a part that was worked on is listed with its step, as the garage lists it.
+    const named = (part: Part): string => {
+      const step = stepOf(this.game.tuning, part.id);
+      return step > 0 ? `${part.name} +${step}` : part.name;
+    };
     if (this.mode === 'buy') {
       return this.stock.filter((part) => tabOf(part) === this.tab).map((part) => {
         const owned = this.game.inventory[part.id] ?? 0;
         return {
-          id: part.id, label: owned > 0 ? `${part.name} x${owned}` : part.name,
+          id: part.id, label: owned > 0 ? `${named(part)} x${owned}` : named(part),
           enabled: checkBuy(this.game, part.id, this.catalog) === null, note: String(part.price),
         };
       });
@@ -45,7 +53,7 @@ export class ShopFlow {
     const owned = parts.filter((part) => (this.game.inventory[part.id] ?? 0) > 0).map((part) => {
       const refusal = checkSell(this.game, part.id, this.catalog);
       const note = refusal === null ? `+${part.price}` : refusal === 'lastWeapon' ? S.lastWeapon : S.inUse;
-      return { id: part.id, label: part.name, enabled: refusal === null, note };
+      return { id: part.id, label: named(part), enabled: refusal === null, note };
     });
     return owned.length > 0 ? owned : [{ id: EMPTY, label: S.nothingToSell, enabled: false }];
   }
@@ -54,6 +62,15 @@ export class ShopFlow {
   get selected(): Part | undefined {
     const id = this.list.selected?.id;
     return id && id !== EMPTY ? this.catalog[id] : undefined;
+  }
+
+  /**
+   * The saved builds that selling the part under the cursor would leave a part short, by their places from 0:
+   * said before it is sold. Empty where nothing is being sold, or the part cannot be.
+   */
+  get neededBy(): number[] {
+    const part = this.selected;
+    return this.mode === 'sell' && part && checkSell(this.game, part.id, this.catalog) === null ? loadoutsNeeding(this.game, part.id) : [];
   }
 
   private reset(): void {
@@ -72,6 +89,7 @@ export class ShopFlow {
 
   onInput(action: InputAction): 'stay' | 'changed' | 'exit' {
     this.justBought = false;
+    this.shortened = [];
     switch (action) {
       case 'cancel': return 'exit';
       case 'up': this.list.move(-1); this.message = ''; return 'stay';
@@ -99,6 +117,7 @@ export class ShopFlow {
         } else {
           const refusal = checkSell(this.game, part.id, this.catalog);
           if (refusal !== null) { this.message = refusal === 'lastWeapon' ? S.needWeapon : S.inUse; return 'stay'; }
+          this.shortened = loadoutsNeeding(this.game, part.id);
           this.game = sell(this.game, part.id, this.catalog);
           this.message = S.sold(part.name, part.price);
         }

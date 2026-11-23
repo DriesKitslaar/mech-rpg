@@ -276,11 +276,13 @@ describe('the duel won', () => {
     const again = ended(holder, true);
     expect(bill(again.app)).toMatchObject({ won: true, reward: 3750, seated: false });
     const shown = drawn(again.app);
-    expect(written(shown, STRINGS.settlement.won).y).toBe(26);
+    // It is billed as the rematch it is.
+    expect(written(shown, STRINGS.settlement.rematchWon).y).toBe(26);
     expect(shown.texts.some((t) => t.text === 'THE SEAT IS YOURS')).toBe(false);
     expect(shown.texts.filter((t) => t.y >= 144 && t.y < 180).map((t) => t.text).join(' ')).toBe(A.win);
     expect([snap(again.app).toast, ...snap(again.app).toasts]).not.toContain('seat');
     expect(savedGame(again.store).seat).toBe(true);
+    expect(savedGame(again.store).rematches).toEqual({ [SEAT_ID]: 1 });
   });
 
   test('a game loaded with the seat has it without ceremony', () => {

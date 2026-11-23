@@ -1,7 +1,8 @@
-import { adviceAfter, ADVICE } from '../../src/core/advice';
+import { adviceAfter, armourLeft, ADVICE, OUTMATCHED_SHARE } from '../../src/core/advice';
 import { ROUND_LIMIT, createBattle, type BattleEvent, type BattleOptions, type BattleState } from '../../src/core/battle';
 import { ENEMIES } from '../../src/content/enemies';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
+import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
 import { charsFor, wrap } from '../../src/ui/widgets';
 
@@ -13,9 +14,15 @@ function lost(events: BattleEvent[] = [], opts: BattleOptions = {}, edit: (s: Ba
   s.round = 4;
   s.events = events;
   s.units[0].repairsLeft = 0;
+  // The other side took its share: half of its armour is gone. (A defeat that barely marked them is a matter of its own.)
+  for (const unit of s.units.filter((u) => u.side === 'enemy')) for (const part of Object.values(unit.parts)) part.ap = Math.floor(part.maxAp / 2);
   edit(s);
   return s;
 }
+/** Sets the armour every machine of the other side has left, as a share of what it came with. */
+const leave = (share: number) => (s: BattleState): void => {
+  for (const unit of s.units.filter((u) => u.side === 'enemy')) for (const part of Object.values(unit.parts)) part.ap = Math.round(part.maxAp * share);
+};
 const stood: BattleEvent[] = [{ type: 'boost', unit: 'player' }, { type: 'guard', unit: 'player' }];
 
 describe('what Dispatch says after a defeat', () => {
@@ -63,6 +70,27 @@ describe('what Dispatch says after a defeat', () => {
     expect(adviceAfter(lost(stood))).toBe(adviceAfter(lost(stood)));
   });
 
+  test('a pilot who flew it soundly and barely marked them is told that the machine was not up to it, before anything about repairs', () => {
+    expect(OUTMATCHED_SHARE).toBeCloseTo(2 / 3);
+    // Untouched, or with four fifths of their armour left: the machine. Repairs unused are not the story of such a defeat.
+    expect(adviceAfter(lost(stood, {}, leave(1)))).toBe('outmatched');
+    expect(adviceAfter(lost(stood, {}, (s) => { leave(0.8)(s); s.units[0].repairsLeft = 2; }))).toBe('outmatched');
+    expect(adviceAfter(lost(stood, {}, (s) => { leave(0.8)(s); s.round = ROUND_LIMIT; }))).toBe('outmatched');
+    // With half of it gone, it was a fight: what was left undone is said as before.
+    expect(adviceAfter(lost(stood, {}, (s) => { leave(0.5)(s); s.units[0].repairsLeft = 2; }))).toBe('repairs');
+    // A turn lost to heat, or no Boost and no Guard, comes first: that is flying, and the machine is not judged on it.
+    expect(adviceAfter(lost([...stood, { type: 'overheat', unit: 'player' }], {}, leave(1)))).toBe('heat');
+    expect(adviceAfter(lost([], {}, leave(1)))).toBe('stance');
+    // What the share is taken of: all the armour the other side came with, a machine that is down counting for nothing left.
+    const s = lost(stood, {}, leave(1));
+    expect(armourLeft(s)).toBe(1);
+    for (const part of Object.values(s.units[1].parts)) part.ap = 0;
+    const whole = s.units.filter((u) => u.side === 'enemy').flatMap((u) => Object.values(u.parts)).reduce((sum, part) => sum + part.maxAp, 0);
+    const left = Object.values(s.units[2].parts).reduce((sum, part) => sum + part.maxAp, 0);
+    expect(armourLeft(s)).toBeCloseTo(left / whole);
+    expect(armourLeft(lost(stood, {}, leave(0)))).toBe(0);
+  });
+
   test('what went most plainly wrong is said first: the contract\'s own terms, then heat, then stance, then repairs', () => {
     const everything: BattleEvent[] = [{ type: 'overheat', unit: 'player' }];
     const s = lost(everything, { objective: { type: 'disable', target: 0 } }, (d) => { d.units[1].destroyed = true; d.units[0].repairsLeft = 2; });
@@ -82,5 +110,7 @@ describe('what Dispatch says after a defeat', () => {
     expect(STRINGS.advice.stance).toContain(STRINGS.actions.boost);
     expect(STRINGS.advice.stance).toContain(STRINGS.actions.guard);
     expect(STRINGS.advice.heat).toContain(STRINGS.actions.cool);
+    // The Dutch fits the same three lines.
+    for (const id of ADVICE) expect(wrap(STRINGS_NL.advice[id], charsFor(210)).length, id).toBeLessThanOrEqual(3);
   });
 });

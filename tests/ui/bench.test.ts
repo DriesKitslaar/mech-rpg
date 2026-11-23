@@ -455,11 +455,13 @@ describe('what the shop shows beside a tuned mech', () => {
     // Never owned now, but worked on once: bought again, it has the armour the bench gave it.
     const texts = onLegs(pilot({ 'legs-crawler': 3 }), 'legs-crawler');
     const tuned = Math.round(crawler.ap * 1.15);
-    // On its page, that is: the row in the list is the shelf's label, and stays as printed.
+    // On its page and on its row of the list: the shelf does not show as plain a part that will come back worked on.
     const page = texts.filter((t) => t.x > 168).map((t) => t.text);
     expect(page).toContain(`${crawler.name} +3`);
     expect(page).not.toContain(crawler.name);
-    expect(texts.filter((t) => t.x <= 168).map((t) => t.text)).toContain(crawler.name);
+    const list = texts.filter((t) => t.x <= 168).map((t) => t.text);
+    expect(list).toContain(`${crawler.name} +3`);
+    expect(list).not.toContain(crawler.name);
     expect(texts.some((t) => t.text.startsWith(`${STRINGS.partInfo.ap} ${tuned}`))).toBe(true);
     expect(chipOf(texts)).toMatchObject({ text: `AP +${tuned - colossus.ap}`, color: COLORS.armor });
     // What it costs is what it always cost: the bench's work was paid for at the bench.

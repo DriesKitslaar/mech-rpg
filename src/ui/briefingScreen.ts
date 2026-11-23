@@ -8,9 +8,9 @@ import { groundFor } from '../core/ground';
 import { askBonus, crownHeld, isMaster } from '../core/masters';
 import { isSeat } from '../core/seat';
 import type { Fight } from '../core/mission';
-import type { Sortie } from '../core/sortie';
+import type { Grounded, Sortie } from '../core/sortie';
 import { isRange, parseSpar } from '../core/range';
-import { countsForClass, nextStripeAt, stripesOf } from '../core/stripes';
+import { earnsStripes, nextStripeAt, stripesOf } from '../core/stripes';
 import { isDrill } from '../core/training';
 import { tunedCatalog } from '../core/tuning';
 import type { BuildSlot } from '../core/game';
@@ -141,6 +141,8 @@ export class BriefingScreen implements Screen {
    * contract that is flown in a mech that is lent: the patrol of a pilot whose own cannot deploy, and every drill.
    */
   private builds: Sortie[];
+  /** The saved builds that cannot be flown now: the page of builds says so, where it would otherwise not name them at all. */
+  private grounded: Grounded[];
   private chosen = 0;
   /**
    * The odds of what has been shown, by offer, build and wingman: the contract as accepting would start it,
@@ -158,6 +160,7 @@ export class BriefingScreen implements Screen {
     // A pilot still in the introductions is told the contract and nothing else: what class a build is, how the
     // odds stand and what a stripe is are for once the board opens, and each has its chapter in the manual.
     this.builds = first.loaner === undefined && !app.newcomer ? app.sorties() : [];
+    this.grounded = first.loaner === undefined && !app.newcomer ? app.grounded() : [];
     this.turnTo(first);
   }
 
@@ -201,12 +204,12 @@ export class BriefingScreen implements Screen {
   /**
    * How near the class of that build is to its next stripe: the stripes it has given, the contracts
    * won as it, and how many its next stripe asks (null once it has given all three). Null where a
-   * win would count for no class: the simulator's fights.
+   * win would count for no class: the simulator's fights, and a rematch in the arena.
    */
   private get stripe(): { kind: Archetype; held: number; won: number; next: number | null } | null {
     const game = this.app.game;
     const kind = this.kind;
-    if (!game || !kind || !countsForClass(this.mission)) return null;
+    if (!game || !kind || !earnsStripes(this.mission)) return null;
     return { kind, held: stripesOf(game, kind), won: wonAs(game, kind), next: nextStripeAt(game, kind) };
   }
 
@@ -329,7 +332,9 @@ export class BriefingScreen implements Screen {
     drawText(ctx, mission.title.toUpperCase(), 72, 8, { size: 16, color: COLORS.accent });
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
     const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
-    const tag = isDrill(mission) ? STRINGS.training.tag
+    // A rematch says first that it is one: what it is a rematch of, its briefing goes on to say.
+    const tag = mission.rematch ? STRINGS.arena.rematchTag
+      : isDrill(mission) ? STRINGS.training.tag
       : isRange(mission) ? STRINGS.training.rangeTag
       : mission.loaner !== undefined ? B.lent
       : mission.id.startsWith('cup-') ? STRINGS.arena.cups.tag
@@ -424,8 +429,15 @@ export class BriefingScreen implements Screen {
         drawText(ctx, oddsText, 12, y + 21 + 6 * LINE, { color: oddsShade });
         drawText(ctx, `: ${B.oddsNote}`, 12 + Math.round(oddsText.length * CHAR_W), y + 21 + 6 * LINE, { color: COLORS.dim });
       }
-      // With something to turn to, how; with nothing, where builds are saved.
-      drawText(ctx, this.builds.length > 1 ? B.buildHint : B.buildNone, 12, 191 - LINE, { color: COLORS.dim });
+      // With something to turn to, how; with nothing, where builds are saved. A saved build that cannot be flown
+      // now is named with what it is short of: beside the hint, or where the page would say that none is saved.
+      const [down] = this.grounded;
+      const short = down === undefined ? null
+        : down.part !== undefined ? B.buildShort(down.slot + 1, Object.hasOwn(catalog, down.part) ? catalog[down.part].name : down.part) : B.buildGrounded(down.slot + 1);
+      if (this.builds.length > 1) {
+        drawText(ctx, B.buildHint, 12, 191 - LINE, { color: COLORS.dim });
+        if (short) drawText(ctx, short, LOGICAL_W - 12, 192 - LINE, { align: 'right', color: COLORS.heat, size: 10 });
+      } else drawText(ctx, short ?? B.buildNone, 12, 191 - LINE, { color: short ? COLORS.heat : COLORS.dim });
     }
     for (const paragraph of onHire || onBuild ? [] : this.rows) {
       for (const _full of paragraph) {

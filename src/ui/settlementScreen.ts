@@ -87,7 +87,9 @@ export class SettlementScreen implements Screen {
     const T = STRINGS.training;
     // A duel that took a master's crown is headed by that, and the one that took the eighth seat by that.
     const heading = drill ? (s.won ? T.won : T.lost) : s.simulated ? (s.won ? T.rangeWon : T.rangeLost) : s.seated ? S.seated : s.crowned ? S.crowned
-      : s.account ? (s.account.closed ? S.accountClosed : S.account(s.account.meeting, GRUDGE_MEETINGS)) : s.won ? S.won : S.lost;
+      : s.account ? (s.account.closed ? S.accountClosed : S.account(s.account.meeting, GRUDGE_MEETINGS))
+      // A rematch is billed as one: it is no contract completed or failed.
+      : this.mission.rematch ? (s.won ? S.rematchWon : S.rematchLost) : s.won ? S.won : S.lost;
     drawText(ctx, heading, LOGICAL_W / 2, 26, { size: 16, align: 'center', color: s.won ? COLORS.accent : COLORS.danger });
     const fast = this.app.deps.fast;
     if (s.rank) {

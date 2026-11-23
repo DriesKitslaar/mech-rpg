@@ -103,6 +103,8 @@ export class SceneScreen implements Screen {
   }
 
   onInput(action: InputAction): void {
+    // A page that was told in an earlier telling is left with B, whatever of it is on the screen yet.
+    if (action === 'cancel' && this.app.canSkip(this.scene)) return this.app.finishScene(this.scene);
     if (action !== 'confirm' || this.hold > 0) return;
     // The first press writes the page out; the next one leaves it. Each is held off for a moment
     // after what came before it, so a mashed button skips nothing unread.
@@ -116,7 +118,7 @@ export class SceneScreen implements Screen {
   view(): ScreenView {
     const { id, ending, faction } = this.scene;
     return {
-      menu: { items: [], cursor: 0 }, scene: id, typing: !this.wordsUp || !this.writer.done, busy: this.hold > 0,
+      menu: { items: [], cursor: 0 }, scene: id, typing: !this.wordsUp || !this.writer.done, busy: this.hold > 0, skippable: this.app.canSkip(this.scene),
       ...(ending && faction ? { ending: faction } : {}),
     };
   }
@@ -152,6 +154,7 @@ export class SceneScreen implements Screen {
 
     if (scene.heading) drawOutlined(ctx, scene.heading, LOGICAL_W / 2, 18, { align: 'center', color: OVER_PICTURE });
     this.drawTitle(ctx);
+    drawSkip(ctx, this.app, scene);
     // Not a word before the shade is up: text that is all there at once would otherwise sit on the bare picture.
     if (!this.wordsUp) return;
     const written = this.writer.visible();
@@ -170,4 +173,11 @@ export class SceneScreen implements Screen {
       drawOutlined(ctx, scene.ending ? STRINGS.ending.continue : STRINGS.scene.continue, LOGICAL_W / 2, 250, { align: 'center', color: OVER_PICTURE });
     }
   }
+}
+
+/** Where a page of story says that B skips it: the corner over the picture that no heading or title reaches. */
+export const SKIP_AT = { right: LOGICAL_W - 6, y: 4 };
+/** Says, on a page that was told in an earlier telling, that B skips it. */
+export function drawSkip(ctx: CanvasRenderingContext2D, app: App, scene: Scene): void {
+  if (app.canSkip(scene)) drawOutlined(ctx, STRINGS.scene.skip, SKIP_AT.right, SKIP_AT.y, { align: 'right', color: OVER_PICTURE, size: 10 });
 }

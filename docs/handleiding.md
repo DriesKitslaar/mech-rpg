@@ -204,6 +204,20 @@ meer loon, en een andere opdrachtgever kiezen. Zo'n nieuwe doorgang heet in het 
 Tussen de contracten door stellen mensen je soms een vraag. Wat je antwoordt wordt onthouden: het
 bepaalt wie er later iets voor je doet, en wat er aan het eind over je geschreven staat.
 
+**Een nieuwe cyclus weet dat je er al geweest bent.**
+
+- **Wat blijft en wat opnieuw begint** staat in de vraag die het spel stelt voor je begint: je
+  credits, onderdelen, level, perks en arenarang blijven. Bijklussen, de duels en het archief
+  beginnen opnieuw: ze komen terug naarmate het verhaal vordert.
+- **Overslaan.** Een verhaalpagina of gesprek dat je in een eerdere cyclus al zag, sla je over met
+  **B**; rechtsboven staat dan **B: skip, told before**. Een vraag die je gesteld wordt, moet je
+  wel opnieuw beantwoorden, en het einde sla je nooit over. In je eerste cyclus doet **B** op een
+  verhaalpagina niets.
+- **Post.** Brieven komen opnieuw binnen op het moment dat ze in het verhaal horen. Een brief die
+  je al eens las, is niet meer als nieuw gemarkeerd. De nieuwste brief staat bovenaan.
+- **Nieuw werk.** Achter een contract dat je nog nooit hebt gewonnen staat in de lijst een
+  sterretje (`*`), zodat je ziet wat er in deze cyclus bij is gekomen.
+
 ## Wat je vindt
 
 Het spel vertelt niet alles. Soms laat wat je doet iets achter: een papier, of een koperen penning.
@@ -231,6 +245,18 @@ Je vindt ze terug in de **Database** op de pagina **Found**.
 Na de tien rangen van de ladder is er voor de kampioen nog een achterkamer met vijf piloten.
 Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen mech.
 
+**Revanche.** Wie je in de arena hebt verslagen, kun je opnieuw uitdagen: een rang, het
+spiegelgevecht, een beker, een meester. Dat is een revanche; de briefing begint er dan mee
+(**REMATCH**, Nederlands **REVANCHE**) en op de afrekening staat **REMATCH WON**.
+
+- **De pot wordt steeds kleiner.** De eerste revanche betaalt een kwart van de pot, elke volgende
+  de helft van de vorige, tot er niets meer te halen valt. De lijst van de arena laat zien wat
+  een rij nu betaalt.
+- **Een revanche is geen contract.** Hij komt niet op je teller van gewonnen contracten, het open
+  bord verandert er niet door, en je verdient er geen streep mee.
+- Een gevecht in de arena dat je **voor het eerst** wint, telt wel als gewonnen contract: daarna
+  staan er dus nieuwe open contracten op het bord.
+
 ### De meesters: een kroon per klasse
 
 De arena heeft een tweede pagina: druk op **R1** (of **L1**) voor **MASTERS**. Daar staan zeven
@@ -238,8 +264,8 @@ meesters, een voor elke klasse. Ze nemen alleen de **kampioen** van de ladder aa
 dan kun je ze wel bekijken. Word je kampioen, dan schrijft het arenakantoor je erover (onder
 **Messages**).
 
-- **Elke build mag een meester uitdagen.** Win je, dan krijg je de pot: 9000 de eerste keer,
-  daarna een kwart.
+- **Elke build mag een meester uitdagen.** Win je, dan krijg je de pot: 9000 de eerste keer;
+  daarna is het een revanche.
 - **Versla je een meester in een build van zijn eigen klasse, dan is de kroon van die klasse van
   jou.** Een bastion tegen de meester van de bastions, een duellist tegen die van de duellisten.
   In de briefing staat het erbij: **CROWN: WIN AS A BASTION**. Vlieg je iets anders, dan wijst die
@@ -274,7 +300,8 @@ Met de zevende kroon schrijft het arenakantoor je erover (onder **Messages**).
 
 - **Elke build mag.** Er wordt geen klasse gevraagd en er is geen kroon te halen: je vecht om de
   stoel zelf. Het is één tegen één; een wingman kun je niet meenemen.
-- De pot is 15000 de eerste keer, daarna een kwart. Je kunt het duel zo vaak overdoen als je wilt.
+- De pot is 15000 de eerste keer; daarna is het een revanche. Je kunt het duel zo vaak overdoen
+  als je wilt.
 - Zijn machine, de **Sovereign**, vecht op **drie manieren** en wisselt als hij geraakt wordt. Bij
   elke wissel zegt hij wat er komt.
 
@@ -305,8 +332,8 @@ Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appoint
 dat, dan volgt een tweede, **First Sword**, daarna **Hot Work** en als laatste **The Longest
 Day**. Het zijn gevechten van één tegen één, tegen piloten van buiten de stad, elk in een mech die
 niemand in Varn bouwt. Een wingman kun je er niet voor huren: ze vroegen om jou alleen. Wie zo'n
-duel wint, mag die mech daarna in de **Shop** kopen. Dat recht raak je niet meer kwijt, ook niet
-in een nieuwe cyclus.
+duel wint, mag die mech daarna in de **Shop** kopen; het spel meldt het met **NEW IN THE SHOP**.
+Dat recht raak je niet meer kwijt, ook niet in een nieuwe cyclus.
 
 De eerste twee tegenstanders zijn zwaarden van het Coast Circuit. De laatste twee zijn de
 fabriekspiloten van de werf aan de kust die de mechs van het Circuit bouwt: zij komen kijken wat
@@ -375,9 +402,20 @@ daar het gewicht van je build in zit).
 
 Onder **Pilot** staat het blad **Class** met dezelfde lijst en hoeveel contracten je als elke
 klasse hebt gewonnen. Daaronder staat van de klasse onder de cursor een build die je nu kunt
-samenstellen: wit is wat je al hebt, roze wat je nog moet kopen, grijs wat nog nergens te koop is.
+samenstellen: wit is wat je al hebt, rood wat je nog moet kopen, grijs wat nog nergens te koop is.
 Het spel kiest de beste die je met je credits kunt betalen; kan dat met geen enkele, dan de
 goedkoopste, om voor te sparen.
+
+**Kopen en monteren vanaf dat blad.** Kun je de build betalen, dan staat er rechts boven de build
+**A: buy for 26100 c and fit** (of **A: fit this build** als je alles al hebt). Druk op **A** en
+antwoord **Yes**: het spel koopt wat ontbreekt en monteert de build. De vraag staat eerst op
+**No**, zodat je niets per ongeluk koopt.
+
+- Wat je tot dan vloog, gaat terug op de plank; je raakt er niets van kwijt.
+- Is er bij je bewaarde builds nog een plek vrij, dan wordt de nieuwe build daar ook bewaard. Er
+  wordt nooit een bewaarde build overschreven. Daarna staat er **YOU FLY THIS: BUILD 3**.
+- Staat er **Still to buy**, dan heb je te weinig credits; staat er **Not all of it is sold yet**,
+  dan verkoopt de winkel nog niet alles. In beide gevallen doet **A** niets.
 
 Een contract dat je wint in je eigen mech telt voor de klasse van die mech. De Gauntlet, de
 training en een geleende mech tellen niet. Er zijn drie medailles: voor drie klassen proberen,
@@ -420,7 +458,12 @@ met **7**). Kies je **Accept**, dan wordt de gekozen build gemonteerd en begint 
 blijft daarna gemonteerd, net als wanneer je hem in de garage laadt.
 
 - Een bewaarde build staat er alleen bij als je alle onderdelen nog bezit en hij mag uitrukken
-  (niet te zwaar, genoeg energie, een wapen).
+  (niet te zwaar, genoeg energie, een wapen). Kan een bewaarde build niet mee, dan staat dat
+  onderaan: **BUILD 2: Arc Blade missing** als je een onderdeel ervan hebt verkocht, of **BUILD 2
+  cannot deploy**.
+- De **Shop** waarschuwt al bij het verkopen. Sta je in **SELL** op een onderdeel dat een bewaarde
+  build nodig heeft, dan staat onderaan **Saved build 2 needs this part**. Verkopen mag; daarna
+  staat er **Saved build 2 is a part short now**.
 - Builds bewaar je in de **Garage**: naar rechts, een plek kiezen, **Save current build**.
   Er zijn **zeven plekken**: genoeg voor een build van elke klasse. Een plek zit niet aan een
   klasse vast; je mag ook zeven duellisten bewaren. In de lijst staat bij elke plek wat voor
@@ -486,7 +529,8 @@ Dat begint met iets wat echt gebeurd is: je sloopte de mech van die piloot, die 
 de vlucht, of stond nog overeind toen jij het veld verliet. Drie gewonnen contracten later staat
 er tussen de open contracten een bericht met een roepnaam: **Overdue: Brakk** (Nederlands
 **Vervallen: Brakk**). Je neemt het aan wanneer je wilt; het blijft staan tot je het wint. Alles
-wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena.
+wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena dat je voor
+het eerst wint (een revanche niet).
 
 - Het is **één gevecht om één machine**: die van de piloot, met wat gezelschap. Valt die machine,
   dan is het klaar (**TARGET: BRAKK**).
@@ -540,8 +584,9 @@ in **je eigen build**.
 - Handig om een nieuw wapen te proberen, twee builds te vergelijken of een baas te oefenen.
 - **Sparren:** bovenaan de lijst staan je bewaarde builds (**Saved Build 1** tot en met **7**).
   Kies er een en de simulator vliegt die build tegen je: dezelfde onderdelen, met het werk van de
-  werkbank, in andere kleuren. Zo zie je welke van je builds de andere verslaat; de winkans in de
-  briefing zegt het al vooraf.
+  werkbank, in andere kleuren. De winkans in de briefing is die van **jou** tegen die build: je
+  perks, je Overdrive en je reparaties heb jij alleen. Een kopie van je eigen build verliest dus
+  van je; een andere build die je verslaat, is echt de sterkere.
 - Het proefveld vlieg je in je eigen mech. Kan die niet uitrukken (te zwaar, te weinig energie,
   geen wapen), dan is het proefveld **dicht**: de lijst staat er nog, maar grijs, en onderaan staat
   waarom (**CLOSED: your mech cannot deploy**). Breng je mech in de **Garage** in orde, of laad
@@ -598,8 +643,8 @@ onderdeel staan en druk op **R1**: het ligt op de werkbank.
 - Een stap kost zijn nummer maal de prijs van het onderdeel: de tweede stap kost dus twee keer de
   prijs.
 - Het werk hoort bij het onderdeel. Verkoop je het en koop je het later terug, dan is het er nog.
-  De winkel laat dat zien: de stap staat achter de naam, en de vergelijking gaat uit van wat je
-  draagt zoals het nu is.
+  De winkel laat dat zien: de stap staat achter de naam, in de lijst en op het blad van het
+  onderdeel (**Wraith Mask +2**), en de vergelijking gaat uit van wat je draagt zoals het nu is.
 - In de eerste cyclus gaat de werkbank twee stappen. Elke keer dat je met **New Cycle** opnieuw
   begint, kan er één stap bij, tot vijf. Achter de naam staat hoe ver een onderdeel is: `+2`.
 

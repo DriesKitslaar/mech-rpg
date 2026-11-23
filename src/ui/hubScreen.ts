@@ -1,5 +1,6 @@
 import { isSwarm } from '../core/board';
 import { campaignComplete, type Mission } from '../core/campaign';
+import type { GameState } from '../core/game';
 import { isGrudge } from '../core/grudge';
 import { isJob } from '../core/jobs';
 import { levelFor, perkPoints } from '../core/pilot';
@@ -42,6 +43,18 @@ export function kindOf(mission: Pick<Mission, 'id' | 'phase' | 'asks'>, lent: bo
   return 'story';
 }
 
+/** What a row of the list ends in when its contract is new to a pilot who has told the story before. */
+export const UNFLOWN_MARK = '*';
+/**
+ * Whether a contract on the list is new to this pilot in a later telling: a contract of the story, or
+ * one beside it, that has left no rank in any telling (a rank is kept through them all). In a first
+ * telling everything is new and nothing is marked; a contract that decides something keeps its own
+ * line under the list, which says what it decides.
+ */
+export function isUnflown(game: Pick<GameState, 'cycle' | 'ranks'>, mission: Pick<Mission, 'id'>, kind: RowKind): boolean {
+  return game.cycle > 0 && (kind === 'story' || kind === 'side') && !Object.hasOwn(game.ranks, mission.id);
+}
+
 /** The place between contracts: shows the pilot's standing and leads to everything else. */
 /** The title of the contract that ends the introductions, after which the arena and open contracts are offered. */
 const lastIntroduction = (): string => MISSIONS.filter((m) => m.phase === 'intro').at(-1)?.title ?? '';
@@ -59,6 +72,8 @@ export class HubScreen implements Screen {
   private inArchive = false;
   /** What kind each contract on the list is, by its id. */
   private kinds = new Map<string, RowKind>();
+  /** The contracts on the list that are new to a pilot who has told the story before, by their id. */
+  private unflown = new Set<string>();
   private clock = 0;
 
   /** `list` opens with that list showing, and the cursor on the entry `at`, for returning from a briefing. */
@@ -107,12 +122,14 @@ export class HubScreen implements Screen {
     const story = missions.findIndex((m) => m.phase !== 'patrol' && m.phase !== 'side');
     const lent = this.app.buildErrors().length > 0;
     this.kinds = new Map(missions.map((m) => [m.id, kindOf(m, lent)]));
+    // In a later telling most of the list has been flown before: what has not is marked, so that it is found.
+    this.unflown = new Set(missions.filter((m) => isUnflown(this.app.game!, m, this.kinds.get(m.id)!)).map((m) => m.id));
     // With no story on offer (it is told, or waits on something), the cursor rests on the open board, where the
     // work is: its first contract, the single fight. The patrol is what is left when there is neither.
     const board = missions.findIndex((m) => ['open', 'asks'].includes(this.kinds.get(m.id)!));
     this.sub = new MenuList([
       // A contract that asks for a class pays more to a pilot who wins it as one: a plus after what it pays.
-      ...missions.map((m) => ({ id: m.id, label: m.title, enabled: true, note: m.asks ? `${m.reward}+` : String(m.reward) })),
+      ...missions.map((m) => ({ id: m.id, label: this.unflown.has(m.id) ? `${m.title} ${UNFLOWN_MARK}` : m.title, enabled: true, note: m.asks ? `${m.reward}+` : String(m.reward) })),
       ...(done > 0 ? [{ id: ARCHIVE, label: H.archive, enabled: true, note: String(done) }] : []),
     ], Math.max(0, story >= 0 ? story : board));
   }
@@ -123,6 +140,7 @@ export class HubScreen implements Screen {
     if (this.inArchive) return H.kinds.replay;
     const id = this.list.selected?.id;
     if (id === ARCHIVE) return H.kinds.archive;
+    if (id !== undefined && this.unflown.has(id)) return H.kinds.unflown;
     const kind = id === undefined ? undefined : this.kinds.get(id);
     return kind ? H.kinds[kind] : null;
   }

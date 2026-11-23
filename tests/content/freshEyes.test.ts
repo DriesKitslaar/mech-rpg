@@ -80,7 +80,7 @@ describe('the manual, in the order a pilot comes to need it', () => {
   test('what a first hour asks comes before what the open board brings, and the long game stands last', () => {
     const firstHour = ['basics', 'turn', 'aim', 'parts', 'types', 'heat', 'boost', 'guard', 'stagger', 'repairs', 'ranks', 'money', 'garage'];
     const board = ['momentum', 'shatter', 'rout', 'swarm', 'jobs', 'accounts', 'range', 'gauntlet'];
-    const longGame = ['works', 'cups', 'crowns', 'masters', 'seat', 'cycle'];
+    const longGame = ['works', 'rematches', 'cups', 'crowns', 'masters', 'seat', 'cycle'];
     const last = (ids: string[]): number => Math.max(...ids.map(at));
     const first = (ids: string[]): number => Math.min(...ids.map(at));
     expect(last(firstHour)).toBeLessThan(first(board));

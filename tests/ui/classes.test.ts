@@ -15,8 +15,9 @@ import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { STARTERS } from '../../src/content/starters';
 import { STRINGS } from '../../src/content/strings';
 import { LOGICAL_W } from '../../src/ui/display';
+import { ASK } from '../../src/ui/pilotScreen';
 import { COLORS, LINE } from '../../src/ui/widgets';
-import { accept, done, finishBattle, finishMission, fresh, ids, inHub, press, savedGame, select, snap, strong } from '../helpers/app';
+import { accept, done, finishBattle, finishMission, fresh, ids, inHub, medalPay, press, savedGame, select, snap, strong } from '../helpers/app';
 import { overlap, record, type Drawn, type Written } from '../helpers/canvas';
 
 /**
@@ -207,7 +208,22 @@ describe('one to fly now', () => {
       const missing = BUILD_SLOTS.filter((slot) => advice.build[slot] !== undefined && !owned.has(advice.build[slot]!));
       expect(advice.toBuy, kind).toEqual(missing);
       expect(advice.cost, kind).toBe(missing.reduce((sum, slot) => sum + price(advice.build[slot]!), 0));
+      // The stage's budget pays for it: so the page offers to buy and fit it, and does not say what is still to be saved for.
+      expect(written(drawn(app), `A: buy for ${advice.cost} c and fit`).color, kind).toBe(COLORS.armor);
+      expect(drawn(app).texts.some((t) => t.text.startsWith('Still to buy')), kind).toBe(false);
+    }
+  });
+
+  test('what the credits in hand do not pay for is something to save for: what is still to buy is priced, dim, and A offers nothing', () => {
+    const app = onPage({ ...AFTER.war, credits: 10 });
+    for (const kind of ARCHETYPES) {
+      onKind(app, kind);
+      const { advice } = page(app);
+      expect(advice.cost, kind).toBeGreaterThan(10);
       expect(written(drawn(app), `Still to buy: ${advice.cost} c`).color, kind).toBe(COLORS.dim);
+      expect(drawn(app).texts.some((t) => t.text.startsWith('A: ') && t.y === 171), kind).toBe(false);
+      press(app, 'confirm');
+      expect((snap(app).classes as { asking: boolean }).asking, kind).toBe(false);
     }
   });
 
@@ -252,14 +268,14 @@ describe('one to fly now', () => {
     expect(BUILD_SLOTS.map(column)).toEqual(['left', 'left', 'left', 'left', 'left', 'left', 'right', 'right', 'right', 'right', 'right']);
   });
 
-  test('a pilot who flies the build is told they own all of it, and one who owns a part once is asked to buy the second', () => {
+  test('a pilot who flies the build is told so, and one who owns a part once is asked to buy the second', () => {
     const lancer = ARCHETYPE_BUILDS.lancer.war;
     const app = onPage(flying(AFTER.war, lancer));
     onKind(app, 'lancer');
     expect(page(app).advice).toMatchObject({ build: lancer, toBuy: [], cost: 0, unsold: [] });
     const shown = drawn(app);
-    expect(written(shown, 'You own all of it').color).toBe(COLORS.armor);
-    expect(shown.texts.some((t) => t.text.startsWith('Still to buy'))).toBe(false);
+    expect(written(shown, 'YOU FLY THIS BUILD').color).toBe(COLORS.armor);
+    expect(shown.texts.some((t) => t.text.startsWith('Still to buy') || t.text.startsWith('A: '))).toBe(false);
     // The duellist of the war carries two different blades; a build of two of the same pistol asks for two of it.
     const twin: Build = { ...STARTER_BUILD, rightHand: 'wpn-arc-pistol', leftHand: 'wpn-arc-pistol' };
     const one = { ...quiet(), inventory: { ...quiet().inventory, 'wpn-arc-pistol': 1 } };
@@ -359,14 +375,16 @@ describe('the page can be read', () => {
     onKind(app, 'skirmisher');
     const shown = drawn(app);
     for (const text of ['KLASSE', 'DE EERSTE REGEL DIE PAST, TELT', 'ZEGES', 'JAGER', 'BOUW ER NU EEN', N.rules.skirmisher]) expect(written(shown, text), text).toBeTruthy();
-    expect(shown.texts.some((t) => t.text.startsWith('Nog te kopen: '))).toBe(true);
+    // The stage's budget pays for the jager's build: the page offers to buy and fit it.
+    expect(shown.texts.some((t) => /^A: koop \(\d+ c\) en monteer$/.test(t.text))).toBe(true);
+    expect(N.toBuy(1200)).toBe('Nog te kopen: 1200 c');
     for (const kind of ARCHETYPES) {
       expect(N.names[kind], kind).not.toBe('');
       expect(N.notes[kind], kind).not.toBe(ENGLISH.notes[kind]);
       expect(N.tags[kind], kind).not.toBe(ENGLISH.tags[kind]);
       expect(N.rules[kind], kind).not.toBe(ENGLISH.rules[kind]);
     }
-    expect([N.yours, N.owned, N.unsold]).toEqual(['NU DE JOUWE', 'Je hebt alles al', 'Nog niet alles is te koop']);
+    expect([N.yours, N.unsold]).toEqual(['NU DE JOUWE', 'Nog niet alles is te koop']);
   });
 });
 
@@ -500,5 +518,110 @@ describe('a contract won is won as the kind of machine it was won in', () => {
     press(app, 'confirm');
     expect(snap(app).screen).toBe('gauntlet');
     expect(savedGame(store).wonAs).toBeUndefined();
+  });
+});
+
+describe('bought and fitted from the page', () => {
+  interface Asked { asking: boolean; status: string; advice: BuildAdvice }
+  const asked = (app: AppOf): Asked => snap(app).classes as Asked;
+  const NL = STRINGS_NL.classes;
+
+  test('A asks first, with No under the cursor; No and B change nothing, and the pages do not turn while it is asked', () => {
+    const { app, store } = (() => { const made = inHub(AFTER.war); select(made.app, 'pilot'); return made; })();
+    for (let i = 0; i < 6 && snap(app).page !== 'classes'; i++) press(app, 'next');
+    onKind(app, 'lancer');
+    const before = savedGame(store);
+    const { advice } = page(app);
+    expect(asked(app)).toMatchObject({ asking: false, status: `A: buy for ${advice.cost} c and fit` });
+    press(app, 'confirm');
+    expect(asked(app).asking).toBe(true);
+    expect(snap(app).menu).toEqual({ items: [{ id: 'no', label: 'No', enabled: true }, { id: 'yes', label: 'Yes', enabled: true }], cursor: 0 });
+    // The question, in a panel of its own, with what it costs; the build it is about is still in view under it.
+    const shown = drawn(app);
+    expect(written(shown, `Buy what is missing for ${advice.cost} c?`)).toMatchObject({ left: ASK.x + 8, color: COLORS.accent });
+    expect(written(shown, 'It takes the place of the build you fly.').left).toBe(ASK.x + 8);
+    for (const t of shown.texts.filter((text) => text.y >= ASK.y && text.y < ASK.y + ASK.h && text.left >= ASK.x && text.left < ASK.x + ASK.w && [C.ask(advice.cost), C.askNote, 'No', 'Yes'].includes(text.text))) {
+      expect(t.right, t.text).toBeLessThanOrEqual(ASK.x + ASK.w - 6);
+    }
+    expect(written(shown, C.advice).y).toBeGreaterThan(ASK.y + ASK.h);
+    // Turning a page does nothing while it is asked.
+    press(app, 'next', 'prev', 'left', 'right');
+    expect(snap(app).page).toBe('classes');
+    expect(asked(app).asking).toBe(true);
+    // No: nothing bought, nothing fitted.
+    press(app, 'confirm');
+    expect(asked(app).asking).toBe(false);
+    expect(savedGame(store)).toEqual(before);
+    // B: the same, and the page is not left.
+    press(app, 'confirm', 'cancel');
+    expect([snap(app).screen, snap(app).page, asked(app).asking]).toEqual(['pilot', 'classes', false]);
+    expect(savedGame(store)).toEqual(before);
+    expect(page(app).kind).toBe('lancer');
+  });
+
+  test('Yes buys what is missing, fits the build and keeps it in the first free place: the page then says which build it is', () => {
+    const { app, store } = inHub(AFTER.war);
+    select(app, 'pilot');
+    for (let i = 0; i < 6 && snap(app).page !== 'classes'; i++) press(app, 'next');
+    onKind(app, 'lancer');
+    const before = savedGame(store);
+    const { advice } = page(app);
+    expect(advice.toBuy.length).toBeGreaterThan(3);
+    press(app, 'confirm', 'down', 'confirm');
+    const after = savedGame(store);
+    expect(asked(app).asking).toBe(false);
+    // (A medal earned as it was booked pays beside it.)
+    expect(after.credits).toBe(before.credits - advice.cost + medalPay(after.medals.filter((id) => !before.medals.includes(id))));
+    expect(after.build).toEqual(advice.build);
+    expect(archetypeOf(after.build, CATALOG)).toBe('lancer');
+    expect(after.loadouts[0]).toEqual(advice.build);
+    expect(snap(app).menu.items.map((item) => item.id)).toEqual([...ARCHETYPES]);
+    expect(page(app).flown).toBe('lancer');
+    // Whatever the page now names for a lancer, the build flown is said to be flown where it is that build.
+    const shown = drawn(app);
+    expect(written(shown, C.yours).color).toBe(COLORS.armor);
+    if (asked(app).status === 'YOU FLY THIS: BUILD 1') expect(written(shown, 'YOU FLY THIS: BUILD 1').color).toBe(COLORS.armor);
+    else expect(asked(app).advice.build).not.toEqual(after.build);
+    // The hangar and the garage have it as the page left it.
+    press(app, 'cancel');
+    select(app, 'garage');
+    expect(snap(app).screen).toBe('garage');
+    expect(savedGame(store).build).toEqual(advice.build);
+  });
+
+  test('a build owned in full is fitted for nothing, and the question says so', () => {
+    const lancer = ARCHETYPE_BUILDS.lancer.war;
+    // Bought and fitted, and then back in what the pilot started in: the lancer's parts are on the shelf.
+    const owned: GameState = { ...flying(AFTER.war, lancer), build: { ...STARTER_BUILD } };
+    const { app, store } = inHub(owned);
+    select(app, 'pilot');
+    for (let i = 0; i < 6 && snap(app).page !== 'classes'; i++) press(app, 'next');
+    onKind(app, 'lancer');
+    expect(page(app).advice).toMatchObject({ build: lancer, toBuy: [], cost: 0 });
+    expect(written(drawn(app), 'A: fit this build').color).toBe(COLORS.armor);
+    press(app, 'confirm');
+    expect(written(drawn(app), 'Fit this build?').color).toBe(COLORS.accent);
+    press(app, 'down', 'confirm');
+    const after = savedGame(store);
+    expect(after.credits).toBe(owned.credits + medalPay(after.medals.filter((id) => !owned.medals.includes(id))));
+    expect(after.inventory).toEqual(owned.inventory);
+    expect(after.build).toEqual(lancer);
+  });
+
+  test('in Dutch the question, its answers and what stands beside the build fit where they stand', () => {
+    const app = onPage(AFTER.war, 'nl');
+    onKind(app, 'bastion');
+    const { advice } = page(app);
+    expect(written(drawn(app), NL.follow(advice.cost)).right).toBeLessThanOrEqual(LOGICAL_W - 12);
+    expect(NL.follow(advice.cost)).toBe(`A: koop (${advice.cost} c) en monteer`);
+    press(app, 'confirm');
+    const shown = drawn(app);
+    for (const text of [NL.ask(advice.cost), NL.askNote, 'Nee', 'Ja']) expect(written(shown, text).right, text).toBeLessThanOrEqual(ASK.x + ASK.w - 6);
+    // Nothing of the question lies over anything else of it.
+    const panel = shown.texts.filter((t) => [NL.ask(advice.cost), NL.askNote, 'Nee', 'Ja', '>'].includes(t.text) && t.y >= ASK.y && t.y < ASK.y + ASK.h);
+    for (const a of panel) for (const b of panel) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
+    press(app, 'down', 'confirm');
+    expect(snap(app).menu.items.map((item) => item.id)).toEqual([...ARCHETYPES]);
+    expect([NL.flying, NL.flyingKept(3)]).toEqual(['JE VLIEGT DEZE BUILD', 'JE VLIEGT DIT: BUILD 3']);
   });
 });

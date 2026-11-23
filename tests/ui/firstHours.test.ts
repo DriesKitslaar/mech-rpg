@@ -463,7 +463,7 @@ describe('the list of contracts says what kind of row is in hand', () => {
     for (const [language, S] of [['en', STRINGS], ['nl', STRINGS_NL]] as const) {
       setLanguage(language);
       const lines = Object.values(S.hub.kinds);
-      expect(lines).toHaveLength(13);
+      expect(lines).toHaveLength(14);
       for (const line of lines) {
         expect(line.length, `${language} ${line}`).toBeLessThanOrEqual(KIND_CHARS);
         expect(line, language).toMatch(/^[A-Z][A-Z ]+: /);

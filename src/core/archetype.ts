@@ -1,5 +1,5 @@
 import { framePart, shieldOf, weaponIn } from './build';
-import { BUILD_SLOTS, ownedCount, type BuildSlot, type GameState } from './game';
+import { BUILD_SLOTS, LOADOUT_SLOTS, buy, checkBuy, fits, ownedCount, partOf, saveLoadout, type BuildSlot, type GameState } from './game';
 import { WEAPON_SLOTS, type AiProfile, type Build, type Catalog } from './types';
 
 /**
@@ -99,4 +99,47 @@ export function adviceFor(game: GameState, builds: Build[], inStock: (partId: st
   if (sold.length === 0) return weighed[0];
   const nearest = sold.reduce((least, advice) => (advice.cost < least.cost ? advice : least));
   return [...sold].reverse().find((advice) => advice.cost <= game.credits) ?? nearest;
+}
+
+/** Whether two builds are the same build: the same part in every slot, and nothing where the other has nothing. */
+export const sameBuild = (a: Build, b: Build): boolean => BUILD_SLOTS.every((slot) => a[slot] === b[slot]);
+
+/** The place among the saved builds that holds this build, from 0; -1 when none does. */
+export const keptAt = (game: Pick<GameState, 'loadouts'>, build: Build): number =>
+  Array.from({ length: LOADOUT_SLOTS }, (_, i) => game.loadouts[i] ?? null).findIndex((saved) => saved !== null && sameBuild(saved, build));
+
+/**
+ * Whether a build to try can be followed today: everything of it is owned or on the shelf, the
+ * credits in hand pay for what is not owned, and it is not the build the pilot flies already.
+ */
+export const canFollow = (game: GameState, advice: BuildAdvice): boolean =>
+  advice.unsold.length === 0 && advice.cost <= game.credits && !sameBuild(game.build, advice.build);
+
+/**
+ * Follows a build to try: buys what of it is still to be bought and fits it, in place of what the
+ * pilot flew, whose parts go back on the shelf. It is kept among the saved builds too, where it was
+ * not kept already and a place is free: no saved build is written over. Null where it cannot be
+ * followed (see `canFollow`), or where a part of it is not for sale or goes in no such slot.
+ */
+export function followAdvice(game: GameState, advice: BuildAdvice, catalog: Catalog): GameState | null {
+  if (!canFollow(game, advice)) return null;
+  let next = game;
+  for (const slot of advice.toBuy) {
+    const id = advice.build[slot];
+    if (id === undefined || checkBuy(next, id, catalog) !== null) return null;
+    next = buy(next, id, catalog);
+  }
+  // Fitting it frees every part of the build flown: what matters is that enough of each of its own are owned now.
+  const needed: { [id: string]: number } = {};
+  for (const slot of BUILD_SLOTS) {
+    const id = advice.build[slot];
+    if (id === undefined) continue;
+    needed[id] = (Object.hasOwn(needed, id) ? needed[id] : 0) + 1;
+    const part = partOf(catalog, id);
+    if (!part || !fits(part, slot) || needed[id] > ownedCount(next, id)) return null;
+  }
+  next = { ...next, build: { ...advice.build } };
+  if (keptAt(next, advice.build) >= 0) return next;
+  const free = Array.from({ length: LOADOUT_SLOTS }, (_, i) => next.loadouts[i] ?? null).indexOf(null);
+  return free >= 0 ? saveLoadout(next, free) : next;
 }

@@ -4,13 +4,14 @@ import { GUARD_DAMAGE, HARDENED, HEAT_LIMIT, SPOOL_BASE, SURGE_UNIT, bufferRoom,
 import { WINS_PER_TIER } from '../../src/core/board';
 import { GRUDGE_MEETINGS, GRUDGE_NUMBERS, GRUDGE_TIER, GRUDGE_WAIT } from '../../src/core/grudge';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
-import { startNewCycle } from '../../src/core/campaign';
+import { isUnread, skippable, startNewCycle } from '../../src/core/campaign';
 import { launches } from '../../src/core/launch';
 import { DEFAULT_MIXES, MIX_KEYS, MIX_SLOTS, MIX_STEPS, mixId } from '../../src/core/mix';
 import { MAX_LEVEL } from '../../src/core/pilot';
 import { SEAT_PURSE, seatPurse } from '../../src/core/seat';
-import { ALL_STRIPES, MAX_STRIPE_POINTS, STRIPES_AT, STRIPES_A_POINT, countsForClass, stripePoints, stripesHeld } from '../../src/core/stripes';
+import { ALL_STRIPES, MAX_STRIPE_POINTS, STRIPES_AT, STRIPES_A_POINT, countsForClass, earnsStripes, stripePoints, stripesHeld } from '../../src/core/stripes';
 import type { FramePart, Weapon } from '../../src/core/types';
+import { rematchPurse } from '../../src/core/arena';
 import { ARENA } from '../../src/content/arena';
 import { MANUAL } from '../../src/content/codex';
 import { BOARD_TEXT, GRUDGE_FACES, GRUDGE_NAMES, LEDGER_LINES } from '../../src/content/board';
@@ -29,6 +30,7 @@ import { SONGS } from '../../src/content/songs';
 import { STARTERS } from '../../src/content/starters';
 import { STRINGS } from '../../src/content/strings';
 import { FAST_BATTLE_SPEED } from '../../src/ui/app';
+import { UNFLOWN_MARK } from '../../src/ui/hubScreen';
 import { LAMPS_AT, LAUNCH_MS } from '../../src/ui/launch';
 import { CROWN_PAINTS, PAINTS, SEAT_PAINT, paintsFor, rampOf, schemeOfMix, toHsl } from '../../src/ui/paint';
 
@@ -95,7 +97,7 @@ describe('the guide\'s chapter on the eighth seat says what is so', () => {
     expect(SEAT_CHAPTER).toContain(`van wie **alle ${word(ARCHETYPES.length)} kronen** heeft`);
     expect(SEAT_CHAPTER).toContain(`staat er hoeveel je er hebt (**${STRINGS.arena.seat.count(3, ARCHETYPES.length)}**)`);
     expect(SEAT_CHAPTER).toContain(`houder van de stoel: **${KEEPER.name}**`);
-    expect(SEAT_CHAPTER).toContain(`De pot is ${SEAT_PURSE} de eerste keer, daarna een kwart.`);
+    expect(SEAT_CHAPTER).toContain(`De pot is ${SEAT_PURSE} de eerste keer; daarna is het een revanche.`);
     expect(seatPurse({ seat: true }) * 4).toBe(SEAT_PURSE);
     expect(SEAT_CHAPTER).toContain(`achtste rij: **${STRINGS.arena.seat.row}**`);
   });
@@ -532,6 +534,80 @@ describe('what is said of the yard\'s two frames and their duels is so', () => {
   });
 });
 
+describe('what is said of the long game is so', () => {
+  test('a new cycle: what the question names, what B skips, how mail is marked, and the star on the list', () => {
+    const story = GUIDE.slice(GUIDE.indexOf('## Het verhaal'), GUIDE.indexOf('## Wat je vindt'));
+    // What the question says stays, and what it says starts over.
+    const asked = STRINGS.hub.cycleQuestion(1).join(' ');
+    expect(asked).toContain('You keep credits, parts, level, perks and arena rank.');
+    expect(asked).toContain('Side work, duels and the Archive start over with it.');
+    expect(story).toContain('je credits, onderdelen, level, perks en arenarang blijven. Bijklussen, de duels en het archief beginnen opnieuw');
+    // Skipping: only what was told before, never an ending, and a question is still asked.
+    expect(story).toContain(`rechtsboven staat dan **${STRINGS.scene.skip}**`);
+    const seen = { told: { scenes: ['act-1', 'talk-kite', 'ending-x'], read: [] } };
+    expect([skippable(seen, { id: 'act-1' }), skippable(seen, { id: 'ending-x', ending: true }), skippable({}, { id: 'act-1' })]).toEqual([true, false, false]);
+    expect(story).toContain('In je eerste cyclus doet **B** op een verhaalpagina niets.');
+    // Mail read before is not new; the list has what came last on top.
+    expect(isUnread({ read: [], told: { scenes: [], read: ['welcome'] } }, 'welcome')).toBe(false);
+    expect(isUnread({ read: [] }, 'welcome')).toBe(true);
+    expect(story).toContain('Een brief die je al eens las, is niet meer als nieuw gemarkeerd. De nieuwste brief staat bovenaan.');
+    // The star.
+    expect(story).toContain(`staat in de lijst een sterretje (\`${UNFLOWN_MARK}\`)`);
+    expect(STRINGS.hub.kinds.unflown).toContain(UNFLOWN_MARK);
+  });
+
+  test('the class page that buys and fits, the build that is short of a part, and the shop that says so', () => {
+    const classes = GUIDE.slice(GUIDE.indexOf('## Zeven klassen'), GUIDE.indexOf('### Strepen'));
+    const C = STRINGS.classes;
+    expect(classes).toContain(`**${C.follow(26100)}** (of **${C.follow(0)}** als je alles al hebt)`);
+    expect(classes).toContain(`antwoord **${C.yes}**`);
+    expect(classes).toContain(`De vraag staat eerst op **${C.no}**`);
+    expect(classes).toContain(`Daarna staat er **${C.flyingKept(3)}**.`);
+    expect(C.toBuy(100).startsWith('Still to buy')).toBe(true);
+    expect(classes).toContain(`Staat er **Still to buy**, dan heb je te weinig credits; staat er **${C.unsold}**`);
+    expect(classes).toContain('wit is wat je al hebt, rood wat je nog moet kopen, grijs wat nog nergens te koop is');
+    const briefing = GUIDE.slice(GUIDE.indexOf('### Je build kiezen bij de briefing'), GUIDE.indexOf('### Je winkans'));
+    expect(briefing).toContain(`**${STRINGS.briefing.buildShort(2, CATALOG['wpn-arc-blade'].name)}**`);
+    expect(briefing).toContain(`**${STRINGS.briefing.buildGrounded(2)}**`);
+    expect(briefing).toContain(`**${STRINGS.shop.neededBy(2)}**`);
+    expect(briefing).toContain(`**${STRINGS.shop.missedBy(2)}**`);
+    expect(briefing).toContain(`Sta je in **${STRINGS.shop.sell}** op een onderdeel`);
+    // The frames of the yard are announced, and bench work shows on the shelf.
+    expect(GUIDE).toContain(`het spel meldt het met **${STRINGS.shop.shelfToast}**`);
+    expect(GUIDE).toContain(`in de lijst en op het blad van het onderdeel (**${CATALOG['head-wraith'].name} +2**)`);
+  });
+});
+
+describe('what is said of a rematch is so', () => {
+  const section = GUIDE.slice(GUIDE.indexOf('## Arena'), GUIDE.indexOf('### De meesters: een kroon per klasse'));
+  const chapter = MANUAL.find((entry) => entry.id === 'rematches')!;
+
+  test('the guide and the manual: a quarter, then half of the one before, and no contract', () => {
+    // A quarter the first time, half of that the next, and half of that after.
+    expect([0, 1, 2].map((won) => rematchPurse({ rematches: { 'arena-9': won } }, 'arena-9', 8000))).toEqual([2000, 1000, 500]);
+    expect(section).toContain('De eerste revanche betaalt een kwart van de pot, elke volgende de helft van de vorige, tot er niets meer te halen valt.');
+    expect(chapter.text).toContain('The first rematch pays a quarter of the purse, each one after half of the one before.');
+    // No contract: no count, no turn of the board, no stripe; and a first win in the arena is one.
+    expect(section).toContain('**Een revanche is geen contract.** Hij komt niet op je teller van gewonnen contracten, het open bord verandert er niet door, en je verdient er geen streep mee.');
+    expect(chapter.text).toContain('It is no contract: it earns no stripe, and the open board does not turn for it.');
+    expect(earnsStripes({ id: 'arena-9', rematch: true })).toBe(false);
+    expect(earnsStripes({ id: 'arena-9' })).toBe(true);
+    expect(section).toContain('Een gevecht in de arena dat je **voor het eerst** wint, telt wel als gewonnen contract');
+    expect(chapter.text).toContain('A first win there is booked as a contract won, and turns the board.');
+    // The words the screen heads it with.
+    expect(section).toContain('(**REMATCH**, Nederlands **REVANCHE**) en op de afrekening staat **REMATCH WON**.');
+    expect(STRINGS.arena.rematchTag.startsWith('REMATCH: ')).toBe(true);
+    expect(STRINGS_NL.arena.rematchTag.startsWith('REVANCHE: ')).toBe(true);
+    expect(STRINGS.settlement.rematchWon).toBe('REMATCH WON');
+    // What it says a rematch can be of, the arena has.
+    expect(section).toContain('een rang, het spiegelgevecht, een beker, een meester');
+    expect(chapter.text).toContain('a rank, the mirror, a cup, a master');
+    // The masters' and the seat's chapters send the reader here and name no share of their own.
+    expect(GUIDE).toContain('dan krijg je de pot: 9000 de eerste keer; daarna is het een revanche.');
+    expect(GUIDE).not.toContain('daarna een kwart');
+  });
+});
+
 describe('what is said of accounts is so', () => {
   const section = GUIDE.slice(GUIDE.indexOf('### Vervallen rekeningen: wie voor je terugkomt'), GUIDE.indexOf('### Het proefveld'));
   const chapter = MANUAL.find((entry) => entry.id === 'accounts')!;
@@ -551,8 +627,8 @@ describe('what is said of accounts is so', () => {
     expect(section).toContain(`Vanaf ${word(GRUDGE_TIER * WINS_PER_TIER)} gewonnen contracten kan een piloot die je bent tegengekomen **voor je terugkomen**`);
     expect(section).toContain('je sloopte de mech van die piloot, die sloeg voor je op de vlucht, of stond nog overeind toen jij het veld verliet');
     expect(section).toContain(`${capital(word(GRUDGE_WAIT[0]))} gewonnen contracten later staat er tussen de open contracten een bericht met een roepnaam`);
-    // Whatever is counted as a contract won is one waited through: a fight in the arena too.
-    expect(section).toContain('Alles wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena.');
+    // Whatever is counted as a contract won is one waited through: a fight in the arena won for the first time too, and no rematch.
+    expect(section).toContain('Alles wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena dat je voor het eerst wint (een revanche niet).');
     expect(GRUDGE_NAMES).toContain('Brakk');
     const english = BOARD_TEXT.grudge.title('Brakk');
     setLanguage('nl');

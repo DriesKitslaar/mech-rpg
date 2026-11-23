@@ -1,7 +1,7 @@
 import { createBattle, type BattleEvent, type BattleState } from '../../src/core/battle';
 import { ARCHETYPES } from '../../src/core/archetype';
 import type { Settlement } from '../../src/core/economy';
-import type { GameState } from '../../src/core/game';
+import { buy, sell, type GameState } from '../../src/core/game';
 import type { EnemyDef } from '../../src/core/types';
 import { JUKEBOX, UNITS, WORLD } from '../../src/content/codex';
 import { FINDS } from '../../src/content/finds';
@@ -17,13 +17,15 @@ import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
 import { COMPARE_LINE_CHARS, PART_LINE_CHARS, compareParts, partLines } from '../../src/ui/partInfo';
 import { MANUAL } from '../../src/content/codex';
-import { driveTitle, TOAST_TITLE_CHARS } from '../../src/ui/app';
+import { driveTitle, shelfToast, TOAST_TITLE_CHARS } from '../../src/ui/app';
 import { HINT_Y } from '../../src/ui/arenaScreen';
+import { UNFLOWN_MARK, isUnflown } from '../../src/ui/hubScreen';
+import { SKIP_AT } from '../../src/ui/sceneScreen';
 import { REPAIR_LINES, SettlementScreen, WORDS_LINES, WORDS_Y } from '../../src/ui/settlementScreen';
 import { DETAIL_TEXT_X } from '../../src/ui/shopScreen';
-import { CHAR_W, COLORS, LINE, STATE_COLORS } from '../../src/ui/widgets';
-import { done, finishMission, inHub, press, savedGame, select, snap, strong, type Store } from '../helpers/app';
-import { record, type Written } from '../helpers/canvas';
+import { CHAR_W, COLORS, LINE, OVER_PICTURE, STATE_COLORS } from '../../src/ui/widgets';
+import { done, finishMission, inHub, makeApp, medalPay, press, retreat, savedGame, select, snap, strong, toHub, type Store } from '../helpers/app';
+import { overlap, record, type Written } from '../helpers/canvas';
 
 /**
  * What four testers who had not seen the game found on its screens, held so that it stays mended.
@@ -521,5 +523,367 @@ describe('one game: the same thing looks and is called the same on every screen'
     const hint = texts(app).find((t) => t.text === STRINGS.arena.back || t.text === STRINGS.arena.backLocked)!;
     expect(hint.y).toBe(HINT_Y);
     expect(hint.y + 10).toBeLessThanOrEqual(266);
+  });
+});
+
+describe('the long game: a rematch in the arena', () => {
+  const texts = (app: App): Written[] => record((ctx) => app.draw(ctx)).texts;
+  /** A pilot past the introductions in the heaviest frame, three ranks up the ladder. */
+  const ranked = (more: Partial<GameState> = {}): GameState => ({ ...strong(done('intro-1', 'intro-2')), scenes: ['act-1'], arenaRank: 3, ...more });
+  const board = (app: App): string[] => { select(app, 'contracts'); const rows = snap(app).menu.items.map((item) => item.id); press(app, 'cancel'); return rows; };
+  const fly = (app: App, row: string): void => {
+    select(app, 'arena');
+    select(app, row);
+    expect(snap(app).screen).toBe('briefing');
+    select(app, 'accept');
+    finishMission(app);
+  };
+
+  test('pays its smaller purse and is no contract: the board stays as it was, the hub counts none, and no class is credited', () => {
+    const { app, store } = inHub(ranked());
+    const before = savedGame(store);
+    const offered = board(app);
+    select(app, 'arena');
+    // The list says what a rematch pays now: a quarter of the purse.
+    expect(snap(app).menu.items.find((item) => item.id === 'rank-1')!.note).toBe('200');
+    select(app, 'rank-1');
+    // Its briefing is headed as a rematch, and says nothing of a stripe on the way.
+    const said = texts(app).map((t) => t.text);
+    expect(said).toContain(STRINGS.arena.rematchTag);
+    expect(said).not.toContain(STRINGS.arena.fight);
+    select(app, 'accept');
+    finishMission(app);
+    expect(snap(app).settlement).toMatchObject({ won: true, reward: 200 });
+    // The bill is a rematch's, and not a contract's.
+    const bill = texts(app).map((t) => t.text);
+    expect(bill).toContain(STRINGS.settlement.rematchWon);
+    expect(bill).not.toContain(STRINGS.settlement.won);
+    const after = savedGame(store);
+    expect(after.credits).toBe(before.credits + snap(app).settlement!.net + medalPay(after.medals.filter((id) => !before.medals.includes(id))));
+    expect(after.battlesWon).toBe(before.battlesWon);
+    expect(after.stats.contracts).toBe(before.stats.contracts);
+    expect(after.wonAs ?? {}).toEqual(before.wonAs ?? {});
+    expect(after.arenaRank).toBe(3);
+    expect(after.rematches).toEqual({ 'arena-1': 1 });
+    // What its battle added up to is on the record all the same.
+    expect(after.stats.kills).toBeGreaterThan(before.stats.kills);
+    expect(after.stats.earned).toBeGreaterThan(before.stats.earned);
+    toHub(app);
+    expect(board(app)).toEqual(offered);
+    // The next rematch of the same opponent pays half of this one, and the one after half of that.
+    select(app, 'arena');
+    expect(snap(app).menu.items.find((item) => item.id === 'rank-1')!.note).toBe('100');
+    press(app, 'cancel');
+    fly(app, 'rank-1');
+    expect(snap(app).settlement).toMatchObject({ won: true, reward: 100 });
+    expect(savedGame(store).rematches).toEqual({ 'arena-1': 2 });
+    expect(savedGame(store).battlesWon).toBe(before.battlesWon);
+  });
+
+  test('a first win in the arena is booked as it was: a contract won, a win for the class, and a rank', () => {
+    const { app, store } = inHub(ranked());
+    const before = savedGame(store);
+    const offered = board(app);
+    select(app, 'arena');
+    select(app, 'rank-4');
+    const said = texts(app).map((t) => t.text);
+    expect(said).toContain(STRINGS.arena.fight);
+    expect(said).not.toContain(STRINGS.arena.rematchTag);
+    select(app, 'accept');
+    finishMission(app);
+    expect(snap(app).settlement!.won).toBe(true);
+    expect(texts(app).map((t) => t.text)).toContain(STRINGS.settlement.won);
+    const after = savedGame(store);
+    expect(after.battlesWon).toBe(before.battlesWon + 1);
+    expect(after.stats.contracts).toBe(before.stats.contracts + 1);
+    expect(Object.values(after.wonAs ?? {}).reduce((sum, n) => sum + n, 0)).toBe(Object.values(before.wonAs ?? {}).reduce((sum, n) => sum + n, 0) + 1);
+    expect(after.arenaRank).toBe(4);
+    expect(after.rematches).toBeUndefined();
+    toHub(app);
+    expect(board(app)).not.toEqual(offered);
+  });
+
+  test('a rematch lost or walked away from is no contract lost, and its purse stays what it was', () => {
+    const { app, store } = inHub(ranked());
+    const before = savedGame(store);
+    select(app, 'arena');
+    select(app, 'rank-2');
+    select(app, 'accept');
+    retreat(app);
+    expect(snap(app).settlement!.won).toBe(false);
+    expect(texts(app).map((t) => t.text)).toContain(STRINGS.settlement.rematchLost);
+    const after = savedGame(store);
+    expect([after.stats.lost, after.stats.retreats, after.stats.contracts]).toEqual([before.stats.lost, before.stats.retreats, before.stats.contracts]);
+    expect(after.rematches).toBeUndefined();
+    expect(after.battlesWon).toBe(before.battlesWon);
+  });
+
+  test('the words for it, in both languages, fit the line of the briefing they stand on', () => {
+    for (const S of [STRINGS, STRINGS_NL]) {
+      expect(S.arena.rematchTag.length).toBeLessThanOrEqual(Math.floor((LOGICAL_W - 84) / CHAR_W));
+      expect(S.arena.rematchTag).toMatch(/^[A-Z]+: /);
+    }
+    expect(MANUAL.find((topic) => topic.id === 'rematches')!.text).toContain('It is no contract');
+  });
+});
+
+describe('the long game: a telling that knows the pilot has been here', () => {
+  const texts = (app: App): Written[] => record((ctx) => app.draw(ctx)).texts;
+  const talk = (app: App) => snap(app).talk as { at: number; of: number; asking: boolean };
+  /** Past the title, onto whatever page of story is due. */
+  const opened = (saved: GameState): App => { const { app } = makeApp(saved); press(app, 'confirm'); return app; };
+  /** The second telling, two contracts in: the bay's conversation is due, and it was held in the first. */
+  const second = (more: Partial<GameState> = {}): GameState => ({
+    ...done('intro-1', 'intro-2'), cycle: 1, scenes: ['act-1', 'playback'], ranks: { 'intro-1': 'A', 'intro-2': 'B' },
+    told: { scenes: ['act-1', 'talk-kite'], read: ['welcome', 'after-intro-1'] }, ...more,
+  });
+
+  test('a conversation held in an earlier telling says that B skips it, and B goes to its last line: the question is still asked', () => {
+    const app = opened(second());
+    expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'talk-kite', skippable: true });
+    expect(talk(app).at).toBe(0);
+    // (A word over a picture is written with a dark edge: the word itself is the one in the picture's own light colour.)
+    const hint = texts(app).find((t) => t.text === STRINGS.scene.skip && t.color === OVER_PICTURE)!;
+    expect(hint).toMatchObject({ right: SKIP_AT.right, y: SKIP_AT.y, size: 10 });
+    // It lies over nothing else on the page.
+    for (const other of texts(app).filter((t) => t.text !== STRINGS.scene.skip)) expect(overlap(hint, other), other.text).toBe(false);
+    press(app, 'cancel');
+    expect(talk(app)).toMatchObject({ at: talk(app).of - 1, asking: false });
+    expect(snap(app).typing).toBe(false);
+    // On the last line there is nothing left to skip: B does nothing, and A goes on to the question.
+    press(app, 'cancel');
+    expect(talk(app).at).toBe(talk(app).of - 1);
+    press(app, 'confirm');
+    expect(talk(app).asking).toBe(true);
+    // The question is not skipped and says nothing of skipping: B does nothing to it.
+    expect(texts(app).some((t) => t.text === STRINGS.scene.skip)).toBe(false);
+    press(app, 'cancel');
+    expect(talk(app).asking).toBe(true);
+    expect(snap(app).menu.items.length).toBeGreaterThan(1);
+  });
+
+  test('in a first telling nothing is skipped: B does nothing on a page of story, and the page does not offer it', () => {
+    const app = opened({ ...done('intro-1', 'intro-2'), scenes: ['act-1'] });
+    expect(snap(app)).toMatchObject({ screen: 'scene', scene: 'talk-kite', skippable: false });
+    expect(texts(app).some((t) => t.text === STRINGS.scene.skip)).toBe(false);
+    press(app, 'cancel', 'cancel');
+    expect(talk(app).at).toBe(0);
+    // A page that is new to this telling is not skipped in a later one either.
+    const later = opened({ ...done(), cycle: 1, told: { scenes: ['act-1'], read: [] } });
+    expect(snap(later)).toMatchObject({ screen: 'scene', scene: 'act-1', skippable: true });
+    expect(texts(later).find((t) => t.text === STRINGS.scene.skip && t.color === OVER_PICTURE)).toMatchObject({ right: SKIP_AT.right, y: SKIP_AT.y });
+    // B leaves the page that was told before, at once: the next one is new, and stays.
+    press(later, 'cancel');
+    expect(snap(later)).toMatchObject({ screen: 'scene', scene: 'playback', skippable: false });
+    press(later, 'cancel');
+    expect(snap(later).scene).toBe('playback');
+    expect(texts(later).some((t) => t.text === STRINGS.scene.skip)).toBe(false);
+  });
+
+  test('the words for it fit the corner they stand in, in both languages', () => {
+    for (const S of [STRINGS, STRINGS_NL]) {
+      expect(S.scene.skip).toMatch(/^B: /);
+      expect(S.scene.skip.length * 4).toBeLessThanOrEqual(110);
+    }
+  });
+
+  test('a letter read in an earlier telling comes again unmarked, and the hub counts only what is new', () => {
+    const { app } = inHub(second({ scenes: ['act-1', 'playback', 'talk-kite'] }));
+    const row = snap(app).menu.items.find((item) => item.id === 'messages')!;
+    select(app, 'messages');
+    const inbox = snap(app).menu.items;
+    const noted = (id: string): string | undefined => inbox.find((item) => item.id === id)!.note;
+    expect([noted('welcome'), noted('after-intro-1')]).toEqual([undefined, undefined]);
+    const fresh = inbox.filter((item) => item.note === STRINGS.messagesScreen.isNew);
+    expect(fresh.length).toBeGreaterThan(0);
+    expect(fresh.map((item) => item.id)).not.toContain('welcome');
+    expect(row.note).toBe(STRINGS.hub.unread(fresh.length));
+  });
+
+  test('the inbox has the letter that came last on top, wherever the list of letters has it', () => {
+    const { app, store } = inHub({ ...strong(done('intro-1', 'intro-2')), scenes: ['act-1', 'talk-kite'], arenaRank: 2 });
+    // Reading a letter keeps the game: what has come so far is written down in the order of the list.
+    select(app, 'messages');
+    press(app, 'confirm', 'confirm', 'cancel');
+    const before = savedGame(store).mail!;
+    expect(before.length).toBeGreaterThan(2);
+    expect(before).not.toContain('mirror-match');
+    // The third rank brings the arena's proposal. Then a client is flown for, which brings a letter that stands earlier in the list.
+    select(app, 'arena');
+    select(app, 'rank-3');
+    select(app, 'accept');
+    finishMission(app);
+    toHub(app);
+    expect(savedGame(store).mail!.at(-1)).toBe('mirror-match');
+    select(app, 'messages');
+    expect(snap(app).menu.items[0]).toMatchObject({ id: 'mirror-match', note: STRINGS.messagesScreen.isNew });
+    expect(snap(app).menu.items.slice(1).map((item) => item.id)).toEqual([...before].reverse());
+  });
+
+  test('in a later telling a contract that was never won ends in a star, and the line under the list says what the star is; nothing is starred in a first telling', () => {
+    const marked = (app: App): string[] => snap(app).menu.items.filter((item) => item.label.endsWith(` ${UNFLOWN_MARK}`)).map((item) => item.id);
+    const { app } = inHub(second({ scenes: ['act-1', 'playback', 'talk-kite'] }));
+    select(app, 'contracts');
+    const rows = snap(app).menu.items;
+    const stars = marked(app);
+    expect(stars.length).toBeGreaterThan(0);
+    // Every one of them is a contract of the story or beside it that has no rank from any telling; the patrol and the board are never starred.
+    for (const id of stars) expect(Object.hasOwn(second().ranks, id), id).toBe(false);
+    expect(stars.some((id) => id === 'patrol' || id.startsWith('open-'))).toBe(false);
+    // On a starred row the line under the list explains the star; on the patrol it says what the patrol is.
+    const at = rows.findIndex((item) => item.id === stars[0]);
+    for (let i = 0; i < 40 && snap(app).menu.cursor !== at; i++) press(app, 'down');
+    expect(snap(app).row).toBe(STRINGS.hub.kinds.unflown);
+    for (let i = 0; i < 40 && snap(app).menu.items[snap(app).menu.cursor].id !== 'patrol'; i++) press(app, 'down');
+    expect(snap(app).row).toBe(STRINGS.hub.kinds.patrol);
+    // The same contracts in a first telling: no star on any row.
+    const first = inHub({ ...done('intro-1', 'intro-2'), scenes: ['act-1', 'talk-kite'] }).app;
+    select(first, 'contracts');
+    expect(marked(first)).toEqual([]);
+    expect(snap(first).menu.items.map((item) => item.id)).toEqual(expect.arrayContaining(stars));
+    // What it is decided by: a later telling, a kind that only describes, and no rank kept.
+    expect([isUnflown({ cycle: 1, ranks: {} }, { id: 'x' }, 'story'), isUnflown({ cycle: 1, ranks: {} }, { id: 'x' }, 'side')]).toEqual([true, true]);
+    expect([isUnflown({ cycle: 0, ranks: {} }, { id: 'x' }, 'story'), isUnflown({ cycle: 1, ranks: { x: 'C' } }, { id: 'x' }, 'story')]).toEqual([false, false]);
+    for (const kind of ['choice', 'verdict', 'open', 'asks', 'job', 'account', 'swarm', 'patrol', 'lent'] as const) expect(isUnflown({ cycle: 2, ranks: {} }, { id: 'x' }, kind), kind).toBe(false);
+  });
+});
+
+describe('the long game: a saved build and its parts', () => {
+  const texts = (app: App): Written[] => record((ctx) => app.draw(ctx)).texts;
+  const shop = (app: App) => snap(app).shop as { mode: string; selected: string | null; neededBy: number[]; shortened: number[] };
+  /** A pilot in the starter who owns a Halo Visor once, on the shelf, with the bench's work on it: the second saved build is the starter with that head. */
+  const keeper = (more: Partial<GameState> = {}): GameState => {
+    const base = buy({ ...done('intro-1', 'intro-2'), scenes: ['act-1', 'talk-kite'], credits: 50_000 }, 'head-halo', CATALOG);
+    return { ...base, loadouts: [null, { ...base.build, head: 'head-halo' }, null], tuning: { 'head-halo': 2 }, ...more };
+  };
+  const toSell = (app: App, id: string): void => {
+    select(app, 'shop');
+    press(app, 'right');
+    expect(shop(app).mode).toBe('sell');
+    for (let i = 0; i < 30 && shop(app).selected !== id; i++) press(app, 'down');
+    expect(shop(app).selected).toBe(id);
+  };
+
+  test('the shop says of a part under the cursor that a saved build needs it, and after the sale that the build is a part short', () => {
+    const { app, store } = inHub(keeper());
+    toSell(app, 'head-halo');
+    expect(shop(app)).toMatchObject({ neededBy: [1], shortened: [] });
+    expect(texts(app).find((t) => t.text === 'Saved build 2 needs this part')).toMatchObject({ y: 257, color: COLORS.heat });
+    expect(texts(app).some((t) => t.text === STRINGS.shop.wordsHint)).toBe(false);
+    // The sale is made all the same: nothing stops it.
+    press(app, 'confirm');
+    expect(savedGame(store).inventory['head-halo'] ?? 0).toBe(0);
+    expect(shop(app).shortened).toEqual([1]);
+    expect(texts(app).find((t) => t.text === 'Saved build 2 is a part short now')).toMatchObject({ y: 257, color: COLORS.danger });
+    // It is said while the sale's own message stands, and no longer.
+    press(app, 'down');
+    expect(shop(app).shortened).toEqual([]);
+    expect(texts(app).some((t) => t.text === 'Saved build 2 is a part short now')).toBe(false);
+  });
+
+  test('a part no saved build holds is sold without a word of it, and so is one of two copies', () => {
+    const { app } = inHub(buy(keeper(), 'head-halo', CATALOG));
+    toSell(app, 'head-halo');
+    expect(shop(app).neededBy).toEqual([]);
+    expect(texts(app).some((t) => t.text === STRINGS.shop.wordsHint)).toBe(true);
+    press(app, 'confirm');
+    expect(shop(app).shortened).toEqual([]);
+    // One copy is left now, and the saved build holds it: the next sale would leave it short.
+    expect(shop(app)).toMatchObject({ selected: 'head-halo', neededBy: [1] });
+  });
+
+  test('a part the bench has worked on is listed with its step, to be sold and to be bought back', () => {
+    // A Courier Visor on the shelf, worked on twice: the shop sells that head from the start.
+    const base = buy({ ...done('intro-1', 'intro-2'), scenes: ['act-1', 'talk-kite'], credits: 50_000 }, 'head-courier', CATALOG);
+    const { app } = inHub({ ...base, tuning: { 'head-courier': 2 } });
+    const name = CATALOG['head-courier'].name;
+    toSell(app, 'head-courier');
+    expect(snap(app).menu.items.find((item) => item.id === 'head-courier')!.label).toBe(`${name} +2`);
+    press(app, 'confirm', 'left');
+    expect(shop(app).mode).toBe('buy');
+    // Not owned now: no count after it, and the step it would come back with.
+    const shelf = snap(app).menu.items;
+    expect(shelf.find((item) => item.id === 'head-courier')!.label).toBe(`${name} +2`);
+    // A part the bench never touched is listed as it always was: its name, and how often it is owned where it is.
+    const others = shelf.filter((item) => item.id !== 'head-courier');
+    expect(others.length).toBeGreaterThan(1);
+    for (const item of others) expect(item.label.replace(/ x\d+$/, ''), item.id).toBe(CATALOG[item.id].name);
+    expect(others.some((item) => / x1$/.test(item.label))).toBe(true);
+    // Bought back, it says the step and then how many.
+    for (let i = 0; i < 30 && shop(app).selected !== 'head-courier'; i++) press(app, 'down');
+    press(app, 'confirm');
+    expect(snap(app).menu.items.find((item) => item.id === 'head-courier')!.label).toBe(`${name} +2 x1`);
+  });
+
+  test('the briefing names a saved build that cannot be flown and what it is short of, where it would say that none is saved', () => {
+    const sold = sell(keeper(), 'head-halo', CATALOG);
+    const { app } = inHub(sold);
+    select(app, 'contracts');
+    select(app, 'patrol');
+    for (let i = 0; i < 8 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'build'; i++) press(app, 'down');
+    expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('build');
+    const said = texts(app);
+    expect(said.find((t) => t.text === 'BUILD 2: Halo Visor missing')).toMatchObject({ left: 12, color: COLORS.heat });
+    expect(said.some((t) => t.text === STRINGS.briefing.buildNone)).toBe(false);
+    // With another saved build to turn to, how to turn stands where it stood, and the build that is short is named beside it.
+    const other = buy(sold, 'head-ronin', CATALOG);
+    const two = inHub({ ...other, loadouts: [{ ...other.build, head: 'head-ronin' }, ...other.loadouts.slice(1)] }).app;
+    select(two, 'contracts');
+    select(two, 'patrol');
+    for (let i = 0; i < 8 && snap(two).menu.items[snap(two).menu.cursor]?.id !== 'build'; i++) press(two, 'down');
+    const both = texts(two);
+    const hint = both.find((t) => t.text === STRINGS.briefing.buildHint)!;
+    const short = both.find((t) => t.text === 'BUILD 2: Halo Visor missing')!;
+    expect(hint.left).toBe(12);
+    expect(short).toMatchObject({ right: LOGICAL_W - 12, size: 10, color: COLORS.heat });
+    expect(overlap(hint, short)).toBe(false);
+    // With every saved build flyable, the page is as it was.
+    const whole = inHub(keeper()).app;
+    select(whole, 'contracts');
+    select(whole, 'patrol');
+    for (let i = 0; i < 8 && snap(whole).menu.items[snap(whole).menu.cursor]?.id !== 'build'; i++) press(whole, 'down');
+    expect(texts(whole).some((t) => /BUILD \d+: /.test(t.text) || /cannot deploy/.test(t.text))).toBe(false);
+    // The Dutch of it fits the same row.
+    expect([STRINGS_NL.briefing.buildShort(2, 'Halo Visor'), STRINGS_NL.briefing.buildGrounded(2)]).toEqual(['BUILD 2: Halo Visor ontbreekt', 'BUILD 2 niet inzetbaar']);
+  });
+});
+
+describe('the long game: a frame that a duel puts in the shop is announced', () => {
+  /** The story with Lumen, told to its verdict: the yard's pilots take bookings from then on. */
+  const STORY = MISSIONS.filter((m) => m.phase !== 'side' && m.phase !== 'patrol' && (!m.faction || m.faction === 'lumen') && m.phase !== 'verdict').map((m) => m.id);
+  const told = (): GameState => ({ ...done(...STORY, 'verdict-enforce'), endingSeen: true });
+  const won = (game: GameState, id: string): GameState => ({ ...game, ranks: { ...game.ranks, [id]: 'A' } });
+
+  test('a duel won names the frame and how many parts of it are for sale: once, and for nothing the story puts in stock', () => {
+    const before = told();
+    const after = won(before, 'duel-1');
+    expect(shelfToast(before, after)).toEqual([
+      { id: 'shelf:head-shrike+core-shrike+arms-shrike+legs-shrike', heading: 'NEW IN THE SHOP', title: 'Shrike: 4 parts', sound: 'entry' },
+    ]);
+    // It was said: nothing more to say of it.
+    expect(shelfToast(after, after)).toEqual([]);
+    expect(shelfToast(after, won(after, 'duel-1'))).toEqual([]);
+    // Each of the yard's four, by its own name.
+    const frames = ['duel-1', 'duel-2', 'duel-3', 'duel-4'].map((id) => shelfToast(before, won(before, id))[0].title);
+    expect(frames).toEqual(['Shrike: 4 parts', 'Sterling: 4 parts', 'Sirocco: 4 parts', 'Solstice: 4 parts']);
+    for (const title of frames) expect(title.length).toBeLessThanOrEqual(TOAST_TITLE_CHARS);
+    // The seat's frame comes the same way.
+    expect(shelfToast(before, { ...before, seat: true }).map((toast) => toast.title)).toEqual(['Sovereign: 4 parts']);
+    // What the story puts in stock as it goes is not announced: the first client flown for stocks parts, and nothing is said.
+    const early = done('intro-1', 'intro-2');
+    const later = done('intro-1', 'intro-2', 'lumen-1');
+    expect(shelfToast(early, later)).toEqual([]);
+    // A game that is only now opened has nothing to compare with.
+    expect(shelfToast(null, after)).toEqual([]);
+  });
+
+  test('it is announced as the duel is booked, in the words of the language set', () => {
+    const { app } = inHub(strong(told()));
+    const duel = MISSIONS.find((m) => m.id === 'duel-1')!;
+    app.bookSettlement({ won: true, reward: duel.reward, ammoCost: 0, repairCost: 0, net: duel.reward, lines: [], rank: 'A', bonus: 0 }, duel);
+    const said = [snap(app).toast, ...(snap(app).toasts as string[])];
+    expect(said).toContain('shelf:head-shrike+core-shrike+arms-shrike+legs-shrike');
+    expect([STRINGS_NL.shop.shelfToast, STRINGS_NL.shop.shelfParts('Shrike', 4)]).toEqual(['NIEUW IN DE WINKEL', 'Shrike: 4 stuks']);
+    expect(STRINGS_NL.shop.shelfParts('Sovereign', 4).length).toBeLessThanOrEqual(TOAST_TITLE_CHARS);
   });
 });
