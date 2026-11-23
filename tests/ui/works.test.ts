@@ -1,10 +1,12 @@
-import { HEAT_LIMIT, activeUnit, applyAction, createBattle, turnEnergyOf, type Action, type BattleState, type UnitState } from '../../src/core/battle';
+import { chooseEnemyAction } from '../../src/core/ai';
+import { HEAT_LIMIT, activeUnit, applyAction, bufferRoom, createBattle, turnEnergyOf, type Action, type BattleState, type UnitState } from '../../src/core/battle';
 import type { Build, Catalog, FramePart, Weapon } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
 import { setLanguage } from '../../src/content/language';
 import { STRINGS } from '../../src/content/strings';
 import '../../src/content/nl';
 import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
+import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 import SPRITES from '../../src/content/sprites.json';
 import { BattleFlow } from '../../src/ui/battleFlow';
 import { BattleScreen, GENERATOR } from '../../src/ui/battleScreen';
@@ -57,6 +59,8 @@ function heatRow(page: Drawn): { figure: Written; filled: number; room: number; 
   return { figure, filled: fill.w, room: empty.w, color: fill.color };
 }
 afterEach(() => setLanguage('en'));
+/** A copy of a battle with something about it changed. */
+const change = (s: BattleState, to: (draft: BattleState) => void): BattleState => { const copy = structuredClone(s); to(copy); return copy; };
 
 describe('the heat bar of a machine with a limit of its own', () => {
   test('is as long as that limit, and says the limit beside the figure; any other machine\'s says the figure alone', () => {
@@ -134,6 +138,99 @@ describe('a machine seen to be hot, on the field', () => {
     expect(radius(stock.id, 50)).toBe(GENERATOR.r + 3);
     expect(radius(HOT.id, 130)).toBe(GENERATOR.r + 6);
     expect(radius(stock.id, 65)).toBeCloseTo(GENERATOR.r + 3.9, 5);
+  });
+});
+
+describe('a machine that has kept energy, seen from the other side', () => {
+  const foe = (s: BattleState): UnitState => s.units[1];
+  /** The works pilot against a Colossus: the Solstice is the quicker, and has held by the pilot's first turn. */
+  function held(): BattleState {
+    let s = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES.vesper], WORKS, 1);
+    expect(activeUnit(s).id).toBe('enemy-0');
+    for (let guard = 0; guard < 6 && activeUnit(s).id === 'enemy-0'; guard++) s = applyAction(s, chooseEnemyAction(s, WORKS), WORKS);
+    expect(foe(s)).toMatchObject({ guarding: true, kept: 180 });
+    return s;
+  }
+  /** The words written over the field at the size a mark is written in. */
+  const marks = (page: Drawn): Written[] => page.texts.filter((t) => t.size === 10 && t.align === 'center');
+  const K = STRINGS.fx.kept(180);
+
+  test('a surge loaded with what its machine kept is written over the machine: how much, in place of its guard, and it blinks', () => {
+    const { screen, page } = shown(held());
+    expect(screen.markOver('enemy-0')).toBe('+180 EN');
+    const over = marks(page());
+    expect(over.map((t) => t.text)).toEqual([K]);
+    expect([COLORS.energy, COLORS.danger]).toContain(over[0].color);
+    // It is in one colour or the other as the clock goes: both are seen.
+    const colours = new Set<string>();
+    for (let i = 0; i < 60; i++) { screen.update(16); colours.add(marks(page())[0].color); }
+    expect([...colours].sort()).toEqual([COLORS.danger, COLORS.energy].sort());
+    expect(page().texts.some((t) => t.text === STRINGS.tags.guard)).toBe(false);
+  });
+
+  test('knocked off balance it is still what is written: the kept energy comes down all the same', () => {
+    const { screen } = shown(change(held(), (d) => { foe(d).staggered = 1; foe(d).stagger = foe(d).staggerMax; }));
+    expect(screen.markOver('enemy-0')).toBe('+180 EN');
+  });
+
+  test('nothing of it is written once there is nothing to brace for: spent, too little, a turn lost to heat, or no surge to fire it with', () => {
+    const over = (s: BattleState): string | null => shown(s).screen.markOver('enemy-0');
+    expect(over(change(held(), (d) => { foe(d).kept = 0; }))).toBe(STRINGS.tags.guard);
+    expect(over(change(held(), (d) => { foe(d).kept = 89; }))).toBe(STRINGS.tags.guard);
+    expect(over(change(held(), (d) => { foe(d).overheated = true; }))).toBe(STRINGS.tags.guard);
+    expect(over(change(held(), (d) => { foe(d).build = { ...foe(d).build, rightHand: 'wpn-enemy-pinpoint' }; }))).toBe(STRINGS.tags.guard);
+    // With no guard up either there is nothing to say of it.
+    expect(over(change(held(), (d) => { foe(d).kept = 0; foe(d).guarding = false; }))).toBeNull();
+    // And a machine that is gone has nothing over it.
+    expect(over(change(held(), (d) => { foe(d).destroyed = true; }))).toBeNull();
+    expect(bufferRoom(foe(held()), WORKS)).toBe(180);
+  });
+
+  test('beside its name, once it is aimed at: its guard and what it is about to do, and what it kept where there is room', () => {
+    const { screen, flow, page } = shown(held());
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    expect(flow.phase).toBe('target');
+    const said = page().texts.map((t) => t.text);
+    expect(said).toContain(STRINGS.tags.guard);
+    expect(said).toContain(STRINGS.intent.aim('core'));
+    // Here there is room: it is said twice, over the machine and in the row. In the row it is in the colour of energy, and still.
+    expect(page().texts.filter((t) => t.text === K).map((t) => t.align).sort()).toEqual(['center', 'left']);
+    const colours = new Set<string>();
+    for (let i = 0; i < 60; i++) { screen.update(16); colours.add(page().texts.find((t) => t.text === K && t.align === 'left')!.color); }
+    expect([...colours]).toEqual([COLORS.energy]);
+    // A machine that has kept energy and has no surge says so in that row and nowhere else.
+    const plain = shown(change(held(), (d) => { foe(d).build = { ...foe(d).build, rightHand: 'wpn-enemy-pinpoint' }; foe(d).guarding = false; }));
+    plain.screen.onInput('confirm');
+    plain.screen.onInput('confirm');
+    expect(plain.flow.phase).toBe('target');
+    // (In the row: from the panel's edge, not centred over the machine as a mark is.)
+    expect(plain.page().texts.filter((t) => t.text === K).map((t) => t.align)).toEqual(['left']);
+    expect(plain.screen.markOver('enemy-0')).toBeNull();
+  });
+});
+
+describe('a row beside a name with no room for everything', () => {
+  test('what the machine kept is the first to make way, before what it is about to do: over the machine it is said already', () => {
+    let s = createBattle(REFERENCE_BUILDS.tier6, [ENEMIES.vesper], WORKS, 1);
+    for (let guard = 0; guard < 6 && activeUnit(s).id === 'enemy-0'; guard++) s = applyAction(s, chooseEnemyAction(s, WORKS), WORKS);
+    s = structuredClone(s);
+    expect(s.units[1]).toMatchObject({ guarding: true, kept: 180 });
+    // One tag more than the row holds beside this name.
+    s.units[1].painted = 2;
+    const { screen, flow, page } = shown(s);
+    screen.onInput('confirm');
+    screen.onInput('confirm');
+    expect(flow.phase).toBe('target');
+    const said = page().texts;
+    const row = said.filter((t) => t.y === said.find((w) => w.text === STRINGS.tags.guard)!.y && t.align === 'left' && t.size === 10).map((t) => t.text);
+    expect(row).toEqual([STRINGS.tags.guard, STRINGS.tags.painted, STRINGS.intent.aim('core')]);
+    expect(said.filter((t) => t.text === STRINGS.fx.kept(180)).map((t) => t.align)).toEqual(['center']);
+    // Without that one tag more, all of it is there.
+    const roomy = shown(change(s, (d) => { d.units[1].painted = 0; }));
+    roomy.screen.onInput('confirm');
+    roomy.screen.onInput('confirm');
+    expect(roomy.page().texts.filter((t) => t.text === STRINGS.fx.kept(180)).map((t) => t.align).sort()).toEqual(['center', 'left']);
   });
 });
 

@@ -235,7 +235,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'works', title: 'WORKS FRAMES',
-    text: 'Two frames are won from the coast yard\'s works pilots. A SIROCCO core RUNS HOT: it overheats past 130, not 100, so a volley can hold one weapon more and a REDLINE climbs higher. A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn\'s worth. A SURGE leaves nothing to keep.',
+    text: 'Beat the coast yard\'s works pilots to buy their frames. A SIROCCO core RUNS HOT: it overheats past 130, not 100, so a volley can hold one weapon more and a REDLINE climbs higher. A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn\'s worth. A SURGE leaves nothing to keep.',
   },
   {
     id: 'modules', title: 'MODULES',

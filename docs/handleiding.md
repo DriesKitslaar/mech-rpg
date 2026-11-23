@@ -299,14 +299,14 @@ in een nieuwe cyclus.
 
 De eerste twee tegenstanders zijn zwaarden van het Coast Circuit. De laatste twee zijn de
 fabriekspiloten van de werf aan de kust die de mecha's van het Circuit bouwt: zij komen kijken wat
-hun zwaarden heeft verslagen, elk in een mecha die de werf nog nooit verkocht.
+hun zwaarden heeft verslagen, elk in een mecha die de werf nog nooit heeft verkocht.
 
 | Mecha | Wat hem bijzonder maakt | Hoe je hem verslaat |
 |---|---|---|
 | **Shrike** (grijs, licht) | Zijn armen: de eerste slag met een zwaard per beurt kost hem zijn Boost niet. Hij slaat toe en blijft moeilijk te raken. | Breng hem aan het wankelen of schiet zijn benen kapot: dan ontwijkt hij niet meer. |
 | **Sterling** (wit, snel) | Zijn kern wekt een veld op dat de eerste schade opvangt. Blijft er iets van staan, dan is het de volgende ronde weer heel. | Breek het veld in één ronde met een harde klap, of met alles tegelijk. Dan ligt het de ronde daarna plat en is hij kwetsbaar. Losse, kleine treffers voeden het veld alleen maar. |
-| **Sirocco** (zwart en oranje) | Zijn kern loopt heet: hij oververhit pas boven 130 hitte, waar elke andere mecha dat boven 100 doet. Kiln vuurt twee wapens die harder raken naarmate hij heter is. De eerste ronde stelt het weinig voor; vanaf de derde raakt elk schot minstens drie keer zo hard. | Breng hem aan het wankelen: dan heeft hij minder energie en vuurt hij minder. Of stook hem met thermische wapens over zijn eigen grens: dan verliest hij een beurt en begint hij koeler opnieuw. Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig. Wacht niet af, want elke ronde wordt hij gevaarlijker. |
-| **Solstice** (blauw en zilver) | Zijn kern heeft een buffer: energie die hij niet gebruikt, bewaart hij voor zijn volgende beurt, tot een halve beurt. Vesper wacht om de andere ronde (dekking, geen schot) en vuurt de ronde erna één wapen met anderhalve beurt energie erachter. | Kijk wat hij gaat doen. Staat er **HOLDS** (Nederlands **WACHT**) boven hem, dan staat hij open: sla toe. Gaat hij vuren, kies dan eerst **Guard**: een geblokte treffer doet nog zes tiende van de schade. Auto Turn doet dat uit zichzelf. |
+| **Sirocco** (zwart en oranje) | Zijn kern loopt heet: hij oververhit pas boven 130 hitte, waar elke andere mecha dat boven 100 doet. Kiln vuurt met twee wapens die harder raken naarmate hij heter is. De eerste ronde stelt het weinig voor; vanaf de derde raakt elk schot minstens drie keer zo hard. | Breng hem aan het wankelen: dan heeft hij minder energie en vuurt hij minder. Of stook hem met thermische wapens over zijn eigen grens: dan verliest hij een beurt en begint hij koeler opnieuw. Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig. Wacht niet af, want elke ronde wordt hij gevaarlijker. |
+| **Solstice** (blauw en zilver) | Zijn kern heeft een buffer: energie die hij niet gebruikt, bewaart hij voor zijn volgende beurt, tot een halve beurt. Vesper wacht om de andere ronde (dekking, geen schot) en vuurt de ronde erna één wapen af, met anderhalve beurt energie erachter. | Kijk wat er boven hem staat. Knippert daar een getal, zoals **+180 EN**, dan heeft hij zoveel energie bewaard en vuurt hij in zijn volgende beurt: kies dan eerst **Guard**. Een opgevangen treffer doet nog zes tiende van de schade. Staat er geen getal, dan staat hij open: sla toe. Mik je op hem, dan staat naast zijn naam wat hij gaat doen: **AIMS** met het onderdeel waarop hij mikt, of **HOLDS** (Nederlands **MIKT** en **WACHT**). Auto Turn zoekt die dekking uit zichzelf. |
 
 Vlieg je ze zelf, dan gelden dezelfde regels voor jou. Op het onderdeel staat het erbij: **POISE**
 bij de armen van de Shrike, **FIELD** bij de kern van de Sterling (bij jou vangt het veld 25 schade
@@ -328,8 +328,8 @@ over**). Houd je aan het eind van je beurt energie over, dan krijg je die er de 
 tot de helft van wat een beurt je geeft. Boven je mecha staat dan bijvoorbeeld **+180 EN**. Hij is
 op zijn best met wapens die veel energie vragen, zoals twee klingen of een zware straal. Een
 piekwapen (**SURGE**) neemt altijd alle energie, dus daarmee blijft er niets over om te bewaren,
-tenzij je een beurt bewust niet vuurt: dan heeft het de beurt daarna anderhalve beurt energie
-achter zich, zoals bij Vesper.
+tenzij je een beurt bewust niet vuurt: dan zit er de beurt daarna anderhalve beurt energie achter,
+zoals bij Vesper.
 
 Wie beide fabriekspiloten verslaat, krijgt de medaille **Works Order**.
 

@@ -51,7 +51,7 @@ const kept = (page: Page): Promise<GameState> => page.evaluate(() => JSON.parse(
 
 type Fought = {
   phase: string; outcome: string; round: number; message: string; enemies: string[]; spoken: string | null; ground: string | null;
-  intent: string; words: string[]; enemyHeat: number; enemyKept: number;
+  intent: string; words: string[]; enemyHeat: number; enemyKept: number; enemyMark: string | null;
 };
 type Seen = { battle: Fought; player: { energy: number; heat: number }; menu: Snap['menu']; screen: string };
 const seen = async (page: Page): Promise<Seen> => (await snap(page)) as unknown as Seen;
@@ -232,6 +232,10 @@ test('the last duel: a Solstice on the plaza that holds a round and fires the ne
   expect(s.battle).toMatchObject({ enemies: ['vesper'], ground: 'clear', round: 1 });
   // The Solstice is the quicker: it has held already, and its core has kept half a turn for the shot it lines up next.
   expect(s.battle.enemyKept).toBeGreaterThan(100);
+  // And it is written over the machine, before anything is aimed at it: that much is coming with its next shot.
+  expect(s.battle.enemyMark).toBe(`+${s.battle.enemyKept} EN`);
+  await still(page, 6);
+  await page.screenshot({ path: shot('works-vesper-kept') });
   const first = await intentOfFoe(page, 'works-vesper-aims');
   expect(first).toMatch(/^AIMS/);
   // Auto Turn braces before anything else: the brace is the first thing the bar says of the turn.
@@ -241,6 +245,7 @@ test('the last duel: a Solstice on the plaza that holds a round and fires the ne
   // It has fired: nothing is kept, and what it does next is hold.
   expect(s.battle.round).toBe(2);
   expect(s.battle.enemyKept).toBe(0);
+  expect(s.battle.enemyMark ?? '').not.toMatch(/ EN$/);
   expect(await intentOfFoe(page, 'works-vesper-holds')).toBe('HOLDS');
   expect(await autoBattle(page)).toBe('victory');
   await press(page, 'Enter');
@@ -373,6 +378,7 @@ test('in Dutch: the briefing of the last duel, what its machine is about to do, 
   await page.waitForFunction(() => (window as any).__game.snapshot().battle?.spoken);
   let s = await toAction(page);
   expect(s.battle.enemies).toEqual(['vesper']);
+  expect(s.battle.enemyMark).toBe(`+${s.battle.enemyKept} EN`);
   await autoTurn(page);
   s = await seen(page);
   expect(s.battle.round).toBe(2);

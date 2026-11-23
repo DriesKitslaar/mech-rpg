@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { ARCHETYPES, archetypeOf } from '../../src/core/archetype';
-import { GUARD_DAMAGE, HEAT_LIMIT, SPOOL_BASE, SURGE_UNIT } from '../../src/core/battle';
+import { GUARD_DAMAGE, HEAT_LIMIT, SPOOL_BASE, SURGE_UNIT, bufferRoom, createBattle } from '../../src/core/battle';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
 import { startNewCycle } from '../../src/core/campaign';
 import { launches } from '../../src/core/launch';
@@ -454,6 +454,15 @@ describe('what is said of the yard\'s two frames and their duels is so', () => {
     expect(REFERENCE_NL[chapter.title]).toBe('FRAMES VAN DE WERF');
     // It stands after the chapter on the five kinds, which it speaks of.
     expect(MANUAL[MANUAL.findIndex((entry) => entry.id === 'kinds') + 1].id).toBe('works');
+    // Neither frame is given away: each part is on the shop's shelves, at a price, once its duel is won.
+    expect(chapter.text).toMatch(/^Beat the coast yard's works pilots to buy their frames\. /);
+    expect(dutch).toMatch(/^Versla de piloten van de kustwerf om hun frames te kopen\. /);
+    for (const [name, duel] of [['sirocco', 'duel-3'], ['solstice', 'duel-4']]) {
+      for (const slot of ['head', 'core', 'arms', 'legs']) {
+        expect(SHOP_UNLOCKS[`${slot}-${name}`], `${slot}-${name}`).toBe(`won:${duel}`);
+        expect(CATALOG[`${slot}-${name}`].price, `${slot}-${name}`).toBeGreaterThan(0);
+      }
+    }
     expect(chapter.text).toContain(`A SIROCCO core RUNS HOT: it overheats past ${sirocco.heatLimit}, not ${HEAT_LIMIT}`);
     expect(STRINGS.partInfo.heatLimit(130)).toMatch(/^RUNS HOT: /);
     expect(chapter.text).toContain('A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn\'s worth.');
@@ -485,10 +494,16 @@ describe('what is said of the yard\'s two frames and their duels is so', () => {
     // A machine glows from three quarters of the way to its own limit (the screen's own test holds that): the guide says what the glow means.
     expect(section).toContain('Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig.');
     expect(section).toContain('bewaart hij voor zijn volgende beurt, tot een halve beurt');
-    expect(section).toContain('Vesper wacht om de andere ronde (dekking, geen schot) en vuurt de ronde erna één wapen met anderhalve beurt energie erachter');
-    expect(section).toContain(`Staat er **${STRINGS.intent.hold}** (Nederlands **${STRINGS_NL.intent.hold}**) boven hem, dan staat hij open`);
-    expect(section).toContain(`kies dan eerst **${STRINGS.actions.guard}**: een geblokte treffer doet nog zes tiende van de schade`);
-    expect(section).toContain('Auto Turn doet dat uit zichzelf');
+    expect(section).toContain('Vesper wacht om de andere ronde (dekking, geen schot) en vuurt de ronde erna één wapen af, met anderhalve beurt energie erachter');
+    // What is written over Vesper's machine once it has held: half of what a turn gives it, which is the figure the guide gives.
+    const vesper = createBattle(STARTERS[0].build, [ENEMIES.vesper], CATALOG, 1).units[1];
+    expect(STRINGS.fx.kept(bufferRoom(vesper, CATALOG))).toBe('+180 EN');
+    expect(section).toContain(`Kijk wat er boven hem staat. Knippert daar een getal, zoals **${STRINGS.fx.kept(bufferRoom(vesper, CATALOG))}**, dan heeft hij zoveel energie bewaard en vuurt hij in zijn volgende beurt: kies dan eerst **${STRINGS.actions.guard}**.`);
+    expect(section).toContain('Een opgevangen treffer doet nog zes tiende van de schade.');
+    expect(section).toContain('Staat er geen getal, dan staat hij open: sla toe.');
+    // Its next move is said beside its name, once it is aimed at: in the words the screen writes there.
+    expect(section).toContain(`Mik je op hem, dan staat naast zijn naam wat hij gaat doen: **${STRINGS.intent.aim('').trim()}** met het onderdeel waarop hij mikt, of **${STRINGS.intent.hold}** (Nederlands **${STRINGS_NL.intent.aim('').trim()}** en **${STRINGS_NL.intent.hold}**)`);
+    expect(section).toContain('Auto Turn zoekt die dekking uit zichzelf');
   });
 
   test('the guide: what a pilot who flies one sees, in the words the screen writes', () => {
@@ -505,10 +520,10 @@ describe('what is said of the yard\'s two frames and their duels is so', () => {
   });
 
   test('the README: a section on the two, four duels, and the counts that grew', () => {
-    expect(README).toContain('- **De werf**: twee mecha\'s voor het eind van het spel, elk te winnen in een duel met een fabriekspiloot van de werf aan de kust.');
+    expect(README).toContain('- **De werf**: twee mecha\'s voor het eind van het spel, elk te koop zodra je in een duel de fabriekspiloot van de werf aan de kust verslaat die hem vliegt.');
     expect(README).toContain(`De Sirocco loopt heet: zijn hittegrens is ${sirocco.heatLimit} in plaats van ${HEAT_LIMIT}`);
     expect(README).toContain('De Solstice bewaart de energie die je niet gebruikt voor je volgende beurt, tot een halve beurt.');
-    expect(README).toContain('de ander wacht een ronde en vuurt dan met anderhalve beurt energie');
+    expect(README).toContain('de ander wacht een ronde en vuurt dan met anderhalve beurt energie. Wat hij heeft opgespaard, staat boven hem op het veld.');
     expect(README).toContain(`Na het verhaal: ${word(DUELS.length)} duels, elk om een mecha die je daarna zelf mag kopen.`);
   });
 });

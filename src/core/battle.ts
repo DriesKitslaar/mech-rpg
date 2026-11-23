@@ -584,6 +584,11 @@ export const coolingOn = (state: BattleState, unit: UnitState, catalog: Catalog)
 export const heatLimitOf = (build: Build, catalog: Catalog): number => framePart(build, 'core', catalog)?.heatLimit ?? HEAT_LIMIT;
 /** The share of a turn's energy, in a hundred, that a machine of this build keeps from one turn for the next. */
 export const bufferOf = (build: Build, catalog: Catalog): number => framePart(build, 'core', catalog)?.buffer ?? 0;
+/** The round in which a unit takes its next turn: this one if its turn is still to come. */
+export function nextTurnRound(state: BattleState, unit: UnitState): number {
+  const at = state.order.indexOf(unit.id);
+  return at >= 0 && at >= state.turn ? state.round : state.round + 1;
+}
 /** The most energy a unit's buffer can keep from one turn to the next: its share of what a turn gives the unit. */
 export const bufferRoom = (unit: UnitState, catalog: Catalog): number => Math.floor((turnEnergyOf(unit, catalog) * unit.buffer) / 100);
 

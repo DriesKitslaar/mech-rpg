@@ -103,7 +103,7 @@ export const REFERENCE_NL: Record<string, string> = {
   "The coast yard's works pilot, in a Sirocco. Its heat limit is 130, and both weapons hit harder the hotter it runs. Stagger it, or heat it past that.":
     'Fabriekspiloot van de kustwerf, in een Sirocco. Zijn hittegrens is 130 en zijn twee wapens slaan harder naarmate hij heter is. Laat hem wankelen, of stook hem daaroverheen.',
   "The coast yard's other works pilot, in a Solstice. It holds every other round and keeps the energy: the next, its one weapon has a turn and a half.":
-    'Fabriekspiloot van de kustwerf, in een Solstice. Wacht om de andere ronde en bewaart energie: zijn ene wapen heeft daarna anderhalve beurt.',
+    'Fabriekspiloot van de kustwerf, in een Solstice. Wacht om de andere ronde en spaart energie: daarna vuurt hij met anderhalve beurt tegelijk.',
 
   // --- Database: the world ---
   'A mining city on a seam that should have run dry forty years ago. The pits go down, the towers go up, and the lowest streets flood every spring. Nobody governs Varn. Three powers hold it between them, and none of them will fight for it in person.':
@@ -207,8 +207,8 @@ export const REFERENCE_NL: Record<string, string> = {
   "Firing makes heat, and your generator sheds some at the end of every turn. Pass 100 and you overheat: your next turn is lost. Vent sheds heat at once for a fifth of a turn's energy.":
     'Vuren geeft hitte; je generator voert na elke beurt wat af. Boven 100 oververhit je: volgende beurt weg. Koelen voert meteen hitte af voor een vijfde van een beurt energie.',
   'WORKS FRAMES': 'FRAMES VAN DE WERF',
-  "Two frames are won from the coast yard's works pilots. A SIROCCO core RUNS HOT: it overheats past 130, not 100, so a volley can hold one weapon more and a REDLINE climbs higher. A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn's worth. A SURGE leaves nothing to keep.":
-    'Twee frames win je in een duel van de kustwerf. Een SIROCCO-kern is HEET: oververhit pas boven 130, niet 100, dus er past een wapen meer in een salvo en WITHEET klimt hoger. Een SOLSTICE-kern heeft een BUFFER: energie die je niet gebruikt blijft voor je volgende beurt, tot een halve beurt. Een PIEK laat niets over.',
+  "Beat the coast yard's works pilots to buy their frames. A SIROCCO core RUNS HOT: it overheats past 130, not 100, so a volley can hold one weapon more and a REDLINE climbs higher. A SOLSTICE core has a BUFFER: energy you do not spend is kept for your next turn, up to half a turn's worth. A SURGE leaves nothing to keep.":
+    'Versla de piloten van de kustwerf om hun frames te kopen. Een SIROCCO-kern is HEET: oververhit pas boven 130, niet 100, dus er past een wapen meer in een salvo en WITHEET klimt hoger. Een SOLSTICE-kern heeft een BUFFER: energie die je niet gebruikt blijft voor je volgende beurt, tot een halve beurt. Een PIEK laat niets over.',
   STAGGER: 'WANKELEN',
   "Every hit pushes on the target's balance; the thin bar shows how much it has left. When it runs out the unit staggers: it cannot dodge, takes 30% more damage, and starts its next turn with less energy. Heavy mechs are steadier.":
     'Elke treffer duwt tegen de balans van het doelwit; de dunne balk toont hoeveel er over is. Is die op, dan wankelt de eenheid: ze kan niet ontwijken, krijgt 30% meer schade en begint haar volgende beurt met minder energie. Zware mechs staan steviger.',

@@ -1,5 +1,5 @@
 import { chooseEnemyAction } from './ai';
-import { activeUnit, applyAction, turnEnergyOf, type Action, type BattleState, type UnitState } from './battle';
+import { activeUnit, applyAction, nextTurnRound, turnEnergyOf, type Action, type BattleState, type UnitState } from './battle';
 import type { Catalog, FrameSlot } from './types';
 
 /**
@@ -19,11 +19,7 @@ export type Intent =
   | { kind: 'fuse'; turns: number }
   | { kind: 'reeling' };
 
-/** The round in which the unit takes its next turn: this one if its turn is still to come. */
-export function nextTurnRound(state: BattleState, unit: UnitState): number {
-  const at = state.order.indexOf(unit.id);
-  return at >= 0 && at >= state.turn ? state.round : state.round + 1;
-}
+export { nextTurnRound };
 
 /** The field as it will stand when the unit's next turn starts, if nothing else happens first. */
 function atItsTurn(state: BattleState, unit: UnitState, catalog: Catalog): BattleState {

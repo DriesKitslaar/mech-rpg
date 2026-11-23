@@ -322,13 +322,13 @@ export const DUELS: Mission[] = [
     briefing: [
       'The yard has sent its other works pilot, in its other machine. Vesper has booked the plaza for the evening of the longest day of the year, from the last of the light.',
       'A Solstice keeps the energy it does not spend. One round it holds: guards, fires nothing. The next, its one weapon has a turn and a half behind it.',
-      'Watch its next move. About to fire: guard, what it kept is coming. About to hold: it is open, and that round is yours.',
+      'Watch what stands over it. A number: guard, that much is coming. Nothing: it is open, and that round is yours.',
     ],
     debrief: 'Vesper shuts the Solstice down where it stands and waits for the truck. The yard sends its last page. No more zeroes fit.',
     battles: [battle(['vesper'], 'bg-plaza', { talk: [
       vesper('start', 'Vesper, for the yard. I do not hurry. Whatever is worth having is worth keeping a while.'),
       vesper(3, 'You spend everything, every round. It must be tiring, never having anything left.'),
-      dispatch('hurt', 'Read its next move. Guard when it is about to fire. Hit it when it is about to hold.'),
+      dispatch('hurt', 'The number over it is what it kept. Guard while it shows. Hit it when it is gone.'),
       vesper('win', 'Spent. All of it, and nothing kept. So that is what an empty hand feels like.'),
     ] })],
   },

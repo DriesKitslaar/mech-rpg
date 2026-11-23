@@ -34,6 +34,7 @@ import {
   placeFor, standAt, type Place, type Spot,
 } from './stage';
 import { fitTags, intentText, labelFits, markPosition, tagWidth, type Tag } from './tags';
+import { looming } from '../core/ai';
 import { intentOf } from '../core/intent';
 import { PLAIN_TYPING, TYPING_SPEED, Typewriter, type Typing } from './typewriter';
 import { THUNDER_AFTER_MS, drawWeather, drawWeatherExtras, strokeBegan, weatherFor } from './weather';
@@ -423,12 +424,18 @@ export class BattleScreen {
     }
   }
 
-  /** What the wingman is saying right now, if anything. */
+  /** What is written over a unit of the other side at this moment: the one state worth flagging, if there is one. */
+  markOver(unitId: string): string | null {
+    const unit = this.flow.state.units.find((u) => u.id === unitId);
+    return unit && !unit.destroyed ? this.fieldMark(unit)?.text ?? null : null;
+  }
+
   /** The words rising over the field at this moment: figures, and what a weapon's kind or a great hit is called. */
   get words(): string[] {
     return this.fx.texts();
   }
 
+  /** What the wingman is saying right now, if anything. */
   get radioLine(): string | null {
     return this.radio?.line ?? null;
   }
@@ -1335,6 +1342,9 @@ export class BattleScreen {
     if (this.stances.of(unit.id).shaken) return { text: T.shaken, color: COLORS.accent };
     if (unit.fuse !== undefined) return { text: T.fuse(unit.fuse), color: unit.fuse <= 1 && blink ? COLORS.danger : COLORS.heat };
     if (unit.charged.length > 0) return { text: T.charging, color: blink ? COLORS.danger : COLORS.heat };
+    // A surge about to be fired with what its machine kept on top of a turn: how much that is, as pressing as a charge,
+    // and said in place of the guard the machine took while it held (the row beside its name says both).
+    if (looming(this.flow.state, unit, this.catalog)) return { text: STRINGS.fx.kept(unit.kept), color: blink ? COLORS.danger : COLORS.energy };
     if (unit.staggered > 0) return { text: T.stagger, color: blink ? COLORS.heat : COLORS.text };
     if (unit.guarding) return { text: T.guard, color: COLORS.armor };
     if (unit.boosted) return { text: T.boost, color: COLORS.energy };
@@ -1372,6 +1382,9 @@ export class BattleScreen {
       ...(unit.guarding ? [{ text: T.guard, color: COLORS.armor, rank: 6 }] : []),
       ...(unit.charged.length > 0 ? [{ text: unit.side === 'player' ? T.charged : T.charging, color: COLORS.heat, rank: 8 }] : []),
       ...(unit.barrier > 0 ? [{ text: T.barrier(unit.barrier), color: COLORS.energy, rank: 7 }] : []),
+      // What a core's buffer is keeping for the unit's next turn. The first to make way in a full row: where it is
+      // about to matter it is written over the machine as well.
+      ...(unit.kept > 0 ? [{ text: STRINGS.fx.kept(unit.kept), color: COLORS.energy, rank: 0 }] : []),
       // A core's field that has been broken: said for as long as nothing stands in its place.
       ...(unit.barrier === 0 && fieldOf(unit, this.catalog) > 0 ? [{ text: T.fieldDown, color: COLORS.dim, rank: 7 }] : []),
       // An Overdrive that lasts says so for as long as it does.

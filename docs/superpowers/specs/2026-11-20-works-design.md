@@ -102,11 +102,14 @@ that frame's four parts in the shop (`won:duel-3`, `won:duel-4`), for good, as t
   that: knock it off balance (a staggered machine has less energy and fires less), or heat it past
   even its own limit so that it loses a turn.
 - **Vesper** carries a surge. The Solstice fires nothing on every other round: it guards, keeps its
-  energy, and says so in what it is about to do, where an enemy's next move is always shown. The
-  round after, the surge has a turn and a half behind it. The briefing says what to do, and says it
-  by what is shown, so that it is true whoever moves first: when its next move is to hold it is
-  open, and when its next move is to fire the pilot guards. (A weapon that drains takes from the
-  turn the surge is fired with, as it does from any turn; what the core kept it does not touch.)
+  energy, and says so in what it is about to do, where an enemy's next move is always shown (beside
+  its name, once it is aimed at). The round after, the surge has a turn and a half behind it. What it
+  kept is written over the machine for as long as it is about to be fired (`+180 EN`, blinking as a
+  charge does, in place of the guard it took), so that it is seen without aiming at anything. The
+  briefing says what to do by what stands over the machine, so that it is true whoever moves first:
+  with nothing over it, it is open, and with a number over it the pilot guards. (A weapon that drains
+  takes from the turn the surge is fired with, as it does from any turn; what the core kept it does
+  not touch.)
 
 Both are plated to last a duel, as the first two swords are.
 

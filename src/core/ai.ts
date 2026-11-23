@@ -1,5 +1,5 @@
 import {
-  activeUnit, applyAction, boostCost, bufferRoom, checkAction, forkTarget, guardCost, guardFactor, mendablePart, objectiveTarget, previewShot, LIMITER_HEAT,
+  activeUnit, applyAction, boostCost, bufferRoom, checkAction, forkTarget, guardCost, guardFactor, mendablePart, nextTurnRound, objectiveTarget, previewShot, LIMITER_HEAT,
   OVERCLOCK_HEAT,
   type Action, type BattleState, type UnitState,
 } from './battle';
@@ -67,6 +67,22 @@ function fireOrder(state: BattleState, usable: Usable[], target: UnitState): Usa
 
 /** Whether a machine has kept energy worth bracing for: at least half of what its buffer holds. */
 export const saving = (unit: UnitState, catalog: Catalog): boolean => unit.kept > 0 && unit.kept * 2 >= bufferRoom(unit, catalog);
+
+/**
+ * Whether what a machine has kept is about to come down as one larger hit: it has kept a good part of a turn, it
+ * carries a surge that it can still fire (a surge takes all the energy there is; any other weapon costs what it
+ * costs, kept or not), and its next turn is one it takes and fires in. A machine that only spends a little less
+ * than a turn gives keeps as much, turn after turn, and is nothing to brace for.
+ */
+export function looming(state: BattleState, unit: UnitState, catalog: Catalog): boolean {
+  if (!saving(unit, catalog) || unit.overheated) return false;
+  // A pilot who holds fires nothing in a round it holds: what it kept is for the round after.
+  if (unit.abilities.hold !== undefined && nextTurnRound(state, unit) % unit.abilities.hold !== 0) return false;
+  return WEAPON_SLOTS.some((slot) => {
+    const weapon = weaponIn(unit.build, slot, catalog);
+    return weapon?.trait === 'surge' && unit.ammo[slot] !== 0 && !(slot !== 'shoulder' && unit.parts.arms && unit.parts.arms.ap <= 0);
+  });
+}
 
 /** Whether a unit with the habit of holding its fire is in a round it holds. */
 export const holding = (state: BattleState, unit: UnitState): boolean => unit.abilities.hold !== undefined && state.round % unit.abilities.hold !== 0;
@@ -297,9 +313,9 @@ function autoChoice(state: BattleState, catalog: Catalog): Action {
   if (enemies.length === 0) return { type: 'endTurn' };
 
   if (!me.usedBoost && !me.usedGuard) {
-    // A bomb that goes off before the next turn, a charged shot that is about to be fired, or a machine that has
-    // kept a good part of a turn's energy to spend on top of its next, is braced for now, while there is energy for it.
-    const incoming = enemies.some((e) => e.fuse === 1 || e.charged.length > 0 || saving(e, catalog));
+    // A bomb that goes off before the next turn, a charged shot that is about to be fired, or a surge that is about
+    // to be fired with what its machine kept on top of a turn, is braced for now, while there is energy for it.
+    const incoming = enemies.some((e) => e.fuse === 1 || e.charged.length > 0 || looming(state, e, catalog));
     if (incoming && can(state, { type: 'guard' }, catalog)) return { type: 'guard' };
     // A battle that only has to be outlasted is fought from cover: stance first, shooting with what is left.
     if (state.objective.type === 'survive') {

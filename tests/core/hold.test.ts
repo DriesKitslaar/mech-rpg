@@ -1,4 +1,4 @@
-import { chooseAutoPlayerAction, chooseEnemyAction, holding, saving } from '../../src/core/ai';
+import { chooseAutoPlayerAction, chooseEnemyAction, holding, looming, saving } from '../../src/core/ai';
 import { mirrorEnemy } from '../../src/core/arena';
 import {
   GUARD_DAMAGE, STAGGER_ENERGY, activeUnit, applyAction, bufferRoom, createBattle, guardCost, turnEnergyOf,
@@ -248,6 +248,61 @@ describe('the game\'s own pilot against a machine that has kept energy', () => {
     const braced = enemyTurn(pass(first)).after;
     expect(braced.round).toBe(2);
     expect(chooseAutoPlayerAction(braced, CATALOG)).toEqual({ type: 'guard' });
+  });
+
+  test('`looming` is kept energy that is about to come down as one hit: a surge the machine can fire, in a turn it takes and fires in', () => {
+    const held = enemyTurn(against(SLOW)).after;
+    expect(looming(held, foe(held), CATALOG)).toBe(true);
+    // Not while it has kept too little to matter.
+    expect(looming(held, { ...foe(held), kept: 89 }, CATALOG)).toBe(false);
+    // Not when its next turn is lost to heat: what it kept waits a round longer.
+    const cooked = edit(held, (d) => { foe(d).overheated = true; });
+    expect(looming(cooked, foe(cooked), CATALOG)).toBe(false);
+    // Not when its next turn is one it holds in: after that lost turn it is the third round, and it braces again.
+    const third = pass(cooked);
+    expect([third.round, nextTurnRound(third, foe(third)), foe(third).kept]).toEqual([2, 3, 180]);
+    expect(looming(third, foe(third), CATALOG)).toBe(false);
+    expect(chooseAutoPlayerAction(third, CATALOG).type).not.toBe('guard');
+    // Not with its arms gone: the surge is in its hand, and a hand weapon needs arms.
+    const armless = edit(held, (d) => { foe(d).parts.arms!.ap = 0; });
+    expect(looming(armless, foe(armless), CATALOG)).toBe(false);
+    expect(chooseAutoPlayerAction(armless, CATALOG).type).not.toBe('guard');
+    // Nor with the surge shot dry.
+    const dry = edit(held, (d) => { foe(d).ammo.rightHand = 0; });
+    expect(looming(dry, foe(dry), CATALOG)).toBe(false);
+    // A surge on the shoulder needs no arms.
+    const back = edit(armless, (d) => { foe(d).build = { ...foe(d).build, rightHand: undefined, shoulder: 'wpn-spillway' }; });
+    expect(looming(back, foe(back), CATALOG)).toBe(true);
+    // And not of a machine that carries no surge, however much it has kept: any other weapon costs what it costs.
+    const other = edit(held, (d) => { foe(d).build = { ...foe(d).build, rightHand: 'wpn-enemy-pinpoint' }; });
+    expect(saving(foe(other), CATALOG)).toBe(true);
+    expect(looming(other, foe(other), CATALOG)).toBe(false);
+  });
+
+  test('a copy of the pilot\'s own Solstice that keeps a little of every turn is nothing to brace for: two blades go on striking', () => {
+    const build: Build = {
+      head: 'head-solstice', core: 'core-solstice', arms: 'arms-solstice', legs: 'legs-solstice', generator: 'gen-tidal', booster: 'bst-phase',
+      fcs: 'fcs-surgeon', module: 'mod-oracle', rightHand: 'wpn-arc-blade', leftHand: 'wpn-gavel',
+    };
+    expect(validatePlayerBuild(build, CATALOG)).toEqual([]);
+    const mirror = mirrorEnemy({ ...newGame(CATALOG, STARTER_BUILD), build }, 'Mirror');
+    let s = createBattle(build, [mirror], CATALOG, 1);
+    // The copy has kept all its core holds: what a few turns' leftovers come to.
+    s = edit(s, (d) => { foe(d).kept = bufferRoom(foe(d), CATALOG); });
+    if (activeUnit(s).id !== 'player') s = enemyTurn(s).after;
+    expect(saving(foe(s), CATALOG)).toBe(true);
+    expect(looming(s, foe(s), CATALOG)).toBe(false);
+    // A guard would rule out the boost every blade needs: the pilot boosts in, as it always did.
+    const turn: string[] = [];
+    for (let guard = 0; guard < 8 && activeUnit(s).id === 'player' && s.outcome === 'ongoing'; guard++) {
+      const action = chooseAutoPlayerAction(s, CATALOG);
+      turn.push(action.type);
+      if (action.type === 'endTurn') break;
+      s = applyAction(s, action, CATALOG, hit);
+    }
+    expect(turn).not.toContain('guard');
+    expect(turn).toContain('boost');
+    expect(turn.filter((type) => type === 'fire').length).toBeGreaterThanOrEqual(1);
   });
 
   test('a guard takes the surge at six tenths: that is what the brace is for', () => {

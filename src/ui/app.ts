@@ -524,6 +524,8 @@ class MissionHost implements Screen {
         enemyArmour: Object.values(flow.state.units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0),
         // How warm the first of the other side is, and what its core has kept for its next turn: neither is drawn as a figure.
         enemyHeat: flow.state.units[1].heat, enemyKept: flow.state.units[1].kept,
+        // What is written over the first of the other side: the one state worth flagging about it, if there is one.
+        enemyMark: this.screen.markOver(flow.state.units[1].id),
       },
     };
   }
