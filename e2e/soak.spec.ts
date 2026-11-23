@@ -216,6 +216,8 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let meetings = 0;
   const bills = new Set<string>();
   let waits = 0;
+  // The hardening last seen on the first machine of a battle, and which battle that was.
+  let hardening = { of: '', left: 0 };
   let frames = 0;
   const step = async (ms: number): Promise<void> => { frames += Math.ceil(ms / 16); await adv(page, ms); };
   while (Date.now() < until) {
@@ -248,10 +250,15 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     } else if (s.screen === 'battle') {
       const b = s.battle!;
       if (`${b.mission}/${b.index}/${b.round > 1}` !== last && b.round === 1) { battles++; last = `${b.mission}/${b.index}/false`; }
-      const fought = b as unknown as { words?: string[]; fork?: string | null; weapons?: { note: string }[] | null; hardened?: string[]; halved?: boolean };
-      // The machine of an account: hardened against a weapon, and, while that weapon is aimed at it, said to take half.
+      const fought = b as unknown as { words?: string[]; fork?: string | null; weapons?: { note: string }[] | null; hardened?: string[]; halved?: boolean; hardening?: number | null };
+      // The machine of an account: hardened against a weapon, and, while that weapon is aimed at it, said to take half;
+      // and a hardening seen to have less left than it had, or to have gone while the battle went on.
       if ((fought.hardened ?? []).length > 0) kinds.add('hardened');
       if (fought.halved) kinds.add('half');
+      if (typeof fought.hardening === 'number') {
+        if (hardening.of === `${b.mission}/${b.index}` && fought.hardening < hardening.left) kinds.add('wearing');
+        hardening = { of: `${b.mission}/${b.index}`, left: fought.hardening };
+      } else if (hardening.of === `${b.mission}/${b.index}` && b.outcome === 'ongoing') { kinds.add('worn'); hardening = { of: '', left: 0 }; }
       for (const word of fought.words ?? []) {
         const kind = /^(REDLINE|SURGE|PUNISH|WITHEET|PIEK|STRAF)\b/.exec(word);
         if (kind) kinds.add(kind[1]);
@@ -401,12 +408,13 @@ const PLAYERS: {
   // past a hundred, and a turn that opens with what the last one did not spend.
   { name: 'in a Sirocco with a volley of three hot weapons, left to Auto Turn', done: AFTER_THE_WAR, prefer: ['undertow', 'enforce'], settings: {}, wears: HOT_VOLLEY },
   { name: 'in a Solstice with a rifle and a blade, in Dutch, one weapon aimed by hand each turn', done: AFTER_THE_WAR, prefer: ['lumen', 'default'], settings: { language: 'nl' }, wears: KEEPER_OF_TURNS, hand: true },
-  // A pilot somebody has come back for. One whose notice is out for the first time, in a machine hardened against the
-  // cannon this pilot aims by hand: HARDENED over it, and HALF beside its name while that cannon is on it. And one at
-  // the third meeting, in Dutch, which closes the account; whoever the board's contracts then leave may begin another.
+  // A pilot somebody has come back for. One whose second notice is out, in a machine hardened against the cannon
+  // this pilot aims by hand: HARDENED over it, HALF beside its name while that cannon is on it, and a hardening
+  // that each of those shots wears. And one at the third meeting, in Dutch, which closes the account; whoever the
+  // board's contracts then leave may begin another, who knows nothing yet.
   {
-    name: 'with an account due for the first time, whose machine knows the cannon aimed by hand', done: AFTER_THE_WAR, prefer: [], settings: {}, hand: true,
-    account: { open: { name: 'Brakk', kind: 'heavy-mech', origin: 'ran', knows: REFERENCE_BUILDS.tier6.shoulder!, met: 0, waited: 3 } },
+    name: 'with an account at its second meeting, whose machine knows the cannon aimed by hand', done: AFTER_THE_WAR, prefer: [], settings: {}, hand: true,
+    account: { open: { name: 'Brakk', kind: 'heavy-mech', origin: 'ran', knows: REFERENCE_BUILDS.tier6.shoulder!, met: 1, waited: 2 } },
   },
   {
     name: 'with an account at its third meeting and one closed before it, in Dutch', done: AFTER_THE_WAR, prefer: [], settings: { language: 'nl' },
@@ -465,10 +473,11 @@ for (const player of PLAYERS) {
       // its meetings (the last may not have come up yet when the time ran out).
       const kept = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as Pick<GameState, 'grudge' | 'accounts'>);
       const won = meetingsWon(kept) - meetingsWon(start);
-      console.log(`${player.name}: notices taken ${played.meetings}, meetings won ${won}, bills ${played.bills.join(' ') || 'none'}, closed ${(kept.accounts ?? []).join(' ') || 'none'}, open ${kept.grudge ? `${kept.grudge.name} at ${kept.grudge.met}` : 'none'}`);
+      console.log(`${player.name}: notices taken ${played.meetings}, meetings won ${won}, bills ${played.bills.join(' ') || 'none'}, closed ${(kept.accounts ?? []).join(' ') || 'none'}, open ${kept.grudge ? `${kept.grudge.name} at ${kept.grudge.met}` : 'none'}, seen ${played.kinds.filter((kind) => ['hardened', 'half', 'wearing', 'worn'].includes(kind)).join(' ') || 'nothing'}`);
       expect(played.meetings).toBeGreaterThanOrEqual(1);
       expect(played.kinds).toContain('hardened');
-      if (player.hand) expect(played.kinds).toContain('half');
+      // The one who aims the weapon it knows by hand, turn after turn, was told it does half and saw the hardening wear.
+      if (player.hand) expect(played.kinds).toEqual(expect.arrayContaining(['half', 'wearing']));
       expect(won).toBeGreaterThanOrEqual(1);
       expect([won, won - 1]).toContain(played.bills.length);
       // Whoever was closed before is still written down, and whoever a bill said was closed is with them.

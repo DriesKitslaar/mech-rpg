@@ -549,8 +549,10 @@ describe('what is said of accounts is so', () => {
   test('the guide: when one begins, what its notice is called in both languages, and what the contract asks', () => {
     expect(section.length).toBeGreaterThan(1500);
     expect(section).toContain(`Vanaf ${word(GRUDGE_TIER * WINS_PER_TIER)} gewonnen contracten kan een piloot die je bent tegengekomen **voor je terugkomen**`);
-    expect(section).toContain('je sloopte zijn mecha, hij sloeg voor je op de vlucht, of hij versloeg jou');
-    expect(section).toContain(`${capital(word(GRUDGE_WAIT[0]))} gewonnen contracten later staat er tussen de open contracten een bericht met zijn roepnaam`);
+    expect(section).toContain('je sloopte de mecha van die piloot, die sloeg voor je op de vlucht, of stond nog overeind toen jij het veld verliet');
+    expect(section).toContain(`${capital(word(GRUDGE_WAIT[0]))} gewonnen contracten later staat er tussen de open contracten een bericht met een roepnaam`);
+    // Whatever is counted as a contract won is one waited through: a fight in the arena too.
+    expect(section).toContain('Alles wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena.');
     expect(GRUDGE_NAMES).toContain('Brakk');
     const english = BOARD_TEXT.grudge.title('Brakk');
     setLanguage('nl');
@@ -563,16 +565,31 @@ describe('what is said of accounts is so', () => {
   });
 
   test('the guide: what hardened is, in the words the screen writes', () => {
-    expect(section).toContain('Zijn mecha is **gehard** tegen het wapen dat hem de vorige keer het hardst raakte. Dat wapen doet bij hem nog maar **de helft**');
-    expect(section).toContain('bij de machines naast hem doet het wat het altijd deed');
-    expect(section).toContain(`Boven hem staat **${STRINGS.tags.hardened}** (Nederlands **${STRINGS_NL.tags.hardened}**)`);
-    expect(section).toContain(`dan staat er **${STRINGS.tags.half}** (Nederlands **${STRINGS_NL.tags.half}**) naast zijn naam en zie je bij **${STRINGS.preview.damage}** het gehalveerde getal`);
+    expect(section).toContain('**De eerste keer** kent de piloot je nog niet: het is de machine zoals die is.');
+    expect(section).toContain('**Vanaf de tweede keer** is de machine **gehard** tegen het ene wapen dat er de vorige keer het meeste pantser af haalde. Dat wapen doet bij die machine nog maar **de helft**');
+    expect(section).toContain('bij de machines ernaast doet het wat het altijd deed');
+    expect(section).toContain(`Boven de machine staat **${STRINGS.tags.hardened}** (Nederlands **${STRINGS_NL.tags.hardened}**)`);
+    expect(section).toContain(`dan staat er **${STRINGS.tags.half}** (Nederlands **${STRINGS_NL.tags.half}**) naast de naam en zie je bij **${STRINGS.preview.damage}** het gehalveerde getal`);
     expect(section).toContain('blader bij de briefing op de rij **Build** naar een andere bewaarde build en kijk wat **ODDS** dan zegt');
   });
 
+  test('the guide: the hardening wears, by what the hit did, and is said to be gone in the words of the screen', () => {
+    expect(section).toContain(`**De harding slijt.** Naast de naam staat een getal, bijvoorbeeld **${STRINGS.tags.hardenedLeft(160)}** (Nederlands **${STRINGS_NL.tags.hardenedLeft(160)}**)`);
+    // A point of the hardening for a point of damage: what a half keeps off is as much as it lets through.
+    expect(HARDENED).toBe(0.5);
+    expect(section).toContain('Elke treffer van dat wapen haalt eraf wat hij aan schade deed.');
+    expect(section).toContain(`dan is de harding weg (**${STRINGS.fx.hardeningGone}**, Nederlands **${STRINGS_NL.fx.hardeningGone}**) en doet het wapen weer alles`);
+    expect(GRUDGE_NUMBERS.hardening).toBeGreaterThan(0);
+    expect(section).toContain('Heb je maar één wapen, dan is het je hele vuurkracht die halveert tot de harding weg is');
+    // (That it takes longer and nets less a round with the weapon the machine knows is held by tests/core/balance7.test.ts.)
+    expect(section).toContain('Met hetzelfde wapen kan het ook, maar het duurt langer en levert per ronde minder op.');
+  });
+
   test('the guide: three meetings in the same machine, what each waits and pays, how one closes, and the medals', () => {
-    expect(section).toContain(`Hij komt **${word(GRUDGE_MEETINGS)} keer** terug, steeds in dezelfde mecha, elke keer iets dikker gepantserd`);
-    expect(section).toContain(`Na de eerste keer wacht hij ${word(GRUDGE_WAIT[1])} gewonnen contracten, na de tweede weer ${word(GRUDGE_WAIT[2])}.`);
+    expect(section).toContain(`De piloot komt **${word(GRUDGE_MEETINGS)} keer** terug, steeds in dezelfde mecha, de tweede en derde keer iets dikker gepantserd`);
+    expect(section).toContain(`Na de eerste keer duurt het ${word(GRUDGE_WAIT[1])} gewonnen contracten, na de tweede weer ${word(GRUDGE_WAIT[2])}.`);
+    // In the guide, as in the game, their pilot is nobody's he or she.
+    expect(section).not.toMatch(/\b(zijn mecha|zijn roepnaam|zijn naam|hij komt|wacht hij|hij sloeg|hij versloeg|bij hem|boven hem|naast hem)\b/i);
     expect(section).toContain('De tweede ontmoeting betaalt een kwart meer dan de eerste, de derde de helft meer.');
     expect(section).toContain(`(**${STRINGS.settlement.accountClosed}**, Nederlands **${STRINGS_NL.settlement.accountClosed}**)`);
     expect(section).toContain('Er loopt er altijd maar één tegelijk.');
@@ -596,17 +613,17 @@ describe('what is said of accounts is so', () => {
     expect(chapter.text).toContain('A pilot you wrecked, drove off or lost to may come back for you');
     expect(BOARD_TEXT.grudge.title('Brakk')).toBe('Overdue: Brakk');
     expect(chapter.text).toContain('OVERDUE and their callsign');
-    expect(chapter.text).toContain(`Their machine is ${STRINGS.tags.hardened} against the weapon that hurt it most last time: that weapon does ${STRINGS.tags.half} to it`);
-    expect(chapter.text).toContain('Three meetings close the account.');
+    expect(chapter.text).toContain(`They come ${['no', 'one', 'two', 'three'][GRUDGE_MEETINGS]} times. From the second, their machine is ${STRINGS.tags.hardened} against the weapon that hurt it most last time: that does ${STRINGS.tags.half} until the number beside ${STRINGS.tags.hardened} is shot away.`);
+    expect(chapter.text).toContain('Bring another: it is only a machine.');
     const dutch = REFERENCE_NL[chapter.text];
-    expect(dutch).toContain('VERVALLEN en hun roepnaam');
-    expect(dutch).toContain(`Hun machine is ${STRINGS_NL.tags.hardened} tegen het wapen dat hem de vorige keer het meest deed: dat doet de ${STRINGS_NL.tags.half}`);
-    expect(dutch).toContain(`${capital(word(GRUDGE_MEETINGS))} ontmoetingen sluiten de rekening.`);
+    expect(dutch).toContain('VERVALLEN en een roepnaam');
+    expect(dutch).toContain(`Dat gebeurt ${word(GRUDGE_MEETINGS)} keer. Vanaf de tweede is de machine ${STRINGS_NL.tags.hardened} tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de ${STRINGS_NL.tags.half} tot het getal naast ${STRINGS_NL.tags.hardened} is weggeschoten.`);
+    expect(dutch).not.toMatch(/\b(hun|hij|zij)\b/i);
   });
 
   test('the README: a section on accounts, and the medals counted', () => {
-    expect(README).toContain('- **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op een eigen bericht naast het bord, met zijn roepnaam.');
-    expect(README).toContain('Zijn mecha is gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet bij hem nog de helft');
+    expect(README).toContain('- **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op een eigen bericht naast het bord, met een roepnaam. De eerste keer kent die piloot je nog niet.');
+    expect(README).toContain('Daarna is de mecha gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de helft tot de harding is weggeschoten');
     expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
     expect(README).toContain(`${MEDALS.length} medailles`);
     expect(MEDALS).toHaveLength(77);

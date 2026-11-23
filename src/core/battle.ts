@@ -101,10 +101,16 @@ export const MARK = { armour: 0.4, damage: 1.25, evasion: 15, shield: 0.1 } as c
 /**
  * What a weapon does to a machine that is hardened against it, as a share of what it does to any other: the
  * armour it takes off, and nothing else about the shot. It is as likely to hit and pushes as hard.
+ *
+ * A hardening may wear (see `UnitState.hardening`): what it keeps off the machine comes off the hardening, and
+ * at nothing it is gone. So the cost of bringing the weapon a machine is hardened against has an end, whatever
+ * else the pilot brought: without one, a machine with a single weapon did half of everything for a whole battle.
  */
 export const HARDENED = 0.5;
 /** Whether a machine is hardened against a weapon: the weapon is one of those its unit lists. */
 export const hardenedAgainst = (target: Pick<UnitState, 'hardened'>, weapon: Pick<Weapon, 'id'>): boolean => target.hardened?.includes(weapon.id) ?? false;
+/** What a hit that did this much to a hardened machine was kept from doing: at a half, as much again. */
+const keptOff = (dealt: number): number => Math.round((dealt * (1 - HARDENED)) / HARDENED);
 
 /** Something the player has to keep from being worn down; see the `protect` objective. `sprite` is its picture on the field, where it has one. */
 export interface Asset { name: string; hp: number; maxHp: number; sprite?: string }
@@ -218,6 +224,12 @@ export interface UnitState {
   mark?: EnemyMark;
   /** Weapons this unit is hardened against, by their ids: each does `HARDENED` of its damage to it. Absent of a unit that is hardened against none. */
   hardened?: string[];
+  /**
+   * What its hardening can still take, of a hardening that wears: every hit of a weapon it is hardened against
+   * takes off this what the hardening kept off the machine, and at nothing the unit is hardened against nothing.
+   * Absent of a unit whose hardening does not wear, and of one that has none.
+   */
+  hardening?: number;
   /** The energy the unit's turn began with: what Second Wind gives back. */
   turnEnergy: number;
   /** The Overdrive this unit has, if any: only the pilot's own mech has one. */
@@ -250,13 +262,14 @@ export type BattleEvent =
   | { type: 'turnStart'; unit: string; kept?: number }
   | { type: 'turnSkipped'; unit: string }
   /**
-   * `part` is where the shot was aimed; `appliedTo` and `damage` are what was actually hit and lost.
-   * `absorbed` is what a barrier took off it first. `shatter` marks a hit that went through an
-   * ordinary machine in one blow (see `SHATTER`).
+   * `part` is where the shot was aimed; `appliedTo` is what was actually hit, and `damage` what the hit was
+   * worth there. `absorbed` is what a barrier took off it first. `took` is the armour it took off, where that is
+   * less than it was worth: there was less left. `shatter` marks a hit that went through an ordinary machine in
+   * one blow (see `SHATTER`).
    */
   | {
     type: 'shot'; unit: string; weapon: WeaponSlot; target: string; part: FrameSlot; appliedTo: FrameSlot; hit: boolean; damage: number;
-    absorbed?: number; shatter?: true;
+    absorbed?: number; took?: number; shatter?: true;
     /** The machine a fork's bolt leapt on from: a shot that has one was not rolled for, and is a hit. */
     via?: string;
     /**
@@ -290,6 +303,8 @@ export type BattleEvent =
   | { type: 'stagger'; unit: string }
   /** The field of a unit's core took all it could and is gone; and, a round later, is whole again. */
   | { type: 'fieldDown'; unit: string }
+  /** A hardening that wears has taken all it could: the unit is hardened against nothing from here on. */
+  | { type: 'hardeningGone'; unit: string }
   | { type: 'fieldUp'; unit: string }
   | { type: 'recover'; unit: string }
   | { type: 'charge'; unit: string; weapon: WeaponSlot }
@@ -501,7 +516,22 @@ function createEnemy(def: EnemyDef, id: string, name: string, slot: number, scal
     ...(def.tune ? { tune: def.tune } : {}),
   });
   unit.barrier = standingBarrier(unit, catalog);
+  // A hardening that wears is so much of the armour the core stands in, plating and all; never made already gone.
+  if (unit.hardened && def.hardening !== undefined) unit.hardening = Math.max(1, Math.round(def.hardening * unit.parts.core!.maxAp));
   return unit;
+}
+
+/**
+ * Wears the hardening of a machine that a weapon it is hardened against has just hit for this much: what was
+ * kept off the machine comes off the hardening. At nothing it is gone, for every weapon it listed, and that is said.
+ */
+function wearHardening(state: BattleState, target: UnitState, dealt: number): void {
+  if (target.hardening === undefined) return;
+  target.hardening -= keptOff(dealt);
+  if (target.hardening > 0) return;
+  delete target.hardened;
+  delete target.hardening;
+  if (!target.destroyed) state.events.push({ type: 'hardeningGone', unit: target.id });
 }
 
 const isAlive = (part: PartState | undefined): boolean => !!part && part.ap > 0;
@@ -1262,13 +1292,17 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       }
       const appliedTo: FrameSlot = target.parts[aimed]!.ap > 0 ? aimed : 'core';
       const absorbed = hit ? Math.min(target.barrier, damage) : 0;
-      state.events.push({
+      const shot: BattleEvent & { type: 'shot' } = {
         type: 'shot', unit: unit.id, weapon: action.weapon, target: target.id, part: aimed, appliedTo, hit,
         damage: hit ? damage - absorbed : 0, ...(absorbed > 0 ? { absorbed } : {}), ...(hit && shatter ? { shatter: true as const } : {}),
         ...(via ? { via } : {}), ...(hit && lift !== 100 ? { lift } : {}),
-      });
+      };
+      state.events.push(shot);
       if (!hit) continue;
       struck.add(target);
+      // (Asked before the hit lands: it may be the one that wears the hardening out.)
+      const hardened = hardenedAgainst(target, weapon);
+      const armour = target.parts[appliedTo]!.ap;
       // What the blow did past any barrier, against the core at full strength: an overkill, if it is the end of the machine.
       // (A shattering takes all that is left of a core and no more, so it is never one for that alone.) It is a
       // thing the pilot does: of the pilot's own end it is not said.
@@ -1276,6 +1310,10 @@ function resolveFire(state: BattleState, action: Extract<Action, { type: 'fire' 
       target.barrier -= absorbed;
       fieldBroken(state, target, absorbed, catalog);
       if (damage > absorbed) damagePart(state, target, appliedTo, damage - absorbed, overkill);
+      // Where there was less armour left than the hit was worth, what it took off is written down with it.
+      const took = armour - target.parts[appliedTo]!.ap;
+      if (took < shot.damage) shot.took = took;
+      if (hardened) wearHardening(state, target, damage);
       if (weapon.trait === 'thermal') heatUp(state, target, weapon.traitPower ?? 0);
       if (weapon.trait === 'drain') target.energyDebt += weapon.traitPower ?? 0;
       addImpact(state, target, Math.round(push * (target.guarding ? GUARD_IMPACT : 1)));

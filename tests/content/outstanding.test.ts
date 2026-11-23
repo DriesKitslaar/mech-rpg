@@ -13,10 +13,11 @@ import '../../src/content/nl';
 import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { KEEPER } from '../../src/content/seat';
 import { STARTERS } from '../../src/content/starters';
+import { STRINGS_NL } from '../../src/content/nl/strings';
 import { STRINGS } from '../../src/content/strings';
 import { WINGMEN } from '../../src/content/wingmen';
 import { TALK_CHARS } from '../../src/ui/battleScreen';
-import { BRIEFING_CHARS, briefingRows, groundLines, hostiles, objectiveLines } from '../../src/ui/briefingScreen';
+import { BRIEFING_CHARS, briefingRows, briefingShown, groundLines, hostiles, objectiveLines } from '../../src/ui/briefingScreen';
 import { charsFor, wrap } from '../../src/ui/widgets';
 
 /**
@@ -62,8 +63,8 @@ describe('the callsigns', () => {
 describe('the lines', () => {
   const gaps = (line: string): string[] => (line.match(/\{\w+\}/g) ?? []).sort();
   const all: string[] = [
-    GRUDGE_LINES.title, ...Object.values(GRUDGE_LINES.first), ...GRUDGE_LINES.again, ...GRUDGE_LINES.hardened, ...Object.values(GRUDGE_LINES.opens.first),
-    ...GRUDGE_LINES.opens.again, ...GRUDGE_LINES.falls, GRUDGE_LINES.hurt, ...GRUDGE_LINES.debrief,
+    GRUDGE_LINES.title, ...GRUDGE_LINES.places, ...Object.values(GRUDGE_LINES.first), ...GRUDGE_LINES.again, ...GRUDGE_LINES.hardened, ...Object.values(GRUDGE_LINES.opens.first),
+    ...GRUDGE_LINES.opens.again, ...GRUDGE_LINES.falls, ...GRUDGE_LINES.hurt, ...GRUDGE_LINES.debrief,
   ];
 
   test('there is one for each way an account begins, each later meeting, each thing said and each bill', () => {
@@ -73,8 +74,11 @@ describe('the lines', () => {
     expect(GRUDGE_LINES.opens.again).toHaveLength(GRUDGE_MEETINGS - 1);
     expect(GRUDGE_LINES.falls).toHaveLength(GRUDGE_MEETINGS);
     expect(GRUDGE_LINES.debrief).toHaveLength(GRUDGE_MEETINGS);
-    // Nothing known, and one weapon known.
+    // Nothing known, and one weapon known: what the briefing says of the machine, and what Dispatch says in the fight.
     expect(GRUDGE_LINES.hardened).toHaveLength(2);
+    expect(GRUDGE_LINES.hurt).toHaveLength(2);
+    // And a line for each place the board has, in its order.
+    expect(GRUDGE_LINES.places).toHaveLength(BOARD_TEXT.backgrounds.length);
     expect(new Set(all).size).toBe(all.length);
   });
 
@@ -85,7 +89,7 @@ describe('the lines', () => {
     expect(gaps(GRUDGE_LINES.hardened[1])).toEqual(['{a}']);
     for (const line of GRUDGE_LINES.debrief) expect(gaps(line), line).toEqual(['{name}']);
     // What is said over a battle is said by them, of themselves: nobody is named in it.
-    for (const line of [...Object.values(GRUDGE_LINES.opens.first), ...GRUDGE_LINES.opens.again, ...GRUDGE_LINES.falls, GRUDGE_LINES.hurt]) expect(gaps(line), line).toEqual([]);
+    for (const line of [...Object.values(GRUDGE_LINES.opens.first), ...GRUDGE_LINES.opens.again, ...GRUDGE_LINES.falls, ...GRUDGE_LINES.hurt, ...GRUDGE_LINES.places]) expect(gaps(line), line).toEqual([]);
     const nl = dictionaryOf('nl');
     for (const line of all) {
       expect(Object.hasOwn(nl, line), line).toBe(true);
@@ -111,11 +115,21 @@ describe('the lines', () => {
       expect(words.falls[meeting], `meeting ${meeting + 1}`).toBe(GRUDGE_LINES.falls[meeting]);
       expect(words.debrief[meeting](who.name), `meeting ${meeting + 1}`).toBe(filled(GRUDGE_LINES.debrief[meeting], { name: who.name }));
     }
-    expect(words.hurt).toBe(GRUDGE_LINES.hurt);
+    expect(words.hurt).toEqual(GRUDGE_LINES.hurt);
+    expect(words.places).toEqual(GRUDGE_LINES.places);
+    // The places are the board's, each under its own line: what a notice says of where is where it is fought.
+    const neon = BOARD_TEXT.backgrounds.indexOf('bg-neon-district');
+    expect(words.places[neon]).toContain('neon district');
+    expect(words.places[BOARD_TEXT.backgrounds.indexOf('bg-mine')]).toContain('mine');
+    expect(words.places[BOARD_TEXT.backgrounds.indexOf('bg-plaza')]).toContain('plaza');
+    expect(words.places[BOARD_TEXT.backgrounds.indexOf('bg-undercity')]).toContain('undercity');
+    for (const made of [notice(account(), 20), notice(account(), 21), notice(account(), 22), notice(account(), 23), notice(account(), 24), notice(account(), 25)]) {
+      expect(made.briefing[0]).toBe(words.places[BOARD_TEXT.backgrounds.indexOf(made.battles[0].background)]);
+    }
   });
 
   test('and each line says what its place is for: how it began, which meeting it is, and only the last that it is the last', () => {
-    expect(GRUDGE_LINES.first.beat).toContain('put you down');
+    expect(GRUDGE_LINES.first.beat).toContain('could not finish');
     expect(GRUDGE_LINES.first.ran).toContain('broke off');
     expect(GRUDGE_LINES.first.wrecked).toContain('You wrecked');
     expect(GRUDGE_LINES.opens.first.beat).toContain('Back for more');
@@ -129,17 +143,45 @@ describe('the lines', () => {
     expect(GRUDGE_LINES.falls[2]).toContain('Account closed');
     expect(GRUDGE_LINES.debrief[2]).toContain('account is closed');
     for (const line of [GRUDGE_LINES.falls[0], GRUDGE_LINES.falls[1], GRUDGE_LINES.debrief[0], GRUDGE_LINES.debrief[1]]) expect(line.toLowerCase(), line).not.toContain('closed');
-    // The second bill says there is a third to come. And Dispatch speaks of the machine: it is not its pilot talking.
+    // The second bill says there is a third to come.
     expect(GRUDGE_LINES.debrief[1]).toContain('a third time');
-    expect(GRUDGE_LINES.hurt).toContain('Whatever does half');
     // A notice made of them says the same: one that began with a defeat, at its third meeting.
     const third = notice(account({ origin: 'beat', met: 2 }));
-    expect(third.battles[0].talk!.map((line) => line.text)).toEqual([GRUDGE_LINES.opens.again[1], GRUDGE_LINES.hurt, GRUDGE_LINES.falls[2]]);
+    expect(third.battles[0].talk!.map((line) => line.text)).toEqual([GRUDGE_LINES.opens.again[1], GRUDGE_LINES.hurt[1], GRUDGE_LINES.falls[2]]);
     expect(third.debrief).toBe(GRUDGE_LINES.debrief[2].replace('{name}', 'Brakk'));
-    const first = notice(account({ origin: 'beat' }));
-    expect(first.briefing[1]).toContain('put you down');
-    expect(first.battles[0].talk!.map((line) => line.text)).toEqual([GRUDGE_LINES.opens.first.beat, GRUDGE_LINES.hurt, GRUDGE_LINES.falls[0]]);
+    const { knows: _, ...unknown } = account({ origin: 'beat' });
+    const first = notice(unknown);
+    expect(first.briefing[1]).toContain('could not finish');
+    expect(first.battles[0].talk!.map((line) => line.text)).toEqual([GRUDGE_LINES.opens.first.beat, GRUDGE_LINES.hurt[0], GRUDGE_LINES.falls[0]]);
     expect(first.debrief).toBe(GRUDGE_LINES.debrief[0].replace('{name}', 'Brakk'));
+  });
+
+  test('none says what is not so of some account it is said of', () => {
+    const nl = dictionaryOf('nl');
+    // A notice has no client: they named the place themselves.
+    for (const line of GRUDGE_LINES.places) {
+      expect(line.toLowerCase(), line).not.toContain('client');
+      expect(nl[line].toLowerCase(), line).not.toContain('klant');
+    }
+    // A machine that stood when the pilot left the field did not have to have beaten them: they may have walked away.
+    expect(GRUDGE_LINES.first.beat).not.toContain('put you down');
+    // At the second meeting one that began with a wreck has lost twice, and one that ran or won has lost once.
+    expect(GRUDGE_LINES.again[0]).not.toMatch(/once|twice/i);
+    // The first wreck of one that ran or won is not another.
+    expect(GRUDGE_LINES.debrief[0]).not.toContain('another');
+    // Dispatch speaks of a machine built for a weapon only where it knows one, and names the word the row says.
+    expect(GRUDGE_LINES.hurt[0]).not.toMatch(/half|last time|built for/i);
+    expect(GRUDGE_LINES.hurt[1]).toContain('last time');
+    expect(GRUDGE_LINES.hurt[1]).toContain(STRINGS.tags.half);
+    expect(nl[GRUDGE_LINES.hurt[1]]).toContain(STRINGS_NL.tags.half);
+    // What the machine is hardened against is said to have hurt it last time: so it is said of no first meeting the
+    // game makes, where it knows nothing; and what a hardening is, it is said to be for a while and not for good.
+    expect(GRUDGE_LINES.hardened[1]).toContain('until the hardening is shot away');
+    expect(nl[GRUDGE_LINES.hardened[1]]).toContain('tot de harding is weggeschoten');
+    // In Dutch, where the notice and the bill speak of their pilot, that pilot is nobody's he or she and no "they" of
+    // several: a callsign, "de piloot" or "die".
+    const told = [...GRUDGE_LINES.places, ...Object.values(GRUDGE_LINES.first), ...GRUDGE_LINES.again, ...GRUDGE_LINES.hardened, ...GRUDGE_LINES.debrief];
+    for (const line of told) expect(nl[line], line).not.toMatch(/\b(hij|zij|ze|hun|haar)\b/i);
   });
 
   test('are read as they are asked for: the same notice is in whatever language is set when it is made', () => {
@@ -193,9 +235,12 @@ describe('every notice there can be fits the page it is read on', () => {
         places.add(made.battles[0].background);
         const label = `${made.title} ${made.grudge} ${made.briefing[1].slice(0, 30)}`;
         expect(made.title.length, label).toBeLessThanOrEqual(18);
-        // The body, wrapped as the page wraps it, in the rows left over by what stands under it.
-        const body = made.briefing.reduce((sum, paragraph) => sum + wrap(paragraph, BRIEFING_CHARS).length, 0);
-        expect(body, label).toBeLessThanOrEqual(briefingRows(made));
+        // The body, as the page draws it: every line of it, down to the last row the contract leaves and with the
+        // gap under each paragraph. (Counting lines against rows is not enough: three paragraphs hold a line less.)
+        const { lines, shown } = briefingShown(made);
+        expect(shown, `${label}: ${made.briefing[2]}`).toBe(lines);
+        expect(lines, label).toBeLessThanOrEqual(briefingRows(made));
+        expect(made.briefing.every((paragraph) => wrap(paragraph, BRIEFING_CHARS).length >= 1)).toBe(true);
         for (const line of [...objectiveLines(made), ...groundLines(made)]) expect(line.length, `${label}: ${line}`).toBeLessThanOrEqual(BRIEFING_CHARS);
         // What the contract asks names them, and so does the list of what to expect.
         expect(objectiveLines(made)).toEqual([STRINGS.objectives.brief.leader(made.names![GRUDGE])]);
@@ -215,7 +260,7 @@ describe('what a briefing says of the machine is so', () => {
   test('half is the figure the rules have, and the weapon named is the one the machine is hardened against', () => {
     expect(HARDENED).toBe(0.5);
     expect(GRUDGE_LINES.hardened[1]).toContain('that does half to it');
-    expect(dictionaryOf('nl')[GRUDGE_LINES.hardened[1]]).toContain('die doet de helft');
+    expect(dictionaryOf('nl')[GRUDGE_LINES.hardened[1]]).toContain('doet nu de helft');
     const made = notice(account({ knows: 'wpn-arc-blade' }));
     expect(made.briefing[2]).toContain(`your ${CATALOG['wpn-arc-blade'].name}`);
     expect(made.briefing[2]).toContain('which hurt it most last time');

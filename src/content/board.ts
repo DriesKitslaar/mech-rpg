@@ -13,21 +13,28 @@ export const GRUDGE_NAMES = ['Brakk', 'Tally', 'Docket', 'Lapse', 'Surety', 'Mar
  */
 export const GRUDGE_LINES = {
   title: 'Overdue: {name}',
+  // Where it is to be, for each of the board's backgrounds in their order. They named it: there is no client.
+  places: [
+    'They named the place: the neon district, freight lanes.',
+    'They named the place: the old mine works, past the fence.',
+    'They named the place: the corporate plaza, in plain view.',
+    'They named the place: the undercity, where nobody files.',
+  ],
   // Who this is, at the first meeting, by how the account began.
   first: {
-    beat: 'The {machine} that put you down a few jobs back has a callsign: {name}. They would like to do it again, and have asked for you by name.',
+    beat: 'The {machine} you could not finish a few jobs back has a callsign: {name}. They would like another go, and have asked for you by name.',
     ran: 'A {machine} broke off from you a few jobs back, and its pilot has not lived it down: callsign {name}. They have asked for you by name.',
     wrecked: 'You wrecked a {machine} a few jobs back. Its pilot walked out of it: callsign {name}. They have another now, and they have asked for you by name.',
   },
   // Which meeting this is, at the second and at the third.
   again: [
-    '{name} again, in that {machine}, rebuilt from the frame up. Losing to you once was an accident, they say. Twice would be a habit.',
+    '{name} again, in that {machine}, rebuilt from the frame up. They have had time to go over the last one, and a yard to do it in.',
     '{name}, a third time. Everything they own is in that {machine} now. After this the account is closed, one way or the other.',
   ],
-  // What their machine is hardened against: nothing yet, or the weapon that hurt it most last time.
+  // What their machine is hardened against: nothing yet, or the weapon that took most off it at the last meeting.
   hardened: [
     'They do not know what you fly yet: nothing on that machine is hardened against you.',
-    'It is hardened against your {a}, which hurt it most last time: that does half to it. Anything else does all it ever did.',
+    'It is hardened against your {a}, which hurt it most last time: that does half to it until the hardening is shot away.',
   ],
   // What they say as the fight opens.
   opens: {
@@ -37,7 +44,7 @@ export const GRUDGE_LINES = {
       wrecked: 'You cost me a machine. I have come to see what this one costs you.',
     },
     again: [
-      'I had it rebuilt around you. Every plate of it has your name on.',
+      'I had it rebuilt around what you did to it. Go on. Try that again.',
       'Last time. I sold the lot for this machine. Either you pay or I do.',
     ],
   },
@@ -47,9 +54,13 @@ export const GRUDGE_LINES = {
     'Again. Fine. I know what to change.',
     'That is everything I had. Account closed. Fly well.',
   ],
-  hurt: 'It was built for what you hit it with last time. Whatever does half, stop firing it.',
+  // Dispatch, when the pilot is hurt: of a machine that knows no weapon, and of one that does.
+  hurt: [
+    'They came for you by name, and it shows. Guard when they wind up, and stay on one part.',
+    'It was built for what you hit it with last time. Whatever says HALF: shoot the hardening away, or stop firing it.',
+  ],
   debrief: [
-    '{name} walks away from another wreck. That one keeps a list, and you are on it.',
+    '{name} walks away from the wreck. That one keeps a list, and you are on it.',
     '{name} climbs out and is on the radio to a yard before the dust settles. There will be a third time.',
     '{name} signs the wreck over where it lies. The account is closed, and paid in full.',
   ],
@@ -144,6 +155,7 @@ export const BOARD_TEXT: BoardText & JobText & GrudgeText = {
   grudge: {
     names: GRUDGE_NAMES,
     title: (name) => fill(GRUDGE_LINES.title, { name }),
+    get places() { return [...GRUDGE_LINES.places]; },
     first: {
       beat: (name, machine) => fill(GRUDGE_LINES.first.beat, { name, machine }),
       ran: (name, machine) => fill(GRUDGE_LINES.first.ran, { name, machine }),
@@ -153,7 +165,7 @@ export const BOARD_TEXT: BoardText & JobText & GrudgeText = {
     hardened: (weapon) => (weapon === null ? GRUDGE_LINES.hardened[0] : fill(GRUDGE_LINES.hardened[1], { a: weapon })),
     get opens() { return { first: GRUDGE_LINES.opens.first, again: [GRUDGE_LINES.opens.again[0], GRUDGE_LINES.opens.again[1]] as [string, string] }; },
     get falls() { return [GRUDGE_LINES.falls[0], GRUDGE_LINES.falls[1], GRUDGE_LINES.falls[2]] as [string, string, string]; },
-    get hurt() { return GRUDGE_LINES.hurt; },
+    get hurt() { return [GRUDGE_LINES.hurt[0], GRUDGE_LINES.hurt[1]] as [string, string]; },
     debrief: [(name) => fill(GRUDGE_LINES.debrief[0], { name }), (name) => fill(GRUDGE_LINES.debrief[1], { name }), (name) => fill(GRUDGE_LINES.debrief[2], { name })],
   },
 };

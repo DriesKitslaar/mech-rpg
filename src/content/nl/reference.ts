@@ -908,12 +908,12 @@ export const REFERENCE_NL: Record<string, string> = {
     "Een werfdozer van Hadron met plaat over de cabine gelast. Traag, taai, en hij draagt verreweg het meest. Er zit een geweer bij, en een plaat om achter te schuilen.",
   // Accounts: the manual's chapter, and the three medals.
   'OVERDUE ACCOUNTS': 'VERVALLEN REKENING',
-  'A pilot you wrecked, drove off or lost to may come back for you: a notice beside the board, OVERDUE and their callsign. Their machine is HARDENED against the weapon that hurt it most last time: that weapon does HALF to it, and the briefing names it. Bring another and it is only a machine. Three meetings close the account.':
-    'Een piloot die je sloopte, verjoeg of van wie je verloor kan voor je terugkomen: een bericht naast het bord, VERVALLEN en hun roepnaam. Hun machine is GEHARD tegen het wapen dat hem de vorige keer het meest deed: dat doet de HELFT, en de briefing noemt het. Neem een ander mee en het is maar een machine. Drie ontmoetingen sluiten de rekening.',
+  'A pilot you wrecked, drove off or lost to may come back for you: a notice by the board, OVERDUE and their callsign. They come three times. From the second, their machine is HARDENED against the weapon that hurt it most last time: that does HALF until the number beside HARDENED is shot away. Bring another: it is only a machine.':
+    'Een piloot die je sloopte, verjoeg of van wie je verloor kan voor je terugkomen: een bericht naast het bord, VERVALLEN en een roepnaam. Dat gebeurt drie keer. Vanaf de tweede is de machine GEHARD tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de HELFT tot het getal naast GEHARD is weggeschoten. Neem een ander mee en het is maar een machine.',
   'Second Notice': 'Tweede aanmaning',
   'Win a meeting with a pilot who came back for you.': 'Win van een piloot die voor jou is teruggekomen.',
   'Closed Book': 'Gesloten boek',
-  'Close an account: beat the same pilot three times.': 'Sluit een rekening: versla een piloot drie keer.',
+  'Close an account: beat the same pilot three times.': 'Versla dezelfde piloot drie keer: rekening dicht.',
   'Repeat Customers': 'Vaste klanten',
   'Close three accounts.': 'Sluit drie rekeningen.',
 };

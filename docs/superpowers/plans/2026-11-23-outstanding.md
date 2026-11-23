@@ -69,6 +69,10 @@
 
 ### What was measured
 
+(As the round was first built: a machine that knew a weapon from the contract the account began in, and a hardening
+that did not wear. The independent review changed both; what was measured after it is under O3, and those are the
+figures that stand.)
+
 Flown with `scripts/grudge.ts`: the game's own pilot, in the build the game suggests for each class at the stage,
 with the perks a pilot has by then, against every mech the tier's budget pays for. All figures are wins in a
 hundred on Standard unless it says otherwise.
@@ -172,4 +176,156 @@ caught:
 
 ### Task O3: final check
 
-- [ ] Read through once more; all tests; the endurance test with two players who have an account (one from its first notice on, who aims the weapon the machine knows by hand; one at the third meeting, in Dutch, who closes it); an independent review of the branch and its findings answered; the last APK; a short Dutch summary.
+- [ ] Read through once more; all tests; the endurance test with two players who have an account (one at its second meeting, who aims the weapon the machine knows by hand; one at the third meeting, in Dutch, who closes it); an independent review of the branch and its findings answered; the last APK; a short Dutch summary.
+
+### What the independent review found, and what was done about it
+
+A reviewer who had seen none of the round's reasoning read the branch at 388e404 and ran what it suspected. Twelve
+findings. All of them were so; two of them changed the rules.
+
+1. **The briefing dropped its last line** in three of the board's four places ("Anything else does", and nothing
+   after it; it was in a picture the round had committed). Three paragraphs have two gaps under them, so with a
+   line for what the contract asks and one for the ground the page draws seven lines and not eight; the test
+   counted lines against rows. *Now:* the notice has place lines of its own, one line each; the line about the
+   hardening is shorter; the page says how many lines it draws (`briefingShown`, with the gap as `BRIEFING_GAP`)
+   and every notice there can be is held to that in both languages; a screen test draws the page for every place,
+   meeting and language and looks for every line on it; and the count is itself held to the page, on briefings
+   made to fall on either side of the last row.
+2. **A pilot with one weapon was shut out.** "One weapon" is one weapon id, and a build that carries only that one
+   did half of everything for the whole battle: a pilot with a carbine and a shield won a third meeting with one of
+   the three lightest machines at the fourth tier 13 to 27 times in a hundred, in fights that ran to the last round. That is the design's own
+   anti-goal ("a build that cannot win because it was the build that won last time"), met in a build the
+   measuring had not flown. *Now the hardening wears:* what it keeps off the machine comes off the hardening,
+   which is a third of the armour the machine's core stands in, and at nothing it is gone. How much is left is
+   beside the machine's name, and its going is said, written and heard. The figures are below.
+3. **Accounts begin by contracts won, not by where the story is,** so a pilot who has won fifteen contracts in
+   first-act gear meets one: in that gear a Ripper is hard with nothing known, and was worse with a weapon known
+   from the start. *Now* the first meeting is the machine as it comes (see 4), which is what a named Ripper is for
+   that pilot anywhere on the board; the notice waits and costs nothing to leave. The figures are below.
+4. **The first notice said what was not so.** It said the machine was hardened against the weapon "which hurt it
+   most last time", and what it knew was the weapon that did most in the contract the account began in, to
+   everything in it: in one account in four that was not the weapon that did most to that machine, in one in eight
+   it had not hit it at all, and one that was wrecked comes back in another machine. *Now* an account begins
+   knowing nothing. What they know they learn in a meeting, where the machine is theirs.
+5. **Dispatch said "it was built for what you hit it with last time"** of a machine that knew nothing. *Now* there
+   are two lines, and which is said goes by whether the machine knows a weapon.
+6. **Beside a shield drone the word HARDENED was never written over the machine:** the word for cover stood there
+   for the whole battle. *Now* the two take turns, as an elite's mark and cover do.
+7. **`dealtBy` added up what each shot was worth, not the armour it took off,** so a great shot into a part with
+   little left counted for all of it (in one meeting in twelve that changed which weapon was learnt). *Now* a hit
+   that took off less than it was worth says what it took (`took` on the shot), and that is what is added up.
+8. **What counts as a contract.** Arena fights, duels and replays from the archive are waited through like any
+   contract won (they are on the pilot's count of contracts won), and a replay can begin an account. *Kept as it
+   is,* and the guide now says that whatever is on that count counts.
+9. **The Dutch.** "die hem de vorige keer het meest deed", "om jou heen laten bouwen" and "Vlieg goed" were
+   English in Dutch words; the one pilot was "die", "ze", "hun" and "hij" by turns. *Now* rewritten, and their
+   pilot is a callsign, "de piloot" or "die" in the game and in the guide; tests hold that.
+10. **English lines that did not fit every account they were said of:** "put you down" of a pilot who walked away,
+    "losing to you once" of one who had lost twice, "another wreck" of a first one, a place line that spoke of a
+    client, "Their leader is down" of one who came alone. *Now* rewritten, with a test of what none of them may
+    say; a machine that fell alone is down by its name.
+11. **Claims held by nothing.** The guide's "more than a third less a round" was true and no test held it; the
+    script's best weapon was the best over all the tier's machines, where its header said per machine. *Now* the
+    guide says what the balance test holds (longer, and less a round), and the script does what it says.
+12. **The Gauntlet built its names from every machine a fight can field,** the account's among them, so a kind
+    could have been called by a callsign. No warden is a machine an account can be about, so nothing showed.
+    *Now* it reads the machines there are and nothing that is made for the pilot.
+
+### What was measured after the review
+
+`scripts/grudge.ts` as it now is: the first meeting with nothing known, which is how it is met; the second and third
+with nothing known and with the weapon that takes most armour off that machine known, class by class and machine by
+machine. All figures are wins in a hundred on Standard unless it says otherwise.
+
+**How much the hardening takes.** As a share of the armour the machine's core stands in. For the classes' own
+builds (two or three weapons), the quick machines at the fourth and eighth tier, third meeting, best weapon known
+(105 flights a cell); and for a pilot with one weapon (the reference build of the war with a carbine and a riot
+shield), the lowest and highest of eight cells (four machines at the third and fourth tier), third meeting, the
+carbine known (30 flights a cell):
+
+| The hardening | Ripper, tier 4 | Stalker, tier 4 | Ripper, tier 8 | Stalker, tier 8 | One weapon, third meeting |
+|---|---|---|---|---|---|
+| Does not wear | 47 | 62 | 57 | 60 | 13 to 83 |
+| Half the core's armour | 49 | 64 | 59 | 63 | 37 to 93 |
+| A third (kept) | 57 | 65 | 62 | 68 | 50 to 100 |
+
+A build of several weapons does about half its work with the one the machine knows and seldom sees the end of a
+hardening of half the core; one of a third it is through late in the fight, which is worth a few wins. The pilot
+with one weapon is through it before the fight is half done.
+
+**Machine by machine**, the seven classes together, 210 flights a cell. The first meeting; then the second and
+third with nothing known / with the best weapon known.
+
+| Machine | Tier | First meeting | Second | Third |
+|---|---|---|---|---|
+| Mantis Ripper | 3 | 93 | 88 / 83 | 86 / 78 |
+| | 4 | 90 | 80 / 65 | 77 / 61 |
+| | 6 | 95 | 91 / 81 | 94 / 85 |
+| | 8 | 99 | 92 / 85 | 85 / 68 |
+| Wraith Stalker | 3 | 94 | 99 / 95 | 94 / 87 |
+| | 4 | 92 | 90 / 78 | 86 / 74 |
+| | 6 | 97 | 87 / 84 | 92 / 85 |
+| | 8 | 95 | 90 / 85 | 84 / 72 |
+| Halo Guard | 3 to 8 | 97 to 100 | 94 to 100 / 93 to 98 | 96 to 99 / 92 to 97 |
+| The four heavy ones | 3 to 8 | 98 to 100 | 98 to 100 / 93 to 100 | 97 to 100 / 92 to 100 |
+
+The lowest cell is still a Ripper's third meeting at the fourth tier: 77 with nothing known and 61 with the best
+weapon known, where it was 49.
+
+**Over every machine and class**, with what a round of the fight nets beside what a round of a hit nets for the
+same pilots:
+
+| Tier | A hit | First | Second: nothing | Second: known | Third: nothing | Third: known |
+|---|---|---|---|---|---|---|
+| 3 | 98, 285 a round | 98, 357 | 98, 360 | 95, 241 | 96, 393 | 92, 256 |
+| 4 | 86, 242 | 96, 339 | 96, 287 | 92, 192 | 95, 466 | 93, 330 |
+| 6 | 98, 406 | 99, 471 | 96, 444 | 94, 316 | 96, 478 | 89, 310 |
+| 8 | 100, 443 | 100, 442 | 98, 432 | 94, 298 | 95, 309 | 89, 208 |
+
+A build the machine knows nothing of is paid about what a hit pays for a round, or somewhat more. Bringing the
+weapon it knows costs two to seven wins in a hundred over all and about a third of what a round nets: the fight
+takes a third as long again. The class that does worst with its best weapon known wins 75 to 90.
+
+**A pilot with one weapon** (a carbine and a riot shield on the reference build of the war), 60 flights a cell, the
+second and third meeting: with nothing known / with the carbine known and a hardening that does not wear / as it is.
+
+| Machine | Tier 3 | Tier 4 |
+|---|---|---|
+| Mantis Ripper | 100, 100 / 90, 67 / 100, 93 | 98, 93 / 40, 15 / 88, 60 |
+| Wraith Stalker | 100, 93 / 57, 40 / 90, 83 | 88, 82 / 32, 13 / 65, 65 |
+| Halo Guard | 88, 97 / 42, 32 / 87, 83 | 97, 92 / 17, 27 / 82, 75 |
+| Bulwark Enforcer | 100, 100 / 92, 92 / 100, 100 | 100, 98 / 77, 78 / 92, 90 |
+
+At a disadvantage, and not shut out. The classes' own builds stripped to their best weapon are thin builds with
+nothing known (a third meeting with a quick machine is won 41 to 55 times in a hundred) and win 24 to 31 with it
+known, where they won 8 to 10.
+
+**In first-act gear at the third tier** (a pilot who has won fifteen contracts and bought nothing for the war), the
+first meeting, then the second and third with nothing known / with the best weapon known:
+
+| Machine | First | Second | Third |
+|---|---|---|---|
+| Mantis Ripper | 59 | 46 / 29 | 39 / 25 |
+| Wraith Stalker | 78 | 71 / 52 | 65 / 45 |
+| Halo Guard | 87 | 85 / 75 | 89 / 80 |
+
+A Ripper is a hard machine for that pilot wherever it is met, and its notice is no easier. It is left: the notice
+waits for as long as it is left alone, a contract lost costs what any contract lost costs, and the gear of the war
+is what the money of fifteen contracts is for.
+
+**On Veteran** (the enemy at 1.2) the same over all is 86 to 98 with nothing known and 75 to 86 with the best
+weapon known. Machine by machine the quick ones are hard there with or without it: a Ripper at the fourth tier is
+won 68, 55 and 46 times in a hundred with nothing known and 33 and 23 at the second and third meeting with the best
+weapon known. That is the hard difficulty's fourth tier, where a hit is won 78 times in a hundred; it is left as it
+is.
+
+### What deliberate faults found in what the review changed
+
+55 faults over the new lines (the wearing, what a shot took off, what is learnt and when, the words by what the
+machine knows, the turns of the word over the machine, the count of lines a page draws). 45 were caught by the
+tests as they stood. Of the ten that were not, nine have a test now and are caught: a hardening that does not wear
+was worn out by its first hit (every test of one fired once); one with exactly nothing left held for a hit more;
+what a barrier took was not counted against the hardening; and five in `briefingShown`, which nothing held to the
+page it speaks for, so that a count that called every line drawn passed every test of fit. The tenth was the
+Gauntlet's guard against a name that could not occur: the line is gone, and the Gauntlet reads the machines there
+are.

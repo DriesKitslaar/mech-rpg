@@ -43,7 +43,8 @@ export const STRINGS = {
     // What sets an elite enemy apart.
     marks: { armoured: 'ARMOURED', overclocked: 'OVERCLOCKED', swift: 'SWIFT', shielded: 'SHIELDED' } as Record<string, string>,
     // A machine that is hardened against a weapon (see `HARDENED`), and what that weapon does to it while it is aimed at it.
-    hardened: 'HARDENED', half: 'HALF',
+    // (Of a hardening that wears, how much it can still take is said with it.)
+    hardened: 'HARDENED', hardenedLeft: (n: number) => `HARDENED ${n}`, half: 'HALF',
   },
   // What an enemy is about to do, read from how it moves: shown with its tags while it is aimed at.
   intent: { aim: (part: string) => `AIMS ${part.toUpperCase()}`, dart: 'DARTING', mend: 'MENDING', cool: 'COOLING', windUp: 'WINDS UP', hold: 'HOLDS' },
@@ -58,6 +59,8 @@ export const STRINGS = {
     reserve: (n: number) => `${n} MORE TO COME`, more: (n: number) => `+${n}`,
     won: {
       survive: 'You held the line.', protect: (name: string) => `${name}: safe.`, leader: 'Their leader is down.',
+      // Of one that stood there alone: nobody's leader.
+      down: (name: string) => `${name} is down.`,
       disable: 'Disabled, in one piece.', driveOff: (name: string) => `${name} breaks off.`,
     },
     lost: { asset: (name: string) => `${name}: lost.`, target: 'The target was destroyed.', time: 'Out of time.' },
@@ -105,6 +108,7 @@ export const STRINGS = {
   recover: (unit: string) => does(unit, 'steadies', 'steady'),
   // The field of a core that raises one: broken by what it took, and whole again a round later.
   fieldDown: (unit: string) => does(unit, 'loses its field', 'lose your field'),
+  hardeningGone: (unit: string) => does(unit, 'has no hardening left', 'have no hardening left'),
   fieldUp: (unit: string) => does(unit, 'has its field back', 'have your field back'),
   charge: (unit: string, weapon: string) => does(unit, `charges ${weapon}`, `charge ${weapon}`),
   barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} hits ${obj(target)} - barrier -${absorbed}`,
@@ -636,7 +640,7 @@ export const STRINGS = {
   },
   fx: {
     miss: 'MISS', overheat: 'OVERHEAT', stagger: 'STAGGER', shaken: 'SHAKEN', block: (n: number) => `BLOCK ${n}`,
-    fieldDown: 'FIELD DOWN', fieldUp: 'FIELD UP',
+    fieldDown: 'FIELD DOWN', fieldUp: 'FIELD UP', hardeningGone: 'HARDENING GONE',
     // Over a machine that went up to far more than was needed, over the pilot as a run goes on, over a machine that leaves.
     overkill: 'OVERKILL', chain: (n: number) => `CHAIN x${n}`, rout: 'ROUT', offline: 'OFFLINE',
     // Where a weapon's kind did its work: over a redline fired hot and a surge, what it added; over a machine a punish caught reeling.

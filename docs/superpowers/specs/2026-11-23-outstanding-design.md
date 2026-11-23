@@ -101,14 +101,19 @@ weapon known) and a Stalker's at the eighth (84 and 65). The figures are in the 
   account within a handful of contracts, and one account is three meetings.
 - Each meeting is one battle about one machine: the named pilot's own, with the company the board's
   budget leaves. It carries no mark. It is over when that machine falls.
-- The machine is hardened against one weapon: the one that did most to it at the last meeting (when
-  the account began, the one that did most in that contract). A weapon it is hardened against does
-  half to it, and all it ever did to anything else on the field. The briefing names the weapon, and
-  the figure shown while aiming is the halved one.
+- At the first meeting the machine knows nothing: they have not fought the pilot by name yet. From
+  the second on it is hardened against one weapon: the one that took most armour off it at the
+  meeting before. A weapon it is hardened against does half to it, and all it ever did to anything
+  else on the field. The briefing names the weapon, and the figure shown while aiming is the
+  halved one.
+- The hardening wears: what it keeps off the machine comes off the hardening, which is a third of
+  the armour the machine's core stands in, and at nothing it is gone. How much is left is written
+  beside the machine's name.
 - A build that brings that weapon again is at a disadvantage and not shut out: flown in each class's
   build for the stage, the game's own pilot wins the meeting at least about as often as not on
-  Standard against every machine an account can be about, the classes together. A build that does
-  not bring it meets the machine as it would any named machine of the board.
+  Standard against every machine an account can be about, the classes together. That holds for a
+  pilot with one weapon and no other too, for whom that weapon is all the machine can learn. A
+  build that does not bring it meets the machine as it would any named machine of the board.
 - The pilot speaks: as the fight opens (by how the account began, on the first meeting), and when
   their machine falls. The third fall closes the account in their own words.
 - The pilot's page counts accounts closed; three medals; a chapter of the manual and of the guide;
@@ -143,8 +148,8 @@ Kept in the saved game, absent in a game that has none:
 - `kind`: their machine: a mech of the board's pool. It does not change.
 - `origin`: `beat` (they won, or the player retreated, with their machine standing), `ran` (their
   machine broke off) or `wrecked` (the player destroyed it).
-- `knows`: the weapon their machine is hardened against, by its id; absent where the player has hit
-  them with nothing yet.
+- `knows`: the weapon their machine is hardened against, by its id; absent until a meeting has
+  taught them one.
 - `met`: meetings the player has won: 0, 1 or 2.
 - `waited`: contracts won since the account began or since the last meeting.
 
@@ -157,9 +162,11 @@ beyond, the contract's battles are read for a mech of the board's pool: one stan
 lost or retreated, else one that broke off under its own power, else one that was destroyed. The
 strongest of those reasons wins, and among machines with the same reason the dearest, the first of
 them when two cost the same. Contracts that count for nothing (the simulator, the range, the
-Gauntlet) and fights in a lent mech begin none. What the account's pilot knows from there is the
-weapon of the player's that took the most armour off the other side in that contract (none, if the
-player hit nothing).
+Gauntlet) and fights in a lent mech begin none. The account's pilot knows nothing of the player from
+there: a machine that broke off untouched met none of the player's weapons, and one that was wrecked
+is not the machine they come back in. (As first built they knew the weapon that did most in that
+contract. The review found the notice saying of one weapon in four that it had hurt a machine it
+had not, and that was the end of that.)
 
 ### When they come back
 
@@ -174,23 +181,35 @@ changes nothing.
 One battle: the named machine first, then the company the board's budget for the tier leaves after
 its cost (nothing that mends; none at all if nothing is left: then it came alone). The objective
 names the machine, as a hit's does, so the battle is fought by the rules of a fight about one
-machine: no momentum, no shatter, nobody breaks. The machine is hardened against `knows` and plated
-a little thicker at the second meeting and thicker again at the third; the enemy scale is the
-board's own for the tier. The fee is a hit's fee for that machine times a factor for the meeting.
-The plating and the factors are set by measurement in the first task.
+machine: no momentum, no shatter, nobody breaks. The machine is hardened against `knows` (nothing, the
+first time) and plated a little thicker at the second meeting and thicker again at the third; the
+enemy scale is the board's own for the tier. The fee is a hit's fee for that machine times a factor
+for the meeting. The plating, the factors and how much the hardening takes are set by measurement.
+
+The hardening wears. A hit of the weapon the machine is hardened against does half, and what was
+kept off the machine comes off the hardening: at a half, as much as the hit did. At nothing the
+machine is hardened against nothing for the rest of the battle, and the field says so. (As first
+built it did not wear, and the review flew a pilot with a gun and a shield against it: with the gun
+known, a third meeting with a quick machine was won one time in five, in fights that ran to the
+last round. That was the anti-goal below, met in a build the measuring had not flown.)
 
 Won: `met` goes up, `waited` starts again, and `knows` becomes the weapon that took the most armour
-off the named machine in this meeting (it stays what it was if nothing of the player's hit it). The
+off the named machine in this meeting (it stays what it was if nothing of the player's hit it).
+Armour taken off, and not what the hits were worth: a great shot into a part with little left did
+little. The
 third win removes the account and writes the callsign under `accounts`.
 
 ### The words
 
-Dispatch briefs it. Three paragraphs: the place; who this is and how it began (the first meeting, by
-origin) or which meeting this is (the second and third); and which weapon the machine is hardened
-against. In battle the pilot has a line as it opens and one as their machine falls, Dispatch one
-when the player's core is below half. A machine that is hardened says so over its head as an elite
-says its mark, and the weapon in hand says so while it is aimed at that machine. The bill of a
-meeting says which of the three it was; the bill of the third says the account is paid in full.
+Dispatch briefs it. Three paragraphs: the place, in a line of the notice's own (they named it: there
+is no client); who this is and how it began (the first meeting, by origin) or which meeting this is
+(the second and third); and which weapon the machine is hardened against, or that it knows nothing
+yet. In battle the pilot has a line as it opens and one as their machine falls, Dispatch one when
+the player's core is below half (one for a machine that knows a weapon, another for one that does
+not). A machine that is hardened says so over its head as an elite says its mark (in turn with the
+word for cover, where something covers it), its row says how much the hardening can still take, and
+the weapon in hand says so while it is aimed at that machine. The bill of a meeting says which of
+the three it was; the bill of the third says the account is closed.
 
 ## Constraints
 
@@ -198,8 +217,9 @@ meeting says which of the three it was; the bill of the third says the account i
 - No balance test of what exists changes.
 - Every new text has its Dutch, within the room its kind has; interface strings in Dutch at most two
   letters longer than the English, with the same numbers in the same order.
-- A briefing's body, with a line under it for what the contract asks and one for the ground, is at
-  most eight lines.
+- A briefing's body is drawn down to the last row the contract leaves it, with a gap under each
+  paragraph: with a line for what the contract asks and one for the ground, three paragraphs hold
+  seven lines and not eight. Every notice there can be is held to what the page draws.
 - The proxy's address is never written into the repository. No pictures are needed for this round.
 
 ## Left to the builder

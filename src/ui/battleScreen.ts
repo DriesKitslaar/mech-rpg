@@ -1348,14 +1348,14 @@ export class BattleScreen {
     if (unit.staggered > 0) return { text: T.stagger, color: blink ? COLORS.heat : COLORS.text };
     if (unit.guarding) return { text: T.guard, color: COLORS.armor };
     if (unit.boosted) return { text: T.boost, color: COLORS.energy };
-    // An elite is known by its mark whenever there is nothing more pressing to say about it. Cover
-    // lasts as long as the drone that gives it, so an elite under cover says both in turn: neither
-    // hides the other for the whole battle.
-    const marked = !!unit.mark && Math.floor(this.clock / MARK_TURN_MS) % 2 === 0;
+    // An elite is known by its mark whenever there is nothing more pressing to say about it, and a machine
+    // that is hardened against a weapon by that. Cover lasts as long as the drone that gives it, so one of
+    // them under cover says both in turn: neither hides the other for the whole battle.
+    const hardened = !!unit.hardened?.length;
+    const marked = (!!unit.mark || hardened) && Math.floor(this.clock / MARK_TURN_MS) % 2 === 0;
     if (aegisFactor(this.flow.state, unit) < 1 && !marked) return { text: T.covered, color: COLORS.energy };
     if (unit.mark) return { text: T.marks[unit.mark], color: COLORS.accent };
-    // A machine that is hardened against a weapon says so as an elite says its mark.
-    if (unit.hardened?.length) return { text: T.hardened, color: COLORS.accent };
+    if (hardened) return { text: T.hardened, color: COLORS.accent };
     return null;
   }
 
@@ -1378,8 +1378,9 @@ export class BattleScreen {
       ...(unit.abilities.mend !== undefined ? [{ text: T.mender, color: COLORS.armor, rank: 2 }] : []),
       ...(unit.abilities.carrier ? [{ text: T.carrier, color: COLORS.heat, rank: 2 }] : []),
       ...(unit.mark ? [{ text: T.marks[unit.mark], color: COLORS.accent, rank: 4 }] : []),
-      // Hardened against a weapon: and, while that weapon is the one aimed at it, that it does half. Nothing in the row is more pressing than that.
-      ...(unit.hardened?.length ? [{ text: T.hardened, color: COLORS.accent, rank: 4 }] : []),
+      // Hardened against a weapon, with how much the hardening can still take where it wears: and, while that weapon is
+      // the one aimed at it, that it does half. Nothing in the row is more pressing than that.
+      ...(unit.hardened?.length ? [{ text: unit.hardening === undefined ? T.hardened : T.hardenedLeft(unit.hardening), color: COLORS.accent, rank: 4 }] : []),
       ...(this.flow.phase === 'target' && this.flow.targetId === unit.id && this.flow.halved ? [{ text: T.half, color: COLORS.danger, rank: 9 }] : []),
       ...(aegisFactor(state, unit) < 1 ? [{ text: T.covered, color: COLORS.energy, rank: 4 }] : []),
       ...(jammed > 0 ? [{ text: T.jammed(jammed), color: COLORS.heat, rank: 5 }] : []),

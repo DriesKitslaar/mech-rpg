@@ -538,8 +538,9 @@ class MissionHost implements Screen {
         enemyHeat: flow.state.units[1].heat, enemyKept: flow.state.units[1].kept,
         // What is written over the first of the other side: the one state worth flagging about it, if there is one.
         enemyMark: this.screen.markOver(flow.state.units[1].id),
-        // The weapons the first of the other side is hardened against, by their ids.
+        // The weapons the first of the other side is hardened against, by their ids, and what its hardening can still take.
         hardened: flow.state.units[1].hardened ?? [],
+        hardening: flow.state.units[1].hardening ?? null,
         // Whether the weapon in hand does half to the machine under the sights.
         halved: flow.halved,
       },
@@ -1059,7 +1060,9 @@ export class App {
   gauntletFloor(): Mission | undefined {
     const run = this.run;
     if (!run || run.drafting) return undefined;
-    const names = Object.fromEntries(Object.values(this.enemies()).map((e) => [e.id, e.name]));
+    // (What each kind of machine is called: the machines there are, and none that is made for this pilot. The machine of
+    // an account is one of a kind under somebody's callsign, and is no kind's name.)
+    const names = Object.fromEntries(Object.values(ALL_ENEMIES).map((e) => [e.id, e.name]));
     return floorMission(run, GAUNTLET_TEXT, names);
   }
 

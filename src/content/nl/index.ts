@@ -71,7 +71,7 @@ function contentTexts(): TextSlot[] {
     ...textsOf('missions', Object.values(BOARD_TEXT.jobs), { titles: 'mission.title', brief: 'briefing' }),
     ...textsOf('missions', [BOARD_TEXT], { assets: 'asset' }),
     // An account's notice: what it is called, the lines of its briefing, what is said over its battle, and what its bill says.
-    ...textsOf('missions', [GRUDGE_LINES], { title: 'mission.title', again: 'briefing', hardened: 'briefing', falls: 'battle.talk', hurt: 'battle.talk', debrief: 'debrief' }),
+    ...textsOf('missions', [GRUDGE_LINES], { title: 'mission.title', places: 'briefing', again: 'briefing', hardened: 'briefing', falls: 'battle.talk', hurt: 'battle.talk', debrief: 'debrief' }),
     ...textsOf('missions', [GRUDGE_LINES.first], { beat: 'briefing', ran: 'briefing', wrecked: 'briefing' }),
     ...textsOf('missions', [GRUDGE_LINES.opens.first], { beat: 'battle.talk', ran: 'battle.talk', wrecked: 'battle.talk' }),
     ...textsOf('missions', [GRUDGE_LINES.opens], { again: 'battle.talk' }),

@@ -19,14 +19,15 @@ import { CATALOG, DEMO_BUILD, STARTER_BUILD } from '../../src/content/parts';
 
 /**
  * The account: a pilot the player wrecked, drove off or lost to, who comes back three times as a
- * notice beside the board, in their own machine hardened against the weapon that hurt it most the
- * last time. Held here
- * with words of the test's own: what the game's words are is the content's business.
+ * notice beside the board, in their own machine: the first time as it comes, and after that
+ * hardened against the weapon that took most armour off it the meeting before. Held here with
+ * words of the test's own: what the game's words are is the content's business.
  */
 const NAMES = ['Brakk', 'Tally', 'Docket', 'Lapse'];
 const WORDS: GrudgeText['grudge'] = {
   names: NAMES,
   title: (name) => `Outstanding: ${name}`,
+  places: BOARD_TEXT.backgrounds.map((_, i) => `their place ${i}`),
   first: {
     beat: (name, machine) => `beat ${name} ${machine}`, ran: (name, machine) => `ran ${name} ${machine}`, wrecked: (name, machine) => `wrecked ${name} ${machine}`,
   },
@@ -34,7 +35,7 @@ const WORDS: GrudgeText['grudge'] = {
   hardened: (weapon) => (weapon === null ? 'knows nothing' : `hardened ${weapon}`),
   opens: { first: { beat: 'opens beat', ran: 'opens ran', wrecked: 'opens wrecked' }, again: ['opens second', 'opens third'] },
   falls: ['falls first', 'falls second', 'falls third'],
-  hurt: 'hurt',
+  hurt: ['hurt plain', 'hurt known'],
   debrief: [(name) => `debrief 1 ${name}`, (name) => `debrief 2 ${name}`, (name) => `debrief 3 ${name}`],
 };
 const TEXT: BoardText & GrudgeText = { ...BOARD_TEXT, grudge: WORDS };
@@ -63,8 +64,9 @@ const left = (s: BattleState, i: number, fixed = false): void => {
   s.events.push({ type: 'rout', unit: `enemy-${i}`, ...(fixed ? { fixed: true as const } : {}) });
 };
 const lost = (s: BattleState): void => { s.outcome = 'defeat'; s.units[0].destroyed = true; };
-const shot = (weapon: 'rightHand' | 'leftHand' | 'shoulder', target: string, damage: number, hit = true): BattleEvent =>
-  ({ type: 'shot', unit: 'player', weapon, target, part: 'core', appliedTo: 'core', hit, damage });
+/** A shot of the pilot's as the battle writes one down; `took` where it took less armour off than it was worth. */
+const shot = (weapon: 'rightHand' | 'leftHand' | 'shoulder', target: string, damage: number, hit = true, took?: number): BattleEvent =>
+  ({ type: 'shot', unit: 'player', weapon, target, part: 'core', appliedTo: 'core', hit, damage, ...(took === undefined ? {} : { took }) });
 
 describe('who an account can begin with: what a finished battle saw', () => {
   test('a mech of the board standing when the pilot fell, or walked away: it beat them', () => {
@@ -148,6 +150,23 @@ describe('what the pilot\'s weapons did', () => {
     expect(dealtBy(s, 'enemy-1')).toEqual({ [DEMO_BUILD.rightHand!]: 12 });
   });
 
+  test('a hit worth more than the armour that was left counts for what it took off, as the battle wrote it down', () => {
+    const over = ended(['stalker'], (state) => {
+      state.events.push(shot('rightHand', 'enemy-0', 199, true, 85), shot('leftHand', 'enemy-0', 139), shot('leftHand', 'enemy-0', 60, true, 0));
+    });
+    expect(dealtBy(over, 'enemy-0')).toEqual({ [DEMO_BUILD.rightHand!]: 85, [DEMO_BUILD.leftHand!]: 139 });
+    // And in a battle the game fights, what is counted is never more than the armour the machine had.
+    const fought = runBattle(createBattle(DEMO_BUILD, [ENEMIES.stalker], CATALOG, 3), CATALOG, chooseAutoPlayerAction);
+    expect(fought.outcome).toBe('victory');
+    const armour = Object.values(createBattle(DEMO_BUILD, [ENEMIES.stalker], CATALOG, 3).units[1].parts).reduce((sum, part) => sum + (part?.maxAp ?? 0), 0);
+    const counted = Object.values(dealtBy(fought, 'enemy-0')).reduce((sum, amount) => sum + amount, 0);
+    const worth = fought.events.reduce((sum, event) => sum + (event.type === 'shot' && event.unit === 'player' && event.hit ? event.damage : 0), 0);
+    expect(counted).toBeLessThanOrEqual(armour);
+    expect(counted).toBeGreaterThan(0);
+    // (The last hit, at the least, was worth more than the core had left.)
+    expect(worth).toBeGreaterThan(counted);
+  });
+
   test('`addDealt` adds two battles up', () => {
     expect(addDealt({ a: 3, b: 4 }, { b: 6, c: 1 })).toEqual({ a: 3, b: 10, c: 1 });
     expect(addDealt({}, {})).toEqual({});
@@ -165,18 +184,16 @@ describe('what a contract\'s battles come to, one battle after another', () => {
   });
 
   test('nothing, before any is fought', () => {
-    expect(NOTHING_FOUGHT).toEqual({ seen: null, dealt: {}, named: {} });
+    expect(NOTHING_FOUGHT).toEqual({ seen: null, named: {} });
   });
 
-  test('who was seen is the better of what each battle saw, and what the weapons did is added up', () => {
+  test('who was seen is the better of what each battle saw; what the weapons did in a battle that is no meeting is kept nowhere', () => {
     const after = foughtIn(foughtIn(NOTHING_FOUGHT, first, false), second, false);
     // The one that ran in the second battle before the dearer one wrecked in the first.
-    expect(after.seen).toEqual({ kind: 'light-mech', origin: 'ran' });
-    expect(after.dealt).toEqual({ [DEMO_BUILD.rightHand!]: 35, [DEMO_BUILD.leftHand!]: 70, [DEMO_BUILD.shoulder!]: 40 });
-    expect(after.named).toEqual({});
+    expect(after).toEqual({ seen: { kind: 'light-mech', origin: 'ran' }, named: {} });
     // The battles are read in the order they were fought, and what was given is not written to.
     expect(foughtIn(NOTHING_FOUGHT, first, false).seen).toEqual({ kind: 'stalker', origin: 'wrecked' });
-    expect(NOTHING_FOUGHT).toEqual({ seen: null, dealt: {}, named: {} });
+    expect(NOTHING_FOUGHT).toEqual({ seen: null, named: {} });
   });
 
   test('who was seen is the stronger of the two whichever battle saw them, and of two alike the one of the earlier battle', () => {
@@ -200,7 +217,6 @@ describe('what a contract\'s battles come to, one battle after another', () => {
   test('in a meeting, what was done to the machine that stands first is kept apart: the machines beside it are not it', () => {
     const met = foughtIn(NOTHING_FOUGHT, first, true);
     expect(met.named).toEqual({ [DEMO_BUILD.rightHand!]: 30 });
-    expect(met.dealt).toEqual({ [DEMO_BUILD.rightHand!]: 30, [DEMO_BUILD.leftHand!]: 70 });
     expect(foughtIn(met, second, true).named).toEqual({ [DEMO_BUILD.rightHand!]: 35 });
     // In any other battle nothing is kept apart, whatever stood first.
     expect(foughtIn(met, second, false).named).toEqual({ [DEMO_BUILD.rightHand!]: 30 });
@@ -209,12 +225,12 @@ describe('what a contract\'s battles come to, one battle after another', () => {
 
 describe('how an account begins', () => {
   const seen: Witness = { kind: 'stalker', origin: 'wrecked' };
-  const fought: Fought = { seen, dealt: { 'wpn-rivet-rifle': 40, 'wpn-arc-pistol': 90 }, named: {} };
+  const fought: Fought = { seen, named: {} };
 
-  test('with nobody\'s open: the machine, how it began, a callsign, and the weapon that took most armour off them', () => {
+  test('with nobody\'s open: the machine, how it began and a callsign; nothing met, nothing waited', () => {
     const next = bookGrudge(game(), BOARD, true, fought, NAMES);
     const begun = grudgeOf(next)!;
-    expect(begun).toEqual({ name: begun.name, kind: 'stalker', origin: 'wrecked', knows: 'wpn-arc-pistol', met: 0, waited: 0 });
+    expect(begun).toEqual({ name: begun.name, kind: 'stalker', origin: 'wrecked', met: 0, waited: 0 });
     expect(NAMES).toContain(begun.name);
     expect(accountsClosed(next)).toBe(0);
   });
@@ -225,10 +241,16 @@ describe('how an account begins', () => {
     expect(new Set(Array.from({ length: 40 }, (_, i) => name(15 + i))).size).toBe(NAMES.length);
   });
 
-  test('a pilot who hit nothing taught them nothing', () => {
-    const begun = grudgeOf(bookGrudge(game(), BOARD, false, { seen: { kind: 'stalker', origin: 'beat' }, dealt: {}, named: {} }, NAMES))!;
-    expect(begun.knows).toBeUndefined();
-    expect('knows' in begun).toBe(false);
+  test('they know nothing yet, whatever hit them in the contract it began in: what they learn they learn in a meeting', () => {
+    for (const origin of ['beat', 'ran', 'wrecked'] as const) {
+      const begun = grudgeOf(bookGrudge(game(), BOARD, origin !== 'beat', { seen: { kind: 'stalker', origin }, named: { 'wpn-arc-pistol': 90, 'wpn-rivet-rifle': 40 } }, NAMES))!;
+      expect(begun.origin).toBe(origin);
+      expect('knows' in begun, origin).toBe(false);
+    }
+    // So the first notice is of a machine hardened against nothing, and says so.
+    const first = game({ grudge: { ...grudgeOf(bookGrudge(game(), BOARD, true, fought, NAMES))!, waited: 3 } });
+    expect(grudgeEnemy(first, ALL_ENEMIES)!.hardened).toBeUndefined();
+    expect(grudgeContract(first, TEXT, CALLED)!.briefing[2]).toBe('knows nothing');
   });
 
   test('a contract lost begins one as a contract won does', () => {
@@ -282,7 +304,7 @@ describe('when they come back', () => {
     expect(GRUDGE_MEETINGS).toBe(3);
     expect([...GRUDGE_WAIT]).toEqual([3, 2, 2]);
     // As they were set by measurement (scripts/grudge.ts; the figures are in the plan of the round).
-    expect(GRUDGE_NUMBERS).toEqual({ plating: [0, 0.1, 0.15], pay: [1, 1.25, 1.5], par: 7 });
+    expect(GRUDGE_NUMBERS).toEqual({ plating: [0, 0.1, 0.15], pay: [1, 1.25, 1.5], par: 7, hardening: 0.33 });
   });
 
   test('every other contract won is one waited through; one lost is not', () => {
@@ -393,7 +415,9 @@ describe('the notice', () => {
     for (const origin of ['beat', 'ran', 'wrecked'] as const) {
       const made = notice(due({ origin }));
       expect(made.briefing).toHaveLength(3);
-      expect(TEXT.places).toContain(made.briefing[0]);
+      // Where: the line of theirs for the place it is fought in, and not the board's, which speaks of a client.
+      expect(made.briefing[0]).toBe(WORDS.places[TEXT.backgrounds.indexOf(made.battles[0].background)]);
+      expect(TEXT.places).not.toContain(made.briefing[0]);
       expect(made.briefing[1]).toBe(`${origin} Brakk ${stalker}`);
     }
     expect(notice(due({ met: 1, origin: 'ran' })).briefing[1]).toBe(`second Brakk ${stalker}`);
@@ -407,16 +431,25 @@ describe('the notice', () => {
 
   test('what is said over it: the pilot as it opens and as their machine falls, Dispatch when the player is hurt', () => {
     const talk = (change: Partial<Grudge>) => notice(due(change)).battles[0].talk!.map((line) => [line.at, line.who, line.text, line.portrait]);
-    expect(talk({ origin: 'ran' })).toEqual([['start', 'Brakk', 'opens ran', undefined], ['hurt', 'Dispatch', 'hurt', BOARD_TEXT.faces!.Dispatch], ['win', 'Brakk', 'falls first', undefined]]);
+    expect(talk({ origin: 'ran' })).toEqual([['start', 'Brakk', 'opens ran', undefined], ['hurt', 'Dispatch', 'hurt known', BOARD_TEXT.faces!.Dispatch], ['win', 'Brakk', 'falls first', undefined]]);
     expect(talk({ origin: 'beat' })[0][2]).toBe('opens beat');
-    expect(talk({ met: 1, origin: 'ran' }).map((line) => line[2])).toEqual(['opens second', 'hurt', 'falls second']);
-    expect(talk({ met: 2, origin: 'beat' }).map((line) => line[2])).toEqual(['opens third', 'hurt', 'falls third']);
+    expect(talk({ met: 1, origin: 'ran' }).map((line) => line[2])).toEqual(['opens second', 'hurt known', 'falls second']);
+    expect(talk({ met: 2, origin: 'beat' }).map((line) => line[2])).toEqual(['opens third', 'hurt known', 'falls third']);
+    // Of a machine that knows no weapon Dispatch does not say that it was built for one.
+    const plain = (met: number) => grudgeContract(game({ battlesWon: 12, grudge: blank({ met, waited: 3 }) }), TEXT, CALLED)!.battles[0].talk!.map((line) => line.text);
+    expect(plain(0)).toEqual(['opens wrecked', 'hurt plain', 'falls first']);
+    expect(plain(1)).toEqual(['opens second', 'hurt plain', 'falls second']);
   });
 
   test('its machine: the kind\'s own, under their callsign, hardened against the weapon they know', () => {
     const state = due({ knows: 'wpn-arc-pistol' });
     const def = grudgeEnemy(state, ALL_ENEMIES)!;
-    expect(def).toEqual({ ...ENEMIES.stalker, name: 'Brakk', hardened: ['wpn-arc-pistol'] });
+    expect(def).toEqual({ ...ENEMIES.stalker, name: 'Brakk', hardened: ['wpn-arc-pistol'], hardening: GRUDGE_NUMBERS.hardening });
+    // A hardening that wears: less than all the armour its core stands in, and by the numbers it is given.
+    expect(GRUDGE_NUMBERS.hardening).toBeGreaterThan(0);
+    expect(GRUDGE_NUMBERS.hardening).toBeLessThan(1);
+    expect(grudgeEnemy(state, ALL_ENEMIES, { ...GRUDGE_NUMBERS, hardening: 0.25 })!.hardening).toBe(0.25);
+    // One that knows nothing is the kind's own under a callsign: nothing hardened, nothing to wear.
     expect(grudgeEnemy(game({ grudge: blank() }), ALL_ENEMIES)).toEqual({ ...ENEMIES.stalker, name: 'Brakk' });
     // Rebuilt thicker for the second meeting and thicker again for the third: thicker, and no stronger.
     expect(ENEMIES.stalker.plating).toBeUndefined();
@@ -453,7 +486,7 @@ describe('the notice', () => {
 describe('a meeting won', () => {
   const at = (change: Partial<Grudge> = {}, battlesWon = 30): GameState => game({ battlesWon, grudge: account({ waited: 3, ...change }) });
   const named = { 'wpn-arc-pistol': 80, 'wpn-rivet-rifle': 120, 'wpn-mortar-pod': 10 };
-  const won = (state: GameState, dealt: Record<string, number> = named): GameState => bookGrudge(state, NOTICE, true, { seen: null, dealt, named: dealt }, NAMES);
+  const won = (state: GameState, took: Record<string, number> = named): GameState => bookGrudge(state, NOTICE, true, { seen: null, named: took }, NAMES);
 
   test('is one more met and the waiting begun again, in the same machine under the same callsign', () => {
     for (const kind of MECHS) {
@@ -469,8 +502,6 @@ describe('a meeting won', () => {
     // With nothing known before, the one that did most; the first of two that did the same.
     expect(grudgeOf(won(game({ battlesWon: 30, grudge: blank({ waited: 3 }) })))!.knows).toBe('wpn-rivet-rifle');
     expect(grudgeOf(won(at(), { 'wpn-arc-pistol': 50, 'wpn-rivet-rifle': 50 }))!.knows).toBe('wpn-arc-pistol');
-    // What was done to the machines beside it teaches them nothing.
-    expect(grudgeOf(bookGrudge(at({ knows: 'wpn-arc-pistol' }), NOTICE, true, { seen: null, dealt: { 'wpn-mortar-pod': 900 }, named }, NAMES))!.knows).toBe('wpn-rivet-rifle');
   });
 
   test('a machine that fell to nothing the pilot fired knows what it knew', () => {
@@ -491,7 +522,7 @@ describe('a meeting won', () => {
 
   test('a meeting lost changes nothing: the notice stays as it was', () => {
     const state = at();
-    expect(bookGrudge(state, NOTICE, false, { seen: { kind: 'stalker', origin: 'beat' }, dealt: named, named }, NAMES)).toBe(state);
+    expect(bookGrudge(state, NOTICE, false, { seen: { kind: 'stalker', origin: 'beat' }, named }, NAMES)).toBe(state);
   });
 
   test('what the bill of a meeting says: whose, which of the three, and whether it closed the account', () => {
@@ -561,7 +592,7 @@ describe('what a saved game may hold', () => {
       expect(grudgeDue(odd), kind).toBe(false);
       expect(grudgeContract(odd, TEXT, CALLED), kind).toBeNull();
       expect(grudgeEnemy(odd, ALL_ENEMIES), kind).toBeNull();
-      const begun = bookGrudge(odd, BOARD, true, { seen: { kind: 'stalker', origin: 'ran' }, dealt: {}, named: {} }, NAMES);
+      const begun = bookGrudge(odd, BOARD, true, { seen: { kind: 'stalker', origin: 'ran' }, named: {} }, NAMES);
       expect(grudgeOf(begun), kind).toMatchObject({ kind: 'stalker', origin: 'ran', met: 0, waited: 0 });
     }
     // And one that began in a way this game does not know of.

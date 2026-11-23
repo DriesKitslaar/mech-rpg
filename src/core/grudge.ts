@@ -9,13 +9,20 @@ import type { EnemyDef } from './types';
 /**
  * An account: a pilot the player wrecked, drove off or lost to, who comes back for them. One at a
  * time. They come back three times, as a notice beside the board that the player takes when they
- * choose, in their own machine, rebuilt, and hardened each time against the one weapon that hurt
- * it most the time before (see `HARDENED` in battle.ts). The third meeting won closes the account,
- * and somebody else's may begin.
+ * choose, in their own machine. The first time it is that machine as it comes: they do not know
+ * the player yet. The second and third time it is rebuilt thicker, and hardened against the one
+ * weapon that took most armour off it the meeting before (see `HARDENED` in battle.ts). The third
+ * meeting won closes the account, and somebody else's may begin.
  *
  * One weapon, and not every weapon they have ever been hit with: measured, a machine that knew all
  * of a build's weapons was a wall where the machine was a quick one (a Stalker or a Ripper that
  * knew all three was beaten one time in ten), and no trouble at all where it was a heavy one.
+ * And a hardening that wears (see `GrudgeNumbers.hardening`): one that did not shut out a pilot
+ * who carries one weapon, for whom half of that weapon was half of everything for the whole fight.
+ *
+ * What they learn they learn in a meeting, where the machine is theirs and what hit it is plain.
+ * The contract an account began in teaches them nothing: a machine that broke off untouched had
+ * met none of the pilot's weapons, and one that was wrecked is not the machine they come back in.
  *
  * Nothing here is rolled when it is asked for: an account is what the saved game says it is, and
  * its notice is a pure function of that game, the same after a reload and made again with every
@@ -33,7 +40,7 @@ export interface Grudge {
   /** The machine they fly now: a mech of the board's pool. */
   kind: string;
   origin: GrudgeOrigin;
-  /** The weapon their machine is hardened against, by its id: the one that hurt it most the last time. Absent where the pilot has hit them with nothing yet. */
+  /** The weapon their machine is hardened against, by its id: the one that took most armour off it at the last meeting. Absent until a meeting has taught them one. */
   knows?: string;
   /** Meetings the pilot has won. */
   met: number;
@@ -61,16 +68,25 @@ export interface GrudgeNumbers {
   pay: number[];
   /** Rounds a good pilot needs. */
   par: number;
+  /**
+   * How much the hardening takes before it is gone, as a share of the armour the machine's core stands in (see
+   * `EnemyDef.hardening`). Enough that a build with two or three weapons, which does about half its work with
+   * the one the machine knows, feels it for most of the fight; and little enough that a build with that one
+   * weapon and no other is through it well before the fight is done.
+   */
+  hardening: number;
 }
 /**
  * Set by measurement (`scripts/grudge.ts`): every class's build for the stage, flown by the game's own pilot
  * against every mech the tier's budget pays for, to these ends. A build none of whose weapons the machine knows
  * wins a meeting about as often as it wins a hit, and is paid about as much for a round of it. A build whose
  * best weapon the machine knows still wins more often than not on Standard, the classes together, and earns
- * about half as much for a round. Each meeting is a little harder and pays a quarter more than the last. The
- * figures as they stand are in the plan of the round.
+ * about half as much for a round. A pilot with one weapon and no other, of whom the machine knows all there is
+ * to know, is at a disadvantage and still wins: with a hardening that did not wear, one with a gun and a shield
+ * won a third meeting with a quick machine one time in five. Each meeting is a little harder and pays a quarter
+ * more than the last. The figures as they stand are in the plan of the round.
  */
-export const GRUDGE_NUMBERS: GrudgeNumbers = { plating: [0, 0.1, 0.15], pay: [1, 1.25, 1.5], par: 7 };
+export const GRUDGE_NUMBERS: GrudgeNumbers = { plating: [0, 0.1, 0.15], pay: [1, 1.25, 1.5], par: 7, hardening: 0.33 };
 /**
  * No account begins below this tier of the board, which is where its elites begin too. What makes an account
  * worth meeting is having something else to bring, and a pilot newer than that has one build and the money for
@@ -116,14 +132,18 @@ export function stronger(a: Witness | null, b: Witness | null): Witness | null {
   return ENEMY_COST[b.kind] > ENEMY_COST[a.kind] ? b : a;
 }
 
-/** The armour the pilot's weapons took off the other side in a battle (off one machine of it, where one is named), by the weapon's id. */
+/**
+ * The armour the pilot's weapons took off the other side in a battle (off one machine of it, where one is named),
+ * by the weapon's id. What a hit took off, and not what it was worth: a great shot into a part with little left
+ * did little.
+ */
 export function dealtBy(state: BattleState, target?: string): Record<string, number> {
   const { build } = state.units[0];
   const dealt: Record<string, number> = {};
   for (const event of state.events) {
     if (event.type !== 'shot' || event.unit !== 'player' || !event.hit || (target !== undefined && event.target !== target)) continue;
     const id = build[event.weapon];
-    if (id) dealt[id] = (dealt[id] ?? 0) + event.damage;
+    if (id) dealt[id] = (dealt[id] ?? 0) + (event.took ?? event.damage);
   }
   return dealt;
 }
@@ -174,6 +194,8 @@ export interface GrudgeText {
     names: string[];
     /** What the notice is called. */
     title: (name: string) => string;
+    /** Where it is to be: a line for each of the board's backgrounds, in their order. They chose it, and there is no client. */
+    places: string[];
     /** Who this is, at the first meeting, by how the account began; `machine` is what they fly now. */
     first: Record<GrudgeOrigin, (name: string, machine: string) => string>;
     /** Which meeting this is, at the second and at the third. */
@@ -184,8 +206,8 @@ export interface GrudgeText {
     opens: { first: Record<GrudgeOrigin, string>; again: [string, string] };
     /** What they say as their machine falls, by the meeting. */
     falls: [string, string, string];
-    /** Dispatch, when the player's core is below half. */
-    hurt: string;
+    /** Dispatch, when the player's core is below half: of a machine that knows no weapon, and of one that does. */
+    hurt: [string, string];
     /** Shown with the bill, by the meeting. */
     debrief: [(name: string) => string, (name: string) => string, (name: string) => string];
   };
@@ -213,13 +235,13 @@ export function grudgeContract(
   const face = faceOf(text, DISPATCH);
   const talk: TalkLine[] = [
     { at: 'start', who: g.name, text: g.met === 0 ? words.opens.first[g.origin] : words.opens.again[g.met - 1] },
-    { at: 'hurt', who: DISPATCH, text: words.hurt, ...face },
+    { at: 'hurt', who: DISPATCH, text: words.hurt[g.knows === undefined ? 0 : 1], ...face },
     { at: 'win', who: g.name, text: words.falls[g.met] },
   ];
   return {
     id: `open-${game.cycle}-${game.battlesWon}-${GRUDGE}`, phase: 'patrol', title: words.title(g.name), client: DISPATCH, ...face,
     briefing: [
-      text.places[place],
+      words.places[place],
       g.met === 0 ? words.first[g.origin](g.name, machine) : words.again[g.met - 1](g.name, machine),
       words.hardened(g.knows === undefined ? null : called.weapon(g.knows)),
     ],
@@ -236,13 +258,16 @@ export function grudgeContract(
   };
 }
 
-/** Their machine as a battle fields it, under the key `GRUDGE`: the kind's own, by their callsign, plated as the meeting has it and hardened against the weapon they know. */
+/**
+ * Their machine as a battle fields it, under the key `GRUDGE`: the kind's own, by their callsign, plated as the
+ * meeting has it and hardened against the weapon they know, with a hardening that wears.
+ */
 export function grudgeEnemy(game: Pick<GameState, 'grudge'>, enemies: Record<string, EnemyDef>, numbers: GrudgeNumbers = GRUDGE_NUMBERS): EnemyDef | null {
   const g = grudgeOf(game);
   if (!g || !Object.hasOwn(enemies, g.kind)) return null;
   const def = enemies[g.kind];
   const plating = (def.plating ?? 0) + numbers.plating[g.met];
-  return { ...def, name: g.name, ...(plating > 0 ? { plating } : {}), ...(g.knows === undefined ? {} : { hardened: [g.knows] }) };
+  return { ...def, name: g.name, ...(plating > 0 ? { plating } : {}), ...(g.knows === undefined ? {} : { hardened: [g.knows], hardening: numbers.hardening }) };
 }
 
 /** What the bill of a meeting won says: whose account, which of its meetings, and whether that closed it. Null of anything else. */
@@ -255,24 +280,21 @@ export function accountLine(game: Pick<GameState, 'grudge'>, mission: Pick<Missi
 export interface Fought {
   /** Who an account could begin with. */
   seen: Witness | null;
-  /** The armour the pilot's weapons took off the other side, by weapon. */
-  dealt: Record<string, number>;
-  /** And off the named machine of a meeting. */
+  /** The armour the pilot's weapons took off the named machine of a meeting, by weapon: all its pilot learns from. */
   named: Record<string, number>;
 }
 
 /** A contract none of whose battles has been fought yet. */
-export const NOTHING_FOUGHT: Fought = { seen: null, dealt: {}, named: {} };
+export const NOTHING_FOUGHT: Fought = { seen: null, named: {} };
 
 /**
  * What a battle that has ended adds to what its contract's battles came to. `meeting` says the battle is a notice's,
- * whose named machine stands first: what the pilot's weapons did to that machine is kept apart, since it is all the
- * account's pilot learns from.
+ * whose named machine stands first: what the pilot's weapons took off that machine is kept. Of any other battle
+ * only who was seen is.
  */
 export function foughtIn(fought: Fought, state: BattleState, meeting: boolean): Fought {
   return {
     seen: stronger(fought.seen, witness(state)),
-    dealt: addDealt(fought.dealt, dealtBy(state)),
     named: meeting ? addDealt(fought.named, dealtBy(state, 'enemy-0')) : fought.named,
   };
 }
@@ -284,11 +306,12 @@ function without<T extends Kept>(game: T): T {
 }
 
 /**
- * Books a contract as far as an account goes. A meeting won is one more met, and what did most to
- * their machine in it is what they know from now on; the third closes the account. Any other contract won is one waited through. And where no account is open, one may
- * begin with whoever the contract's battles saw, won or lost, as long as it was a contract that
- * counts (not the simulator, the range, the Gauntlet or a fight in a lent mech) and the board has
- * grown to `GRUDGE_TIER`.
+ * Books a contract as far as an account goes. A meeting won is one more met, and what took most off
+ * their machine in it is what they know from now on (what they knew, where the pilot's weapons took
+ * nothing off it); the third closes the account. Any other contract won is one waited through. And
+ * where no account is open, one may begin with whoever the contract's battles saw, won or lost,
+ * knowing nothing yet, as long as it was a contract that counts (not the simulator, the range, the
+ * Gauntlet or a fight in a lent mech) and the board has grown to `GRUDGE_TIER`.
  */
 export function bookGrudge<T extends Kept>(game: T, mission: Pick<Mission, 'id' | 'loaner'>, won: boolean, fought: Fought, names: string[]): T {
   const open = grudgeOf(game);
@@ -304,9 +327,5 @@ export function bookGrudge<T extends Kept>(game: T, mission: Pick<Mission, 'id' 
   const closed = Array.isArray(game.accounts) ? game.accounts : [];
   const fresh = names.filter((name) => !closed.includes(name));
   const dice = new Dice(((game.battlesWon + 1) * 22801763 + game.cycle * 32452867 + closed.length * 613 + 5) | 0);
-  const learnt = most(fought.dealt);
-  return {
-    ...game,
-    grudge: { name: dice.pick(fresh.length > 0 ? fresh : names), kind: fought.seen.kind, origin: fought.seen.origin, ...(learnt ? { knows: learnt } : {}), met: 0, waited: 0 },
-  };
+  return { ...game, grudge: { name: dice.pick(fresh.length > 0 ? fresh : names), kind: fought.seen.kind, origin: fought.seen.origin, met: 0, waited: 0 } };
 }

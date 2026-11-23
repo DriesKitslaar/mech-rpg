@@ -1,7 +1,7 @@
 import { activeUnit, applyAction, createBattle, previewShot, type Action, type BattleState } from '../../src/core/battle';
 import { MECH_ENEMIES, POOL, generateBoard, swarmContract } from '../../src/core/board';
 import type { GameState } from '../../src/core/game';
-import { GRUDGE, GRUDGE_MEETINGS, GRUDGE_WAIT, grudgeContract, grudgeEnemy, type Grudge } from '../../src/core/grudge';
+import { GRUDGE, GRUDGE_MEETINGS, GRUDGE_NUMBERS, GRUDGE_WAIT, grudgeContract, grudgeEnemy, type Grudge } from '../../src/core/grudge';
 import { jobContract } from '../../src/core/jobs';
 import type { EnemyDef } from '../../src/core/types';
 import { ALL_ENEMIES } from '../../src/content/arena';
@@ -15,9 +15,10 @@ import SPRITES from '../../src/content/sprites.json';
 import { STRINGS } from '../../src/content/strings';
 import type { App } from '../../src/ui/app';
 import { BattleFlow } from '../../src/ui/battleFlow';
-import { BattleScreen } from '../../src/ui/battleScreen';
+import { BattleScreen, MARK_TURN_MS } from '../../src/ui/battleScreen';
+import { BRIEFING_CHARS, BriefingScreen, briefingRows, briefingShown } from '../../src/ui/briefingScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
-import { COLORS } from '../../src/ui/widgets';
+import { COLORS, wrap } from '../../src/ui/widgets';
 import { JUGGERNAUT, accept, done, finishMission, ids, inHub, press, retreat, savedGame, select, snap, strong, toHub } from '../helpers/app';
 import { overlap, record, type Drawn } from '../helpers/canvas';
 
@@ -51,7 +52,7 @@ describe('an account begins in a contract flown through the app', () => {
   const contract = generateBoard(wins, 0, BOARD_TEXT)[0];
   const mechs = contract.battles.flatMap((b) => b.enemies).filter((id) => MECHS.includes(id));
 
-  test('with the mech that fell or broke off in it, knowing the weapon that did most; and its notice is there three contracts later, after the job and before the swarm', () => {
+  test('with the mech that fell or broke off in it, knowing nothing of the pilot yet; and its notice is there three contracts later, after the job and before the swarm', () => {
     expect(mechs.length).toBeGreaterThan(0);
     const { app, store } = inHub(pilot(wins));
     expect(snap(app).grudge).toBeNull();
@@ -65,8 +66,8 @@ describe('an account begins in a contract flown through the app', () => {
     expect(mechs).toContain(begun.kind);
     expect(['wrecked', 'ran']).toContain(begun.origin);
     expect(GRUDGE_NAMES).toContain(begun.name);
-    // The only weapon these flights fire is the one in the right hand.
-    expect(begun).toMatchObject({ knows: JUGGERNAUT.rightHand, met: 0, waited: 0 });
+    // Whatever these flights fired at it, it taught them nothing: that is for a meeting.
+    expect(begun).toEqual({ name: begun.name, kind: begun.kind, origin: begun.origin, met: 0, waited: 0 });
     expect(snap(app).grudge).toEqual(begun);
     expect(listed(app).filter((id) => id.endsWith(`-${GRUDGE}`))).toEqual([]);
 
@@ -120,14 +121,93 @@ describe('the notice', () => {
     for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) expect(overlap(lines[i], lines[j]), `${lines[i].text} | ${lines[j].text}`).toBe(false);
   });
 
+  test('all of its briefing is on the page, to the last line, wherever it is fought and at every meeting: in English and in Dutch', () => {
+    const places = new Set<string>();
+    for (const language of ['en', 'nl'] as const) {
+      for (let won = 20; won < 28; won++) {
+        for (const met of [0, 1, 2]) {
+          const state = pilot(won, { grudge: account({ met }) });
+          const { app } = inHub(language === 'nl' ? dutch(state) : state);
+          setLanguage(language);
+          const made = grudgeContract(state, BOARD_TEXT, CALLED)!;
+          places.add(made.battles[0].background);
+          select(app, 'contracts');
+          select(app, made.id);
+          for (let i = 0; i < 400 && (snap(app) as { typing?: boolean }).typing; i++) app.update(50);
+          const words = said(app);
+          for (const paragraph of made.briefing) {
+            for (const line of wrap(paragraph, BRIEFING_CHARS)) expect(words, `${language} ${won} won, meeting ${met + 1}: ${line}`).toContain(line);
+          }
+        }
+      }
+    }
+    expect(places.size).toBe(BOARD_TEXT.backgrounds.length);
+  });
+
   test('its battle fields their machine under their callsign, hardened against the weapon they know, and nothing else on the field is', () => {
     const { app } = inHub(game);
     accept(app, notice.id);
     const battle = snap(app).battle as unknown as { enemies: string[]; hardened: string[]; objective: string };
     expect(battle.enemies[0]).toBe('heavy-mech');
     expect(battle.hardened).toEqual([JUGGERNAUT.rightHand]);
+    // With a hardening that wears: so much of the armour its core stands in.
+    const core = createBattle(JUGGERNAUT, [grudgeEnemy(game, ENEMIES)!], CATALOG, 1, { enemyScale: notice.scale }).units[1].parts.core!;
+    expect((battle as unknown as { hardening: number }).hardening).toBe(Math.round(GRUDGE_NUMBERS.hardening * core.maxAp));
     expect(battle.objective).toBe(STRINGS.objectives.leader('Brakk'));
     expect(said(app)).toContain(STRINGS.objectives.leader('Brakk'));
+  });
+});
+
+describe('how much of a briefing the page draws, and how much it is said to draw', () => {
+  /** A paragraph that wraps to exactly so many lines, each one its own: so that a line can be looked for on the page. */
+  const paragraph = (lines: number, mark: string): string => Array.from({ length: lines }, (_, i) => `${mark}${i}`.padEnd(BRIEFING_CHARS, 'x')).join(' ');
+  /** The notice at this progress with other words for a briefing, drawn once it has written itself out. */
+  function page(won: number, briefing: string[]) {
+    const state = pilot(won, { grudge: account() });
+    const { app } = inHub(state);
+    const mission = { ...grudgeContract(state, BOARD_TEXT, CALLED)!, briefing };
+    const screen = new BriefingScreen(app, mission);
+    for (let i = 0; i < 2000 && screen.view().typing; i++) screen.update(50);
+    const texts = record((ctx) => screen.draw(ctx)).texts;
+    const body = briefing.flatMap((text) => wrap(text, BRIEFING_CHARS));
+    const drawnLines = body.filter((line) => texts.some((t) => t.text === line));
+    return { mission, body, drawn: drawnLines.length, at: (line: string) => texts.find((t) => t.text === line)!.y, said: briefingShown(mission) };
+  }
+  // A notice with a line for the ground under it, and one without: eight rows for what is said, and nine.
+  const withGround = Array.from({ length: 12 }, (_, i) => 20 + i).find((won) => briefingRows(grudgeContract(pilot(won, { grudge: account() }), BOARD_TEXT, CALLED)!) === 8)!;
+  const without = Array.from({ length: 12 }, (_, i) => 20 + i).find((won) => briefingRows(grudgeContract(pilot(won, { grudge: account() }), BOARD_TEXT, CALLED)!) === 9)!;
+
+  test('there is a notice of each kind, and a paragraph made for the test wraps to the lines it was made of', () => {
+    expect(withGround).toBeDefined();
+    expect(without).toBeDefined();
+    expect(wrap(paragraph(3, 'a'), BRIEFING_CHARS)).toHaveLength(3);
+    expect(new Set(wrap(paragraph(3, 'a'), BRIEFING_CHARS)).size).toBe(3);
+  });
+
+  test('one paragraph: as many lines as there are rows, and no more', () => {
+    for (const [won, rows] of [[withGround, 8], [without, 9]] as const) {
+      const full = page(won, [paragraph(rows, 'a')]);
+      expect(full.body).toHaveLength(rows);
+      expect([full.drawn, full.said.shown, full.said.lines], `${rows} rows, full`).toEqual([rows, rows, rows]);
+      const over = page(won, [paragraph(rows + 1, 'a')]);
+      expect([over.drawn, over.said.shown, over.said.lines], `${rows} rows, one over`).toEqual([rows, rows, rows + 1]);
+    }
+  });
+
+  test('three paragraphs: a line less than there are rows, because of the gap under each; and the page and the count agree', () => {
+    for (const [won, rows] of [[withGround, 8], [without, 9]] as const) {
+      const fits = page(won, [paragraph(1, 'a'), paragraph(3, 'b'), paragraph(rows - 5, 'c')]);
+      expect(fits.body).toHaveLength(rows - 1);
+      expect([fits.drawn, fits.said.shown, fits.said.lines], `${rows} rows, a line under`).toEqual([rows - 1, rows - 1, rows - 1]);
+      // As many lines as rows: the last is not drawn, and is not said to be.
+      const over = page(won, [paragraph(1, 'a'), paragraph(3, 'b'), paragraph(rows - 4, 'c')]);
+      expect(over.body).toHaveLength(rows);
+      expect([over.drawn, over.said.shown, over.said.lines], `${rows} rows, as many lines`).toEqual([rows - 1, rows - 1, rows]);
+      // The gap: a line of the next paragraph stands that much lower than a line of the same paragraph would.
+      const [first, second, third] = [fits.at(fits.body[0]), fits.at(fits.body[1]), fits.at(fits.body[2])];
+      expect(third - second).toBe(11);
+      expect(second - first).toBe(11 + 4);
+    }
   });
 });
 
@@ -144,11 +224,13 @@ describe('a machine that is hardened, on the field', () => {
     for (const unit of s.units) { unit.boosted = false; unit.guarding = false; unit.staggered = 0; }
     return s;
   }
-  function shown(state: BattleState) {
+  /** The battle on its screen, at the pilot's turn: hurried, or (asked so) played as it is on the handheld, with what is heard written down. */
+  function shown(state: BattleState, fast = true) {
+    const heard: string[] = [];
     const flow = new BattleFlow(state, CATALOG, { quiet: true });
-    const screen = new BattleScreen(flow, sprites, CATALOG, { fast: true, background: 'bg-mine' });
-    for (let i = 0; i < 2000 && (screen.banner || flow.phase !== 'action'); i++) screen.update(16);
-    return { screen, flow, page: (): Drawn => record((ctx) => screen.draw(ctx)) };
+    const screen = new BattleScreen(flow, sprites, CATALOG, { fast, background: 'bg-mine', sfx: { play: (name: string) => { heard.push(name); } } as never });
+    for (let i = 0; i < 4000 && (screen.banner || flow.phase !== 'action'); i++) screen.update(16);
+    return { screen, flow, heard, page: (): Drawn => record((ctx) => screen.draw(ctx)) };
   }
   /** Takes aim with the weapon at this place in the weapon menu. */
   function aim(made: ReturnType<typeof shown>, weapon: number): void {
@@ -184,8 +266,12 @@ describe('a machine that is hardened, on the field', () => {
     aim(made, 0);
     expect(made.flow.halved).toBe(true);
     const texts = made.page().texts;
-    const row = texts.filter((t) => t.size === 10 && t.align === 'left' && (t.text === STRINGS.tags.hardened || t.text === STRINGS.tags.half));
-    expect(row.map((t) => [t.text, t.color])).toEqual([[STRINGS.tags.hardened, COLORS.accent], [STRINGS.tags.half, COLORS.danger]]);
+    const row = texts.filter((t) => t.size === 10 && t.align === 'left' && (t.text.startsWith(STRINGS.tags.hardened) || t.text === STRINGS.tags.half));
+    // In the row: hardened, with what the hardening can still take, and that this weapon does half.
+    const left = made.flow.state.units[1].hardening!;
+    expect(left).toBeGreaterThan(20);
+    expect(STRINGS.tags.hardenedLeft(left)).toBe(`HARDENED ${left}`);
+    expect(row.map((t) => [t.text, t.color])).toEqual([[STRINGS.tags.hardenedLeft(left), COLORS.accent], [STRINGS.tags.half, COLORS.danger]]);
     const preview = previewShot(made.flow.state, 'player', 'rightHand', 'enemy-0', 'core', CATALOG);
     const plain = previewShot(field(ENEMIES['heavy-mech']), 'player', 'rightHand', 'enemy-0', 'core', CATALOG);
     expect(preview.damage).toBeLessThan(plain.damage);
@@ -197,24 +283,99 @@ describe('a machine that is hardened, on the field', () => {
     const T = STRINGS.tags;
     const rowOf = (made: ReturnType<typeof shown>): string[] => {
       const texts = made.page().texts;
-      const at = texts.find((t) => t.text === T.hardened && t.align === 'left')!.y;
+      const at = texts.find((t) => t.text.startsWith(T.hardened) && t.align === 'left')!.y;
       return texts.filter((t) => t.y === at && t.align === 'left' && t.size === 10).map((t) => t.text);
     };
     // With nothing else on it the row has room for what the machine is about to do, which stands last.
     const roomy = shown(field());
     aim(roomy, 0);
     const plain = rowOf(roomy);
-    expect(plain.slice(0, 2)).toEqual([T.hardened, T.half]);
+    const word = T.hardenedLeft(roomy.flow.state.units[1].hardening!);
+    expect(plain.slice(0, 2)).toEqual([word, T.half]);
     expect(plain).toHaveLength(3);
     const intent = plain[2];
-    // Guarding and painted as well, there is one tag more than the row holds beside this name.
+    // Guarding as well, there is one tag more than the row holds beside this name.
     const full = field();
     full.units[1].guarding = true;
-    full.units[1].painted = 2;
     const tight = shown(full);
     aim(tight, 0);
-    expect(rowOf(tight)).toEqual([T.hardened, T.half, T.guard, T.painted]);
+    expect(rowOf(tight)).toEqual([word, T.half, T.guard]);
     expect(tight.page().texts.filter((t) => t.text === intent)).toEqual([]);
+  });
+
+  test('a hit of the weapon it knows takes what it did off the number in the row; shot away, nothing says hardened or half, and the bar says it is gone', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      // A hardening one hit short of gone, and one with room for many.
+      const thin = field();
+      thin.rng = createBattle(JUGGERNAUT, [theirs], CATALOG, seed).rng;
+      const whole = structuredClone(thin);
+      thin.units[1].hardening = 3;
+      // (Not hurried: what is written over a machine and what is heard are left out of a hurried battle.)
+      const fire = (state: BattleState) => {
+        const made = shown(state, false);
+        aim(made, 0);
+        const worth = previewShot(made.flow.state, 'player', 'rightHand', 'enemy-0', made.flow.targetPart!, CATALOG).damage;
+        const at = made.flow.state.events.length;
+        made.screen.onInput('confirm');
+        const said: string[] = [];
+        // What is written over the field while the shot plays, looked at every few frames.
+        const words = new Set<string>();
+        made.heard.length = 0;
+        for (let i = 0; i < 6000 && (made.flow.phase === 'animating' || made.flow.phase === 'target'); i++) {
+          made.screen.update(16);
+          if (!said.includes(made.flow.message)) said.push(made.flow.message);
+          if (i % 4 === 0) for (const t of made.page().texts) words.add(t.text);
+        }
+        const landed = made.flow.state.events.slice(at).filter((event) => event.type === 'shot' && event.unit === 'player' && event.hit);
+        return { made, worth, landed: landed.length, said, words, heard: [...made.heard] };
+      };
+      const a = fire(whole);
+      if (a.landed !== 1) continue;
+      // With room: the number is less by what the hit did, and it is hardened still.
+      const before = whole.units[1].hardening!;
+      expect(a.made.flow.state.units[1].hardening).toBe(before - a.worth);
+      expect(a.made.screen.markOver('enemy-0')).not.toBeNull();
+      expect(a.said).not.toContain(STRINGS.hardeningGone('Brakk'));
+      expect(a.words.has(STRINGS.fx.hardeningGone)).toBe(false);
+      // One hit short of gone: it is gone, the bar has said so, and nothing over the machine or beside its name says hardened.
+      const b = fire(thin);
+      expect(b.landed).toBe(1);
+      expect(b.made.flow.state.units[1].hardened).toBeUndefined();
+      expect(b.said).toContain(STRINGS.hardeningGone('Brakk'));
+      expect(STRINGS.hardeningGone('Brakk')).toBe('Brakk has no hardening left');
+      // And over the machine, as it goes, the word for it.
+      expect(b.words.has(STRINGS.fx.hardeningGone)).toBe(true);
+      expect(STRINGS.fx.hardeningGone).toBe('HARDENING GONE');
+      // It is heard: the ring of a machine knocked off its balance, which the shot with room left did not make.
+      expect(b.heard).toContain('stagger');
+      expect(a.heard).not.toContain('stagger');
+      expect(b.made.screen.markOver('enemy-0')).not.toBe(STRINGS.tags.hardened);
+      expect(b.made.flow.halved).toBe(false);
+      const texts = b.made.page().texts.map((t) => t.text);
+      expect(texts.filter((text) => text.startsWith(STRINGS.tags.hardened) || text === STRINGS.tags.half)).toEqual([]);
+      return;
+    }
+    throw new Error('no seed on which the one shot lands');
+  });
+
+  test('beside a machine that covers it, it says that it is covered and that it is hardened in turn: neither hides the other', () => {
+    let s = createBattle(JUGGERNAUT, [theirs, ENEMIES['shield-drone']], CATALOG, 3, { objective: { type: 'leader', target: 0 } });
+    for (let guard = 0; activeUnit(s).id !== 'player' && guard < 20; guard++) s = applyAction(s, END, CATALOG);
+    s = structuredClone(s);
+    for (const unit of s.units) { unit.boosted = false; unit.guarding = false; unit.staggered = 0; }
+    const { screen } = shown(s);
+    const words = new Set<string | null>();
+    for (let t = 0; t < 2 * MARK_TURN_MS; t += 16) { screen.update(16); words.add(screen.markOver('enemy-0')); }
+    expect([...words].sort()).toEqual([STRINGS.tags.covered, STRINGS.tags.hardened].sort());
+    // The same machine not hardened says only that it is covered.
+    let plain = createBattle(JUGGERNAUT, [ENEMIES['heavy-mech'], ENEMIES['shield-drone']], CATALOG, 3);
+    for (let guard = 0; activeUnit(plain).id !== 'player' && guard < 20; guard++) plain = applyAction(plain, END, CATALOG);
+    plain = structuredClone(plain);
+    for (const unit of plain.units) { unit.boosted = false; unit.guarding = false; unit.staggered = 0; }
+    const other = shown(plain).screen;
+    const seen = new Set<string | null>();
+    for (let t = 0; t < 2 * MARK_TURN_MS; t += 16) { other.update(16); seen.add(other.markOver('enemy-0')); }
+    expect([...seen]).toEqual([STRINGS.tags.covered]);
   });
 
   test('aimed at with any other weapon: hardened still, and nothing does half', () => {
@@ -223,7 +384,7 @@ describe('a machine that is hardened, on the field', () => {
     expect(made.flow.halved).toBe(false);
     const texts = made.page().texts;
     expect(texts.filter((t) => t.text === STRINGS.tags.half)).toEqual([]);
-    expect(texts.some((t) => t.text === STRINGS.tags.hardened && t.align === 'left')).toBe(true);
+    expect(texts.some((t) => t.text.startsWith(STRINGS.tags.hardened) && t.align === 'left')).toBe(true);
     const preview = previewShot(made.flow.state, 'player', 'leftHand', 'enemy-0', 'core', CATALOG);
     const plain = previewShot(field(ENEMIES['heavy-mech']), 'player', 'leftHand', 'enemy-0', 'core', CATALOG);
     expect(preview.damage).toBe(plain.damage);

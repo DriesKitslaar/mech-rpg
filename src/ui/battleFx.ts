@@ -498,6 +498,13 @@ export class BattleFx {
         this.say(0, at, STRINGS.fx.fieldDown, COLORS.energy);
         break;
       }
+      case 'hardeningGone': {
+        // The hardening goes in a shower off the whole machine, in the colour its word was written in.
+        const at = s.centre(event.unit);
+        this.add(0, SPARK_MS, { kind: 'sparks', at, color: COLORS.accent });
+        this.say(0, at, STRINGS.fx.hardeningGone, COLORS.accent);
+        break;
+      }
       case 'fieldUp': {
         const at = s.centre(event.unit);
         this.add(0, SHIELD_MS, { kind: 'shield', at, aim: this.headingOf(event.unit) });

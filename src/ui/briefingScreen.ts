@@ -89,6 +89,28 @@ export function groundLines(mission: Mission): string[] {
 /** Rows of briefing text that fit in the body, given how many lines of objectives sit under them. */
 export const BRIEFING_ROWS = 10;
 export const briefingRows = (mission: Mission): number => BRIEFING_ROWS - objectiveLines(mission).length - groundLines(mission).length;
+/** The room left under each paragraph of what the client says, in pixels: so a briefing of several holds less than its rows. */
+export const BRIEFING_GAP = 4;
+/**
+ * How many of a briefing's lines the page draws, wrapped as it wraps them: all of them, where it fits. A line is
+ * drawn while it starts no lower than the last row the contract leaves for the client, and each paragraph is
+ * followed by a gap.
+ */
+export function briefingShown(mission: Mission): { lines: number; shown: number } {
+  const lastRow = (briefingRows(mission) - 1) * LINE;
+  let y = 0;
+  let lines = 0;
+  let shown = 0;
+  for (const paragraph of mission.briefing) {
+    for (const _line of wrap(paragraph, BRIEFING_CHARS)) {
+      lines += 1;
+      if (y <= lastRow) shown += 1;
+      y += LINE;
+    }
+    y += BRIEFING_GAP;
+  }
+  return { lines, shown };
+}
 export const BRIEFING_CHARS = charsFor(LOGICAL_W - 24);
 
 /**
@@ -396,7 +418,7 @@ export class BriefingScreen implements Screen {
         drawText(ctx, line, 12, y);
         y += LINE;
       }
-      y += 4;
+      y += BRIEFING_GAP;
     }
     // What the contract asks for appears when the client has finished talking.
     // What the ground does comes last, in the colour of the weather.

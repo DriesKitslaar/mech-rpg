@@ -295,7 +295,7 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   },
   {
     id: 'accounts', title: 'OVERDUE ACCOUNTS',
-    text: 'A pilot you wrecked, drove off or lost to may come back for you: a notice beside the board, OVERDUE and their callsign. Their machine is HARDENED against the weapon that hurt it most last time: that weapon does HALF to it, and the briefing names it. Bring another and it is only a machine. Three meetings close the account.',
+    text: 'A pilot you wrecked, drove off or lost to may come back for you: a notice by the board, OVERDUE and their callsign. They come three times. From the second, their machine is HARDENED against the weapon that hurt it most last time: that does HALF until the number beside HARDENED is shot away. Bring another: it is only a machine.',
   },
   {
     id: 'range', title: 'THE RANGE',

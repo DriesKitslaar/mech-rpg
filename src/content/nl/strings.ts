@@ -38,7 +38,7 @@ export const STRINGS_NL = {
     fuse: (n: number) => `LONT ${n}`, aegis: 'AEGIS', jammer: 'STOORDER', mender: 'HERSTEL', carrier: 'DRAGER', shaken: 'PANIEK',
     covered: 'GEDEKT', jammed: (n: number) => `GESTOORD -${n}`, ironSkin: 'IJZERHUID', deadeye: 'SCHERPOOG',
     marks: { armoured: 'GEPANTSERD', overclocked: 'OVERKLOKT', swift: 'SNEL', shielded: 'SCHILD' } as Record<string, string>,
-    hardened: 'GEHARD', half: 'HELFT',
+    hardened: 'GEHARD', hardenedLeft: (n: number) => `GEHARD ${n}`, half: 'HELFT',
   },
   intent: { aim: (part: string) => `MIKT ${AIMED[part] ?? part.toUpperCase()}`, dart: 'ONTWIJKT', mend: 'HERSTELT', cool: 'KOELT', windUp: 'LAADT OP', hold: 'WACHT' },
   objectives: {
@@ -51,6 +51,7 @@ export const STRINGS_NL = {
     reserve: (n: number) => `NOG ${n} OP KOMST`, more: (n: number) => `+${n}`,
     won: {
       survive: 'Je hield stand.', protect: (name: string) => `${name}: veilig.`, leader: 'Hun leider ligt neer.',
+      down: (name: string) => `${name} ligt neer.`,
       disable: 'Lamgelegd, in een stuk.', driveOff: (name: string) => `${name} druipt af.`,
     },
     lost: { asset: (name: string) => `${name}: kwijt.`, target: 'Het doelwit is vernietigd.', time: 'Tijd is om.' },
@@ -86,6 +87,7 @@ export const STRINGS_NL = {
   stagger: (unit: string) => does(unit, 'WANKELT'),
   recover: (unit: string) => does(unit, 'staat pal'),
   fieldDown: (unit: string) => `${subj(unit)}: veld weg`,
+  hardeningGone: (unit: string) => `${subj(unit)}: harding weg`,
   fieldUp: (unit: string) => `${subj(unit)}: veld terug`,
   charge: (unit: string, weapon: string) => does(unit, `laadt ${weapon} op`),
   barrierHit: (weapon: string, target: string, absorbed: number) => `${weapon} raakt ${obj(target)} - barriere -${absorbed}`,
@@ -552,7 +554,7 @@ export const STRINGS_NL = {
   },
   fx: {
     miss: 'MIS', overheat: 'OVERVERHIT', stagger: 'WANKELT', shaken: 'PANIEK', block: (n: number) => `BLOK ${n}`,
-    fieldDown: 'VELD WEG', fieldUp: 'VELD TERUG',
+    fieldDown: 'VELD WEG', fieldUp: 'VELD TERUG', hardeningGone: 'HARDING WEG',
     overkill: 'OVERKILL', chain: (n: number) => `REEKS x${n}`, rout: 'VLUCHT', offline: 'UIT',
     kinds: { redline: (percent: number) => `WITHEET +${percent}%`, surge: (times: string) => `PIEK x${times}`, punish: 'STRAF' },
     kept: (amount: number) => `+${amount} EN`,

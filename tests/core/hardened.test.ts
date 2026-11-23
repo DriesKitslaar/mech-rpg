@@ -8,7 +8,8 @@ import { CATALOG, DEMO_BUILD } from '../../src/content/parts';
 
 /**
  * A machine can be hardened against weapons, by their ids: each of those does half to it, where the
- * shot is previewed and where it lands, and all of what it does to anything else.
+ * shot is previewed and where it lands, and all of what it does to anything else. A hardening may
+ * wear: it takes what those weapons do to the machine until it has taken so much, and is gone.
  *
  * Half is held here against a catalogue in which the weapon is listed at half its damage: whatever a
  * shot is made of (its kind, the heat or energy behind it, what the part resists, where it is
@@ -199,6 +200,218 @@ describe('every kind of weapon does half to a machine hardened against it', () =
     expect(a.find((shot) => !shot.leapt)).toEqual(b.find((shot) => !shot.leapt));
     expect(leap(a).damage).toBeLessThan(leap(b).damage);
     expect(Math.abs(leap(a).damage - leap(b).damage / 2)).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('a hardening that wears', () => {
+  /** The heavy machine hardened against the rifle, with a hardening of this share of its core's armour. */
+  const wearing = (share: number): EnemyDef => ({ ...HEAVY, hardened: [RIFLE.id], hardening: share });
+  const WILD = made('wpn-t-wild', { accuracy: -500 });
+  const WEAR: Catalog = { ...TEST, [WILD.id]: WILD };
+  const fire = (weapon: WeaponSlot, target: string, part: 'core' | 'legs' = 'legs'): Action => ({ type: 'fire', weapon, target, part });
+  /** The battle after this action, on the first seed on which every shot of it lands (or, asked so, none does). */
+  function after(make: (seed: number) => BattleState, action: Action, landing = true): { before: BattleState; next: BattleState } {
+    for (let seed = 1; seed <= 60; seed++) {
+      const before = make(seed);
+      const next = applyAction(before, action, WEAR);
+      const fired = shots(next, before.events.length);
+      if (fired.length > 0 && fired.every((shot) => shot.hit === landing)) return { before, next };
+    }
+    throw new Error('no seed on which the shots do that');
+  }
+
+  test('is as much as that share of the armour its core stands in; one that is given no share does not wear, and nothing wears on a machine that is hardened against nothing', () => {
+    const s = battle({ rightHand: RIFLE.id, leftHand: OTHER.id }, [wearing(0.5), LIGHT], WEAR);
+    const core = unit(s, 'enemy-0').parts.core!;
+    expect(unit(s, 'enemy-0').hardening).toBe(Math.round(0.5 * core.maxAp));
+    expect(unit(s, 'enemy-0').hardening).toBeGreaterThan(20);
+    expect(unit(s, 'enemy-1').hardening).toBeUndefined();
+    expect(unit(s, 'player').hardening).toBeUndefined();
+    expect(unit(battle({ rightHand: RIFLE.id }, [against(RIFLE.id), LIGHT], WEAR), 'enemy-0').hardening).toBeUndefined();
+    const none = battle({ rightHand: RIFLE.id }, [{ ...HEAVY, hardening: 0.5 }, LIGHT], WEAR);
+    expect(unit(none, 'enemy-0').hardened).toBeUndefined();
+    expect(unit(none, 'enemy-0').hardening).toBeUndefined();
+    // A thicker machine has more of it: the share is of the armour it stands in, plating and all.
+    const plated = battle({ rightHand: RIFLE.id }, [{ ...wearing(0.5), plating: 0.5 }, LIGHT], WEAR);
+    expect(unit(plated, 'enemy-0').hardening).toBe(Math.round(0.5 * unit(plated, 'enemy-0').parts.core!.maxAp));
+    expect(unit(plated, 'enemy-0').hardening).toBeGreaterThan(unit(s, 'enemy-0').hardening!);
+    // And the smallest there is is one point: a hardening is never made already gone.
+    expect(unit(battle({ rightHand: RIFLE.id }, [wearing(0.0001), LIGHT], WEAR), 'enemy-0').hardening).toBe(1);
+  });
+
+  test('a hit of the weapon it is hardened against takes off it what the hit did, and the hit is still halved', () => {
+    const make = (seed: number): BattleState => battle({ rightHand: RIFLE.id, leftHand: OTHER.id }, [wearing(0.9), LIGHT], WEAR, seed);
+    const { before, next } = after(make, fire('rightHand', 'enemy-0'));
+    const [shot] = shots(next, before.events.length);
+    expect(shot.damage).toBe(previewShot(before, 'player', 'rightHand', 'enemy-0', 'legs', WEAR).damage);
+    expect(shot.damage).toBeGreaterThan(5);
+    expect(unit(next, 'enemy-0').hardening).toBe(unit(before, 'enemy-0').hardening! - shot.damage);
+    expect(unit(next, 'enemy-0').hardened).toEqual([RIFLE.id]);
+    expect(next.events.some((event) => event.type === 'hardeningGone')).toBe(false);
+  });
+
+  test('a miss takes nothing off it; nor does another weapon, or that weapon landing on the machine beside it', () => {
+    const make = (weapons: Partial<Record<WeaponSlot, string>>) => (seed: number): BattleState => battle(weapons, [{ ...wearing(0.9), hardened: [RIFLE.id, WILD.id] }, LIGHT], WEAR, seed);
+    const whole = unit(make({ rightHand: RIFLE.id })(1), 'enemy-0').hardening;
+    const missed = after(make({ rightHand: WILD.id }), fire('rightHand', 'enemy-0'), false);
+    expect(unit(missed.next, 'enemy-0').hardening).toBe(whole);
+    const other = after(make({ rightHand: RIFLE.id, leftHand: OTHER.id }), fire('leftHand', 'enemy-0'));
+    expect(unit(other.next, 'enemy-0').hardening).toBe(whole);
+    const beside = after(make({ rightHand: RIFLE.id }), fire('rightHand', 'enemy-1'));
+    expect(unit(beside.next, 'enemy-0').hardening).toBe(whole);
+    expect(shots(beside.next, beside.before.events.length)[0].damage).toBeGreaterThan(0);
+  });
+
+  test('worn to nothing it is gone, and is said to be, once: the shot that wore it out was halved, and the next does all the weapon does', () => {
+    // Small enough for one hit to wear out.
+    const make = (seed: number): BattleState => battle({ rightHand: RIFLE.id, leftHand: OTHER.id }, [wearing(0.02), LIGHT], WEAR, seed);
+    const { before, next } = after(make, fire('rightHand', 'enemy-0'));
+    const [shot] = shots(next, before.events.length);
+    expect(unit(before, 'enemy-0').hardening).toBeLessThanOrEqual(shot.damage);
+    expect(shot.damage).toBe(previewShot(before, 'player', 'rightHand', 'enemy-0', 'legs', WEAR).damage);
+    expect(unit(next, 'enemy-0').hardened).toBeUndefined();
+    expect(unit(next, 'enemy-0').hardening).toBeUndefined();
+    expect(hardenedAgainst(unit(next, 'enemy-0'), RIFLE)).toBe(false);
+    expect(next.events.filter((event) => event.type === 'hardeningGone')).toEqual([{ type: 'hardeningGone', unit: 'enemy-0' }]);
+    // What the rifle does to it now is what it does to the same machine never hardened, part for part it has not been hit on.
+    const plain = battle({ rightHand: RIFLE.id, leftHand: OTHER.id }, [HEAVY, LIGHT], WEAR);
+    for (const part of ['core', 'arms', 'head'] as const) {
+      expect(previewShot(next, 'player', 'leftHand', 'enemy-0', part, WEAR).damage, part).toBe(previewShot(plain, 'player', 'leftHand', 'enemy-0', part, WEAR).damage);
+    }
+    const rifleNow = (state: BattleState): number => {
+      // (The rifle has been fired this turn: it is asked of the pilot's next.)
+      let later = applyAction(state, END, WEAR);
+      for (let guard = 0; activeUnit(later).id !== 'player' && later.outcome === 'ongoing' && guard < 20; guard++) later = applyAction(later, END, WEAR);
+      return previewShot(later, 'player', 'rightHand', 'enemy-0', 'core', WEAR).damage;
+    };
+    expect(rifleNow(next)).toBe(rifleNow(plain));
+    expect(rifleNow(next)).toBeGreaterThan(rifleNow(make(1)));
+    // And it is not said again.
+    let later = applyAction(next, END, WEAR);
+    for (let guard = 0; activeUnit(later).id !== 'player' && later.outcome === 'ongoing' && guard < 20; guard++) later = applyAction(later, END, WEAR);
+    later = applyAction(later, fire('rightHand', 'enemy-0', 'core'), WEAR);
+    expect(later.events.filter((event) => event.type === 'hardeningGone')).toHaveLength(1);
+  });
+
+  test('with exactly nothing left it is gone: it does not hold for one hit more', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const s = structuredClone(battle({ rightHand: RIFLE.id, leftHand: OTHER.id }, [wearing(0.9), LIGHT], WEAR, seed));
+      // As much left as the next hit is worth, to the point.
+      unit(s, 'enemy-0').hardening = previewShot(s, 'player', 'rightHand', 'enemy-0', 'legs', WEAR).damage;
+      const next = applyAction(s, fire('rightHand', 'enemy-0'), WEAR);
+      if (!shots(next, s.events.length)[0].hit) continue;
+      expect(unit(next, 'enemy-0').hardened).toBeUndefined();
+      expect(unit(next, 'enemy-0').hardening).toBeUndefined();
+      expect(next.events.filter((event) => event.type === 'hardeningGone')).toHaveLength(1);
+      return;
+    }
+    throw new Error('no seed on which the shot lands');
+  });
+
+  test('what a barrier took of the hit was kept off the machine by the hardening all the same: it wears by all the hit was worth', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const s = structuredClone(battle({ rightHand: RIFLE.id, leftHand: OTHER.id }, [wearing(0.9), LIGHT], WEAR, seed));
+      unit(s, 'enemy-0').barrier = 7;
+      const before = unit(s, 'enemy-0').hardening!;
+      const worth = previewShot(s, 'player', 'rightHand', 'enemy-0', 'legs', WEAR).damage;
+      const next = applyAction(s, fire('rightHand', 'enemy-0'), WEAR);
+      const [shot] = next.events.slice(s.events.length).flatMap((e: BattleEvent) => (e.type === 'shot' && e.unit === 'player' ? [e] : []));
+      if (!shot.hit) continue;
+      expect(shot.absorbed).toBe(7);
+      expect(shot.damage).toBe(worth - 7);
+      expect(unit(next, 'enemy-0').hardening).toBe(before - worth);
+      return;
+    }
+    throw new Error('no seed on which the shot lands');
+  });
+
+  test('one that is given no share holds for the whole battle: hit after hit is halved, and it is never said to be gone', () => {
+    let s = battle({ rightHand: RIFLE.id, leftHand: OTHER.id }, [against(RIFLE.id), LIGHT], WEAR, 3);
+    const halved = previewShot(s, 'player', 'rightHand', 'enemy-0', 'core', WEAR).damage;
+    let landed = 0;
+    for (let turn = 0; turn < 12 && s.outcome === 'ongoing' && landed < 4; turn++) {
+      const at = s.events.length;
+      s = applyAction(s, fire('rightHand', 'enemy-0', 'core'), WEAR);
+      const [shot] = shots(s, at);
+      if (shot.hit) {
+        landed += 1;
+        expect(shot.damage, `hit ${landed}`).toBe(halved);
+      }
+      expect(unit(s, 'enemy-0').hardened).toEqual([RIFLE.id]);
+      expect(unit(s, 'enemy-0').hardening).toBeUndefined();
+      s = applyAction(s, END, WEAR);
+      for (let guard = 0; activeUnit(s).id !== 'player' && s.outcome === 'ongoing' && guard < 20; guard++) s = applyAction(s, END, WEAR);
+    }
+    expect(landed).toBeGreaterThanOrEqual(3);
+    expect(s.events.some((event) => event.type === 'hardeningGone')).toBe(false);
+  });
+
+  test('against two weapons it is one hardening: either wears it, and when it goes it goes for both', () => {
+    const both = (seed: number): BattleState => battle({ rightHand: RIFLE.id, leftHand: OTHER.id }, [{ ...wearing(0.02), hardened: [RIFLE.id, OTHER.id] }, LIGHT], WEAR, seed);
+    const { next } = after(both, fire('leftHand', 'enemy-0'));
+    expect(unit(next, 'enemy-0').hardened).toBeUndefined();
+    expect(hardenedAgainst(unit(next, 'enemy-0'), RIFLE)).toBe(false);
+  });
+
+  test('a machine brought down by the shot that would have worn it out is not said to have lost its hardening', () => {
+    const glass: EnemyDef = { ...wearing(0.02), plating: -0.99 };
+    const make = (seed: number): BattleState => battle({ rightHand: RIFLE.id }, [glass, LIGHT], WEAR, seed);
+    const { next } = after(make, fire('rightHand', 'enemy-0', 'core'));
+    expect(unit(next, 'enemy-0').destroyed).toBe(true);
+    expect(next.events.some((event) => event.type === 'hardeningGone')).toBe(false);
+  });
+
+  test('a fork\'s bolt that leaps on to it wears it as a shot aimed at it does', () => {
+    const make = (seed: number): BattleState => battle({ rightHand: FORK.id }, [LIGHT, { ...HEAVY, hardened: [FORK.id], hardening: 0.9 }], WEAR, seed);
+    const { before, next } = after(make, fire('rightHand', 'enemy-0', 'core'));
+    const leapt = shots(next, before.events.length).find((shot) => shot.leapt)!;
+    expect(leapt.target).toBe('enemy-1');
+    expect(unit(next, 'enemy-1').hardening).toBe(unit(before, 'enemy-1').hardening! - leapt.damage);
+  });
+});
+
+describe('what a shot took off', () => {
+  const took = (s: BattleState, from: number) => s.events.slice(from).flatMap((e: BattleEvent) => (e.type === 'shot' && e.unit === 'player' ? [{ damage: e.damage, took: e.took }] : []));
+
+  test('a shot worth more than the armour left where it lands says how much it took off; one that is not says nothing more', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const s = battle({ rightHand: RIFLE.id }, [HEAVY, LIGHT], TEST, seed);
+      const legs = unit(s, 'enemy-0').parts.legs!;
+      const worth = previewShot(s, 'player', 'rightHand', 'enemy-0', 'legs', TEST).damage;
+      expect(legs.ap).toBeGreaterThan(worth);
+      const first = applyAction(s, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'legs' }, TEST);
+      const [plain] = took(first, s.events.length);
+      if (plain.damage === 0) continue;
+      expect(plain).toEqual({ damage: worth, took: undefined });
+      // The same shot at legs with three points left on them.
+      const thin = structuredClone(s);
+      unit(thin, 'enemy-0').parts.legs!.ap = 3;
+      const second = applyAction(thin, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'legs' }, TEST);
+      expect(took(second, thin.events.length)).toEqual([{ damage: worth, took: 3 }]);
+      expect(unit(second, 'enemy-0').parts.legs!.ap).toBe(0);
+      return;
+    }
+    throw new Error('no seed on which the shot lands');
+  });
+
+  test('it is the armour that came off: the core of a machine a contract wants driven off keeps a point, and the hit took one less', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const build: Build = { ...DEMO_BUILD };
+      delete build.leftHand; delete build.shoulder;
+      let s = createBattle({ ...build, rightHand: RIFLE.id }, [HEAVY, LIGHT], TEST, seed, { objective: { type: 'driveOff', target: 0, share: 0.01 } });
+      for (let guard = 0; activeUnit(s).id !== 'player' && s.outcome === 'ongoing' && guard < 20; guard++) s = applyAction(s, END, TEST);
+      s = structuredClone(s);
+      unit(s, 'enemy-0').parts.core!.ap = 3;
+      const worth = previewShot(s, 'player', 'rightHand', 'enemy-0', 'core', TEST).damage;
+      const next = applyAction(s, { type: 'fire', weapon: 'rightHand', target: 'enemy-0', part: 'core' }, TEST);
+      const [shot] = took(next, s.events.length);
+      if (shot.damage === 0) continue;
+      expect(worth).toBeGreaterThan(3);
+      expect(unit(next, 'enemy-0').parts.core!.ap).toBe(1);
+      expect(shot.took).toBe(2);
+      return;
+    }
+    throw new Error('no seed on which the shot lands');
   });
 });
 

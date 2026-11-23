@@ -79,9 +79,10 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   ander wacht een ronde en vuurt dan met anderhalve beurt energie. Wat hij heeft opgespaard, staat
   boven hem op het veld.
 - **Rekeningen**: een piloot die je sloopte, verjoeg of van wie je verloor komt voor je terug, op
-  een eigen bericht naast het bord, met zijn roepnaam. Zijn mecha is gehard tegen het wapen dat hem
-  de vorige keer het hardst raakte: dat doet bij hem nog de helft, dus het loont om iets anders mee
-  te nemen. Na drie ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.
+  een eigen bericht naast het bord, met een roepnaam. De eerste keer kent die piloot je nog niet.
+  Daarna is de mecha gehard tegen het wapen dat hem de vorige keer het hardst raakte: dat doet de
+  helft tot de harding is weggeschoten, dus het loont om iets anders mee te nemen. Na drie
+  ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.
 - **Gevecht**: per beurt besteed je energie aan vuren, boosten, bewaken, koelen, je module of een
   noodreparatie. Je mikt op onderdelen; zware treffers brengen een mecha uit evenwicht. Er zijn
   zwaarden, wapens die een beurt opladen, salvo's, schilden en vijf soorten benen.

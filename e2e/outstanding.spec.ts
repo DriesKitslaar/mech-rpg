@@ -12,9 +12,10 @@ import { SCENES } from '../src/content/scenes';
 import { choose, enterHub, nextFrame, oddsCounted, open, press, snap, waitForPhase, waitForScreen, type Snap } from './helpers';
 
 /**
- * An account in a browser: the notice of a pilot who has come back, its briefing, their machine on the field with
- * the weapon it knows in hand and with another, the bill of a meeting and of the one that closes the account, how
- * one begins, and all of it in Dutch.
+ * An account in a browser: the notice of a pilot who has come back, its briefing the first time (when they know
+ * nothing yet) and the second (when their machine knows a weapon), that machine on the field with the weapon it
+ * knows in hand and with another, the hardening shot away, the bill of a meeting and of the one that closes the
+ * account, how one begins, and all of it in Dutch.
  */
 const shot = (name: string) => `docs/screenshots/${name}.png`;
 
@@ -38,7 +39,10 @@ function pilot(extra: Partial<GameState> = {}, language: 'en' | 'nl' = 'en'): Ga
     scenes: SCENES.map((s) => s.id), lessons: ['momentum', 'rout'], settings: { ...g.settings, language }, ...extra,
   };
 }
-const account = (change: Partial<Grudge> = {}): Grudge => ({ name: 'Brakk', kind: 'heavy-mech', origin: 'ran', knows: BUILD.rightHand!, met: 0, waited: 3, ...change });
+/** An account at its second meeting: their machine knows the weapon in the pilot's right hand. */
+const account = (change: Partial<Grudge> = {}): Grudge => ({ name: 'Brakk', kind: 'heavy-mech', origin: 'ran', knows: BUILD.rightHand!, met: 1, waited: 2, ...change });
+/** One whose notice is out for the first time: they know nothing of the pilot yet. */
+const FIRST: Grudge = { name: 'Brakk', kind: 'heavy-mech', origin: 'ran', met: 0, waited: 3 };
 const NOTICE = `open-0-${WINS}-${GRUDGE}`;
 
 async function load(page: Page, save: GameState): Promise<string[]> {
@@ -55,7 +59,10 @@ async function load(page: Page, save: GameState): Promise<string[]> {
 }
 const kept = (page: Page): Promise<GameState> => page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as GameState);
 
-type Fought = { phase: string; outcome: string; enemies: string[]; spoken: string | null; hardened: string[]; halved: boolean; enemyMark: string | null; objective: string | null };
+type Fought = {
+  phase: string; outcome: string; enemies: string[]; spoken: string | null; hardened: string[]; hardening: number | null; halved: boolean; enemyMark: string | null;
+  objective: string | null; message: string; round: number;
+};
 type Billed = { won: boolean; account: { name: string; meeting: number; closed: boolean } | null };
 type Seen = { battle: Fought; settlement: Billed; menu: Snap['menu']; screen: string; grudge: Grudge | null; accounts: string[]; medals: string[] };
 const seen = async (page: Page): Promise<Seen> => (await snap(page)) as unknown as Seen;
@@ -108,8 +115,37 @@ async function toBriefing(page: Page, picture: string): Promise<void> {
   await page.screenshot({ path: shot(picture) });
 }
 
-test('a pilot who has come back: their notice on the list, the briefing that names the weapon, their machine with that weapon in hand and with another, and the bill', async ({ page }) => {
+test('the first meeting: they do not know the pilot yet, so nothing on their machine is hardened; what hit it hardest they know afterwards', async ({ page }) => {
   test.setTimeout(180_000);
+  const errors = await load(page, pilot({ grudge: FIRST }));
+  await toBriefing(page, 'account-first-briefing');
+  await choose(page, 'accept');
+  await page.waitForFunction(() => (window as any).__game.snapshot().battle?.spoken);
+  const s = await toAction(page);
+  expect(s.battle.enemies[0]).toBe('heavy-mech');
+  expect(s.battle.objective).toContain('BRAKK');
+  expect(s.battle.hardened).toEqual([]);
+  expect(s.battle.hardening).toBeNull();
+  // Whatever is aimed at it does all it does.
+  expect(await aimWith(page, 0)).toBe(false);
+  expect(await aimWith(page, 1)).toBe(false);
+  expect(await autoBattle(page)).toBe('victory');
+  await press(page, 'Enter');
+  await waitForScreen(page, 'settlement');
+  await still(page, 20);
+  await page.screenshot({ path: shot('account-bill') });
+  expect((await seen(page)).settlement).toMatchObject({ won: true, account: { name: 'Brakk', meeting: 1, closed: false } });
+  await press(page, 'Enter');
+  await enterHub(page);
+  const game = await kept(page);
+  expect(game.grudge).toMatchObject({ name: 'Brakk', kind: 'heavy-mech', met: 1, waited: 0 });
+  expect(Object.values(BUILD)).toContain(game.grudge!.knows);
+  expect(game.medals).toContain('account-1');
+  expect(errors).toEqual([]);
+});
+
+test('the second: their notice on the list, the briefing that names the weapon, their machine with that weapon in hand and with another, the hardening shot away, and the bill', async ({ page }) => {
+  test.setTimeout(300_000);
   const errors = await load(page, pilot({ grudge: account() }));
   await choose(page, 'contracts');
   await still(page, 4);
@@ -133,24 +169,73 @@ test('a pilot who has come back: their notice on the list, the briefing that nam
   s = await toAction(page);
   expect(s.battle.enemies[0]).toBe('heavy-mech');
   expect(s.battle.hardened).toEqual([BUILD.rightHand]);
+  const whole = s.battle.hardening!;
+  expect(whole).toBeGreaterThan(50);
   expect(s.battle.objective).toContain('BRAKK');
   await still(page, 6);
   await page.screenshot({ path: shot('account-field') });
-  // The weapon it knows does half, and says so; the one in the other hand does not.
+  // The weapon it knows does half, and says so; the one on the shoulder does not.
   expect(await aimWith(page, 0, 'account-half')).toBe(true);
   expect(await aimWith(page, 1, 'account-whole')).toBe(false);
+
+  // Fired at it turn after turn, the weapon it knows wears the hardening away: the number beside its name goes down
+  // by what each hit did, and at nothing the machine is hardened against nothing.
+  let left = whole;
+  let hits = 0;
+  let pictured = false;
+  for (let turn = 0; turn < 24 && (await seen(page)).battle.hardened.length > 0; turn++) {
+    await choose(page, 'fire');
+    await waitForPhase(page, 'weapon');
+    await press(page, 'Enter');
+    await waitForPhase(page, 'target');
+    // After two hits, with the weapon on it again: the number beside its name is what is left.
+    if (hits === 2 && !pictured) {
+      pictured = true;
+      await still(page, 6);
+      expect((await seen(page)).battle.hardening).toBe(left);
+      await page.screenshot({ path: shot('account-wearing') });
+    }
+    await press(page, 'Enter');
+    s = await toAction(page);
+    expect(s.screen).toBe('battle');
+    expect(s.battle.outcome).toBe('ongoing');
+    const now = s.battle.hardening;
+    if (now !== null) {
+      expect(now).toBeLessThanOrEqual(left);
+      if (now < left) hits += 1;
+      left = now;
+    }
+    if (s.battle.hardened.length === 0) break;
+    await choose(page, 'endTurn');
+    await still(page, 2);
+    s = await toAction(page);
+    expect(s.battle.outcome).toBe('ongoing');
+  }
+  s = await seen(page);
+  expect(hits).toBeGreaterThanOrEqual(2);
+  expect(pictured).toBe(true);
+  expect(s.battle.hardened).toEqual([]);
+  expect(s.battle.hardening).toBeNull();
+  await still(page, 6);
+  await page.screenshot({ path: shot('account-worn') });
+  // From the pilot's next turn on that weapon does all it does.
+  await choose(page, 'endTurn');
+  await still(page, 2);
+  s = await toAction(page);
+  expect(s.battle.outcome).toBe('ongoing');
+  expect(await aimWith(page, 0, 'account-worn-aim')).toBe(false);
+
   expect(await autoBattle(page)).toBe('victory');
   await press(page, 'Enter');
   await waitForScreen(page, 'settlement');
   await still(page, 20);
-  await page.screenshot({ path: shot('account-bill') });
-  expect((await seen(page)).settlement).toMatchObject({ won: true, account: { name: 'Brakk', meeting: 1, closed: false } });
+  await page.screenshot({ path: shot('account-second-bill') });
+  expect((await seen(page)).settlement).toMatchObject({ won: true, account: { name: 'Brakk', meeting: 2, closed: false } });
   await press(page, 'Enter');
   await enterHub(page);
   const game = await kept(page);
-  expect(game.grudge).toMatchObject({ name: 'Brakk', kind: 'heavy-mech', met: 1, waited: 0 });
+  expect(game.grudge).toMatchObject({ name: 'Brakk', kind: 'heavy-mech', met: 2, waited: 0 });
   expect(Object.values(BUILD)).toContain(game.grudge!.knows);
-  expect(game.medals).toContain('account-1');
   expect(errors).toEqual([]);
 });
 
@@ -209,7 +294,8 @@ test('an account begins in a contract of the board: whoever flew the mech in it 
   expect(begun).toMatchObject({ met: 0, waited: 0 });
   expect(GRUDGE_NAMES).toContain(begun.name);
   expect(contract.battles.flatMap((battle) => battle.enemies).filter((id) => mechs.includes(id))).toContain(begun.kind);
-  expect(Object.values(BUILD)).toContain(begun.knows);
+  // They know nothing of the pilot yet: that is for the first meeting.
+  expect(begun.knows).toBeUndefined();
   // No notice yet.
   await choose(page, 'contracts');
   expect((await snap(page)).menu.items.map((entry) => entry.id).filter((id) => id.endsWith(`-${GRUDGE}`))).toEqual([]);
