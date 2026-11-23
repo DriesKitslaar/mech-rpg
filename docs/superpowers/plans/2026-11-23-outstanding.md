@@ -176,7 +176,23 @@ caught:
 
 ### Task O3: final check
 
-- [ ] Read through once more; all tests; the endurance test with two players who have an account (one at its second meeting, who aims the weapon the machine knows by hand; one at the third meeting, in Dutch, who closes it); an independent review of the branch and its findings answered; the last APK; a short Dutch summary.
+- [x] Read through once more; all tests; the endurance test with two players who have an account (one at its second meeting, who aims the weapon the machine knows by hand; one at the third meeting, in Dutch, who closes it); an independent review of the branch and its findings answered; the last APK; a short Dutch summary.
+
+### What was run at the end
+
+After the review was answered, on the branch as it is delivered:
+
+- `npx tsc --noEmit`: clean.
+- The unit tests: 222 files, 4988 tests, all passing.
+- The browser tests: 129 passing (44, 46, 29 and the 10 of the last two rounds), and their pictures looked at: every
+  briefing of a notice to its last line in English and in Dutch, the row with what the hardening can still take,
+  the hardening shot away and the figure whole again.
+- The endurance test: fourteen players, 23.7 minutes, nothing refused by the canvas and nothing shown by the game's
+  guard. The player at a second meeting, who aims the cannon the machine knows by hand, was told it does half, saw
+  the hardening wear and go, closed that account and met and closed another; the Dutch player at a third meeting
+  closed it and then another that began and came due while they played. Every meeting won had its bill.
+- Deliberate faults: 137 over the round as it was first built and 55 over what the review changed, every one of
+  them caught now (but the one whose line was removed).
 
 ### What the independent review found, and what was done about it
 
