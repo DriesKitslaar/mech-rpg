@@ -944,12 +944,13 @@ export class App {
   }
 
   /**
-   * True for a pilot who has not finished the introductions of a first story. They are told which button does
-   * what in a battle, and a briefing tells them the contract alone: no class, no odds, no stripes.
+   * True for a pilot who has not finished the introductions of a first story (in a later telling they are behind
+   * the pilot from the start: `introductionsDone` says so). They are told which button does what in a battle, and
+   * a briefing tells them the contract alone: no class, no odds, no stripes.
    */
   get newcomer(): boolean {
     const game = this.game;
-    return !!game && game.cycle === 0 && !introductionsDone(game, MISSIONS);
+    return !!game && !introductionsDone(game, MISSIONS);
   }
 
   /** True once the arena and the open contracts are available. */

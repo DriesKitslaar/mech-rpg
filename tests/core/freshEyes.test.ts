@@ -239,6 +239,16 @@ describe('a build to try, followed from the page that names it', () => {
     // A part that is not for sale is not bought by this door either.
     const odd = { build: { ...game.build, head: 'no-such-part' }, toBuy: ['head' as const], cost: 0, unsold: [] };
     expect(followAdvice(game, odd, CATALOG)).toBeNull();
+    // Advice that says nothing is to be bought, of a build with a part the pilot does not own, is not believed: nothing is fitted that is not owned.
+    const wrong = { build: { ...game.build, head: 'head-halo' }, toBuy: [], cost: 0, unsold: [] };
+    expect(ownedCount(game, 'head-halo')).toBe(0);
+    expect(followAdvice(game, wrong, CATALOG)).toBeNull();
+    // Nor one that takes a part twice and says to buy it once.
+    const twin = { build: { ...game.build, rightHand: 'wpn-arc-pistol', leftHand: 'wpn-arc-pistol' }, toBuy: ['rightHand' as const], cost: CATALOG['wpn-arc-pistol'].price, unsold: [] };
+    expect(followAdvice(game, twin, CATALOG)).toBeNull();
+    // Nor a part where it does not go.
+    const misplaced = { build: { ...game.build, head: game.build.core }, toBuy: [], cost: 0, unsold: [] };
+    expect(followAdvice(game, misplaced, CATALOG)).toBeNull();
   });
 
   test('no saved build is written over: with every place taken it is fitted and not kept, and one kept already is not kept twice', () => {
@@ -381,7 +391,10 @@ describe('a saved build and the parts it is made of', () => {
     const { rightHand: _gun, ...unarmed } = { ...STARTER_BUILD, head: 'head-halo' };
     const bare = { ...game, loadouts: [null, null, unarmed] };
     expect(groundedBuilds(bare, CATALOG)).toEqual([{ slot: 2 }]);
-    // The build on the floor, saved, is neither: it is listed as itself.
+    // The build on the floor, saved, is neither: it is listed as itself. Also where it may not deploy: that is the
+    // floor's own trouble, said where the floor's troubles are said, and not a saved build gone missing.
     expect(groundedBuilds({ ...game, loadouts: [{ ...game.build }] }, CATALOG)).toEqual([]);
+    expect(validatePlayerBuild(unarmed, CATALOG).length).toBeGreaterThan(0);
+    expect(groundedBuilds({ ...game, build: unarmed, loadouts: [{ ...unarmed }] }, CATALOG)).toEqual([]);
   });
 });

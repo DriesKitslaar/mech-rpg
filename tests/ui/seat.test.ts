@@ -120,10 +120,12 @@ describe('the row under the seven classes', () => {
     const shown = drawn(app);
     expect(written(shown, 'TOUCHSTONE')).toMatchObject({ left: 12, y: 189, size: 16, color: COLORS.accent });
     expect(written(shown, 'LOCKED')).toMatchObject({ right: LOGICAL_W - 12, y: 191, color: COLORS.danger });
-    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT')).toMatchObject({ left: 12, y: 207, color: COLORS.armor });
+    // What they keep stands beside the name, on its row.
+    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT')).toMatchObject({ y: 191, color: COLORS.armor });
+    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT').left - written(shown, 'TOUCHSTONE').right).toBeGreaterThanOrEqual(8);
     const rows = wrap(A.seat.locked, charsFor(LOGICAL_W - 28));
     expect(rows.length).toBeLessThanOrEqual(3);
-    rows.forEach((text, i) => expect(written(shown, text)).toMatchObject({ left: 12, y: 207 + (i + 1) * LINE }));
+    rows.forEach((text, i) => expect(written(shown, text)).toMatchObject({ left: 12, y: 207 + i * LINE }));
     expect(A.seat.locked).toContain('all seven crowns');
     // How the keeper fights is not said to a pilot they do not take yet.
     expect(shown.texts.some((t) => t.text.includes('charging rail'))).toBe(false);
@@ -167,9 +169,9 @@ describe('the row under the seven classes', () => {
     expect(seatShown(app)).toEqual({ state: 'open', crowns: 7 });
     const shown = drawn(app);
     expect(written(shown, 'OPEN')).toMatchObject({ right: LOGICAL_W - 12, y: 191, color: COLORS.armor });
-    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT').y).toBe(207);
+    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT').y).toBe(191);
     const rows = wrap(KEEPER.style, charsFor(LOGICAL_W - 28));
-    rows.forEach((text, i) => expect(written(shown, text)).toMatchObject({ left: 12, y: 207 + (i + 1) * LINE }));
+    rows.forEach((text, i) => expect(written(shown, text)).toMatchObject({ left: 12, y: 207 + i * LINE }));
     expect(shown.texts.some((t) => t.text.includes('who takes one challenge'))).toBe(false);
     expect(written(shown, 'CROWNS 7/7').y).toBe(22);
     expect(written(shown, 'The Eighth Seat').color).not.toBe(COLORS.dim);
@@ -314,7 +316,7 @@ describe('in Dutch', () => {
     expect(row(app)).toMatchObject({ label: 'De achtste stoel', note: '15000' });
     let shown = drawn(app);
     expect(written(shown, 'TOUCHSTONE').y).toBe(189);
-    expect(written(shown, 'HOUDER VAN DE ACHTSTE STOEL').y).toBe(207);
+    expect(written(shown, 'HOUDER VAN DE ACHTSTE STOEL').y).toBe(191);
     expect(shown.texts.some((t) => t.text.includes('oplaadrail'))).toBe(true);
     for (const a of shown.texts) {
       expect(a.right, a.text).toBeLessThanOrEqual(LOGICAL_W - 4);

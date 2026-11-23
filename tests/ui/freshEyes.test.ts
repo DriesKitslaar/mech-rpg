@@ -18,7 +18,7 @@ import { STRINGS } from '../../src/content/strings';
 import { COMPARE_LINE_CHARS, PART_LINE_CHARS, compareParts, partLines } from '../../src/ui/partInfo';
 import { MANUAL } from '../../src/content/codex';
 import { driveTitle, shelfToast, TOAST_TITLE_CHARS } from '../../src/ui/app';
-import { HINT_Y } from '../../src/ui/arenaScreen';
+import { HINT_Y, STYLE_Y } from '../../src/ui/arenaScreen';
 import { UNFLOWN_MARK, isUnflown } from '../../src/ui/hubScreen';
 import { SKIP_AT } from '../../src/ui/sceneScreen';
 import { REPAIR_LINES, SettlementScreen, WORDS_LINES, WORDS_Y } from '../../src/ui/settlementScreen';
@@ -49,6 +49,19 @@ describe('a part\'s lines in the shop', () => {
   });
 });
 
+describe('a new pilot is one in a first telling', () => {
+  test('a pilot who starts the story again is no newcomer: the briefing has its row of builds from the first contract', () => {
+    const rows = (app: App): string[] => { select(app, 'contracts'); select(app, 'intro-1'); return snap(app).menu.items.map((item) => item.id); };
+    const first = inHub().app;
+    expect(first.newcomer).toBe(true);
+    expect(rows(first)).not.toContain('build');
+    // The same two contracts to fly, in a second telling: this pilot has seen it all before.
+    const again = inHub({ ...done(), cycle: 1, scenes: ['act-1', 'playback'] }).app;
+    expect(again.newcomer).toBe(false);
+    expect(rows(again)).toContain('build');
+  });
+});
+
 describe('the three kinds of damage have one letter each, the same wherever they are written', () => {
   test('the comparison of two fire controls uses the letters of the line above it, in English and in Dutch', () => {
     const [a, b] = [CATALOG['fcs-omni'], CATALOG['fcs-lattice']];
@@ -65,6 +78,15 @@ describe('the three kinds of damage have one letter each, the same wherever they
       const aims = chips.filter((text) => text.startsWith(`${I.aim} `)).map((text) => text.split(' ')[1]);
       expect(aims.length, language).toBeGreaterThan(0);
       for (const letter of aims) expect(letters, `${language}: ${letter}`).toContain(letter);
+    }
+    // Each kind by its own letter: a fire control that aims better at one kind alone says that kind's letter, and no other's.
+    for (const [language, strings] of [['en', STRINGS], ['nl', STRINGS_NL]] as const) {
+      setLanguage(language);
+      const I = strings.partInfo;
+      for (const kind of ['kinetic', 'energy', 'explosive'] as const) {
+        const better = { ...a, aim: { ...(a as { aim: Record<string, number> }).aim, [kind]: (a as { aim: Record<string, number> }).aim[kind] + 5 } } as typeof a;
+        expect(compareParts(better, a).flat().map((chip) => chip.text), `${language} ${kind}`).toEqual([`${I.aim} ${I.typeLetters[kind]} +5`]);
+      }
     }
     setLanguage('en');
     expect([STRINGS.partInfo.typeLetters, STRINGS_NL.partInfo.typeLetters]).toEqual([
@@ -515,14 +537,32 @@ describe('one game: the same thing looks and is called the same on every screen'
     expect(Math.max(...ring.map(({ at }) => when('rect', at)))).toBeLessThan(when('text', word));
   });
 
-  test('the line of buttons under a master\'s three lines stands more than a line below them', () => {
-    expect(HINT_Y - (207 + 3 * 11)).toBeGreaterThanOrEqual(15);
-    const { app } = inHub({ ...past(), arenaRank: 10 });
-    select(app, 'arena');
-    press(app, 'next');
-    const hint = texts(app).find((t) => t.text === STRINGS.arena.back || t.text === STRINGS.arena.backLocked)!;
-    expect(hint.y).toBe(HINT_Y);
-    expect(hint.y + 10).toBeLessThanOrEqual(266);
+  test('the line of buttons under a master\'s three lines stands two lines below them, and its letters stay clear of the panel\'s edge', () => {
+    for (const language of ['en', 'nl'] as const) {
+      const { app } = inHub({ ...past(), arenaRank: 10 });
+      setLanguage(language);
+      select(app, 'arena');
+      press(app, 'next');
+      for (let row = 0; row < snap(app).menu.items.length; row++) {
+        const all = texts(app);
+        const hint = all.find((t) => t.text === STRINGS.arena.back || t.text === STRINGS.arena.backLocked)!;
+        expect(hint.y).toBe(HINT_Y);
+        // The panel ends at 266 with its border on the row before: the letters end above that.
+        expect(hint.y + hint.size).toBeLessThanOrEqual(266 - 1);
+        // How this one fights: up to three lines, the last of them two lines and more above the hint.
+        const lines = all.filter((t) => t.left === 12 && t.y >= STYLE_Y && t.y < HINT_Y);
+        expect(lines.length, `${language} row ${row}`).toBeGreaterThan(0);
+        expect(lines.length).toBeLessThanOrEqual(3);
+        expect(HINT_Y - Math.max(...lines.map((t) => t.y)), `${language} row ${row}`).toBeGreaterThanOrEqual(2 * LINE);
+        // On the row of the name nothing lies over anything: the name, what they are called, and how it stands.
+        const head = all.filter((t) => t.y >= 189 && t.y <= 191);
+        expect(head.length).toBe(3);
+        for (const a of head) for (const b of head) if (a !== b) expect(overlap(a, b), `${language}: "${a.text}" and "${b.text}"`).toBe(false);
+        for (const t of head) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 12);
+        press(app, 'down');
+      }
+    }
+    setLanguage('en');
   });
 });
 
@@ -616,6 +656,34 @@ describe('the long game: a rematch in the arena', () => {
     expect([after.stats.lost, after.stats.retreats, after.stats.contracts]).toEqual([before.stats.lost, before.stats.retreats, before.stats.contracts]);
     expect(after.rematches).toBeUndefined();
     expect(after.battlesWon).toBe(before.battlesWon);
+  });
+
+  test('an account that is open does not wait through a rematch, and waits through a first win as through any contract', () => {
+    const owed = { name: 'Brakk', kind: 'stalker', origin: 'wrecked' as const, met: 0, waited: 1 };
+    const { app, store } = inHub(ranked({ grudge: owed }));
+    fly(app, 'rank-1');
+    expect(snap(app).settlement).toMatchObject({ won: true });
+    expect(savedGame(store).grudge).toEqual(owed);
+    toHub(app);
+    fly(app, 'rank-4');
+    expect(snap(app).settlement).toMatchObject({ won: true });
+    expect(savedGame(store).grudge).toEqual({ ...owed, waited: 2 });
+  });
+
+  test('the briefing of a rematch does not count towards a stripe on its page of builds, and that of a first fight does', () => {
+    const stripeLine = (app: App): boolean => texts(app).some((t) => /^NEXT STRIPE \d+\/\d+$/.test(t.text) || t.text === STRINGS.stripes.thisWin);
+    const toBuild = (app: App, row: string): void => {
+      select(app, 'arena');
+      select(app, row);
+      for (let i = 0; i < 8 && snap(app).menu.items[snap(app).menu.cursor]?.id !== 'build'; i++) press(app, 'down');
+      expect(snap(app).menu.items[snap(app).menu.cursor].id).toBe('build');
+    };
+    const again = inHub(ranked()).app;
+    toBuild(again, 'rank-1');
+    expect(stripeLine(again)).toBe(false);
+    const first = inHub(ranked()).app;
+    toBuild(first, 'rank-4');
+    expect(stripeLine(first)).toBe(true);
   });
 
   test('the words for it, in both languages, fit the line of the briefing they stand on', () => {
@@ -790,6 +858,21 @@ describe('the long game: a saved build and its parts', () => {
     expect(shop(app).shortened).toEqual([]);
     // One copy is left now, and the saved build holds it: the next sale would leave it short.
     expect(shop(app)).toMatchObject({ selected: 'head-halo', neededBy: [1] });
+  });
+
+  test('nothing is said of a saved build while buying: the part under the cursor is not about to leave', () => {
+    // The Courier Visor is on the shelf of the shop and on the pilot's own; the second saved build holds it.
+    const base = buy({ ...done('intro-1', 'intro-2'), scenes: ['act-1', 'talk-kite'], credits: 50_000 }, 'head-courier', CATALOG);
+    const { app } = inHub({ ...base, loadouts: [null, { ...base.build, head: 'head-courier' }, null] });
+    select(app, 'shop');
+    expect(shop(app).mode).toBe('buy');
+    for (let i = 0; i < 30 && shop(app).selected !== 'head-courier'; i++) press(app, 'down');
+    expect(shop(app)).toMatchObject({ selected: 'head-courier', neededBy: [] });
+    expect(texts(app).some((t) => /^Saved build /.test(t.text))).toBe(false);
+    // The same part, to be sold: now it is said.
+    press(app, 'right');
+    for (let i = 0; i < 30 && shop(app).selected !== 'head-courier'; i++) press(app, 'down');
+    expect(shop(app).neededBy).toEqual([1]);
   });
 
   test('a part the bench has worked on is listed with its step, to be sold and to be bought back', () => {

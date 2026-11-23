@@ -89,6 +89,11 @@ describe('what Dispatch says after a defeat', () => {
     const left = Object.values(s.units[2].parts).reduce((sum, part) => sum + part.maxAp, 0);
     expect(armourLeft(s)).toBeCloseTo(left / whole);
     expect(armourLeft(lost(stood, {}, leave(0)))).toBe(0);
+    // With nobody on the other side there is no armour left on it: none, and not all.
+    const alone = lost(stood);
+    alone.units = alone.units.filter((unit) => unit.side === 'player');
+    expect(armourLeft(alone)).toBe(0);
+    expect(adviceAfter(alone)).not.toBe('outmatched');
   });
 
   test('what went most plainly wrong is said first: the contract\'s own terms, then heat, then stance, then repairs', () => {
