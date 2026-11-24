@@ -68,6 +68,9 @@ describe('a contract flown on raised terms', () => {
     expect(after.credits).toBe(before.credits + settled.net + medalPay(after.medals.filter((id) => !before.medals.includes(id))));
     expect(after.atStake).toBeUndefined();
     expect(after.raised).toEqual([0, 1, 0]);
+    // What the record says was earned is all that was paid for the contract: the fee, what a rank added, and what the terms did.
+    expect(after.stats.earned).toBe(before.stats.earned + settled.reward + (settled.bonus ?? 0) + settled.hazard!.pay);
+    expect(settled.hazard!.pay).toBeGreaterThan(0);
     // It is a contract won like any other: the board turns on it.
     expect(after.battlesWon).toBe(before.battlesWon + 1);
     expect(isValidState(JSON.parse(JSON.stringify(after)), CATALOG)).toBe(true);
