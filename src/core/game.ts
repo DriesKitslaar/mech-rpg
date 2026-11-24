@@ -85,6 +85,14 @@ export interface GameState {
   /** How often each bout of the arena was won again after it had been won, by the bout's id: a rematch pays less for each (see arena.ts). Kept through the cycles. */
   rematches?: Record<string, number>;
   /**
+   * The bond of the contract in the air: set as a contract on raised terms is accepted and gone when it
+   * is booked. A game kept with one was closed with the contract unbooked, and the bond is taken when it
+   * is opened (see stakes.ts).
+   */
+  atStake?: number;
+  /** Contracts won on raised terms, by the terms: Hazard, Severe, Ruinous. Kept through the cycles. Absent until one is. */
+  raised?: number[];
+  /**
    * What earlier tellings of the story left behind: the scenes shown in one and the messages read in
    * one. A later telling shows and sends them again as it goes, and does not present them as new: a
    * scene told before can be skipped, and a letter read before is not marked. Absent in a first telling.
@@ -404,6 +412,10 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const isIds = (list: unknown): boolean => isTextList(list) && list.length <= MAX_IDS && list.every((id) => PLAIN_ID.test(id));
   if (told !== undefined && !(isRecord(told) && isIds(told.scenes) && isIds(told.read))) return false;
   if (mail !== undefined && !isIds(mail)) return false;
+  // What is staked on the contract in the air: a whole amount above nothing. Wins on raised terms: three whole counts.
+  const { atStake, raised } = value;
+  if (atStake !== undefined && !(isWholeNonNegative(atStake) && atStake >= 1 && atStake <= MAX_COUNT)) return false;
+  if (raised !== undefined && !(Array.isArray(raised) && raised.length === 3 && raised.every((count) => isWholeNonNegative(count) && count <= MAX_COUNT))) return false;
   // Rematches won, by the id of the bout: whole counts against plain ids. A bout this version does not know is kept.
   const { rematches } = value;
   if (rematches !== undefined && (!isRecord(rematches) || Object.keys(rematches).length > MAX_BOUTS
