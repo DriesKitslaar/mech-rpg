@@ -362,6 +362,7 @@ export const STRINGS_NL = {
     damage: 'PANTSER VERNIELD', taken: 'PANTSER KWIJT', overheats: 'BEURTEN OVERVERHIT', rounds: 'RONDES GESPEELD',
     earned: 'CREDITS VERDIEND', medals: 'MEDAILLES', cycle: 'CYCLUS', time: 'SPEELTIJD', none: '-', ranksHeld: 'RANGEN',
     accounts: (closed: number) => `REKENINGEN DICHT ${closed}`,
+    raised: (won: number) => `MET INZET GEWONNEN ${won}`,
   },
   renown: {
     names: ['Kostenpost', 'Afboeking', 'Total Loss', 'Overmacht', 'De Eindafrekening'],
@@ -522,6 +523,7 @@ export const STRINGS_NL = {
     account: (meeting: number, of: number) => `REKENING: ${meeting} VAN ${of}`, accountClosed: 'REKENING DICHT',
     rank: 'RANG', rankBonus: (rank: string) => `Bonus rang ${rank}`,
     askBonus: (name: string) => `Bonus ${name}`,
+    hazard: (name: string) => `Inzet ${String(name).toLowerCase()}`, bond: (name: string) => `Borg (${name})`,
     net: 'NETTO', balance: 'SALDO', continue: 'Verder met A',
     medals: (credits: number) => `met medailles +${credits}`,
     wouldCost: 'ZOU KOSTEN',

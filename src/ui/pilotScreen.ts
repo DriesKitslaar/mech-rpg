@@ -15,6 +15,7 @@ import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { accountsClosed } from '../core/grudge';
+import { raisedWon } from '../core/stakes';
 import { nameRank, nextNameAt, renownOf } from '../core/renown';
 import { RECORD_ROWS, rankTally, recordLines } from './record';
 import {
@@ -188,7 +189,7 @@ export class PilotScreen implements Screen {
       medalCount: { earned: MEDALS.filter((m) => game.medals.includes(m.id)).length, of: MEDALS.length },
       ...(this.page === 'medals' ? { detail: this.detail() } : {}),
       ...(this.page === 'drive' ? { overdrive: fittedOverdrive(game) ?? null } : {}),
-      ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length), known: { rank: nameRank(game), renown: renownOf(game), next: nextNameAt(game) }, accounts: accountsClosed(game) } : {}),
+      ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length), known: { rank: nameRank(game), renown: renownOf(game), next: nextNameAt(game) }, accounts: accountsClosed(game), raised: raisedWon(game) } : {}),
       ...(this.page === 'classes' ? { classes: { flown: this.flown, kind: this.kind, advice: this.advice(), asking: this.asking !== null, status: this.adviceStatus().text } } : {}),
     };
   }
@@ -432,6 +433,9 @@ export class PilotScreen implements Screen {
     const top = 18 + RECORD_ROWS * LINE + 16;
     drawPanel(ctx, 4, top, LOGICAL_W - 8, 40);
     drawText(ctx, STRINGS.record.ranksHeld, 12, top + 5, { color: COLORS.dim });
+    // Beside it: the contracts won on raised terms, once there is one. A rank says how well; this says against how much.
+    const raised = raisedWon(game);
+    if (raised > 0) drawText(ctx, STRINGS.record.raised(raised), LOGICAL_W - 12, top + 5, { align: 'right' });
     rankTally(game).forEach(([rank, count], i) => {
       const x = 12 + i * 58;
       drawText(ctx, rank, x, top + 17, { size: 16, color: count > 0 ? COLORS.accent : COLORS.dim });

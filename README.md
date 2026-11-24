@@ -98,7 +98,7 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   spiegelgevecht tegen je eigen mech. Na het verhaal: vier duels, elk om een mech die je
   daarna zelf mag kopen.
 - **Training**: dertien oefeningen in een geleende mech die elk één ding uitleggen.
-- **Piloot**: niveaus en acht vaardigheden, 77 medailles en een logboek.
+- **Piloot**: niveaus en acht vaardigheden, 80 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
 - **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,

@@ -925,4 +925,11 @@ export const REFERENCE_NL: Record<string, string> = {
   'Close an account: beat the same pilot three times.': 'Versla dezelfde piloot drie keer: rekening dicht.',
   'Repeat Customers': 'Vaste klanten',
   'Close three accounts.': 'Sluit drie rekeningen.',
+  // Raised terms: the three medals.
+  'Danger Money': 'Gevarengeld',
+  'Win a contract on raised terms.': 'Win een contract met verhoogde inzet.',
+  'Uninsurable': 'Onverzekerbaar',
+  'Win a contract on ruinous terms.': 'Win een contract met inzet Ruïneus.',
+  'Risk Appetite': 'Risicobereidheid',
+  'Win 25 contracts on raised terms.': 'Win 25 contracten met verhoogde inzet.',
 };

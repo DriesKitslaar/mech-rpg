@@ -577,8 +577,9 @@ describe('one game: the same thing looks and is called the same on every screen'
       const screen = new SettlementScreen(app, settlement, { ...MISSIONS[0], debrief });
       return record((ctx) => screen.draw(ctx)).texts;
     };
-    // The plain bill, the one whose rank paid, and the one whose rank and class both paid: the most rows a bill has.
-    const bills: Partial<Settlement>[] = [{}, { rank: 'S', bonus: 200 }, { rank: 'S', bonus: 200, asked: { kind: ARCHETYPES[0], bonus: 100 } }];
+    // The plain bill, the one whose rank paid, the one whose rank and class both paid, and that one on raised terms: the most rows a bill has.
+    const bills: Partial<Settlement>[] = [{}, { rank: 'S', bonus: 200 }, { rank: 'S', bonus: 200, asked: { kind: ARCHETYPES[0], bonus: 100 } },
+      { rank: 'S', bonus: 200, asked: { kind: ARCHETYPES[0], bonus: 100 }, hazard: { level: 3, pay: 1600 } }];
     // What the client says, in one line, in two and in three.
     const one = 'Paid in full.';
     const said = [one, `${one} The yard is clear and the trucks are rolling again.`, `${one} The yard is clear and the trucks are rolling again. Dispatch has your name down for the next one, and so do we.`];
@@ -595,8 +596,9 @@ describe('one game: the same thing looks and is called the same on every screen'
       expect(words[n].y + LINE).toBeLessThanOrEqual(180 - 2);
       return rows.filter((t) => t.text.startsWith('  ')).length;
     }));
-    // Three lines said cost a full bill a repair line or two; what is shorter moves down and costs it less, or nothing.
-    expect(named).toEqual([[4, 4, 4], [4, 4, 3], [4, 3, 2]]);
+    // Three lines said cost a full bill a repair line or more; what is shorter moves down and costs it less, or nothing.
+    // The fullest bill there is, with three lines said under it, still names a damaged part.
+    expect(named).toEqual([[4, 4, 4, 3], [4, 4, 3, 2], [4, 3, 2, 1]]);
     expect([REPAIR_LINES, WORDS_LINES]).toEqual([4, 3]);
   });
 

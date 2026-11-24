@@ -732,6 +732,6 @@ describe('what is said of accounts is so', () => {
     // (Won: a meeting lost or walked away from leaves the account as it was.)
     expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} gewonnen ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
     expect(README).toContain(`${MEDALS.length} medailles`);
-    expect(MEDALS).toHaveLength(77);
+    expect(MEDALS).toHaveLength(80);
   });
 });

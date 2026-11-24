@@ -121,7 +121,7 @@ export class SettlementScreen implements Screen {
     const lowest = WORDS_Y + (WORDS_LINES - said.length) * LINE;
 
     // The rows are a line apart, and a line is left empty between the last of them and what is said: the fee, what
-    // was added to it, the bill, and as many repair lines as that leaves room for.
+    // was added to it or staked on it, the bill, and as many repair lines as that leaves room for.
     let y = 55;
     const row = (label: string, amount: number, color: string = COLORS.text): void => {
       drawText(ctx, label, x + 10, y, { color: COLORS.text });
@@ -133,6 +133,9 @@ export class SettlementScreen implements Screen {
     if (s.rank && s.bonus) row(S.rankBonus(s.rank), s.bonus, COLORS.armor);
     // What a contract that asked for a class paid for being won as one.
     if (s.asked) row(S.askBonus(STRINGS.classes.names[s.asked.kind]), s.asked.bonus, COLORS.armor);
+    // On raised terms: won, what they paid beside the fee; lost, the bond that went with the contract.
+    if (s.hazard) row(S.hazard(STRINGS.stakes.names[s.hazard.level]), s.hazard.pay, COLORS.armor);
+    if (s.bond) row(S.bond(STRINGS.stakes.names[s.bond.level]), -s.bond.lost, COLORS.danger);
     row(S.ammo, -s.ammoCost, s.ammoCost > 0 ? COLORS.danger : COLORS.dim);
     row(S.repairs, -s.repairCost, s.repairCost > 0 ? COLORS.danger : COLORS.dim);
     // Four repair lines at most, and fewer where what was added to the fee and what is said take more than three

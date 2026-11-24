@@ -447,6 +447,8 @@ export const STRINGS = {
     earned: 'CREDITS EARNED', medals: 'MEDALS', cycle: 'CYCLE', time: 'TIME PLAYED', none: '-', ranksHeld: 'RANKS HELD',
     // Beside the name the record has earned: the accounts the pilot has closed (see grudge.ts), once there is one.
     accounts: (closed: number) => `ACCOUNTS CLOSED ${closed}`,
+    // Beside the ranks held: the contracts won on raised terms (see stakes.ts), once there is one.
+    raised: (won: number) => `RAISED TERMS WON ${won}`,
   },
   // The name a pilot's record has earned: five of them, each with what it means to the other side.
   renown: {
@@ -644,6 +646,8 @@ export const STRINGS = {
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
     askBonus: (name: string) => `${name} bonus`,
+    // A contract flown on raised terms: won, what the terms paid beside the fee; lost, the bond that went with it. Each by the terms' name.
+    hazard: (name: string) => `${name} terms`, bond: (name: string) => `Bond (${name})`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
     // Beside the balance: what the medals earned with this bill paid, which the net does not count.
     medals: (credits: number) => `with medals +${credits}`,

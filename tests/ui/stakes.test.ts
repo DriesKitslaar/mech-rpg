@@ -4,9 +4,12 @@ import type { Mission } from '../../src/core/campaign';
 import type { Settlement } from '../../src/core/economy';
 import { isValidState, type GameState } from '../../src/core/game';
 import { advance, counted, newCount, type Forecast, type Nearness } from '../../src/core/forecast';
+import { MEDAL_PAY, medalProgress } from '../../src/core/medals';
 import { STAKES, bondFor } from '../../src/core/stakes';
 import { BOARD_TEXT } from '../../src/content/board';
 import { setLanguage } from '../../src/content/language';
+import { MEDALS } from '../../src/content/medals';
+import { MISSIONS } from '../../src/content/missions';
 import '../../src/content/nl';
 import { STRINGS_NL } from '../../src/content/nl/strings';
 import { CATALOG } from '../../src/content/parts';
@@ -14,6 +17,7 @@ import { STRINGS } from '../../src/content/strings';
 import { forfeitToast, type App } from '../../src/ui/app';
 import { BRIEFING_CHARS, BRIEFING_HOLD_MS, TERMS_WAIT_MS } from '../../src/ui/briefingScreen';
 import { LOGICAL_W } from '../../src/ui/display';
+import { SettlementScreen, WORDS_Y } from '../../src/ui/settlementScreen';
 import { COLORS, LINE, wrap } from '../../src/ui/widgets';
 import { JUGGERNAUT, done, finishBattle, finishMission, inHub, makeApp, medalPay, press, retreat, savedGame, select, snap, strong } from '../helpers/app';
 import { record, type Drawn, type Written } from '../helpers/canvas';
@@ -516,5 +520,161 @@ describe('the terms in the briefing', () => {
     }
     expect(STRINGS.briefing.termsTag(STRINGS.stakes.names[1], 1.5)).toBe('INZET RISKANT: tegenstand x1,5');
     expect(STRINGS.briefing.termsName(STRINGS.stakes.names[3])).toBe('INZET RUÏNEUS');
+  });
+});
+
+describe('the bill of raised terms', () => {
+  const S = STRINGS.settlement;
+  const sprites = { get: (id: string, fallback: { w: number; h: number }) => ({ image: { id } as unknown as CanvasImageSource, w: fallback.w, h: fallback.h }) };
+  /** A bill as the screen draws it, for a game that holds 5000. */
+  const billed = (settlement: Settlement, debrief = 'Paid in full.'): Written[] => {
+    const app = {
+      deps: { fast: true, sprites, catalog: CATALOG }, settings: { calm: true }, game: { credits: 5000 }, leaveSettlement: () => undefined,
+    } as unknown as App;
+    return record((ctx) => new SettlementScreen(app, settlement, { ...MISSIONS[0], debrief }).draw(ctx)).texts;
+  };
+  /** The row of the bill with this label: the label and the amount at its end. */
+  const rowOf = (texts: Written[], label: string): { label: Written; amount: Written } => {
+    const found = texts.filter((t) => t.text === label);
+    expect(found, label).toHaveLength(1);
+    const amount = texts.filter((t) => t.y === found[0].y && t.align === 'right');
+    expect(amount, `the amount of ${label}`).toHaveLength(1);
+    return { label: found[0], amount: amount[0] };
+  };
+  const lines = Object.keys(CATALOG).slice(0, 4).map((partId) => ({ partId, lost: 10, cost: 25 }));
+
+  test('won: a row for what the terms paid, by their name, after the fee and what was added to it', () => {
+    expect([1, 2, 3].map((level) => S.hazard(STRINGS.stakes.names[level]))).toEqual(['Hazard terms', 'Severe terms', 'Ruinous terms']);
+    const settlement: Settlement = {
+      net: 2010, won: true, reward: 800, ammoCost: 40, repairCost: 150, lines, rank: 'S', bonus: 200, asked: { kind: 'bastion', bonus: 400 }, hazard: { level: 2, pay: 800 },
+    };
+    const texts = billed(settlement);
+    const row = rowOf(texts, 'Severe terms');
+    expect(row.amount).toMatchObject({ text: '+800', color: COLORS.armor });
+    expect(row.label.color).toBe(COLORS.text);
+    // The fee, the rank's bonus, the class's bonus, the terms; then what the flight cost.
+    const order = [S.reward, S.rankBonus('S'), S.askBonus(STRINGS.classes.names.bastion), 'Severe terms', S.ammo, S.repairs].map((label) => rowOf(texts, label).label.y);
+    expect(order).toEqual(order.map((_, i) => order[0] + i * LINE));
+    // The fullest bill there is still names a damaged part, and ends a line above what the client says.
+    const named = texts.filter((t) => t.text.startsWith('  '));
+    expect(named.length).toBeGreaterThanOrEqual(1);
+    const words = texts.find((t) => t.text === 'Paid in full.')!;
+    expect(words.y).toBeGreaterThanOrEqual(WORDS_Y);
+    expect(words.y - Math.max(...named.map((t) => t.y))).toBeGreaterThanOrEqual(2 * LINE);
+    // A bill on Standard terms has no such row.
+    const { hazard: _none, ...plain } = settlement;
+    expect(billed(plain).some((t) => /terms/i.test(t.text))).toBe(false);
+  });
+
+  test('lost: a row for the bond, in the colour of a loss, where the terms would have paid', () => {
+    expect([1, 2, 3].map((level) => S.bond(STRINGS.stakes.names[level]))).toEqual(['Bond (Hazard)', 'Bond (Severe)', 'Bond (Ruinous)']);
+    const texts = billed({ net: -4990, won: false, reward: 0, ammoCost: 40, repairCost: 150, lines, bond: { level: 3, lost: 4800 } });
+    const row = rowOf(texts, 'Bond (Ruinous)');
+    expect(row.amount).toMatchObject({ text: '-4800', color: COLORS.danger });
+    const order = [S.reward, 'Bond (Ruinous)', S.ammo, S.repairs].map((label) => rowOf(texts, label).label.y);
+    expect(order).toEqual(order.map((_, i) => order[0] + i * LINE));
+    // The net under the rule is the whole of it, the bond with the rest.
+    expect(texts.find((t) => t.size === 16 && t.align === 'right' && t.y > 180)).toMatchObject({ text: '-4990', color: COLORS.danger });
+  });
+
+  test('flown and booked, the bill says which terms, and the balance is the balance before and the net', () => {
+    for (const won of [true, false]) {
+      // (An early board: against three times its opposition the test's machine still wins by pressing A.)
+      const { app, store } = inHub(pilot({ battlesWon: 5 }));
+      const row = light(app);
+      const before = savedGame(store);
+      app.startMission(row.id, false, null, false, null, 3);
+      if (won) finishMission(app); else retreat(app);
+      const settled = bill(app);
+      expect(settled.won).toBe(won);
+      const shown = drawn(app).texts;
+      const label = won ? S.hazard('Ruinous') : S.bond('Ruinous');
+      const amount = shown.filter((t) => t.y === written(drawn(app), label).y && t.align === 'right');
+      expect(amount.map((t) => t.text)).toEqual([won ? `+${2 * row.reward}` : String(-2 * row.reward)]);
+      expect(shown.some((t) => t.text === (won ? S.bond('Ruinous') : S.hazard('Ruinous')))).toBe(false);
+      const after = savedGame(store);
+      const paid = medalPay(after.medals.filter((id) => !before.medals.includes(id)));
+      expect(after.credits).toBe(before.credits + settled.net + paid);
+      // The balance on the bill is the balance kept.
+      expect(written(drawn(app), String(after.credits)).align).toBe('right');
+    }
+  });
+
+  test('in Dutch both rows fit: the name of the terms clear of the amount', () => {
+    setLanguage('nl');
+    const N = STRINGS_NL.settlement;
+    expect([1, 2, 3].map((level) => N.hazard(STRINGS_NL.stakes.names[level]))).toEqual(['Inzet riskant', 'Inzet zwaar', 'Inzet ruïneus']);
+    expect([1, 2, 3].map((level) => N.bond(STRINGS_NL.stakes.names[level]))).toEqual(['Borg (Riskant)', 'Borg (Zwaar)', 'Borg (Ruïneus)']);
+    for (const level of [1, 2, 3]) {
+      const name = STRINGS_NL.stakes.names[level];
+      // The largest amounts a bill of the board can come to: six figures.
+      const won = rowOf(billed({ net: 0, won: true, reward: 800, ammoCost: 0, repairCost: 0, lines: [], hazard: { level, pay: 288000 } }), N.hazard(name));
+      const lost = rowOf(billed({ net: 0, won: false, reward: 0, ammoCost: 0, repairCost: 0, lines: [], bond: { level, lost: 288000 } }), N.bond(name));
+      for (const row of [won, lost]) expect(row.amount.left - row.label.right, row.label.text).toBeGreaterThanOrEqual(8);
+    }
+  });
+});
+
+describe('what is kept of raised terms', () => {
+  const medal = (id: string) => MEDALS.find((m) => m.id === id)!;
+  const onRecord = (app: App): void => { select(app, 'pilot'); press(app, 'next', 'next'); expect(snap(app).page).toBe('record'); };
+
+  test('the record counts the contracts won on them, once there is one', () => {
+    const none = inHub(pilot());
+    onRecord(none.app);
+    expect(snap(none.app).raised).toBe(0);
+    expect(texts(none.app).some((text) => /RAISED/.test(text))).toBe(false);
+    for (const language of ['en', 'nl'] as const) {
+      const { app } = inHub(pilot({ raised: [3, 1, 2], settings: { ...pilot().settings, language } }));
+      onRecord(app);
+      expect(snap(app).raised).toBe(6);
+      const R = language === 'nl' ? STRINGS_NL.record : STRINGS.record;
+      expect(R.raised(6)).toBe(language === 'nl' ? 'MET INZET GEWONNEN 6' : 'RAISED TERMS WON 6');
+      const shown = drawn(app);
+      const line = written(shown, R.raised(6));
+      expect(line.align).toBe('right');
+      expect(line.right).toBeLessThanOrEqual(LOGICAL_W - 12);
+      // It stands beside the ranks held, clear of the word that heads them.
+      const heads = written(shown, R.ranksHeld);
+      expect(line.y).toBe(heads.y);
+      expect(line.left - heads.right).toBeGreaterThanOrEqual(8);
+    }
+  });
+
+  test('three medals: for the first, for one on ruinous terms, and for twenty-five', () => {
+    expect(medal('stake-1')).toMatchObject({ name: 'Danger Money', text: 'Win a contract on raised terms.', tier: 1 });
+    expect(medal('stake-ruinous')).toMatchObject({ name: 'Uninsurable', text: 'Win a contract on ruinous terms.', tier: 2 });
+    expect(medal('stake-25')).toMatchObject({ name: 'Risk Appetite', text: 'Win 25 contracts on raised terms.', tier: 3 });
+    const ids = ['stake-1', 'stake-ruinous', 'stake-25'];
+    const at = (raised: number[] | undefined) => ids.map((id) => medalProgress(medal(id), { ...pilot(), raised }));
+    expect(at(undefined)).toEqual([{ have: 0, need: 1, earned: false }, { have: 0, need: 1, earned: false }, { have: 0, need: 25, earned: false }]);
+    expect(at([0, 0, 0])).toEqual(at(undefined));
+    expect(at([1, 0, 0]).map((p) => p.have)).toEqual([1, 0, 1]);
+    // One on ruinous terms is one on raised terms too.
+    expect(at([0, 0, 1]).map((p) => p.have)).toEqual([1, 1, 1]);
+    expect(at([0, 5, 0]).map((p) => p.have)).toEqual([1, 0, 5]);
+    expect(at([20, 4, 1]).map((p) => p.have)).toEqual([1, 1, 25]);
+    // In Dutch they have Dutch names and say in Dutch what they take.
+    setLanguage('nl');
+    expect(medal('stake-1')).toMatchObject({ name: 'Gevarengeld', text: 'Win een contract met verhoogde inzet.' });
+    expect(medal('stake-ruinous')).toMatchObject({ name: 'Onverzekerbaar', text: 'Win een contract met inzet Ruïneus.' });
+    expect(medal('stake-25')).toMatchObject({ name: 'Risicobereidheid', text: 'Win 25 contracten met verhoogde inzet.' });
+  });
+
+  test('the first win on raised terms earns the first of them, paid once beside the bill; a win on Standard earns none', () => {
+    const plain = inHub(pilot());
+    plain.app.startMission(light(plain.app).id);
+    finishMission(plain.app);
+    expect(savedGame(plain.store).medals).not.toContain('stake-1');
+    const { app, store } = inHub(pilot({ battlesWon: 5 }));
+    const before = savedGame(store);
+    app.startMission(light(app).id, false, null, false, null, 3);
+    finishMission(app);
+    const after = savedGame(store);
+    expect(after.raised).toEqual([0, 0, 1]);
+    const earned = after.medals.filter((id) => !before.medals.includes(id));
+    expect(earned).toEqual(expect.arrayContaining(['stake-1', 'stake-ruinous']));
+    expect(earned).not.toContain('stake-25');
+    expect(after.credits).toBe(before.credits + bill(app).net + earned.reduce((sum, id) => sum + MEDAL_PAY[medal(id).tier], 0));
   });
 });
