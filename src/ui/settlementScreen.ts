@@ -46,7 +46,7 @@ export class SettlementScreen implements Screen {
   }
 
   view(): ScreenView {
-    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned, seated, account, medals } = this.settlement;
+    const { net, won, reward, ammoCost, repairCost, rank, bonus, relief, asked, simulated, crowned, seated, account, medals, hazard, bond } = this.settlement;
     return {
       menu: { items: [], cursor: 0 },
       settlement: {
@@ -55,6 +55,8 @@ export class SettlementScreen implements Screen {
         medals: medals ?? 0,
         // What the contract paid on top for being won as the class it asked for, and which class.
         asked: asked ?? null,
+        // On raised terms: what they paid beside the fee, or the bond that went with the contract; and on which terms.
+        hazard: hazard ?? null, bond: bond ?? null,
         // True of the bill of a fight on the range: shown, and not booked.
         simulated: simulated === true,
         // The class whose crown this duel took from its master.

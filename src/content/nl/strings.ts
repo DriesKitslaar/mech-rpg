@@ -68,6 +68,11 @@ export const STRINGS_NL = {
   },
   battleIntro: { warning: 'ALARM', overdue: 'VERVALLEN', destroy: 'VERNIETIG ELKE VIJAND', open: 'DOORSTOTEN' },
   accounts: { opened: 'REKENING GEOPEND', callsign: (name: string) => `Roepnaam ${name}` },
+  stakes: {
+    names: ['Standaard', 'Riskant', 'Zwaar', 'Ruïneus'],
+    forfeit: 'BORG KWIJT',
+    forfeitNote: (credits: number) => `Niet afgemaakt: -${credits} c`,
+  },
   catapult: { bay: 'KATAPULT', go: 'START' },
   yourTurn: (round: number) => `Ronde ${round} - jouw zet`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} raakt ${obj(target)} - ${part} -${damage}`,

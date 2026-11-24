@@ -85,6 +85,13 @@ export const STRINGS = {
   battleIntro: { warning: 'WARNING', overdue: 'OVERDUE', destroy: 'DESTROY ALL HOSTILES', open: 'MOMENTUM' },
   // An account (see grudge.ts), as it is announced when one begins: that it has, and under what callsign.
   accounts: { opened: 'ACCOUNT OPENED', callsign: (name: string) => `Callsign ${name}` },
+  // The terms an open contract can be taken on (core/stakes.ts), by their level; and what is said when a game is
+  // opened that was closed with a contract on raised terms in the air: its bond is gone.
+  stakes: {
+    names: ['Standard', 'Hazard', 'Severe', 'Ruinous'],
+    forfeit: 'BOND LOST',
+    forfeitNote: (credits: number) => `Left in the air: -${credits} c`,
+  },
   // The launch that opens a contract flown from the hangar: where it is, and the word as the catapult fires.
   catapult: { bay: 'CATAPULT', go: 'LAUNCH' },
   yourTurn: (round: number) => `Round ${round} - your move`,
