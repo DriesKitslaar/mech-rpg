@@ -53,7 +53,8 @@ test('the bench: a part is put on it from the garage, a step is paid for and sav
   expect(after.tuning).toEqual({ 'core-hauler': 2 });
   expect(after.medals).toContain('bench-1');
   expect((await snap(page)).credits).toBe(had - 3 * core.price + 100);
-  expect((await snap(page)).menu.items[0]).toMatchObject({ label: 'No further this cycle', enabled: false });
+  // At the end of this telling's bench the row is the licence for a step more: dear, and not this pilot's to buy yet.
+  expect((await snap(page)).menu.items[0]).toMatchObject({ id: 'licence', label: 'Licence +3', note: '50000 c', enabled: false });
   await page.screenshot({ path: shot('garage-bench-limit') });
   // Back through the list of parts to the slots: the step follows the part's name.
   await press(page, 'Escape');

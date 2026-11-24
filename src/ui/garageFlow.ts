@@ -6,7 +6,10 @@ import {
   type BuildSlot, type GameState,
 } from '../core/game';
 import { MIX_KEYS, parseMix, setMix, stepMix, type Mix, type MixKey } from '../core/mix';
-import { TUNE_MAX, checkTune, stepOf, tunable, tune, tuneCap, tuneCost, tunedCatalog, tunedPart, type TuneRefusal } from '../core/tuning';
+import {
+  benchCap, buyLicence, checkLicence, checkTune, licencePrice, stepOf, tunable, tune, tuneCost, tunedCatalog, tunedPart,
+  type LicenceRefusal, type TuneRefusal,
+} from '../core/tuning';
 import { FRAME_SLOTS, WEAPON_SLOTS, type Build, type BuildError, type BuildStats, type Catalog, type Part } from '../core/types';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
@@ -23,7 +26,7 @@ export interface BenchInfo {
   id: string;
   name: string;
   step: number;
-  /** How far the bench goes in this cycle. */
+  /** How far the bench goes for this pilot now: by the cycle and the licences bought. */
   cap: number;
   /** What a step works on, and that figure as it is and as the next step would leave it. */
   figure: 'armour' | 'damage' | 'output';
@@ -32,6 +35,11 @@ export interface BenchInfo {
   /** The price of the next step. */
   cost: number;
   refusal: TuneRefusal | null;
+  /**
+   * Where the part stands as far as the bench goes now and that is short of the last step: the licence
+   * that would take the bench further, by the step it opens, with its price and what stands in its way.
+   */
+  licence: { step: number; price: number; refusal: LicenceRefusal | null } | null;
 }
 
 /** The figure the bench works on, for a part it takes. */
@@ -48,12 +56,14 @@ function figureOf(part: Part): { figure: BenchInfo['figure']; value: number } {
  */
 export class GarageFlow {
   game: GameState;
-  mode: 'slots' | 'parts' | 'loadouts' | 'loadoutMenu' | 'bench' | 'paint' = 'slots';
+  mode: 'slots' | 'parts' | 'loadouts' | 'loadoutMenu' | 'bench' | 'licence' | 'paint' = 'slots';
   slots: MenuList;
   parts = new MenuList();
   loadouts = new MenuList();
   loadoutMenu = new MenuList();
   bench = new MenuList();
+  /** The question before a licence is bought, while it is asked: No first. */
+  question = new MenuList();
   /** The rows of the paint page: the paint that is worn, and the five things a mix sets. */
   paintRows: MenuList;
   /** The part on the bench. */
@@ -172,25 +182,33 @@ export class GarageFlow {
   /** What the bench says about the part on it; null when nothing is. */
   get benchInfo(): BenchInfo | null {
     const id = this.benchId;
-    if (this.mode !== 'bench' || id === null || !Object.hasOwn(this.factory, id)) return null;
+    if ((this.mode !== 'bench' && this.mode !== 'licence') || id === null || !Object.hasOwn(this.factory, id)) return null;
     const part = this.factory[id];
     const step = stepOf(this.game.tuning, id);
     const { figure, value: now } = figureOf(tunedPart(part, step));
+    const refusal = checkTune(this.game, id, this.factory);
     return {
-      id, name: this.nameOf(id), step, cap: tuneCap(this.game.cycle), figure, now,
-      next: figureOf(tunedPart(part, step + 1)).value, cost: tuneCost(part, step + 1), refusal: checkTune(this.game, id, this.factory),
+      id, name: this.nameOf(id), step, cap: benchCap(this.game), figure, now,
+      next: figureOf(tunedPart(part, step + 1)).value, cost: tuneCost(part, step + 1), refusal, licence: this.licenceAt(refusal),
     };
+  }
+
+  /** The licence a part at the bench's limit is offered: none where the limit is the last step there is. */
+  private licenceAt(refusal: TuneRefusal | null): BenchInfo['licence'] {
+    const price = refusal === 'limit' ? licencePrice(this.game) : null;
+    return price === null ? null : { step: benchCap(this.game) + 1, price, refusal: checkLicence(this.game) };
   }
 
   private benchItems(): ListItem[] {
     const id = this.benchId!;
     const step = stepOf(this.game.tuning, id);
     const refusal = checkTune(this.game, id, this.factory);
+    const licence = this.licenceAt(refusal);
     return [
-      // At the limit the row says so: the last step of all, or the last this cycle allows.
-      refusal === 'limit'
-        ? { id: 'tune', label: step >= TUNE_MAX ? G.benchAtEnd : G.benchAtLimit, enabled: false }
-        : { id: 'tune', label: G.tune(step + 1), enabled: refusal === null, note: G.benchCost(tuneCost(this.factory[id], step + 1)) },
+      // At the limit the row is the licence that would take the bench a step further, with its price; or, at the last step of all, says so.
+      licence ? { id: 'licence', label: G.licence(licence.step), enabled: licence.refusal === null, note: G.benchCost(licence.price) }
+        : refusal === 'limit' ? { id: 'tune', label: G.benchAtEnd, enabled: false }
+          : { id: 'tune', label: G.tune(step + 1), enabled: refusal === null, note: G.benchCost(tuneCost(this.factory[id], step + 1)) },
       { id: 'back', label: G.backItem, enabled: true },
     ];
   }
@@ -279,7 +297,9 @@ export class GarageFlow {
   }
 
   onInput(action: InputAction): 'stay' | 'changed' | 'exit' {
-    const list = { slots: this.slots, parts: this.parts, loadouts: this.loadouts, loadoutMenu: this.loadoutMenu, bench: this.bench, paint: this.paintRows }[this.mode];
+    const list = {
+      slots: this.slots, parts: this.parts, loadouts: this.loadouts, loadoutMenu: this.loadoutMenu, bench: this.bench, licence: this.question, paint: this.paintRows,
+    }[this.mode];
     if (action === 'up') { list.move(-1); return 'stay'; }
     if (action === 'down') { list.move(1); return 'stay'; }
     switch (this.mode) {
@@ -320,6 +340,12 @@ export class GarageFlow {
         const item = this.bench.selected;
         if (action !== 'confirm' || !item?.enabled) return 'stay';
         if (item.id === 'back') { this.mode = 'parts'; return 'stay'; }
+        // A licence is dear and for good: it is asked about first, and the question rests on No.
+        if (item.id === 'licence') {
+          this.question = new MenuList([{ id: 'no', label: STRINGS.hub.no, enabled: true }, { id: 'yes', label: STRINGS.hub.yes, enabled: true }]);
+          this.mode = 'licence';
+          return 'stay';
+        }
         this.game = tune(this.game, this.benchId!, this.factory);
         // Every figure and every name that showed the part now shows it as the bench left it.
         this.catalog = tunedCatalog(this.factory, this.game.tuning);
@@ -327,6 +353,15 @@ export class GarageFlow {
         this.parts.setItems(this.partItems(this.slot));
         this.bench = this.benchList();
         return 'changed';
+      }
+      case 'licence': {
+        if (action !== 'confirm' && action !== 'cancel') return 'stay';
+        const yes = action === 'confirm' && this.question.selected?.id === 'yes' && checkLicence(this.game) === null;
+        if (yes) this.game = buyLicence(this.game);
+        // Back on the bench either way: with the step the licence opened on offer, or the offer as it was.
+        this.bench = this.benchList();
+        this.mode = 'bench';
+        return yes ? 'changed' : 'stay';
       }
       case 'loadouts':
         if (action === 'cancel' || action === 'left' || action === 'right') { this.mode = 'slots'; return 'stay'; }

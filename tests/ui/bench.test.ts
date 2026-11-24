@@ -18,7 +18,8 @@ import { JUGGERNAUT, accept, done, finishBattle, fresh, inHub, medalPay, press, 
 const core = CATALOG['core-hauler'] as FramePart;
 const rifle = CATALOG['wpn-rivet-rifle'] as Weapon;
 const generator = CATALOG['gen-kd1'] as Generator;
-type Bench = { id: string; name: string; step: number; cap: number; figure: string; now: number; next: number; cost: number; refusal: string | null };
+type Licence = { step: number; price: number; refusal: string | null };
+type Bench = { id: string; name: string; step: number; cap: number; figure: string; now: number; next: number; cost: number; refusal: string | null; licence: Licence | null };
 const garage = (app: Parameters<typeof snap>[0]) => snap(app).garage as { mode: string; candidate: string | null; errors: string[]; bench?: Bench };
 const rich = (extra: Partial<GameState> = {}): GameState => ({ ...fresh(), credits: 50_000, ...extra });
 /** The first step a pilot ever has taken earns a medal, and a medal pays. */
@@ -66,14 +67,14 @@ describe('the bench, in the garage', () => {
     expect(snap(app).menu.items.find((item) => item.id === 'core')!.note).toBe(`${core.name} +1`);
   });
 
-  test('goes as far as the cycle allows and then says so: the way on is closed and the cursor is on the way back', () => {
+  test('goes as far as the cycle allows, and there offers the licence for a step more: one this pilot cannot pay, so the cursor is on the way back', () => {
     const { app, store } = inHub(rich());
     const had = snap(app).credits;
     toParts(app, 'core');
     press(app, 'next', 'confirm', 'confirm');
     expect(savedGame(store).tuning).toEqual({ 'core-hauler': 2 });
     expect(garage(app).bench).toMatchObject({ step: 2, cap: 2, refusal: 'limit' });
-    expect(snap(app).menu).toEqual({ items: [{ id: 'tune', label: 'No further this cycle', enabled: false }, { id: 'back', label: 'Back', enabled: true }], cursor: 1 });
+    expect(snap(app).menu).toEqual({ items: [{ id: 'licence', label: 'Licence +3', enabled: false, note: '50000 c' }, { id: 'back', label: 'Back', enabled: true }], cursor: 1 });
     // Confirming there leaves the bench, and nothing more was paid.
     press(app, 'confirm');
     expect(garage(app).mode).toBe('parts');
@@ -229,9 +230,147 @@ describe('the bench, in the garage', () => {
       press(app, 'next', 'confirm', 'confirm');
       const said = record((ctx) => app.draw(ctx)).texts.map((t) => t.text);
       // A cycle is a cyclus in the Dutch game, and a ronde is a round of a battle: the bench's limit is the cycle's.
-      expect(said).toEqual(expect.arrayContaining(['DE WERKBANK', 'Stap 2 van 2', 'Niet verder deze cyclus', 'Terug', `Je hebt ${had - 3 * core.price + FIRST} c`]));
+      expect(said).toEqual(expect.arrayContaining(['DE WERKBANK', 'Stap 2 van 2', 'Licentie +3', '50000 c', 'Terug', `Je hebt ${had - 3 * core.price + FIRST} c`, 'Te weinig credits']));
       expect(said).not.toContain('Niet verder deze ronde');
       expect(said.some((text) => text.startsWith('Pantser '))).toBe(true);
+    } finally {
+      setLanguage('en');
+    }
+  });
+});
+
+describe('the bench\'s licence, in the garage', () => {
+  /** A pilot whose core stands at the end of a first telling's bench, with money for one licence and a step. */
+  const atEnd = (extra: Partial<GameState> = {}): GameState => rich({ credits: 60_000, tuning: { 'core-hauler': 2 }, ...extra });
+  const toBench = (app: Parameters<typeof snap>[0], slot = 'core'): void => { toParts(app, slot); press(app, 'next'); expect(garage(app).mode).toBe('bench'); };
+  const drawn = (app: Parameters<typeof snap>[0]) => record((ctx) => app.draw(ctx)).texts;
+  const said = (app: Parameters<typeof snap>[0]): string[] => drawn(app).map((t) => t.text);
+  const G = STRINGS.garage;
+
+  test('a part at the bench\'s end is offered the licence for the next step, with what it costs and what it is', () => {
+    const { app } = inHub(atEnd());
+    toBench(app);
+    expect(garage(app).bench).toMatchObject({ step: 2, cap: 2, refusal: 'limit', licence: { step: 3, price: 50_000, refusal: null } });
+    expect(snap(app).menu).toEqual({ items: [{ id: 'licence', label: 'Licence +3', enabled: true, note: '50000 c' }, { id: 'back', label: 'Back', enabled: true }], cursor: 0 });
+    // Under what the pilot has: what a licence is, in the panel's width.
+    expect(G.licenceNote(3)).toBe('Opens +3 for every part, permanently.');
+    const texts = drawn(app);
+    const note = texts.filter((t) => t.color === COLORS.dim && t.left >= 162 && t.y < 194 && t.y > texts.find((t) => t.text.startsWith('You have '))!.y);
+    expect(note.length).toBeGreaterThan(1);
+    expect(note.map((t) => t.text).join(' ')).toBe(G.licenceNote(3));
+    for (const line of note) expect(line.right, line.text).toBeLessThanOrEqual(310 - 6);
+    expect(said(app)).not.toContain('Not enough credits');
+    // A part that is not at the end is offered its step, and no licence; and nothing is said of one.
+    const other = inHub(atEnd()).app;
+    toBench(other, 'rightHand');
+    expect(garage(other).bench).toMatchObject({ step: 0, refusal: null, licence: null });
+    expect(snap(other).menu.items[0].id).toBe('tune');
+    expect(said(other).join(' ')).not.toContain('for every part');
+  });
+
+  test('A asks, with No under the cursor; Yes buys it, and the step it opened is offered and taken', () => {
+    const { app, store } = inHub(atEnd());
+    const had = snap(app).credits;
+    toBench(app);
+    press(app, 'confirm');
+    expect(garage(app).mode).toBe('licence');
+    expect(snap(app).menu).toEqual({ items: [{ id: 'no', label: 'No', enabled: true }, { id: 'yes', label: 'Yes', enabled: true }], cursor: 0 });
+    // The question says what is bought and for what; the part and what a licence is stay in view; nothing is bought by asking.
+    expect(G.licenceQuestion(3, 50_000)).toBe('Licence +3 for 50000 c?');
+    expect(said(app)).toEqual(expect.arrayContaining(['THE BENCH', `${core.name} +2`, 'Step 2 of 2', 'Licence +3 for 50000 c?', 'No', 'Yes', `You have ${had} c`]));
+    expect(said(app)).not.toContain('Back');
+    expect(savedGame(store).bench).toBeUndefined();
+    expect(savedGame(store).credits).toBe(had);
+    press(app, 'down', 'confirm');
+    expect(garage(app).mode).toBe('bench');
+    expect(savedGame(store).bench).toBe(1);
+    expect(savedGame(store).credits).toBe(had - 50_000);
+    expect(snap(app).credits).toBe(had - 50_000);
+    expect(garage(app).bench).toMatchObject({ step: 2, cap: 3, refusal: null, licence: null, next: Math.round(core.ap * 1.15), cost: 3 * core.price });
+    expect(snap(app).menu).toEqual({ items: [{ id: 'tune', label: 'Tune to +3', enabled: true, note: `${3 * core.price} c` }, { id: 'back', label: 'Back', enabled: true }], cursor: 0 });
+    expect(said(app)).toEqual(expect.arrayContaining(['Step 2 of 3', `> ${Math.round(core.ap * 1.15)}`]));
+    // The step is taken as any step is; and at the new end the next licence is offered, at its own price, which this pilot cannot pay.
+    press(app, 'confirm');
+    expect(savedGame(store).tuning).toEqual({ 'core-hauler': 3 });
+    expect(savedGame(store).credits).toBe(had - 50_000 - 3 * core.price);
+    expect(garage(app).bench).toMatchObject({ step: 3, cap: 3, refusal: 'limit', licence: { step: 4, price: 100_000, refusal: 'credits' } });
+    expect(snap(app).menu).toEqual({ items: [{ id: 'licence', label: 'Licence +4', enabled: false, note: '100000 c' }, { id: 'back', label: 'Back', enabled: true }], cursor: 1 });
+    expect(said(app)).toContain('Not enough credits');
+    // A row that cannot be paid is not taken.
+    press(app, 'up', 'confirm');
+    expect(garage(app).mode).toBe('bench');
+    expect(savedGame(store).bench).toBe(1);
+  });
+
+  test('No and B change nothing, and leave the pilot on the bench with the offer as it was', () => {
+    // (The two answers go round: down from No is Yes, and down again is No.)
+    for (const keys of [['confirm'], ['cancel'], ['down', 'up', 'confirm'], ['down', 'down', 'confirm'], ['down', 'cancel']] as const) {
+      const { app, store } = inHub(atEnd());
+      const had = snap(app).credits;
+      toBench(app);
+      press(app, 'confirm');
+      expect(garage(app).mode).toBe('licence');
+      press(app, ...keys);
+      expect(garage(app).mode, keys.join(' ')).toBe('bench');
+      expect(savedGame(store).bench).toBeUndefined();
+      expect(savedGame(store).credits).toBe(had);
+      expect(snap(app).menu).toEqual({ items: [{ id: 'licence', label: 'Licence +3', enabled: true, note: '50000 c' }, { id: 'back', label: 'Back', enabled: true }], cursor: 0 });
+      // And B from there is the way back to the parts, as it was.
+      press(app, 'cancel');
+      expect(garage(app).mode).toBe('parts');
+    }
+  });
+
+  test('the licence opens the step for every part: another part at the old end goes on at once', () => {
+    const { app, store } = inHub(atEnd({ tuning: { 'core-hauler': 2, 'wpn-rivet-rifle': 2 }, bench: 1 }));
+    toBench(app, 'rightHand');
+    expect(garage(app).bench).toMatchObject({ id: 'wpn-rivet-rifle', step: 2, cap: 3, refusal: null, licence: null });
+    press(app, 'confirm');
+    expect(savedGame(store).tuning).toEqual({ 'core-hauler': 2, 'wpn-rivet-rifle': 3 });
+  });
+
+  test('in a later telling it is the step after that telling\'s own that is offered; and at five nothing is', () => {
+    const second = inHub(atEnd({ cycle: 1, tuning: { 'core-hauler': 3 }, credits: 120_000 })).app;
+    toBench(second);
+    expect(garage(second).bench).toMatchObject({ step: 3, cap: 3, licence: { step: 4, price: 100_000, refusal: null } });
+    expect(snap(second).menu.items[0]).toEqual({ id: 'licence', label: 'Licence +4', enabled: true, note: '100000 c' });
+    for (const game of [atEnd({ bench: 3, tuning: { 'core-hauler': 5 }, credits: 900_000 }), atEnd({ cycle: 6, tuning: { 'core-hauler': 5 }, credits: 900_000 })]) {
+      const last = inHub(game).app;
+      toBench(last);
+      expect(garage(last).bench).toMatchObject({ step: 5, cap: 5, refusal: 'limit', licence: null });
+      expect(snap(last).menu).toEqual({ items: [{ id: 'tune', label: 'As far as it goes', enabled: false }, { id: 'back', label: 'Back', enabled: true }], cursor: 1 });
+      expect(said(last).join(' ')).not.toContain('for every part');
+    }
+  });
+
+  test.each(['en', 'nl'] as const)('the row, the question and the note fit the panel at every step (%s)', (language) => {
+    try {
+      for (const [bench, step] of [[undefined, 2], [1, 3], [2, 4]] as const) {
+        const base = atEnd({ bench, tuning: { 'core-hauler': step }, credits: 999_999 });
+        const { app } = inHub({ ...base, settings: { ...base.settings, language } });
+        toBench(app);
+        const price = [50_000, 100_000, 150_000][step - 2];
+        expect(snap(app).menu.items[0]).toMatchObject({ id: 'licence', label: STRINGS.garage.licence(step + 1), note: `${price} c`, enabled: true });
+        for (const asking of [false, true]) {
+          if (asking) press(app, 'confirm');
+          // What is written in the panel of the bench: under the screen's own heading, over the figures of the build.
+          const texts = drawn(app).filter((t) => t.left >= 162 && t.y >= 20 && t.y < 194);
+          // Nothing runs out of the panel, and nothing lies over anything.
+          for (const t of texts) expect(t.right, `${language} ${t.text}`).toBeLessThanOrEqual(310 - 6);
+          for (const a of texts) for (const b of texts) {
+            if (a !== b && a.y === b.y) expect(a.right <= b.left || b.right <= a.left, `${language}: "${a.text}" and "${b.text}"`).toBe(true);
+          }
+          const words = texts.map((t) => t.text);
+          expect(words.join(' ')).toContain(STRINGS.garage.licenceNote(step + 1));
+          if (asking) expect(words).toContain(STRINGS.garage.licenceQuestion(step + 1, price));
+          else expect(words).toEqual(expect.arrayContaining([STRINGS.garage.licence(step + 1), `${price} c`]));
+        }
+      }
+      if (language === 'nl') {
+        expect([STRINGS.garage.licence(3), STRINGS.garage.licenceQuestion(5, 150_000), STRINGS.garage.licenceNote(4)]).toEqual([
+          'Licentie +3', 'Licentie +5 voor 150000 c?', 'Opent +4 voor elk onderdeel, voorgoed.',
+        ]);
+      }
     } finally {
       setLanguage('en');
     }

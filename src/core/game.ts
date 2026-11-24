@@ -7,7 +7,7 @@ import { BOUT_ID, MAX_BOUTS, MAX_COUNT, MAX_IDS, PLAIN_ID } from './kept';
 import { MIX_SHAPE } from './mix';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
-import { MAX_TUNED, tuneCap, type Tuning } from './tuning';
+import { LICENCE_PRICES, MAX_TUNED, benchCap, type Tuning } from './tuning';
 
 /** How well a contract was done, best first. */
 export type Rank = 'S' | 'A' | 'B' | 'C' | 'D';
@@ -120,6 +120,8 @@ export interface GameState {
   lessons?: string[];
   /** Bench work: the step each part stands at, by part id (see tuning.ts). Kept across cycles. */
   tuning?: Tuning;
+  /** The bench's licences bought: one to three, each a step further for every part (see tuning.ts). Kept across cycles. Absent until one is. */
+  bench?: number;
   /** The account that is open: a pilot who is coming back for this one (see grudge.ts). Absent where there is none. Kept across cycles. */
   grudge?: Grudge;
   /** The callsigns of the accounts closed, in the order they were. Kept across cycles. Absent until one is. */
@@ -427,10 +429,12 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
     && (grudge.knows === undefined || isPlainId(grudge.knows))
     && isWholeNonNegative(grudge.met) && grudge.met <= 2 && isWholeNonNegative(grudge.waited) && grudge.waited <= 1_000_000)) return false;
   if (accounts !== undefined && !(Array.isArray(accounts) && accounts.length <= 1000 && accounts.every(isName))) return false;
-  // Bench work: whole steps against plain ids, no further than the bench goes in this telling. A part
-  // this version does not know is kept: it is simply never fitted.
-  const { tuning } = value;
-  const furthest = tuneCap(value.cycle);
+  // The bench's licences: one, two or three. Bench work: whole steps against plain ids, no further than the
+  // bench goes in this telling with those licences. A part this version does not know is kept: it is simply
+  // never fitted.
+  const { tuning, bench } = value;
+  if (bench !== undefined && !(isWholeNonNegative(bench) && bench >= 1 && bench <= LICENCE_PRICES.length)) return false;
+  const furthest = benchCap({ cycle: value.cycle, bench });
   if (tuning !== undefined && (!isRecord(tuning) || Object.keys(tuning).length > MAX_TUNED
     || !Object.entries(tuning).every(([id, step]) => /^[a-z0-9-]{1,64}$/.test(id) && isWholeNonNegative(step) && step >= 1 && step <= furthest))) return false;
   // What the pilot has been told. An id this version does not know is kept: a later one may.

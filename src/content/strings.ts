@@ -301,11 +301,13 @@ export const STRINGS = {
     // What starting over keeps, and what the cycle that would begin changes: tougher enemies and better pay up to the third
     // telling, a step more at the bench up to the fourth.
     // What stays, what leaves the list of contracts until the story brings it back, and what the next telling is like.
-    cycleQuestion: (next: number): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
+    // `bench` is whether that telling takes this pilot's bench a step further: it does up to the fourth, unless licences
+    // have taken it to its end before (see tuning.ts).
+    cycleQuestion: (next: number, bench = next <= 3): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
       // (The duels that start over are the ones that are side work: what was won in the arena stays.)
       'Side work and its duels, and', 'the Archive, start over too.',
-      ...(next <= 2 ? ['Tougher enemies, better pay,', 'one more step at the bench.']
-        : next === 3 ? ['Enemies are as tough as now.', 'The bench has one step left.']
+      ...(next <= 2 ? (bench ? ['Tougher enemies, better pay,', 'one more step at the bench.'] : ['Tougher enemies, better pay.', 'The bench goes no further.'])
+        : bench ? ['Enemies are as tough as now.', 'The bench has one step left.']
           : ['Enemies are as tough as now,', 'and the pay is the same.'])],
     no: 'No', yes: 'Yes',
   },
@@ -703,7 +705,11 @@ export const STRINGS = {
     toBench: 'R1: the bench', bench: 'THE BENCH', benchStep: (step: number, cap: number) => `Step ${step} of ${cap}`,
     tune: (step: number) => `Tune to +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `You have ${credits} c`,
     benchFigures: { armour: 'Armour', damage: 'Damage', output: 'Output' },
-    benchAtLimit: 'No further this cycle', benchAtEnd: 'As far as it goes', benchShort: 'Not enough credits',
+    benchAtEnd: 'As far as it goes', benchShort: 'Not enough credits',
+    // The bench's licence: offered where a part stands as far as the bench goes now, short of the last step. The row
+    // (its price stands beside it), the question before it is bought, and under both what it is.
+    licence: (step: number) => `Licence +${step}`, licenceQuestion: (step: number, price: number) => `Licence +${step} for ${price} c?`,
+    licenceNote: (step: number) => `Opens +${step} for every part, permanently.`,
   },
   shop: {
     heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'c',

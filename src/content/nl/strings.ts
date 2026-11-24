@@ -244,10 +244,10 @@ export const STRINGS_NL = {
     },
     locked: 'Op slot', opensAfter: (title: string) => `na ${title}`, campaignDone: 'De oorlog is voorbij. Het werk niet.',
     cycleLabel: (n: number) => `CYCLUS ${n + 1}`,
-    cycleQuestion: (next: number): string[] => ['De oorlog opnieuw?', 'Je houdt credits, level,', 'onderdelen, perks, arenarang.',
+    cycleQuestion: (next: number, bench = next <= 3): string[] => ['De oorlog opnieuw?', 'Je houdt credits, level,', 'onderdelen, perks, arenarang.',
       'Bijklussen en hun duels, en', 'het archief beginnen opnieuw.',
-      ...(next <= 2 ? ['Taaiere vijanden, meer loon,', 'een stap meer op de werkbank.']
-        : next === 3 ? ['Vijanden blijven even taai.', 'De werkbank kan nog een stap.']
+      ...(next <= 2 ? (bench ? ['Taaiere vijanden, meer loon,', 'een stap meer op de werkbank.'] : ['Taaiere vijanden, meer loon.', 'De werkbank kan niet verder.'])
+        : bench ? ['Vijanden blijven even taai.', 'De werkbank kan nog een stap.']
           : ['Vijanden blijven even taai,', 'en het loon blijft gelijk.'])],
     no: 'Nee', yes: 'Ja',
   },
@@ -569,7 +569,9 @@ export const STRINGS_NL = {
     toBench: 'R1: de werkbank', bench: 'DE WERKBANK', benchStep: (step: number, cap: number) => `Stap ${step} van ${cap}`,
     tune: (step: number) => `Naar +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `Je hebt ${credits} c`,
     benchFigures: { armour: 'Pantser', damage: 'Schade', output: 'Vermogen' },
-    benchAtLimit: 'Niet verder deze cyclus', benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
+    benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
+    licence: (step: number) => `Licentie +${step}`, licenceQuestion: (step: number, price: number) => `Licentie +${step} voor ${price} c?`,
+    licenceNote: (step: number) => `Opent +${step} voor elk onderdeel, voorgoed.`,
   },
   shop: {
     heading: 'WINKEL', buy: 'KOOP', sell: 'VERK.', credits: 'c',

@@ -7,13 +7,48 @@ import type { Catalog, FramePart, Generator, Part, Weapon } from './types';
  * the part is for (armour to a frame part, damage to a weapon, output to a generator) and costs
  * its number times the part's price. The work is on the model, not the copy: it is written down
  * against the part's id, so it is still there when the part is sold and bought again, and when the
- * story starts over. How far the bench goes grows with the telling.
+ * story starts over. How far the bench goes grows with the telling, and with the licences bought.
  */
 export const TUNE_STEP = 0.05;
 /** The furthest the bench ever goes. */
 export const TUNE_MAX = 5;
-/** How far the bench goes in a cycle: two steps in the first, one further with every cycle after it. */
-export const tuneCap = (cycle: number): number => Math.min(TUNE_MAX, 2 + Math.max(0, cycle));
+/**
+ * How far the bench goes: two steps in the first cycle, one further with every cycle after it, and one
+ * further for every licence bought (see `buyLicence`); never past the furthest.
+ */
+export const tuneCap = (cycle: number, licences = 0): number => Math.min(TUNE_MAX, 2 + Math.max(0, cycle) + licences);
+/**
+ * A licence is for the bench, not for a part: it lets every part go one step past where the telling has
+ * brought the bench, each at the step's own price. What one costs goes by the step it opens: the third,
+ * the fourth, the fifth. It is kept through every telling, and a new telling still brings its own step
+ * on top of it: nobody pays for a step and is then handed that step.
+ */
+export const LICENCE_PRICES: readonly number[] = [50_000, 100_000, 150_000];
+/** The licences a game holds: one to three, and none for anything else it may say. */
+const licences = (game: Pick<GameState, 'bench'>): number => {
+  const held = game.bench;
+  return typeof held === 'number' && Number.isInteger(held) && held >= 1 && held <= LICENCE_PRICES.length ? held : 0;
+};
+/** How far the bench goes for this pilot now. */
+export const benchCap = (game: Pick<GameState, 'cycle' | 'bench'>): number => tuneCap(game.cycle, licences(game));
+/** What the next licence costs: the price of the step it would open. Null where the bench already goes as far as it ever does. */
+export function licencePrice(game: Pick<GameState, 'cycle' | 'bench'>): number | null {
+  const opens = benchCap(game) + 1;
+  return opens > TUNE_MAX ? null : LICENCE_PRICES[opens - (TUNE_MAX - LICENCE_PRICES.length) - 1];
+}
+export type LicenceRefusal = 'end' | 'credits';
+/** Why the next licence cannot be bought now; null when it can. */
+export function checkLicence(game: Pick<GameState, 'cycle' | 'bench' | 'credits'>): LicenceRefusal | null {
+  const price = licencePrice(game);
+  if (price === null) return 'end';
+  return game.credits < price ? 'credits' : null;
+}
+/** Buys the next licence: the bench goes one step further from here on, in this telling and every other. */
+export function buyLicence<T extends Pick<GameState, 'cycle' | 'bench' | 'credits'>>(game: T): T {
+  const refusal = checkLicence(game);
+  if (refusal) throw new Error(`no licence: ${refusal}`);
+  return { ...game, credits: game.credits - licencePrice(game)!, bench: licences(game) + 1 };
+}
 
 /** Bench work: the step each part stands at, by part id. A part that is not named has had none. */
 export type Tuning = Record<string, number>;
@@ -48,7 +83,7 @@ export function checkTune(state: GameState, id: string, catalog: Catalog): TuneR
   if (!tunable(part)) return 'notTunable';
   if (!Object.hasOwn(state.inventory, id) || state.inventory[id] <= 0) return 'notOwned';
   const next = stepOf(state.tuning, id) + 1;
-  if (next > tuneCap(state.cycle)) return 'limit';
+  if (next > benchCap(state)) return 'limit';
   return state.credits < tuneCost(part, next) ? 'credits' : null;
 }
 
