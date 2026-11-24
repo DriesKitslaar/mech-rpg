@@ -4,7 +4,7 @@ import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
-import { SCENE_HOLD_MS, drawPlace, hearThunder } from './sceneScreen';
+import { SCENE_HOLD_MS, drawPlace, drawSkip, hearThunder } from './sceneScreen';
 import { drawWord, fitTall, wordTop } from './signType';
 import { Typewriter } from './typewriter';
 import { COLORS, LINE, OVER_PICTURE, charsFor, drawList, drawPanel, drawPortrait, drawOutlined, drawText, wrap } from './widgets';
@@ -79,6 +79,15 @@ export class TalkScreen implements Screen {
       else if (action === 'confirm' && this.hold <= 0) this.answer();
       return;
     }
+    // A conversation that was held in an earlier telling is skipped with B: to its last line, written out. What
+    // it ends in is not skipped: A goes on from there, to the question where there is one.
+    if (action === 'cancel' && this.app.canSkip(this.scene) && (this.at + 1 < this.said.length || !this.writer.done)) {
+      this.at = this.said.length - 1;
+      this.open();
+      this.writer.finish();
+      this.hold = this.app.deps.fast ? 0 : SCENE_HOLD_MS / 2;
+      return;
+    }
     if (action !== 'confirm' || this.hold > 0) return;
     if (!this.writer.done) {
       this.writer.finish();
@@ -124,7 +133,7 @@ export class TalkScreen implements Screen {
     const line = this.said[this.at];
     return {
       menu: this.asking ? { items: this.answers!.items, cursor: this.answers!.cursor } : { items: [], cursor: 0 },
-      scene: this.scene.id, typing: !this.writer.done, busy: this.hold > 0,
+      scene: this.scene.id, typing: !this.writer.done, busy: this.hold > 0, skippable: this.app.canSkip(this.scene),
       talk: { at: this.at, of: this.said.length, who: line?.who ?? '', asking: this.asking },
     };
   }
@@ -139,6 +148,7 @@ export class TalkScreen implements Screen {
     ctx.fillStyle = `rgba(8, 8, 20, ${TALK_VEIL})`;
     ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     if (scene.heading) drawOutlined(ctx, scene.heading, LOGICAL_W / 2, 10, { align: 'center', color: OVER_PICTURE });
+    if (!this.asking) drawSkip(ctx, this.app, scene);
     // What the conversation is called, in the sign's letters; in the font where the sign cannot write it.
     const tall = fitTall(scene.title, TALK_TITLE_W, TALK_TITLE_TALL);
     if (tall === null) drawText(ctx, scene.title, LOGICAL_W / 2, 22, { size: 16, align: 'center', color: COLORS.accent });

@@ -103,12 +103,15 @@ export const retreated = (state: BattleState): boolean => state.retreated === tr
  * What a finished contract adds to the record: everything its battles added up to, and how it
  * ended. Flawless means won without being hit once, whatever was repaired along the way.
  */
-export function contractStats(battles: Stats, end: { won: boolean; retreated: boolean; pay: number }): Stats {
+export function contractStats(battles: Stats, end: { won: boolean; retreated: boolean; pay: number; counted?: boolean }): Stats {
+  // What is counted as no contract (a rematch in the arena) is none won, lost, walked away from or won without a
+  // scratch: what its battles added up to is kept, and what it paid was earned.
+  const counted = end.counted !== false;
   return addStats(battles, {
-    contracts: end.won ? 1 : 0,
-    lost: !end.won && !end.retreated ? 1 : 0,
-    retreats: !end.won && end.retreated ? 1 : 0,
-    flawless: end.won && battles.taken === 0 ? 1 : 0,
+    contracts: end.won && counted ? 1 : 0,
+    lost: !end.won && !end.retreated && counted ? 1 : 0,
+    retreats: !end.won && end.retreated && counted ? 1 : 0,
+    flawless: end.won && battles.taken === 0 && counted ? 1 : 0,
     earned: end.won ? end.pay : 0,
   });
 }

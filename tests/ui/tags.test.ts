@@ -64,6 +64,15 @@ describe('the mark over a unit on the field', () => {
     expect(markPosition({ x: 200, y: 30, w: 40, h: 40 }, [], 24).y).toBe(26);
   });
 
+  test('pushed down onto a tall machine by the top of the field, it is on the machine, and says so: it is then written on a dark ground', () => {
+    // A machine whose head stands higher than a mark may: the mark's nine rows from 26 lie on it.
+    expect(markPosition({ x: 200, y: 20, w: 60, h: 120 }, [], 24)).toEqual({ x: 230, y: 26, inside: true });
+    expect(markPosition({ x: 200, y: 34, w: 60, h: 100 }, [], 24)).toEqual({ x: 230, y: 26, inside: true });
+    // One whose head begins where those rows end is clear of it, and one lower down has its mark above it as ever.
+    expect(markPosition({ x: 200, y: 35, w: 60, h: 100 }, [], 24)).toEqual({ x: 230, y: 26, inside: false });
+    expect(markPosition({ x: 200, y: 60, w: 60, h: 100 }, [], 24)).toEqual({ x: 230, y: 50, inside: false });
+  });
+
   test('is written on the unit itself when the place above it is where another unit\'s bars are', () => {
     // The upper unit's bars run under it from 97 to 101, across where the lower one's mark would go.
     expect(upperBars).toEqual({ x: 236, y: 97, w: 44 });

@@ -15,6 +15,7 @@ import { STRINGS_NL } from '../../src/content/nl/strings';
 import { CATALOG } from '../../src/content/parts';
 import { STRINGS } from '../../src/content/strings';
 import { TOAST_MS, type App } from '../../src/ui/app';
+import { HINT_Y, STYLE_Y } from '../../src/ui/arenaScreen';
 import { LOGICAL_W } from '../../src/ui/display';
 import { battleTrack } from '../../src/ui/soundtrack';
 import type { SpriteStore } from '../../src/ui/sprites';
@@ -151,11 +152,20 @@ describe('the arena has two pages', () => {
       toRow(app, masterId(master.kind));
       const shown = drawn(app);
       expect(written(shown, master.name.toUpperCase())).toMatchObject({ left: 12, y: 189, size: 16, color: COLORS.accent });
-      expect(written(shown, M.titles[master.kind].toUpperCase())).toMatchObject({ left: 12, y: 207, color: COLORS.armor });
+      // What they are the master of stands beside the name, on its row: it has no row of its own.
+      const name = written(shown, master.name.toUpperCase());
+      const title = written(shown, M.titles[master.kind].toUpperCase());
+      expect(title).toMatchObject({ y: 191, color: COLORS.armor });
+      expect(title.left - name.right).toBeGreaterThanOrEqual(8);
+      expect(title.left - name.right).toBeLessThan(10);
       expect(written(shown, 'OPEN')).toMatchObject({ right: LOGICAL_W - 12, y: 191, color: COLORS.armor });
       const style = wrap(master.style, charsFor(LOGICAL_W - 28));
-      expect(shown.texts.filter((t) => t.y >= 207 + LINE && t.y < 252 && t.left === 12).map((t) => t.text)).toEqual(style);
-      expect(written(shown, A.back)).toMatchObject({ y: 253, color: COLORS.dim });
+      // How they fight begins where an opponent's of the ladder does, and ends two lines and more above the line of buttons.
+      const lines = shown.texts.filter((t) => t.y >= STYLE_Y && t.y < HINT_Y && t.left === 12);
+      expect(lines.map((t) => t.text)).toEqual(style);
+      expect(lines.map((t) => t.y)).toEqual(style.map((_, i) => STYLE_Y + i * LINE));
+      expect(written(shown, A.back)).toMatchObject({ y: HINT_Y, color: COLORS.dim });
+      expect(HINT_Y - Math.max(...lines.map((t) => t.y))).toBeGreaterThanOrEqual(2 * LINE);
       const panel = shown.texts.filter((t) => t.y >= 184);
       for (const a of panel) for (const b of panel) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
       for (const t of shown.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 4);
@@ -209,10 +219,10 @@ describe('the masters take challenges from the champion', () => {
     const shown = drawn(app);
     // The master is there to be looked at: their name and what they are the master of.
     expect(written(shown, 'QUILLON').y).toBe(189);
-    expect(written(shown, 'MASTER DUELLIST').y).toBe(207);
+    expect(written(shown, 'MASTER DUELLIST').y).toBe(191);
     expect(shown.texts.find((t) => t.text === 'LOCKED' && t.y === 191)).toMatchObject({ right: LOGICAL_W - 12, color: COLORS.danger });
     // Where the line about how they fight would stand: whom they take challenges from.
-    expect(shown.texts.filter((t) => t.y >= 207 + LINE && t.y < 252 && t.left === 12).map((t) => t.text)).toEqual(wrap(M.locked, charsFor(LOGICAL_W - 28)));
+    expect(shown.texts.filter((t) => t.y >= STYLE_Y && t.y < HINT_Y && t.left === 12).map((t) => t.text)).toEqual(wrap(M.locked, charsFor(LOGICAL_W - 28)));
     press(app, 'confirm');
     expect(snap(app).screen).toBe('arena');
   });
@@ -434,14 +444,17 @@ describe('the duel', () => {
     expect(written(drawn(app), 'THE CROWN IS YOURS').y).toBe(26);
   });
 
-  test('a crown is taken once: the holder\'s rematch pays a quarter, says the arena\'s usual word, and changes nothing that is kept', () => {
+  test('a crown is taken once: the holder\'s rematch pays a quarter, is billed as a rematch, and changes nothing that is kept but its own count', () => {
     const { app, store } = won(champion(late('bastion'), { masters: ['bastion'], crowns: ['bastion'] }), 'bastion');
     expect(bill(app)).toMatchObject({ won: true, reward: 2250, crowned: null });
     const kept = savedGame(store);
     expect(kept.crowns).toEqual(['bastion']);
     expect(kept.masters).toEqual(['bastion']);
+    // Its next purse is half of this one.
+    expect(kept.rematches).toEqual({ [masterId('bastion')]: 1 });
     const shown = drawn(app);
-    expect(written(shown, STRINGS.settlement.won).y).toBe(26);
+    expect(written(shown, STRINGS.settlement.rematchWon).y).toBe(26);
+    expect(shown.texts.some((t) => t.text === STRINGS.settlement.won)).toBe(false);
     expect(shown.texts.filter((t) => t.y >= 144 && t.y < 180).map((t) => t.text).join(' ')).toBe(A.win);
     expect(snap(app).toasts).not.toContain('crown:bastion');
   });
@@ -473,28 +486,31 @@ describe('in Dutch', () => {
     select(app, 'arena');
     press(app, 'next');
     shown = drawn(app);
-    expect(shown.texts.filter((t) => t.y === 1).map((t) => t.text)).toEqual(expect.arrayContaining(['LADDER', 'MEESTERS']));
+    expect(shown.texts.filter((t) => t.y === 1).map((t) => t.text)).toEqual(expect.arrayContaining(['RANGLIJST', 'MEESTERS']));
     expect(written(shown, 'KRONEN 1/7').y).toBe(22);
     expect(snap(app).menu.items.map((row) => row.label)).toEqual(['Duellist', 'Scherpschutter', 'Artillerie', 'Lansier', 'Bastion', 'Jager', 'Allrounder', 'De achtste stoel']);
-    expect(written(shown, 'MEESTERDUELLIST').y).toBe(207);
-    expect(written(shown, N.back).y).toBe(253);
+    expect(written(shown, 'MEESTERDUELLIST').y).toBe(191);
+    expect(written(shown, N.back).y).toBe(HINT_Y);
     for (const kind of ARCHETYPES) {
       toRow(app, masterId(kind));
       const page = drawn(app);
-      expect(written(page, N.masters.titles[kind].toUpperCase()).y).toBe(207);
+      expect(written(page, N.masters.titles[kind].toUpperCase()).y).toBe(191);
       const panel = page.texts.filter((t) => t.y >= 184);
       for (const a of panel) for (const b of panel) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
       for (const t of page.texts) expect(t.right, t.text).toBeLessThanOrEqual(LOGICAL_W - 4);
     }
-    // The briefing: the tag on one line, and under it what the crown asks; here it is held.
+    // The briefing: the tag on one line, and under it what the crown asks; here it is held, and the duel a rematch.
     toRow(app, masterId('bastion'));
     press(app, 'confirm');
     shown = drawn(app);
-    expect(written(shown, 'MEESTERDUEL: een tegen een, om de pot')).toMatchObject({ left: 72, y: 40 });
+    expect(written(shown, 'REVANCHE: geen contract, de pot halveert')).toMatchObject({ left: 72, y: 40 });
+    expect(shown.texts.some((t) => t.text === 'MEESTERDUEL: een tegen een, om de pot')).toBe(false);
     expect(written(shown, 'DEZE KROON IS VAN JOU')).toMatchObject({ left: 72, y: 51 });
     press(app, 'cancel');
     toRow(app, masterId('marksman'));
     press(app, 'confirm');
     expect(written(drawn(app), 'KROON: WIN ALS SCHERPSCHUTTER').right).toBeLessThanOrEqual(LOGICAL_W - 8);
+    // A master not beaten yet is no rematch: the duel is headed as a duel.
+    expect(written(drawn(app), 'MEESTERDUEL: een tegen een, om de pot')).toMatchObject({ left: 72, y: 40 });
   });
 });

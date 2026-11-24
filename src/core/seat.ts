@@ -1,4 +1,5 @@
 import { ARCHETYPES, CLASS_AI } from './archetype';
+import { asRematch, rematchPurse } from './arena';
 import type { Mission } from './campaign';
 import type { Settlement } from './economy';
 import type { GameState } from './game';
@@ -13,15 +14,15 @@ import type { BossPhase, Build, EnemyDef } from './types';
 
 /** The id of the duel for the seat, and of its keeper on the field. It begins as an arena fight's does: what holds for those by their id holds for it. */
 export const SEAT_ID = 'arena-seat';
-/** What the duel pays the first time it is won; a quarter of it after. */
+/** What the duel pays the first time it is won; a rematch's share of it after. */
 export const SEAT_PURSE = 15000;
 
 /** Whether the pilot holds the eighth seat. Nothing but a plain yes in the kept game counts as one. */
 export const seatHeld = (state: Pick<GameState, 'seat'>): boolean => state.seat === true;
 /** The seat's keeper takes a challenge from the pilot who holds the crown of every class, and from nobody else. */
 export const seatOpen = (state: Pick<GameState, 'crowns'>): boolean => crownsHeld(state) >= ARCHETYPES.length;
-/** The purse of the duel: in full until the seat is the pilot's, a quarter after. */
-export const seatPurse = (state: Pick<GameState, 'seat'>): number => (seatHeld(state) ? Math.round(SEAT_PURSE / 4) : SEAT_PURSE);
+/** The purse of the duel: in full until the seat is the pilot's, a rematch's after. */
+export const seatPurse = (state: Pick<GameState, 'seat' | 'rematches'>): number => (seatHeld(state) ? rematchPurse(state, SEAT_ID, SEAT_PURSE) : SEAT_PURSE);
 export const isSeat = (mission: Pick<Mission, 'id'>): boolean => mission.id === SEAT_ID;
 
 /** The one who keeps the seat, and the machine they keep it in. */
@@ -54,11 +55,11 @@ export function keeperEnemy(keeper: Keeper): EnemyDef {
 }
 
 /** The duel for the seat in the shape of a contract, so that it is briefed, fought and settled like one. */
-export function seatMission(state: Pick<GameState, 'seat'>, keeper: Keeper, text: { client: string; win: string }): Mission {
+export function seatMission(state: Pick<GameState, 'seat' | 'rematches'>, keeper: Keeper, text: { client: string; win: string }): Mission {
   return {
     id: SEAT_ID, phase: 'patrol', title: keeper.name, client: text.client,
     briefing: [keeper.style, `"${keeper.taunt}"`], debrief: text.win, reward: seatPurse(state),
-    battles: [{ enemies: [SEAT_ID], background: 'bg-arena' }], scale: keeper.scale,
+    battles: [{ enemies: [SEAT_ID], background: 'bg-arena' }], scale: keeper.scale, ...asRematch(seatHeld(state)),
   };
 }
 

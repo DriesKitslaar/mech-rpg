@@ -277,8 +277,12 @@ test('what an open battle gives: practised in the simulator, where nothing of Di
   await page.screenshot({ path: shot('lesson-momentum') });
   // It is in the kept game while the battle is still being fought.
   kept = await saved(page);
-  expect(kept.lessons).toEqual(['momentum']);
-  expect(await listen(page)).toEqual([LESSON_LINES.momentum.text]);
+  const lessons = kept.lessons ?? [];
+  expect(lessons[0]).toBe('momentum');
+  // Whatever else this turn had to teach is said after it (a machine that runs hot is told about heat): each a lesson, each once.
+  const taught = await listen(page);
+  expect(taught[0]).toBe(LESSON_LINES.momentum.text);
+  expect(taught.slice(1)).toEqual(lessons.slice(1).map((id) => LESSON_LINES[id as keyof typeof LESSON_LINES].text));
   expect((await fought(page)).message).toMatch(/ ready again$/);
   expect(errors).toEqual([]);
 });

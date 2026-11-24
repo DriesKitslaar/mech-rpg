@@ -34,6 +34,8 @@ export interface FlowOptions {
   opening?: string;
   /** What this pilot has not been told yet: each line is said once, the first time its moment comes (see `Lesson`). */
   lessons?: Partial<Record<Lesson, LessonLine>>;
+  /** The pilot let the machine fly the last turn of the battle before this one, in the same contract: see `flewItself`. */
+  auto?: boolean;
 }
 
 const O = STRINGS.objectives;
@@ -75,12 +77,19 @@ export class BattleFlow {
   private weapon: WeaponSlot | null = null;
   /** The row of the action menu to come back to, after something that leaves the turn going. */
   private keepCursor: number | null = null;
+  /** The row of the menu a list was opened from (the weapons, the parts to repair, a question): B out of it comes back here. */
+  private openedFrom: number | null = null;
   /** The weapon the pilot's last kill readied, while the run it belongs to goes on: the weapon menu opens on it. */
   private chained: WeaponSlot | null = null;
   /** The events, by their place in the battle's list, at which a kill readied a weapon for nothing: see `readiedForNothing`. */
   private idle = new Set<number>();
   /** Set by Auto Turn: the automatic player acts until this turn is over. */
   private autoTurn = false;
+  /**
+   * True from the turn the pilot hands to Auto Turn until they do something themselves: the menu then opens
+   * on Auto Turn, so that a battle flown that way is one press a turn and not three.
+   */
+  flewItself = false;
   private waiting: Spoken[] = [];
   private afterTalk: () => void = () => {};
   /** The rounds whose lines have been said, and the moments (`last`, `hurt`) that have had theirs. */
@@ -93,6 +102,7 @@ export class BattleFlow {
     this.state = state;
     this.began = state.units.filter((u) => u.side === 'enemy').length;
     if (opts.opening) this.message = opts.opening;
+    this.flewItself = opts.auto === true;
     this.say(this.lines('start'), () => { this.phase = 'animating'; });
   }
 
@@ -351,7 +361,9 @@ export class BattleFlow {
     switch (event.type) {
       case 'shot': {
         const attacker = this.state.units.find((u) => u.id === event.unit)!;
-        const weapon = weaponIn(attacker.build, event.weapon, this.catalog)?.name ?? event.weapon;
+        const fired = weaponIn(attacker.build, event.weapon, this.catalog)?.name ?? event.weapon;
+        // A shot that is not the pilot's says whose it was: the weapon alone is a name nobody on the field goes by.
+        const weapon = attacker.side === 'enemy' ? `${fired} (${attacker.name})` : fired;
         if (!event.hit) return STRINGS.miss(weapon, name(event.target));
         if (event.shatter) return STRINGS.shatter(weapon, name(event.target));
         // What leapt on from a fork's hit is said as that, unless a barrier took all of it.
@@ -477,7 +489,9 @@ export class BattleFlow {
       .filter((round) => round <= this.state.round && !this.roundsSaid.has(round))
       .sort((a, b) => a - b);
     for (const round of due) this.roundsSaid.add(round);
-    const lessons = this.lessons({ momentum: readied, rout: this.livingEnemies().some((unit) => unit.shaken) });
+    // Heat is explained when it is true: the first time the menu comes with the machine at half its limit or hotter.
+    const hot = this.player.heat * 2 >= this.player.heatLimit;
+    const lessons = this.lessons({ momentum: readied, rout: this.livingEnemies().some((unit) => unit.shaken), heat: hot });
     this.say([...lessons, ...due.flatMap((round) => this.lines(round)), ...this.moments()], () => this.openActionMenu(standing));
   }
 
@@ -502,12 +516,13 @@ export class BattleFlow {
       ['auto', STRINGS.actions.auto, true],
       ['retreat', STRINGS.actions.retreat, true],
     ];
-    const items = entries.map(([id, label, enabled]) => ({ id, label, enabled }));
+    // A row that cannot be chosen says why, beside it.
+    const items: MenuItem[] = entries.map(([id, label, enabled]) => ({ id, label, enabled, note: enabled ? undefined : this.shut(id) }));
     this.phase = 'action';
     // After an Overdrive the turn goes on where it was: the cursor comes back to the row it was on.
     const kept = this.keepCursor !== null && items[this.keepCursor] ? this.keepCursor : null;
     this.keepCursor = null;
-    this.menu = { items, cursor: kept ?? items.findIndex((i) => i.enabled) };
+    this.menu = { items, cursor: kept ?? this.restingRow(items) };
     this.message = standing ?? STRINGS.yourTurn(this.state.round);
     // A run is over with the turn it was made in.
     if (this.player.chain === 0) this.chained = null;
@@ -516,6 +531,64 @@ export class BattleFlow {
     this.targetPart = null;
     this.preview = null;
     this.overheatWarning = false;
+  }
+
+  /**
+   * Back from a list the pilot opened and left again without choosing: the cursor is on the row it was
+   * opened from, and not wherever the menu would rest of itself. (A pilot who lets the machine fly has
+   * the menu rest on Auto Turn: one press too many there would fly the turn.)
+   */
+  private backToActions(): void {
+    const row = this.openedFrom;
+    this.openActionMenu();
+    if (row !== null && this.menu.items[row]) this.menu.cursor = row;
+  }
+
+  /** The row the cursor rests on as the menu is handed over. */
+  private restingRow(items: MenuItem[]): number {
+    const at = (id: ActionId): number => items.findIndex((item) => item.id === id);
+    // A pilot who let the machine fly the turn before is offered that again.
+    if (this.flewItself) return at('auto');
+    if (items[at('fire')].enabled) return at('fire');
+    // A blade waits for a boost. Anything else that cannot fire has nothing left to do but end the turn: the
+    // cursor does not rest on a row that spends energy, under a press that was meant for something else.
+    const waiting = this.fittedWeapons().some((slot) => this.weaponRefusal(slot) === 'needsBoost');
+    return waiting && items[at('boost')].enabled ? at('boost') : at('endTurn');
+  }
+
+  /** Why a row of the menu cannot be chosen, in a word or two for beside it. Nothing where the row's own count says it. */
+  private shut(id: ActionId): string | undefined {
+    const N = STRINGS.actionNotes;
+    const unit = this.player;
+    const short = (refusal: Refusal | null): string | undefined => (refusal === 'noEnergy' ? N.noEnergy
+      : refusal === 'legsDisabled' ? N.legs : refusal === 'cannotBoost' ? N.tracks : refusal === 'staggered' ? N.staggered : undefined);
+    switch (id) {
+      case 'fire': {
+        const refusals = this.fittedWeapons().map((slot) => this.weaponRefusal(slot));
+        // What stops a weapon that has not fired says more than that the others have.
+        const reason = refusals.find((refusal) => refusal !== 'alreadyFired' && refusal !== 'alreadyUsed')
+          ?? refusals.find((refusal) => refusal === 'alreadyFired') ?? refusals[0];
+        return reason ? W.reasons[reason as keyof typeof W.reasons] : undefined;
+      }
+      case 'boost':
+      case 'guard':
+        // One of the two a turn: the row says which of them the machine is doing.
+        if (unit.usedBoost) return N.boosting;
+        if (unit.usedGuard) return N.guarding;
+        return short(checkAction(this.state, { type: id }, this.catalog));
+      case 'cool':
+        return unit.usedCool ? N.vented : short(checkAction(this.state, { type: 'cool' }, this.catalog));
+      case 'module': {
+        const refusal = checkAction(this.state, { type: 'module' }, this.catalog);
+        return refusal === 'alreadyUsed' ? N.used : refusal === 'invalidTarget' ? N.noTarget : undefined;
+      }
+      case 'repair':
+        if (unit.repairsLeft <= 0) return N.spent;
+        // With repairs in hand and nothing to patch: nothing is damaged, or what is damaged is past patching.
+        return FRAME_SLOTS.some((part) => unit.parts[part] && unit.parts[part]!.ap <= 0) ? N.late : N.whole;
+      default:
+        return undefined;
+    }
   }
 
   /** A weapon's menu entry: its name with the shots left, and under it the cost of firing or the reason it cannot. */
@@ -552,8 +625,10 @@ export class BattleFlow {
 
   private openTarget(targetId: string): void {
     const target = this.state.units.find((u) => u.id === targetId)!;
+    // A part that is already destroyed can still be aimed at: the shot goes on to the core, for half. Its row says so.
+    const gone = (part: FrameSlot): boolean => part !== 'core' && target.parts[part]!.ap <= 0;
     const items = FRAME_SLOTS.filter((part) => target.parts[part])
-      .map((part) => ({ id: part, label: partName(target, part), enabled: true }));
+      .map((part) => ({ id: part, label: gone(part) ? STRINGS.preview.passedOn(partName(target, part)) : partName(target, part), enabled: true }));
     this.phase = 'target';
     // A machine the client wants in one piece is aimed at by what has to come off it, never first by its core.
     const wanted = this.state.objective.type === 'disable' && objectiveTarget(this.state)?.id === targetId;
@@ -590,6 +665,8 @@ export class BattleFlow {
   }
 
   private act(action: Action): void {
+    // Whatever the pilot does themselves ends a run of turns the machine flew. An Overdrive is not a row of the menu.
+    if (action.type !== 'overdrive') this.flewItself = false;
     this.state = applyAction(this.state, action, this.catalog);
     this.resume();
   }
@@ -648,6 +725,7 @@ export class BattleFlow {
           return;
         }
         if (input !== 'confirm' || !item?.enabled) return;
+        this.openedFrom = this.menu.cursor;
         switch (item.id as ActionId) {
           case 'fire': return this.openWeaponMenu();
           case 'repair': return this.openRepairMenu();
@@ -667,6 +745,7 @@ export class BattleFlow {
           }
           case 'auto':
             this.autoTurn = true;
+            this.flewItself = true;
             return this.resume();
           case 'retreat':
             // Giving up loses the contract, so it asks first, with "No" under the cursor.
@@ -677,11 +756,11 @@ export class BattleFlow {
           default: return this.act({ type: item.id as 'boost' | 'guard' | 'cool' | 'endTurn' });
         }
       case 'confirmRetreat':
-        if (input === 'cancel' || (input === 'confirm' && item.id === 'no')) return this.openActionMenu();
+        if (input === 'cancel' || (input === 'confirm' && item.id === 'no')) return this.backToActions();
         if (input === 'confirm') this.act({ type: 'retreat' });
         return;
       case 'weapon': {
-        if (input === 'cancel') return this.openActionMenu();
+        if (input === 'cancel') return this.backToActions();
         if (input !== 'confirm' || !item?.enabled) return;
         const slot = item.id as WeaponSlot;
         const target = this.firstTarget(slot);
@@ -700,11 +779,11 @@ export class BattleFlow {
         }
         return;
       case 'repairPart':
-        if (input === 'cancel') return this.openActionMenu();
+        if (input === 'cancel') return this.backToActions();
         if (input === 'confirm') this.act({ type: 'repair', part: item.id as FrameSlot });
         return;
       case 'moduleTarget':
-        if (input === 'cancel') return this.openActionMenu();
+        if (input === 'cancel') return this.backToActions();
         if (input === 'confirm' && item) this.act({ type: 'module', target: item.id });
         return;
     }

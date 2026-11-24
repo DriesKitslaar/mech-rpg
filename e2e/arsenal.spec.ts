@@ -327,7 +327,7 @@ test('in Dutch: the rows, the mark over the next machine, the line of what leapt
     const list = await rows(page);
     if (list.ready.includes('rightHand')) {
       await aim(page, 'rightHand');
-      s = await fire(page, [[/^PIEK x\d+\.\d$/, 'arsenal-surge-nl']]);
+      s = await fire(page, [[/^PIEK x\d+,\d$/, 'arsenal-surge-nl']]);
     } else {
       await press(page, 'Escape');
       await inPhase(page, 'action');
@@ -340,7 +340,8 @@ test('in Dutch: the rows, the mark over the next machine, the line of what leapt
   }
   const { said, words } = await kept(page);
   expect(said.some((line) => leapt.test(line))).toBe(true);
-  expect(words.some((word) => /^PIEK x\d+\.\d$/.test(word))).toBe(true);
+  // (A figure with a tenth is written with a comma in Dutch.)
+  expect(words.some((word) => /^PIEK x\d+,\d$/.test(word))).toBe(true);
   // Nothing English is written of a kind.
   expect(words.filter((word) => /^(SURGE|REDLINE|PUNISH)/.test(word))).toEqual([]);
   expect(said.filter((line) => line.startsWith('It leaps'))).toEqual([]);

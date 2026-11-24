@@ -1,45 +1,54 @@
 import { SPOOL_BASE, shotsOf } from '../core/battle';
 import { impactOf } from '../core/build';
 import type { Build, Catalog, Part } from '../core/types';
+import { figure } from '../content/language';
 import { STRINGS } from '../content/strings';
 import { wrap } from './widgets';
 
 const I = STRINGS.partInfo;
 const pct = (n: number): string => String(Math.round(n * 100));
 const signed = (n: number): string => (n >= 0 ? `+${n}` : String(n));
-/** The widest line the garage and shop panels can show. */
-export const PART_LINE_CHARS = 28;
-/** The widest row of comparison chips: one character short of a full line, so the last chip never touches the screen edge. */
-export const COMPARE_LINE_CHARS = PART_LINE_CHARS - 1;
+/**
+ * The widest line the garage and shop panels can show. (The shop's panel runs to the edge of the screen: a line
+ * of one letter more would end on its border.)
+ */
+export const PART_LINE_CHARS = 27;
+/** The widest row of comparison chips: a full line. */
+export const COMPARE_LINE_CHARS = PART_LINE_CHARS;
+/** Figures side by side on one line: two spaces between them, or one where the line would otherwise be too wide. */
+const row = (...figures: string[]): string => {
+  const wide = figures.join('  ');
+  return wide.length <= PART_LINE_CHARS ? wide : figures.join(' ');
+};
 
 /** A part's statistics as short lines of text, for the garage and the shop. */
 export function partLines(part: Part): string[] {
   switch (part.kind) {
     case 'weapon':
       return [
-        `${I.types[part.damageType]}  ${I.damage} ${part.damage}  ${I.accuracy} ${part.accuracy}`,
+        row(I.types[part.damageType], `${I.damage} ${figure(part.damage)}`, `${I.accuracy} ${part.accuracy}`),
         // A surge asks this much at the least, and takes whatever more there is.
-        `${I.energy} ${part.energy}${part.trait === 'surge' ? '+' : ''}  ${I.heat} ${part.heat}  ${I.impact} ${impactOf(part)}`,
+        row(`${I.energy} ${part.energy}${part.trait === 'surge' ? '+' : ''}`, `${I.heat} ${part.heat}`, `${I.impact} ${impactOf(part)}`),
         part.ammo === null
-          ? `${I.weight} ${part.weight}  ${I.ammo} ${I.unlimited}`
-          : `${I.weight} ${part.weight}  ${I.ammo} ${part.ammo}  ${part.costPerShot}${I.perShot}`,
+          ? row(`${I.weight} ${part.weight}`, `${I.ammo} ${I.unlimited}`)
+          : row(`${I.weight} ${part.weight}`, `${I.ammo} ${part.ammo}`, `${part.costPerShot}${I.perShot}`),
         ...(part.trait ? [I.traits[part.trait](part.trait === 'spool' ? SPOOL_BASE + (part.traitPower ?? 0) : part.traitPower ?? 0)] : []),
         ...(part.charge ? [I.charge] : []),
         ...(part.melee ? [I.melee] : []),
       ];
     case 'generator':
-      return [`${I.output} ${part.output}`, `${I.cooling} ${part.cooling}  ${I.weight} ${part.weight}`];
+      return [`${I.output} ${part.output}`, row(`${I.cooling} ${part.cooling}`, `${I.weight} ${part.weight}`)];
     case 'booster':
-      return [`${I.thrust} ${part.thrust}  ${I.boostCost} ${pct(part.cost)}%`, `${I.weight} ${part.weight}  ${I.drain} ${part.drain}`];
+      return [row(`${I.thrust} ${part.thrust}`, `${I.boostCost} ${pct(part.cost)}%`), row(`${I.weight} ${part.weight}`, `${I.drain} ${part.drain}`)];
     case 'fcs':
       return [
         `${I.aimByType} ${signed(part.aim.kinetic)}/${signed(part.aim.energy)}/${signed(part.aim.explosive)}`,
-        `${I.focus} ${pct(part.focus)}%  ${I.weight} ${part.weight}  ${I.drain} ${part.drain}`,
+        row(`${I.focus} ${pct(part.focus)}%`, `${I.weight} ${part.weight}`, `${I.drain} ${part.drain}`),
       ];
     case 'module':
       return [
         ...wrap(I.modules[part.effect](part.power), PART_LINE_CHARS),
-        `${I.uses} ${part.uses}  ${I.weight} ${part.weight}  ${I.drain} ${part.drain}`,
+        row(`${I.uses} ${part.uses}`, `${I.weight} ${part.weight}`, `${I.drain} ${part.drain}`),
       ];
     case 'shield':
       return [I.guard(100 - Math.round(part.guard * 100)), `${I.weight} ${part.weight}`];
@@ -51,7 +60,7 @@ export function partLines(part: Part): string[] {
       ].filter(Boolean).join('  ');
       const legs = part.legType ? I.legTypes[part.legType] : '';
       return [
-        `${I.ap} ${part.ap}  ${I.weight} ${part.weight}  ${I.drain} ${part.drain}`,
+        row(`${I.ap} ${part.ap}`, `${I.weight} ${part.weight}`, `${I.drain} ${part.drain}`),
         `${I.resist} ${pct(part.resist.kinetic)}/${pct(part.resist.energy)}/${pct(part.resist.explosive)}`,
         ...(extra ? [extra] : []),
         ...(legs ? [legs] : []),
@@ -96,8 +105,9 @@ function facts(part: Part, fitted: Part): Fact[] {
   }
   if (part.kind === 'fcs' && fitted.kind === 'fcs') {
     return [
-      [`${D.aim} K`, part.aim.kinetic, fitted.aim.kinetic, true], [`${D.aim} E`, part.aim.energy, fitted.aim.energy, true],
-      [`${D.aim} X`, part.aim.explosive, fitted.aim.explosive, true],
+      // By the letter each kind of damage has in the line above: they are not the same letters in every language.
+      [`${D.aim} ${I.typeLetters.kinetic}`, part.aim.kinetic, fitted.aim.kinetic, true], [`${D.aim} ${I.typeLetters.energy}`, part.aim.energy, fitted.aim.energy, true],
+      [`${D.aim} ${I.typeLetters.explosive}`, part.aim.explosive, fitted.aim.explosive, true],
       [D.focus, Math.round(part.focus * 100), Math.round(fitted.focus * 100), true, '%'],
       [D.weight, part.weight, fitted.weight, false], [D.drain, part.drain, fitted.drain, false],
     ];
@@ -128,7 +138,7 @@ export function compareParts(part: Part, fitted: Part): DiffChip[][] {
   const chips = facts(part, fitted).flatMap(([label, mine, theirs, moreIsBetter, unit = '']): DiffChip[] => {
     // A figure with the bench's work in it may have a tenth: the difference is said to a tenth and no further.
     const delta = Math.round((mine - theirs) * 10) / 10;
-    return delta === 0 ? [] : [{ text: `${label} ${delta > 0 ? '+' : ''}${delta}${unit}`, good: delta > 0 === moreIsBetter }];
+    return delta === 0 ? [] : [{ text: `${label} ${delta > 0 ? '+' : ''}${figure(delta)}${unit}`, good: delta > 0 === moreIsBetter }];
   });
   const rows: DiffChip[][] = [];
   for (const chip of chips) {

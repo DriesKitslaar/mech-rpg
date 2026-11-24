@@ -189,6 +189,12 @@ export function drawTabs(ctx: CanvasRenderingContext2D, right: number, y: number
   }
 }
 
+/**
+ * The colour a word for how something stands is written in, wherever it stands: there to be done now (OPEN, NEXT
+ * OPPONENT), done (PASSED, BEATEN, WON), shut (LOCKED), or held by the pilot (a crown, the seat).
+ */
+export const STATE_COLORS = { todo: COLORS.armor, done: COLORS.dim, shut: COLORS.danger, held: COLORS.accent } as const;
+
 /** What a medal of each tier is made of: bronze, silver, gold. */
 export const MEDAL_COLORS: Record<1 | 2 | 3, string> = { 1: '#c0773c', 2: '#c3c9d6', 3: '#f2c744' };
 

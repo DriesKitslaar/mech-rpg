@@ -9,13 +9,14 @@ import { MISSIONS } from '../content/missions';
 import { SONGS, type SongName } from '../content/songs';
 import { songSeconds, type TrackName } from '../platform/music';
 import { STRINGS } from '../content/strings';
+import { listTitle } from '../content/titles';
 import type { InputAction } from '../platform/input';
 import { ALL_ENEMIES } from '../content/arena';
 import type { App, Screen, ScreenView } from './app';
 import { LOGICAL_H, LOGICAL_W } from './display';
 import { MenuList } from './menuList';
 import { unitPage } from './unitPage';
-import { COLORS, LINE, charsFor, clip, drawList, drawPanel, drawPortrait, drawTabs, drawText, wrap } from './widgets';
+import { CHAR_W, COLORS, LINE, charsFor, clip, drawList, drawPanel, drawPortrait, drawTabs, drawText, wrap } from './widgets';
 
 const D = STRINGS.database;
 export type DatabasePage = 'units' | 'people' | 'world' | 'finds' | 'manual' | 'music';
@@ -26,8 +27,8 @@ const PAGES: DatabasePage[] = ['units', 'people', 'world', 'finds', 'manual', 'm
  * One that is not found keeps its name to itself; a paper still shows its number, so the gaps can be seen.
  */
 export function findLabel(find: Find, found: boolean): string {
-  if (find.kind === 'check') return found ? titleCase(find.title) : `${D.check} ${D.unknown}`;
-  return `${String(find.no).padStart(2, '0')} ${found ? titleCase(find.title) : D.unknown}`;
+  if (find.kind === 'check') return found ? listTitle(find.title) : `${D.check} ${D.unknown}`;
+  return `${String(find.no).padStart(2, '0')} ${found ? listTitle(find.title) : D.unknown}`;
 }
 
 /**
@@ -57,6 +58,12 @@ const ACCOUNT = 'account:';
  * callsigns are shorter; one from a file made elsewhere may not be, and is cut (its page has it whole).
  */
 export const ROW_NAME = 10;
+/**
+ * The letters a row of a list has room for, clear of the mark at its right that says the list goes on: a name
+ * that is longer is cut in the list, and stands whole at the head of its page.
+ */
+export const ROW_CHARS = Math.round((LIST.w - 20) / CHAR_W);
+const row = (label: string): string => clip(label, ROW_CHARS);
 /** The most lines a find's text may take on its page, and its clue: both stand under a name and a line about where it comes from. */
 export const FIND_TEXT_LINES = 12;
 export const FIND_CLUE_LINES = 3;
@@ -103,15 +110,15 @@ export class DatabaseScreen implements Screen {
     const met = (id: string): boolean => game.met.includes(id);
     this.lists = {
       // Every kind has its row from the start, so the pilot can see how many there are still to meet.
-      units: new MenuList(UNITS.map((unit) => ({ id: unit.id, label: met(unit.id) ? this.unitTitle(unit.id) : D.unknown, enabled: met(unit.id) }))),
+      units: new MenuList(UNITS.map((unit) => ({ id: unit.id, label: met(unit.id) ? row(this.unitTitle(unit.id)) : D.unknown, enabled: met(unit.id) }))),
       // What has not come to light is not listed at all: a title would give it away.
-      world: new MenuList(WORLD.filter((entry) => game.codex.includes(entry.id)).map((entry) => ({ id: entry.id, label: titleCase(entry.title), enabled: true }))),
+      world: new MenuList(WORLD.filter((entry) => game.codex.includes(entry.id)).map((entry) => ({ id: entry.id, label: row(listTitle(entry.title)), enabled: true }))),
       // Every find has its row from the start, a paper under its number: what is missing can be seen, and read about.
       finds: new MenuList(FINDS.map((find) => {
         const found = game.codex.includes(find.id);
-        return { id: find.id, label: findLabel(find, found), enabled: found };
+        return { id: find.id, label: row(findLabel(find, found)), enabled: found };
       })),
-      manual: new MenuList(MANUAL.map((topic) => ({ id: topic.id, label: titleCase(topic.title), enabled: true }))),
+      manual: new MenuList(MANUAL.map((topic) => ({ id: topic.id, label: row(listTitle(topic.title)), enabled: true }))),
       // First whoever has an account with the pilot: the one that is open, then those that are closed, each with a
       // word behind the callsign that says which. Nobody is listed there before an account with them begins. Then
       // everybody of the story, each with a row like every unit: somebody not come across yet keeps their name.
@@ -119,13 +126,13 @@ export class DatabaseScreen implements Screen {
         ...ledger(game).map((entry) => ({ id: `${ACCOUNT}${entry.name}`, label: clip(entry.name, ROW_NAME), enabled: true, note: entry.open ? D.rowOpen : D.rowClosed })),
         ...PEOPLE.map((person) => {
           const known = personKnown(game, person);
-          return { id: person.id, label: known ? person.name : D.unknown, enabled: known };
+          return { id: person.id, label: known ? row(person.name) : D.unknown, enabled: known };
         }),
       ]),
       // Every song has its row, like every unit: one not heard yet keeps its name to itself.
       music: new MenuList(JUKEBOX.map((song) => {
         const heard = app.heard().includes(song.id);
-        return { id: song.id, label: heard ? titleCase(song.title) : D.unknown, enabled: heard };
+        return { id: song.id, label: heard ? row(listTitle(song.title, 'en')) : D.unknown, enabled: heard };
       })),
     };
     // Open on the first unit there is something to read about.
@@ -323,9 +330,3 @@ export class DatabaseScreen implements Screen {
   }
 }
 
-/** "THE FLOODGATES" as it reads in a list: "The Floodgates". A word with a figure in it is a number of its own and stays as written: "Policy VRN-1". */
-function titleCase(title: string): string {
-  return title.split(' ')
-    .map((word) => (/\d/.test(word) ? word : word.toLowerCase().replace(/(^|-)([a-z])/g, (_, gap: string, letter: string) => gap + letter.toUpperCase())))
-    .join(' ');
-}

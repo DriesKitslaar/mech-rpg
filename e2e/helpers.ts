@@ -43,8 +43,16 @@ export async function open(page: Page, url = '/?seed=7&fast=1'): Promise<void> {
   await page.waitForFunction(() => (window as any).__game?.snapshot().screen === 'title');
 }
 
-/** Moves the cursor to the menu item with this id and confirms it. */
+/**
+ * Moves the cursor to the menu item with this id and confirms it. A briefing that has just opened, in a
+ * game that is not hurried, does not take A for a moment: that moment is let pass first, as a player's own
+ * hand lets it.
+ */
 export async function choose(page: Page, id: string): Promise<void> {
+  await page.waitForFunction(() => {
+    const s = (window as any).__game.snapshot();
+    return !(s.screen === 'briefing' && s.busy === true);
+  });
   for (let i = 0; i < 40; i++) {
     const s = await snap(page);
     if (s.menu.items[s.menu.cursor]?.id === id) { await press(page, 'Enter'); return; }

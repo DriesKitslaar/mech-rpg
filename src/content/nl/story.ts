@@ -103,7 +103,7 @@ export const STORY_NL: Record<string, string> = {
   'THE CANTEEN': 'DE KANTINE',
   'SIXTY AND ONE': 'ZESTIG EN EEN',
   'Sit. I looked at your record. Somebody ought to tell you what a clean one costs.':
-    'Ga zitten. Ik zag je staat van dienst. Iemand moet je vertellen wat een schone kost.',
+    'Ga zitten. Ik zag je staat van dienst. Iemand moet je vertellen wat een schone staat kost.',
   'Sixty contracts, no losses. The sixty-first I lost. A convoy, in the sluice. I paid a clerk to file it under another callsign.':
     'Zestig contracten, geen verlies. Toen wel. Een konvooi, in de sluis. Ik betaalde een klerk: het staat op andermans roepnaam.',
   'The families were told a stranger failed them. The clerk retired last week and sent you the file. He always liked a tidy desk.':
@@ -342,7 +342,7 @@ export const STORY_NL: Record<string, string> = {
 
   // The arena: the ladder.
   'A scrapper in a stock salvage frame. He boosts in with a ram fist that knocks a light mech flat, then shoots. Guard takes half the push out of it.':
-    'Een knokker in een standaard sloopframe. Hij boost erin met een Ram Fist die een lichte mech omver slaat en schiet dan. Dekking halveert de duw.',
+    'Een knokker in een standaard sloopframe. Hij boost erin met een Ram Fist die een lichte mech omverslaat en schiet dan. Dekking halveert de duw.',
   'Fresh paint. I will fix that for you.': 'Verse lak. Dat los ik wel voor je op.',
   'Halo optics on a salvage body. Paints you, drains your generator and aims for the head.':
     'Halo-optiek op een slooplijf. Markeert je, zuigt je generator leeg en mikt op het hoofd.',
@@ -366,7 +366,7 @@ export const STORY_NL: Record<string, string> = {
     'Een volledige Wraith met een Void Rifle die de weerstand van je pantser halveert, en een Arc Blade waarmee hij elke ronde op je af komt.',
   'Eight seasons. Nobody has touched the mask.': 'Acht seizoenen. Niemand heeft het masker geraakt.',
   'A full Colossus with a breaker cannon and a barrier for when it hurts. Both guns landing take half a core.':
-    'Een volle Colossus met Breaker Cannon en een barriere voor als het pijn doet. Twee treffers kosten je een halve kern.',
+    'Een volle Colossus met Breaker Cannon en een barrière voor als het pijn doet. Twee treffers kosten je een halve kern.',
   'Take your time. I have all the armour in the world.': 'Neem je tijd. Ik heb al het pantser van de wereld.',
   'The champion. Colossus armour, a Wraith mask, a void rifle and a null beam that drains your generator.':
     'De kampioen. Colossus-pantser, een Wraith-masker, een Void Rifle en een Null Beam die je generator leegzuigt.',
@@ -399,7 +399,7 @@ export const STORY_NL: Record<string, string> = {
   'One line. I only draw it once.': 'Een lijn. Ik trek hem maar een keer.',
   'You drew it straighter than I did. The crown is yours.': 'Jij trok hem rechter dan ik. De kroon is van jou.',
   'A Ronin body on Colossus legs that fires by the clock: a Hornet salvo, a frag launcher, and a Writ rifle through whatever they open. End it before your magazines do.':
-    'Een Ronin-lijf op Colossus-benen dat op de klok vuurt: Hornet Salvo, Frag Launcher, en een Writ Rifle door wat die openleggen. Maak het af voor je magazijnen leeg zijn.',
+    'Een Ronin-lijf op Colossus-benen dat op de maat vuurt: Hornet Salvo, Frag Launcher, en een Writ Rifle door wat die openleggen. Maak het af voor je magazijnen leeg zijn.',
   'Count with me. You will not get to ten.': 'Tel maar mee. Tien haal je niet.',
   'You kept better time than I did. Take the crown.': 'Jij hield de maat beter dan ik. Neem de kroon.',
   'Energy and nothing else, behind a Sterling field: a lance emitter, a disruptor and a null beam. Every hit comes out of your next turn. Small hits stop at the field.':
@@ -407,7 +407,7 @@ export const STORY_NL: Record<string, string> = {
   'You brought ammunition. How quaint.': 'Je hebt munitie bij je. Wat schattig.',
   'Light against light, and yours was brighter. It is yours.': 'Licht tegen licht, en het jouwe was feller. Hij is van jou.',
   'Colossus plate on treads behind a tower shield. A void rifle that halves what your armour resists, and a breaker cannon. It does not move, and nothing here hits harder.':
-    'Colossus-platen op rupsbanden achter een Tower Shield. Een Void Rifle die je pantserweerstand halveert en een Breaker Cannon. Beweegt niet, en niets hier slaat harder.',
+    'Colossus-platen op rupsbanden achter een Tower Shield. Een Void Rifle die je pantserweerstand halveert en een Breaker Cannon. Beweegt niet, en niets slaat hier harder.',
   'Push. Everyone pushes. I am still here.': 'Duw maar. Iedereen duwt. Ik sta er nog.',
   'Moved. The first time in eleven years. The crown is yours.': 'Verschoven. Voor het eerst in elf jaar. De kroon is van jou.',
   'A Wraith that is never where you aimed, with a void rifle, a needler and chaff for when you get a lock. She wins on the shots you miss, so make each one count.':
@@ -415,14 +415,14 @@ export const STORY_NL: Record<string, string> = {
   'Take your time aiming. I will be somewhere else.': 'Mik gerust rustig. Ik ben dan al ergens anders.',
   'You were there before I was. Nobody has been. Take it.': 'Jij was er eerder dan ik. Dat lukte nog niemand. Pak aan.',
   'An Auditor with a gun of each sort: a Writ rifle, a pulse carbine and a howler that knocks you flat, and nanites to put the armour back. No trick, and no weakness to find.':
-    'Een Auditor met van elk soort een wapen: Writ Rifle, Pulse Carbine en een Howler die je omver slaat, en nanites die pantser herstellen. Geen truc, en geen zwakke plek.',
+    'Een Auditor met van elk soort een wapen: Writ Rifle, Pulse Carbine en een Howler die je omverslaat, en nanites die pantser herstellen. Geen truc, en geen zwakke plek.',
   'Thirty years, and they still call me Journeyman.': 'Dertig jaar, en ze noemen me nog steeds Journeyman.',
   'Now there is nothing left to learn from me. Take the crown.': 'Nu valt er niets meer van mij te leren. Neem de kroon.',
   // The keeper of the eighth seat.
   'The Sovereign fights three ways, changing as it is hurt: a charging rail and a howler that knocks you flat, then light that drains you, then two blades.':
-    'De Sovereign vecht op drie manieren en wisselt bij schade: een oplaadrail en een howler die je omver blaast, dan licht dat je leegtrekt, dan twee klingen.',
+    'De Sovereign vecht op drie manieren en wisselt bij schade: een oplaadrail en een howler die je omverblaast, dan licht dat je leegtrekt, dan twee klingen.',
   'Seven crowns. Let us see which of them is you.': 'Zeven kronen. Eens zien welke daarvan jij bent.',
-  'It was only ever kept warm. Sit down, pilot.': 'Hij werd alleen warm gehouden. Ga zitten, piloot.',
+  'It was only ever kept warm. Sit down, pilot.': 'Hij werd alleen warmgehouden. Ga zitten, piloot.',
   'Range is answered. Now the light: mind your generator.': 'Afstand is beantwoord. Nu het licht: let op je generator.',
   'Guns down. What is left is what you are.': 'Wapens neer. Wat overblijft, dat ben jij.',
 
@@ -455,7 +455,7 @@ export const STORY_NL: Record<string, string> = {
   "I filed things for the board for forty years. Mostly where I was told to. Once where I was paid to, and you have that file now.":
     "Ik borg veertig jaar dingen op voor de commissie. Meestal waar het moest. Een keer waar ik voor betaald werd, en dat dossier heb jij nu.",
   "I am retired. I kept copies. I will send a pilot what that pilot has been near, and no more than that. I like a tidy desk.":
-    "Ik ben met pensioen. Ik hield kopieen. Ik stuur een piloot wat die piloot van dichtbij zag, en niet meer. Ik hou van een net bureau.",
+    "Ik ben met pensioen. Ik hield kopieën. Ik stuur een piloot wat die piloot van dichtbij zag, en niet meer. Ik hou van een net bureau.",
   "Keep what you find in one place. Some of it you will have picked up yourself before you ever heard from me.":
     "Bewaar wat je vindt bij elkaar. Een deel raapte je zelf al op voor je ooit van mij hoorde.",
   "So it is decided. I had hoped to be out of envelopes by now.":

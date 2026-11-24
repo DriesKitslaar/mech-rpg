@@ -6,7 +6,7 @@ import { BattleFlow, BattleScreen, INTRO_MS, TALK_CHARS, TALK_HOLD_MS, TALK_LINE
 import { pictureTop, placeFor } from '../../src/ui/stage';
 import { SCENE_HOLD_MS } from '../../src/ui/sceneScreen';
 import { buy, equip, newGame, type GameState } from '../../src/core/game';
-import { WORLD } from '../../src/content/codex';
+import { MANUAL, WORLD } from '../../src/content/codex';
 import { MISSIONS } from '../../src/content/missions';
 import { SCENES } from '../../src/content/scenes';
 import { STRINGS } from '../../src/content/strings';
@@ -16,6 +16,7 @@ import { REFERENCE_BUILDS } from '../../src/content/referenceBuilds';
 import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/storage';
 import type { InputAction } from '../../src/platform/input';
 import { App, SHUTTER_MS } from '../../src/ui/app';
+import { BRIEFING_HOLD_MS } from '../../src/ui/briefingScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 import { pastLaunch } from '../helpers/app';
 import { record, signCount, signIn } from '../helpers/canvas';
@@ -41,6 +42,8 @@ const snap = (app: App) => app.snapshot() as {
 };
 const press = (app: App, ...actions: InputAction[]) => actions.forEach((a) => app.onInput(a));
 function select(app: App, id: string): void {
+  // A briefing that has just opened does not take A for a moment, at a walking pace: that is let pass, as a hand lets it.
+  if (snap(app).screen === 'briefing' && (snap(app) as { busy?: boolean }).busy) app.update(BRIEFING_HOLD_MS);
   for (let i = 0; i < 60 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');
   expect(snap(app).menu.items[snap(app).menu.cursor]?.id).toBe(id);
   press(app, 'confirm');
@@ -125,10 +128,13 @@ test('with more than one enemy to aim at, the target list says which one this is
   expect(snap(app).screen).toBe('battle');
   // The drones are quicker and go first.
   for (let i = 0; i < 4000 && snap(app).battle?.phase !== 'action'; i++) app.update(16);
-  // The list of actions says what each costs: energy, or for a field repair the rest of the turn.
+  // The list of actions says what each costs: energy, or for a field repair the rest of the turn; and of a
+  // row that cannot be chosen, why not.
   const actions = recorder();
   app.draw(actions.ctx);
-  expect(actions.calls.filter((c) => c.name === 'fillText').map((c) => String(c.args[0]))).toContain('Field Repair  ends turn');
+  const repair = (snap(app).menu.items as { id: string; enabled: boolean }[]).find((item) => item.id === 'repair')!;
+  expect(actions.calls.filter((c) => c.name === 'fillText').map((c) => String(c.args[0])))
+    .toContain(repair.enabled ? 'Field Repair  ends turn' : 'Field Repair  not needed');
   select(app, 'fire');
   press(app, 'confirm');
   expect(snap(app).battle?.phase).toBe('target');
@@ -337,8 +343,10 @@ describe('the screens the three-act story added', () => {
     expect(drawn.filter((d) => /^ {2}\S/.test(d.text))).toHaveLength(4);
     expect(drawn.some((d) => d.text === 'Rank A bonus')).toBe(true);
     const debrief = Math.min(...drawn.filter((d) => d.y >= 140 && d.y < 180).map((d) => d.y));
-    // A line of text is eleven pixels high.
-    expect(lowest + 11).toBeLessThanOrEqual(debrief);
+    // A line of text is eleven pixels high: one is left empty between the last part and what the client says, which
+    // is two lines here and begins a line lower for it.
+    expect(lowest + 2 * 11).toBeLessThanOrEqual(debrief);
+    expect(drawn.filter((d) => d.y >= debrief && d.y < 180)).toHaveLength(2);
   });
 
   /** A battle with one line of talk at its start, past its banner, with the line on screen. */
@@ -723,7 +731,9 @@ describe('the screens the pilot\'s record added', () => {
     // Nothing is found yet: every paper has its number, and the page of the first says where to look.
     expect(page().said).toEqual(expect.arrayContaining(['FOUND', '01 ? ? ?', 'Not found yet.', 'FOUND 0/40   LAMP CHECKS 0']));
     press(app, 'next');
-    expect(page().said).toEqual(expect.arrayContaining(['THE BASICS', 'Your Turn', 'Momentum', 'Shatter', 'Overkill', 'They Break', 'Swarms', 'A Name', 'Five Kinds', 'Works Frames', 'Field Repairs', `${50} TOPICS`]));
+    // The manual opens on the buttons and the short words, and what a first hour asks follows.
+    expect(page().said).toEqual(expect.arrayContaining(['CONTROLS', 'Short Words', 'Short Words: Guns', 'The Basics', 'Your Turn', 'Aiming', 'Heat', 'Field Repairs', 'Money', `${MANUAL.length} TOPICS`]));
+    expect(MANUAL).toHaveLength(53);
   });
 
   test('the database growing is announced with its own mark, and medals after it one by one', () => {

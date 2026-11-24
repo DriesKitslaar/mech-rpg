@@ -1,9 +1,10 @@
 # IRONWAGE: handleiding
 
 Een beurtgebaseerde mech-RPG voor de Retroid Pocket Classic. Je bent een huurling in de neonstad
-Varn. Je bouwt een mecha uit losse onderdelen, neemt contracten aan en betaalt munitie en
+Varn. Je bouwt een mech uit losse onderdelen, neemt contracten aan en betaalt munitie en
 reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies dat onder
-**Options**, bij **Language**); deze handleiding gebruikt de Engelse namen van de menu's.
+**Options**, bij **Language**); deze handleiding gebruikt de Engelse namen van de menu's, en zet
+de Nederlandse erbij waar je ze het eerst nodig hebt.
 
 ## Installeren
 
@@ -27,10 +28,10 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
 
 1. Kies **New Game** en geef je piloot een roepnaam. (Heb je al een spel staan, dan kies je eerst
    een opslagplek.)
-2. Kies de mecha waarin je begint. Er staan er drie, en met omhoog en omlaag bekijk je ze één voor
+2. Kies de mech waarin je begint. Er staan er drie, en met omhoog en omlaag bekijk je ze één voor
    één; A neemt degene die in beeld staat, B gaat terug naar je roepnaam.
 
-   | Mecha | Wat het is | Begint met |
+   | Mech | Wat het is | Begint met |
    |---|---|---|
    | **Hauler** | Het werkpaard: kan alles redelijk en heeft plaats voor drie wapens. | Een geweer en 1200 credits |
    | **Courier** | De renner: snel en moeilijk te raken, maar dun en hij kan weinig dragen. | Een pistool dat nooit leeg raakt en 900 credits |
@@ -46,29 +47,30 @@ reparaties uit je eigen loon. De tekst in het spel is Engels of Nederlands (kies
    het makkelijkst te raken en de enige die een vijand uitschakelt. Staan er meer vijanden, dan
    wissel je met L1/R1 van doelwit; het spel mikt vanzelf op het doel van de opdracht, of op wie je
    het laatst beschoot.
-5. Na het gevecht zie je de afrekening: loon, min munitie en reparaties.
-6. Koop in de **Shop** een tweede wapen en zet het in de **Garage** op je mecha (kopen alleen
+5. Na het gevecht zie je de afrekening: loon, min munitie en reparaties. Verdien je er een
+   medaille mee, dan staat naast het saldo wat die opbracht.
+6. Koop in de **Shop** een tweede wapen en zet het in de **Garage** op je mech (kopen alleen
    is niet genoeg).
 7. Doe daarna een paar oefeningen onder **Training**. Ze kosten niets en leggen elk één ding uit.
 
 ## Het hoofdkwartier
 
-| Menu | Wat je er doet |
-|---|---|
-| Contracts | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld), drie wisselende losse contracten, één klus met een eigen doel en één zwerm. Onderaan staat het archief. |
-| Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
-| Training | Dertien oefeningen in een geleende mecha, en het proefveld voor je eigen build. |
-| The Gauntlet | Een reeks etages in een standaardmecha, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
-| Garage | Onderdelen wisselen, verf kiezen (L1/R1), je eigen lak mengen (links), zeven builds bewaren (rechts). |
-| Shop | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. |
-| Pilot | Niveau en vaardigheden, medailles, een logboek van alles wat je gedaan hebt, en de zeven klassen (**Class**). |
-| Messages | Berichten van je opdrachtgevers. |
-| Database | Fiches van elke vijand die je bent tegengekomen, de mensen van Varn, achtergrond over de stad, wat je gevonden hebt (**Found**), de spelregels en de muziek. |
-| Options | Geluid, muziek, trillen, snelle gevechten, moeilijkheid, A en B omwisselen, de aftiteling opnieuw bekijken, terug naar het titelscherm. De opties gelden voor alle drie de opslagplekken. |
+| Menu | In het Nederlands | Wat je er doet |
+|---|---|---|
+| Contracts | Contracten | Verhaalcontracten, de patrouille (altijd beschikbaar, makkelijk geld), drie wisselende losse contracten, één klus met een eigen doel en één zwerm. Onderaan staat het archief. Onder de lijst staat wat voor rij je voor je hebt: **STORY** (het verhaal), **SIDE WORK** (een bijklus, eenmalig), **OPEN** (een los contract: na elke winst staat er een ander), **JOB**, **ACCOUNT**, **SWARM**, **PATROL** of **ARCHIVE**. Een **+** achter het loon betekent meer loon als je het in de gevraagde klasse wint. |
+| Arena | Arena | Een ladder van tien piloten. Gaat open na het tweede contract. Elke rang levert een premie op, en vanaf rang twee openen de rangen ook betere onderdelen in de winkel. |
+| Training | Training | Dertien oefeningen in een geleende mech, en het proefveld voor je eigen build. Naast het woord staat hoeveel oefeningen open staan en nog niet gehaald zijn (**3 open**). |
+| The Gauntlet | De Gauntlet | Een reeks etages in een standaardframe, steeds zwaarder, tot je valt. Betaalt naar hoe diep je kwam. |
+| Garage | Garage | Onderdelen wisselen, verf kiezen (L1/R1), je eigen lak mengen (links), zeven builds bewaren (rechts). |
+| Shop | Winkel | Kopen en verkopen. Verkopen levert de volle prijs op, dus uitproberen kost niets. Onderaan staat waar de afkortingen (AP, WT, DRAIN) uitgelegd worden: in de Database, op het blad **MANUAL**. |
+| Pilot | Piloot | Niveau en vaardigheden, medailles, een logboek van alles wat je gedaan hebt, en de zeven klassen (**Class**). |
+| Messages | Berichten | Berichten van je opdrachtgevers. |
+| Database | Database | Fiches van elke vijand die je bent tegengekomen, de mensen van Varn, achtergrond over de stad, wat je gevonden hebt (**Found**), de spelregels (**Manual**, Nederlands **Handboek**: het begint met de knoppen en met wat alle afkortingen betekenen) en de muziek. |
+| Options | Opties | Geluid, muziek, trillen, snelle gevechten, teksttempo, schermeffecten, lichteffecten, moeilijkheid, A en B omwisselen, taal, de aftiteling opnieuw bekijken, terug naar het titelscherm. Bij elke rij staat onderaan wat hij doet. De opties gelden voor alle drie de opslagplekken. |
 
 ## Een gevecht
 
-Een contract dat je vanuit de hangar vliegt begint met de **lancering**: je eigen mecha staat op de
+Een contract dat je vanuit de hangar vliegt begint met de **lancering**: je eigen mech staat op de
 katapult, drie lampen gaan aan, en hij schiet de tunnel uit. Het duurt anderhalve seconde. Met **A**
 of **B** sla je het over. Staat **Fast Battles** aan, dan zie je het niet. In de arena, in de
 simulator en in de Gauntlet is er geen lancering.
@@ -76,17 +78,26 @@ simulator en in de Gauntlet is er geen lancering.
 Elke beurt krijg je energie van je generator. Daarmee kun je:
 
 - **Fire**: elk wapen één keer per beurt afvuren. Je mikt op een onderdeel. Zonder benen kan een
-  vijand niet ontwijken, zonder armen vallen zijn handwapens uit, zonder kop mikt hij slecht.
+  vijand niet ontwijken, zonder armen vallen zijn handwapens uit, zonder hoofd mikt hij slecht.
 - **Boost**: tot je volgende beurt ben je veel moeilijker te raken. Een zwaard kan alleen slaan in
   een beurt waarin je eerst geboost hebt, en de slag verbruikt de boost.
 - **Guard**: tot je volgende beurt komt er veel minder schade door. Doe dit als boven een vijand
   **CHARGING** of **FUSE 1** staat: dan komt er de volgende beurt een zware klap.
-- **Vent**: hitte lozen. Elk schot maakt je mecha warmer; boven de 100 verlies je je volgende beurt.
+- **Vent**: hitte lozen. Elk schot maakt je mech warmer; boven de 100 verlies je je volgende beurt.
 - **Module**: je speciale uitrusting, een paar keer per gevecht, kost geen energie.
 - **Field Repair**: twee keer per contract een beschadigd onderdeel oplappen. Dat beëindigt je
   beurt, dus schiet eerst.
-- **Auto Turn**: de computer speelt deze beurt voor je.
+- **End Turn**: je beurt is om en de vijand is aan zet. Je krijgt energie terug en koelt wat af.
+- **Auto Turn**: de computer speelt deze beurt voor je. De beurt erna staat de cursor er weer op,
+  tot je zelf iets anders doet; zo vlieg je een heel gevecht met één druk per beurt.
 - **Retreat**: het contract opgeven. Je betaalt wel de kosten.
+
+In het Nederlands heten deze rijen **Vuur**, **Boost**, **Dekking**, **Koelen**, **Module**,
+**Veldreparatie**, **Einde beurt**, **Auto-beurt** en **Aftocht**. Een rij die grijs is, kun je nu
+niet kiezen, en ernaast staat waarom: *fired* (elk wapen vuurt één keer per beurt), *boosting* of
+*guarding* (Boost en Guard gaan niet samen in één beurt), *no energy*, *not needed*. Kan er geen
+wapen meer vuren, dan staat de cursor op **End Turn**. In je eerste twee contracten staat boven het
+veld ook wat de rij onder de cursor doet.
 
 **Doorstoten en vermorzelen.** In een gevecht tegen *gewone machines* gelden een paar regels in
 jouw voordeel. Dat is elk gevecht tegen twee of meer machines waar geen baas, geen piloot met een
@@ -145,11 +156,11 @@ hij onder de banner aan het begin van elk gevecht van een contract (behalve als 
 aankomt), en tegen gewone machines opent de meldingsbalk ermee: zij weten wie er komt. Een naam
 raak je nooit kwijt.
 
-Onder de pantserbalk van elke mecha staat een dunne balk: het evenwicht. Is die leeg, dan wankelt
-de mecha een beurt: hij kan niet ontwijken en krijgt 30% meer schade. Zware wapens duwen het hardst.
+Onder de pantserbalk van elke mech staat een dunne balk: de balans. Is die leeg, dan wankelt
+de mech een beurt: hij kan niet ontwijken en krijgt 30% meer schade. Zware wapens duwen het hardst.
 
 Verlies je een gevecht, dan staat op de afrekening een tip van Dispatch over wat er misging
-(bijvoorbeeld dat je nooit geboost of bewaakt hebt).
+(bijvoorbeeld dat je nooit Boost of Guard gebruikt hebt).
 
 Sommige vijanden helpen de rest: een schilddrone dekt de anderen af, een reparatiedrone last ze
 weer aan elkaar, een stoorzender verpest je richten. Schiet die helpers eerst neer.
@@ -177,13 +188,13 @@ Niet elk gevecht win je door alles te vernietigen. Boven het veld staat wat er g
 - Je kunt hoogstens 2000 credits schuld hebben. Wat een rekening daar nog bovenop zou zetten, wordt
   kwijtgescholden. Met schuld kun je niets kopen, maar wel altijd vliegen: de patrouille brengt je er
   weer bovenop.
-- Mag je eigen mecha niet uitrukken (te zwaar, te weinig energie, geen wapen) en heb je geen geld om
+- Mag je eigen mech niet uitrukken (te zwaar, te weinig energie, geen wapen) en heb je geen geld om
   dat op te lossen, dan kun je de patrouille nog steeds vliegen: Dispatch leent je daarvoor een
-  standaardmecha. De rest van de contracten wacht tot je eigen mecha weer in orde is.
+  standaardframe. De rest van de contracten wacht tot je eigen mech weer in orde is.
 
 ## Het verhaal
 
-Het verhaal heeft drie bedrijven en duurt ongeveer achttien contracten. In het eerste bedrijf werk
+Het verhaal heeft drie aktes en duurt ongeveer achttien contracten. In de eerste akte werk
 je voor drie opdrachtgevers. Daarna kies je er één (de andere twee trekken hun aanbod in) en vecht
 je hun oorlog uit. Wat daarna komt, verklap ik niet. Het einde hangt af van je keuzes. Na het einde
 kun je met **New Cycle** opnieuw beginnen met alles wat je hebt, tegen sterkere vijanden en voor
@@ -192,6 +203,21 @@ meer loon, en een andere opdrachtgever kiezen. Zo'n nieuwe doorgang heet in het 
 
 Tussen de contracten door stellen mensen je soms een vraag. Wat je antwoordt wordt onthouden: het
 bepaalt wie er later iets voor je doet, en wat er aan het eind over je geschreven staat.
+
+**Een nieuwe cyclus weet dat je er al geweest bent.**
+
+- **Wat blijft en wat opnieuw begint** staat in de vraag die het spel stelt voor je begint: je
+  credits, onderdelen, level, perks en arenarang blijven. Bijklussen, met de vier duels die
+  daarbij horen, en het archief beginnen opnieuw: ze komen terug naarmate het verhaal vordert.
+  Wat je in de arena hebt bereikt, blijft allemaal: je rang, de bekers, de kronen en de stoel.
+- **Overslaan.** Een verhaalpagina of gesprek dat je in een eerdere cyclus al zag, sla je over met
+  **B**; rechtsboven staat dan **B: skip, told before**. Een vraag die je gesteld wordt, moet je
+  wel opnieuw beantwoorden, en het einde sla je nooit over. In je eerste cyclus doet **B** op een
+  verhaalpagina niets.
+- **Post.** Brieven komen opnieuw binnen op het moment dat ze in het verhaal horen. Een brief die
+  je al eens las, is niet meer als nieuw gemarkeerd. De nieuwste brief staat bovenaan.
+- **Nieuw werk.** Achter een contract dat je nog nooit hebt gewonnen staat in de lijst een
+  sterretje (`*`), zodat je ziet wat er in deze cyclus bij is gekomen.
 
 ## Wat je vindt
 
@@ -218,7 +244,21 @@ Je vindt ze terug in de **Database** op de pagina **Found**.
 ## Arena
 
 Na de tien rangen van de ladder is er voor de kampioen nog een achterkamer met vijf piloten.
-Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen mecha.
+Vanaf rang drie kun je ook een spiegelgevecht doen: tegen een kopie van je eigen mech.
+
+**Revanche.** Wie je in de arena hebt verslagen, kun je opnieuw uitdagen: een rang, het
+spiegelgevecht, een beker, een meester. Dat is een revanche; de briefing begint er dan mee
+(**REMATCH**, Nederlands **REVANCHE**) en op de afrekening staat **REMATCH WON**.
+
+- **De pot wordt steeds kleiner.** De eerste revanche betaalt een kwart van de pot, elke volgende
+  de helft van de vorige, tot er niets meer te halen valt. De lijst van de arena laat zien wat
+  een rij nu betaalt. Alleen bij een meester van wie je de kroon hebt (**CROWN**) en bij de
+  achtste stoel als die van jou is (**HELD**) staat dat woord op die plek: wat de revanche dan
+  betaalt, staat in de briefing.
+- **Een revanche is geen contract.** Hij komt niet op je teller van gewonnen contracten, het open
+  bord verandert er niet door, en je verdient er geen streep mee.
+- Een gevecht in de arena dat je **voor het eerst** wint, telt wel als gewonnen contract: daarna
+  staan er dus nieuwe open contracten op het bord.
 
 ### De meesters: een kroon per klasse
 
@@ -227,8 +267,8 @@ meesters, een voor elke klasse. Ze nemen alleen de **kampioen** van de ladder aa
 dan kun je ze wel bekijken. Word je kampioen, dan schrijft het arenakantoor je erover (onder
 **Messages**).
 
-- **Elke build mag een meester uitdagen.** Win je, dan krijg je de pot: 9000 de eerste keer,
-  daarna een kwart.
+- **Elke build mag een meester uitdagen.** Win je, dan krijg je de pot: 9000 de eerste keer;
+  daarna is het een revanche.
 - **Versla je een meester in een build van zijn eigen klasse, dan is de kroon van die klasse van
   jou.** Een bastion tegen de meester van de bastions, een duellist tegen die van de duellisten.
   In de briefing staat het erbij: **CROWN: WIN AS A BASTION**. Vlieg je iets anders, dan wijst die
@@ -263,13 +303,14 @@ Met de zevende kroon schrijft het arenakantoor je erover (onder **Messages**).
 
 - **Elke build mag.** Er wordt geen klasse gevraagd en er is geen kroon te halen: je vecht om de
   stoel zelf. Het is één tegen één; een wingman kun je niet meenemen.
-- De pot is 15000 de eerste keer, daarna een kwart. Je kunt het duel zo vaak overdoen als je wilt.
+- De pot is 15000 de eerste keer; daarna is het een revanche. Je kunt het duel zo vaak overdoen
+  als je wilt.
 - Zijn machine, de **Sovereign**, vecht op **drie manieren** en wisselt als hij geraakt wordt. Bij
   elke wissel zegt hij wat er komt.
 
 | Wanneer | Wat hij doet | Waar je op let |
 |---|---|---|
-| Tot hij een derde kwijt is | Hij blijft op afstand, met een geweer dat een beurt oplaadt (**Longbow Rail**) en een kanon dat je uit evenwicht slaat (**Howler**). | Nu is hij het makkelijkst te raken. Bewaak (**Guard**) in de beurt dat het geladen schot komt. |
+| Tot hij een derde kwijt is | Hij blijft op afstand, met een geweer dat een beurt oplaadt (**Longbow Rail**) en een kanon dat je uit balans slaat (**Howler**). | Nu is hij het makkelijkst te raken. Kies **Guard** in de beurt dat het geladen schot komt. |
 | Tot hij twee derde kwijt is | Licht: drie energiewapens, waarvan er een je generator leegzuigt (**Null Beam**). Hij ontwijkt nu beter. | Reken op minder energie per beurt, en op meer missers. |
 | Daarna | Twee klingen (**Gavel** en **Arc Blade**). Hij komt op je af en slaat een tiende harder. | Bewaar je Overdrive en je zwaarste schot voor dit stuk. |
 
@@ -279,7 +320,7 @@ briefing zegt hoe jouw build ervoor staat.
 
 **Wat de stoel je geeft:**
 
-- **De Sovereign.** Zijn vier onderdelen (kop, romp, armen, benen) staan daarna in de **Shop**. Ze
+- **De Sovereign.** Zijn vier onderdelen (hoofd, kern, armen, benen) staan daarna in de **Shop**. Ze
   zijn de duurste die er zijn: samen 29200. Dat recht raak je niet meer kwijt, ook niet in een
   nieuwe cyclus.
 - **De lak van de houder.** In de **Garage** staat **Touchstone** achter de kleuren van de
@@ -292,20 +333,20 @@ briefing zegt hoe jouw build ervoor staat.
 
 Heb je het verhaal uit, dan staat er tussen de contracten een duel: **By Appointment**. Win je
 dat, dan volgt een tweede, **First Sword**, daarna **Hot Work** en als laatste **The Longest
-Day**. Het zijn gevechten van één tegen één, tegen piloten van buiten de stad, elk in een mecha die
+Day**. Het zijn gevechten van één tegen één, tegen piloten van buiten de stad, elk in een mech die
 niemand in Varn bouwt. Een wingman kun je er niet voor huren: ze vroegen om jou alleen. Wie zo'n
-duel wint, mag die mecha daarna in de **Shop** kopen. Dat recht raak je niet meer kwijt, ook niet
-in een nieuwe cyclus.
+duel wint, mag die mech daarna in de **Shop** kopen; het spel meldt het met **NEW IN THE SHOP**.
+Dat recht raak je niet meer kwijt, ook niet in een nieuwe cyclus.
 
 De eerste twee tegenstanders zijn zwaarden van het Coast Circuit. De laatste twee zijn de
-fabriekspiloten van de werf aan de kust die de mecha's van het Circuit bouwt: zij komen kijken wat
-hun zwaarden heeft verslagen, elk in een mecha die de werf nog nooit heeft verkocht.
+fabriekspiloten van de werf aan de kust die de mechs van het Circuit bouwt: zij komen kijken wat
+hun zwaarden heeft verslagen, elk in een mech die de werf nog nooit heeft verkocht.
 
-| Mecha | Wat hem bijzonder maakt | Hoe je hem verslaat |
+| Mech | Wat hem bijzonder maakt | Hoe je hem verslaat |
 |---|---|---|
 | **Shrike** (grijs, licht) | Zijn armen: de eerste slag met een zwaard per beurt kost hem zijn Boost niet. Hij slaat toe en blijft moeilijk te raken. | Breng hem aan het wankelen of schiet zijn benen kapot: dan ontwijkt hij niet meer. |
 | **Sterling** (wit, snel) | Zijn kern wekt een veld op dat de eerste schade opvangt. Blijft er iets van staan, dan is het de volgende ronde weer heel. | Breek het veld in één ronde met een harde klap, of met alles tegelijk. Dan ligt het de ronde daarna plat en is hij kwetsbaar. Losse, kleine treffers voeden het veld alleen maar. |
-| **Sirocco** (zwart en oranje) | Zijn kern loopt heet: hij oververhit pas boven 130 hitte, waar elke andere mecha dat boven 100 doet. Kiln vuurt met twee wapens die harder raken naarmate hij heter is. De eerste ronde stelt het weinig voor; vanaf de derde raakt elk schot minstens drie keer zo hard. | Breng hem aan het wankelen: dan heeft hij minder energie en vuurt hij minder. Of stook hem met thermische wapens over zijn eigen grens: dan verliest hij een beurt en begint hij koeler opnieuw. Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig. Wacht niet af, want elke ronde wordt hij gevaarlijker. |
+| **Sirocco** (zwart en oranje) | Zijn kern loopt heet: hij oververhit pas boven 130 hitte, waar elke andere mech dat boven 100 doet. Kiln vuurt met twee wapens die harder raken naarmate hij heter is. De eerste ronde stelt het weinig voor; vanaf de derde raakt elk schot minstens drie keer zo hard. | Breng hem aan het wankelen: dan heeft hij minder energie en vuurt hij minder. Of stook hem met thermische wapens over zijn eigen grens: dan verliest hij een beurt en begint hij koeler opnieuw. Gloeit hij van binnenuit, dan zit hij dicht bij zijn grens en is er weinig voor nodig. Wacht niet af, want elke ronde wordt hij gevaarlijker. |
 | **Solstice** (blauw en zilver) | Zijn kern heeft een buffer: energie die hij niet gebruikt, bewaart hij voor zijn volgende beurt, tot een halve beurt. Vesper wacht om de andere ronde (dekking, geen schot) en vuurt de ronde erna één wapen af, met anderhalve beurt energie erachter. | Kijk wat er boven hem staat. Knippert daar een getal, zoals **+180 EN**, dan heeft hij zoveel energie bewaard en vuurt hij in zijn volgende beurt: kies dan eerst **Guard**. Een opgevangen treffer doet nog zes tiende van de schade. Staat er geen getal, dan staat hij open: sla toe. Mik je op hem, dan staat naast zijn naam wat hij gaat doen: **AIMS** met het onderdeel waarop hij mikt, of **HOLDS** (Nederlands **MIKT** en **WACHT**). Auto Turn zoekt die dekking uit zichzelf. |
 
 Vlieg je ze zelf, dan gelden dezelfde regels voor jou. Op het onderdeel staat het erbij: **POISE**
@@ -321,11 +362,11 @@ Bij de kern van de Sirocco staat **RUNS HOT: heat limit 130** (Nederlands **HEET
 130**). Je hittebalk loopt dan tot 130 in plaats van 100, en ernaast staat hoe ver je bent,
 bijvoorbeeld **84/130**. De waarschuwing dat een schot je oververhit komt ook pas bij 130. Een
 witheet wapen (**REDLINE**) telt je hitte mee tot die grens, en raakt in een Sirocco dus harder
-dan in welke andere mecha ook. Hij is op zijn best met drie wapens die veel hitte maken.
+dan in welke andere mech ook. Hij is op zijn best met drie wapens die veel hitte maken.
 
 Bij de kern van de Solstice staat **BUFFER: keeps unspent EN** (Nederlands **BUFFER: houdt EN
 over**). Houd je aan het eind van je beurt energie over, dan krijg je die er de volgende beurt bij,
-tot de helft van wat een beurt je geeft. Boven je mecha staat dan bijvoorbeeld **+180 EN**. Hij is
+tot de helft van wat een beurt je geeft. Boven je mech staat dan bijvoorbeeld **+180 EN**. Hij is
 op zijn best met wapens die veel energie vragen, zoals twee klingen of een zware straal. Een
 piekwapen (**SURGE**) neemt altijd alle energie, dus daarmee blijft er niets over om te bewaren,
 tenzij je een beurt bewust niet vuurt: dan zit er de beurt daarna anderhalve beurt energie achter,
@@ -336,7 +377,8 @@ Wie beide fabriekspiloten verslaat, krijgt de medaille **Works Order**.
 ## Opslaan
 
 Het spel slaat vanzelf op na alles wat telt. Er zijn drie opslagplekken; op het titelscherm kies je
-**Continue** (het laatst gespeelde spel), **New Game** of **Load Game**. Terug naar het titelscherm
+**Continue** (het laatst gespeelde spel), **New Game** of **Load Game** (dat laatste staat er alleen
+als er meer dan één spel bewaard is). Terug naar het titelscherm
 ga je met **Options** en dan **Quit to Title**.
 
 ## Zeven klassen
@@ -363,12 +405,23 @@ daar het gewicht van je build in zit).
 
 Onder **Pilot** staat het blad **Class** met dezelfde lijst en hoeveel contracten je als elke
 klasse hebt gewonnen. Daaronder staat van de klasse onder de cursor een build die je nu kunt
-samenstellen: wit is wat je al hebt, roze wat je nog moet kopen, grijs wat nog nergens te koop is.
+samenstellen: wit is wat je al hebt, rood wat je nog moet kopen, grijs wat nog nergens te koop is.
 Het spel kiest de beste die je met je credits kunt betalen; kan dat met geen enkele, dan de
 goedkoopste, om voor te sparen.
 
-Een contract dat je wint in je eigen mecha telt voor de klasse van die mecha. De Gauntlet, de
-training en een geleende mecha tellen niet. Er zijn drie medailles: voor drie klassen proberen,
+**Kopen en monteren vanaf dat blad.** Kun je de build betalen, dan staat er rechts boven de build
+**A: buy for 26100 c and fit** (of **A: fit this build** als je alles al hebt). Druk op **A** en
+antwoord **Yes**: het spel koopt wat ontbreekt en monteert de build. De vraag staat eerst op
+**No**, zodat je niets per ongeluk koopt.
+
+- Wat je tot dan vloog, gaat terug op de plank; je raakt er niets van kwijt.
+- Is er bij je bewaarde builds nog een plek vrij, dan wordt de nieuwe build daar ook bewaard. Er
+  wordt nooit een bewaarde build overschreven. Daarna staat er **YOU FLY THIS: BUILD 3**.
+- Staat er **Still to buy**, dan heb je te weinig credits; staat er **Not all of it is sold yet**,
+  dan verkoopt de winkel nog niet alles. In beide gevallen doet **A** niets.
+
+Een contract dat je wint in je eigen mech telt voor de klasse van die mech. De Gauntlet, de
+training en een geleende mech tellen niet. Er zijn drie medailles: voor drie klassen proberen,
 voor 25 contracten in één klasse, en voor vijf contracten in elk van de zeven.
 
 ### Strepen
@@ -392,7 +445,7 @@ Is dit contract het laatste dat nog ontbreekt, dan staat er **WIN THIS FOR A STR
 naar een andere bewaarde build, dan zie je de stand van die klasse. In de simulator staat er niets:
 die telt niet mee.
 
-Wint je mecha een contract waarmee je een streep haalt, dan meldt het spel dat onderin beeld, met
+Wint je mech een contract waarmee je een streep haalt, dan meldt het spel dat onderin beeld, met
 **+1 POINT** erbij als het de vijfde was. Een streep raak je niet meer kwijt, ook niet als je het
 verhaal opnieuw begint. Er zijn twee medailles: voor je eerste streep en voor alle eenentwintig.
 
@@ -408,12 +461,17 @@ met **7**). Kies je **Accept**, dan wordt de gekozen build gemonteerd en begint 
 blijft daarna gemonteerd, net als wanneer je hem in de garage laadt.
 
 - Een bewaarde build staat er alleen bij als je alle onderdelen nog bezit en hij mag uitrukken
-  (niet te zwaar, genoeg energie, een wapen).
+  (niet te zwaar, genoeg energie, een wapen). Kan een bewaarde build niet mee, dan staat dat
+  onderaan: **BUILD 2: Arc Blade missing** als je een onderdeel ervan hebt verkocht, of **BUILD 2
+  cannot deploy**.
+- De **Shop** waarschuwt al bij het verkopen. Sta je in **SELL** op een onderdeel dat een bewaarde
+  build nodig heeft, dan staat onderaan **Saved build 2 needs this part**. Verkopen mag; daarna
+  staat er **Saved build 2 is a part short now**.
 - Builds bewaar je in de **Garage**: naar rechts, een plek kiezen, **Save current build**.
   Er zijn **zeven plekken**: genoeg voor een build van elke klasse. Een plek zit niet aan een
   klasse vast; je mag ook zeven duellisten bewaren. In de lijst staat bij elke plek wat voor
   machine erin zit en van welk frame de kern is, bijvoorbeeld `2  Bastion   Colossus`.
-- Bij een geleende mecha, de training en de Gauntlet is er niets te kiezen.
+- Bij een geleende mech, de training en de Gauntlet is er niets te kiezen.
 
 ### Je winkans
 
@@ -427,8 +485,8 @@ en de moeilijkheid. Je ziet het tellen (grijs, de teller loopt op) terwijl je de
   je meteen welke van je builds het best bij dit contract past. Huur je een wingman, dan telt het
   ook opnieuw.
 - Het is wat Auto Turn ervan maakt. Speel je zelf goed, dan haal je meer; 0/20 betekent meestal
-  dat je mecha sterker moet worden voor dit contract.
-- Bij een geleende mecha en de training staat er geen kans.
+  dat je mech sterker moet worden voor dit contract.
+- Bij een geleende mech en de training staat er geen kans.
 
 ### Een contract dat een klasse zoekt
 
@@ -457,7 +515,7 @@ er gevraagd wordt.
 | **Hit** (doelwit) | Eén machine is aangewezen (**TARGET**), en die is **OVERCLOCKED**: hij slaat harder. Valt hij, dan is de klus klaar, ook als de rest nog staat. | Veel schade in één keer: een Duellist of Sharpshooter is zo klaar. |
 | **Repo** (beslag) | De klant wil één machine heel terug. Schiet zijn **armen en benen** eraf en laat de **kern** heel. Vernietig je hem, dan verlies je. Het spel richt bij die machine vanzelf eerst op een arm of been. | Rustig mikken. Het duurt wat langer en betaalt wat meer. |
 | **Escort** | Er staat vracht van de klant op het veld: je ziet hem staan tussen jou en de vijand, en bovenin staat hoeveel er over is (bijvoorbeeld **WAGE TRUCK 11/11**). Elke ronde haalt elke vijand die nog staat er één punt af. Begint hij te roken, dan is er nog een derde of minder. Op nul verlies je. | Snel opruimen: een Duellist redt het bijna altijd, een Bastion of Lancer veel minder vaak. |
-| **Hold** (standhouden) | Er komt meer dan je kunt verslaan, en wat je sloopt wordt vervangen. Overleef **zes rondes** (**HOLD OUT 1/6**). | Stevig staan: een Bastion of Artillery haalt het altijd, een lichte mecha heeft het zwaar. |
+| **Hold** (standhouden) | Er komt meer dan je kunt verslaan, en wat je sloopt wordt vervangen. Overleef **zes rondes** (**HOLD OUT 1/6**). | Stevig staan: een Bastion of Artillery haalt het altijd, een lichte mech heeft het zwaar. |
 
 - Na elk gewonnen contract is er een **andere soort** klus. Ze wisselen in vaste volgorde, dus na
   vier contracten heb je ze alle vier gezien.
@@ -470,11 +528,12 @@ er gevraagd wordt.
 ### Vervallen rekeningen: wie voor je terugkomt
 
 Vanaf vijftien gewonnen contracten kan een piloot die je bent tegengekomen **voor je terugkomen**.
-Dat begint met iets wat echt gebeurd is: je sloopte de mecha van die piloot, die sloeg voor je op
+Dat begint met iets wat echt gebeurd is: je sloopte de mech van die piloot, die sloeg voor je op
 de vlucht, of stond nog overeind toen jij het veld verliet. Drie gewonnen contracten later staat
 er tussen de open contracten een bericht met een roepnaam: **Overdue: Brakk** (Nederlands
 **Vervallen: Brakk**). Je neemt het aan wanneer je wilt; het blijft staan tot je het wint. Alles
-wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena.
+wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de arena dat je voor
+het eerst wint (een revanche niet).
 
 - Het is **één gevecht om één machine**: die van de piloot, met wat gezelschap. Valt die machine,
   dan is het klaar (**TARGET: BRAKK**).
@@ -493,7 +552,7 @@ wat op je teller van gewonnen contracten komt telt mee, ook een gevecht in de ar
   **Build** naar een andere bewaarde build en kijk wat **ODDS** dan zegt. Met hetzelfde wapen kan
   het ook, maar het duurt langer en levert per ronde minder op. Heb je maar één wapen, dan is het
   je hele vuurkracht die halveert tot de harding weg is: dan loont wisselen het meest.
-- De piloot komt **drie keer** terug, steeds in dezelfde mecha, de tweede en derde keer iets
+- De piloot komt **drie keer** terug, steeds in dezelfde mech, de tweede en derde keer iets
   dikker gepantserd. Na de eerste keer duurt het twee gewonnen contracten, na de tweede weer
   twee. De tweede ontmoeting betaalt een kwart meer dan de eerste, de derde de helft meer.
 - Na de derde is de rekening gesloten (**ACCOUNT CLOSED**, Nederlands **REKENING DICHT**). Daarna
@@ -518,7 +577,7 @@ Onder **Training** zit een tweede pagina: druk op **R1** (of **L1**) voor **TEST
 staat elke machine die je al bent tegengekomen. Kies er een, en je vecht er in de simulator tegen
 in **je eigen build**.
 
-- Met **links/rechts** kies je hoeveel: tot drie van de lichtere machines, één van een mecha of
+- Met **links/rechts** kies je hoeveel: tot drie van de lichtere machines, één van een mech of
   van iets uit het verhaal (ook de grote bazen die je al versloeg).
 - Het is een echt gevecht: je perks, de werkbank, je Overdrive en de moeilijkheid tellen mee. In de
   briefing kun je ook hier je build kiezen en zie je je winkans.
@@ -528,33 +587,34 @@ in **je eigen build**.
 - Handig om een nieuw wapen te proberen, twee builds te vergelijken of een baas te oefenen.
 - **Sparren:** bovenaan de lijst staan je bewaarde builds (**Saved Build 1** tot en met **7**).
   Kies er een en de simulator vliegt die build tegen je: dezelfde onderdelen, met het werk van de
-  werkbank, in andere kleuren. Zo zie je welke van je builds de andere verslaat; de winkans in de
-  briefing zegt het al vooraf.
-- Het proefveld vlieg je in je eigen mecha. Kan die niet uitrukken (te zwaar, te weinig energie,
+  werkbank, in andere kleuren. De winkans in de briefing is die van **jou** tegen die build: je
+  perks, je Overdrive en je reparaties heb jij alleen. Een kopie van je eigen build verliest dus
+  van je; een andere build die je verslaat, is echt de sterkere.
+- Het proefveld vlieg je in je eigen mech. Kan die niet uitrukken (te zwaar, te weinig energie,
   geen wapen), dan is het proefveld **dicht**: de lijst staat er nog, maar grijs, en onderaan staat
-  waarom (**CLOSED: your mech cannot deploy**). Breng je mecha in de **Garage** in orde, of laad
+  waarom (**CLOSED: your mech cannot deploy**). Breng je mech in de **Garage** in orde, of laad
   daar een bewaarde build, en het is weer open. De oefeningen kun je altijd doen: die lenen je een
-  mecha.
+  mech.
 
 ## Vijf soorten wapens die iets van je vragen
 
 De meeste wapens doen gewoon wat erop staat. Tien wapens zijn van een soort die iets van jou
-terugvraagt: wie zijn mecha eromheen bouwt en zijn beurt erop inricht, haalt er meer uit dan uit
+terugvraagt: wie zijn mech eromheen bouwt en zijn beurt erop inricht, haalt er meer uit dan uit
 een gewoon wapen van dezelfde prijs, en wie dat niet doet minder. In de winkel en de garage staat
 de soort op de onderste regel van het onderdeel.
 
 | Soort | In het Nederlands | Wat het doet | Zo haal je er het meeste uit |
 |---|---|---|---|
-| **REDLINE** | WITHEET | Hoe heter je eigen mecha is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de hittegrens van je mecha (100, in een Sirocco 130). | Vuur eerst je andere wapens (die maken hitte) en dit als laatste. Een generator die slecht koelt is hier ineens een voordeel. Koel niet te vroeg. |
+| **REDLINE** | WITHEET | Hoe heter je eigen mech is, hoe harder het raakt: een vast percentage erbij voor elke 10 hitte, tot de hittegrens van je mech (100, in een Sirocco 130). | Vuur eerst je andere wapens (die maken hitte) en dit als laatste. Een generator die slecht koelt is hier ineens een voordeel. Koel niet te vroeg. |
 | **SURGE** | PIEK | Neemt alle energie die je nog hebt. De schade die erbij staat geldt voor elke 100 energie die het neemt. | Doe eerst al het andere (Boost of Dekking, je andere wapens) en schiet dan leeg. Hoe groter je generator, hoe harder de klap. |
-| **PUNISH** | STRAF | Dubbele schade tegen een mecha die wankelt. Zelf duwt het nauwelijks. | Neem er een wapen bij dat hard duwt (een Howler, een hamer, een vuist) en vuur dat eerst. |
+| **PUNISH** | STRAF | Dubbele schade tegen een mech die wankelt. Zelf duwt het nauwelijks. | Neem er een wapen bij dat hard duwt (een Howler, een hamer, een vuist) en vuur dat eerst. |
 | **FORK** | VONK | Een treffer slaat over op de volgende vijand in de rij, voor een deel van de schade. Wat overslaat mist nooit. | Voor gevechten tegen meerdere vijanden. Bij het mikken staat **FORK** (Nederlands **VONK**) boven de machine waar het naartoe springt. |
 | **SPOOL** | OPTOEREN | Begint met 2 schoten en krijgt er elke beurt op rij een bij. Sla je een beurt over, dan begint het weer bij 2. | Voor lange gevechten tegen een grote machine. Houd je hitte laag, zodat je elke beurt kunt vuren. |
 
 In een gevecht zegt de regel onder het wapen wat het deze beurt doet: **EN ALL 230** bij een
 piekwapen (het neemt dan 230 energie), **4 SHOTS** bij een optoerwapen, **+36%** bij een witheet
-wapen. De richtlijn rekent de schade al voor je uit, met de hitte, de energie en het evenwicht van
-dat moment. Boven de mecha verschijnt een woord als de soort zijn werk doet: **REDLINE +36%**,
+wapen. De richtlijn rekent de schade al voor je uit, met de hitte, de energie en de balans van
+dat moment. Boven de mech verschijnt een woord als de soort zijn werk doet: **REDLINE +36%**,
 **SURGE x2.3**, **PUNISH**.
 
 | Wapen | Soort | Waar | Te koop na |
@@ -586,8 +646,8 @@ onderdeel staan en druk op **R1**: het ligt op de werkbank.
 - Een stap kost zijn nummer maal de prijs van het onderdeel: de tweede stap kost dus twee keer de
   prijs.
 - Het werk hoort bij het onderdeel. Verkoop je het en koop je het later terug, dan is het er nog.
-  De winkel laat dat zien: de stap staat achter de naam, en de vergelijking gaat uit van wat je
-  draagt zoals het nu is.
+  De winkel laat dat zien: de stap staat achter de naam, in de lijst en op het blad van het
+  onderdeel (**Wraith Mask +2**), en de vergelijking gaat uit van wat je draagt zoals het nu is.
 - In de eerste cyclus gaat de werkbank twee stappen. Elke keer dat je met **New Cycle** opnieuw
   begint, kan er één stap bij, tot vijf. Achter de naam staat hoe ver een onderdeel is: `+2`.
 
@@ -595,7 +655,7 @@ onderdeel staan en druk op **R1**: het ligt op de werkbank.
 
 In de **Garage** wissel je met **L1/R1** van lak: de kleuren van de fabriek, twaalf kant-en-klare
 lakken, de lakken die je in de arena verdient, en als laatste **Mix 1**, **Mix 2** en **Mix 3**. Die
-drie zijn van jou. Zolang je er niets aan verandert zijn het een witte mecha met blauwe lichten, een
+drie zijn van jou. Zolang je er niets aan verandert zijn het een witte mech met blauwe lichten, een
 zwarte met rode, en een marineblauwe met goud.
 
 Druk in de garage op **links**: dan sta je in de **PAINT SHOP**. Met **B** ga je terug naar de
@@ -611,8 +671,8 @@ vijf rijen eronder in:
 | **GLOW** | 3 | Hoe fel die branden: Soft, Clear, Bright. |
 
 Met **omhoog/omlaag** kies je een rij, met **links/rechts** verander je hem: houd de knop
-ingedrukt en hij loopt door. **L1/R1** doen hetzelfde, en **A** gaat een stap verder. Je mecha
-ernaast verandert bij elke druk mee. **Steel** met **Pale** geeft een witte mecha, **Steel** met **Deep** een zwarte.
+ingedrukt en hij loopt door. **L1/R1** doen hetzelfde, en **A** gaat een stap verder. Je mech
+ernaast verandert bij elke druk mee. **Steel** met **Pale** geeft een witte mech, **Steel** met **Deep** een zwarte.
 Een mengsel blijft bewaard zoals je het achterlaat, en je draagt het overal: in de hangar, in het
 gevecht en bij de lancering. Wapens houden hun eigen kleur.
 

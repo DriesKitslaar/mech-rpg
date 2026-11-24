@@ -80,8 +80,8 @@ export const MISSIONS: Mission[] = [
     id: 'intro-2', phase: 'intro', title: 'Hot Barrel', ...DISPATCH, reward: 800,
     briefing: [
       'An abandoned checkpoint turret has woken up and is shooting at anything that moves.',
-      'It hits hard and never moves. Boost to make yourself harder to hit, and watch your heat.',
-      'Push past the red line and your mech shuts down for a turn. Vent before that happens.',
+      'It hits hard and never moves. Boost to make yourself harder to hit, or Guard to take less of it.',
+      'One or the other each turn, before you end it: the turret fires when you are done.',
     ],
     debrief: 'Turret silenced. Three clients just asked for your number. That is how it starts.',
     battles: [battle(['gun-turret'], MINE, {

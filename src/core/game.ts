@@ -3,6 +3,7 @@ import { OVERDRIVES, type OverdriveId } from './battle';
 import type { Run } from './gauntlet';
 import type { Grudge } from './grudge';
 import type { JobKind } from './jobs';
+import { BOUT_ID, MAX_BOUTS, MAX_COUNT, MAX_IDS, PLAIN_ID } from './kept';
 import { MIX_SHAPE } from './mix';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
@@ -81,6 +82,16 @@ export interface GameState {
   wonAs?: Partial<Record<Archetype, number>>;
   /** Jobs won, by their kind (see jobs.ts). Kept through the cycles. Absent in a game from before the board had jobs. */
   jobs?: Partial<Record<JobKind, number>>;
+  /** How often each bout of the arena was won again after it had been won, by the bout's id: a rematch pays less for each (see arena.ts). Kept through the cycles. */
+  rematches?: Record<string, number>;
+  /**
+   * What earlier tellings of the story left behind: the scenes shown in one and the messages read in
+   * one. A later telling shows and sends them again as it goes, and does not present them as new: a
+   * scene told before can be skipped, and a letter read before is not marked. Absent in a first telling.
+   */
+  told?: { scenes: string[]; read: string[] };
+  /** The messages that have arrived in this telling, in the order they came: the inbox shows them so. Absent in a game from before that was written down. */
+  mail?: string[];
   /** What the pilot decided when the story asked, by question, in this cycle. Absent in a game from before there were questions. */
   choices?: Record<string, string>;
   /** What the pilot is called. */
@@ -151,6 +162,8 @@ export const BUILD_SLOTS: BuildSlot[] = [
   'head', 'core', 'arms', 'legs', 'generator', 'booster', 'fcs', 'module', 'rightHand', 'leftHand', 'shoulder',
 ];
 const REQUIRED: BuildSlot[] = ['head', 'core', 'arms', 'legs', 'generator', 'booster', 'fcs'];
+/** Whether two builds are the same build: the same part in every slot, and nothing where the other has nothing. */
+export const sameBuild = (a: Build, b: Build): boolean => BUILD_SLOTS.every((slot) => a[slot] === b[slot]);
 /** Slots that may be left empty. */
 export const OPTIONAL_SLOTS: BuildSlot[] = BUILD_SLOTS.filter((slot) => !REQUIRED.includes(slot));
 
@@ -196,9 +209,11 @@ export function setPaint(state: GameState, paint: string): GameState {
 
 export type LoadoutRefusal = 'unknown' | 'empty' | 'missingPart';
 const isSlot = (index: number): boolean => Number.isInteger(index) && index >= 0 && index < LOADOUT_SLOTS;
+/** The places for saved builds, every one of them: the build kept in each, or null. A game may have been kept with fewer. */
+export const savedBuilds = (state: Pick<GameState, 'loadouts'>): (Build | null)[] => Array.from({ length: LOADOUT_SLOTS }, (_, i) => state.loadouts[i] ?? null);
 /** The game with one place written: always the full list, whatever length it was kept at. */
 const withLoadout = (state: GameState, index: number, build: Build | null): GameState =>
-  ({ ...state, loadouts: Array.from({ length: LOADOUT_SLOTS }, (_, i) => (i === index ? build : state.loadouts[i] ?? null)) });
+  ({ ...state, loadouts: savedBuilds(state).map((kept, i) => (i === index ? build : kept)) });
 
 /** Keeps a copy of the current build in a slot, replacing what was there. */
 export function saveLoadout(state: GameState, index: number): GameState {
@@ -234,6 +249,15 @@ export function loadLoadout(state: GameState, index: number, catalog: Catalog): 
   const refused = checkLoadout(state, index, catalog);
   if (refused) throw new Error(`illegal loadout: ${refused.refusal}`);
   return { ...state, build: { ...state.loadouts[index]! } };
+}
+
+/**
+ * The saved builds that would be a part short if one copy of this part were sold: their places, from
+ * 0. Selling is not stopped by it; whoever sells is told.
+ */
+export function loadoutsNeeding(state: GameState, partId: string): number[] {
+  const left = ownedCount(state, partId) - 1;
+  return savedBuilds(state).flatMap((build, i) => (build !== null && Object.values(build).filter((id) => id === partId).length > left ? [i] : []));
 }
 
 export function equippedCount(state: GameState, partId: string): number {
@@ -375,6 +399,15 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
     if (counts !== undefined && (!isRecord(counts) || Object.keys(counts).length > 32
       || !Object.entries(counts).every(([kind, count]) => /^[a-z]{1,24}$/.test(kind) && isWholeNonNegative(count) && count <= 1_000_000))) return false;
   }
+  // What earlier tellings left behind, and the order this one's mail came in: lists of plain ids.
+  const { told, mail } = value;
+  const isIds = (list: unknown): boolean => isTextList(list) && list.length <= MAX_IDS && list.every((id) => PLAIN_ID.test(id));
+  if (told !== undefined && !(isRecord(told) && isIds(told.scenes) && isIds(told.read))) return false;
+  if (mail !== undefined && !isIds(mail)) return false;
+  // Rematches won, by the id of the bout: whole counts against plain ids. A bout this version does not know is kept.
+  const { rematches } = value;
+  if (rematches !== undefined && (!isRecord(rematches) || Object.keys(rematches).length > MAX_BOUTS
+    || !Object.entries(rematches).every(([id, count]) => BOUT_ID.test(id) && isWholeNonNegative(count) && count <= MAX_COUNT))) return false;
   // An account: a callsign, plain ids, one of three words and small whole counts. Whether it is about a machine an
   // account can be about is the reader's business: one that is not reads as none.
   const { grudge, accounts } = value;

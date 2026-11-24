@@ -120,10 +120,12 @@ describe('the row under the seven classes', () => {
     const shown = drawn(app);
     expect(written(shown, 'TOUCHSTONE')).toMatchObject({ left: 12, y: 189, size: 16, color: COLORS.accent });
     expect(written(shown, 'LOCKED')).toMatchObject({ right: LOGICAL_W - 12, y: 191, color: COLORS.danger });
-    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT')).toMatchObject({ left: 12, y: 207, color: COLORS.armor });
+    // What they keep stands beside the name, on its row.
+    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT')).toMatchObject({ y: 191, color: COLORS.armor });
+    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT').left - written(shown, 'TOUCHSTONE').right).toBeGreaterThanOrEqual(8);
     const rows = wrap(A.seat.locked, charsFor(LOGICAL_W - 28));
     expect(rows.length).toBeLessThanOrEqual(3);
-    rows.forEach((text, i) => expect(written(shown, text)).toMatchObject({ left: 12, y: 207 + (i + 1) * LINE }));
+    rows.forEach((text, i) => expect(written(shown, text)).toMatchObject({ left: 12, y: 207 + i * LINE }));
     expect(A.seat.locked).toContain('all seven crowns');
     // How the keeper fights is not said to a pilot they do not take yet.
     expect(shown.texts.some((t) => t.text.includes('charging rail'))).toBe(false);
@@ -167,9 +169,9 @@ describe('the row under the seven classes', () => {
     expect(seatShown(app)).toEqual({ state: 'open', crowns: 7 });
     const shown = drawn(app);
     expect(written(shown, 'OPEN')).toMatchObject({ right: LOGICAL_W - 12, y: 191, color: COLORS.armor });
-    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT').y).toBe(207);
+    expect(written(shown, 'KEEPER OF THE EIGHTH SEAT').y).toBe(191);
     const rows = wrap(KEEPER.style, charsFor(LOGICAL_W - 28));
-    rows.forEach((text, i) => expect(written(shown, text)).toMatchObject({ left: 12, y: 207 + (i + 1) * LINE }));
+    rows.forEach((text, i) => expect(written(shown, text)).toMatchObject({ left: 12, y: 207 + i * LINE }));
     expect(shown.texts.some((t) => t.text.includes('who takes one challenge'))).toBe(false);
     expect(written(shown, 'CROWNS 7/7').y).toBe(22);
     expect(written(shown, 'The Eighth Seat').color).not.toBe(COLORS.dim);
@@ -276,11 +278,13 @@ describe('the duel won', () => {
     const again = ended(holder, true);
     expect(bill(again.app)).toMatchObject({ won: true, reward: 3750, seated: false });
     const shown = drawn(again.app);
-    expect(written(shown, STRINGS.settlement.won).y).toBe(26);
+    // It is billed as the rematch it is.
+    expect(written(shown, STRINGS.settlement.rematchWon).y).toBe(26);
     expect(shown.texts.some((t) => t.text === 'THE SEAT IS YOURS')).toBe(false);
     expect(shown.texts.filter((t) => t.y >= 144 && t.y < 180).map((t) => t.text).join(' ')).toBe(A.win);
     expect([snap(again.app).toast, ...snap(again.app).toasts]).not.toContain('seat');
     expect(savedGame(again.store).seat).toBe(true);
+    expect(savedGame(again.store).rematches).toEqual({ [SEAT_ID]: 1 });
   });
 
   test('a game loaded with the seat has it without ceremony', () => {
@@ -312,7 +316,7 @@ describe('in Dutch', () => {
     expect(row(app)).toMatchObject({ label: 'De achtste stoel', note: '15000' });
     let shown = drawn(app);
     expect(written(shown, 'TOUCHSTONE').y).toBe(189);
-    expect(written(shown, 'HOUDER VAN DE ACHTSTE STOEL').y).toBe(207);
+    expect(written(shown, 'HOUDER VAN DE ACHTSTE STOEL').y).toBe(191);
     expect(shown.texts.some((t) => t.text.includes('oplaadrail'))).toBe(true);
     for (const a of shown.texts) {
       expect(a.right, a.text).toBeLessThanOrEqual(LOGICAL_W - 4);
@@ -332,7 +336,7 @@ describe('in Dutch', () => {
     const won = drawn(made.app);
     expect(written(won, 'DE STOEL IS VAN JOU').y).toBe(26);
     const woorden = won.texts.filter((t) => t.y >= 144 && t.y < 180);
-    expect(woorden.map((t) => t.text).join(' ')).toBe('"Hij werd alleen warm gehouden. Ga zitten, piloot." De werf van zijn machine neemt nu jouw order aan.');
+    expect(woorden.map((t) => t.text).join(' ')).toBe('"Hij werd alleen warmgehouden. Ga zitten, piloot." De werf van zijn machine neemt nu jouw order aan.');
     expect(woorden.length).toBeLessThanOrEqual(3);
     for (let i = 0; i < 40 && snap(made.app).toast !== 'seat'; i++) made.app.update(TOAST_MS + 1);
     const notice = drawn(made.app);
@@ -355,14 +359,17 @@ describe('where the seat is seen and what comes of it', () => {
     expect(written(before, 'CROWNS 7/7')).toMatchObject({ right: 273, y: 22, size: 10, color: COLORS.dim });
     expect(before.texts.some((t) => t.text === 'THE EIGHTH SEAT')).toBe(false);
     const held = drawn(onClasses(champion(late('marksman'), { ...CROWNED, seat: true })));
-    expect(written(held, 'THE EIGHTH SEAT')).toMatchObject({ right: 273, y: 22, size: 10, color: CROWN_COLOR });
+    // It ends short of the column of crowns: two letters and more lie between it and the word over the next column.
+    expect(written(held, 'THE EIGHTH SEAT')).toMatchObject({ right: 261, y: 22, size: 10, color: CROWN_COLOR });
+    const beside = held.texts.filter((t) => t.y === 22 && t.left > 261).sort((a, b) => a.left - b.left)[0];
+    expect(beside.left - 261).toBeGreaterThanOrEqual(12);
     expect(held.texts.some((t) => /^CROWNS /.test(t.text))).toBe(false);
     // Nothing in that row of the page runs into anything else, in either language.
     const header = held.texts.filter((t) => t.y === 22);
     for (const a of header) for (const b of header) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
     const base = champion(late('marksman'), { ...CROWNED, seat: true });
     const dutch = drawn(onClasses({ ...base, settings: { ...base.settings, language: 'nl' } }));
-    expect(written(dutch, 'DE ACHTSTE STOEL')).toMatchObject({ right: 273, y: 22, color: CROWN_COLOR });
+    expect(written(dutch, 'DE ACHTSTE STOEL')).toMatchObject({ right: 261, y: 22, color: CROWN_COLOR });
     const kop = dutch.texts.filter((t) => t.y === 22);
     for (const a of kop) for (const b of kop) if (a !== b) expect(overlap(a, b), `"${a.text}" and "${b.text}"`).toBe(false);
   });

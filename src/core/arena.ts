@@ -1,6 +1,7 @@
 import type { Mission } from './campaign';
 import { likenessPaint } from './mix';
 import type { GameState } from './game';
+import { BOUT_ID, MAX_BOUTS, MAX_COUNT } from './kept';
 import type { EnemyDef } from './types';
 
 /** The ladder ends with the champion at rank ten. Behind it is a back room with five more, shown only to the champion. */
@@ -33,9 +34,42 @@ export function checkChallenge(state: GameState, rank: number): ChallengeError |
   return rank > state.arenaRank + 1 ? 'locked' : null;
 }
 
-/** The full purse for the next opponent, a quarter for a rematch. */
+/**
+ * A rematch: a bout that has been won before, fought again. The house pays a quarter of the purse for
+ * the first, and half as much again for each one after: the crowd has seen it. What it pays is all it
+ * is worth: a rematch is no contract (see `Mission.rematch`).
+ */
+type Rematched = Pick<GameState, 'rematches'>;
+/** How often a bout has been won again after it had been won. */
+export const rematchesWon = (state: Rematched, id: string): number => {
+  const count = state.rematches && Object.hasOwn(state.rematches, id) ? state.rematches[id] : 0;
+  return Number.isInteger(count) && count > 0 ? count : 0;
+};
+/** What a bout pays that has been won before, of a purse that was this much in full. */
+export const rematchPurse = (state: Rematched, id: string, purse: number): number => Math.round(purse / 4 / 2 ** Math.min(40, rematchesWon(state, id)));
+/**
+ * Writes a rematch won down: its next purse is half of this one's. Only what a kept game may hold is
+ * written: a bout under a plain id, a count no higher than a count may be, and no more bouts than there
+ * is room for (the one written down first makes way, which play never comes to: there are fewer bouts).
+ */
+export function recordRematch<T extends Rematched>(state: T, id: string): T {
+  if (!BOUT_ID.test(id)) return state;
+  const rematches: Record<string, number> = { ...state.rematches, [id]: Math.min(MAX_COUNT, rematchesWon(state, id) + 1) };
+  for (const bout of Object.keys(rematches)) {
+    if (Object.keys(rematches).length <= MAX_BOUTS) break;
+    if (bout !== id) delete rematches[bout];
+  }
+  return { ...state, rematches };
+}
+/** The mark of a rematch on a bout in the shape of a contract. */
+export const asRematch = (again: boolean): { rematch?: true } => (again ? { rematch: true } : {});
+
+/** The id of the fight with an opponent of the ladder. */
+export const arenaId = (rank: number): string => `arena-${rank}`;
+
+/** The full purse for the next opponent, a rematch's for one beaten before. */
 export function arenaPurse(state: GameState, opponent: ArenaOpponent): number {
-  return opponent.rank <= state.arenaRank ? Math.round(opponent.purse / 4) : opponent.purse;
+  return opponent.rank <= state.arenaRank ? rematchPurse(state, arenaId(opponent.rank), opponent.purse) : opponent.purse;
 }
 
 /** Beating the next opponent in line raises the rank; nothing else does. */
@@ -46,13 +80,14 @@ export function recordArenaWin(state: GameState, rank: number): GameState {
 /** An arena fight in the shape of a contract, so it is briefed, fought and settled like one. */
 export function arenaMission(state: GameState, opponent: ArenaOpponent, text: { client: string; win: string }): Mission {
   return {
-    id: `arena-${opponent.rank}`, phase: 'patrol', title: opponent.name, client: text.client,
+    id: arenaId(opponent.rank), phase: 'patrol', title: opponent.name, client: text.client,
     briefing: [opponent.style, `"${opponent.taunt}"`], debrief: text.win, reward: arenaPurse(state, opponent),
     battles: [{ enemies: [opponent.enemy], background: 'bg-arena' }], scale: opponent.scale, arenaRank: opponent.rank,
+    ...asRematch(opponent.rank <= state.arenaRank),
   };
 }
 
-/** The mirror match: a duel against the pilot's own build. It opens at this rank, and pays its purse once and a quarter after. */
+/** The mirror match: a duel against the pilot's own build. It opens at this rank, and pays its purse once and a rematch's after. */
 export const MIRROR_ID = 'arena-mirror';
 export const MIRROR_OPENS = 3;
 export const MIRROR_PURSE = 2400;
@@ -60,7 +95,7 @@ export const MIRROR_PURSE = 2400;
 export const MIRROR_SCALE = 1.1;
 
 export const mirrorOpen = (state: GameState): boolean => state.arenaRank >= MIRROR_OPENS;
-export const mirrorPurse = (state: GameState): number => (state.stats.mirrors > 0 ? Math.round(MIRROR_PURSE / 4) : MIRROR_PURSE);
+export const mirrorPurse = (state: GameState): number => (state.stats.mirrors > 0 ? rematchPurse(state, MIRROR_ID, MIRROR_PURSE) : MIRROR_PURSE);
 
 /**
  * The opponent of a mirror match: the pilot's build as it is now, part for part, flown by the house
@@ -80,7 +115,7 @@ export function mirrorMission(state: GameState, text: { client: string; win: str
   return {
     id: MIRROR_ID, phase: 'patrol', title: text.title, client: text.client,
     briefing: [text.style, `"${text.taunt}"`], debrief: text.win, reward: mirrorPurse(state),
-    battles: [{ enemies: ['mirror'], background: 'bg-arena' }], scale: MIRROR_SCALE,
+    battles: [{ enemies: ['mirror'], background: 'bg-arena' }], scale: MIRROR_SCALE, ...asRematch(state.stats.mirrors > 0),
   };
 }
 
@@ -90,7 +125,7 @@ export function recordMirrorWin(state: GameState): GameState {
 
 /**
  * A cup: three opponents of the ladder back to back, with only field service between them. It opens
- * to a pilot who has beaten all three, pays its purse once and a quarter after, and is kept on record.
+ * to a pilot who has beaten all three, pays its purse once and a rematch's after, and is kept on record.
  */
 export interface Cup {
   /** Begins with `cup-`. */
@@ -113,7 +148,7 @@ export const CUPS: Cup[] = [
 export const isCup = (mission: Mission): boolean => mission.id.startsWith('cup-');
 export const cupOpen = (state: GameState, cup: Cup): boolean => state.arenaRank >= cup.ranks[2];
 export const cupWon = (state: GameState, cup: Cup): boolean => (state.cups ?? []).includes(cup.id);
-export const cupPurse = (state: GameState, cup: Cup): number => (cupWon(state, cup) ? Math.round(cup.purse / 4) : cup.purse);
+export const cupPurse = (state: GameState, cup: Cup): number => (cupWon(state, cup) ? rematchPurse(state, cup.id, cup.purse) : cup.purse);
 
 /** A cup in the shape of a contract of three battles. */
 export function cupMission(state: GameState, cup: Cup, ladder: ArenaOpponent[], text: { client: string; win: string; title: string; briefing: (names: string[]) => string[] }): Mission {
@@ -121,7 +156,7 @@ export function cupMission(state: GameState, cup: Cup, ladder: ArenaOpponent[], 
   const scale = Math.round((opponents.reduce((sum, o) => sum + o.scale, 0) / opponents.length) * cup.tune * 100) / 100;
   return {
     id: cup.id, phase: 'patrol', title: text.title, client: text.client, briefing: text.briefing(opponents.map((o) => o.name)), debrief: text.win,
-    reward: cupPurse(state, cup), battles: opponents.map((o) => ({ enemies: [o.enemy], background: 'bg-arena' })), scale,
+    reward: cupPurse(state, cup), battles: opponents.map((o) => ({ enemies: [o.enemy], background: 'bg-arena' })), scale, ...asRematch(cupWon(state, cup)),
   };
 }
 

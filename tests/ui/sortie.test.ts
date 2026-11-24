@@ -256,7 +256,7 @@ describe('the page about the build', () => {
     const N = STRINGS_NL.briefing;
     expect(snap(app).menu.items[1].label).toBe('Build');
     toRow(app, 'build');
-    expect(written(drawn(app), 'LEFT/RIGHT: andere build')).toBeTruthy();
+    expect(written(drawn(app), 'LINKS/RECHTS: andere build')).toBeTruthy();
     expect(drawn(app).texts.filter((t) => t.text === 'HUIDIGE BUILD')).toHaveLength(2);
     press(app, 'right');
     expect(drawn(app).texts.filter((t) => t.text === 'MIJN BUILD 1')).toHaveLength(2);

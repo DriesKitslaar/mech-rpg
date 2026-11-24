@@ -21,6 +21,8 @@ export interface Settlement {
   lines: { partId: string; lost: number; cost: number }[];
   /** What Dispatch wrote off of the bill because of the debt limit; set when the settlement is booked. */
   relief?: number;
+  /** What the medals earned as this was booked paid. It is in the balance and no part of `net`: the bill says it beside the balance. */
+  medals?: number;
   /** How well a won contract was done, the score behind it and what it adds to the fee; see rank.ts. */
   rank?: Rank;
   score?: number;
@@ -88,11 +90,15 @@ export function debtRelief(state: GameState, settlement: Settlement): number {
   return Math.max(0, floor - (state.credits + settlement.net));
 }
 
-/** Credits may end below zero, down to the debt limit: debt blocks buying, never playing. */
-export function applySettlement(state: GameState, settlement: Settlement): GameState {
+/**
+ * Credits may end below zero, down to the debt limit: debt blocks buying, never playing. A bill won
+ * is a contract won, which is what the open board turns on: but for one that is `counted` as none (a
+ * rematch in the arena), which pays and costs what it says and leaves the count alone.
+ */
+export function applySettlement(state: GameState, settlement: Settlement, counted = true): GameState {
   return {
     ...state,
     credits: state.credits + settlement.net + debtRelief(state, settlement),
-    battlesWon: state.battlesWon + (settlement.won ? 1 : 0),
+    battlesWon: state.battlesWon + (settlement.won && counted ? 1 : 0),
   };
 }

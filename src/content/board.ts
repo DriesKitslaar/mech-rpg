@@ -179,7 +179,8 @@ export const BOARD_TEXT: BoardText & JobText & GrudgeText = {
       brief: 'The client wants one machine back in one piece. Take its arms and legs and leave the core. Destroy it and nobody is paid.',
     },
     escort: {
-      titles: ['Escort: Wage Run', 'Escort: Last Mile', 'Escort: Day Shift', 'Escort: Cold Chain', 'Escort: Fragile'],
+      // (None of them says what the freight is: that goes by the place, and a title is drawn with any of the four.)
+      titles: ['Escort: Safe Hands', 'Escort: Last Mile', 'Escort: Day Shift', 'Escort: Signed For', 'Escort: Fragile'],
       brief: 'The client\'s freight is under fire. Every round, each machine left standing takes a piece of it. Clear them first.',
     },
     hold: {

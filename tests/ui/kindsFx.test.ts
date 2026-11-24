@@ -103,7 +103,7 @@ describe('the word for what a weapon\'s kind made of a hit', () => {
   test('in Dutch', () => {
     setLanguage('nl');
     expect(words(shot({ lift: 148 }), 'redline', 20)).toEqual(['WITHEET +48%']);
-    expect(words(shot({ lift: 340 }), 'surge', 20)).toEqual(['PIEK x3.4']);
+    expect(words(shot({ lift: 340 }), 'surge', 20)).toEqual(['PIEK x3,4']);
     expect(words(shot({ lift: 200 }), 'punish')).toEqual(['-30', 'STRAF']);
   });
 

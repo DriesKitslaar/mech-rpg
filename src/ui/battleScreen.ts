@@ -61,6 +61,8 @@ export const WARNING_MS = 1700;
 const HOT = 0.75;
 const DEFAULT_BACKGROUND = 'bg-neon-district';
 const MENU_W = 154;
+/** The letters a row of the action menu holds, from where its words start to the panel's edge. */
+export const MENU_ROW_CHARS = Math.floor((MENU_W - 14 - 4) / CHAR_W);
 /** The letters that fit under a weapon's name in the list of weapons: its row is written small, from a little way in. */
 export const WEAPON_NOTE_CHARS = Math.floor((MENU_W - 6 - 14 - 6) / 4);
 /**
@@ -83,6 +85,8 @@ export const PUSH = { shot: 0.06, shell: 0.09, blade: 0.12, wreck: 0.12, surge: 
 /** Where the strip the wingman's line is written on starts, and how far under the top of the field it and the new pilot's line are. */
 const RADIO_X = 8;
 const STRIP_Y = FIELD_Y + 13;
+/** How far apart the new pilot's two lines stand. */
+const COACH_LINE = 11;
 /** How long an elite under cover says each of the two over its head before it says the other. */
 export const MARK_TURN_MS = 1600;
 
@@ -713,14 +717,22 @@ export class BattleScreen {
     drawText(ctx, name, LOGICAL_W - 3, 14, { align: 'right', size: 10, color: COLORS.energy });
   }
 
-  /** For a new pilot: one small line near the top of the field saying which button does what right now. */
+  /**
+   * For a new pilot: one small line near the top of the field saying which button does what right now, and
+   * under it, while they choose what to do, what the row under the cursor is for.
+   */
   private drawCoach(ctx: CanvasRenderingContext2D): void {
-    const line = (STRINGS.coach as Record<string, string>)[this.flow.phase];
+    const { phase, menu } = this.flow;
+    const line = (STRINGS.coach as Record<string, string>)[phase];
     if (!line) return;
-    const width = line.length * 4 + 8;
-    ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
-    ctx.fillRect(Math.round(LOGICAL_W / 2 - width / 2), STRIP_Y, width, 11);
-    drawText(ctx, line, LOGICAL_W / 2, STRIP_Y + 1, { align: 'center', size: 10, color: COLORS.heat });
+    const row = phase === 'action' ? (STRINGS.coachRows as Record<string, string>)[menu.items[menu.cursor]?.id] : undefined;
+    [line, ...(row ? [row] : [])].forEach((text, i) => {
+      const width = text.length * 4 + 8;
+      const y = STRIP_Y + i * COACH_LINE;
+      ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
+      ctx.fillRect(Math.round(LOGICAL_W / 2 - width / 2), y, width, COACH_LINE);
+      drawText(ctx, text, LOGICAL_W / 2, y + 1, { align: 'center', size: 10, color: i === 0 ? COLORS.heat : COLORS.text });
+    });
   }
 
   /** The banner that opens a battle: the contract and what it asks for, or a warning with the name of a boss. */
@@ -1679,7 +1691,9 @@ export class BattleScreen {
     };
     return this.flow.menu.items.map((item) => ({
       ...item,
-      label: cost[item.id] !== undefined ? `${item.label}  ${STRINGS.meters.energy} ${cost[item.id]}`
+      // A row that cannot be chosen says why, where it would have said what it costs.
+      label: !item.enabled && item.note ? `${item.label}  ${item.note}`
+        : cost[item.id] !== undefined ? `${item.label}  ${STRINGS.meters.energy} ${cost[item.id]}`
         : item.id === 'repair' ? `${item.label}  ${STRINGS.actionNotes.repair}` : item.label,
     }));
   }

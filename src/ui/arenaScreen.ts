@@ -13,7 +13,18 @@ import { MenuList } from './menuList';
 import { drawMech, mechSprites } from './mechView';
 import { drawMechShadow, drawRoom, drawRoomSpill } from './room';
 import { idlePose } from './pose';
-import { COLORS, LINE, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
+import { COLORS, LINE, STATE_COLORS, charsFor, drawList, drawPanel, drawTabs, drawText, wrap } from './widgets';
+
+/**
+ * Where the line that names the buttons stands, at the foot of the panel under the list: as low as its letters
+ * stay clear of the panel's edge.
+ */
+export const HINT_Y = 253;
+/** Where the lines about how an opponent fights begin: three of them end two lines above the line of buttons, so that it does not read as a fourth. */
+export const STYLE_Y = 207;
+/** How wide a letter of the name at the head of the panel is, and how far after the name what they are called stands. */
+const NAME_W = 16 * 0.4;
+const AFTER_NAME = 8;
 
 const A = STRINGS.arena;
 const M = A.masters;
@@ -191,20 +202,32 @@ export class ArenaScreen implements Screen {
         : !o ? (this.list.selected?.enabled ? A.next : A.locked)
         : o.rank <= game.arenaRank ? A.beaten : o.rank === game.arenaRank + 1 ? A.next : A.locked;
       drawText(ctx, (o ? o.name : cup ? A.cups.names[cup.id] : A.mirror.title).toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
-      drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === A.locked ? COLORS.danger : state === A.next ? COLORS.armor : COLORS.dim });
+      drawText(ctx, state, LOGICAL_W - 12, 191, { align: 'right', color: state === A.locked ? STATE_COLORS.shut : state === A.next || state === A.cups.open ? STATE_COLORS.todo : STATE_COLORS.done });
       // The one at the top of what this pilot can see has a word for whoever has beaten them.
       const last = o && o.rank === game.arenaRank && (o.rank === CHAMPION_RANK || o.rank === ARENA_RANKS);
       const cupNames = cup ? cup.ranks.map((rank) => ARENA[rank - 1].name) : [];
       const words = cup ? (cupOpen(game, cup) ? A.cups.style(cupNames) : A.cups.locked(cupNames[2]))
         : !o ? (this.list.selected?.enabled ? A.mirror.style : A.mirror.locked)
         : last ? (o.rank === ARENA_RANKS ? A.apex : A.champion) : o.style;
-      wrap(words, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + i * LINE));
+      wrap(words, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, STYLE_Y + i * LINE));
     }
-    drawText(ctx, A.back, LOGICAL_W / 2, 253, { align: 'center', color: COLORS.dim });
+    // A is offered where the row in hand takes a challenge, and nowhere else.
+    drawText(ctx, this.list.selected?.enabled ? A.back : A.backLocked, LOGICAL_W / 2, HINT_Y, { align: 'center', color: COLORS.dim });
   }
 
   /**
-   * The master of a class: their name, how it stands with them, what they are the master of, and how they
+   * The head of the panel for somebody with a title: the name, what they are called beside it on the same row,
+   * and at the right how it stands with them. The title has no row of its own: the lines under it then begin
+   * where an opponent's of the ladder do, and end well clear of the line of buttons.
+   */
+  private drawHead(ctx: CanvasRenderingContext2D, name: string, title: string, word: string, color: string): void {
+    drawText(ctx, name, 12, 189, { size: 16, color: COLORS.accent });
+    drawText(ctx, title, 12 + Math.ceil(name.length * NAME_W) + AFTER_NAME, 191, { color: COLORS.armor });
+    drawText(ctx, word, LOGICAL_W - 12, 191, { align: 'right', color });
+  }
+
+  /**
+   * The master of a class: their name, what they are the master of, how it stands with them, and how they
    * fight. While the masters are not open to this pilot, whom they take challenges from stands where the
    * line about their fighting would.
    */
@@ -212,25 +235,21 @@ export class ArenaScreen implements Screen {
     const master = masterOf(kind);
     const state = this.stateOf(kind);
     const word = { locked: A.locked, open: M.open, beaten: A.beaten, crown: M.crowned }[state];
-    const color = { locked: COLORS.danger, open: COLORS.armor, beaten: COLORS.dim, crown: COLORS.accent }[state];
-    drawText(ctx, master.name.toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
-    drawText(ctx, word, LOGICAL_W - 12, 191, { align: 'right', color });
-    drawText(ctx, M.titles[kind].toUpperCase(), 12, 207, { color: COLORS.armor });
-    wrap(state === 'locked' ? M.locked : master.style, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + (i + 1) * LINE));
+    const color = { locked: STATE_COLORS.shut, open: STATE_COLORS.todo, beaten: STATE_COLORS.done, crown: STATE_COLORS.held }[state];
+    this.drawHead(ctx, master.name.toUpperCase(), M.titles[kind].toUpperCase(), word, color);
+    wrap(state === 'locked' ? M.locked : master.style, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, STYLE_Y + i * LINE));
   }
 
   /**
-   * The keeper of the eighth seat, as a master is shown: their name, how it stands with them, what they
-   * keep, and how they fight. Until every crown is the pilot's, whom they take a challenge from stands
+   * The keeper of the eighth seat, as a master is shown: their name, what they keep, how it stands with
+   * them, and how they fight. Until every crown is the pilot's, whom they take a challenge from stands
    * where the line about their fighting would.
    */
   private drawSeat(ctx: CanvasRenderingContext2D): void {
     const state = this.seatState;
     const word = { locked: A.locked, open: M.open, held: S.held }[state];
-    const color = { locked: COLORS.danger, open: COLORS.armor, held: COLORS.accent }[state];
-    drawText(ctx, KEEPER.name.toUpperCase(), 12, 189, { size: 16, color: COLORS.accent });
-    drawText(ctx, word, LOGICAL_W - 12, 191, { align: 'right', color });
-    drawText(ctx, S.title.toUpperCase(), 12, 207, { color: COLORS.armor });
-    wrap(state === 'locked' ? S.locked : KEEPER.style, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, 207 + (i + 1) * LINE));
+    const color = { locked: STATE_COLORS.shut, open: STATE_COLORS.todo, held: STATE_COLORS.held }[state];
+    this.drawHead(ctx, KEEPER.name.toUpperCase(), S.title.toUpperCase(), word, color);
+    wrap(state === 'locked' ? S.locked : KEEPER.style, charsFor(LOGICAL_W - 28)).slice(0, 3).forEach((row, i) => drawText(ctx, row, 12, STYLE_Y + i * LINE));
   }
 }

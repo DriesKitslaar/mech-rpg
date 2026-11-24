@@ -8,9 +8,9 @@ import { groundFor } from '../core/ground';
 import { askBonus, crownHeld, isMaster } from '../core/masters';
 import { isSeat } from '../core/seat';
 import type { Fight } from '../core/mission';
-import type { Sortie } from '../core/sortie';
+import type { Grounded, Sortie } from '../core/sortie';
 import { isRange, parseSpar } from '../core/range';
-import { countsForClass, nextStripeAt, stripesOf } from '../core/stripes';
+import { earnsStripes, nextStripeAt, stripesOf } from '../core/stripes';
 import { isDrill } from '../core/training';
 import { tunedCatalog } from '../core/tuning';
 import type { BuildSlot } from '../core/game';
@@ -44,6 +44,11 @@ export const ODDS_FAIR = 0.4;
  */
 export const ODDS_BUDGET_MS = 4;
 export const ODDS_GOES = 8;
+/**
+ * How long a briefing that has just opened does not take A, as a line of talk does not: the cursor stands on Accept,
+ * and a press meant for the list of contracts would launch one. Short enough that hub to launch stays three presses.
+ */
+export const BRIEFING_HOLD_MS = 250;
 /** The colour odds are written in once they are counted: good, fair or poor. */
 export const oddsColor = (odds: Forecast): string =>
   odds.won >= odds.played * ODDS_GOOD ? COLORS.armor : odds.won >= odds.played * ODDS_FAIR ? COLORS.heat : COLORS.danger;
@@ -136,6 +141,8 @@ export class BriefingScreen implements Screen {
    * contract that is flown in a mech that is lent: the patrol of a pilot whose own cannot deploy, and every drill.
    */
   private builds: Sortie[];
+  /** The saved builds that cannot be flown now: the page of builds says so, where it would otherwise not name them at all. */
+  private grounded: Grounded[];
   private chosen = 0;
   /**
    * The odds of what has been shown, by offer, build and wingman: the contract as accepting would start it,
@@ -144,9 +151,16 @@ export class BriefingScreen implements Screen {
    */
   private counts = new Map<string, { mission: Mission; fight: Fight; count: Count } | null>();
 
+  /** What is left of the moment in which A is not taken: see `BRIEFING_HOLD_MS`. */
+  private held: number;
+
   constructor(private app: App, private first: Mission) {
+    this.held = app.deps.fast ? 0 : BRIEFING_HOLD_MS;
     this.other = app.otherOffer(first);
-    this.builds = first.loaner === undefined ? app.sorties() : [];
+    // A pilot still in the introductions is told the contract and nothing else: what class a build is, how the
+    // odds stand and what a stripe is are for once the board opens, and each has its chapter in the manual.
+    this.builds = first.loaner === undefined && !app.newcomer ? app.sorties() : [];
+    this.grounded = first.loaner === undefined && !app.newcomer ? app.grounded() : [];
     this.turnTo(first);
   }
 
@@ -190,12 +204,12 @@ export class BriefingScreen implements Screen {
   /**
    * How near the class of that build is to its next stripe: the stripes it has given, the contracts
    * won as it, and how many its next stripe asks (null once it has given all three). Null where a
-   * win would count for no class: the simulator's fights.
+   * win would count for no class: the simulator's fights, and a rematch in the arena.
    */
   private get stripe(): { kind: Archetype; held: number; won: number; next: number | null } | null {
     const game = this.app.game;
     const kind = this.kind;
-    if (!game || !kind || !countsForClass(this.mission)) return null;
+    if (!game || !kind || !earnsStripes(this.mission)) return null;
     return { kind, held: stripesOf(game, kind), won: wonAs(game, kind), next: nextStripeAt(game, kind) };
   }
 
@@ -237,6 +251,7 @@ export class BriefingScreen implements Screen {
 
   update(dtMs: number): void {
     this.writer.update(dtMs);
+    this.held = Math.max(0, this.held - dtMs);
     // A few actions of a flight a frame: the briefing goes on writing itself out while the odds are counted.
     const counting = this.counting;
     if (!counting || counted(counting.count)) return;
@@ -255,6 +270,8 @@ export class BriefingScreen implements Screen {
     else if (action === 'cancel') this.app.closeBriefing(this.first);
     else if (this.list.selected?.id === 'wingman' && (action === 'left' || action === 'right' || action === 'confirm')) this.choose(action === 'left' ? -1 : 1);
     else if (this.list.selected?.id === 'build' && (action === 'left' || action === 'right' || action === 'confirm')) this.turnBuild(action === 'left' ? -1 : 1);
+    // A press that comes in the briefing's first moment was meant for the list before it: a contract is not launched by it.
+    else if (action === 'confirm' && this.held > 0) return;
     else if (action === 'confirm') {
       const id = this.list.selected?.id;
       // Accepting fits the build that was chosen, if it is not the one on the floor already, and starts the contract in it.
@@ -273,6 +290,8 @@ export class BriefingScreen implements Screen {
       menu: { items: this.list.items, cursor: this.list.cursor },
       // True while the briefing is still writing itself out.
       typing: !this.writer.done,
+      // True for the moment in which a press is not taken: whoever drives the game waits it out.
+      busy: this.held > 0,
       briefing: {
         mission: this.mission.id, replay: !!this.mission.replay, reward: this.fee, objectives: objectiveLines(this.mission), ground: groundLines(this.mission),
         wingman: this.hires.length === 0 ? null
@@ -313,7 +332,9 @@ export class BriefingScreen implements Screen {
     drawText(ctx, mission.title.toUpperCase(), 72, 8, { size: 16, color: COLORS.accent });
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
     const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
-    const tag = isDrill(mission) ? STRINGS.training.tag
+    // A rematch says first that it is one: what it is a rematch of, its briefing goes on to say.
+    const tag = mission.rematch ? STRINGS.arena.rematchTag
+      : isDrill(mission) ? STRINGS.training.tag
       : isRange(mission) ? STRINGS.training.rangeTag
       : mission.loaner !== undefined ? B.lent
       : mission.id.startsWith('cup-') ? STRINGS.arena.cups.tag
@@ -408,8 +429,15 @@ export class BriefingScreen implements Screen {
         drawText(ctx, oddsText, 12, y + 21 + 6 * LINE, { color: oddsShade });
         drawText(ctx, `: ${B.oddsNote}`, 12 + Math.round(oddsText.length * CHAR_W), y + 21 + 6 * LINE, { color: COLORS.dim });
       }
-      // With something to turn to, how; with nothing, where builds are saved.
-      drawText(ctx, this.builds.length > 1 ? B.buildHint : B.buildNone, 12, 191 - LINE, { color: COLORS.dim });
+      // With something to turn to, how; with nothing, where builds are saved. A saved build that cannot be flown
+      // now is named with what it is short of: beside the hint, or where the page would say that none is saved.
+      const [down] = this.grounded;
+      const short = down === undefined ? null
+        : down.part !== undefined ? B.buildShort(down.slot + 1, Object.hasOwn(catalog, down.part) ? catalog[down.part].name : down.part) : B.buildGrounded(down.slot + 1);
+      if (this.builds.length > 1) {
+        drawText(ctx, B.buildHint, 12, 191 - LINE, { color: COLORS.dim });
+        if (short) drawText(ctx, short, LOGICAL_W - 12, 192 - LINE, { align: 'right', color: COLORS.heat, size: 10 });
+      } else drawText(ctx, short ?? B.buildNone, 12, 191 - LINE, { color: short ? COLORS.heat : COLORS.dim });
     }
     for (const paragraph of onHire || onBuild ? [] : this.rows) {
       for (const _full of paragraph) {

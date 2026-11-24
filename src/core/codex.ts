@@ -50,6 +50,19 @@ function earlierRecord(game: GameState, entries: Entry[]): GameState | null {
 }
 
 /**
+ * The finds an answer is good for that the pilot held before giving it. A decision that hands over something
+ * the pilot already has (found another way, in an earlier telling) says so, where otherwise it would say nothing
+ * at all. An answer counts where it is one of the things one way to the find asks for; only an answer given
+ * between the two games counts, and nothing does where there was no game before.
+ */
+export function heldAlready(before: GameState | null | undefined, after: GameState, finds: Find[]): Find[] {
+  if (!before) return [];
+  const given = Object.entries(after.choices ?? {}).filter(([question, answer]) => before.choices?.[question] !== answer).map(([question, answer]) => `chose:${question}=${answer}`);
+  if (given.length === 0) return [];
+  return finds.filter((find) => before.codex.includes(find.id) && find.after.split('|').some((way) => way.split('&').some((term) => given.includes(term))));
+}
+
+/**
  * Opens every entry whose time has come and that is not open yet, in list order. An open entry
  * stays open through later cycles. The state is returned unchanged when nothing opens. A game that
  * has found nothing yet is also given the finds its record has earned (see `earlierRecord`).

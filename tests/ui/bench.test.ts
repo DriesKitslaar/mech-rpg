@@ -177,7 +177,7 @@ describe('the bench, in the garage', () => {
     const had = snap(app).credits;
     toParts(app, 'core');
     // On a part the bench takes, the foot of the panel says which button puts it there.
-    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain('R1: THE BENCH');
+    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain('R1: the bench');
     press(app, 'next', 'confirm');
     const said = record((ctx) => app.draw(ctx)).texts.map((t) => t.text);
     expect(said).toEqual(expect.arrayContaining([
@@ -194,7 +194,7 @@ describe('the bench, in the garage', () => {
     expect(record((ctx) => poor.draw(ctx)).texts.map((t) => t.text)).toEqual(expect.arrayContaining(['Not enough credits', 'You have 10 c']));
     const { app } = inHub(rich());
     toParts(app, 'booster');
-    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).not.toContain('R1: THE BENCH');
+    expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).not.toContain('R1: the bench');
   });
 
   test('the hint for the bench stands over the list of parts, where a build that may not leave does not hide it', () => {
@@ -207,7 +207,7 @@ describe('the bench, in the garage', () => {
       const { app } = inHub(saved);
       toParts(app, 'core');
       const texts = record((ctx) => app.draw(ctx)).texts;
-      const hint = texts.find((t) => t.text === 'R1: THE BENCH')!;
+      const hint = texts.find((t) => t.text === 'R1: the bench')!;
       expect(hint, name).toBeDefined();
       const slot = texts.find((t) => t.text === STRINGS.slots.core.toUpperCase())!;
       // On the line of the slot's name, at the right of the panel, clear of that name and of the edge of the screen.
@@ -225,7 +225,7 @@ describe('the bench, in the garage', () => {
       const { app } = inHub({ ...base, settings: { ...base.settings, language: 'nl' } });
       const had = snap(app).credits;
       toParts(app, 'core');
-      expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain('R1: WERKBANK');
+      expect(record((ctx) => app.draw(ctx)).texts.map((t) => t.text)).toContain('R1: de werkbank');
       press(app, 'next', 'confirm', 'confirm');
       const said = record((ctx) => app.draw(ctx)).texts.map((t) => t.text);
       // A cycle is a cyclus in the Dutch game, and a ronde is a round of a battle: the bench's limit is the cycle's.
@@ -455,11 +455,13 @@ describe('what the shop shows beside a tuned mech', () => {
     // Never owned now, but worked on once: bought again, it has the armour the bench gave it.
     const texts = onLegs(pilot({ 'legs-crawler': 3 }), 'legs-crawler');
     const tuned = Math.round(crawler.ap * 1.15);
-    // On its page, that is: the row in the list is the shelf's label, and stays as printed.
+    // On its page and on its row of the list: the shelf does not show as plain a part that will come back worked on.
     const page = texts.filter((t) => t.x > 168).map((t) => t.text);
     expect(page).toContain(`${crawler.name} +3`);
     expect(page).not.toContain(crawler.name);
-    expect(texts.filter((t) => t.x <= 168).map((t) => t.text)).toContain(crawler.name);
+    const list = texts.filter((t) => t.x <= 168).map((t) => t.text);
+    expect(list).toContain(`${crawler.name} +3`);
+    expect(list).not.toContain(crawler.name);
     expect(texts.some((t) => t.text.startsWith(`${STRINGS.partInfo.ap} ${tuned}`))).toBe(true);
     expect(chipOf(texts)).toMatchObject({ text: `AP +${tuned - colossus.ap}`, color: COLORS.armor });
     // What it costs is what it always cost: the bench's work was paid for at the bench.
@@ -528,7 +530,8 @@ describe('the lines of a part the bench has worked on', () => {
           for (const [a, b] of [[5, 0], [0, 3], [1, 2]]) {
             for (const row of compareParts(tunedPart(mine, a), tunedPart(theirs, b))) {
               expect(row.reduce((sum, chip) => sum + chip.text.length + 2, -2), `${mine.id} +${a} against ${theirs.id} +${b}`).toBeLessThanOrEqual(COMPARE_LINE_CHARS);
-              for (const chip of row) expect(chip.text, `${mine.id} +${a} against ${theirs.id} +${b}`).toMatch(/ [+-]\d+(\.\d)?%?$/);
+              // A tenth is written with a point in English and a comma in Dutch.
+              for (const chip of row) expect(chip.text, `${mine.id} +${a} against ${theirs.id} +${b}`).toMatch(language === 'nl' ? / [+-]\d+(,\d)?%?$/ : / [+-]\d+(\.\d)?%?$/);
             }
           }
         }

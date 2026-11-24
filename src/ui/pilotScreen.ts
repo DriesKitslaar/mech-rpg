@@ -1,5 +1,5 @@
-import { ARCHETYPES, adviceFor, archetypeOf, wonAs, type Archetype, type BuildAdvice } from '../core/archetype';
-import { DEFAULT_CALLSIGN, type BuildSlot, type GameState } from '../core/game';
+import { ARCHETYPES, adviceFor, archetypeOf, canFollow, keptAt, wonAs, type Archetype, type BuildAdvice } from '../core/archetype';
+import { DEFAULT_CALLSIGN, sameBuild, type BuildSlot, type GameState } from '../core/game';
 import { crownHeld, crownsHeld, mastersOpen } from '../core/masters';
 import { seatHeld } from '../core/seat';
 import { ALL_STRIPES, MAX_STRIPES, nextPointAt, nextStripeAt, stripePoints, stripesHeld, stripesOf } from '../core/stripes';
@@ -43,6 +43,11 @@ export const CLASS_STRIPE_Y = 238;
 /** The row of the perks page that says what stripes have brought: under what the perk does, over what stands in the way of buying it. */
 export const PERKS_STRIPES_Y = 226;
 const ADVICE_COLUMN_W = 146;
+/**
+ * The panel of the question before a build to try is bought and fitted: over the rows of the list of classes,
+ * all of them, so that no row shows half from under it. The build it is about stays in view below.
+ */
+export const ASK = { x: 8, y: 32, w: 294, h: 80 };
 
 /** The pilot: level and perks, the medals earned and still to earn, the record of what they have done, and the kinds of machine there are. */
 export class PilotScreen implements Screen {
@@ -53,6 +58,8 @@ export class PilotScreen implements Screen {
   private classes = new MenuList();
   /** The build last suggested on the page of kinds, with the kind and the game it was worked out for. */
   private advised: { kind: Archetype; game: GameState; advice: BuildAdvice } | null = null;
+  /** The question before a build to try is bought and fitted, while it is asked: No first. */
+  private asking: MenuList | null = null;
 
   constructor(private app: App) {
     this.refresh();
@@ -139,6 +146,23 @@ export class PilotScreen implements Screen {
   update(): void {}
 
   onInput(action: InputAction): void {
+    // While the page asks whether to buy and fit, it takes an answer and nothing else.
+    if (this.asking) {
+      if (action === 'up') this.asking.move(-1);
+      else if (action === 'down') this.asking.move(1);
+      else if (action === 'cancel') this.asking = null;
+      else if (action === 'confirm') {
+        const yes = this.asking.selected?.id === 'yes';
+        this.asking = null;
+        if (yes && this.app.followAdvice(this.advice())) this.refresh();
+      }
+      return;
+    }
+    if (action === 'confirm' && this.page === 'classes') {
+      // A build that can be put together today is bought and fitted from here, once the pilot has said yes.
+      if (canFollow(this.app.game!, this.advice())) this.asking = new MenuList([{ id: 'no', label: C.no, enabled: true }, { id: 'yes', label: C.yes, enabled: true }]);
+      return;
+    }
     if (action === 'up') this.list?.move(-1);
     else if (action === 'down') this.list?.move(1);
     else if (action === 'next' || action === 'right') this.turn(1);
@@ -158,14 +182,14 @@ export class PilotScreen implements Screen {
   view(): ScreenView {
     const game = this.app.game!;
     return {
-      menu: { items: this.list?.items ?? [], cursor: this.list?.cursor ?? 0 },
+      menu: this.asking ? { items: this.asking.items, cursor: this.asking.cursor } : { items: this.list?.items ?? [], cursor: this.list?.cursor ?? 0 },
       page: this.page,
       pilot: { level: levelFor(game.xp), points: perkPoints(game, PERKS) },
       medalCount: { earned: MEDALS.filter((m) => game.medals.includes(m.id)).length, of: MEDALS.length },
       ...(this.page === 'medals' ? { detail: this.detail() } : {}),
       ...(this.page === 'drive' ? { overdrive: fittedOverdrive(game) ?? null } : {}),
       ...(this.page === 'record' ? { record: recordLines(game, MEDALS.length), known: { rank: nameRank(game), renown: renownOf(game), next: nextNameAt(game) }, accounts: accountsClosed(game) } : {}),
-      ...(this.page === 'classes' ? { classes: { flown: this.flown, kind: this.kind, advice: this.advice() } } : {}),
+      ...(this.page === 'classes' ? { classes: { flown: this.flown, kind: this.kind, advice: this.advice(), asking: this.asking !== null, status: this.adviceStatus().text } } : {}),
     };
   }
 
@@ -192,6 +216,7 @@ export class PilotScreen implements Screen {
     else this.drawRecord(ctx);
     drawText(ctx, this.page === 'perks' ? P.hint : this.page === 'drive' ? O.hint : P.pageHint, LOGICAL_W / 2, 255, { align: 'center', color: COLORS.dim });
     if (this.page === 'classes') this.drawStripeCount(ctx);
+    if (this.asking) this.drawAsking(ctx, this.asking);
   }
 
   /**
@@ -208,7 +233,8 @@ export class PilotScreen implements Screen {
     // The crowns of the arena's masters, counted once they are there to be taken, or once one is held. For the pilot who
     // has taken the eighth seat the count has nothing left to say (every row has its crown): the seat stands there instead.
     if (seatHeld(game)) {
-      drawText(ctx, STRINGS.arena.seat.row.toUpperCase(), CROWN_X + 9, 22, { align: 'right', color: CROWN_COLOR, size: 10 });
+      // A few letters short of the column of crowns, so that it does not read on into the word over the column beside it.
+      drawText(ctx, STRINGS.arena.seat.row.toUpperCase(), CROWN_X - 3, 22, { align: 'right', color: CROWN_COLOR, size: 10 });
     } else if (mastersOpen(game) || crownsHeld(game) > 0) {
       drawText(ctx, STRINGS.arena.masters.crowns(crownsHeld(game), ARCHETYPES.length), CROWN_X + 9, 22, { align: 'right', color: COLORS.dim, size: 10 });
     }
@@ -242,20 +268,47 @@ export class PilotScreen implements Screen {
     ctx.fillStyle = COLORS.border;
     ctx.fillRect(12, 168, LOGICAL_W - 24, 1);
     drawText(ctx, C.advice, 12, 171, { color: COLORS.dim, size: 10 });
-    const status = advice.unsold.length > 0 ? C.unsold : advice.toBuy.length === 0 ? C.owned : C.toBuy(advice.cost);
-    drawText(ctx, status, LOGICAL_W - 12, 171, { align: 'right', color: advice.toBuy.length === 0 ? COLORS.armor : COLORS.dim, size: 10 });
+    const status = this.adviceStatus();
+    drawText(ctx, status.text, LOGICAL_W - 12, 171, { align: 'right', color: status.lit ? COLORS.armor : COLORS.dim, size: 10 });
     ADVICE_COLUMNS.forEach((slots, column) => slots.forEach((slot, row) => {
       const id = advice.build[slot];
       const x = 12 + column * ADVICE_COLUMN_W;
       const y = 182 + row * LINE;
       drawText(ctx, STRINGS.garage.slotTags[slot], x, y + 1, { color: COLORS.dim, size: 10 });
       const name = id !== undefined && Object.hasOwn(catalog, id) ? catalog[id].name : '-';
-      const color = id === undefined || advice.unsold.includes(slot) ? COLORS.dim : advice.toBuy.includes(slot) ? COLORS.accent : COLORS.text;
+      // What is still to be bought is red, as a part that is missing is everywhere else: pink is the cursor's.
+      const color = id === undefined || advice.unsold.includes(slot) ? COLORS.dim : advice.toBuy.includes(slot) ? COLORS.danger : COLORS.text;
       drawText(ctx, name, x + 34, y, { color });
     }));
     // In the corner the build leaves free: the contracts won as this class at which it gives its next stripe.
     const next = nextStripeAt(game, kind);
     drawText(ctx, next === null ? T.allThree : T.nextStripe(next), LOGICAL_W - 12, CLASS_STRIPE_Y, { align: 'right', color: next === null ? STRIPE_COLOR : COLORS.dim, size: 10 });
+  }
+
+  /**
+   * What stands beside the build to try: that it is the build flown (and which saved build holds it), what A
+   * does about it where A does something, or what stands in the way: parts not sold yet, or what is still to pay.
+   */
+  private adviceStatus(): { text: string; lit: boolean } {
+    const game = this.app.game!;
+    const advice = this.advice();
+    if (sameBuild(game.build, advice.build)) {
+      const kept = keptAt(game, advice.build);
+      return { text: kept >= 0 ? C.flyingKept(kept + 1) : C.flying, lit: true };
+    }
+    if (advice.unsold.length > 0) return { text: C.unsold, lit: false };
+    return canFollow(game, advice) ? { text: C.follow(advice.cost), lit: true } : { text: C.toBuy(advice.cost), lit: false };
+  }
+
+  /** The question, in a panel over the list of classes: the build it is about stays in view under it. */
+  private drawAsking(ctx: CanvasRenderingContext2D, asking: MenuList): void {
+    const { x, y, w, h } = ASK;
+    ctx.fillStyle = '#0c0c18';
+    ctx.fillRect(x, y, w, h);
+    drawPanel(ctx, x, y, w, h);
+    drawText(ctx, C.ask(this.advice().cost), x + 8, y + 10, { color: COLORS.accent });
+    drawText(ctx, C.askNote, x + 8, y + 10 + LINE);
+    drawList(ctx, asking, x + 8, y + 18 + 2 * LINE, w - 20, 2);
   }
 
   /**

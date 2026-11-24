@@ -253,10 +253,12 @@ export const DRILLS: Drill[] = [
 
 /**
  * What Dispatch explains to a pilot once, in the field, the first time it happens to them: the two
- * things an open battle does that the screen alone does not make plain. See `Lesson`.
+ * things an open battle does that the screen alone does not make plain, and what running hot leads
+ * to. See `Lesson`.
  */
 const told = (text: string): LessonLine => ({ who: 'Dispatch', portrait: 'portrait-dispatch', text });
 export const LESSON_LINES: Record<Lesson, LessonLine> = {
   momentum: told('One down, and the weapon that did it is ready again. That is the MOMENTUM on the banner: nothing here outranks you, so a kill gives the shot back. Use it.'),
   rout: told('Two in one turn, and the one that is left has lost its nerve. It leaves on its turn without firing. It only counts as destroyed if you get to it first.'),
+  heat: told('You are running hot. Pass the red line and the frame shuts down: your next turn is lost. Vent sheds heat at once, and a turn with fewer shots lets it drain.'),
 };

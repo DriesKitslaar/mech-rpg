@@ -2,6 +2,7 @@ import { archetypeOf } from '../core/archetype';
 import { LOADOUT_SLOTS, type BuildSlot } from '../core/game';
 import { MIX_KEYS, MIX_STEPS, type MixKey } from '../core/mix';
 import type { BuildStats } from '../core/types';
+import { figure } from '../content/language';
 import { STRINGS } from '../content/strings';
 import type { InputAction } from '../platform/input';
 import type { App, Screen, ScreenView } from './app';
@@ -167,10 +168,10 @@ export class GarageScreen implements Screen {
     drawText(ctx, bench.name, x, 40, { color: COLORS.accent });
     drawText(ctx, G.benchStep(bench.step, bench.cap), x, 40 + LINE);
     // What the bench works on: as it is and, while there is a step to take, as that step would leave it.
-    const figure = `${G.benchFigures[bench.figure]} ${bench.now}`;
-    drawText(ctx, figure, x, 40 + 2 * LINE + 2);
+    const now = `${G.benchFigures[bench.figure]} ${figure(bench.now)}`;
+    drawText(ctx, now, x, 40 + 2 * LINE + 2);
     if (bench.refusal !== 'limit') {
-      drawText(ctx, `> ${bench.next}`, x + (figure.length + 1) * CHAR_W, 40 + 2 * LINE + 2, { color: COLORS.armor });
+      drawText(ctx, `> ${figure(bench.next)}`, x + (now.length + 1) * CHAR_W, 40 + 2 * LINE + 2, { color: COLORS.armor });
     }
     ctx.fillStyle = COLORS.border;
     ctx.fillRect(x, 84, LIST_W - 12, 1);
@@ -215,6 +216,9 @@ export class GarageScreen implements Screen {
       // With nothing wrong, the foot of the panel says what the shoulder buttons and the D-pad do here.
       drawText(ctx, G.paint(flow.paintName), 8, STATS_Y + 61, { color: COLORS.dim, size: 10 });
       drawText(ctx, G.pages, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
+    } else if (flow.mode === 'loadouts') {
+      // The page of saved builds says what A does on a row of it.
+      drawText(ctx, G.buildsHint, LOGICAL_W - 8, STATS_Y + 61, { align: 'right', color: COLORS.dim, size: 10 });
     }
   }
 

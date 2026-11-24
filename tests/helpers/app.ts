@@ -7,6 +7,7 @@ import { CATALOG, STARTER_BUILD } from '../../src/content/parts';
 import { SAVE_KEY, SaveFile, type KeyValueStore } from '../../src/platform/storage';
 import type { InputAction } from '../../src/platform/input';
 import { App, SHUTTER_MS, type AppDeps } from '../../src/ui/app';
+import { BRIEFING_HOLD_MS } from '../../src/ui/briefingScreen';
 import type { SpriteStore } from '../../src/ui/sprites';
 
 /** What the app tests share: an app over a store in memory, and ways to press through it. */
@@ -43,8 +44,12 @@ export function makeApp(saved?: GameState, seed = 5, deps: Partial<AppDeps> = {}
 export const snap = (app: App) => app.snapshot() as Snap;
 export const press = (app: App, ...actions: InputAction[]) => actions.forEach((a) => app.onInput(a));
 export const ids = (app: App) => snap(app).menu.items.map((i) => i.id);
-/** Walks the cursor down to an entry and confirms it. */
+/**
+ * Walks the cursor down to an entry and confirms it. A briefing that has just opened, in a game that is not
+ * hurried, does not take A for a moment: that moment is let pass first, as a player's own hand lets it.
+ */
 export const select = (app: App, id: string) => {
+  if (snap(app).screen === 'briefing' && snap(app).busy === true) app.update(BRIEFING_HOLD_MS);
   for (let i = 0; i < 60 && snap(app).menu.items[snap(app).menu.cursor]?.id !== id; i++) press(app, 'down');
   expect(snap(app).menu.items[snap(app).menu.cursor]?.id).toBe(id);
   press(app, 'confirm');

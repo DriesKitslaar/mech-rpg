@@ -9,7 +9,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'Rocket pods on rotors. It has little armour. Bring it down before the pods add up.':
     'Raketpods op rotors. Weinig pantser. Haal het neer voor de pods gaan optellen.',
   'While it flies, every other enemy takes 40% less damage. Shoot it first.':
-    'Zolang het vliegt, krijgt elke andere vijand 40% minder schade. Schiet het eerst neer.',
+    'Zolang hij vliegt, krijgt elke andere vijand 40% minder schade. Schiet hem eerst neer.',
   'Every turn it welds armour back onto the most damaged friend it has. Shoot it first.':
     'Elke beurt last het pantser terug op zijn zwaarst beschadigde maat. Schiet het eerst neer.',
   'Walks up and goes off on its third turn for heavy damage. Destroy it before then, or guard.':
@@ -42,10 +42,10 @@ export const REFERENCE_NL: Record<string, string> = {
     'Een piloot met licentie in een Ronin-frame, met een lans en een rek. Slaat hard en incasseert goed.',
   'Ashfall, at war': 'Ashfall, in oorlog',
   'Ashfall with a barrier that soaks up the first damage each time it is raised, and a second wind.':
-    'Ashfall met een barriere die de eerste schade opvangt, telkens als ze opgaat, en een tweede adem.',
+    'Ashfall met een barrière die de eerste schade opvangt, telkens als ze opgaat, en een tweede adem.',
   'Ashfall Unbound': 'Ashfall ontketend',
   'Ashfall with nothing held back: lance, edge and rack, a barrier, and two changes of pace.':
-    'Ashfall zonder rem: lans, kling en rek, een barriere, en twee tempowissels.',
+    'Ashfall zonder rem: lans, kling en rek, een barrière, en twee tempowissels.',
   "Lumen's best pilot. A piercing rifle at range and a blade when she closes. Do not let her choose the distance.":
     'Lumens beste piloot. Doorborend geweer van ver, kling van dichtbij. Laat haar de afstand niet kiezen.',
   "The Undertow's champion. He closes in every turn with a cutting torch that heats you up, and drops chaff.":
@@ -63,9 +63,9 @@ export const REFERENCE_NL: Record<string, string> = {
   "Meridian's Auditor frame: a piercing rifle and a coil that drains your energy. Armoured alike all round.":
     'Meridians Auditor-frame: doorborend geweer en een spoel die je energie aftapt. Rondom gelijk gepantserd.',
   'A Bailiff with a barrier and a decree that charges for a turn. It refits itself when it starts losing.':
-    'Een Bailiff met een barriere en een decreet dat een beurt oplaadt. Bouwt zichzelf om als het gaat verliezen.',
+    'Een Bailiff met een barrière en een decreet dat een beurt oplaadt. Bouwt zichzelf om als het gaat verliezen.',
   "Meridian's claim on the city, on tracks. A barrier, lien drones every fourth turn, three ways of fighting.":
-    'Meridians claim op de stad, op rupsbanden. Een barriere, Lien Drones elke vierde beurt, drie vechtwijzen.',
+    'Meridians claim op de stad, op rupsbanden. Een barrière, Lien Drones elke vierde beurt, drie vechtwijzen.',
   'A mortar in a ring of plate. It cannot move and often misses, but what lands takes a quarter of a core. Beams go through the ring.':
     'Een mortier in een ring van staal. Kan niet bewegen en mist vaak, maar wat raakt, kost een kwart kern. Stralen gaan door de ring.',
   'A dart with twin needles, aimed at your head. Very hard to hit. Anything that lands on it is nearly enough.':
@@ -95,13 +95,13 @@ export const REFERENCE_NL: Record<string, string> = {
   'Wanted. A Ronin with a thermal lance and an inferno pod. It spreads its fire over all of you. Vent early.':
     'Gezocht. Een Ronin met een thermische lans en een infernopod. Spreidt zijn vuur over je hele mech. Koel op tijd.',
   'Wanted. An Auditor frame gone private: a barrier, a draining coil and a decree. It hits harder once it is losing.':
-    'Gezocht. Een Auditor-frame dat voor zichzelf begon: een barriere, een aftappende spoel en een decreet. Slaat harder zodra het verliest.',
+    'Gezocht. Een Auditor-frame dat voor zichzelf begon: een barrière, een aftappende spoel en een decreet. Slaat harder zodra het verliest.',
   'Coast Circuit. A Shrike with a blade and a rifle. It boosts in, strikes and is still boosting: hard to hit until it staggers or loses its legs.':
     'Coast Circuit. Een Shrike met kling en geweer. Boost erin, slaat en boost nog steeds: lastig te raken tot hij wankelt of zijn benen kwijt is.',
   "The Circuit's first sword, in a Sterling. Its field takes what lands first and is whole each round unless you break it. Broken, it is down a round.":
     'Eerste zwaard van het Circuit, in een Sterling. Zijn veld vangt de eerste treffers op en is elke ronde weer heel, tenzij je het breekt. Dan is het een ronde weg.',
   "The coast yard's works pilot, in a Sirocco. Its heat limit is 130, and both weapons hit harder the hotter it runs. Stagger it, or heat it past that.":
-    'Fabriekspiloot van de kustwerf, in een Sirocco. Zijn hittegrens is 130 en zijn twee wapens slaan harder naarmate hij heter is. Laat hem wankelen, of stook hem daaroverheen.',
+    'Fabriekspiloot van de kustwerf, in een Sirocco: hittegrens 130, en twee wapens die harder slaan naarmate hij heter is. Laat hem wankelen, of stook hem erover.',
   "The coast yard's other works pilot, in a Solstice. It holds every other round and keeps the energy: the next, its one weapon has a turn and a half.":
     'Fabriekspiloot van de kustwerf, in een Solstice. Wacht om de andere ronde en spaart energie: daarna vuurt hij met anderhalve beurt tegelijk.',
 
@@ -124,8 +124,8 @@ export const REFERENCE_NL: Record<string, string> = {
   'Not every frame has a flag on it. Ronin, Wraith and Colossus are built by small shops for pilots who answer to nobody, and sold to anyone who can pay. They are not cheap.':
     'Niet elk frame draagt een vlag. Ronin, Wraith en Colossus komen uit kleine werkplaatsen, voor piloten zonder baas, en gaan naar wie kan betalen. Goedkoop zijn ze niet.',
   'THE ARENA': 'DE ARENA',
-  'Ranked pilots fight for purses in a pit under the rail yard. It is licensed, legal and heavily bet on. Beat the next rank and the purse is yours in full; beat someone you have beaten before and you get a quarter.':
-    'Piloten met rang vechten om de pot in een kuil onder het emplacement. Vergund, legaal, en er wordt zwaar gewed. Versla de volgende rang en de hele pot is van jou; versla iemand opnieuw: een kwart.',
+  'Ranked pilots fight for purses in a pit under the rail yard. It is licensed, legal and heavily bet on. Beat the next rank and the purse is yours in full; beat someone you have beaten before and it is a rematch, for a quarter of it or less.':
+    'Piloten met rang vechten om de pot in een kuil onder het emplacement. Vergund, legaal, en er wordt zwaar gewed. Versla de volgende rang en de hele pot is van jou; versla iemand opnieuw en het is een revanche, voor een kwart of minder.',
   'THE BACK ROOM': 'DE ACHTERKAMER',
   'Behind the pit is a room the crowd does not know about. Five pilots fight there who stopped caring about the ladder years ago: for larger purses, without an audience, and only against a champion.':
     'Achter de kuil ligt een kamer waar het publiek niets van weet. Daar vechten vijf piloten die de ranglijst al jaren niets meer kan schelen: om hogere potten, zonder publiek, en alleen tegen een kampioen.',
@@ -175,7 +175,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'Where the banner says MOMENTUM (two or more machines, none of them a boss, a named pilot, an elite, a Bailiff or an objective\'s target), a volley that destroys one pays for itself: the weapon is ready again, its energy comes back, and the run is counted (CHAIN x2). Heat and rounds stay spent; a charged weapon must charge again.':
     'Waar de banner DOORSTOTEN zegt (twee of meer machines, zonder baas, piloot met naam, elite, Bailiff of doelwit), verdient een schot dat er een vernietigt zichzelf terug: het wapen is weer klaar, de energie komt terug en de reeks wordt geteld (REEKS x2). Hitte en munitie ben je kwijt; een laadwapen moet opnieuw laden.',
   'In the same fights, one hit of yours that takes half of a machine\'s core, as it stood at full strength, finishes it: a heavy weapon goes through a light machine. The aiming line says DESTROYS when a hit would do it. It is never done to you, and a wingman\'s fire does not do it.':
-    'In dezelfde gevechten maakt een treffer van jou die de helft van haar kern wegslaat, gemeten op volle sterkte, een machine af: een zwaar wapen gaat dwars door een lichte machine. Bij het richten staat er dan VERNIETIGT. Jou overkomt het nooit, en een wingman doet het niet.',
+    'In dezelfde gevechten maakt een treffer van jou die de helft van zijn kern wegslaat, gemeten op volle sterkte, een machine af: een zwaar wapen gaat dwars door een lichte machine. Bij het richten staat er dan VERNIETIGT. Jou overkomt het nooit, en een wingman doet het niet.',
   'One hit of yours that destroys a machine and does at least one and a half times its whole core, as it stood at full strength, is an OVERKILL: the machine goes up harder and the word is over it. It is said in any fight and changes nothing. How worn the machine already was makes no difference.':
     'Een treffer van jou die een machine vernietigt en minstens anderhalf keer zo zwaar is als haar hele kern op volle sterkte, is een OVERKILL: de machine ontploft harder en het woord staat erboven. Dat kan in elk gevecht en verandert niets. Hoe versleten ze al was, maakt niet uit.',
   'SHATTER':
@@ -225,13 +225,13 @@ export const REFERENCE_NL: Record<string, string> = {
   'Some weapons charge for a turn before they fire. When an enemy has one loaded, the turn before it fires is the time to guard or boost.':
     'Sommige wapens laden een beurt op voor ze vuren. Heeft een vijand er een geladen, kies dan de beurt voor het schot Dekking of Boost.',
   'One module fits each mech: a coolant flush, a barrier, an overclock, a target painter and others. A module has a few uses per battle and costs no energy. The shop and the garage say what each one does.':
-    'In elke mech past een module: koelspoeling, barriere, overklok, doelmarkeerder en andere. Een module gaat per gevecht een paar keer mee en kost geen energie. Winkel en garage zeggen wat elke doet.',
+    'In elke mech past een module: koelspoeling, barrière, overklok, doelmarkeerder en andere. Een module gaat per gevecht een paar keer mee en kost geen energie. Winkel en garage zeggen wat elke doet.',
   'FIELD REPAIRS': 'VELDREPARATIES',
   'Twice per contract you can patch a damaged part in the field, which restores 40% of its armour. A destroyed part cannot be patched. A repair ends your turn, so fire first. Each one you use lowers your rank a little.':
     'Twee keer per contract kun je in het veld een beschadigd onderdeel oplappen: dat herstelt 40% van zijn pantser. Een vernietigd onderdeel is niet op te lappen. Een reparatie eindigt je beurt, dus vuur eerst. Elke reparatie verlaagt je rang iets.',
   'ENEMY TRICKS': 'VIJANDELIJKE TRUCS',
-  'Shield drones cover the others. Repair drones weld them back together. Jammers spoil your aim. Bomb crawlers go off on a fuse. Carriers launch more. Shoot the helper first.':
-    'Shield Drones dekken de rest. Repair Drones lassen ze weer aan elkaar. Stoorders bederven je mikken. Bomb Crawlers gaan af op een lont. Dragers lanceren er meer. Schiet eerst op de helper.',
+  'Shield drones cover the others. Repair drones weld them back together. Jammers spoil your aim. Bomb crawlers go off on a fuse. Carriers launch more. Shoot the helper first. While you aim at a machine, the word beside its name is what it means to do next: AIMS HEAD, WINDS UP, HOLDS.':
+    'Shield Drones dekken de rest. Repair Drones lassen ze aan elkaar. Stoorders bederven je mikken. Bomb Crawlers gaan af op een lont. Dragers lanceren er meer. Schiet eerst op de helper. Mik je op een machine, dan staat naast zijn naam wat die gaat doen: MIKT HOOFD, LAADT OP, WACHT.',
   OBJECTIVES: 'DOELEN',
   'Not every battle is won by destroying everything. Some ask you to outlast a number of rounds, to protect something, to take out one leader, to disable a machine without destroying it, or to drive a pilot off. The line at the top of the field says which. Freight you guard stands on the field; if it burns, a third or less is left.':
     'Niet elk gevecht win je door alles te vernietigen. Soms moet je een aantal rondes overleven, iets beschermen, een leider uitschakelen, een machine stilleggen zonder haar te vernietigen, of een piloot verjagen. De regel boven het veld zegt welke. Vracht die je bewaakt staat op het veld: brandt die, dan rest een derde of minder.',
@@ -240,7 +240,7 @@ export const REFERENCE_NL: Record<string, string> = {
     'Een gewonnen contract krijgt rang S tot D op drie punten: rondes tegenover de norm, verloren pantser en veldreparaties. S betaalt 25% meer, A 10% meer. In het archief speel je een contract over voor een betere rang en een deel loon. Wat je voor de andere kant won, staat er zoals het eerst geboden werd.',
   MONEY: 'GELD',
   'Repairs cost 0.8 credits per point of armour and every round fired has a price. Selling a part returns what you paid for it, so trying something out costs nothing. Debt stops you buying, never flying, and you can owe 2000 at most: what a bill adds beyond that, Dispatch writes off.':
-    'Reparaties kosten 0.8 credits per punt pantser en elk schot kost geld. Een onderdeel verkopen geeft terug wat je betaalde, dus iets uitproberen kost niets. Schuld belet kopen, nooit vliegen, en je schuld is hooguit 2000: wat een rekening daarboven toevoegt, schrijft Dispatch af.',
+    'Reparaties kosten 0,8 credits per punt pantser en elk schot kost geld. Een onderdeel verkopen geeft terug wat je betaalde, dus iets uitproberen kost niets. Schuld belet kopen, nooit vliegen, en je schuld is hooguit 2000: wat een rekening daarboven toevoegt, schrijft Dispatch af.',
   'THE GARAGE': 'DE GARAGE',
   'A build must stay under the weight its legs can carry and within the energy its generator makes. L1 and R1 change the paint. Right opens your seven saved builds: room for one of each class, each listed by the class it is. Left opens the paint shop.':
     'Een build moet onder het gewicht blijven dat zijn benen dragen en binnen de energie van zijn generator. L1 en R1 wisselen de lak. Rechts: je zeven bewaarde builds, plek voor een van elke klasse, elk bij zijn klasse genoemd. Links: de spuiterij.',
@@ -264,12 +264,12 @@ export const REFERENCE_NL: Record<string, string> = {
   'CLASS WANTED': 'KLASSE GEZOCHT',
   'Once the board has grown a little, one of its three open contracts wants a class: its pay on the list ends in a plus, and its briefing says which. It can be won as anything; won in a build of that class it pays a quarter more. Turn to such a build on the Build row and the line lights up.':
     "Is het bord wat gegroeid, dan zoekt een van de drie open contracten een klasse: het loon in de lijst eindigt op een plus en de briefing zegt welke. Winnen kan met alles; in een build van die klasse betaalt het een kwart meer. Ga op de rij Build naar zo'n build en de regel licht op.",
-  'THE RANGE': 'HET PROEFVELD',
+  'THE TEST RANGE': 'HET PROEFVELD',
   "The simulator's second page (L1/R1) is the range: your own build against any machine you have met, up to three of the lighter ones, one of a mech or anything of the story's. A real fight: perks, bench work, Overdrive and difficulty all count. Nothing is billed, paid or counted; afterwards you see what it would have cost.":
     'Pagina twee van de simulator (L1/R1) is het proefveld: je eigen build tegen elke machine die je al zag, tot drie lichtere, of een mech of iets uit het verhaal. Een echt gevecht: perks, werkbank, Overdrive en moeilijkheid tellen mee. Niets wordt gerekend, betaald of geteld; daarna zie je wat het had gekost.',
   SPARRING: 'SPARREN',
-  "The range also lists your saved builds that can be flown. Pick one and the simulator flies it against you: the same parts, with the bench's work on them, in other colours, flown as its class is flown. The odds in the briefing say which of two builds beats the other before a shot is fired. Nothing is billed, paid or counted.":
-    'Het proefveld toont ook je bewaarde builds die kunnen vliegen. Kies er een en de simulator vliegt hem tegen je: dezelfde onderdelen, met het werk van de werkbank, in andere kleuren, gevlogen zoals zijn klasse vliegt. De kans in de briefing zegt welke build wint voor er een schot valt. Niets wordt gerekend, betaald of geteld.',
+  "The range also lists your saved builds that can be flown. Pick one and the simulator flies it against you: the same parts, with the bench's work, in other colours, flown as its class is flown. The odds are yours against it: perks, Overdrive and repairs are yours alone, so your own copy loses. Nothing is billed, paid or counted.":
+    'Het proefveld toont ook je bewaarde builds die kunnen vliegen. Kies er een en de simulator vliegt hem tegen je: dezelfde onderdelen, met het werk van de werkbank, in andere kleuren, gevlogen als zijn klasse. De kans is die van jou: perks, Overdrive en reparaties heb jij alleen, dus je eigen kopie verliest. Niets wordt gerekend, betaald of geteld.',
   'LEVELS AND PERKS': 'LEVELS EN PERKS',
   'Contracts won are experience. Every level gives a perk point; perks are bought on the pilot screen and kept for good. Medals are earned for what you do, pay a little, and are listed there too.':
     'Gewonnen contracten zijn ervaring. Elk level geeft een perkpunt; perks koop je op het pilotenscherm en hou je voorgoed. Medailles verdien je met wat je doet, ze betalen een beetje, en staan daar ook.',
@@ -278,21 +278,24 @@ export const REFERENCE_NL: Record<string, string> = {
     'Als het verhaal uit is kun je opnieuw beginnen. Je houdt credits, onderdelen, level, perks, medailles, de database en je arenarang. De eerste twee keer worden vijanden taaier en stijgt het loon; daarna blijft dat gelijk. De werkbank gaat elke keer een stap verder, tot vijf. Soms ligt er dan een tweede bod, van de andere kant.',
   DIFFICULTY: 'MOEILIJKHEID',
   'Story takes a fifth off enemy armour and firepower; Veteran adds a fifth. Change it in the options whenever you like. Fast battles play everything at two and a half times the speed.':
-    'Verhaal: een vijfde minder pantser en vuurkracht voor vijanden; Veteraan: een vijfde meer. Altijd te wijzigen in de opties. Snelle gevechten: alles tweeenhalf keer zo snel.',
+    'Verhaal: een vijfde minder pantser en vuurkracht voor vijanden; Veteraan: een vijfde meer. Altijd te wijzigen in de opties. Snel vechten: alles tweeënhalf keer zo snel.',
   GROUND: 'TERREIN',
   'Some places have a rule for both sides. Rain: all shed 4 more heat a turn. Furnace heat: 4 less. Dust: every shot 5 less likely to hit. Flood water: a boost dodges 6 less. Sealed vault: explosions do 15% less. Crosswind: kinetic hits 6 less likely. Clear air: beams 4 more likely. The briefing and the field name it.':
     'Sommige plekken hebben een regel voor beide kanten. Regen: ieder voert 4 hitte meer af per beurt. Ovenhitte: 4 minder. Stof: elk schot 5 minder trefkans. Vloedwater: een boost ontwijkt 6 minder. Dichte kluis: explosies doen 15% minder. Zijwind: kogels 6 minder trefkans. Klare lucht: stralen 4 meer. Briefing en veld noemen het.',
   'A wingman is hired in the briefing for a share of fee and experience, and fires once a round from round 2. In battle the Wing row gives orders for nothing: strike the strongest, strike what you fired at last, or cover you, which takes a share off every shot at you while they hold fire.':
     'Een wingman huur je in de briefing in voor een deel van loon en ervaring; die vuurt een keer per ronde vanaf ronde 2. In het gevecht geeft de rij Wing gratis orders: de sterkste aanvallen, aanvallen waar jij het laatst op vuurde, of jou dekken, wat van elk schot op jou een deel afhaalt zolang de wingman niet vuurt.',
   'THE GAUNTLET': 'DE GAUNTLET',
-  'ELITES AND RELICS': 'ELITES, RELIKWIEEN',
+  'ELITES AND RELICS': 'ELITES, RELIKWIEËN',
   'A run of floors in a stock frame, with none of your own parts or perks. Most floors have two doors: pick your fight. After each floor take one thing on offer: a part, a full service, or a boon for the run. Every fifth floor has a warden. Falling, retreating or closing the game on a floor ends the run. It pays by floors cleared.':
-    'Een reeks etages in een standaardframe, zonder je eigen onderdelen of perks. De meeste etages hebben twee deuren: kies je gevecht. Kies na elke etage iets uit het aanbod: onderdeel, groot onderhoud of reeksbonus. Elke vijfde etage heeft een bewaker. Vallen, Aftocht of afsluiten op een etage eindigt de reeks. Loon per gehaalde etage.',
+    'Een reeks etages in een standaardframe, zonder je eigen onderdelen of perks. De meeste etages hebben twee deuren: kies je gevecht. Kies na elke etage iets uit het aanbod: onderdeel, groot onderhoud of een bonus. Elke vijfde etage heeft een bewaker. Vallen, Aftocht of afsluiten op een etage eindigt de afdaling. Loon per gehaalde etage.',
   'An elite is a machine with a mark. ARMOURED: two fifths more armour. OVERCLOCKED: a quarter more damage. SWIFT: harder to hit. SHIELDED: a barrier, new every turn. The Gauntlet hides one behind some doors: beat it for one more thing on offer. Some open contracts have one, and pay more. A warden beaten leaves one of two relics.':
-    'Een elite is een machine met een merkteken. GEPANTSERD: twee vijfde meer pantser. OVERKLOKT: een kwart meer schade. SNEL: lastiger te raken. SCHILD: een barriere, elke beurt nieuw. In de Gauntlet zit er soms een achter een deur: versla hem voor extra aanbod. Soms ook in een open contract: meer loon. Na een bewaker kies je een van twee relikwieen.',
+    'Een elite is een machine met een merkteken. GEPANTSERD: twee vijfde meer pantser. OVERKLOKT: een kwart meer schade. SNEL: lastiger te raken. SCHILD: een barrière, elke beurt nieuw. In de Gauntlet zit er soms een achter een deur: versla hem voor extra aanbod. Soms ook in een open contract: meer loon. Na een bewaker kies je een van twee relikwieën.',
+  REMATCHES: 'REVANCHES',
+  'Whoever you have beaten in the arena will fight you again: a rank, the mirror, a cup, a master. The first rematch pays a quarter of the purse, each one after half of the one before. It is no contract: it earns no stripe, and the open board does not turn for it. A first win there is booked as a contract won, and turns the board.':
+    'Wie je in de arena hebt verslagen, vecht opnieuw: een rang, de spiegel, een beker, een meester. De eerste revanche betaalt een kwart van de pot, elke volgende de helft van de vorige. Het is geen contract: geen streep, en het open bord verandert er niet door. Een eerste zege daar telt als gewonnen contract, en het bord verandert.',
   'ARENA CUPS': 'ARENABEKERS',
-  'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, a quarter after.':
-    'Een beker is drie van de ranglijst achter elkaar, met alleen veldonderhoud ertussen. Hij opent zodra je zijn drie hebt verslagen. De pot is voor alle drie of voor geen: eerst volledig, daarna een kwart.',
+  'A cup is three of the ladder back to back, with only field service between. It opens once you have beaten its three. The purse is paid for all three or not at all: in full the first time, and as a rematch after.':
+    'Een beker is drie van de ranglijst achter elkaar, met alleen veldonderhoud ertussen. Hij opent zodra je zijn drie hebt verslagen. De pot is voor alle drie of voor geen: eerst volledig, daarna als revanche.',
   CROWNS: 'KRONEN',
   "A crown is kept for good, through every telling. It is marked on your page of classes, and its holder is called by the master's title there. The garage offers the holder the master's own paint. A contract on the board that asks for that class pays the holder half as much again, where it pays anyone else a quarter more.":
     'Een kroon houd je voorgoed, door elke vertelling heen. Hij staat op je klassenpagina, waar de houder de titel van de meester draagt. De garage biedt de houder de lak van de meester aan. Een contract op het bord dat die klasse zoekt, betaalt de houder de helft extra, waar het een ander een kwart extra betaalt.',
@@ -315,14 +318,20 @@ export const REFERENCE_NL: Record<string, string> = {
   'THE EIGHTH SEAT': 'DE ACHTSTE STOEL',
   "Under the seven masters is a seat that is no class's. Its keeper takes one challenge: from the pilot who holds all seven crowns, in any build. The keeper's machine fights three ways and changes as it is hurt. Take the seat and its frame, the Sovereign, is on the shop's list, and the keeper's paint is yours.":
     'Onder de zeven meesters staat een stoel die van geen klasse is. De houder neemt een uitdaging aan: van wie alle zeven kronen heeft, in welke build ook. Zijn machine vecht op drie manieren en wisselt bij schade. Pak de stoel en zijn frame, de Sovereign, staat in de winkel, en de lak van de houder is van jou.',
-  "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, a quarter after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.":
-    'De tweede pagina van de arena (L1/R1): zeven meesters, een per klasse, die alleen de kampioen aannemen. Elke build mag vechten, om een pot: eerst volledig, daarna een kwart. Versla een meester in een build van zijn eigen klasse en de kroon van die klasse is van jou. De briefing zegt welke build dat is.',
+  "The arena's second page (L1/R1): seven masters, one of each class, who take challenges from the champion. Any build may fight one, for a purse: in full the first time, and as a rematch after. Beat a master in a build of their own class and the crown of that class is yours. The briefing says which build that is.":
+    'De tweede pagina van de arena (L1/R1): zeven meesters, een per klasse, die alleen de kampioen aannemen. Elke build mag vechten, om een pot: eerst volledig, daarna als revanche. Versla een meester in een build van zijn eigen klasse en de kroon van die klasse is van jou. De briefing zegt welke build dat is.',
   CONTROLS: 'BESTURING',
+  'SHORT WORDS': 'AFKORTINGEN',
+  "AP: armour. WT: weight, against the LOAD its legs can carry. DRAIN: energy a part takes out of every turn. RES K/E/X: what it stops, in a hundred, of kinetic, energy and explosive damage. MOB: a pair of legs' mobility. A machine's Mobility is less the more it is loaded. OUTPUT: energy a turn. COOLING: heat shed a turn.":
+    'AP: pantser. GEW: gewicht, tegenover de LAST die de benen dragen. VERBR: energie die een deel elke beurt kost. RES K/S/E: wat het tegenhoudt, per honderd, van kinetisch, stralen en explosief. MOB: mobiliteit van de benen. De Mobiliteit van een machine zakt met de belading. VERMOGEN: energie per beurt. KOELING: hitte die per beurt weggaat.',
+  'SHORT WORDS: GUNS': 'AFKORTINGEN: WAPEN',
+  "DMG: damage. ACC: accuracy. EN, HEAT: what a shot costs. IMP: the push on the target's balance (STAB). AMMO: rounds, each one billed. AIM: added to hitting, by kind where it says K/E/X. FOCUS: the share taken off the penalty for aiming at a limb. THRUST: what a boost adds to dodging. BOOST COST: its share of a turn's energy.":
+    'SCH: schade. PREC: precisie. EN, HITTE: kosten per schot. DUW: duw tegen de balans van het doel (STAB). MUN.: munitie, elk schot betaald. TREF: telt op bij raken, per soort bij K/S/E. FOCUS: minder straf voor mikken op een ledemaat. STUWING: ontwijken bij een boost. BOOSTKOSTEN: deel van een beurt energie.',
   'D-pad: move. A: confirm. B: back. L1 and R1: turn pages, switch tabs, and in battle switch targets. R1 on your own turn sets off a full Overdrive. A or B cuts short the launch a contract opens with; with Fast Battles on there is none.':
     'D-pad: bewegen. A: kiezen. B: terug. L1/R1: bladeren, van tab en in gevecht van doelwit wisselen. R1 in je beurt zet een volle Overdrive in. A of B kapt de lancering af waarmee een contract opent; met Snel vechten aan is die er niet.',
 
   // --- Perks ---
-  Marksman: 'Scherpschutter',
+  Marksman: 'Vaste hand',
   '+4 hit chance with every weapon.': '+4 trefkans met elk wapen.',
   Reflexes: 'Reflexen',
   '+4 evasion while your legs work.': '+4 ontwijken zolang je benen werken.',
@@ -334,7 +343,7 @@ export const REFERENCE_NL: Record<string, string> = {
   '+1 field repair per contract.': '+1 veldreparatie per contract.',
   'Reinforced Plating': 'Versterkt pantser',
   '+6% armour on every part.': '+6% pantser op elk onderdeel.',
-  Haggler: 'Afdinger',
+  Haggler: 'Onderhandelaar',
   '+8% pay on every contract.': '+8% loon op elk contract.',
   Quartermaster: 'Kwartiermeester',
   '-15% ammunition and repair costs.': '-15% kosten voor munitie en reparaties.',
@@ -353,7 +362,7 @@ export const REFERENCE_NL: Record<string, string> = {
   'Six Figures': 'Zes cijfers',
   'Be paid 100000 credits for contracts, all told.': 'Verdien in totaal 100000 credits met contracten.',
   Liquid: 'Liquide',
-  'Hold 30000 credits at once.': 'Heb 30000 credits tegelijk.',
+  'Hold 30000 credits at once.': 'Bezit 30000 credits tegelijk.',
   'Scrap Dealer': 'Schroothandelaar',
   'Destroy 50 enemies.': 'Vernietig 50 vijanden.',
   "Breaker's Yard": 'Sloperij',
@@ -416,17 +425,17 @@ export const REFERENCE_NL: Record<string, string> = {
   'Full Cabinet': 'Volle prijzenkast',
   'Win all three arena cups.': 'Win alle drie de arenabekers.',
   'Past the Warden': 'Langs de bewaker',
-  'Clear 5 floors of the Gauntlet in one run.': 'Haal 5 etages van de Gauntlet in een reeks.',
+  'Clear 5 floors of the Gauntlet in one run.': 'Haal 5 etages van de Gauntlet in een afdaling.',
   'Deep Water': 'Diep water',
-  'Clear 10 floors of the Gauntlet in one run.': 'Haal 10 etages van de Gauntlet in een reeks.',
+  'Clear 10 floors of the Gauntlet in one run.': 'Haal 10 etages van de Gauntlet in een afdaling.',
   'No Floor': 'Bodemloos',
-  'Clear 20 floors of the Gauntlet in one run.': 'Haal 20 etages van de Gauntlet in een reeks.',
+  'Clear 20 floors of the Gauntlet in one run.': 'Haal 20 etages van de Gauntlet in een afdaling.',
   'Marked Down': 'Afgeprijsd',
   'Beat an elite in the Gauntlet.': 'Versla een elite in de Gauntlet.',
   'Ten Marks': 'Tien merktekens',
   'Beat 10 elites in the Gauntlet.': 'Versla 10 elites in de Gauntlet.',
   Reliquary: 'Reliekschrijn',
-  'Hold three relics in one run of the Gauntlet.': 'Heb drie relikwieen in een reeks van de Gauntlet.',
+  'Hold three relics in one run of the Gauntlet.': 'Heb drie relikwieën in een afdaling van de Gauntlet.',
   Licensed: 'Met licentie',
   'Reach pilot level 5.': 'Bereik pilotenlevel 5.',
   Veteran: 'Veteraan',
@@ -456,11 +465,11 @@ export const REFERENCE_NL: Record<string, string> = {
   'On Retainer': 'Vaste kracht',
   'Win 25 jobs.': 'Win 25 klussen.',
   'Second Opinion': 'Tweede mening',
-  'Win contracts as 3 classes of machine.': 'Win contracten als 3 klassen machine.',
+  'Win contracts as 3 classes of machine.': 'Win contracten in 3 klassen.',
   Specialist: 'Specialist',
-  'Win 25 contracts as one class of machine.': 'Win 25 contracten als een klasse machine.',
+  'Win 25 contracts as one class of machine.': 'Win 25 contracten in een klasse.',
   'Full Hangar': 'Volle hangar',
-  'Win 5 contracts as each of the 7 classes.': 'Win 5 contracten als elk van de 7 klassen.',
+  'Win 5 contracts as each of the 7 classes.': 'Win 5 contracten in elk van de 7 klassen.',
   'Field Guide': 'Veldgids',
   'Meet 20 kinds of enemy.': 'Ontmoet 20 soorten vijand.',
   'Know Your Enemy': 'Ken je vijand',
@@ -871,7 +880,7 @@ export const REFERENCE_NL: Record<string, string> = {
   "Gavel":
     "Hamer",
   "Meridian's vote for everybody who cannot attend. A barrier, a gavel that knocks you off balance, lien drones every fifth turn, three ways of fighting.":
-    "De stem van Meridian voor ieder die niet kan komen. Een barriere, een hamer die je uit balans slaat, Lien Drones om de vijf beurten, drie vechtwijzen.",
+    "De stem van Meridian voor ieder die niet kan komen. Een barrière, een hamer die je uit balans slaat, Lien Drones om de vijf beurten, drie vechtwijzen.",
   "THE SOCIETY":
     "DE SOCIETY",
   "The Meridian Pit Mutual Aid Society met in its hall for the first time in forty years, with nine checks counted. The Secretary took the minutes. Nobody owns the city now but the people in it, and they own a good deal more than the city.":

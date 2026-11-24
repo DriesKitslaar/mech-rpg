@@ -14,8 +14,16 @@ export const STRINGS = {
     fire: 'Fire', boost: 'Boost', guard: 'Guard', cool: 'Vent', module: 'Module', repair: 'Field Repair', auto: 'Auto Turn',
     endTurn: 'End Turn', retreat: 'Retreat',
   },
-  /** What an action costs other than energy, said beside it in the list. */
-  actionNotes: { repair: 'ends turn' },
+  /**
+   * What an action costs other than energy, said beside it in the list; and, beside a row that cannot be chosen,
+   * why: the machine is boosting or guarding (one of the two a turn), has vented, has used its module, has no
+   * field repairs left, has nothing damaged, has only damage past patching, and what stops a boost.
+   */
+  actionNotes: {
+    repair: 'ends turn',
+    boosting: 'boosting', guarding: 'guarding', vented: 'vented', used: 'used', spent: 'none left', whole: 'not needed', late: 'too late',
+    noEnergy: 'no energy', legs: 'legs gone', tracks: 'cannot boost', staggered: 'staggered', noTarget: 'no target',
+  },
   retreat: { question: 'Retreat? The contract is lost.', no: 'No', yes: 'Yes' },
   parts: { core: 'Core', legs: 'Legs', arms: 'Arms', head: 'Head' } satisfies Record<FrameSlot, string>,
   meters: { energy: 'EN', heat: 'HEAT', ammo: 'AMMO', unlimited: '--', repairs: 'REPAIRS' },
@@ -25,7 +33,8 @@ export const STRINGS = {
     targetOf: (n: number, of: number) => `TARGET ${n}/${of}  L1/R1`,
   },
   // `fork` is written over the machine a fork's hit would leap on to.
-  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL', kills: 'DESTROYS', fork: 'FORK' },
+  // `passedOn` is the row of a part that is already destroyed, while aiming: a shot at it goes on to the core, for half.
+  preview: { hit: 'HIT', damage: 'DMG', all: 'ALL', kills: 'DESTROYS', fork: 'FORK', passedOn: (part: string) => `${part}: gone, half to core` },
   weaponMenu: {
     charge: 'CHARGE', ready: 'READY',
     // Of a surge, beside the energy it would take now; of a spool, the shots it has wound up to.
@@ -144,6 +153,8 @@ export const STRINGS = {
     spendFirst: 'Second Wind: spend your turn first.',
     // Announced in passing when the pilot's level opens one.
     opened: 'OVERDRIVE OPEN',
+    // The announcement's second line when more open at once than their names have room for.
+    openedMany: (n: number) => `${n} Overdrives`,
     level: (n: number) => `LV ${n}`, fitted: 'FITTED', hint: 'A: fit   L1/R1: page   B: back',
   },
   // What a hired wingman can be told, on the pilot's turn, for nothing.
@@ -167,9 +178,22 @@ export const STRINGS = {
   // Said over the field in a new pilot's first battles: which button does what at this step.
   coach: {
     action: 'UP/DOWN: choose what to do   A: confirm',
-    weapon: 'Pick a weapon with A.   B: go back',
-    target: 'Pick the part to hit with A. The core kills.',
-    repairPart: 'Pick the part to patch with A.   B: go back',
+    weapon: 'UP/DOWN: pick a weapon   A: aim it   B: back',
+    target: 'UP/DOWN: pick a part   A: fire. The core kills.',
+    repairPart: 'UP/DOWN: pick a part   A: patch it   B: back',
+  },
+  // Under that line while a new pilot chooses what to do: what the row under the cursor is for. Each opens with the row's name.
+  coachRows: {
+    fire: 'FIRE: pick a weapon, then a part to hit. Each weapon fires once a turn.',
+    boost: 'BOOST: you are much harder to hit until your next turn. Not with Guard.',
+    guard: 'GUARD: stops 40% of every hit on you until your next turn. Not with Boost.',
+    cool: 'VENT: sheds heat at once. Pass 100 heat and your next turn is lost.',
+    module: 'MODULE: the module you fitted. It costs no energy. Once a turn.',
+    repair: 'FIELD REPAIR: patches one part. It takes the rest of your turn.',
+    order: 'WINGMAN: tells your wingman what to shoot at next.',
+    endTurn: 'END TURN: the enemy moves. You get energy back and shed some heat.',
+    auto: 'AUTO TURN: the mech plays this one turn for you.',
+    retreat: 'RETREAT: leave the battle. The contract is lost.',
   },
   titleScreen: {
     tagline: 'Every contract pays. Not every pilot collects.',
@@ -181,7 +205,9 @@ export const STRINGS = {
     progress: (done: number, cycle: number, time: string) => `${done} done  ${cycle > 0 ? `C${cycle + 1}  ` : ''}${time}`,
   },
   // The frames a new pilot chooses between. Their figures go by the garage's own names.
-  starter: { heading: 'CHOOSE A FRAME', hint: 'A: take this one   B: back', credits: 'Credits' },
+  // The last of its figures is what the pilot has in hand beside it, and is worded so that it does not read as a price.
+  // `later` stands under the figures: the choice is where a pilot starts, and not what they stay in.
+  starter: { heading: 'CHOOSE A FRAME', hint: 'A: take this one   B: back', credits: 'Plus credits', later: 'Any part can be changed later.' },
   callsign: {
     heading: 'YOUR CALLSIGN', hint: 'A: pick   B: erase', del: 'DEL', ok: 'OK',
     rows: ['ABCDEFGHI', 'JKLMNOPQR', 'STUVWXYZ0', '123456789'],
@@ -242,11 +268,35 @@ export const STRINGS = {
     messages: 'Messages', database: 'Database', training: 'Training', options: 'Options', cycle: 'New Cycle', archive: 'Archive', noRank: '-', bestRank: 'best rank',
     credits: 'CREDITS', battlesWon: 'CONTRACTS WON', level: (n: number) => `LV ${n}`, contracts: 'CONTRACTS', reward: 'pays',
     unread: (n: number) => `${n} new`, points: (n: number) => (n === 1 ? '1 point' : `${n} points`),
+    // Beside Training: the drills that are open and not passed.
+    drills: (n: number) => `${n} open`,
+    // Under the list of contracts: what kind of row is in hand. Each fits the width of the list's panel in small letters.
+    kinds: {
+      story: 'STORY: the next step of the war',
+      choice: 'STORY: one client, and the others go',
+      verdict: 'STORY: the ending. Fly one of these',
+      side: 'SIDE WORK: flown once, and optional',
+      open: 'OPEN: a new offer after every win',
+      asks: 'OPEN: + pays more in the class it asks',
+      job: 'JOB: asks for more than a win',
+      account: 'ACCOUNT: stays here until you win it',
+      swarm: 'SWARM: wave on wave, paid by the head',
+      patrol: 'PATROL: always on offer, pays little',
+      lent: 'CANNOT DEPLOY: patrol only, lent mech',
+      archive: 'ARCHIVE: fly a finished contract again',
+      // (What a replay can change is the best rank on record: nothing of the story.)
+      replay: 'REPLAY: pays less, for a better rank',
+      // (In a later telling: a contract of the story or beside it that was never won in any telling. Its row ends in a star.)
+      unflown: 'NEW: the * marks one you never won',
+    },
     locked: 'Locked', opensAfter: (title: string) => `after ${title}`, campaignDone: 'The war is over. The work is not.',
     cycleLabel: (n: number) => `CYCLE ${n + 1}`,
     // What starting over keeps, and what the cycle that would begin changes: tougher enemies and better pay up to the third
     // telling, a step more at the bench up to the fourth.
+    // What stays, what leaves the list of contracts until the story brings it back, and what the next telling is like.
     cycleQuestion: (next: number): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
+      // (The duels that start over are the ones that are side work: what was won in the arena stays.)
+      'Side work and its duels, and', 'the Archive, start over too.',
       ...(next <= 2 ? ['Tougher enemies, better pay,', 'one more step at the bench.']
         : next === 3 ? ['Enemies are as tough as now.', 'The bench has one step left.']
           : ['Enemies are as tough as now,', 'and the pay is the same.'])],
@@ -254,9 +304,13 @@ export const STRINGS = {
   },
   arena: {
     heading: 'ARENA', client: 'Arena Office', win: 'The crowd got what it paid for. So did you.',
-    rank: (n: number) => `RANK ${n}`, purse: 'PURSE', rematch: 'REMATCH',
+    rank: (n: number) => `RANK ${n}`, purse: 'PURSE',
+    // (Heads the briefing of a bout that was won before.)
+    rematchTag: 'REMATCH: no contract, and a purse that halves',
     next: 'NEXT OPPONENT', beaten: 'BEATEN', locked: 'LOCKED', champion: 'You are the champion of Varn.',
     yourRank: (n: number, of: number) => (n === 0 ? 'UNRANKED' : `YOUR RANK ${n}/${of}`), fight: 'ARENA FIGHT', back: 'A: challenge   L1/R1: page   B: back',
+    // (Under a row that takes no challenge: A does nothing there, and the hint does not say it does.)
+    backLocked: 'L1/R1: page   B: back',
     apex: 'There is nobody left to beat. The back room drinks to you.',
     // The arena's two pages: the ladder, and the masters who stand apart from it.
     pages: { ladder: 'LADDER', masters: 'MASTERS' },
@@ -308,6 +362,8 @@ export const STRINGS = {
   },
   pilot: {
     heading: 'PILOT', level: 'LEVEL', xp: 'XP', next: 'NEXT LEVEL', maxLevel: 'MAX LEVEL', points: 'PERK POINTS',
+    // The announcement of a level gained: its heading, and the level it names.
+    levelUp: 'LEVEL GAINED', levelReached: (n: number) => `Level ${n}`,
     hint: 'A: spend a point   L1/R1: page   B: back', pageHint: 'L1/R1: page   B: back',
     noPoints: 'No perk points. Win contracts to level up.', maxed: 'This perk is at its highest rank.',
     pages: { perks: 'PERKS', drive: 'DRIVE', medals: 'MEDALS', record: 'RECORD', classes: 'CLASS' },
@@ -362,8 +418,15 @@ export const STRINGS = {
     },
     garage: (name: string, tag: string) => `${name.toUpperCase()}: ${tag}`,
     // A build of the kind under the cursor that the shop can supply now, and what of it is still to be bought.
-    advice: 'ONE TO FLY NOW', owned: 'You own all of it', toBuy: (credits: number) => `Still to buy: ${credits} c`,
+    advice: 'ONE TO FLY NOW', toBuy: (credits: number) => `Still to buy: ${credits} c`,
     unsold: 'Not all of it is sold yet',
+    // What A does on the page, where it does something: buys what is missing of that build and fits it, or only fits it.
+    follow: (credits: number) => (credits > 0 ? `A: buy for ${credits} c and fit` : 'A: fit this build'),
+    // (Where the build named is the one on the floor, and which of the saved builds holds it.)
+    flying: 'YOU FLY THIS BUILD', flyingKept: (n: number) => `YOU FLY THIS: BUILD ${n}`,
+    // The question before it is done.
+    ask: (credits: number) => (credits > 0 ? `Buy what is missing for ${credits} c?` : 'Fit this build?'),
+    askNote: 'It takes the place of the build you fly.', no: 'No', yes: 'Yes',
   },
   medals: {
     heading: 'MEDALS', earned: 'MEDAL EARNED', earnedMany: 'MEDALS EARNED', count: (n: number) => `${n} medals`, pay: (credits: number) => `+${credits} c`, held: 'EARNED', pays: (credits: number) => `Pays ${credits} c`,
@@ -398,6 +461,8 @@ export const STRINGS = {
     // What has been found: papers and brass lamp checks. One not found has a clue where its text will be.
     found: (n: number, of: number) => `FOUND ${n}/${of}`, checks: (n: number) => `LAMP CHECKS ${n}`, check: 'Check', notFound: 'Not found yet.',
     findToast: 'FOUND', newFinds: (n: number) => `${n} new finds`,
+    // Over the name of a find that an answer hands over and the pilot held already.
+    heldToast: 'ALREADY FOUND',
     // The people of Varn the pilot has come across.
     known: (n: number, of: number) => `KNOWN ${n}/${of}`, broughtIn: 'Brought in',
     // The pilots of accounts (see grudge.ts), who have a page here from the moment their account begins: what one is
@@ -422,7 +487,7 @@ export const STRINGS = {
   },
   training: {
     heading: 'TRAINING', client: 'Training Simulator', pays: 'PAYS', passed: 'PASSED', locked: 'LOCKED', open: 'OPEN',
-    count: (n: number, of: number) => `PASSED ${n}/${of}`, hint: 'A: briefing   B: back',
+    count: (n: number, of: number) => `PASSED ${n}/${of}`, hint: 'A: briefing   L1/R1: page   B: back',
     lockedNote: 'The simulator opens this drill once Dispatch has finished introducing you.',
     tag: 'TRAINING: a lent mech in the simulator. It costs nothing.',
     won: 'DRILL PASSED', lost: 'DRILL FAILED',
@@ -432,10 +497,10 @@ export const STRINGS = {
     rangeBriefing: (fielded: string) => `The simulator fields ${fielded} against your own machine, as the book has it and as hard as the game is set.`,
     rangeFree: 'Nothing here is billed, paid or counted. Afterwards you see what a real flight would have cost.',
     rangeDebrief: 'The simulator resets. Your machine is as it was.',
-    rangeTag: 'RANGE: your own mech in the simulator. Nothing is billed or counted.',
+    rangeTag: 'TEST RANGE: your own mech in the simulator. Nothing is billed or counted.',
     rangeWon: 'RANGE CLEARED', rangeLost: 'SHOT DOWN',
     rangeEmpty: 'Nothing met yet. Fly a contract and come back.',
-    rangeHint: 'LEFT/RIGHT: how many   A: briefing   B: back',
+    rangeHint: 'LEFT/RIGHT: how many   A: briefing   L1/R1: page   B: back',
     rangeShut: (why: string) => `CLOSED: your mech cannot deploy (${why}).`,
     rangeCount: (n: number) => `x${n}`,
     // Where a contract's briefing says what it pays.
@@ -479,6 +544,17 @@ export const STRINGS = {
       standard: 'The game as it was balanced.',
       veteran: 'Enemies have 20% more armour and firepower.',
     },
+    // What each of the other rows is, under the list while the cursor is on it.
+    help: {
+      sfx: 'The sounds of the game: shots, hits, menus.',
+      music: 'The music. The Database has a jukebox.',
+      rumble: 'The handheld shakes with a hit, if it can.',
+      fastBattles: 'Battles play 2.5 times as fast, with no launch.',
+      textSpeed: 'How fast briefings and talk are written out.',
+      language: 'The language of everything on the screen.',
+      credits: 'Watch the end roll once more.',
+      title: 'Back to the title. The game is kept as it is.',
+    } as Record<string, string>,
     hint: 'A: change   B: back',
   },
   buildErrors: {
@@ -504,6 +580,8 @@ export const STRINGS = {
     // The build the contract is taken in: the row in the briefing's menu, which build it is, and how to turn to another.
     build: 'Build', buildOnFloor: 'CURRENT BUILD', buildSaved: (slot: number) => `SAVED BUILD ${slot}`,
     buildHint: 'LEFT/RIGHT: another build', buildNone: 'Save builds in the Garage to choose one here.',
+    // (A saved build that cannot be chosen: a part of it was sold, or it may not deploy as it is.)
+    buildShort: (slot: number, part: string) => `BUILD ${slot}: ${part} missing`, buildGrounded: (slot: number) => `BUILD ${slot} cannot deploy`,
     // How the contract is likely to go in that build: what the game's own pilot wins of it, flight by flight as it is counted.
     odds: (won: number, played: number) => `ODDS ${won}/${played}`, oddsWait: 'ODDS ..',
     oddsNote: 'this contract flown on Auto Turn',
@@ -528,9 +606,15 @@ export const STRINGS = {
   },
   messagesScreen: { heading: 'MESSAGES', isNew: 'NEW', from: 'FROM', empty: 'No messages', back: 'B: back' },
   ending: { continue: 'Press A to return to headquarters' },
-  scene: { continue: 'Press A to continue', yourCall: 'YOUR CALL', answer: 'UP/DOWN: choose   A: answer. It stands.' },
+  scene: {
+    continue: 'Press A to continue', yourCall: 'YOUR CALL', answer: 'UP/DOWN: choose   A: answer. It stands.',
+    // (On a page of story that was told in an earlier telling.)
+    skip: 'B: skip, told before',
+  },
   settlement: {
-    won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Reward', ammo: 'Ammunition', repairs: 'Repairs',
+    won: 'CONTRACT COMPLETE', lost: 'CONTRACT FAILED', reward: 'Fee', ammo: 'Ammunition', repairs: 'Armour repair',
+    // (A bout of the arena won before and fought again: it is billed, and is no contract.)
+    rematchWon: 'REMATCH WON', rematchLost: 'REMATCH LOST',
     // The heading of a duel that took a master's crown, and of the one that took the eighth seat.
     crowned: 'THE CROWN IS YOURS', seated: 'THE SEAT IS YOURS',
     // The heading of a meeting won with the pilot of an account: which of its meetings it was, and of the one that closed it.
@@ -539,6 +623,8 @@ export const STRINGS = {
     // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
     askBonus: (name: string) => `${name} bonus`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
+    // Beside the balance: what the medals earned with this bill paid, which the net does not count.
+    medals: (credits: number) => `with medals +${credits}`,
     // On the bill of a fight on the range, where the net stands on one that is paid: what it would have come to.
     wouldCost: 'WOULD HAVE COST',
     relief: (credits: number) => `Debt limit reached: ${credits} written off`,
@@ -550,6 +636,8 @@ export const STRINGS = {
     // The bar is as long as the machine's own limit, so this is so in a machine whose limit is not the usual one.
     heat: 'You overheated and lost a turn. Vent before the heat bar is full.',
     stance: 'You never used Boost or Guard. Boost makes you hard to hit; Guard blunts what lands.',
+    // (The other side kept most of its armour: the machine was the reason, and not how it was flown.)
+    outmatched: 'You barely marked them: that one is beyond this machine. Better parts, the bench or another build; a briefing gives the odds.',
     repairs: 'You went down with field repairs unused. A repair ends your turn: fire, then patch.',
     time: 'The fight ran out of time. Bring more firepower, and aim at what the contract names.',
     patrol: 'Short of parts? The patrol always pays, and a second weapon changes most fights.',
@@ -563,15 +651,17 @@ export const STRINGS = {
     rightHand: 'Right Hand', leftHand: 'Left Hand', shoulder: 'Shoulder',
   },
   garage: {
-    heading: 'GARAGE', empty: 'Empty', none: '(none)', inUse: 'In use', fitted: '*',
+    heading: 'GARAGE', empty: 'Empty', none: 'Empty', inUse: 'In use', fitted: '*',
     weight: 'Weight', energy: 'Energy', mobility: 'Mobility', armour: 'Armour', stability: 'Stability', cooling: 'Cooling',
     evasion: 'Boost evade', volley: 'Volley EN', back: 'B: back',
-    factoryPaint: 'Factory', paint: (name: string) => `L1/R1 PAINT: ${name}`,
+    factoryPaint: 'Factory', paint: (name: string) => `L1/R1: paint ${name}`,
     // Which way the panel's other pages are, at the foot of the parts: the paint shop to the left, the saved builds to the right.
-    pages: 'LEFT: PAINT  RIGHT: BUILDS',
+    pages: 'LEFT: paint shop   RIGHT: builds',
+    // At the foot of the page of saved builds.
+    buildsHint: 'A: load or save   B: back',
     // The page of paint: the paint that is worn, and the five things a mix of the pilot's own sets (see core/mix.ts).
     mixer: {
-      heading: 'PAINT SHOP', change: 'LEFT/RIGHT: CHANGE',
+      heading: 'PAINT SHOP', change: 'LEFT/RIGHT: change',
       rows: { paint: 'PAINT', hue: 'ARMOUR', finish: 'FINISH', shade: 'SHADE', trim: 'TRIM', glow: 'GLOW' },
       finish: ['Steel', 'Matte', 'Rich', 'Vivid'], shade: ['Pale', 'Light', 'Middle', 'Dark', 'Deep'], glow: ['Soft', 'Clear', 'Bright'],
       ready: 'A paint as it comes. Choose MIX 1, 2 or 3 to mix your own.',
@@ -584,7 +674,7 @@ export const STRINGS = {
       rightHand: 'R.HAND', leftHand: 'L.HAND', shoulder: 'SHLDR',
     },
     // The bench: a part made a step better for credits.
-    toBench: 'R1: THE BENCH', bench: 'THE BENCH', benchStep: (step: number, cap: number) => `Step ${step} of ${cap}`,
+    toBench: 'R1: the bench', bench: 'THE BENCH', benchStep: (step: number, cap: number) => `Step ${step} of ${cap}`,
     tune: (step: number) => `Tune to +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `You have ${credits} c`,
     benchFigures: { armour: 'Armour', damage: 'Damage', output: 'Output' },
     benchAtLimit: 'No further this cycle', benchAtEnd: 'As far as it goes', benchShort: 'Not enough credits',
@@ -592,20 +682,28 @@ export const STRINGS = {
   shop: {
     heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'c',
     tabs: {
-      head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', booster: 'Bst', fcs: 'FCS', module: 'Mod',
+      head: 'Head', core: 'Core', arms: 'Arms', legs: 'Legs', generator: 'Gen', booster: 'Boost', fcs: 'FCS', module: 'Mod',
       hand: 'Hand', shoulder: 'Shldr',
     },
     bought: (name: string) => `Bought ${name}`,
     sold: (name: string, price: number) => `Sold ${name} +${price}`,
     cannotAfford: 'Not enough credits', inUse: 'In use', nothingToSell: 'Nothing to sell here',
     lastWeapon: 'Last weapon', needWeapon: 'You need at least one weapon',
-    hint: 'A trade  L1/R1 category  LEFT/RIGHT buy/sell list  B back', fitHint: 'Fit it in the Garage.',
+    hint: 'A: trade   L1/R1: category   LEFT/RIGHT: buy or sell   B: back', fitHint: 'Fit it in the Garage.',
+    // Under the hint: where AP, WT, DRAIN and the rest are explained, by the names the hub and the database have for it.
+    wordsHint: 'What the short words mean: Database, MANUAL',
+    // (Announced when a duel won, or the seat taken, puts a frame on the shelf.)
+    shelfToast: 'NEW IN THE SHOP', shelfParts: (frame: string, parts: number) => `${frame}: ${parts} parts`,
+    // (Selling a part that one of the saved builds is made of: before it is sold, and after.)
+    neededBy: (slot: number) => `Saved build ${slot} needs this part`, missedBy: (slot: number) => `Saved build ${slot} is a part short now`,
   },
   partInfo: {
     ap: 'AP', resist: 'RES K/E/X', weight: 'WT', drain: 'DRAIN', aim: 'AIM', capacity: 'LOAD', mobility: 'MOB',
     output: 'OUTPUT', cooling: 'COOLING', damage: 'DMG', accuracy: 'ACC', energy: 'EN', heat: 'HEAT', ammo: 'AMMO',
     impact: 'IMP', unlimited: 'unlimited', perShot: '/shot',
     thrust: 'THRUST', boostCost: 'BOOST COST', aimByType: 'AIM K/E/X', focus: 'FOCUS', uses: 'USES',
+    // The letter of each kind of damage, as `resist` and `aimByType` list them: for a figure that is of one kind alone.
+    typeLetters: { kinetic: 'K', energy: 'E', explosive: 'X' },
     guard: (blocked: number) => `GUARD: blocks ${blocked}%`, guardShort: 'GUARD',
     versus: (name: string) => `VS ${name}`,
     charge: 'CHARGE: fires a turn later', melee: 'MELEE: spends your Boost',
@@ -619,7 +717,7 @@ export const STRINGS = {
       twin: () => 'TWIN: fires twice',
       pierce: () => 'PIERCE: halves resistance',
       thermal: (power: number) => `THERMAL: +${power} heat on target`,
-      drain: (power: number) => `DRAIN: -${power} energy on target`,
+      drain: (power: number) => `DRAIN: -${power} EN on target`,
       burst: (power: number) => `BURST: fires ${power} times`,
       salvo: () => 'SALVO: hits every enemy',
       // The five kinds that ask something of the machine that carries them. A spool's line is given the most it fires.
@@ -631,7 +729,7 @@ export const STRINGS = {
     },
     legTypes: {
       biped: '', reverse: 'REVERSE: boost +8 evasion', quad: 'QUAD: steady, shoulder +6',
-      tank: 'TRACKS: no boost, guard 50%', hover: 'HOVER: cheap boost, unsteady',
+      tank: 'TRACKS: no boost, guard 50%', hover: 'HOVER: cheap boost, shaky',
     },
     modules: {
       coolant: (p: number) => `Vents ${p} heat at once.`,

@@ -160,7 +160,7 @@ export class OptionsScreen implements Screen {
     const selected = this.list.selected?.id;
     const words = selected === 'difficulty' ? O.difficultyHelp[this.app.settings.difficulty]
       : selected === 'swapAB' ? O.swapHelp : selected === 'calm' ? O.calmHelp : selected === 'detail' ? O.detailHelp
-        : selected === TITLE && this.warned ? O.unsavedHelp : null;
+        : selected === TITLE && this.warned ? O.unsavedHelp : selected !== undefined ? O.help[selected] ?? null : null;
     if (words) drawText(ctx, words, LOGICAL_W / 2, help, { align: 'center', color: COLORS.text, size: 10 });
     drawText(ctx, O.hint, LOGICAL_W / 2, help + 14, { align: 'center', color: COLORS.dim });
   }

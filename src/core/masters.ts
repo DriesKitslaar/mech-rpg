@@ -1,5 +1,5 @@
 import { ARCHETYPES, CLASS_AI, type Archetype } from './archetype';
-import { CHAMPION_RANK } from './arena';
+import { CHAMPION_RANK, asRematch, rematchPurse } from './arena';
 import { ASK_BONUS } from './board';
 import type { Mission } from './campaign';
 import type { Settlement } from './economy';
@@ -12,7 +12,7 @@ import type { Build, EnemyDef } from './types';
  * pilot who beats a master in a machine of the master's own class takes that class's crown.
  */
 
-/** What a master's duel pays the first time that master is beaten; a quarter of it after. */
+/** What a master's duel pays the first time that master is beaten; a rematch's share of it after. */
 export const MASTER_PURSE = 9000;
 
 export interface Master {
@@ -47,7 +47,7 @@ export const isMaster = (mission: Pick<Mission, 'id'>): boolean => parseMaster(m
 /** The masters take challenges from the champion of the ladder, and from nobody before. */
 export const mastersOpen = (state: Pick<GameState, 'arenaRank'>): boolean => state.arenaRank >= CHAMPION_RANK;
 
-type Kept = Pick<GameState, 'masters' | 'crowns'>;
+type Kept = Pick<GameState, 'masters' | 'crowns' | 'rematches'>;
 /** Whether the master of a class has been beaten, in whatever machine. */
 export const masterBeaten = (state: Kept, kind: Archetype): boolean => (state.masters ?? []).includes(kind);
 /** Whether the pilot holds the crown of a class: its master beaten in a machine of that class. */
@@ -60,8 +60,8 @@ export const CROWN_BONUS = 0.5;
 /** The share of the fee a contract that asks for a class adds for this pilot, won as that class: the crown's for its holder, the board's for anyone else. */
 export const askBonus = (state: Kept, kind: Archetype): number => (crownHeld(state, kind) ? CROWN_BONUS : ASK_BONUS);
 
-/** The purse of a duel with the master of a class: in full until that master has been beaten, a quarter after. */
-export const masterPurse = (state: Kept, kind: Archetype): number => (masterBeaten(state, kind) ? Math.round(MASTER_PURSE / 4) : MASTER_PURSE);
+/** The purse of a duel with the master of a class: in full until that master has been beaten, a rematch's after. */
+export const masterPurse = (state: Kept, kind: Archetype): number => (masterBeaten(state, kind) ? rematchPurse(state, masterId(kind), MASTER_PURSE) : MASTER_PURSE);
 
 /** A master as the battle fields them: their machine part for part, in their paint, flown as their class is. */
 export function masterEnemy(master: Master): EnemyDef {
@@ -77,6 +77,8 @@ export function masterMission(state: Kept, master: Master, text: { client: strin
     id: masterId(master.kind), phase: 'patrol', title: master.name, client: text.client,
     briefing: [master.style, `"${master.taunt}"`], debrief: text.win, reward: masterPurse(state, master.kind),
     battles: [{ enemies: [masterId(master.kind)], background: 'bg-arena' }], scale: master.scale, crown: master.kind,
+    // A master beaten before is a rematch whatever is flown: the crown, where it is still to be had, is all it is fought for besides the purse.
+    ...asRematch(masterBeaten(state, master.kind)),
   };
 }
 

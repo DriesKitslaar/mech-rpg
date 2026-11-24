@@ -91,10 +91,12 @@ describe('the lot', () => {
     expect(game.inventory).toEqual(Object.fromEntries(Object.values(starter.build).map((part) => [part, 1])));
     expect(game.credits).toBe(starter.credits);
     expect(game.callsign).toBe('PIL');
-    // In every other way it is the game a new pilot always got (what it has heard by now is the title's music).
-    const { build: _build, inventory: _inventory, credits: _credits, settings: _settings, heard: _heard, ...rest } = game;
+    // In every other way it is the game a new pilot always got (what it has heard by now is the title's music, and
+    // the one letter that has come is the one every new pilot gets).
+    const { build: _build, inventory: _inventory, credits: _credits, settings: _settings, heard: _heard, mail, ...rest } = game;
     const { build: _b, inventory: _i, credits: _c, settings: _s, ...usual } = newGame(CATALOG, STARTER_BUILD, 'PIL');
     expect(rest).toEqual(usual);
+    expect(mail).toEqual(['welcome']);
     skipScenes(app);
     expect(snap(app)).toMatchObject({ screen: 'hub', credits: starter.credits });
     expect(snap(app).build).toEqual(starter.build);
@@ -104,8 +106,9 @@ describe('the lot', () => {
     const { app, store } = makeApp();
     press(app, 'confirm', 'confirm', 'confirm');
     expect(snap(app)).toMatchObject({ screen: 'scene', credits: 1200, callsign: 'PILOT' });
-    const { heard: _heard, ...game } = savedGame(store);
+    const { heard: _heard, mail, ...game } = savedGame(store);
     expect(game).toEqual({ ...newGame(CATALOG, STARTER_BUILD), settings: game.settings });
+    expect(mail).toEqual(['welcome']);
   });
 
   test('B goes back to the name as it was typed, with the cursor on OK; nothing has been kept, and the lot opens on the first frame again', () => {

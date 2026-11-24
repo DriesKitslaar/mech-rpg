@@ -56,6 +56,13 @@ const UNCOUNTED = ['drill-', 'range-', 'gauntlet-'];
 export const countsForClass = (mission: Pick<Mission, 'id' | 'loaner'>): boolean =>
   mission.loaner === undefined && !UNCOUNTED.some((prefix) => mission.id.startsWith(prefix));
 
+/**
+ * Whether winning this is a win for the class of the build it is flown in, towards that class's
+ * stripes: a contract flown in the pilot's own build, and a bout of the arena the first time it is
+ * won. A rematch is flown as a class (a crown can be taken in one) and is no win for it.
+ */
+export const earnsStripes = (mission: Pick<Mission, 'id' | 'loaner' | 'rematch'>): boolean => countsForClass(mission) && mission.rematch !== true;
+
 /** A stripe that was earned: whose it is, which of the class's three, and whether it was the one that brought a perk point. */
 export interface Earned { kind: Archetype; stripe: number; point: boolean }
 
