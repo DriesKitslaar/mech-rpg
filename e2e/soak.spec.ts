@@ -3,6 +3,7 @@ import { ARCHETYPES } from '../src/core/archetype';
 import { completeMission } from '../src/core/campaign';
 import { BUILD_SLOTS, buy, equip, newGame, type GameState } from '../src/core/game';
 import { meetingsWon, type Grudge } from '../src/core/grudge';
+import { MEDAL_PAY } from '../src/core/medals';
 import { DEFAULT_MIXES, MIX_KEYS, isMix, mixId, setMix, stepMix, type Mix } from '../src/core/mix';
 import { xpForLevel } from '../src/core/pilot';
 import { stripesEarned } from '../src/core/stripes';
@@ -11,6 +12,7 @@ import type { Build } from '../src/core/types';
 import { ARCHETYPE_BUILDS } from '../src/content/archetypeBuilds';
 import { GRUDGE_FACES } from '../src/content/board';
 import { FINDS } from '../src/content/finds';
+import { MEDALS } from '../src/content/medals';
 import { MISSIONS } from '../src/content/missions';
 import { STRINGS_NL } from '../src/content/nl/strings';
 import { CATALOG, STARTER_BUILD } from '../src/content/parts';
@@ -42,10 +44,12 @@ const PHASE = Object.fromEntries(MISSIONS.map((m) => [m.id, m.phase as string]))
 const AFTER_THE_WAR = [...ACT_ONE, 'choice-lumen', 'lumen-3', 'lumen-4', 'lumen-5', 'finale-lumen', 'audit-1', 'audit-2', 'audit-3', 'verdict-enforce'];
 
 type Seen = Snap & {
-  list?: string; busy?: boolean; page?: string; launch?: unknown; gauntlet?: { floor: number | null; drafting: boolean }; briefing?: { turned?: boolean }; toasts?: string[];
+  list?: string; busy?: boolean; page?: string; launch?: unknown; gauntlet?: { floor: number | null; drafting: boolean }; toasts?: string[];
+  /** A briefing: whether it has turned to the other side's offer; the terms showing, where the contract takes them; and the odds as far as counted. */
+  briefing?: { mission?: string; turned?: boolean; terms?: { level: number; held: boolean; waiting: boolean } | null; odds?: { won: number; done: boolean } | null };
   player?: { heat: number };
   /** The account that is open, and on a bill the meeting it is of. */
-  grudge?: Grudge | null; settlement?: { account?: { name: string; meeting: number; closed: boolean } | null };
+  grudge?: Grudge | null; settlement?: { net: number; relief?: number; account?: { name: string; meeting: number; closed: boolean } | null };
 };
 
 /**
@@ -171,6 +175,8 @@ interface Played {
   kinds: string[];
   /** The notices of an account taken from the list, and the bills that were a meeting's: whose, which, and whether it closed the account. */
   meetings: number; bills: string[];
+  /** For the player who raises terms: the terms each open contract was taken on, the bills looked at, and every one that did not add up. */
+  raised: number[]; summed: number; sums: string[];
 }
 
 /**
@@ -184,9 +190,12 @@ interface Played {
  * cool, and aims and fires the last weapon on it that can be fired (the one on the shoulder) for themselves, at the
  * second machine where there is one; Auto Turn has the rest of the turn. With `account`, the notice of an account is
  * taken before anything else whenever it is on offer, and while one is open and not yet due the board's own contracts
- * are flown to wait it through. It stops when all of that is done or its time is up.
+ * are flown to wait it through. With `raise`, the board's own contracts are flown once the rest is done, each on the
+ * highest terms whose counted odds are good and whose bond is held, and every bill is added up: the balance after it
+ * is the balance before, its net, what the debt limit wrote off and what medals paid. It stops when all of that is
+ * done or its time is up.
  */
-async function play(page: Page, prefer: string[], minutes: number, other = false, seat = false, hand = false, account = false): Promise<Played> {
+async function play(page: Page, prefer: string[], minutes: number, other = false, seat = false, hand = false, account = false, raise = false): Promise<Played> {
   const tried = new Map<string, number>();
   const screens = new Set<string>();
   const rooms = ['gauntlet', 'training', 'arena', 'garage', 'shop', 'pilot', 'messages', 'database', 'options'];
@@ -221,6 +230,14 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   let waits = 0;
   // The hardening last seen on the first machine of a battle, and which battle that was.
   let hardening = { of: '', left: 0 };
+  // The player who raises terms: the board's contracts flown for it, the terms each was taken on, the briefing whose
+  // terms are settled, what the pilot held as the contract in the air was accepted, and the bills that did not add up.
+  let bets = 0;
+  const raised: number[] = [];
+  let settled = '';
+  let owed: { credits: number; medals: string[] } | null = null;
+  let summed = 0;
+  const sums: string[] = [];
   let frames = 0;
   const step = async (ms: number): Promise<void> => { frames += Math.ceil(ms / 16); await adv(page, ms); };
   while (Date.now() < until) {
@@ -233,6 +250,15 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     if (s.screen !== 'settlement') read = 0;
     const bill = s.screen === 'settlement' ? s.settlement?.account : null;
     if (bill) bills.add(`${bill.name}:${bill.meeting}:${bill.closed ? 'closed' : 'open'}`);
+    if (owed && s.screen === 'settlement' && s.settlement) {
+      // The bill of the contract that was in the air: the balance is what was held, the net, what was written off, and what medals paid.
+      const held: { credits: number; medals: string[] } = owed;
+      const paid: number = (s.medals ?? []).filter((id) => !held.medals.includes(id)).reduce((sum, id) => sum + MEDAL_PAY[MEDALS.find((m) => m.id === id)!.tier], 0);
+      const due: number = held.credits + s.settlement.net + (s.settlement.relief ?? 0) + paid;
+      if (s.credits !== due) sums.push(`${held.credits} and ${s.settlement.net}, ${s.settlement.relief ?? 0} written off, ${paid} for medals: ${due}, not ${s.credits}`);
+      summed++;
+      owed = null;
+    }
     // Who came in on a band of their own, and under what word; and whose face was beside a line as it was said.
     // (Looked at before anything is pressed or passed over: while the band is up, the line under it holds every press off.)
     const entered = s.screen === 'battle' ? s.battle as unknown as { entrance?: { warning: string; name: string } | null; face?: string | null } : null;
@@ -252,9 +278,32 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
     } else if (['callsign', 'scene', 'ending', 'credits', 'settlement'].includes(s.screen)) {
       await tap(page, 'Enter');
       await step(320);
+    } else if (s.screen === 'briefing' && raise && items.some((item) => item.id === 'terms') && settled !== s.briefing?.mission) {
+      // The terms first: up a step while the odds counted for the terms showing are good, and back down from terms
+      // whose odds are not or whose bond is not held. What Accept then takes is what is showing.
+      const terms = s.briefing?.terms;
+      const odds = s.briefing?.odds;
+      if (cur !== 'terms') await go('terms');
+      else if (!terms) settled = s.briefing?.mission ?? '';
+      else if (!terms.held) { await tap(page, 'ArrowLeft'); settled = s.briefing?.mission ?? ''; }
+      else if (terms.waiting || !odds?.done) await step(160);
+      else if (odds.won >= 15 && terms.level < 3) await tap(page, 'ArrowRight');
+      else {
+        if (odds.won < 15 && terms.level > 0) await tap(page, 'ArrowLeft');
+        settled = s.briefing?.mission ?? '';
+      }
     } else if (s.screen === 'briefing') {
-      // A player told to reads the other side's offer where there is one, and takes it.
-      await go(other && has('other') && !s.briefing?.turned ? 'other' : 'accept');
+      // A player told to reads the other side's offer where there is one, and takes it. On raised terms Accept waits
+      // for their odds: the count is let run.
+      if (raise && s.briefing?.terms?.waiting) await step(160);
+      else {
+        const taking = !(other && has('other') && !s.briefing?.turned);
+        if (raise && taking && cur === 'accept') {
+          owed = { credits: s.credits ?? 0, medals: s.medals ?? [] };
+          if (s.briefing?.terms) raised.push(s.briefing.terms.level);
+        }
+        await go(taking ? 'accept' : 'other');
+      }
     } else if (s.screen === 'battle') {
       const b = s.battle!;
       if (`${b.mission}/${b.index}/${b.round > 1}` !== last && b.round === 1) { battles++; last = `${b.mission}/${b.index}/false`; }
@@ -314,11 +363,13 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
       // one is open with no notice out, one of the board's own three, which is one more contract waited through.
       const notice = account && meetings < 6 ? items.find((item) => item.id.endsWith('-grudge') && item.enabled) : undefined;
       const wait = account && !notice && s.grudge && waits < 12 ? items.find((item) => /^open-\d+-\d+-\d+$/.test(item.id) && item.enabled) : undefined;
-      const pick = notice ?? swarm ?? job ?? story.find((item) => prefer.some((word) => item.id.includes(word))) ?? story[0] ?? wait;
+      // The player who raises terms flies the board's own contracts once the rest is done: the heaviest on offer.
+      const bet = raise && bets < 8 ? items.filter((item) => /^open-\d+-\d+-\d+$/.test(item.id) && item.enabled).at(-1) : undefined;
+      const pick = notice ?? swarm ?? job ?? story.find((item) => prefer.some((word) => item.id.includes(word))) ?? story[0] ?? wait ?? bet;
       if (!pick) { storyOver = true; await tap(page, 'Escape'); }
       else if (cur !== pick.id) await tap(page, 'ArrowDown');
       else {
-        if (pick === notice) meetings++; else if (pick === wait) waits++;
+        if (pick === notice) meetings++; else if (pick === wait) waits++; else if (pick === bet) bets++;
         else if (pick === swarm) swarms++; else if (pick === job) jobs.push(kindOf(job)); else tried.set(pick.id, (tried.get(pick.id) ?? 0) + 1);
         flown++;
         await tap(page, 'Enter');
@@ -366,7 +417,7 @@ async function play(page: Page, prefer: string[], minutes: number, other = false
   const waiting = [end.toast, ...(end.toasts ?? [])].filter((id): id is string => !!id);
   return {
     missions: end.completed ?? [], screens: [...screens].sort(), battles, floors, frames, swarms, jobs, duel, launches, flown, stripes: [...stripes], waiting, notices: notices.size,
-    kinds: [...kinds].sort(), meetings, bills: [...bills],
+    kinds: [...kinds].sort(), meetings, bills: [...bills], raised, summed, sums,
   };
 }
 
@@ -395,6 +446,8 @@ const PLAYERS: {
   wears?: Partial<Build>; hand?: boolean;
   /** The account that is open as the player sets out, and the callsigns of those closed before it. */
   account?: { open: Grudge; closed?: string[] };
+  /** Whether the player raises the terms of the board's contracts as far as the odds are good, and adds up every bill. */
+  raise?: boolean;
 }[] = [
   // In the white mix as it comes: the launch and every battle from the first contract on show a mixed machine from behind.
   { name: 'from the first contract, in English, with all of the light', done: [], prefer: ['hadron'], settings: {}, mix: DEFAULT_MIXES[0] },
@@ -428,6 +481,9 @@ const PLAYERS: {
     name: 'with an account at its third meeting and one closed before it, in Dutch', done: AFTER_THE_WAR, prefer: [], settings: { language: 'nl' },
     account: { open: { name: 'Tally', kind: 'stalker', origin: 'beat', knows: REFERENCE_BUILDS.tier6.rightHand!, met: 2, waited: 2 }, closed: ['Brakk'] },
   },
+  // After the war, with the board's fullest list: every contract taken on the highest terms whose odds are good, the
+  // bond staked each time, and every bill added up to the credit.
+  { name: 'raising the terms of the board as far as the odds are good, every bill added up', done: AFTER_THE_WAR, prefer: [], settings: {}, raise: true },
 ];
 
 for (const player of PLAYERS) {
@@ -438,7 +494,7 @@ for (const player of PLAYERS) {
     const mixed = player.mix ? setMix(made, player.mix) : made;
     const start: GameState = player.account ? { ...mixed, grudge: player.account.open, ...(player.account.closed ? { accounts: player.account.closed } : {}) } : mixed;
     const errors = await open(page, start, player.settings);
-    const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat, !!player.hand, !!player.account);
+    const played = await play(page, player.prefer, MINUTES, player.later, !!player.seat, !!player.hand, !!player.account, !!player.raise);
     const faults = await page.evaluate(() => (window as any).__faults as string[]);
     console.log(`${player.name}: ${played.frames} frames, ${played.battles} battles, ${played.flown} contracts flown, ${played.launches} launches, ${played.swarms} swarm, jobs ${played.jobs.join(' ') || 'none'}, ${played.floors} floors, ${played.notices} notices, stripes ${played.stripes.join(' ') || 'none'}, contracts ${played.missions.length}, screens ${played.screens.join(' ')}`);
     expect([...new Set(faults)]).toEqual([]);
@@ -496,6 +552,19 @@ for (const player of PLAYERS) {
       // Whoever was closed before is still written down, and whoever a bill said was closed is with them.
       for (const name of player.account.closed ?? []) expect(kept.accounts, name).toContain(name);
       for (const bill of played.bills.filter((line) => line.endsWith(':closed'))) expect(kept.accounts, bill).toContain(bill.split(':')[0]);
+    }
+    if (player.raise) {
+      // Terms were raised, on contracts whose bills came up; and every bill added up: the balance after it was what
+      // was held before it, its net, what was written off and what medals paid.
+      const kept = await page.evaluate(() => JSON.parse(window.localStorage.getItem('ironwage-save')!) as Pick<GameState, 'raised' | 'atStake' | 'credits'>);
+      console.log(`${player.name}: terms taken ${played.raised.join(' ') || 'none'}, bills added up ${played.summed}, won on raised terms ${(kept.raised ?? []).join('/') || 'none'}, credits ${kept.credits}`);
+      expect(played.sums).toEqual([]);
+      expect(played.summed).toBeGreaterThanOrEqual(5);
+      expect(played.raised.some((level) => level > 0)).toBe(true);
+      // What the kept game counts as won on raised terms is no more than was taken on them.
+      const won = (kept.raised ?? []).reduce((sum, count) => sum + count, 0);
+      expect(won).toBeLessThanOrEqual(played.raised.filter((level) => level > 0).length);
+      expect(won).toBeGreaterThanOrEqual(1);
     }
     // Every one of them flew a swarm: the machines that come on later were on the screen.
     expect(played.swarms).toBe(1);

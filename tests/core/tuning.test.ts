@@ -4,7 +4,8 @@ import { startNewCycle } from '../../src/core/campaign';
 import { buy, isValidState, newGame, sell, type GameState } from '../../src/core/game';
 import { awardMedals } from '../../src/core/medals';
 import {
-  TUNE_MAX, TUNE_STEP, checkTune, stepOf, tunable, tune, tuneCap, tuneCost, tuneFactor, tunedCatalog, tunedPart,
+  LICENCE_PRICES, TUNE_MAX, TUNE_STEP, benchCap, buyLicence, checkLicence, checkTune, licencePrice, stepOf, tunable, tune, tuneCap, tuneCost, tuneFactor,
+  tunedCatalog, tunedPart,
 } from '../../src/core/tuning';
 import type { FramePart, Generator, Weapon } from '../../src/core/types';
 import { ENEMIES } from '../../src/content/enemies';
@@ -46,7 +47,7 @@ describe('what the bench works on', () => {
   });
 
   test('goes two steps in the first telling and one further with each telling after it, to five', () => {
-    expect([0, 1, 2, 3, 4, 9].map(tuneCap)).toEqual([2, 3, 4, 5, 5, 5]);
+    expect([0, 1, 2, 3, 4, 9].map((cycle) => tuneCap(cycle))).toEqual([2, 3, 4, 5, 5, 5]);
   });
 
   test('asks the number of the step times the price of the part', () => {
@@ -246,6 +247,86 @@ describe('a saved game', () => {
     const many = Object.fromEntries(Array.from({ length: 257 }, (_, i) => [`part-${i}`, 1]));
     expect(isValidState(saved(many), CATALOG)).toBe(false);
     expect(isValidState(saved(Object.fromEntries(Object.entries(many).slice(0, 256))), CATALOG)).toBe(true);
+  });
+});
+
+describe('the bench\'s licence', () => {
+  /** A game whose story is told to its end: one that may begin again. */
+  const told = (extra: Partial<GameState>): GameState => ({ ...fresh(extra), completed: MISSIONS.filter((m) => m.phase === 'verdict').slice(0, 1).map((m) => m.id) });
+
+  test('how far the bench goes: the telling and the licences together, never past five', () => {
+    expect([tuneCap(0), tuneCap(0, 1), tuneCap(1, 1), tuneCap(2, 3), tuneCap(0, 3), tuneCap(3, 0), tuneCap(0, 2)]).toEqual([2, 3, 4, 5, 5, 5, 4]);
+    expect([benchCap({ cycle: 0 }), benchCap({ cycle: 0, bench: 2 }), benchCap({ cycle: 1, bench: 1 }), benchCap({ cycle: 9, bench: 3 })]).toEqual([2, 4, 4, 5]);
+    // What a kept game says of it is read with care: anything but one, two or three reads as none.
+    for (const odd of [0, 4, -1, 1.5, '2', null, Number.NaN, [1]]) expect(benchCap({ cycle: 0, bench: odd as unknown as number }), JSON.stringify(odd)).toBe(2);
+  });
+
+  test('a licence costs by the step it opens: the third, the fourth, the fifth', () => {
+    expect(LICENCE_PRICES).toEqual([50_000, 100_000, 150_000]);
+    expect([undefined, 1, 2, 3].map((bench) => licencePrice({ cycle: 0, bench }))).toEqual([50_000, 100_000, 150_000, null]);
+    // In a second telling the bench goes three by itself: the first licence bought there opens the fourth step, and costs what that costs.
+    expect(licencePrice({ cycle: 1 })).toBe(100_000);
+    expect(licencePrice({ cycle: 1, bench: 1 })).toBe(150_000);
+    expect(licencePrice({ cycle: 2 })).toBe(150_000);
+    // Where the bench goes five there is nothing to license.
+    expect([licencePrice({ cycle: 3 }), licencePrice({ cycle: 2, bench: 1 }), licencePrice({ cycle: 1, bench: 2 }), licencePrice({ cycle: 8, bench: 3 })]).toEqual([null, null, null, null]);
+  });
+
+  test('it is bought with credits, and opens the next step for every part at the step\'s own price', () => {
+    expect(checkLicence({ cycle: 0, credits: 49_999 })).toBe('credits');
+    expect(checkLicence({ cycle: 0, credits: 50_000 })).toBeNull();
+    expect(checkLicence({ cycle: 0, bench: 1, credits: 99_999 })).toBe('credits');
+    expect(checkLicence({ cycle: 3, credits: 10_000_000 })).toBe('end');
+    expect(checkLicence({ cycle: 0, bench: 3, credits: 10_000_000 })).toBe('end');
+    const before = fresh({ credits: 60_000, tuning: { 'core-hauler': 2, 'wpn-rivet-rifle': 2 } });
+    expect(checkTune(before, 'core-hauler', CATALOG)).toBe('limit');
+    const after = buyLicence(before);
+    expect(after).toEqual({ ...before, credits: 10_000, bench: 1 });
+    // The game it was given is as it was.
+    expect(before.bench).toBeUndefined();
+    // The step past the old limit can now be taken, by any part, at what a third step costs.
+    expect(checkTune(after, 'core-hauler', CATALOG)).toBeNull();
+    expect(checkTune(after, 'wpn-rivet-rifle', CATALOG)).toBeNull();
+    const tuned = tune(after, 'core-hauler', CATALOG);
+    expect(tuned.tuning).toEqual({ 'core-hauler': 3, 'wpn-rivet-rifle': 2 });
+    expect(tuned.credits).toBe(10_000 - 3 * core.price);
+    // And no further: the step after it asks for the next licence.
+    expect(checkTune(tuned, 'core-hauler', CATALOG)).toBe('limit');
+    expect(() => buyLicence(tuned)).toThrow(/credits/);
+    expect(() => buyLicence({ ...before, cycle: 3 })).toThrow(/end/);
+    // Three of them are all there are.
+    const all = buyLicence(buyLicence(buyLicence(fresh({ credits: 300_000 }))));
+    expect([all.bench, all.credits, benchCap(all)]).toEqual([3, 0, 5]);
+    expect(checkLicence({ ...all, credits: 10_000_000 })).toBe('end');
+  });
+
+  test('a new telling keeps it, and brings its own step on top', () => {
+    const next = startNewCycle(told({ bench: 1, tuning: { 'core-hauler': 3 } }), MISSIONS);
+    expect([next.cycle, next.bench, benchCap(next)]).toEqual([1, 1, 4]);
+    expect(checkTune(next, 'core-hauler', CATALOG)).toBeNull();
+    // Nobody pays for a step and is then handed that step: what is next to license there is the fifth.
+    expect(licencePrice(next)).toBe(150_000);
+    // With all three bought the bench is at its end, in this telling and every other.
+    const most = startNewCycle(told({ bench: 3, tuning: { 'core-hauler': 5 } }), MISSIONS);
+    expect([most.bench, benchCap(most), licencePrice(most)]).toEqual([3, 5, null]);
+  });
+
+  test('a kept game is read with care', () => {
+    const kept = (extra: Record<string, unknown>): unknown => JSON.parse(JSON.stringify({ ...fresh(), ...extra }));
+    // Two licences in a first telling: the bench goes four, and a part may stand there.
+    expect(isValidState(kept({ bench: 2, tuning: { 'core-hauler': 4 } }), CATALOG)).toBe(true);
+    expect(isValidState(kept({ bench: 3, tuning: { 'core-hauler': 5 } }), CATALOG)).toBe(true);
+    expect(isValidState(kept({ bench: 1 }), CATALOG)).toBe(true);
+    // But no further than they open: a fifth step asks for the third.
+    expect(isValidState(kept({ bench: 2, tuning: { 'core-hauler': 5 } }), CATALOG)).toBe(false);
+    // Without one, a step past the telling's own is no step: as it always was.
+    expect(isValidState(kept({ tuning: { 'core-hauler': 4 } }), CATALOG)).toBe(false);
+    for (const bench of [0, 4, -1, 1.5, '2', null, [1], {}]) expect(isValidState(kept({ bench }), CATALOG), `bench ${JSON.stringify(bench)}`).toBe(false);
+    // What the rules write is what the reader takes.
+    let bought = buyLicence(buyLicence(fresh({ credits: 150_000 + 10 * core.price })));
+    for (let step = 1; step <= 4; step++) bought = tune(bought, 'core-hauler', CATALOG);
+    expect([bought.bench, bought.tuning, bought.credits]).toEqual([2, { 'core-hauler': 4 }, 0]);
+    expect(isValidState(JSON.parse(JSON.stringify(bought)), CATALOG)).toBe(true);
   });
 });
 

@@ -5,6 +5,7 @@ import { isGrudge } from '../core/grudge';
 import { isJob } from '../core/jobs';
 import { levelFor, perkPoints } from '../core/pilot';
 import { drillOpen, drillPassed } from '../core/training';
+import { benchCap } from '../core/tuning';
 import { DRILLS } from '../content/drills';
 import { MISSIONS } from '../content/missions';
 import { PERKS } from '../content/perks';
@@ -67,6 +68,11 @@ export class HubScreen implements Screen {
   /** The cycle that starting over would begin. */
   private get nextCycle(): number {
     return (this.app.game?.cycle ?? 0) + 1;
+  }
+  /** What the question before it says: with whether that cycle would take this pilot's bench a step further. */
+  private get question(): string[] {
+    const game = this.app.game;
+    return H.cycleQuestion(this.nextCycle, game ? benchCap({ cycle: this.nextCycle, bench: game.bench }) > benchCap(game) : undefined);
   }
   /** True while the list showing is the archive of contracts already done. */
   private inArchive = false;
@@ -190,7 +196,7 @@ export class HubScreen implements Screen {
   }
 
   view(): ScreenView {
-    const message = this.app.saveFailed ? STRINGS.saveFailed : this.asking ? H.cycleQuestion(this.nextCycle)[0] : '';
+    const message = this.app.saveFailed ? STRINGS.saveFailed : this.asking ? this.question[0] : '';
     return { menu: { items: this.list.items, cursor: this.list.cursor }, message, list: this.inArchive ? 'archive' : this.sub && !this.asking ? 'contracts' : 'main', row: this.row };
   }
 
@@ -229,7 +235,7 @@ export class HubScreen implements Screen {
 
     drawPanel(ctx, x, 78, w, 24 + ROWS * LINE);
     if (this.asking) {
-      const question = H.cycleQuestion(this.nextCycle);
+      const { question } = this;
       question.forEach((row, i) => drawText(ctx, row, x + 6, 83 + i * LINE, { color: i === 0 ? COLORS.accent : COLORS.text }));
       drawList(ctx, this.list, x + 6, 96 + question.length * LINE, w - 16, 2);
     } else {

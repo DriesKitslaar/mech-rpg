@@ -925,4 +925,21 @@ export const REFERENCE_NL: Record<string, string> = {
   'Close an account: beat the same pilot three times.': 'Versla dezelfde piloot drie keer: rekening dicht.',
   'Repeat Customers': 'Vaste klanten',
   'Close three accounts.': 'Sluit drie rekeningen.',
+  // Raised terms: the three medals.
+  'Danger Money': 'Gevarengeld',
+  'Win a contract on raised terms.': 'Win een contract met verhoogde inzet.',
+  'Uninsurable': 'Onverzekerbaar',
+  'Win a contract on ruinous terms.': 'Win een contract met inzet Ruïneus.',
+  'Risk Appetite': 'Risicobereidheid',
+  'Win 25 contracts on raised terms.': 'Win 25 contracten met verhoogde inzet.',
+  // Raised terms, how a flight was lost, and the bench's licences: the manual's three chapters.
+  'RAISED TERMS': 'VERHOOGDE INZET',
+  'An open contract, job or swarm can be flown on raised terms: the row Terms under Accept. Hazard: opposition x1.5, armour and damage. Severe: x2. Ruinous: x3. The pay grows as much, and what it adds is your bond: lost if you lose, leave, or close the game in the air. Freight you guard grows as sturdy. Accept waits for the odds.':
+    'Een open contract, klus of zwerm kan met verhoogde inzet: de rij Inzet onder Aannemen. Riskant: tegenstand x1,5, pantser en schade. Zwaar: x2. Ruïneus: x3. Het loon groeit mee, en wat erbij komt is je borg: weg bij verlies, vertrek of afsluiten in de lucht. Vracht die je bewaakt wordt even taai. Aannemen wacht op de kans.',
+  'HOW IT WAS LOST': 'HOE HET VERLOREN GING',
+  'Where the odds are under 15 in 20, the briefing says how the lost flights went. Each is flown again against a tenth less opposition, about what two steps at the bench give. Lost narrowly: two in three are then won. Lost clearly: one in three. Outmatched: fewer. Narrowly wants a little more machine; outmatched, another build.':
+    "Is de kans lager dan 15 op 20, dan zegt de briefing hoe de verloren vluchten gingen. Elk gaat opnieuw, tegen een tiende minder tegenstand: zo'n twee stappen op de werkbank. Nipt verloren: twee op de drie lukken dan. Ruim verloren: een op de drie. Kansloos: minder. Nipt vraagt iets meer machine; kansloos een andere build.",
+  'BENCH LICENCES': 'WERKBANKLICENTIES',
+  "Where a part stands as far as the bench goes, the bench offers a licence for the next step: 50000 c for the third, 100000 for the fourth, 150000 for the fifth. A licence is for the bench, not the part: every part may then go that step, at the step's own price. It is kept for good, and a new cycle still adds its own step on top.":
+    'Staat een onderdeel zo ver als de werkbank gaat, dan biedt die een licentie aan voor de volgende stap: 50000 c voor de derde, 100000 voor de vierde, 150000 voor de vijfde. Ze geldt voor de werkbank: elk onderdeel mag dan die stap, voor de prijs van de stap. Ze blijft voorgoed, en een nieuwe cyclus telt er zijn eigen stap bij.',
 };

@@ -92,6 +92,8 @@ export interface CareerReport {
   benchSteps: number;
   /** The contracts won as each kind of machine, as the game kept count. */
   wonAs: Record<string, number>;
+  /** The game as the career left it: what a longer game can go on from (see stakes.ts). */
+  game: GameState;
 }
 
 type Snap = {
@@ -150,7 +152,7 @@ export function playCareer(options: CareerOptions): CareerReport {
   };
   const report: CareerReport = {
     options, finished: false, contracts: 0, won: 0, losses: {}, worst: { id: '', streak: 0 }, grind: 0, arenaLosses: 0, endings: [], side: [], offers: [],
-    credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity, benchSteps: 0, wonAs: {},
+    credits: 0, level: 1, arenaRank: 0, medals: 0, tier: 'starter', cycle: 0, lowestCredits: Infinity, benchSteps: 0, wonAs: {}, game: null as unknown as GameState,
   };
   let tier = -1;
   const rungs = rungsOf(options);
@@ -369,7 +371,7 @@ export function playCareer(options: CareerOptions): CareerReport {
     ...report, credits: game.credits, level: levelFor(game.xp), arenaRank: game.arenaRank, medals: game.medals.length, cycle: game.cycle,
     lowestCredits: Number.isFinite(report.lowestCredits) ? report.lowestCredits : game.credits,
     benchSteps: Object.values(game.build).reduce((sum, id) => sum + stepOf(game.tuning, id), 0),
-    wonAs: { ...(game.wonAs ?? {}) },
+    wonAs: { ...(game.wonAs ?? {}) }, game,
   };
 }
 

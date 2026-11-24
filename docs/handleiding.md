@@ -487,6 +487,13 @@ en de moeilijkheid. Je ziet het tellen (grijs, de teller loopt op) terwijl je de
 - Het is wat Auto Turn ervan maakt. Speel je zelf goed, dan haal je meer; 0/20 betekent meestal
   dat je mech sterker moet worden voor dit contract.
 - Bij een geleende mech en de training staat er geen kans.
+- Is de kans niet goed (minder dan 15 van de 20), dan zegt de regel onder de build ook **hoe** de
+  verloren vluchten verloren gingen. Het spel vliegt elke verloren vlucht nog eens tegen een tiende
+  minder tegenstand (ongeveer wat twee stappen op de werkbank waard zijn) en kijkt hoeveel er dan
+  wel lukken: **lost narrowly** (Nederlands **nipt verloren**) als dat er twee op de drie of meer
+  zijn, **lost clearly** (**ruim verloren**) bij een op de drie of meer, en **outmatched**
+  (**kansloos**) bij minder. Nipt betekent: een klein beetje sterker en je wint. Kansloos betekent:
+  neem een andere build.
 
 ### Een contract dat een klasse zoekt
 
@@ -571,6 +578,37 @@ het eerst wint (een revanche niet).
 - **Drie medailles:** één voor de eerste gewonnen ontmoeting, één voor een gesloten rekening, één
   voor drie.
 
+### Verhoogde inzet: meer tegenstand voor meer loon
+
+Bij een open contract, een klus of een zwerm staat in de briefing onder **Accept** de rij **Terms**
+(Nederlands **Inzet**). Met links en rechts kies je hoe zwaar je het contract aanneemt:
+
+| Inzet | Tegenstand | Loon | Borg |
+|---|---|---|---|
+| **Standard** (Standaard) | zoals aangeboden | zoals aangeboden | geen |
+| **Hazard** (Riskant) | x1,5 | x1,5 | de helft van het loon |
+| **Severe** (Zwaar) | x2 | x2 | het loon |
+| **Ruinous** (Ruïneus) | x3 | x3 | twee keer het loon |
+
+- **Tegenstand** is pantser én schade van elke vijand. Vracht die je moet beschermen wordt even
+  veel taaier: anders was een escorte met verhoogde inzet niet te doen.
+- **De borg** is precies wat je erbij kunt winnen. Je betaalt hem niet vooraf: win je, dan krijg
+  je het hogere loon; verlies je of loop je weg, dan gaat de borg van je saldo. Op de afrekening
+  staat dat als **Severe terms** (gewonnen) of **Bond (Severe)** (verloren).
+- **Je moet de borg kunnen betalen.** Heb je te weinig credits, dan zie je wel wat de inzet vraagt,
+  maar **Accept** blijft grijs.
+- **Sluit je het spel midden in zo'n contract, dan ben je de borg kwijt.** Bij het openen staat er
+  **BOND LOST** (Nederlands **BORG KWIJT**).
+- **ODDS** telt voor de inzet die je kiest. Bij verhoogde inzet wacht **Accept** tot de kans
+  geteld is (er staat even **Counting**, Nederlands **Telt nog**): je zet nooit blind in.
+- De rest blijft zoals het was: het is een gewoon gewonnen contract, het bord schuift door, en de
+  bonus voor een gevraagde klasse krijg je er gewoon bij.
+- Verhaalcontracten, bijklussen, vervallen rekeningen, de arena en een geleende mech hebben geen
+  inzet.
+- Hoeveel contracten je met verhoogde inzet won, staat op de pagina **Record** van je piloot.
+- **Drie medailles:** één voor de eerste, één voor een contract op **Ruinous**, één voor
+  vijfentwintig.
+
 ### Het proefveld: je build gratis uitproberen
 
 Onder **Training** zit een tweede pagina: druk op **R1** (of **L1**) voor **TEST RANGE**. Daar
@@ -650,6 +688,12 @@ onderdeel staan en druk op **R1**: het ligt op de werkbank.
   onderdeel (**Wraith Mask +2**), en de vergelijking gaat uit van wat je draagt zoals het nu is.
 - In de eerste cyclus gaat de werkbank twee stappen. Elke keer dat je met **New Cycle** opnieuw
   begint, kan er één stap bij, tot vijf. Achter de naam staat hoe ver een onderdeel is: `+2`.
+- **Licentie.** Staat een onderdeel zo ver als de werkbank nu gaat, dan biedt de werkbank een
+  licentie voor de volgende stap aan (**Licence +3**, Nederlands **Licentie +3**): 50.000 credits
+  voor de derde stap, 100.000 voor de vierde en 150.000 voor de vijfde. Het spel vraagt eerst of
+  je het zeker weet. Een licentie geldt voor de werkbank, niet voor één onderdeel: daarna mag elk
+  onderdeel die stap zetten, voor de gewone prijs van die stap. Je houdt hem voorgoed, en een
+  nieuwe cyclus telt er nog steeds zijn eigen stap bij op.
 
 ## De spuiterij: je eigen lak
 

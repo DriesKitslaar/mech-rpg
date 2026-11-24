@@ -19,6 +19,8 @@ const G = STRINGS.garage;
 const C = STRINGS.classes;
 const LIST_X = 162;
 const LIST_W = LOGICAL_W - LIST_X;
+/** Where, on the bench, what a licence is stands: under the choice, what the pilot has and what is short, whichever of them show. */
+const LICENCE_NOTE_Y = 152;
 /** Where the list of saved builds begins, and where the menu of the one chosen is ruled off under its last row. */
 const LOADOUTS_Y = 40;
 const LOADOUT_MENU_Y = LOADOUTS_Y + LOADOUT_SLOTS * LINE + 4;
@@ -63,7 +65,9 @@ export class GarageScreen implements Screen {
 
   view(): ScreenView {
     const { flow } = this;
-    const list = { slots: flow.slots, parts: flow.parts, loadouts: flow.loadouts, loadoutMenu: flow.loadoutMenu, bench: flow.bench, paint: flow.paintRows }[flow.mode];
+    const list = {
+      slots: flow.slots, parts: flow.parts, loadouts: flow.loadouts, loadoutMenu: flow.loadoutMenu, bench: flow.bench, licence: flow.question, paint: flow.paintRows,
+    }[flow.mode];
     const bench = flow.benchInfo;
     return {
       menu: { items: list.items, cursor: list.cursor },
@@ -136,7 +140,7 @@ export class GarageScreen implements Screen {
         const missing = flow.loadoutMenu.items[0].note;
         if (missing) drawText(ctx, missing, LIST_X + 6, LOADOUT_MENU_Y + 6 + flow.loadoutMenu.items.length * 13, { color: COLORS.danger });
       }
-    } else if (flow.mode === 'bench') {
+    } else if (flow.mode === 'bench' || flow.mode === 'licence') {
       this.drawBench(ctx);
     } else if (flow.mode === 'paint') {
       this.drawPaint(ctx);
@@ -175,9 +179,16 @@ export class GarageScreen implements Screen {
     }
     ctx.fillStyle = COLORS.border;
     ctx.fillRect(x, 84, LIST_W - 12, 1);
-    drawList(ctx, flow.bench, x, 90, LIST_W - 18, 2);
-    drawText(ctx, G.benchCredits(flow.game.credits), x, 90 + 2 * LINE + 6, { color: COLORS.dim });
-    if (bench.refusal === 'credits') drawText(ctx, G.benchShort, x, 90 + 3 * LINE + 6, { color: COLORS.danger });
+    const { licence } = bench;
+    // The choice: a step or the licence and the way back; or, while the licence is asked about, the question and its two answers.
+    const asking = flow.mode === 'licence' && licence !== null;
+    if (asking) drawText(ctx, G.licenceQuestion(licence.step, licence.price), x, 90, { color: COLORS.accent });
+    drawList(ctx, asking ? flow.question : flow.bench, x, asking ? 90 + LINE + 2 : 90, LIST_W - 18, 2);
+    const foot = asking ? 90 + 3 * LINE + 8 : 90 + 2 * LINE + 6;
+    drawText(ctx, G.benchCredits(flow.game.credits), x, foot, { color: COLORS.dim });
+    if (bench.refusal === 'credits' || licence?.refusal === 'credits') drawText(ctx, G.benchShort, x, foot + LINE, { color: COLORS.danger });
+    // Under it, where a licence is on offer: what one is.
+    if (licence) wrap(G.licenceNote(licence.step), charsFor(LIST_W - 12)).forEach((line, i) => drawText(ctx, line, x, LICENCE_NOTE_Y + i * LINE, { color: COLORS.dim }));
   }
 
   private drawStats(ctx: CanvasRenderingContext2D): void {

@@ -3,7 +3,7 @@ import { isSwarm } from '../core/board';
 import { computeBuildStats } from '../core/build';
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
-import { advance, counted, newCount, type Count, type Forecast } from '../core/forecast';
+import { ODDS_GOOD, advance, counted, neared, nearness, newCount, type Count, type Forecast, type Nearness } from '../core/forecast';
 import { groundFor } from '../core/ground';
 import { askBonus, crownHeld, isMaster } from '../core/masters';
 import { isSeat } from '../core/seat';
@@ -35,8 +35,7 @@ const SMALL_W = 4;
 const MENU_TOP = [216, 216, 210, 204, 202];
 /** What a build carries, as the page about it lists it: what it fights with, and its module. */
 const CARRIED: BuildSlot[] = ['rightHand', 'leftHand', 'shoulder', 'module'];
-/** The share of its flights a build has to win for its odds to be written as good, and as fair; under that they are poor. */
-export const ODDS_GOOD = 0.75;
+/** The share of its flights a build has to win for its odds to be written as fair; under that they are poor. (`ODDS_GOOD` is the count's own: see forecast.ts.) */
 export const ODDS_FAIR = 0.4;
 /**
  * How long the count of the odds may work in one frame, where the time can be told: a quarter of a frame
@@ -49,6 +48,12 @@ export const ODDS_GOES = 8;
  * and a press meant for the list of contracts would launch one. Short enough that hub to launch stays three presses.
  */
 export const BRIEFING_HOLD_MS = 250;
+/**
+ * How long the row that takes a contract waits for the odds of raised terms before it is taken with the
+ * count as far as it has come: nobody is held for ever by a machine too slow to count.
+ */
+export const TERMS_WAIT_MS = 8000;
+
 /** The colour odds are written in once they are counted: good, fair or poor. */
 export const oddsColor = (odds: Forecast): string =>
   odds.won >= odds.played * ODDS_GOOD ? COLORS.armor : odds.won >= odds.played * ODDS_FAIR ? COLORS.heat : COLORS.danger;
@@ -153,6 +158,10 @@ export class BriefingScreen implements Screen {
 
   /** What is left of the moment in which A is not taken: see `BRIEFING_HOLD_MS`. */
   private held: number;
+  /** The terms the contract would be taken on, where it takes any: 0 is Standard (see core/stakes.ts). Chosen afresh in every briefing. */
+  private level = 0;
+  /** How long the terms showing have been waited on for their odds: see `TERMS_WAIT_MS`. */
+  private waited = 0;
 
   constructor(private app: App, private first: Mission) {
     this.held = app.deps.fast ? 0 : BRIEFING_HOLD_MS;
@@ -172,8 +181,12 @@ export class BriefingScreen implements Screen {
     this.writer = new Typewriter(this.rows.flat(), 150 * typing.factor, typing.instant);
     this.hires = takesWingman(mission) ? this.app.wingmen(mission) : [];
     this.hired = -1;
+    this.level = 0;
+    this.waited = 0;
     const items = [
       { id: 'accept', label: B.accept, enabled: true },
+      // An open contract can be taken on harder terms: the row for them stands right under the one that takes it.
+      ...(this.app.stakes(mission, null).length > 0 ? [{ id: 'terms', label: B.terms, enabled: true }] : []),
       ...(this.builds.length > 0 ? [{ id: 'build', label: B.build, enabled: true }] : []),
       ...(this.hires.length > 0 ? [{ id: 'wingman', label: B.wingman, enabled: true }] : []),
       ...(this.other ? [{ id: 'other', label: mission === this.other ? B.firstOffer : B.otherOffer, enabled: true }] : []),
@@ -184,8 +197,47 @@ export class BriefingScreen implements Screen {
 
   private get wingman(): Wingman | undefined { return this.hires[this.hired]; }
 
-  /** What the contract pays the pilot: the fee, less the share of whoever was hired. */
-  private get fee(): number { return this.wingman ? feeAfter(this.mission.reward, this.wingman) : this.mission.reward; }
+  /** What the contract pays the pilot: the fee, less the share of whoever was hired, and with what the terms showing add to it. */
+  private get fee(): number {
+    const fee = this.wingman ? feeAfter(this.mission.reward, this.wingman) : this.mission.reward;
+    return fee + (this.terms?.bond ?? 0);
+  }
+
+  /** The terms there are for this contract with whoever is hired, Standard first; none where it takes no terms. */
+  private get stakes(): ReturnType<App['stakes']> { return this.app.stakes(this.mission, this.wingman?.id ?? null); }
+
+  /** The terms showing: what they multiply, what they stake, and whether this pilot holds that. Null where the contract takes none. */
+  private get terms(): ReturnType<App['stakes']>[number] | null { return this.stakes[this.level] ?? null; }
+
+  /** Walks through the terms there are, round and round. The wait for their odds begins again with each. */
+  private turnTerms(step: number): void {
+    const count = this.stakes.length;
+    if (count === 0) return;
+    this.level = (this.level + step + count) % count;
+    this.waited = 0;
+  }
+
+  /**
+   * True while the contract is not taken because the odds of the raised terms showing are still being counted:
+   * a bet is read before it is made. Never at Standard, and never for longer than `TERMS_WAIT_MS` on the same terms.
+   */
+  private get waiting(): boolean {
+    const counting = this.level > 0 ? this.counting : null;
+    return !!counting && !counted(counting.count) && this.waited < TERMS_WAIT_MS;
+  }
+
+  /**
+   * The row that takes the contract, as it stands now: it says that the odds are being counted while it waits
+   * for them, and cannot be chosen then, nor on terms whose bond this pilot does not hold.
+   */
+  private refresh(): void {
+    const accept = this.list.items.find((item) => item.id === 'accept');
+    if (!accept) return;
+    const unheld = this.terms?.refusal === 'bond';
+    const waiting = !unheld && this.waiting;
+    accept.label = waiting ? B.counting : B.accept;
+    accept.enabled = !unheld && !waiting;
+  }
 
   /** Walks through nobody and everyone for hire, round and round. */
   private choose(step: number): void {
@@ -233,14 +285,23 @@ export class BriefingScreen implements Screen {
    * The count for what is showing, begun the first time it is asked for. Nothing in the hurried mode, where
    * nobody is reading; nothing for a contract flown in a lent mech, or in a build that may not deploy.
    */
-  private get counting(): { mission: Mission; fight: Fight; count: Count } | null {
+  private get counting(): { mission: Mission; fight: Fight; count: Count } | null { return this.countFor(this.level); }
+
+  /** The count for what is showing as it would be on the terms of a level: each has its own, and keeps it. */
+  private countFor(level: number): { mission: Mission; fight: Fight; count: Count } | null {
     if (this.app.deps.fast || !this.sortie) return null;
-    const key = `${this.mission === this.other ? 'other' : 'first'}/${this.sortie.slot ?? 'floor'}/${this.wingman?.id ?? 'alone'}`;
+    const key = `${this.mission === this.other ? 'other' : 'first'}/${this.sortie.slot ?? 'floor'}/${this.wingman?.id ?? 'alone'}/${level}`;
     if (!this.counts.has(key)) {
-      const prospect = this.app.prospect(this.mission, this.wingman?.id ?? null, this.sortie.slot);
+      const prospect = this.app.prospect(this.mission, this.wingman?.id ?? null, this.sortie.slot, level);
       this.counts.set(key, prospect ? { ...prospect, count: newCount() } : null);
     }
     return this.counts.get(key) ?? null;
+  }
+
+  /** How near the lost flights of the count showing were, once that is worked out and where the odds are not good. */
+  private get near(): Nearness | null {
+    const counting = this.counting;
+    return counting ? nearness(counting.count) : null;
   }
 
   /** The odds as far as they are counted, and whether that is all of them. */
@@ -252,30 +313,47 @@ export class BriefingScreen implements Screen {
   update(dtMs: number): void {
     this.writer.update(dtMs);
     this.held = Math.max(0, this.held - dtMs);
-    // A few actions of a flight a frame: the briefing goes on writing itself out while the odds are counted.
-    const counting = this.counting;
-    if (!counting || counted(counting.count)) return;
-    const { now, catalog } = this.app.deps;
-    const until = now ? now() + ODDS_BUDGET_MS : 0;
-    let goes = 0;
-    do {
-      counting.count = advance(counting.count, counting.fight, counting.mission, catalog);
-      goes += 1;
-    } while (now && goes < ODDS_GOES && !counted(counting.count) && now() < until);
+    // The wait for the odds of raised terms is time spent on those terms.
+    const waiting = this.waiting;
+    if (waiting) this.waited += dtMs;
+    // A few actions of a flight a frame: the briefing goes on writing itself out while the odds are counted. The
+    // count showing first, to its last lost flight flown again; then, behind the page, the terms one step up, so
+    // that a pilot who turns to them finds their odds standing.
+    const showing = this.counting;
+    const ahead = showing && neared(showing.count) && this.level + 1 < this.stakes.length ? this.countFor(this.level + 1) : null;
+    const counting = showing && !neared(showing.count) ? showing : ahead && !neared(ahead.count) ? ahead : null;
+    if (counting) {
+      const { now, catalog } = this.app.deps;
+      // A count the pilot is waiting for may take twice the share of the frame.
+      const share = waiting ? 2 : 1;
+      const until = now ? now() + share * ODDS_BUDGET_MS : 0;
+      let goes = 0;
+      do {
+        counting.count = advance(counting.count, counting.fight, counting.mission, catalog);
+        goes += 1;
+      } while (now && goes < share * ODDS_GOES && !neared(counting.count) && now() < until);
+    }
+    this.refresh();
   }
 
   onInput(action: InputAction): void {
+    this.refresh();
     if (action === 'up') this.list.move(-1);
     else if (action === 'down') this.list.move(1);
     else if (action === 'cancel') this.app.closeBriefing(this.first);
+    else if (this.list.selected?.id === 'terms' && (action === 'left' || action === 'right' || action === 'confirm')) this.turnTerms(action === 'left' ? -1 : 1);
     else if (this.list.selected?.id === 'wingman' && (action === 'left' || action === 'right' || action === 'confirm')) this.choose(action === 'left' ? -1 : 1);
     else if (this.list.selected?.id === 'build' && (action === 'left' || action === 'right' || action === 'confirm')) this.turnBuild(action === 'left' ? -1 : 1);
     // A press that comes in the briefing's first moment was meant for the list before it: a contract is not launched by it.
     else if (action === 'confirm' && this.held > 0) return;
     else if (action === 'confirm') {
       const id = this.list.selected?.id;
-      // Accepting fits the build that was chosen, if it is not the one on the floor already, and starts the contract in it.
-      if (id === 'accept') this.app.startMission(this.mission.id, !!this.mission.replay, this.wingman?.id ?? null, this.mission === this.other, this.sortie?.slot ?? null);
+      // Accepting fits the build that was chosen, if it is not the one on the floor already, and starts the contract in it,
+      // on the terms showing. Not while their odds are still being counted, and not on terms whose bond is not held.
+      if (id === 'accept') {
+        if (!this.list.selected?.enabled) return;
+        this.app.startMission(this.mission.id, !!this.mission.replay, this.wingman?.id ?? null, this.mission === this.other, this.sortie?.slot ?? null, this.level);
+      }
       // The other side's offer and back: the cursor stays on the row that turns the page, and the song is the client's whose page it is.
       else if (id === 'other' && this.other) {
         this.turnTo(this.mission === this.other ? this.first : this.other, 'other');
@@ -286,6 +364,8 @@ export class BriefingScreen implements Screen {
   }
 
   view(): ScreenView {
+    this.refresh();
+    const terms = this.terms;
     return {
       menu: { items: this.list.items, cursor: this.list.cursor },
       // True while the briefing is still writing itself out.
@@ -301,6 +381,11 @@ export class BriefingScreen implements Screen {
         build: this.sortie ? { slot: this.sortie.slot, kind: this.kind, choices: this.builds.length } : null,
         // How the contract is likely to go in it: flights won of those counted so far, and whether all are counted.
         odds: this.odds,
+        // How near its lost flights were, once that is worked out and where the odds are not good.
+        near: this.near,
+        // The terms it would be taken on, where it takes any: what they multiply and stake, whether this pilot holds
+        // the bond, and whether the row that takes it is waiting for their odds.
+        terms: terms ? { level: terms.level, factor: terms.factor, fee: terms.fee, bond: terms.bond, held: terms.refusal === null, waiting: this.waiting } : null,
         // How near the class of that build is to its next stripe, where a win counts for a class.
         stripe: this.stripe,
         // The class the contract asks for, when it asks, and whether the build chosen is of it.
@@ -317,6 +402,7 @@ export class BriefingScreen implements Screen {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
+    this.refresh();
     const { mission } = this;
     const { sprites } = this.app.deps;
     const bg = sprites.get(mission.battles[0].background, { w: LOGICAL_W, h: LOGICAL_H, label: '' });
@@ -332,8 +418,12 @@ export class BriefingScreen implements Screen {
     drawText(ctx, mission.title.toUpperCase(), 72, 8, { size: 16, color: COLORS.accent });
     drawText(ctx, mission.client, 72, 26, { color: COLORS.text });
     const decisive = !mission.replay && (mission.phase === 'choice' || mission.phase === 'verdict');
+    // Raised terms are named first, wherever the cursor is: what A accepts is always in view.
+    const terms = this.terms;
+    const raised = terms !== null && terms.level > 0;
     // A rematch says first that it is one: what it is a rematch of, its briefing goes on to say.
-    const tag = mission.rematch ? STRINGS.arena.rematchTag
+    const tag = raised ? B.termsTag(STRINGS.stakes.names[terms.level], terms.factor)
+      : mission.rematch ? STRINGS.arena.rematchTag
       : isDrill(mission) ? STRINGS.training.tag
       : isRange(mission) ? STRINGS.training.rangeTag
       : mission.loaner !== undefined ? B.lent
@@ -352,7 +442,7 @@ export class BriefingScreen implements Screen {
     const sortie = this.sortie;
     const kind = this.kind;
     wrap(tag, charsFor(LOGICAL_W - 84)).slice(0, 2).forEach((line, i) =>
-      drawText(ctx, line, 72, 40 + i * 11, { color: decisive ? COLORS.danger : COLORS.dim }));
+      drawText(ctx, line, 72, 40 + i * 11, { color: raised ? COLORS.heat : decisive ? COLORS.danger : COLORS.dim }));
     // An open contract that asks for a class says so on the second line, which its one-line tag leaves free:
     // lit in the colour of pay when the build chosen is of that class; a notice otherwise, which then points
     // to the saved build that is, when there is one.
@@ -392,9 +482,29 @@ export class BriefingScreen implements Screen {
     const lastRow = 78 + (briefingRows(mission) - 1) * LINE;
     const onHire = this.list.selected?.id === 'wingman';
     const onBuild = this.list.selected?.id === 'build' && !!sortie && !!kind;
+    const onTerms = this.list.selected?.id === 'terms' && terms !== null;
+    // What the line of the odds ends in: what they are, or, where they are not good and that is worked out, how the lost flights were lost.
+    const near = this.near;
+    const oddsNote = `: ${near ? B.oddsNear[near] : B.oddsNote}`;
     const written = this.writer.visible();
     let at = 0;
     let y = 78;
+    if (onTerms) {
+      // On the row of the terms the client makes way for them: their name, what they multiply and pay, what is staked, and the odds.
+      drawText(ctx, B.termsName(STRINGS.stakes.names[terms.level]), 12, y, { color: COLORS.accent });
+      const lines = terms.level === 0 ? [{ text: B.termsStandard, color: COLORS.text }] : [
+        { text: B.opposition(terms.factor), color: COLORS.text },
+        { text: B.termsFee(terms.fee + terms.bond), color: COLORS.text },
+        // A bond this pilot does not hold is said as that, with what is held: these terms cannot be taken.
+        terms.refusal === 'bond' ? { text: B.termsNoBond(terms.bond, this.app.game!.credits), color: COLORS.danger } : { text: B.termsBond(terms.bond), color: COLORS.heat },
+      ];
+      lines.forEach((line, i) => drawText(ctx, line.text, 12, y + 15 + i * LINE, { color: line.color }));
+      if (odds) {
+        drawText(ctx, oddsText, 12, y + 21 + 6 * LINE, { color: oddsShade });
+        drawText(ctx, oddsNote, 12 + Math.round(oddsText.length * CHAR_W), y + 21 + 6 * LINE, { color: COLORS.dim });
+      }
+      drawText(ctx, B.termsHint, 12, 191 - LINE, { color: COLORS.dim });
+    }
     if (onHire) {
       // On the wingman's row the client makes way for a word about whoever is being considered.
       drawText(ctx, (this.wingman?.name ?? B.alone).toUpperCase(), 12, y, { color: COLORS.accent });
@@ -427,7 +537,7 @@ export class BriefingScreen implements Screen {
       // The odds again, with what they are: the game's own pilot flying the contract in this build.
       if (odds) {
         drawText(ctx, oddsText, 12, y + 21 + 6 * LINE, { color: oddsShade });
-        drawText(ctx, `: ${B.oddsNote}`, 12 + Math.round(oddsText.length * CHAR_W), y + 21 + 6 * LINE, { color: COLORS.dim });
+        drawText(ctx, oddsNote, 12 + Math.round(oddsText.length * CHAR_W), y + 21 + 6 * LINE, { color: COLORS.dim });
       }
       // With something to turn to, how; with nothing, where builds are saved. A saved build that cannot be flown
       // now is named with what it is short of: beside the hint, or where the page would say that none is saved.
@@ -439,7 +549,7 @@ export class BriefingScreen implements Screen {
         if (short) drawText(ctx, short, LOGICAL_W - 12, 192 - LINE, { align: 'right', color: COLORS.heat, size: 10 });
       } else drawText(ctx, short ?? B.buildNone, 12, 191 - LINE, { color: short ? COLORS.heat : COLORS.dim });
     }
-    for (const paragraph of onHire || onBuild ? [] : this.rows) {
+    for (const paragraph of onHire || onBuild || onTerms ? [] : this.rows) {
       for (const _full of paragraph) {
         const line = written[at++];
         if (y > lastRow) break;
@@ -450,7 +560,7 @@ export class BriefingScreen implements Screen {
     }
     // What the contract asks for appears when the client has finished talking.
     // What the ground does comes last, in the colour of the weather.
-    if (this.writer.done && !onHire && !onBuild) {
+    if (this.writer.done && !onHire && !onBuild && !onTerms) {
       const under = [...objectives.map((text) => ({ text, color: COLORS.heat })), ...ground.map((text) => ({ text, color: COLORS.energy }))];
       under.forEach((line, i) => drawText(ctx, line.text, 12, 191 - (under.length - i) * LINE, { color: line.color }));
     }

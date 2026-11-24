@@ -98,9 +98,14 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
   spiegelgevecht tegen je eigen mech. Na het verhaal: vier duels, elk om een mech die je
   daarna zelf mag kopen.
 - **Training**: dertien oefeningen in een geleende mech die elk één ding uitleggen.
-- **Piloot**: niveaus en acht vaardigheden, 77 medailles en een logboek.
+- **Piloot**: niveaus en acht vaardigheden, 80 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
+- **Inzet**: een open contract kun je zwaarder aannemen voor meer loon: anderhalf, twee of drie
+  keer de tegenstand en het loon, met een borg die je kwijt bent als je verliest. De briefing telt
+  je kans voor de inzet die je kiest en zegt hoe nipt een verlies was. Sparen kan voor een
+  werkbanklicentie (50.000, 100.000 en 150.000 credits): een stap extra voor elk onderdeel,
+  voorgoed.
 - **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,
   drie moeilijkheden, muziek per scherm (zestien nummers, zonder audiobestanden), trillen bij zware
   treffers, en een schuldplafond zodat een reeks nederlagen nooit het einde van een spel is.
@@ -121,7 +126,7 @@ npm run dev
 |---|---|
 | `npm test` | Tests op de spelregels, de inhoud en de schermlogica |
 | `npm run e2e` | Browsertests die het spel met het toetsenbord doorspelen |
-| `SOAK=1 npm run e2e -- e2e/soak.spec.ts --workers 2` | Duurproef: vijf robotspelers spelen het spel door met alles getekend, in een echte browser, en melden alles wat het tekenvlak weigert. Duurt een kwartier (`SOAK_MINUTES` stelt de speeltijd per speler in) |
+| `SOAK=1 npm run e2e -- e2e/soak.spec.ts --workers 2` | Duurproef: vijftien robotspelers spelen het spel door met alles getekend, in een echte browser, en melden alles wat het tekenvlak weigert. Duurt een kwartier (`SOAK_MINUTES` stelt de speeltijd per speler in) |
 | `npm run typecheck` | Typecontrole |
 | `npm run simulate -- --table` | Speelt elk contract honderden keren automatisch en toont de winstkans per referentiebuild (`--arena`, `--board`, `--cycle 1`, `--why`) |
 | `npm run career -- --all` | Laat een piloot hele loopbanen zelf uitspelen: elke route, elke moeilijkheid. Hij vecht alleen met Auto Turn en koopt onderdelen via de spelregels, niet via de winkelschermen |

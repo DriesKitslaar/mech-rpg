@@ -68,6 +68,11 @@ export const STRINGS_NL = {
   },
   battleIntro: { warning: 'ALARM', overdue: 'VERVALLEN', destroy: 'VERNIETIG ELKE VIJAND', open: 'DOORSTOTEN' },
   accounts: { opened: 'REKENING GEOPEND', callsign: (name: string) => `Roepnaam ${name}` },
+  stakes: {
+    names: ['Standaard', 'Riskant', 'Zwaar', 'Ruïneus'],
+    forfeit: 'BORG KWIJT',
+    forfeitNote: (credits: number) => `Niet afgemaakt: -${credits} c`,
+  },
   catapult: { bay: 'KATAPULT', go: 'START' },
   yourTurn: (round: number) => `Ronde ${round} - jouw zet`,
   hit: (weapon: string, target: string, part: string, damage: number) => `${weapon} raakt ${obj(target)} - ${part} -${damage}`,
@@ -239,10 +244,10 @@ export const STRINGS_NL = {
     },
     locked: 'Op slot', opensAfter: (title: string) => `na ${title}`, campaignDone: 'De oorlog is voorbij. Het werk niet.',
     cycleLabel: (n: number) => `CYCLUS ${n + 1}`,
-    cycleQuestion: (next: number): string[] => ['De oorlog opnieuw?', 'Je houdt credits, level,', 'onderdelen, perks, arenarang.',
+    cycleQuestion: (next: number, bench = next <= 3): string[] => ['De oorlog opnieuw?', 'Je houdt credits, level,', 'onderdelen, perks, arenarang.',
       'Bijklussen en hun duels, en', 'het archief beginnen opnieuw.',
-      ...(next <= 2 ? ['Taaiere vijanden, meer loon,', 'een stap meer op de werkbank.']
-        : next === 3 ? ['Vijanden blijven even taai.', 'De werkbank kan nog een stap.']
+      ...(next <= 2 ? (bench ? ['Taaiere vijanden, meer loon,', 'een stap meer op de werkbank.'] : ['Taaiere vijanden, meer loon.', 'De werkbank kan niet verder.'])
+        : bench ? ['Vijanden blijven even taai.', 'De werkbank kan nog een stap.']
           : ['Vijanden blijven even taai,', 'en het loon blijft gelijk.'])],
     no: 'Nee', yes: 'Ja',
   },
@@ -357,6 +362,7 @@ export const STRINGS_NL = {
     damage: 'PANTSER VERNIELD', taken: 'PANTSER KWIJT', overheats: 'BEURTEN OVERVERHIT', rounds: 'RONDES GESPEELD',
     earned: 'CREDITS VERDIEND', medals: 'MEDAILLES', cycle: 'CYCLUS', time: 'SPEELTIJD', none: '-', ranksHeld: 'RANGEN',
     accounts: (closed: number) => `REKENINGEN DICHT ${closed}`,
+    raised: (won: number) => `MET INZET GEWONNEN ${won}`,
   },
   renown: {
     names: ['Kostenpost', 'Afboeking', 'Total Loss', 'Overmacht', 'De Eindafrekening'],
@@ -477,8 +483,18 @@ export const STRINGS_NL = {
     build: 'Build', buildOnFloor: 'HUIDIGE BUILD', buildSaved: (slot: number) => `MIJN BUILD ${slot}`,
     buildHint: 'LINKS/RECHTS: andere build', buildNone: 'Bewaar builds in de Garage en kies er hier een.',
     buildShort: (slot: number, part: string) => `BUILD ${slot}: ${part} ontbreekt`, buildGrounded: (slot: number) => `BUILD ${slot} niet inzetbaar`,
+    terms: 'Inzet', termsHint: 'LINKS/RECHTS: andere inzet',
+    termsName: (name: string) => `INZET ${name.toUpperCase()}`,
+    termsTag: (name: string, factor: number) => `INZET ${name.toUpperCase()}: tegenstand x${String(factor).replace('.', ',')}`,
+    termsStandard: 'Het contract zoals het is. Geen inzet.',
+    opposition: (factor: number) => `Tegenstand x${String(factor).replace('.', ',')}: pantser en schade.`,
+    termsFee: (credits: number) => `Loon ${credits} c bij winst.`,
+    termsBond: (credits: number) => `Borg ${credits} c: weg bij verlies of vertrek.`,
+    termsNoBond: (credits: number, held: number) => `Borg ${credits} c: je hebt ${held}.`,
+    counting: 'Telt nog',
     odds: (won: number, played: number) => `KANS ${won}/${played}`, oddsWait: 'KANS ..',
     oddsNote: 'dit contract op Auto-beurt',
+    oddsNear: { narrow: 'nipt verloren op Auto-beurt', clear: 'ruim verloren op Auto-beurt', outmatched: 'kansloos op Auto-beurt' },
     asks: (wanted: string, percent: number) => `ZOEKT ${wanted}: +${percent}% LOON`,
     asksBuild: (slot: number) => `(BUILD ${slot})`,
     wanted: {
@@ -507,6 +523,7 @@ export const STRINGS_NL = {
     account: (meeting: number, of: number) => `REKENING: ${meeting} VAN ${of}`, accountClosed: 'REKENING DICHT',
     rank: 'RANG', rankBonus: (rank: string) => `Bonus rang ${rank}`,
     askBonus: (name: string) => `Bonus ${name}`,
+    hazard: (name: string) => `Inzet ${String(name).toLowerCase()}`, bond: (name: string) => `Borg (${name})`,
     net: 'NETTO', balance: 'SALDO', continue: 'Verder met A',
     medals: (credits: number) => `met medailles +${credits}`,
     wouldCost: 'ZOU KOSTEN',
@@ -552,7 +569,9 @@ export const STRINGS_NL = {
     toBench: 'R1: de werkbank', bench: 'DE WERKBANK', benchStep: (step: number, cap: number) => `Stap ${step} van ${cap}`,
     tune: (step: number) => `Naar +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `Je hebt ${credits} c`,
     benchFigures: { armour: 'Pantser', damage: 'Schade', output: 'Vermogen' },
-    benchAtLimit: 'Niet verder deze cyclus', benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
+    benchAtEnd: 'Dit is het uiterste', benchShort: 'Te weinig credits',
+    licence: (step: number) => `Licentie +${step}`, licenceQuestion: (step: number, price: number) => `Licentie +${step} voor ${price} c?`,
+    licenceNote: (step: number) => `Opent +${step} voor elk onderdeel, voorgoed.`,
   },
   shop: {
     heading: 'WINKEL', buy: 'KOOP', sell: 'VERK.', credits: 'c',

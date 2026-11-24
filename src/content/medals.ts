@@ -7,6 +7,7 @@ import { JOB_KINDS, jobsWon, kindsOfJob } from '../core/jobs';
 import { crownsHeld } from '../core/masters';
 import { isMix } from '../core/mix';
 import { seatHeld } from '../core/seat';
+import { TOP_STAKE, raisedAt, raisedWon } from '../core/stakes';
 import { ALL_STRIPES, stripesHeld } from '../core/stripes';
 import type { Medal } from '../core/medals';
 import { levelFor } from '../core/pilot';
@@ -132,6 +133,10 @@ const EARNED: Medal[] = [
   { id: 'account-1', name: 'Second Notice', text: 'Win a meeting with a pilot who came back for you.', tier: 1, progress: count(1, meetingsWon) },
   { id: 'account-closed', name: 'Closed Book', text: 'Close an account: beat the same pilot three times.', tier: 2, progress: count(1, accountsClosed) },
   { id: 'account-3', name: 'Repeat Customers', text: 'Close three accounts.', tier: 3, progress: count(3, accountsClosed) },
+  // Raised terms: an open contract taken against more, for more, with a bond (see stakes.ts). For the first won, for one on the top terms, and for living off them.
+  { id: 'stake-1', name: 'Danger Money', text: 'Win a contract on raised terms.', tier: 1, progress: count(1, raisedWon) },
+  { id: 'stake-ruinous', name: 'Uninsurable', text: 'Win a contract on ruinous terms.', tier: 2, progress: count(1, (g) => raisedAt(g, TOP_STAKE)) },
+  { id: 'stake-25', name: 'Risk Appetite', text: 'Win 25 contracts on raised terms.', tier: 3, progress: count(25, raisedWon) },
   { id: 'met-20', name: 'Field Guide', text: 'Meet 20 kinds of enemy.', tier: 2, progress: count(20, kindsMet) },
   { id: 'met-all', name: 'Know Your Enemy', text: 'Meet every kind of enemy there is.', tier: 3, progress: count(KINDS.length, kindsMet) },
   // What is found.

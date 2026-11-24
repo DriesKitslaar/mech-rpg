@@ -22,6 +22,7 @@ import {
 import { ARCHETYPES, archetypeOf, followAdvice, recordWinAs, type Archetype, type BuildAdvice } from '../core/archetype';
 import { askBonus, crownHeld, crownSettlement, isMaster, masterMission, mastersOpen, parseMaster, recordMasterWin } from '../core/masters';
 import { SEAT_ID, isSeat, recordSeatWin, seatHeld, seatMission, seatOpen, seatSettlement } from '../core/seat';
+import { STAKES, bondFor, checkStake, forfeit, recordRaised, stakeSettlement, staked, takesStake } from '../core/stakes';
 import { launchRumble, launches } from '../core/launch';
 import { startFight, type Fight } from '../core/mission';
 import { fitSortie, groundedBuilds, sortieBuilds, type Grounded, type Sortie } from '../core/sortie';
@@ -236,6 +237,11 @@ export function shelfToast(before: GameState | null, after: GameState): Toast[] 
   return [{ id: `shelf:${fresh.map((part) => part.id).join('+')}`, heading: STRINGS.shop.shelfToast, title: STRINGS.shop.shelfParts(frame, fresh.length), sound: 'entry' }];
 }
 
+/** The announcement that a bond was taken as the game was opened: the contract it was staked on was left in the air. Nothing where nothing was lost. */
+export function forfeitToast(lost: number): Toast[] {
+  return lost > 0 ? [{ id: 'forfeit', heading: STRINGS.stakes.forfeit, title: STRINGS.stakes.forfeitNote(lost), sound: 'entry' }] : [];
+}
+
 /** One announcement for a find, by its name, or one for all of them when there are several. */
 function findToasts(found: Find[]): Toast[] {
   const D = STRINGS.database;
@@ -439,7 +445,9 @@ class MissionHost implements Screen {
     const crowned = seatSettlement(crownSettlement(asked, this.mission, flown, game), this.mission, game);
     // The bill of a meeting won says whose account it was and which of its meetings, as the game stood before it was booked.
     const account = crowned.won ? accountLine(game, this.mission) : null;
-    const settlement = account ? { ...crowned, account } : crowned;
+    // On raised terms: the hazard pay beside the fee, or the bond that went with the contract. What rank and class
+    // add was figured from the fee before it.
+    const settlement = stakeSettlement(account ? { ...crowned, account } : crowned, this.mission);
     this.count();
     const relief = this.app.bookSettlement(settlement, this.mission, {
       tally: this.tally, met: [...this.met], retreated: retreated(this.flow.state), overdrives: this.overdrives, account: this.account,
@@ -827,7 +835,10 @@ export class App {
     // had already done is recognised now (medals, entries of the database, the enemies its finished
     // contracts put in front of it) rather than at its next save.
     this.lastRun = null;
-    this.commit({ ...settleOldStory(saved, SCENES, MISSIONS), met: metByRecord(saved, MISSIONS, ARENA), settings: { ...this.settings } });
+    // A contract on raised terms that was in the air when the game was closed was walked away from: its bond is taken, and said.
+    const { game: landed, lost } = forfeit(saved);
+    this.commit({ ...settleOldStory(landed, SCENES, MISSIONS), met: metByRecord(landed, MISSIONS, ARENA), settings: { ...this.settings } });
+    this.toasts.push(...forfeitToast(lost));
     // A run that was on a floor when the game was closed fell there.
     if (this.run?.fighting) this.loseFloor();
     this.go('hub');
@@ -1336,7 +1347,7 @@ export class App {
    * the saved build in that slot is fitted first, as the garage would load it: a slot that cannot be
    * flown from starts nothing, and nothing is fitted for a contract that is not on offer.
    */
-  startMission(missionId: string, replay = false, wingmanId: string | null = null, other = false, fit: number | null = null): void {
+  startMission(missionId: string, replay = false, wingmanId: string | null = null, other = false, fit: number | null = null, stake = 0): void {
     if (fit !== null) {
       // A contract in a lent mech is not flown in any build of the pilot's: nothing is fitted for it either.
       const asked = this.offered(missionId, replay);
@@ -1348,7 +1359,34 @@ export class App {
     const offered = other && first ? this.otherOffer(first) ?? undefined : first;
     if (!offered || (offered.loaner === undefined && this.buildErrors().length > 0)) return;
     this.seed = (this.seed + 101) % 2147483647;
-    this.show('battle', new MissionHost(this, this.crewed(offered, wingmanId), this.seed));
+    const flown = this.flown(offered, wingmanId, stake);
+    // What is staked is written down before the machine leaves the bay: a game closed with the contract in the air
+    // is opened with the bond still staked, and it is taken then.
+    if (flown.stake) this.commit({ ...this.game!, atStake: flown.stake.amount });
+    this.show('battle', new MissionHost(this, flown, this.seed));
+  }
+
+  /**
+   * An offer as it is flown: with whoever was hired, and on the terms asked for where the contract takes
+   * terms and this pilot holds their bond. On any other terms it is flown at Standard, and nothing is staked.
+   */
+  private flown(offered: Mission, wingmanId: string | null, stake: number): Mission {
+    const crewed = this.crewed(offered, wingmanId);
+    return this.game && checkStake(this.game, crewed, stake) === null ? staked(crewed, stake) : crewed;
+  }
+
+  /**
+   * The terms an offer can be taken on, Standard first: what each multiplies the opposition and the fee by, the
+   * fee they are figured from (as this pilot would be paid it at Standard, after whoever was hired), the bond,
+   * and whether this pilot holds it. Nothing for a contract that takes no terms.
+   */
+  stakes(offered: Mission, wingmanId: string | null): { level: number; factor: number; fee: number; bond: number; refusal: 'bond' | null }[] {
+    const game = this.game;
+    const crewed = this.crewed(offered, wingmanId);
+    if (!game || !takesStake(crewed)) return [];
+    return STAKES.map((factor, level) => ({
+      level, factor, fee: crewed.reward, bond: bondFor(crewed.reward, level), refusal: checkStake(game, crewed, level) === 'bond' ? 'bond' as const : null,
+    }));
   }
 
   /** The game as it would be kept with one of `sorties()` fitted: itself for the build on the floor, nothing for a slot that cannot be flown from. */
@@ -1367,10 +1405,12 @@ export class App {
    * fought with in the build of that slot (null for the one on the floor). Nothing for a contract in a lent
    * mech, a slot that cannot be flown from, or a build that may not deploy.
    */
-  prospect(offered: Mission, wingmanId: string | null, slot: number | null): { mission: Mission; fight: Fight } | null {
+  prospect(offered: Mission, wingmanId: string | null, slot: number | null, stake = 0): { mission: Mission; fight: Fight } | null {
     const game = offered.loaner === undefined ? this.fitted(slot) : null;
     if (!game || validatePlayerBuild(game.build, tunedCatalog(this.deps.catalog, game.tuning)).length > 0) return null;
-    const mission = this.crewed(offered, wingmanId);
+    // On the terms asked about, whether or not this pilot holds their bond: what is counted is what those terms would
+    // be, and a briefing shows that for terms it will not let the pilot take.
+    const mission = staked(this.crewed(offered, wingmanId), stake);
     return { mission, fight: this.fight(mission, game) };
   }
 
@@ -1430,9 +1470,11 @@ export class App {
     const counted = mission.rematch !== true;
     let next = applySettlement(this.game!, settlement, counted);
     next = addXp(next, xpForContract(mission.reward, settlement.won));
-    const pay = settlement.reward + (settlement.bonus ?? 0) + (settlement.asked?.bonus ?? 0);
+    const pay = settlement.reward + (settlement.bonus ?? 0) + (settlement.asked?.bonus ?? 0) + (settlement.hazard?.pay ?? 0);
+    // The contract is booked: nothing is in the air any more, and whatever was staked on it is on this bill or was never touched.
+    const { atStake: _booked, ...landed } = next;
     next = {
-      ...next,
+      ...landed,
       stats: addStats(next.stats, contractStats(fought.tally, { won: settlement.won, retreated: fought.retreated, pay, counted })),
       met: [...next.met, ...fought.met.filter((kind) => !next.met.includes(kind))],
       ...(fought.overdrives ? { overdrives: (next.overdrives ?? 0) + fought.overdrives } : {}),
@@ -1442,6 +1484,8 @@ export class App {
     if (settlement.won && kind && earnsStripes(mission)) next = recordWinAs(next, kind);
     // A rematch won: its next purse is half of this one's.
     if (settlement.won && mission.rematch) next = recordRematch(next, mission.id);
+    // A contract won on raised terms is counted by its terms.
+    if (settlement.won && mission.stake) next = recordRaised(next, mission.stake.level);
     if (settlement.won) {
       if (mission.arenaRank !== undefined) next = recordArenaWin(next, mission.arenaRank);
       else if (mission.id === MIRROR_ID) next = recordMirrorWin(next);

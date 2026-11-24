@@ -7,7 +7,7 @@ import { BOUT_ID, MAX_BOUTS, MAX_COUNT, MAX_IDS, PLAIN_ID } from './kept';
 import { MIX_SHAPE } from './mix';
 import { NO_STATS, STAT_KEYS, type Stats } from './stats';
 import type { Build, Catalog, Part } from './types';
-import { MAX_TUNED, tuneCap, type Tuning } from './tuning';
+import { LICENCE_PRICES, MAX_TUNED, benchCap, type Tuning } from './tuning';
 
 /** How well a contract was done, best first. */
 export type Rank = 'S' | 'A' | 'B' | 'C' | 'D';
@@ -85,6 +85,14 @@ export interface GameState {
   /** How often each bout of the arena was won again after it had been won, by the bout's id: a rematch pays less for each (see arena.ts). Kept through the cycles. */
   rematches?: Record<string, number>;
   /**
+   * The bond of the contract in the air: set as a contract on raised terms is accepted and gone when it
+   * is booked. A game kept with one was closed with the contract unbooked, and the bond is taken when it
+   * is opened (see stakes.ts).
+   */
+  atStake?: number;
+  /** Contracts won on raised terms, by the terms: Hazard, Severe, Ruinous. Kept through the cycles. Absent until one is. */
+  raised?: number[];
+  /**
    * What earlier tellings of the story left behind: the scenes shown in one and the messages read in
    * one. A later telling shows and sends them again as it goes, and does not present them as new: a
    * scene told before can be skipped, and a letter read before is not marked. Absent in a first telling.
@@ -112,6 +120,8 @@ export interface GameState {
   lessons?: string[];
   /** Bench work: the step each part stands at, by part id (see tuning.ts). Kept across cycles. */
   tuning?: Tuning;
+  /** The bench's licences bought: one to three, each a step further for every part (see tuning.ts). Kept across cycles. Absent until one is. */
+  bench?: number;
   /** The account that is open: a pilot who is coming back for this one (see grudge.ts). Absent where there is none. Kept across cycles. */
   grudge?: Grudge;
   /** The callsigns of the accounts closed, in the order they were. Kept across cycles. Absent until one is. */
@@ -404,6 +414,10 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
   const isIds = (list: unknown): boolean => isTextList(list) && list.length <= MAX_IDS && list.every((id) => PLAIN_ID.test(id));
   if (told !== undefined && !(isRecord(told) && isIds(told.scenes) && isIds(told.read))) return false;
   if (mail !== undefined && !isIds(mail)) return false;
+  // What is staked on the contract in the air: a whole amount above nothing. Wins on raised terms: three whole counts.
+  const { atStake, raised } = value;
+  if (atStake !== undefined && !(isWholeNonNegative(atStake) && atStake >= 1 && atStake <= MAX_COUNT)) return false;
+  if (raised !== undefined && !(Array.isArray(raised) && raised.length === 3 && raised.every((count) => isWholeNonNegative(count) && count <= MAX_COUNT))) return false;
   // Rematches won, by the id of the bout: whole counts against plain ids. A bout this version does not know is kept.
   const { rematches } = value;
   if (rematches !== undefined && (!isRecord(rematches) || Object.keys(rematches).length > MAX_BOUTS
@@ -415,10 +429,12 @@ export function isValidState(value: unknown, catalog: Catalog): value is GameSta
     && (grudge.knows === undefined || isPlainId(grudge.knows))
     && isWholeNonNegative(grudge.met) && grudge.met <= 2 && isWholeNonNegative(grudge.waited) && grudge.waited <= 1_000_000)) return false;
   if (accounts !== undefined && !(Array.isArray(accounts) && accounts.length <= 1000 && accounts.every(isName))) return false;
-  // Bench work: whole steps against plain ids, no further than the bench goes in this telling. A part
-  // this version does not know is kept: it is simply never fitted.
-  const { tuning } = value;
-  const furthest = tuneCap(value.cycle);
+  // The bench's licences: one, two or three. Bench work: whole steps against plain ids, no further than the
+  // bench goes in this telling with those licences. A part this version does not know is kept: it is simply
+  // never fitted.
+  const { tuning, bench } = value;
+  if (bench !== undefined && !(isWholeNonNegative(bench) && bench >= 1 && bench <= LICENCE_PRICES.length)) return false;
+  const furthest = benchCap({ cycle: value.cycle, bench });
   if (tuning !== undefined && (!isRecord(tuning) || Object.keys(tuning).length > MAX_TUNED
     || !Object.entries(tuning).every(([id, step]) => /^[a-z0-9-]{1,64}$/.test(id) && isWholeNonNegative(step) && step >= 1 && step <= furthest))) return false;
   // What the pilot has been told. An id this version does not know is kept: a later one may.

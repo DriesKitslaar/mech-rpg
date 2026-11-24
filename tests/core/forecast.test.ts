@@ -1,6 +1,6 @@
 import { chooseAutoPlayerAction, runBattle, stepBattle } from '../../src/core/ai';
 import type { Mission } from '../../src/core/campaign';
-import { FORECAST_PLAYS, FORECAST_STEPS, advance, counted, forecastSeed, newCount, type Count } from '../../src/core/forecast';
+import { FORECAST_PLAYS, FORECAST_STEPS, NEAR_SCALE, ODDS_GOOD, advance, counted, forecastSeed, neared, nearness, nearnessOf, newCount, type Count } from '../../src/core/forecast';
 import { playMission, startFight, type Fight } from '../../src/core/mission';
 import { ARCHETYPE_BUILDS } from '../../src/content/archetypeBuilds';
 import { ENEMIES } from '../../src/content/enemies';
@@ -49,7 +49,7 @@ test('the flights are always the same flights: each has its own seed, and no two
 });
 
 test('a new count has counted nothing and has nothing in the air', () => {
-  expect(newCount()).toEqual({ tally: { played: 0, won: 0 }, index: 0, state: null });
+  expect(newCount()).toEqual({ tally: { played: 0, won: 0 }, index: 0, state: null, lost: [], again: { flown: 0, turned: 0 } });
   expect(counted(newCount())).toBe(false);
 });
 
@@ -57,7 +57,9 @@ test('what is counted is what playing the contract through twenty times gives: a
   const { count } = countAll(LANCER, DEEP_WATER);
   expect(count.tally).toEqual({ played: 20, won: 9 });
   expect(count.tally.won).toBe(played(LANCER, DEEP_WATER));
-  expect(count.state).toBeNull();
+  // As the last of the twenty is counted nothing is in the air. (A step at a time: with odds like these the count
+  // goes on to fly the lost flights again, and a go of several steps may have begun the first of them.)
+  expect(countAll(LANCER, DEEP_WATER, 1).count.state).toBeNull();
   // Another build on the same contract is another count.
   expect(countAll(SHARP, DEEP_WATER).count.tally).toEqual({ played: 20, won: 20 });
 });
@@ -138,7 +140,7 @@ test('a flight that wins its first battle and loses its last counts as lost: the
     count = next;
   }
   expect(seen).not.toBeNull();
-  expect(count).toEqual({ tally: { played: 1, won: 0 }, index: 0, state: null });
+  expect(count).toEqual({ tally: { played: 1, won: 0 }, index: 0, state: null, lost: [0], again: { flown: 0, turned: 0 } });
 });
 
 test('the count is of the fight it is given: the scale of the enemy, what the pilot brings and the Overdrive all tell', () => {
@@ -177,4 +179,108 @@ test('a contract that fills the Overdrive hands it over full as its first battle
   expect(startFight(fight, contract, 1, CATALOG, 5, spent).units[0].drive).toBe(0);
   // Without a hand-out the meter starts empty.
   expect(startFight({ ...fight, drive: undefined }, contract, 0, CATALOG, 5).units[0].drive).toBe(0);
+});
+
+describe('how near the lost flights were', () => {
+  /** Counts on until every lost flight has been flown again, so many steps at a time. */
+  function nearAll(fight: Fight, contract: Mission, steps = 100_000): Count {
+    let count = newCount();
+    for (let goes = 0; !neared(count); goes++) {
+      count = advance(count, fight, contract, CATALOG, steps);
+      if (goes > 400_000) throw new Error('the count never ends');
+    }
+    return count;
+  }
+  /** Whether a flight is won, played through in one go, with the opposition at a share of what it is. */
+  const wins = (fight: Fight, contract: Mission, flight: number, share = 1): boolean =>
+    playMission(fight.build, contract, fight.enemies, CATALOG, forecastSeed(flight), (s) => runBattle(s, CATALOG, chooseAutoPlayerAction),
+      { ...fight.opts, enemyScale: (fight.opts.enemyScale ?? 1) * share }).outcome === 'victory';
+
+  test('by the share of them that a tenth less opposition turns: two thirds narrowly, a third clearly, fewer outmatched', () => {
+    expect(NEAR_SCALE).toBe(0.9);
+    expect(ODDS_GOOD).toBe(0.75);
+    expect(nearnessOf(15, 14)).toBe('narrow');
+    expect(nearnessOf(16, 1)).toBe('outmatched');
+    expect(nearnessOf(14, 8)).toBe('clear');
+    // On the lines themselves: two of three is narrowly, one of three is clearly.
+    expect([nearnessOf(6, 4), nearnessOf(6, 3), nearnessOf(6, 2), nearnessOf(6, 1), nearnessOf(6, 0)]).toEqual(['narrow', 'clear', 'clear', 'outmatched', 'outmatched']);
+    expect(nearnessOf(20, 20)).toBe('narrow');
+    // With no flight lost there is nothing to say.
+    expect(nearnessOf(0, 0)).toBeNull();
+  });
+
+  test('a count with good odds is done when it is counted: nothing is flown again, and nothing is said', () => {
+    const { count } = countAll(SHARP, DEEP_WATER, 100_000);
+    expect(count.tally).toEqual({ played: 20, won: 20 });
+    expect(neared(count)).toBe(true);
+    expect(nearness(count)).toBeNull();
+    expect(count.lost).toEqual([]);
+    expect(count.again).toEqual({ flown: 0, turned: 0 });
+    // Fifteen of twenty is good, fourteen is not: one flight is the line.
+    const lost = (n: number): Count => ({ ...count, tally: { played: 20, won: 20 - n }, lost: Array.from({ length: n }, (_, i) => i) });
+    expect([neared(lost(5)), neared(lost(6))]).toEqual([true, false]);
+    expect(nearness({ ...lost(5), again: { flown: 5, turned: 5 } })).toBeNull();
+    expect(nearness({ ...lost(6), again: { flown: 6, turned: 6 } })).toBe('narrow');
+  });
+
+  test('where the odds are not good, the lost flights are flown again against a tenth less, each from its own seed', () => {
+    // (A step at a time, so that the count is looked at as its last flight is counted and not a step later.)
+    const { count: odds } = countAll(LANCER, DEEP_WATER, 1);
+    expect(odds.tally).toEqual({ played: 20, won: 9 });
+    // The count knows which flights were lost: the ones that playing each through loses.
+    const lost = Array.from({ length: FORECAST_PLAYS }, (_, flight) => flight).filter((flight) => !wins(LANCER, DEEP_WATER, flight));
+    expect(odds.lost).toEqual(lost);
+    expect(lost).toHaveLength(11);
+    // Counted, and not yet done: there are flights to fly again, and until they are nothing is said.
+    expect([counted(odds), neared(odds), nearness(odds)]).toEqual([true, false, null]);
+    const count = nearAll(LANCER, DEEP_WATER);
+    const turned = lost.filter((flight) => wins(LANCER, DEEP_WATER, flight, NEAR_SCALE)).length;
+    expect(count.again).toEqual({ flown: lost.length, turned });
+    expect(nearness(count)).toBe(nearnessOf(lost.length, turned));
+    expect(nearness(count)).not.toBeNull();
+    // The odds are the odds: flying the lost flights again moved nothing of them.
+    expect(count.tally).toEqual(odds.tally);
+    expect(count.lost).toEqual(odds.lost);
+    expect(count.state).toBeNull();
+    // And then it is done: another go changes nothing.
+    expect(advance(count, LANCER, DEEP_WATER, CATALOG)).toEqual(count);
+  });
+
+  test('it comes out the same however little is worked out at a time', () => {
+    const whole = nearAll(LANCER, DEEP_WATER);
+    for (const steps of [1, FORECAST_STEPS, 64]) expect(nearAll(LANCER, DEEP_WATER, steps), String(steps)).toEqual(whole);
+  });
+
+  test('a go leaves the count it was given as it was, in the second flying as in the first', () => {
+    const { count: odds } = countAll(LANCER, DEEP_WATER, 1);
+    const before = advance(odds, LANCER, DEEP_WATER, CATALOG, 40);
+    const kept = structuredClone(before);
+    const after = advance(before, LANCER, DEEP_WATER, CATALOG, 40);
+    expect(before).toEqual(kept);
+    expect(after).not.toEqual(before);
+    // The first step of it begins the first lost flight, from that flight's seed, against a tenth less.
+    const begun = advance(odds, LANCER, DEEP_WATER, CATALOG, 1);
+    const weaker: Fight = { ...LANCER, opts: { ...LANCER.opts, enemyScale: 0.9 } };
+    expect(begun.state).toEqual(startFight(weaker, DEEP_WATER, 0, CATALOG, forecastSeed(odds.lost[0])));
+  });
+
+  test('a contract of two battles is flown again whole: a flight lost in the second is one that wins the first again', () => {
+    const contract: Mission = {
+      id: 't', title: 't', phase: 'faction', client: 'c', briefing: ['b'], debrief: 'd', reward: 100,
+      battles: [{ enemies: ['recon-drone'], background: 'bg' }, { enemies: ['leviathan', 'juggernaut', 'juggernaut'], background: 'bg' }],
+    };
+    const fight: Fight = { build: STARTER_BUILD, enemies: ENEMIES, opts: { enemyScale: 1 } };
+    let count = newCount();
+    let second = 0;
+    for (let goes = 0; !neared(count) && goes < 400_000; goes++) {
+      const next = advance(count, fight, contract, CATALOG, 1);
+      if (counted(count) && next.index === 1 && count.index === 0) second += 1;
+      count = next;
+    }
+    expect(count.tally).toEqual({ played: 20, won: 0 });
+    expect(count.again).toEqual({ flown: 20, turned: 0 });
+    // Every one of the twenty reached the second battle again before it was lost there.
+    expect(second).toBe(20);
+    expect(nearness(count)).toBe('outmatched');
+  });
 });

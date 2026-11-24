@@ -733,7 +733,7 @@ describe('the screens the pilot\'s record added', () => {
     press(app, 'next');
     // The manual opens on the buttons and the short words, and what a first hour asks follows.
     expect(page().said).toEqual(expect.arrayContaining(['CONTROLS', 'Short Words', 'Short Words: Guns', 'The Basics', 'Your Turn', 'Aiming', 'Heat', 'Field Repairs', 'Money', `${MANUAL.length} TOPICS`]));
-    expect(MANUAL).toHaveLength(53);
+    expect(MANUAL).toHaveLength(56);
   });
 
   test('the database growing is announced with its own mark, and medals after it one by one', () => {

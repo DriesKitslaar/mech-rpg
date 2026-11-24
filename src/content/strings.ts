@@ -85,6 +85,13 @@ export const STRINGS = {
   battleIntro: { warning: 'WARNING', overdue: 'OVERDUE', destroy: 'DESTROY ALL HOSTILES', open: 'MOMENTUM' },
   // An account (see grudge.ts), as it is announced when one begins: that it has, and under what callsign.
   accounts: { opened: 'ACCOUNT OPENED', callsign: (name: string) => `Callsign ${name}` },
+  // The terms an open contract can be taken on (core/stakes.ts), by their level; and what is said when a game is
+  // opened that was closed with a contract on raised terms in the air: its bond is gone.
+  stakes: {
+    names: ['Standard', 'Hazard', 'Severe', 'Ruinous'],
+    forfeit: 'BOND LOST',
+    forfeitNote: (credits: number) => `Left in the air: -${credits} c`,
+  },
   // The launch that opens a contract flown from the hangar: where it is, and the word as the catapult fires.
   catapult: { bay: 'CATAPULT', go: 'LAUNCH' },
   yourTurn: (round: number) => `Round ${round} - your move`,
@@ -294,11 +301,13 @@ export const STRINGS = {
     // What starting over keeps, and what the cycle that would begin changes: tougher enemies and better pay up to the third
     // telling, a step more at the bench up to the fourth.
     // What stays, what leaves the list of contracts until the story brings it back, and what the next telling is like.
-    cycleQuestion: (next: number): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
+    // `bench` is whether that telling takes this pilot's bench a step further: it does up to the fourth, unless licences
+    // have taken it to its end before (see tuning.ts).
+    cycleQuestion: (next: number, bench = next <= 3): string[] => ['Start the war again?', 'You keep credits, parts,', 'level, perks and arena rank.',
       // (The duels that start over are the ones that are side work: what was won in the arena stays.)
       'Side work and its duels, and', 'the Archive, start over too.',
-      ...(next <= 2 ? ['Tougher enemies, better pay,', 'one more step at the bench.']
-        : next === 3 ? ['Enemies are as tough as now.', 'The bench has one step left.']
+      ...(next <= 2 ? (bench ? ['Tougher enemies, better pay,', 'one more step at the bench.'] : ['Tougher enemies, better pay.', 'The bench goes no further.'])
+        : bench ? ['Enemies are as tough as now.', 'The bench has one step left.']
           : ['Enemies are as tough as now,', 'and the pay is the same.'])],
     no: 'No', yes: 'Yes',
   },
@@ -440,6 +449,8 @@ export const STRINGS = {
     earned: 'CREDITS EARNED', medals: 'MEDALS', cycle: 'CYCLE', time: 'TIME PLAYED', none: '-', ranksHeld: 'RANKS HELD',
     // Beside the name the record has earned: the accounts the pilot has closed (see grudge.ts), once there is one.
     accounts: (closed: number) => `ACCOUNTS CLOSED ${closed}`,
+    // Beside the ranks held: the contracts won on raised terms (see stakes.ts), once there is one.
+    raised: (won: number) => `RAISED TERMS WON ${won}`,
   },
   // The name a pilot's record has earned: five of them, each with what it means to the other side.
   renown: {
@@ -582,9 +593,24 @@ export const STRINGS = {
     buildHint: 'LEFT/RIGHT: another build', buildNone: 'Save builds in the Garage to choose one here.',
     // (A saved build that cannot be chosen: a part of it was sold, or it may not deploy as it is.)
     buildShort: (slot: number, part: string) => `BUILD ${slot}: ${part} missing`, buildGrounded: (slot: number) => `BUILD ${slot} cannot deploy`,
+    // The terms an open contract is taken on (core/stakes.ts): the row in the briefing's menu, and how to turn it.
+    terms: 'Terms', termsHint: 'LEFT/RIGHT: change the terms',
+    // The terms by name: the heading of their page, and the line under the client while they are raised.
+    termsName: (name: string) => `${name.toUpperCase()} TERMS`,
+    termsTag: (name: string, factor: number) => `${name.toUpperCase()} TERMS: opposition x${factor}`,
+    // What they ask, a line each: the opposition, the fee, the bond (and the bond of a pilot who does not hold it).
+    termsStandard: 'The contract as it is offered. Nothing is staked.',
+    opposition: (factor: number) => `Opposition x${factor}: armour and damage.`,
+    termsFee: (credits: number) => `Pays ${credits} c if you win.`,
+    termsBond: (credits: number) => `Bond ${credits} c: lost if you lose or leave.`,
+    termsNoBond: (credits: number, held: number) => `Bond ${credits} c: you hold ${held}.`,
+    // What the row that takes the contract says while the odds of raised terms are still being counted.
+    counting: 'Counting',
     // How the contract is likely to go in that build: what the game's own pilot wins of it, flight by flight as it is counted.
     odds: (won: number, played: number) => `ODDS ${won}/${played}`, oddsWait: 'ODDS ..',
     oddsNote: 'this contract flown on Auto Turn',
+    // What that line ends in where the odds are not good: how the lost flights were lost (core/forecast.ts).
+    oddsNear: { narrow: 'lost narrowly on Auto Turn', clear: 'lost clearly on Auto Turn', outmatched: 'outmatched on Auto Turn' },
     // An open contract that asks for a class of machine: the line under its client, and each class as it is asked for.
     asks: (wanted: string, percent: number) => `WANTS ${wanted}: +${percent}% PAY`,
     // After it, while another build is chosen: which of the pilot's saved builds is of that class.
@@ -622,6 +648,8 @@ export const STRINGS = {
     rank: 'RANK', rankBonus: (rank: string) => `Rank ${rank} bonus`,
     // What a contract that asked for a class paid on top to a pilot who won it as one: the row is the class by its name.
     askBonus: (name: string) => `${name} bonus`,
+    // A contract flown on raised terms: won, what the terms paid beside the fee; lost, the bond that went with it. Each by the terms' name.
+    hazard: (name: string) => `${name} terms`, bond: (name: string) => `Bond (${name})`,
     net: 'NET', balance: 'BALANCE', continue: 'Press A to continue',
     // Beside the balance: what the medals earned with this bill paid, which the net does not count.
     medals: (credits: number) => `with medals +${credits}`,
@@ -677,7 +705,11 @@ export const STRINGS = {
     toBench: 'R1: the bench', bench: 'THE BENCH', benchStep: (step: number, cap: number) => `Step ${step} of ${cap}`,
     tune: (step: number) => `Tune to +${step}`, benchCost: (cost: number) => `${cost} c`, benchCredits: (credits: number) => `You have ${credits} c`,
     benchFigures: { armour: 'Armour', damage: 'Damage', output: 'Output' },
-    benchAtLimit: 'No further this cycle', benchAtEnd: 'As far as it goes', benchShort: 'Not enough credits',
+    benchAtEnd: 'As far as it goes', benchShort: 'Not enough credits',
+    // The bench's licence: offered where a part stands as far as the bench goes now, short of the last step. The row
+    // (its price stands beside it), the question before it is bought, and under both what it is.
+    licence: (step: number) => `Licence +${step}`, licenceQuestion: (step: number, price: number) => `Licence +${step} for ${price} c?`,
+    licenceNote: (step: number) => `Opens +${step} for every part, permanently.`,
   },
   shop: {
     heading: 'SHOP', buy: 'BUY', sell: 'SELL', credits: 'c',

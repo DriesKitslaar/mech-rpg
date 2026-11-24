@@ -44,12 +44,49 @@ describe('the question before the story starts over', () => {
     }
   });
 
+  test('with licences bought it says of the bench what is so: a step where the telling still brings one, and that it goes no further where none does', () => {
+    for (let next = 1; next <= 8; next++) {
+      for (let licences = 0; licences <= 3; licences++) {
+        const grows = tuneCap(next, licences) > tuneCap(next - 1, licences);
+        const said = STRINGS.hub.cycleQuestion(next, grows).join(' ');
+        const tougher = cycleStrength(next) > cycleStrength(next - 1);
+        expect(/one more step at the bench|The bench has one step left/.test(said), `cycle ${next}, ${licences} licences`).toBe(grows);
+        expect(/The bench goes no further/.test(said), `cycle ${next}, ${licences} licences`).toBe(tougher && !grows);
+        expect(/Tougher enemies, better pay/.test(said), `cycle ${next}, ${licences} licences`).toBe(tougher);
+        expect(/as tough as now/.test(said), `cycle ${next}, ${licences} licences`).toBe(!tougher);
+      }
+      // Asked with no word of the bench, it is as a pilot without a licence is asked.
+      expect(question(next)).toEqual(STRINGS.hub.cycleQuestion(next, tuneCap(next) > tuneCap(next - 1)));
+    }
+    expect(STRINGS.hub.cycleQuestion(1, false).slice(5)).toEqual(['Tougher enemies, better pay.', 'The bench goes no further.']);
+  });
+
+  test('the hub asks it by the pilot\'s own bench', () => {
+    const asked = (game: GameState): string[] => {
+      const { app } = inHub(game);
+      select(app, 'cycle');
+      return record((ctx) => app.draw(ctx)).texts.map((t) => t.text);
+    };
+    expect(asked(finished(0))).toContain('one more step at the bench.');
+    // With all three licences the bench is at its end, whatever telling comes; with one it still has a step to come.
+    expect(asked({ ...finished(0), bench: 3 })).toEqual(expect.arrayContaining(['Tougher enemies, better pay.', 'The bench goes no further.']));
+    expect(asked({ ...finished(0), bench: 3 })).not.toContain('one more step at the bench.');
+    expect(asked({ ...finished(0), bench: 1 })).toContain('one more step at the bench.');
+    // In the third telling the fourth would bring the last step: unless a licence already has.
+    expect(asked(finished(2))).toContain('The bench has one step left.');
+    expect(asked({ ...finished(2), bench: 1 })).toEqual(expect.arrayContaining(['Enemies are as tough as now,', 'and the pay is the same.']));
+  });
+
   test.each(['en', 'nl'] as const)('is seven lines that fit the box (%s)', (language) => {
     setLanguage(language);
     try {
       for (let next = 1; next <= 6; next++) {
         expect(question(next)).toHaveLength(7);
         for (const row of question(next)) expect(row.length, row).toBeLessThanOrEqual(30);
+        for (const bench of [true, false]) {
+          expect(STRINGS.hub.cycleQuestion(next, bench)).toHaveLength(7);
+          for (const row of STRINGS.hub.cycleQuestion(next, bench)) expect(row.length, row).toBeLessThanOrEqual(30);
+        }
       }
       // The first five lines are the same whatever the cycle: what is kept, and what starts over.
       expect(question(5).slice(0, 5)).toEqual(question(1).slice(0, 5));

@@ -363,6 +363,29 @@ describe('no word lies over another, and none runs off the screen', () => {
     expect(faults).toEqual([]);
   });
 
+  test.each(['en', 'nl'] as const)('in the briefing of an open contract, on every row at each of its terms (%s)', (language) => {
+    // With money for every bond, and with too little for the upper two: the page of terms that cannot be taken has a line of its own.
+    for (const credits of [1234567, 2500]) {
+      const { app } = inHub({ ...veteran(language), credits });
+      const faults: string[] = [];
+      // A contract that asks for a class, where the board has one: its second line stands under the line of the terms.
+      const open = app.missions().filter((mission) => mission.id.startsWith('open-'));
+      const contract = open.find((mission) => mission.asks !== undefined && mission.battles.length > 1) ?? open[open.length - 1];
+      select(app, 'contracts');
+      select(app, contract.id);
+      expect(snap(app).menu.items.map((item) => item.id)).toContain('terms');
+      for (let level = 0; level < 4; level++) {
+        for (let row = 0; row < snap(app).menu.items.length; row++) {
+          for (const fault of crowded(app)) faults.push(`${credits} terms ${level}, row ${snap(app).menu.items[snap(app).menu.cursor].id}: ${fault}`);
+          press(app, 'down');
+        }
+        while (snap(app).menu.items[snap(app).menu.cursor].id !== 'terms') press(app, 'down');
+        press(app, 'right');
+      }
+      expect(faults).toEqual([]);
+    }
+  });
+
   test.each(['en', 'nl'] as const)('where the long game put new words: a question on the class page, a rematch, the question before a new telling, and the list of one (%s)', (language) => {
     const { app } = inHub(veteran(language));
     const faults: string[] = [];
@@ -554,8 +577,9 @@ describe('one game: the same thing looks and is called the same on every screen'
       const screen = new SettlementScreen(app, settlement, { ...MISSIONS[0], debrief });
       return record((ctx) => screen.draw(ctx)).texts;
     };
-    // The plain bill, the one whose rank paid, and the one whose rank and class both paid: the most rows a bill has.
-    const bills: Partial<Settlement>[] = [{}, { rank: 'S', bonus: 200 }, { rank: 'S', bonus: 200, asked: { kind: ARCHETYPES[0], bonus: 100 } }];
+    // The plain bill, the one whose rank paid, the one whose rank and class both paid, and that one on raised terms: the most rows a bill has.
+    const bills: Partial<Settlement>[] = [{}, { rank: 'S', bonus: 200 }, { rank: 'S', bonus: 200, asked: { kind: ARCHETYPES[0], bonus: 100 } },
+      { rank: 'S', bonus: 200, asked: { kind: ARCHETYPES[0], bonus: 100 }, hazard: { level: 3, pay: 1600 } }];
     // What the client says, in one line, in two and in three.
     const one = 'Paid in full.';
     const said = [one, `${one} The yard is clear and the trucks are rolling again.`, `${one} The yard is clear and the trucks are rolling again. Dispatch has your name down for the next one, and so do we.`];
@@ -572,8 +596,9 @@ describe('one game: the same thing looks and is called the same on every screen'
       expect(words[n].y + LINE).toBeLessThanOrEqual(180 - 2);
       return rows.filter((t) => t.text.startsWith('  ')).length;
     }));
-    // Three lines said cost a full bill a repair line or two; what is shorter moves down and costs it less, or nothing.
-    expect(named).toEqual([[4, 4, 4], [4, 4, 3], [4, 3, 2]]);
+    // Three lines said cost a full bill a repair line or more; what is shorter moves down and costs it less, or nothing.
+    // The fullest bill there is, with three lines said under it, still names a damaged part.
+    expect(named).toEqual([[4, 4, 4, 3], [4, 4, 3, 2], [4, 3, 2, 1]]);
     expect([REPAIR_LINES, WORDS_LINES]).toEqual([4, 3]);
   });
 

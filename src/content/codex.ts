@@ -270,6 +270,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'A briefing gives the odds of the contract in the build you have chosen: Auto Turn flies it 20 times with your perks, bench work, Overdrive, wingman and difficulty, and its wins are counted. Another build is another count. The odds are what Auto Turn makes of the fight: flying it yourself, you can do better.',
   },
   {
+    id: 'near', title: 'HOW IT WAS LOST',
+    text: 'Where the odds are under 15 in 20, the briefing says how the lost flights went. Each is flown again against a tenth less opposition, about what two steps at the bench give. Lost narrowly: two in three are then won. Lost clearly: one in three. Outmatched: fewer. Narrowly wants a little more machine; outmatched, another build.',
+  },
+  {
     id: 'momentum', title: 'MOMENTUM',
     text: 'Where the banner says MOMENTUM (two or more machines, none of them a boss, a named pilot, an elite, a Bailiff or an objective\'s target), a volley that destroys one pays for itself: the weapon is ready again, its energy comes back, and the run is counted (CHAIN x2). Heat and rounds stay spent; a charged weapon must charge again.',
   },
@@ -318,6 +322,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
     text: 'A pilot you wrecked, drove off or lost to may come back for you: a notice by the board, OVERDUE and their callsign. They come three times. From the second, their machine is HARDENED against the weapon that hurt it most last time: that does HALF until the number beside HARDENED is shot away. Bring another: it is only a machine.',
   },
   {
+    id: 'terms', title: 'RAISED TERMS',
+    text: 'An open contract, job or swarm can be flown on raised terms: the row Terms under Accept. Hazard: opposition x1.5, armour and damage. Severe: x2. Ruinous: x3. The pay grows as much, and what it adds is your bond: lost if you lose, leave, or close the game in the air. Freight you guard grows as sturdy. Accept waits for the odds.',
+  },
+  {
     id: 'range', title: 'THE TEST RANGE',
     text: "The simulator's second page (L1/R1) is the range: your own build against any machine you have met, up to three of the lighter ones, one of a mech or anything of the story's. A real fight: perks, bench work, Overdrive and difficulty all count. Nothing is billed, paid or counted; afterwards you see what it would have cost.",
   },
@@ -332,6 +340,10 @@ export const MANUAL: { id: string; title: string; text: string }[] = [
   {
     id: 'bench', title: 'THE BENCH',
     text: 'In the garage, R1 on a part you own puts it on the bench. A step costs its number times the price of the part and adds a twentieth: armour to a frame part, damage to a weapon, output to a generator. The work stays with the part when it is sold. The bench goes two steps, and one further each time the story starts over, to five.',
+  },
+  {
+    id: 'bench-licence', title: 'BENCH LICENCES',
+    text: "Where a part stands as far as the bench goes, the bench offers a licence for the next step: 50000 c for the third, 100000 for the fourth, 150000 for the fifth. A licence is for the bench, not the part: every part may then go that step, at the step's own price. It is kept for good, and a new cycle still adds its own step on top.",
   },
   {
     id: 'overdrive', title: 'OVERDRIVE',

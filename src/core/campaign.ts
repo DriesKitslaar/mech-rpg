@@ -116,6 +116,11 @@ export interface Mission {
    * for it, and it counts for no class. See arena.ts.
    */
   rematch?: true;
+  /**
+   * Set on an open contract as it is flown on raised terms: the level of the terms, and what is staked
+   * on it (the bond, which is also what the terms pay on top of the fee). See stakes.ts.
+   */
+  stake?: { level: number; amount: number };
   /** Set on a training drill: the mech that is lent for it. See training.ts. */
   loaner?: Build;
   /** Set on a drill that teaches the Overdrive: the one it is flown with, and what its meter starts at. */

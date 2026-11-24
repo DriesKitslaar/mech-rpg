@@ -35,6 +35,10 @@ export interface Settlement {
   crowned?: Archetype;
   /** Set on the bill of the duel that took the eighth seat from its keeper; see seat.ts. */
   seated?: true;
+  /** What a contract won on raised terms paid beside the fee, and on which terms; see stakes.ts. */
+  hazard?: { level: number; pay: number };
+  /** The bond that went with a contract lost on raised terms, and on which terms. */
+  bond?: { level: number; lost: number };
   /** Set on the bill of a meeting won with the pilot of an account: whose, which meeting, and whether it closed the account; see grudge.ts. */
   account?: { name: string; meeting: number; closed: boolean };
 }
