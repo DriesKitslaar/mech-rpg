@@ -1408,7 +1408,9 @@ export class App {
   prospect(offered: Mission, wingmanId: string | null, slot: number | null, stake = 0): { mission: Mission; fight: Fight } | null {
     const game = offered.loaner === undefined ? this.fitted(slot) : null;
     if (!game || validatePlayerBuild(game.build, tunedCatalog(this.deps.catalog, game.tuning)).length > 0) return null;
-    const mission = this.flown(offered, wingmanId, stake);
+    // On the terms asked about, whether or not this pilot holds their bond: what is counted is what those terms would
+    // be, and a briefing shows that for terms it will not let the pilot take.
+    const mission = staked(this.crewed(offered, wingmanId), stake);
     return { mission, fight: this.fight(mission, game) };
   }
 

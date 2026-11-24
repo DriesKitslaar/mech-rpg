@@ -589,9 +589,24 @@ export const STRINGS = {
     buildHint: 'LEFT/RIGHT: another build', buildNone: 'Save builds in the Garage to choose one here.',
     // (A saved build that cannot be chosen: a part of it was sold, or it may not deploy as it is.)
     buildShort: (slot: number, part: string) => `BUILD ${slot}: ${part} missing`, buildGrounded: (slot: number) => `BUILD ${slot} cannot deploy`,
+    // The terms an open contract is taken on (core/stakes.ts): the row in the briefing's menu, and how to turn it.
+    terms: 'Terms', termsHint: 'LEFT/RIGHT: change the terms',
+    // The terms by name: the heading of their page, and the line under the client while they are raised.
+    termsName: (name: string) => `${name.toUpperCase()} TERMS`,
+    termsTag: (name: string, factor: number) => `${name.toUpperCase()} TERMS: opposition x${factor}`,
+    // What they ask, a line each: the opposition, the fee, the bond (and the bond of a pilot who does not hold it).
+    termsStandard: 'The contract as it is offered. Nothing is staked.',
+    opposition: (factor: number) => `Opposition x${factor}: armour and damage.`,
+    termsFee: (credits: number) => `Pays ${credits} c if you win.`,
+    termsBond: (credits: number) => `Bond ${credits} c: lost if you lose or leave.`,
+    termsNoBond: (credits: number, held: number) => `Bond ${credits} c: you hold ${held}.`,
+    // What the row that takes the contract says while the odds of raised terms are still being counted.
+    counting: 'Counting',
     // How the contract is likely to go in that build: what the game's own pilot wins of it, flight by flight as it is counted.
     odds: (won: number, played: number) => `ODDS ${won}/${played}`, oddsWait: 'ODDS ..',
     oddsNote: 'this contract flown on Auto Turn',
+    // What that line ends in where the odds are not good: how the lost flights were lost (core/forecast.ts).
+    oddsNear: { narrow: 'lost narrowly on Auto Turn', clear: 'lost clearly on Auto Turn', outmatched: 'outmatched on Auto Turn' },
     // An open contract that asks for a class of machine: the line under its client, and each class as it is asked for.
     asks: (wanted: string, percent: number) => `WANTS ${wanted}: +${percent}% PAY`,
     // After it, while another build is chosen: which of the pilot's saved builds is of that class.

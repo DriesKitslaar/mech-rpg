@@ -363,6 +363,29 @@ describe('no word lies over another, and none runs off the screen', () => {
     expect(faults).toEqual([]);
   });
 
+  test.each(['en', 'nl'] as const)('in the briefing of an open contract, on every row at each of its terms (%s)', (language) => {
+    // With money for every bond, and with too little for the upper two: the page of terms that cannot be taken has a line of its own.
+    for (const credits of [1234567, 2500]) {
+      const { app } = inHub({ ...veteran(language), credits });
+      const faults: string[] = [];
+      // A contract that asks for a class, where the board has one: its second line stands under the line of the terms.
+      const open = app.missions().filter((mission) => mission.id.startsWith('open-'));
+      const contract = open.find((mission) => mission.asks !== undefined && mission.battles.length > 1) ?? open[open.length - 1];
+      select(app, 'contracts');
+      select(app, contract.id);
+      expect(snap(app).menu.items.map((item) => item.id)).toContain('terms');
+      for (let level = 0; level < 4; level++) {
+        for (let row = 0; row < snap(app).menu.items.length; row++) {
+          for (const fault of crowded(app)) faults.push(`${credits} terms ${level}, row ${snap(app).menu.items[snap(app).menu.cursor].id}: ${fault}`);
+          press(app, 'down');
+        }
+        while (snap(app).menu.items[snap(app).menu.cursor].id !== 'terms') press(app, 'down');
+        press(app, 'right');
+      }
+      expect(faults).toEqual([]);
+    }
+  });
+
   test.each(['en', 'nl'] as const)('where the long game put new words: a question on the class page, a rematch, the question before a new telling, and the list of one (%s)', (language) => {
     const { app } = inHub(veteran(language));
     const faults: string[] = [];
