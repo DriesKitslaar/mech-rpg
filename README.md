@@ -101,6 +101,11 @@ Zitten A en B op jouw toestel andersom? Zet onder **Options** de regel **A/B But
 - **Piloot**: niveaus en acht vaardigheden, 80 medailles en een logboek.
 - **Database**: een fiche per vijand die je bent tegengekomen, de achtergrond van de stad en de
   spelregels.
+- **Inzet**: een open contract kun je zwaarder aannemen voor meer loon: anderhalf, twee of drie
+  keer de tegenstand en het loon, met een borg die je kwijt bent als je verliest. De briefing telt
+  je kans voor de inzet die je kiest en zegt hoe nipt een verlies was. Sparen kan voor een
+  werkbanklicentie (50.000, 100.000 en 150.000 credits): een stap extra voor elk onderdeel,
+  voorgoed.
 - **Verder**: losse contracten die meegroeien, een nieuwe ronde na het einde, drie opslagplekken,
   drie moeilijkheden, muziek per scherm (zestien nummers, zonder audiobestanden), trillen bij zware
   treffers, en een schuldplafond zodat een reeks nederlagen nooit het einde van een spel is.

@@ -3,12 +3,15 @@ import { ARCHETYPES, archetypeOf } from '../../src/core/archetype';
 import { GUARD_DAMAGE, HARDENED, HEAT_LIMIT, SPOOL_BASE, SURGE_UNIT, bufferRoom, createBattle } from '../../src/core/battle';
 import { WINS_PER_TIER } from '../../src/core/board';
 import { GRUDGE_MEETINGS, GRUDGE_NUMBERS, GRUDGE_TIER, GRUDGE_WAIT } from '../../src/core/grudge';
+import { NEAR_SCALE, ODDS_GOOD, nearnessOf } from '../../src/core/forecast';
 import { BUILD_SLOTS, LOADOUT_SLOTS } from '../../src/core/game';
 import { isUnread, skippable, startNewCycle } from '../../src/core/campaign';
 import { launches } from '../../src/core/launch';
 import { DEFAULT_MIXES, MIX_KEYS, MIX_SLOTS, MIX_STEPS, mixId } from '../../src/core/mix';
 import { MAX_LEVEL } from '../../src/core/pilot';
 import { SEAT_PURSE, seatPurse } from '../../src/core/seat';
+import { STAKES, bondFor } from '../../src/core/stakes';
+import { LICENCE_PRICES, TUNE_MAX, tuneCap } from '../../src/core/tuning';
 import { ALL_STRIPES, MAX_STRIPE_POINTS, STRIPES_AT, STRIPES_A_POINT, countsForClass, earnsStripes, stripePoints, stripesHeld } from '../../src/core/stripes';
 import type { FramePart, Weapon } from '../../src/core/types';
 import { rematchPurse } from '../../src/core/arena';
@@ -733,5 +736,129 @@ describe('what is said of accounts is so', () => {
     expect(README).toContain(`Na ${word(GRUDGE_MEETINGS)} gewonnen ontmoetingen is de rekening gesloten en kan er een met een ander beginnen.`);
     expect(README).toContain(`${MEDALS.length} medailles`);
     expect(MEDALS).toHaveLength(80);
+  });
+});
+
+describe('what is said of terms and of the licence is so', () => {
+  const chapter = (id: string) => MANUAL.find((entry) => entry.id === id)!;
+  const at = (id: string): number => MANUAL.findIndex((entry) => entry.id === id);
+  const dutch = (id: string): { title: string; text: string } => ({ title: REFERENCE_NL[chapter(id).title], text: REFERENCE_NL[chapter(id).text] });
+  const B = STRINGS.briefing;
+  const N = STRINGS_NL.briefing;
+  /** A price as the guide writes it: thousands apart. */
+  const thousands = (n: number): string => String(n).replace(/\B(?=(\d{3})+$)/g, '.');
+  const terms = GUIDE.slice(GUIDE.indexOf('### Verhoogde inzet: meer tegenstand voor meer loon'), GUIDE.indexOf('### Het proefveld'));
+  const odds = GUIDE.slice(GUIDE.indexOf('### Je winkans'), GUIDE.indexOf('### Een contract dat een klasse zoekt'));
+  const bench = GUIDE.slice(GUIDE.indexOf('## De werkbank'), GUIDE.indexOf('## De spuiterij'));
+
+  test('the figures everything below is held to', () => {
+    expect([...STAKES]).toEqual([1, 1.5, 2, 3]);
+    expect([1, 2, 3].map((level) => bondFor(1000, level))).toEqual([500, 1000, 2000]);
+    expect([ODDS_GOOD * 20, NEAR_SCALE]).toEqual([15, 0.9]);
+    expect([nearnessOf(3, 2), nearnessOf(3, 1), nearnessOf(4, 1)]).toEqual(['narrow', 'clear', 'outmatched']);
+    expect([...LICENCE_PRICES]).toEqual([50_000, 100_000, 150_000]);
+    expect([tuneCap(0), TUNE_MAX]).toEqual([2, 5]);
+  });
+
+  test('the manual: raised terms, after the chapters of the open board; the four by the screen\'s names and what each multiplies', () => {
+    expect(at('terms')).toBe(at('accounts') + 1);
+    const { title, text } = chapter('terms');
+    expect(title).toBe('RAISED TERMS');
+    expect(text.length).toBeLessThanOrEqual(330);
+    expect(text).toContain(`the row ${B.terms} under ${B.accept}`);
+    const [, hazard, severe, ruinous] = STRINGS.stakes.names;
+    expect(text).toContain(`${hazard}: opposition x${STAKES[1]}, armour and damage. ${severe}: x${STAKES[2]}. ${ruinous}: x${STAKES[3]}.`);
+    // The fee grows by the factor, and what it grows by is the bond.
+    expect(text).toContain('The pay grows as much, and what it adds is your bond');
+    expect(text).toContain('lost if you lose, leave, or close the game in the air');
+    expect(text).toContain('Freight you guard grows as sturdy.');
+    expect(text).toMatch(/Accept waits for the odds\.$/);
+    // Which contracts: the three kinds the open board has.
+    expect(text).toMatch(/^An open contract, job or swarm can be flown on raised terms/);
+    const nl = dutch('terms');
+    expect(nl.title).toBe('VERHOOGDE INZET');
+    expect(nl.text.length).toBeLessThanOrEqual(330);
+    expect(nl.text).toContain(`de rij ${N.terms} onder ${N.accept}`);
+    const [, riskant, zwaar, ruineus] = STRINGS_NL.stakes.names;
+    expect(nl.text).toContain(`${riskant}: tegenstand x1,5, pantser en schade. ${zwaar}: x2. ${ruineus}: x3.`);
+    expect(nl.text).toContain('wat erbij komt is je borg: weg bij verlies, vertrek of afsluiten in de lucht');
+    expect(nl.text).toContain('Vracht die je bewaakt wordt even taai.');
+  });
+
+  test('the manual: how a flight was lost, after the chapter on odds, in the words of the briefing', () => {
+    expect(at('near')).toBe(at('odds') + 1);
+    const { title, text } = chapter('near');
+    expect(title).toBe('HOW IT WAS LOST');
+    expect(text.length).toBeLessThanOrEqual(330);
+    expect(text).toContain(`Where the odds are under ${ODDS_GOOD * 20} in 20`);
+    expect(text).toContain('Each is flown again against a tenth less opposition');
+    const said = (line: string): string => line.replace(' on Auto Turn', '');
+    const capital = (line: string): string => line[0].toUpperCase() + line.slice(1);
+    expect(text).toContain(`${capital(said(B.oddsNear.narrow))}: two in three are then won. ${capital(said(B.oddsNear.clear))}: one in three. ${capital(said(B.oddsNear.outmatched))}: fewer.`);
+    const nl = dutch('near');
+    expect(nl.title).toBe('HOE HET VERLOREN GING');
+    expect(nl.text.length).toBeLessThanOrEqual(330);
+    const gezegd = (line: string): string => line.replace(' op Auto-beurt', '');
+    expect(nl.text).toContain(`${capital(gezegd(N.oddsNear.narrow))}: twee op de drie lukken dan. ${capital(gezegd(N.oddsNear.clear))}: een op de drie. ${capital(gezegd(N.oddsNear.outmatched))}: minder.`);
+    expect(nl.text).toContain(`Is de kans lager dan ${ODDS_GOOD * 20} op 20`);
+    expect(nl.text).toContain('tegen een tiende minder tegenstand');
+  });
+
+  test('the manual: the bench\'s licences, after the chapter on the bench, with the three prices', () => {
+    expect(at('bench-licence')).toBe(at('bench') + 1);
+    const { title, text } = chapter('bench-licence');
+    expect(title).toBe('BENCH LICENCES');
+    expect(text.length).toBeLessThanOrEqual(330);
+    expect(text).toContain(`${LICENCE_PRICES[0]} c for the third, ${LICENCE_PRICES[1]} for the fourth, ${LICENCE_PRICES[2]} for the fifth`);
+    expect(text).toContain('every part may then go that step, at the step\'s own price');
+    expect(text).toContain('It is kept for good, and a new cycle still adds its own step on top.');
+    const nl = dutch('bench-licence');
+    expect(nl.title).toBe('WERKBANKLICENTIES');
+    expect(nl.text.length).toBeLessThanOrEqual(330);
+    expect(nl.text).toContain(`${LICENCE_PRICES[0]} c voor de derde, ${LICENCE_PRICES[1]} voor de vierde, ${LICENCE_PRICES[2]} voor de vijfde`);
+    expect(nl.text).toContain('Ze blijft voorgoed, en een nieuwe cyclus telt er zijn eigen stap bij.');
+    // The bench's own chapter still says how far it goes by itself.
+    expect(chapter('bench').text).toContain('The bench goes two steps, and one further each time the story starts over, to five.');
+  });
+
+  test('the guide: the row, the four terms in a table, and what the bond is', () => {
+    expect(terms).toContain(`staat in de briefing onder **${B.accept}** de rij **${B.terms}** (Nederlands **${N.terms}**)`);
+    const rows = [['zoals aangeboden', 'zoals aangeboden', 'geen'], ['x1,5', 'x1,5', 'de helft van het loon'], ['x2', 'x2', 'het loon'], ['x3', 'x3', 'twee keer het loon']];
+    STRINGS.stakes.names.forEach((name, level) => {
+      expect(terms, name).toContain(`| **${name}** (${STRINGS_NL.stakes.names[level]}) | ${rows[level].join(' | ')} |`);
+    });
+    expect(terms).toContain('**Tegenstand** is pantser én schade van elke vijand. Vracht die je moet beschermen wordt even veel taaier');
+    expect(terms).toContain('**De borg** is precies wat je erbij kunt winnen. Je betaalt hem niet vooraf');
+    expect(terms).toContain(`Op de afrekening staat dat als **${STRINGS.settlement.hazard('Severe')}** (gewonnen) of **${STRINGS.settlement.bond('Severe')}** (verloren).`);
+    expect(terms).toContain(`**Je moet de borg kunnen betalen.** Heb je te weinig credits, dan zie je wel wat de inzet vraagt, maar **${B.accept}** blijft grijs.`);
+  });
+
+  test('the guide: a game closed in the air, the wait for the odds, what stays as it was, and what is kept', () => {
+    expect(terms).toContain(`**Sluit je het spel midden in zo'n contract, dan ben je de borg kwijt.** Bij het openen staat er **${STRINGS.stakes.forfeit}** (Nederlands **${STRINGS_NL.stakes.forfeit}**).`);
+    expect(terms).toContain(`Bij verhoogde inzet wacht **${B.accept}** tot de kans geteld is (er staat even **${B.counting}**, Nederlands **${N.counting}**)`);
+    expect(terms).toContain('het is een gewoon gewonnen contract, het bord schuift door, en de bonus voor een gevraagde klasse krijg je er gewoon bij');
+    expect(terms).toContain('Verhaalcontracten, bijklussen, vervallen rekeningen, de arena en een geleende mech hebben geen inzet.');
+    const medals = MEDALS.filter((entry) => entry.id.startsWith('stake-'));
+    expect(medals.map((entry) => [entry.id, entry.tier])).toEqual([['stake-1', 1], ['stake-ruinous', 2], ['stake-25', 3]]);
+    expect(terms).toContain(`**${capital(word(medals.length))} medailles:** één voor de eerste, één voor een contract op **${STRINGS.stakes.names[3]}**, één voor vijfentwintig.`);
+    expect(medals[2].progress({} as never).need).toBe(25);
+    expect(terms).toContain('Hoeveel contracten je met verhoogde inzet won, staat op de pagina **Record** van je piloot.');
+  });
+
+  test('the guide: how near a lost flight was, in the words of the screen in both languages', () => {
+    const en = (line: string): string => line.replace(' on Auto Turn', '');
+    const nl = (line: string): string => line.replace(' op Auto-beurt', '');
+    expect(odds).toContain(`Is de kans niet goed (minder dan ${ODDS_GOOD * 20} van de 20), dan zegt de regel onder de build ook **hoe** de verloren vluchten verloren gingen.`);
+    expect(odds).toContain('Het spel vliegt elke verloren vlucht nog eens tegen een tiende minder tegenstand');
+    expect(odds).toContain(`**${en(B.oddsNear.narrow)}** (Nederlands **${nl(N.oddsNear.narrow)}**) als dat er twee op de drie of meer zijn, **${en(B.oddsNear.clear)}** (**${nl(N.oddsNear.clear)}**) bij een op de drie of meer, en **${en(B.oddsNear.outmatched)}** (**${nl(N.oddsNear.outmatched)}**) bij minder.`);
+  });
+
+  test('the guide and the README: the licence, with its prices', () => {
+    expect(bench).toContain(`(**${STRINGS.garage.licence(3)}**, Nederlands **${STRINGS_NL.garage.licence(3)}**)`);
+    expect(bench).toContain(`${thousands(LICENCE_PRICES[0])} credits voor de derde stap, ${thousands(LICENCE_PRICES[1])} voor de vierde en ${thousands(LICENCE_PRICES[2])} voor de vijfde`);
+    expect(bench).toContain('Een licentie geldt voor de werkbank, niet voor één onderdeel: daarna mag elk onderdeel die stap zetten, voor de gewone prijs van die stap.');
+    expect(bench).toContain('Je houdt hem voorgoed, en een nieuwe cyclus telt er nog steeds zijn eigen stap bij op.');
+    expect(README).toContain('- **Inzet**: een open contract kun je zwaarder aannemen voor meer loon: anderhalf, twee of drie keer de tegenstand en het loon, met een borg die je kwijt bent als je verliest.');
+    expect(README).toContain(`Sparen kan voor een werkbanklicentie (${thousands(LICENCE_PRICES[0])}, ${thousands(LICENCE_PRICES[1])} en ${thousands(LICENCE_PRICES[2])} credits): een stap extra voor elk onderdeel, voorgoed.`);
   });
 });
