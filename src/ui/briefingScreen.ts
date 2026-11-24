@@ -3,7 +3,7 @@ import { isSwarm } from '../core/board';
 import { computeBuildStats } from '../core/build';
 import { MIRROR_ID } from '../core/arena';
 import type { Mission } from '../core/campaign';
-import { advance, counted, newCount, type Count, type Forecast } from '../core/forecast';
+import { ODDS_GOOD, advance, counted, newCount, type Count, type Forecast } from '../core/forecast';
 import { groundFor } from '../core/ground';
 import { askBonus, crownHeld, isMaster } from '../core/masters';
 import { isSeat } from '../core/seat';
@@ -35,8 +35,7 @@ const SMALL_W = 4;
 const MENU_TOP = [216, 216, 210, 204, 202];
 /** What a build carries, as the page about it lists it: what it fights with, and its module. */
 const CARRIED: BuildSlot[] = ['rightHand', 'leftHand', 'shoulder', 'module'];
-/** The share of its flights a build has to win for its odds to be written as good, and as fair; under that they are poor. */
-export const ODDS_GOOD = 0.75;
+/** The share of its flights a build has to win for its odds to be written as fair; under that they are poor. (`ODDS_GOOD` is the count's own: see forecast.ts.) */
 export const ODDS_FAIR = 0.4;
 /**
  * How long the count of the odds may work in one frame, where the time can be told: a quarter of a frame
